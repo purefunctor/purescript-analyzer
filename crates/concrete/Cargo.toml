@@ -1,0 +1,11 @@
+[package]
+name = "concrete"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hashbrown = "0.14.0"
+rowan = "0.15.11"
+unicode_categories = "0.1.1"
