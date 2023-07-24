@@ -182,3 +182,45 @@ BIN_EXPR@240..246
 ```
 
 If it's the case that we perform gluing within the lexer, we have to add a special case in the expression parser that `DotDot` is a special case for an `Operator` token.
+
+### Reparsing
+
+In PureScript, precedence levels for operators are determined by fixity declarations, which means that an "association" step has to happen some time after obtaining fixity information for operators from name resolution. For instance, the following expression `1 + 2 * 3 / 4` is actually parsed into the CST as `1, [+ 2, * 3, / 4]`, where after name resolution, it can look something like `1, [Prelude.(+) 2, Prelude.(*) 3, Prelude.(/ 4)]`. The idea with reparsing is that initially, we can parse this into:
+
+```rs
+OperatorChain
+  Literal
+    Integer
+  OperatorChainTail
+    NameRef
+      Operator
+    NameRef
+      Operator
+```
+
+Name resolution inserts qualification information:
+
+```rs
+OperatorChain
+  Expression
+  OperatorChainPair
+    Qualified
+      ModuleName
+      NameRef
+        Operator
+    Expression
+  OperatorChainPair
+    Qualified
+      ModuleName
+      NameRef
+        Operator
+    Expression
+```
+
+Finally, this operator chain is flattened into:
+
+```rs
+Expression, Operator, Expression, Operator, Expression
+```
+
+Once fixity information is known, the parser can perform Pratt parsing to associate expressions.
