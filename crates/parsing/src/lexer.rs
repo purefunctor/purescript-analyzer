@@ -246,7 +246,7 @@ impl<'a> Lexer<'a> {
     #[inline]
     fn take_integer_or_number(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
-        self.take_while(|c| c.is_ascii_digit());
+        self.take_while(|c| c.is_ascii_digit() || c == '_');
 
         if self.first() == '.' {
             // `1..x` => [LiteralInteger, Period2, Lower]
@@ -257,7 +257,12 @@ impl<'a> Lexer<'a> {
             // `1.2` => [LiteralNumber]
             if self.second().is_ascii_digit() {
                 assert_eq!(self.take(), '.');
-                self.take_while(|c| c.is_ascii_digit());
+                self.take_while(|c| c.is_ascii_digit() || c == '_');
+                if matches!(self.first(), 'e' | 'E') {
+                    self.take();
+                    if matches!(self.first(), '+' | '-') { self.take(); }
+                    self.take_while(|c| c.is_ascii_digit() || c == '_');
+                }
                 return (SyntaxKind::LiteralNumber, offset, None);
             }
 
