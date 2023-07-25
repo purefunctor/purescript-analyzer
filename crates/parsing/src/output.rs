@@ -1,5 +1,3 @@
 //! The output type for the parser.
 
-pub struct Output {
-    
-}
+pub struct Output {}

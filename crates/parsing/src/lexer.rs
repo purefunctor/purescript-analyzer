@@ -12,18 +12,32 @@ pub struct Lexed<'a> {
     source: &'a str,
     kinds: Vec<SyntaxKind>,
     offsets: Vec<u32>,
+    errors: Vec<LexError>,
+}
+
+#[derive(Debug)]
+struct LexError {
+    message: String,
+    index: u32,
 }
 
 impl<'a> Lexed<'a> {
     fn new(source: &'a str) -> Lexed<'a> {
         let kinds = vec![];
         let offsets = vec![];
-        Lexed { source, kinds, offsets }
+        let errors = vec![];
+        Lexed { source, kinds, offsets, errors }
     }
 
-    fn push(&mut self, kind: SyntaxKind, offset: usize) {
+    fn push(&mut self, kind: SyntaxKind, offset: usize, error: Option<&str>) {
         self.kinds.push(kind);
         self.offsets.push(offset as u32);
+
+        if let Some(error) = error {
+            let message = error.to_string();
+            let index = self.len() as u32;
+            self.errors.push(LexError { message, index });
+        }
     }
 
     /// # Invariant
@@ -108,14 +122,10 @@ impl<'a> Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    fn take_token(&mut self) -> (SyntaxKind, usize) {
+    fn take_token(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         match self.first() {
-            '-' if self.second() == '-' => {
-                self.take_line_comment()
-            }
-            '{' if self.second() == '-' => {
-                self.take_block_comment()
-            }
+            '-' if self.second() == '-' => self.take_line_comment(),
+            '{' if self.second() == '-' => self.take_block_comment(),
 
             '(' => self.take_single(SyntaxKind::LeftParenthesis),
             ')' => self.take_single(SyntaxKind::RightParenthesis),
@@ -124,15 +134,20 @@ impl<'a> Lexer<'a> {
             '[' => self.take_single(SyntaxKind::LeftBrace),
             ']' => self.take_single(SyntaxKind::RightBrace),
 
+            '\'' => self.take_char(),
+            '"' => self.take_string(),
+
             identifier => {
                 if identifier.is_letter_lowercase() {
-                    self.take_lower_or_kw()
+                    self.take_lower()
                 } else if identifier.is_letter_uppercase() {
                     self.take_upper()
                 } else if is_operator(identifier) {
                     self.take_operator()
                 } else if identifier.is_whitespace() {
                     self.take_whitespace()
+                } else if identifier.is_ascii_digit() {
+                    self.take_integer_or_number()
                 } else {
                     todo!("Unknown token!")
                 }
@@ -141,14 +156,14 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_single(&mut self, kind: SyntaxKind) -> (SyntaxKind, usize) {
+    fn take_single(&mut self, kind: SyntaxKind) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         self.take();
-        (kind, offset)
+        (kind, offset, None)
     }
 
     #[inline]
-    fn take_lower_or_kw(&mut self) -> (SyntaxKind, usize) {
+    fn take_lower(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         self.take_while(|c| c.is_letter());
         let end_offset = self.consumed();
@@ -157,6 +172,7 @@ impl<'a> Lexer<'a> {
             "class" => SyntaxKind::ClassKw,
             "data" => SyntaxKind::DataKw,
             "derive" => SyntaxKind::DeriveKw,
+            "false" => SyntaxKind::LiteralFalse,
             "foreign" => SyntaxKind::ForeignKw,
             "import" => SyntaxKind::ImportKw,
             "infix" => SyntaxKind::InfixKw,
@@ -165,22 +181,23 @@ impl<'a> Lexer<'a> {
             "instance" => SyntaxKind::InstanceKw,
             "module" => SyntaxKind::ModuleKw,
             "newtype" => SyntaxKind::NewtypeKw,
+            "true" => SyntaxKind::LiteralTrue,
             "type" => SyntaxKind::TypeKw,
             "where" => SyntaxKind::WhereKw,
             _ => SyntaxKind::Lower,
         };
-        (kind, offset)
+        (kind, offset, None)
     }
 
     #[inline]
-    fn take_upper(&mut self) -> (SyntaxKind, usize) {
+    fn take_upper(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         self.take_while(|c| c.is_letter());
-        (SyntaxKind::Upper, offset)
+        (SyntaxKind::Upper, offset, None)
     }
 
     #[inline]
-    fn take_operator(&mut self) -> (SyntaxKind, usize) {
+    fn take_operator(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         self.take_while(is_operator);
         let offset_end = self.consumed();
@@ -194,29 +211,81 @@ impl<'a> Lexer<'a> {
             "->" => SyntaxKind::RightArrow,
             "<=" => SyntaxKind::LeftThickArrow,
             "=>" => SyntaxKind::RightThickArrow,
-            _ => SyntaxKind::Operator
+            _ => SyntaxKind::Operator,
         };
-        (kind, offset)
+        (kind, offset, None)
     }
 
     #[inline]
-    fn take_whitespace(&mut self) -> (SyntaxKind, usize) {
+    fn take_char(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+        let offset = self.consumed();
+        assert_eq!(self.take(), '\'');
+        self.take();
+        if self.first() == '\'' {
+            self.take();
+            (SyntaxKind::LiteralChar, offset, None)
+        } else {
+            (SyntaxKind::Error, offset, Some("invalid character literal"))
+        }
+    }
+
+    #[inline]
+    fn take_string(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+        let offset = self.consumed();
+        assert_eq!(self.take(), '"');
+        self.take_while(|c| c != '"');
+        if self.first() == '"' {
+            self.take();
+            (SyntaxKind::LiteralString, offset, None)
+        } else {
+            (SyntaxKind::Error, offset, Some("invalid string literal"))
+        }
+    }
+    
+    #[inline]
+    fn take_integer_or_number(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+        let offset = self.consumed();
+        self.take_while(|c| c.is_ascii_digit());
+
+        if self.first() == '.' {
+            // `1..x` => [LiteralInteger, Period2, Lower]
+            if self.second() == '.' {
+                return (SyntaxKind::LiteralInteger, offset, None);
+            }
+
+            // `1.2` => [LiteralNumber]
+            if self.second().is_ascii_digit() {
+                assert_eq!(self.take(), '.');
+                self.take_while(|c| c.is_ascii_digit());
+                return (SyntaxKind::LiteralNumber, offset, None);
+            }
+
+            // `1.` => [Error]
+            assert_eq!(self.take(), '.');
+            return (SyntaxKind::Error, offset, Some("invalid number literal"));
+        }
+
+        return (SyntaxKind::LiteralInteger, offset, None);
+    }
+
+    #[inline]
+    fn take_whitespace(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         self.take_while(|c| c.is_whitespace());
-        (SyntaxKind::Whitespace, offset)
+        (SyntaxKind::Whitespace, offset, None)
     }
 
     #[inline]
-    fn take_line_comment(&mut self) -> (SyntaxKind, usize) {
+    fn take_line_comment(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         assert_eq!(self.take(), '-');
         assert_eq!(self.take(), '-');
         self.take_while(|c| c != '\n');
-        (SyntaxKind::LineComment, offset)
+        (SyntaxKind::LineComment, offset, None)
     }
 
     #[inline]
-    fn take_block_comment(&mut self) -> (SyntaxKind, usize) {
+    fn take_block_comment(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         assert_eq!(self.take(), '{');
         assert_eq!(self.take(), '-');
@@ -240,7 +309,7 @@ impl<'a> Lexer<'a> {
             }
             self.take();
         }
-        (SyntaxKind::BlockComment, offset)
+        (SyntaxKind::BlockComment, offset, None)
     }
 }
 
@@ -254,18 +323,19 @@ pub fn lex(source: &str) -> Lexed {
     let mut lexed = Lexed::new(source);
     loop {
         if lexer.is_eof() {
-            lexed.push(SyntaxKind::EndOfFile, lexer.consumed());
+            lexed.push(SyntaxKind::EndOfFile, lexer.consumed(), None);
             break;
         }
-        let (kind, offset) = lexer.take_token();
-        lexed.push(kind, offset);
+        let (kind, offset, error) = lexer.take_token();
+        lexed.push(kind, offset, error);
     }
     lexed
 }
 
 #[test]
 fn lexer_test() {
-    let lexed = lex(". .. ... : :: ::: <- -> <= => {- hello -} -- final");
+    let lexed = lex("1..5");
     dbg!(lexed.kinds);
     dbg!(lexed.offsets);
+    dbg!(lexed.errors);
 }

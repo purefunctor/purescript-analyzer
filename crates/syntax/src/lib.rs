@@ -41,7 +41,13 @@ pub enum SyntaxKind {
     LeftBrace,
     RightBrace,
 
-    Expression,
+    LiteralChar,
+    LiteralString,
+    LiteralInteger,
+    LiteralNumber,
+    LiteralTrue,
+    LiteralFalse,
+
     Type,
     Pattern,
 
@@ -75,6 +81,7 @@ pub enum SyntaxKind {
     InfixrKw,
     InfixKw,
 
+    Error,
     EndOfFile,
 }
 
