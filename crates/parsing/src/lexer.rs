@@ -168,6 +168,7 @@ impl<'a> Lexer<'a> {
         self.take_while(|c| c.is_letter());
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
+            // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
             "as" => SyntaxKind::AsKw,
             "class" => SyntaxKind::ClassKw,
             "data" => SyntaxKind::DataKw,
@@ -241,7 +242,7 @@ impl<'a> Lexer<'a> {
             (SyntaxKind::Error, offset, Some("invalid string literal"))
         }
     }
-    
+
     #[inline]
     fn take_integer_or_number(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
@@ -338,4 +339,69 @@ fn lexer_test() {
     dbg!(lexed.kinds);
     dbg!(lexed.offsets);
     dbg!(lexed.errors);
+}
+
+#[cfg(test)]
+mod tests {
+    // Reading a failing test output is a lot easier with this:
+    //  $ cargo test -- --test-threads 1
+    use syntax::SyntaxKind;
+    use syntax::SyntaxKind::*;
+
+    use super::lex;
+
+    fn expect_tokens<'a>(source: &'a str, expected: &[SyntaxKind]) {
+        println!();
+        let lexed = lex(source);
+        let mut success = true;
+        for (i, (actual, expected)) in lexed.kinds.iter().zip(expected).enumerate() {
+            if actual == expected && success {
+                continue;
+            }
+            success = false;
+            println!("{:?}: {:?}@{:?} != {:?}", i, actual, lexed.offsets[i], expected);
+        }
+        if lexed.kinds.len() != expected.len() {
+            let got_len = lexed.kinds.len();
+            let expected_len = expected.len();
+            println!("Got {got_len} tokens but expected {expected_len} tokens");
+            success = false
+        }
+        for error in lexed.errors.iter() {
+            println!("Error: {:?}", error);
+            success = false;
+        }
+        if !success {
+            assert!(false, "test failed for source: {source}");
+        }
+    }
+
+    #[test]
+    fn lex_test_lower_and_ints() {
+        expect_tokens(
+            "a  b   c  1  2  3",
+            &[
+                Lower,
+                Whitespace,
+                Lower,
+                Whitespace,
+                Lower,
+                Whitespace,
+                LiteralInteger,
+                Whitespace,
+                LiteralInteger,
+                Whitespace,
+                LiteralInteger,
+                EndOfFile,
+            ],
+        )
+    }
+
+    #[test]
+    fn lex_test_numbers() {
+        expect_tokens(
+            "1.2e-3 0.4e+5 66.7e8",
+            &[LiteralNumber, Whitespace, LiteralNumber, Whitespace, LiteralNumber, EndOfFile],
+        )
+    }
 }
