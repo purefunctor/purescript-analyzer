@@ -41,6 +41,7 @@ impl<'a> Lexed<'a> {
     ///
     /// // without EndOfFile, 0..?
     /// [(Lower, 0)]
+    /// ```
     pub fn len(&self) -> usize {
         self.kinds.len() - 1
     }
