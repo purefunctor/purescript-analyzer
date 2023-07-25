@@ -26,7 +26,7 @@ QualifiedName =
 ExportList =
   '(' ExportItem* ')'
 
-ExportItem =
+inline ExportItem =
   'todo'
 
 ImportDeclaration =
@@ -38,19 +38,19 @@ ImportDeclaration =
 ImportList =
   '(' ImportItem* ')'
 
-ImportItem =
+inline ImportItem =
   'todo'
 
-Expression =
+inline Expression =
   'todo'
 
-Type =
+inline Type =
   'todo'
 
-Pattern =
+inline Pattern =
   'todo'
 
-Declaration = 
+inline Declaration = 
   ValueDeclaration
 | AnnotationDeclaration
 | DataDeclaration
