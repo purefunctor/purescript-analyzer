@@ -414,4 +414,12 @@ mod tests {
             &[LiteralNumber, Whitespace, LiteralNumber, Whitespace, LiteralNumber, EndOfFile],
         )
     }
+
+    #[test]
+    fn lex_test_numbers_and_ints_with_underscores() {
+        expect_tokens(
+            "1_2_3__4 1_2_3.4_3_2e12",
+            &[LiteralInteger, Whitespace, LiteralNumber, EndOfFile],
+        )
+    }
 }
