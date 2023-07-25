@@ -32,6 +32,14 @@ ExpressionBinaryOperation
     Expression  "3"
 ```
 
+### Parser
+
+There's a couple of considerations that have to be made for the parser architecture, in particular with its input type. For the layout algorithm to work, the parser has to be aware of the indentation of a token, and to simplify peeking into a single-token lookup, whitespace and comment tokens are not included in the input type.
+
+That being said, rather than simply having `Vec<SyntaxKind>` as the input, it'd be more like `Vec<SyntaxKind>, Vec<u32>` where the latter is the column offset for that specific token.
+
+Conceptually, this means that the parser cannot be "generic" over its input type without offset information. For inputs coming from lexed tokens, the offset information is easy to compute. However for arbitrary token sources e.g. macro expansion, programmatic sources, even a node in the CST, the offset is a bit more difficult to compute.
+
 ## Old Notes
 
 ### Layout Algorithm

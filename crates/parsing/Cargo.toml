@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 syntax = { version = "0.1.0", path = "../syntax" }
+unicode_categories = "0.1.1"

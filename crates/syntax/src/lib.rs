@@ -4,6 +4,8 @@ pub mod ast;
 #[repr(u16)]
 pub enum SyntaxKind {
     Whitespace = 0,
+    LineComment,
+    BlockComment,
 
     Module,
     ModuleHeader,
@@ -21,10 +23,17 @@ pub enum SyntaxKind {
     ModuleName,
     Upper,
     Lower,
+    Operator,
 
-    Period,
-    Colon,
     Equal,
+    Period,
+    Period2,
+    Colon,
+    Colon2,
+    LeftArrow,
+    RightArrow,
+    LeftThickArrow,
+    RightThickArrow,
     LeftParenthesis,
     RightParenthesis,
     LeftBracket,
@@ -42,6 +51,9 @@ pub enum SyntaxKind {
     DataDeclaration,
     DataKw,
 
+    NewtypeDeclaration,
+    NewtypeKw,
+
     TypeDeclaration,
     TypeKw,
 
@@ -50,6 +62,9 @@ pub enum SyntaxKind {
 
     InstanceDeclaration,
     InstanceKw,
+
+    DeriveInstanceDeclaration,
+    DeriveKw,
 
     ForeignDataDeclaration,
     ForeignValueDeclaration,
@@ -89,6 +104,12 @@ pub type SyntaxNode = rowan::SyntaxNode<PureScript>;
 pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<PureScript>;
 pub type SyntaxToken = rowan::SyntaxToken<PureScript>;
 pub type SyntaxElement = rowan::SyntaxElement<PureScript>;
+
+impl SyntaxKind {
+    pub fn is_contextual_operator(&self) -> bool {
+        matches!(self, Self::Colon | Self::Period2 | Self::LeftThickArrow)
+    }
+}
 
 #[cfg(test)]
 mod tests {
