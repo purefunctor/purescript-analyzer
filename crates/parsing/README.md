@@ -1,7 +1,38 @@
-# monarch-concrete
-This crate defines the Concrete Syntax Tree of the language using the language-agnostic [rowan](https://crates.io/crates/rowan) crate, as well as the handwritten parser.
+# monarch-parsing
+This crate provides the lexer and parser for the CST defined by `syntax`.
 
 ## Notes
+
+### Lowering
+
+In order to perform operations such as type checking, the CST is "lowered" into another typed representation, usually the AST. Some refactorings can be performed on the CST, like operator rebracketing, while some refactorings can only be performed on the AST, during or after lowering. Name resolution, for example, can occur during lowering; there's usually enough information in the CST to resolve names e.g. turning the `Nil` constructor into `Data.List.Nil`.
+
+### Reparsing
+
+Given the architecture of the parser and the CST, reparsing can be employed to modify certain tree nodes. Take for example the `ExpressionOperatorChain` node:
+
+```hs
+ExpressionOperatorChain
+  Expression  "1"
+  Operator    "+"
+  Expression  "2"
+  Operator    "*"
+  Expression  "3"
+```
+
+It simply describes a chain of operator applications, since at this point in parsing, we have no idea what the associativity is for each `Operator`. Once the `FixityDeclaration` nodes have been parsed, and after some degree of name resolution, we're able to transform the node into the following using a basic Pratt-style parser!
+
+```hs
+ExpressionBinaryOperation
+  Expression    "1"
+  Operator      "+"
+  ExpressionBinaryOperation
+    Expression  "2"
+    Operator    "*"
+    Expression  "3"
+```
+
+## Old Notes
 
 ### Layout Algorithm
 
