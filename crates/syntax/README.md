@@ -20,6 +20,9 @@ ModuleHeader =
 ModuleName =
   #Upper ('.' #Upper)*
 
+QualifiedName =
+  ModuleName? ( #Upper | #Lower )
+
 ExportList =
   '(' ExportItem* ')'
 
@@ -52,9 +55,9 @@ Pattern =
 
 Declaration = 
   ValueDeclaration
-| TypeDeclaration
+| AnnotationDeclaration
 | DataDeclaration
-| SynonymDeclaration
+| TypeDeclaration
 | ClassDeclaration
 | InstanceDeclaration
 | ForeignDataDeclaration
@@ -64,6 +67,6 @@ Declaration =
 ValueDeclaration =
   #Lower Pattern* '=' Expression
 
-TypeDeclaration =
+AnnotationDeclaration =
   #Lower '::' Type
 ```
