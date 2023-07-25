@@ -140,15 +140,11 @@ mod tests {
         print(2, purescript_module.clone().into());
 
         let module_name = purescript_module
-            .children_with_tokens()
+            .children()
             .nth(0)
             .unwrap()
-            .into_node()
-            .unwrap()
-            .children_with_tokens()
-            .nth(2)
-            .unwrap()
-            .into_node()
+            .children()
+            .nth(0)
             .and_then(ast::ModuleName::cast)
             .unwrap();
 
