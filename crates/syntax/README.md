@@ -8,7 +8,7 @@ The following code block describes the "grammar" for the Concrete Syntax Tree, i
 ```hs
 Module =
   ModuleHeader
-  ModuleBody
+  Declaration*
 
 ModuleHeader =
   'module'
@@ -40,9 +40,6 @@ ImportList =
 
 ImportItem =
   'todo'
-
-ModuleBody =
-  Declaration*
 
 Expression =
   'todo'

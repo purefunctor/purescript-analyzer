@@ -7,7 +7,6 @@ pub enum SyntaxKind {
 
     Module,
     ModuleHeader,
-    ModuleBody,
     ModuleKw,
     WhereKw,
 
