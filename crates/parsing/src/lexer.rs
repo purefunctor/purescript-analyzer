@@ -161,7 +161,7 @@ impl<'a> Lexer<'a> {
                 } else if identifier.is_ascii_digit() {
                     self.take_integer_or_number()
                 } else {
-                    todo!("Unknown token!")
+                    panic!("Unknown token!")
                 }
             }
         }
@@ -236,7 +236,7 @@ impl<'a> Lexer<'a> {
         let c = self.take();
         if c == '\\' {
             if let Some(err) = self.take_escape() {
-                return (SyntaxKind::Error, offset, Some(err))
+                return (SyntaxKind::Error, offset, Some(err));
             }
         }
         if self.first() == '\'' {
@@ -265,15 +265,71 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_string(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+    fn take_string(&mut self) -> (SyntaxKind, usize, Option<&'static str>) {
         let offset = self.consumed();
-        assert_eq!(self.take(), '"');
-        self.take_while(|c| c != '"');
-        if self.first() == '"' {
-            self.take();
-            (SyntaxKind::LiteralString, offset, None)
-        } else {
-            (SyntaxKind::Error, offset, Some("invalid string literal"))
+        self.take_while_max(|c| c == '"', 8);
+        let leading_quotes = self.consumed() - offset;
+        match leading_quotes {
+            0 => panic!("Caller garantees leading quote!"),
+            // "..." => a string
+            1 => self.take_normal_string(offset),
+            // "" => an empty string
+            2 => (SyntaxKind::LiteralString, offset, None),
+            // """...""" => a raw string with leading quotes
+            3 | 4 | 5 => self.take_raw_string(offset),
+            // """"""" => Trailing and leading quotes in a raw string
+            6 | 7 | 8 => (SyntaxKind::LiteralRawString, offset, None),
+            _ => unreachable!(),
+        }
+    }
+
+    fn take_normal_string(&mut self, offset: usize) -> (SyntaxKind, usize, Option<&'static str>) {
+        loop {
+            match self.take() {
+                '\r' | '\n' => {
+                    break (
+                        SyntaxKind::Error,
+                        offset,
+                        Some(
+                            "invalid string literal - newlines are not allowed in string literals",
+                        ),
+                    )
+                }
+                '\\' => {
+                    if let Some(err) = self.take_escape() {
+                        break (SyntaxKind::Error, offset, Some(err));
+                    } else {
+                        continue;
+                    }
+                }
+                '"' => break (SyntaxKind::LiteralString, offset, None),
+                EOF_CHAR => {
+                    break (SyntaxKind::Error, offset, Some("invalid string literal - end of file"))
+                }
+                _ => continue,
+            }
+        }
+    }
+
+    fn take_raw_string(&mut self, offset: usize) -> (SyntaxKind, usize, Option<&'static str>) {
+        loop {
+            self.take_while(|c| c != '"');
+            let start_of_quotes = self.consumed();
+            self.take_while_max(|c| c == '"', 5);
+            let end_of_quotes = self.consumed();
+            let num_quotes = end_of_quotes - start_of_quotes;
+            match num_quotes {
+                0 => {
+                    break (
+                        SyntaxKind::Error,
+                        offset,
+                        Some("invalid raw string literal - end of file"),
+                    )
+                }
+                1 | 2 => continue,
+                3 | 4 | 5 => break (SyntaxKind::LiteralRawString, offset, None),
+                _ => unreachable!(),
+            }
         }
     }
 
@@ -390,7 +446,6 @@ fn is_hex_digit(c: char) -> bool {
     matches!(c, 'a'..='f' | 'A'..='F' | '0'..='9')
 }
 
-
 /// Lexes a `&str` into [`Lexed`].
 pub fn lex(source: &str) -> Lexed {
     let mut lexer = Lexer::new(source);
@@ -420,11 +475,16 @@ mod tests {
         let lexed = lex(source);
         let mut success = true;
         for (i, (actual, expected)) in lexed.kinds.iter().zip(expected).enumerate() {
-            if actual == expected && success {
-                continue;
-            }
-            success = false;
-            println!("{:?}: {:?}@{:?} != {:?}", i, actual, lexed.offsets[i], expected);
+            println!(
+                "{} {:>2} {:3}@{:<18} {} {:<18}",
+                if actual == expected { " " } else { "X" },
+                i,
+                lexed.offsets[i],
+                format!("{:?}", actual),
+                if actual == expected { " " } else { "X" },
+                format!("{:?}", expected),
+            );
+            success = success && actual == expected;
         }
         if lexed.kinds.len() != expected.len() {
             let got_len = lexed.kinds.len();
@@ -488,17 +548,38 @@ mod tests {
 
     #[test]
     fn lex_double_period() {
-        expect_tokens(
-            "1..5",
-            &[LiteralInteger, Period2, LiteralInteger, EndOfFile],
-        )
+        expect_tokens("1..5", &[LiteralInteger, Period2, LiteralInteger, EndOfFile])
     }
 
     #[test]
     fn lex_holes_and_lower() {
         expect_tokens(
             "?abc abc ?a123b''_ abc''' _ignore",
-            &[Hole, Whitespace, Lower, Whitespace, Hole, Whitespace, Lower, Whitespace, Lower, EndOfFile],
+            &[
+                Hole, Whitespace, Lower, Whitespace, Hole, Whitespace, Lower, Whitespace, Lower,
+                EndOfFile,
+            ],
+        )
+    }
+
+    #[test]
+    fn lex_strings() {
+        expect_tokens(
+            r#" "abc" "\"" """""x""""" """"ABC"""" "\x012qqqqq" "#,
+            &[
+                Whitespace,
+                LiteralString,
+                Whitespace,
+                LiteralString,
+                Whitespace,
+                LiteralRawString,
+                Whitespace,
+                LiteralRawString,
+                Whitespace,
+                LiteralString,
+                Whitespace,
+                EndOfFile,
+            ],
         )
     }
 }

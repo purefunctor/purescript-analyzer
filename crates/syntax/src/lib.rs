@@ -44,6 +44,7 @@ pub enum SyntaxKind {
 
     LiteralChar,
     LiteralString,
+    LiteralRawString,
     LiteralInteger,
     LiteralNumber,
     LiteralTrue,
