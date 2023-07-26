@@ -247,7 +247,7 @@ impl<'a> Lexer<'a> {
     fn take_integer_or_number(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         // NOTE: The PureScript parser does not allow multiple leading 0s - the best way to handle
-        // it is maybe to report the same errors as PureScript or we try to parse a super-set. 
+        // it is maybe to report the same errors as PureScript or we try to parse a super-set.
         // NOTE: The first rune has to be a digit, but after that underscores are allowed in
         // PureScript number- and int-literals.
         self.take_while(|c| c.is_ascii_digit() || c == '_');
@@ -265,7 +265,9 @@ impl<'a> Lexer<'a> {
                 // Scientific notation
                 if matches!(self.first(), 'e' | 'E') {
                     self.take();
-                    if matches!(self.first(), '+' | '-') { self.take(); }
+                    if matches!(self.first(), '+' | '-') {
+                        self.take();
+                    }
                     self.take_while(|c| c.is_ascii_digit() || c == '_');
                 }
                 return (SyntaxKind::LiteralNumber, offset, None);
