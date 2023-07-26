@@ -41,6 +41,9 @@ pub enum SyntaxKind {
     RightBracket,
     LeftBrace,
     RightBrace,
+    Tick,
+    Comma,
+    Pipe,
 
     LiteralChar,
     LiteralString,

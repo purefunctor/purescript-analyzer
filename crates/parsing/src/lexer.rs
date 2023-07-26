@@ -1,4 +1,5 @@
 //! Text-based lexer into a sequence of [`SyntaxKind`]s.
+//! Based of off https://github.com/purescript/purescript/blob/master/src/Language/PureScript/CST/Lexer.hs
 
 use std::{ops::Range, str::Chars};
 
@@ -144,6 +145,9 @@ impl<'a> Lexer<'a> {
             '[' => self.take_single(SyntaxKind::LeftBrace),
             ']' => self.take_single(SyntaxKind::RightBrace),
 
+            '`' => self.take_single(SyntaxKind::Tick),
+            ',' => self.take_single(SyntaxKind::Comma),
+
             '\'' => self.take_char(),
             '"' => self.take_string(),
 
@@ -224,6 +228,7 @@ impl<'a> Lexer<'a> {
             "->" => SyntaxKind::RightArrow,
             "<=" => SyntaxKind::LeftThickArrow,
             "=>" => SyntaxKind::RightThickArrow,
+            "|" => SyntaxKind::Pipe,
             _ => SyntaxKind::Operator,
         };
         (kind, offset, None)
@@ -581,5 +586,23 @@ mod tests {
                 EndOfFile,
             ],
         )
+    }
+
+    #[test]
+    fn lex_tick_comma_pipe() {
+        expect_tokens(
+            "`,| || |+|",
+            &[Tick, Comma, Pipe, Whitespace, Operator, Whitespace, Operator, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_noise() {
+        lex("@jKUpg7LjW9$cPyb#b3iek1S17BvUSOIP0HfBuvv^3UF#w3UpRy@a$");
+    }
+
+    #[test]
+    fn lex_emojis() {
+        lex("👋🌟😊🚀🔥");
     }
 }
