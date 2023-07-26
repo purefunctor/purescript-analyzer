@@ -608,6 +608,33 @@ mod tests {
     }
 
     #[test]
+    fn lex_some_keywords() {
+        expect_tokens(
+            "data type forall foreign ∷ ← → ⇒ ∀",
+            &[
+                DataKw,
+                Whitespace,
+                TypeKw,
+                Whitespace,
+                ForallKw,
+                Whitespace,
+                ForeignKw,
+                Whitespace,
+                Colon2,
+                Whitespace,
+                LeftArrow,
+                Whitespace,
+                RightArrow,
+                Whitespace,
+                RightThickArrow,
+                Whitespace,
+                ForallKw,
+                EndOfFile,
+            ],
+        );
+    }
+
+    #[test]
     fn lex_emojis() {
         lex("👋🌟😊🚀🔥");
     }
