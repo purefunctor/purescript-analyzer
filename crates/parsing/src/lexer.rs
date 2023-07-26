@@ -168,6 +168,7 @@ impl<'a> Lexer<'a> {
         self.take_while(|c| c.is_letter());
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
+            // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
             "as" => SyntaxKind::AsKw,
             "class" => SyntaxKind::ClassKw,
             "data" => SyntaxKind::DataKw,
@@ -241,11 +242,15 @@ impl<'a> Lexer<'a> {
             (SyntaxKind::Error, offset, Some("invalid string literal"))
         }
     }
-    
+
     #[inline]
     fn take_integer_or_number(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
-        self.take_while(|c| c.is_ascii_digit());
+        // NOTE: The PureScript parser does not allow multiple leading 0s - the best way to handle
+        // it is maybe to report the same errors as PureScript or we try to parse a super-set.
+        // NOTE: The first rune has to be a digit, but after that underscores are allowed in
+        // PureScript number- and int-literals.
+        self.take_while(|c| c.is_ascii_digit() || c == '_');
 
         if self.first() == '.' {
             // `1..x` => [LiteralInteger, Period2, Lower]
@@ -256,7 +261,15 @@ impl<'a> Lexer<'a> {
             // `1.2` => [LiteralNumber]
             if self.second().is_ascii_digit() {
                 assert_eq!(self.take(), '.');
-                self.take_while(|c| c.is_ascii_digit());
+                self.take_while(|c| c.is_ascii_digit() || c == '_');
+                // Scientific notation
+                if matches!(self.first(), 'e' | 'E') {
+                    self.take();
+                    if matches!(self.first(), '+' | '-') {
+                        self.take();
+                    }
+                    self.take_while(|c| c.is_ascii_digit() || c == '_');
+                }
                 return (SyntaxKind::LiteralNumber, offset, None);
             }
 
@@ -338,4 +351,77 @@ fn lexer_test() {
     dbg!(lexed.kinds);
     dbg!(lexed.offsets);
     dbg!(lexed.errors);
+}
+
+#[cfg(test)]
+mod tests {
+    // Reading a failing test output is a lot easier with this:
+    //  $ cargo test -- --test-threads 1
+    use syntax::SyntaxKind;
+    use syntax::SyntaxKind::*;
+
+    use super::lex;
+
+    fn expect_tokens<'a>(source: &'a str, expected: &[SyntaxKind]) {
+        println!();
+        let lexed = lex(source);
+        let mut success = true;
+        for (i, (actual, expected)) in lexed.kinds.iter().zip(expected).enumerate() {
+            if actual == expected && success {
+                continue;
+            }
+            success = false;
+            println!("{:?}: {:?}@{:?} != {:?}", i, actual, lexed.offsets[i], expected);
+        }
+        if lexed.kinds.len() != expected.len() {
+            let got_len = lexed.kinds.len();
+            let expected_len = expected.len();
+            println!("Got {got_len} tokens but expected {expected_len} tokens");
+            success = false
+        }
+        for error in lexed.errors.iter() {
+            println!("Error: {:?}", error);
+            success = false;
+        }
+        if !success {
+            assert!(false, "test failed for source: {source}");
+        }
+    }
+
+    #[test]
+    fn lex_test_lower_and_ints() {
+        expect_tokens(
+            "a  b   c  1  2  3",
+            &[
+                Lower,
+                Whitespace,
+                Lower,
+                Whitespace,
+                Lower,
+                Whitespace,
+                LiteralInteger,
+                Whitespace,
+                LiteralInteger,
+                Whitespace,
+                LiteralInteger,
+                EndOfFile,
+            ],
+        )
+    }
+
+    #[test]
+    fn lex_test_numbers() {
+        expect_tokens(
+            "1.2e-3 0.4e+5 66.7e8",
+            &[LiteralNumber, Whitespace, LiteralNumber, Whitespace, LiteralNumber, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_test_numbers_and_ints_with_underscores() {
+        expect_tokens(
+            "1_2_3__4 1_2_3.4_3_2e12",
+            &[LiteralInteger, Whitespace, LiteralNumber, EndOfFile],
+        )
+    }
 }
