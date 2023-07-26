@@ -64,6 +64,7 @@ pub enum SyntaxKind {
 
     NewtypeDeclaration,
     NewtypeKw,
+    ForallKw,
 
     TypeDeclaration,
     TypeKw,

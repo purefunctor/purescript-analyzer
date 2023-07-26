@@ -190,6 +190,7 @@ impl<'a> Lexer<'a> {
             "data" => SyntaxKind::DataKw,
             "derive" => SyntaxKind::DeriveKw,
             "false" => SyntaxKind::LiteralFalse,
+            "forall" => SyntaxKind::ForallKw,
             "foreign" => SyntaxKind::ForeignKw,
             "import" => SyntaxKind::ImportKw,
             "infix" => SyntaxKind::InfixKw,
@@ -219,6 +220,11 @@ impl<'a> Lexer<'a> {
         self.take_while(is_operator);
         let offset_end = self.consumed();
         let kind = match &self.source[offset..offset_end] {
+            "∷" => SyntaxKind::Colon2,
+            "←" => SyntaxKind::LeftArrow,
+            "→" => SyntaxKind::RightArrow,
+            "⇒" => SyntaxKind::RightThickArrow,
+            "∀" => SyntaxKind::ForallKw,
             "=" => SyntaxKind::Equal,
             ":" => SyntaxKind::Colon,
             "::" => SyntaxKind::Colon2,
