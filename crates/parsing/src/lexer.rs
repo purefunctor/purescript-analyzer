@@ -119,6 +119,16 @@ impl<'a> Lexer<'a> {
             self.take();
         }
     }
+
+    fn take_while_max(&mut self, predicate: impl Fn(char) -> bool, max: u8) {
+        for _ in 0..max {
+            if predicate(self.first()) && !self.is_eof() {
+                self.take();
+            } else {
+                return;
+            }
+        }
+    }
 }
 
 impl<'a> Lexer<'a> {
@@ -137,8 +147,10 @@ impl<'a> Lexer<'a> {
             '\'' => self.take_char(),
             '"' => self.take_string(),
 
+            '?' if is_ident(self.second()) => self.take_hole(),
+
             identifier => {
-                if identifier.is_letter_lowercase() {
+                if is_ident_start(identifier) {
                     self.take_lower()
                 } else if identifier.is_letter_uppercase() {
                     self.take_upper()
@@ -165,7 +177,7 @@ impl<'a> Lexer<'a> {
     #[inline]
     fn take_lower(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
-        self.take_while(|c| c.is_letter());
+        self.take_while(|c| is_ident(c));
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
@@ -221,12 +233,34 @@ impl<'a> Lexer<'a> {
     fn take_char(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         assert_eq!(self.take(), '\'');
-        self.take();
+        let c = self.take();
+        if c == '\\' {
+            if let Some(err) = self.take_escape() {
+                return (SyntaxKind::Error, offset, Some(err))
+            }
+        }
         if self.first() == '\'' {
             self.take();
             (SyntaxKind::LiteralChar, offset, None)
         } else {
             (SyntaxKind::Error, offset, Some("invalid character literal"))
+        }
+    }
+
+    #[inline]
+    fn take_escape(&mut self) -> Option<&'static str> {
+        match self.first() {
+            't' | 'r' | 'n' | '"' | '\'' | '\\' => {
+                self.take();
+                None
+            }
+            'x' => {
+                assert!(self.take() == 'x');
+                self.take_while_max(is_hex_digit, 6);
+                None
+            }
+
+            _ => Some("invalid escaped character literal"),
         }
     }
 
@@ -324,11 +358,38 @@ impl<'a> Lexer<'a> {
         }
         (SyntaxKind::BlockComment, offset, None)
     }
+
+    #[inline]
+    fn take_hole(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+        let offset = self.consumed();
+        assert_eq!(self.take(), '?');
+        assert!(is_ident(self.take()));
+        self.take_while(is_ident);
+        (SyntaxKind::Hole, offset, None)
+    }
 }
 
 fn is_operator(c: char) -> bool {
-    c.is_symbol() || c.is_punctuation()
+    match c {
+        // These are the only valid ASCII operators
+        '!' | '#' | '$' | '%' | '&' | '*' | '+' | '.' | '/' | '<' | '=' | '>' | '?' | '@'
+        | '\\' | '^' | '|' | '-' | '~' => true,
+        _ => c.is_symbol() && !c.is_ascii(),
+    }
 }
+
+fn is_ident(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == '\''
+}
+
+fn is_ident_start(c: char) -> bool {
+    c.is_alphabetic() || c == '_'
+}
+
+fn is_hex_digit(c: char) -> bool {
+    matches!(c, 'a'..='f' | 'A'..='F' | '0'..='9')
+}
+
 
 /// Lexes a `&str` into [`Lexed`].
 pub fn lex(source: &str) -> Lexed {
@@ -343,14 +404,6 @@ pub fn lex(source: &str) -> Lexed {
         lexed.push(kind, offset, error);
     }
     lexed
-}
-
-#[test]
-fn lexer_test() {
-    let lexed = lex("1..5");
-    dbg!(lexed.kinds);
-    dbg!(lexed.offsets);
-    dbg!(lexed.errors);
 }
 
 #[cfg(test)]
@@ -384,7 +437,7 @@ mod tests {
             success = false;
         }
         if !success {
-            assert!(false, "test failed for source: {source}");
+            assert!(false, "test failed for source: <{source}>");
         }
     }
 
@@ -422,6 +475,30 @@ mod tests {
         expect_tokens(
             "1_2_3__4 1_2_3.4_3_2e12",
             &[LiteralInteger, Whitespace, LiteralNumber, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_escaped_chars() {
+        expect_tokens(
+            "'a' '\\r' '\\xDEAD'",
+            &[LiteralChar, Whitespace, LiteralChar, Whitespace, LiteralChar, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_double_period() {
+        expect_tokens(
+            "1..5",
+            &[LiteralInteger, Period2, LiteralInteger, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_holes_and_lower() {
+        expect_tokens(
+            "?abc abc ?a123b''_ abc''' _ignore",
+            &[Hole, Whitespace, Lower, Whitespace, Hole, Whitespace, Lower, Whitespace, Lower, EndOfFile],
         )
     }
 }

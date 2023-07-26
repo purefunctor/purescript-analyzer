@@ -23,6 +23,7 @@ pub enum SyntaxKind {
     ModuleName,
     Upper,
     Lower,
+    Hole,
     Operator,
 
     Equal,
