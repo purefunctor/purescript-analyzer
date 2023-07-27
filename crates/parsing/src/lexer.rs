@@ -169,8 +169,10 @@ impl<'a> Lexer<'a> {
     }
 }
 
+type Token = (SyntaxKind, Position, Option<&'static str>);
+
 impl<'a> Lexer<'a> {
-    fn take_token(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_token(&mut self) -> Token {
         match self.first() {
             '-' if self.second() == '-' => self.take_line_comment(),
             '{' if self.second() == '-' => self.take_block_comment(),
@@ -209,14 +211,14 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_single(&mut self, kind: SyntaxKind) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_single(&mut self, kind: SyntaxKind) -> Token {
         let position = self.position();
         self.take();
         (kind, position, None)
     }
 
     #[inline]
-    fn take_lower(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_lower(&mut self) -> Token {
         let position @ Position { offset, .. } = self.position();
         self.take_while(is_ident);
         let end_offset = self.consumed();
@@ -245,14 +247,14 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_upper(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_upper(&mut self) -> Token {
         let position = self.position();
         self.take_while(|c| c.is_letter());
         (SyntaxKind::Upper, position, None)
     }
 
     #[inline]
-    fn take_operator(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_operator(&mut self) -> Token {
         let position @ Position { offset, .. } = self.position();
         self.take_while(is_operator);
         let offset_end = self.consumed();
@@ -278,7 +280,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_char(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_char(&mut self) -> Token {
         let position = self.position();
         assert_eq!(self.take(), '\'');
         let c = self.take();
@@ -392,7 +394,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_integer_or_number(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_integer_or_number(&mut self) -> Token {
         let position = self.position();
         // NOTE: The PureScript parser does not allow multiple leading 0s - the best way to handle
         // it is maybe to report the same errors as PureScript or we try to parse a super-set.
@@ -430,14 +432,14 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_whitespace(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_whitespace(&mut self) -> Token {
         let position = self.position();
         self.take_while(|c| c.is_whitespace());
         (SyntaxKind::Whitespace, position, None)
     }
 
     #[inline]
-    fn take_line_comment(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_line_comment(&mut self) -> Token {
         let position = self.position();
         assert_eq!(self.take(), '-');
         assert_eq!(self.take(), '-');
@@ -446,7 +448,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_block_comment(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_block_comment(&mut self) -> Token {
         let position = self.position();
         assert_eq!(self.take(), '{');
         assert_eq!(self.take(), '-');
@@ -474,7 +476,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_hole(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+    fn take_hole(&mut self) -> Token {
         let position = self.position();
         assert_eq!(self.take(), '?');
         assert!(is_ident(self.take()));
