@@ -9,7 +9,7 @@ env:
 
 jobs:
   build_and_test:
-    name: Rust project - latest
+    name: Compilation
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,3 +22,8 @@ jobs:
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - run: cargo build --verbose
       - run: cargo test --verbose
+
+  formatting:
+    name: Formatting
+    runs-on: ubuntu-latest
+    run: cargo fmt -- --check

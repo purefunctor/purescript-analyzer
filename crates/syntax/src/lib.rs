@@ -23,6 +23,7 @@ pub enum SyntaxKind {
     ModuleName,
     Upper,
     Lower,
+    Hole,
     Operator,
 
     Equal,
@@ -40,9 +41,13 @@ pub enum SyntaxKind {
     RightBracket,
     LeftBrace,
     RightBrace,
+    Tick,
+    Comma,
+    Pipe,
 
     LiteralChar,
     LiteralString,
+    LiteralRawString,
     LiteralInteger,
     LiteralNumber,
     LiteralTrue,
@@ -59,6 +64,7 @@ pub enum SyntaxKind {
 
     NewtypeDeclaration,
     NewtypeKw,
+    ForallKw,
 
     TypeDeclaration,
     TypeKw,

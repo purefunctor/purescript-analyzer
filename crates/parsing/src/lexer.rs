@@ -1,4 +1,5 @@
 //! Text-based lexer into a sequence of [`SyntaxKind`]s.
+//! Based of off https://github.com/purescript/purescript/blob/master/src/Language/PureScript/CST/Lexer.hs
 
 use std::{ops::Range, str::Chars};
 
@@ -119,6 +120,16 @@ impl<'a> Lexer<'a> {
             self.take();
         }
     }
+
+    fn take_while_max(&mut self, predicate: impl Fn(char) -> bool, max: u8) {
+        for _ in 0..max {
+            if predicate(self.first()) && !self.is_eof() {
+                self.take();
+            } else {
+                return;
+            }
+        }
+    }
 }
 
 impl<'a> Lexer<'a> {
@@ -134,11 +145,16 @@ impl<'a> Lexer<'a> {
             '[' => self.take_single(SyntaxKind::LeftBrace),
             ']' => self.take_single(SyntaxKind::RightBrace),
 
+            '`' => self.take_single(SyntaxKind::Tick),
+            ',' => self.take_single(SyntaxKind::Comma),
+
             '\'' => self.take_char(),
             '"' => self.take_string(),
 
+            '?' if is_ident(self.second()) => self.take_hole(),
+
             identifier => {
-                if identifier.is_letter_lowercase() {
+                if is_ident_start(identifier) {
                     self.take_lower()
                 } else if identifier.is_letter_uppercase() {
                     self.take_upper()
@@ -149,7 +165,7 @@ impl<'a> Lexer<'a> {
                 } else if identifier.is_ascii_digit() {
                     self.take_integer_or_number()
                 } else {
-                    todo!("Unknown token!")
+                    panic!("Unknown token!")
                 }
             }
         }
@@ -165,7 +181,7 @@ impl<'a> Lexer<'a> {
     #[inline]
     fn take_lower(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
-        self.take_while(|c| c.is_letter());
+        self.take_while(|c| is_ident(c));
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
@@ -174,6 +190,7 @@ impl<'a> Lexer<'a> {
             "data" => SyntaxKind::DataKw,
             "derive" => SyntaxKind::DeriveKw,
             "false" => SyntaxKind::LiteralFalse,
+            "forall" => SyntaxKind::ForallKw,
             "foreign" => SyntaxKind::ForeignKw,
             "import" => SyntaxKind::ImportKw,
             "infix" => SyntaxKind::InfixKw,
@@ -203,6 +220,11 @@ impl<'a> Lexer<'a> {
         self.take_while(is_operator);
         let offset_end = self.consumed();
         let kind = match &self.source[offset..offset_end] {
+            "∷" => SyntaxKind::Colon2,
+            "←" => SyntaxKind::LeftArrow,
+            "→" => SyntaxKind::RightArrow,
+            "⇒" => SyntaxKind::RightThickArrow,
+            "∀" => SyntaxKind::ForallKw,
             "=" => SyntaxKind::Equal,
             ":" => SyntaxKind::Colon,
             "::" => SyntaxKind::Colon2,
@@ -212,6 +234,7 @@ impl<'a> Lexer<'a> {
             "->" => SyntaxKind::RightArrow,
             "<=" => SyntaxKind::LeftThickArrow,
             "=>" => SyntaxKind::RightThickArrow,
+            "|" => SyntaxKind::Pipe,
             _ => SyntaxKind::Operator,
         };
         (kind, offset, None)
@@ -221,7 +244,12 @@ impl<'a> Lexer<'a> {
     fn take_char(&mut self) -> (SyntaxKind, usize, Option<&str>) {
         let offset = self.consumed();
         assert_eq!(self.take(), '\'');
-        self.take();
+        let c = self.take();
+        if c == '\\' {
+            if let Some(err) = self.take_escape() {
+                return (SyntaxKind::Error, offset, Some(err));
+            }
+        }
         if self.first() == '\'' {
             self.take();
             (SyntaxKind::LiteralChar, offset, None)
@@ -231,15 +259,88 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_string(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+    fn take_escape(&mut self) -> Option<&'static str> {
+        match self.first() {
+            't' | 'r' | 'n' | '"' | '\'' | '\\' => {
+                self.take();
+                None
+            }
+            'x' => {
+                assert!(self.take() == 'x');
+                self.take_while_max(is_hex_digit, 6);
+                None
+            }
+
+            _ => Some("invalid escaped character literal"),
+        }
+    }
+
+    #[inline]
+    fn take_string(&mut self) -> (SyntaxKind, usize, Option<&'static str>) {
         let offset = self.consumed();
-        assert_eq!(self.take(), '"');
-        self.take_while(|c| c != '"');
-        if self.first() == '"' {
-            self.take();
-            (SyntaxKind::LiteralString, offset, None)
-        } else {
-            (SyntaxKind::Error, offset, Some("invalid string literal"))
+        self.take_while_max(|c| c == '"', 8);
+        let leading_quotes = self.consumed() - offset;
+        match leading_quotes {
+            0 => panic!("Caller garantees leading quote!"),
+            // "..." => a string
+            1 => self.take_normal_string(offset),
+            // "" => an empty string
+            2 => (SyntaxKind::LiteralString, offset, None),
+            // """...""" => a raw string with leading quotes
+            3 | 4 | 5 => self.take_raw_string(offset),
+            // """"""" => Trailing and leading quotes in a raw string
+            6 | 7 | 8 => (SyntaxKind::LiteralRawString, offset, None),
+            _ => unreachable!(),
+        }
+    }
+
+    fn take_normal_string(&mut self, offset: usize) -> (SyntaxKind, usize, Option<&'static str>) {
+        loop {
+            match self.take() {
+                '\r' | '\n' => {
+                    break (
+                        SyntaxKind::Error,
+                        offset,
+                        Some(
+                            "invalid string literal - newlines are not allowed in string literals",
+                        ),
+                    )
+                }
+                '\\' => {
+                    if let Some(err) = self.take_escape() {
+                        break (SyntaxKind::Error, offset, Some(err));
+                    } else {
+                        continue;
+                    }
+                }
+                '"' => break (SyntaxKind::LiteralString, offset, None),
+                EOF_CHAR => {
+                    break (SyntaxKind::Error, offset, Some("invalid string literal - end of file"))
+                }
+                _ => continue,
+            }
+        }
+    }
+
+    fn take_raw_string(&mut self, offset: usize) -> (SyntaxKind, usize, Option<&'static str>) {
+        loop {
+            self.take_while(|c| c != '"');
+            let start_of_quotes = self.consumed();
+            self.take_while_max(|c| c == '"', 5);
+            let end_of_quotes = self.consumed();
+            let num_quotes = end_of_quotes - start_of_quotes;
+            match num_quotes {
+                0 => {
+                    break (
+                        SyntaxKind::Error,
+                        offset,
+                        Some("invalid raw string literal - end of file"),
+                    )
+                }
+                1 | 2 => continue,
+                3 | 4 | 5 => break (SyntaxKind::LiteralRawString, offset, None),
+                _ => unreachable!(),
+            }
         }
     }
 
@@ -324,10 +425,36 @@ impl<'a> Lexer<'a> {
         }
         (SyntaxKind::BlockComment, offset, None)
     }
+
+    #[inline]
+    fn take_hole(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+        let offset = self.consumed();
+        assert_eq!(self.take(), '?');
+        assert!(is_ident(self.take()));
+        self.take_while(is_ident);
+        (SyntaxKind::Hole, offset, None)
+    }
 }
 
 fn is_operator(c: char) -> bool {
-    c.is_symbol() || c.is_punctuation()
+    match c {
+        // These are the only valid ASCII operators
+        '!' | '#' | '$' | '%' | '&' | '*' | '+' | '.' | '/' | '<' | '=' | '>' | '?' | '@'
+        | '\\' | '^' | '|' | '-' | '~' => true,
+        _ => c.is_symbol() && !c.is_ascii(),
+    }
+}
+
+fn is_ident(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == '\''
+}
+
+fn is_ident_start(c: char) -> bool {
+    c.is_alphabetic() || c == '_'
+}
+
+fn is_hex_digit(c: char) -> bool {
+    matches!(c, 'a'..='f' | 'A'..='F' | '0'..='9')
 }
 
 /// Lexes a `&str` into [`Lexed`].
@@ -345,14 +472,6 @@ pub fn lex(source: &str) -> Lexed {
     lexed
 }
 
-#[test]
-fn lexer_test() {
-    let lexed = lex("1..5");
-    dbg!(lexed.kinds);
-    dbg!(lexed.offsets);
-    dbg!(lexed.errors);
-}
-
 #[cfg(test)]
 mod tests {
     // Reading a failing test output is a lot easier with this:
@@ -367,11 +486,16 @@ mod tests {
         let lexed = lex(source);
         let mut success = true;
         for (i, (actual, expected)) in lexed.kinds.iter().zip(expected).enumerate() {
-            if actual == expected && success {
-                continue;
-            }
-            success = false;
-            println!("{:?}: {:?}@{:?} != {:?}", i, actual, lexed.offsets[i], expected);
+            println!(
+                "{} {:>2} {:3}@{:<18} {} {:<18}",
+                if actual == expected { " " } else { "X" },
+                i,
+                lexed.offsets[i],
+                format!("{:?}", actual),
+                if actual == expected { " " } else { "X" },
+                format!("{:?}", expected),
+            );
+            success = success && actual == expected;
         }
         if lexed.kinds.len() != expected.len() {
             let got_len = lexed.kinds.len();
@@ -384,7 +508,7 @@ mod tests {
             success = false;
         }
         if !success {
-            assert!(false, "test failed for source: {source}");
+            assert!(false, "test failed for source: <{source}>");
         }
     }
 
@@ -423,5 +547,95 @@ mod tests {
             "1_2_3__4 1_2_3.4_3_2e12",
             &[LiteralInteger, Whitespace, LiteralNumber, EndOfFile],
         )
+    }
+
+    #[test]
+    fn lex_escaped_chars() {
+        expect_tokens(
+            "'a' '\\r' '\\xDEAD'",
+            &[LiteralChar, Whitespace, LiteralChar, Whitespace, LiteralChar, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_double_period() {
+        expect_tokens("1..5", &[LiteralInteger, Period2, LiteralInteger, EndOfFile])
+    }
+
+    #[test]
+    fn lex_holes_and_lower() {
+        expect_tokens(
+            "?abc abc ?a123b''_ abc''' _ignore",
+            &[
+                Hole, Whitespace, Lower, Whitespace, Hole, Whitespace, Lower, Whitespace, Lower,
+                EndOfFile,
+            ],
+        )
+    }
+
+    #[test]
+    fn lex_strings() {
+        expect_tokens(
+            r#" "abc" "\"" """""x""""" """"ABC"""" "\x012qqqqq" "#,
+            &[
+                Whitespace,
+                LiteralString,
+                Whitespace,
+                LiteralString,
+                Whitespace,
+                LiteralRawString,
+                Whitespace,
+                LiteralRawString,
+                Whitespace,
+                LiteralString,
+                Whitespace,
+                EndOfFile,
+            ],
+        )
+    }
+
+    #[test]
+    fn lex_tick_comma_pipe() {
+        expect_tokens(
+            "`,| || |+|",
+            &[Tick, Comma, Pipe, Whitespace, Operator, Whitespace, Operator, EndOfFile],
+        )
+    }
+
+    #[test]
+    fn lex_noise() {
+        lex("@jKUpg7LjW9$cPyb#b3iek1S17BvUSOIP0HfBuvv^3UF#w3UpRy@a$");
+    }
+
+    #[test]
+    fn lex_some_keywords() {
+        expect_tokens(
+            "data type forall foreign ∷ ← → ⇒ ∀",
+            &[
+                DataKw,
+                Whitespace,
+                TypeKw,
+                Whitespace,
+                ForallKw,
+                Whitespace,
+                ForeignKw,
+                Whitespace,
+                Colon2,
+                Whitespace,
+                LeftArrow,
+                Whitespace,
+                RightArrow,
+                Whitespace,
+                RightThickArrow,
+                Whitespace,
+                ForallKw,
+                EndOfFile,
+            ],
+        );
+    }
+
+    #[test]
+    fn lex_emojis() {
+        lex("👋🌟😊🚀🔥");
     }
 }
