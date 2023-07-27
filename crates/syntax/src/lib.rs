@@ -119,8 +119,8 @@ pub type SyntaxToken = rowan::SyntaxToken<PureScript>;
 pub type SyntaxElement = rowan::SyntaxElement<PureScript>;
 
 impl SyntaxKind {
-    pub fn is_contextual_operator(&self) -> bool {
-        matches!(self, Self::Colon | Self::Period2 | Self::LeftThickArrow)
+    pub fn is_whitespace_or_comment(&self) -> bool {
+        matches!(self, Self::Whitespace | Self::LineComment | Self::BlockComment)
     }
 }
 

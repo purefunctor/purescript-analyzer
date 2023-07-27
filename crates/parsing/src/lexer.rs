@@ -80,6 +80,12 @@ impl<'a> Lexed<'a> {
         self.kinds[index]
     }
 
+    /// Returns the position for an index.
+    pub fn position(&self, index: usize) -> Position {
+        assert!(index < self.len());
+        self.positions[index]
+    }
+
     /// Returns the text for an index.
     pub fn text(&self, index: usize) -> &str {
         self.text_in_range(index..index + 1)
