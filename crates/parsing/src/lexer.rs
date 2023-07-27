@@ -1,8 +1,8 @@
 //! Text-based lexer into a sequence of [`SyntaxKind`]s.
-//! 
+//!
 //! Tokens are based off of the compiler's [`lexer`], while the lexer
 //! core borrows from [`rustc_lexer`] and [`rust-analyzer`].
-//! 
+//!
 //! [`lexer`]: https://github.com/purescript/purescript/blob/master/src/Language/PureScript/CST/Lexer.hs
 //! [`rustc_lexer`]: https://doc.rust-lang.org/stable/nightly-rustc/rustc_lexer/
 //! [`rust-analyzer`]: https://github.com/rust-lang/rust-analyzer/
@@ -12,17 +12,20 @@ use std::{ops::Range, str::Chars};
 use syntax::SyntaxKind;
 use unicode_categories::UnicodeCategories;
 
+use crate::position::Position;
+
 const EOF_CHAR: char = '\0';
 
 /// A sequence of [`SyntaxKind`]s.
 pub struct Lexed<'a> {
     source: &'a str,
     kinds: Vec<SyntaxKind>,
-    offsets: Vec<u32>,
+    positions: Vec<Position>,
     errors: Vec<LexError>,
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct LexError {
     message: String,
     index: u32,
@@ -31,14 +34,14 @@ struct LexError {
 impl<'a> Lexed<'a> {
     fn new(source: &'a str) -> Lexed<'a> {
         let kinds = vec![];
-        let offsets = vec![];
+        let positions = vec![];
         let errors = vec![];
-        Lexed { source, kinds, offsets, errors }
+        Lexed { source, kinds, positions, errors }
     }
 
-    fn push(&mut self, kind: SyntaxKind, offset: usize, error: Option<&str>) {
+    fn push(&mut self, kind: SyntaxKind, position: Position, error: Option<&str>) {
         self.kinds.push(kind);
-        self.offsets.push(offset as u32);
+        self.positions.push(position);
 
         if let Some(error) = error {
             let message = error.to_string();
@@ -67,6 +70,10 @@ impl<'a> Lexed<'a> {
         self.kinds.len() - 1
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Returns the kind for an index.
     pub fn kind(&self, index: usize) -> SyntaxKind {
         assert!(index < self.len());
@@ -81,8 +88,8 @@ impl<'a> Lexed<'a> {
     /// Returns the text for a range.
     pub fn text_in_range(&self, range: Range<usize>) -> &str {
         assert!(range.start < range.end && range.end <= self.len());
-        let low = self.offsets[range.start] as usize;
-        let high = self.offsets[range.end] as usize;
+        let low = self.positions[range.start].offset;
+        let high = self.positions[range.end].offset;
         &self.source[low..high]
     }
 }
@@ -91,12 +98,16 @@ impl<'a> Lexed<'a> {
 struct Lexer<'a> {
     source: &'a str,
     chars: Chars<'a>,
+    line: u32,
+    column: u32,
 }
 
 impl<'a> Lexer<'a> {
     fn new(source: &'a str) -> Lexer<'a> {
         let chars = source.chars();
-        Lexer { source, chars }
+        let line = 0;
+        let column = 0;
+        Lexer { source, chars, line, column }
     }
 
     fn is_eof(&self) -> bool {
@@ -105,6 +116,13 @@ impl<'a> Lexer<'a> {
 
     fn consumed(&self) -> usize {
         self.source.len() - self.chars.as_str().len()
+    }
+
+    fn position(&self) -> Position {
+        let offset = self.consumed();
+        let line = self.line;
+        let column = self.column;
+        Position { offset, line, column }
     }
 
     fn first(&self) -> char {
@@ -118,7 +136,14 @@ impl<'a> Lexer<'a> {
     }
 
     fn take(&mut self) -> char {
-        self.chars.next().unwrap_or(EOF_CHAR)
+        let result = self.chars.next().unwrap_or(EOF_CHAR);
+        if result == '\n' {
+            self.line += 1;
+            self.column = 1;
+        } else {
+            self.column += 1;
+        }
+        result
     }
 
     fn take_while(&mut self, predicate: impl Fn(char) -> bool) {
@@ -139,7 +164,7 @@ impl<'a> Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    fn take_token(&mut self) -> (SyntaxKind, usize, Option<&str>) {
+    fn take_token(&mut self) -> (SyntaxKind, Position, Option<&str>) {
         match self.first() {
             '-' if self.second() == '-' => self.take_line_comment(),
             '{' if self.second() == '-' => self.take_block_comment(),
@@ -178,16 +203,16 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_single(&mut self, kind: SyntaxKind) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_single(&mut self, kind: SyntaxKind) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         self.take();
-        (kind, offset, None)
+        (kind, position, None)
     }
 
     #[inline]
-    fn take_lower(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
-        self.take_while(|c| is_ident(c));
+    fn take_lower(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position @ Position { offset, .. } = self.position();
+        self.take_while(is_ident);
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
@@ -210,19 +235,19 @@ impl<'a> Lexer<'a> {
             "where" => SyntaxKind::WhereKw,
             _ => SyntaxKind::Lower,
         };
-        (kind, offset, None)
+        (kind, position, None)
     }
 
     #[inline]
-    fn take_upper(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_upper(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         self.take_while(|c| c.is_letter());
-        (SyntaxKind::Upper, offset, None)
+        (SyntaxKind::Upper, position, None)
     }
 
     #[inline]
-    fn take_operator(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_operator(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position @ Position { offset, .. } = self.position();
         self.take_while(is_operator);
         let offset_end = self.consumed();
         let kind = match &self.source[offset..offset_end] {
@@ -243,24 +268,24 @@ impl<'a> Lexer<'a> {
             "|" => SyntaxKind::Pipe,
             _ => SyntaxKind::Operator,
         };
-        (kind, offset, None)
+        (kind, position, None)
     }
 
     #[inline]
-    fn take_char(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_char(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         assert_eq!(self.take(), '\'');
         let c = self.take();
         if c == '\\' {
             if let Some(err) = self.take_escape() {
-                return (SyntaxKind::Error, offset, Some(err));
+                return (SyntaxKind::Error, position, Some(err));
             }
         }
         if self.first() == '\'' {
             self.take();
-            (SyntaxKind::LiteralChar, offset, None)
+            (SyntaxKind::LiteralChar, position, None)
         } else {
-            (SyntaxKind::Error, offset, Some("invalid character literal"))
+            (SyntaxKind::Error, position, Some("invalid character literal"))
         }
     }
 
@@ -282,31 +307,34 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_string(&mut self) -> (SyntaxKind, usize, Option<&'static str>) {
-        let offset = self.consumed();
+    fn take_string(&mut self) -> (SyntaxKind, Position, Option<&'static str>) {
+        let position @ Position { offset, .. } = self.position();
         self.take_while_max(|c| c == '"', 8);
         let leading_quotes = self.consumed() - offset;
         match leading_quotes {
             0 => panic!("Caller garantees leading quote!"),
             // "..." => a string
-            1 => self.take_normal_string(offset),
+            1 => self.take_normal_string(position),
             // "" => an empty string
-            2 => (SyntaxKind::LiteralString, offset, None),
+            2 => (SyntaxKind::LiteralString, position, None),
             // """...""" => a raw string with leading quotes
-            3 | 4 | 5 => self.take_raw_string(offset),
+            3 | 4 | 5 => self.take_raw_string(position),
             // """"""" => Trailing and leading quotes in a raw string
-            6 | 7 | 8 => (SyntaxKind::LiteralRawString, offset, None),
+            6 | 7 | 8 => (SyntaxKind::LiteralRawString, position, None),
             _ => unreachable!(),
         }
     }
 
-    fn take_normal_string(&mut self, offset: usize) -> (SyntaxKind, usize, Option<&'static str>) {
+    fn take_normal_string(
+        &mut self,
+        position: Position,
+    ) -> (SyntaxKind, Position, Option<&'static str>) {
         loop {
             match self.take() {
                 '\r' | '\n' => {
                     break (
                         SyntaxKind::Error,
-                        offset,
+                        position,
                         Some(
                             "invalid string literal - newlines are not allowed in string literals",
                         ),
@@ -314,21 +342,28 @@ impl<'a> Lexer<'a> {
                 }
                 '\\' => {
                     if let Some(err) = self.take_escape() {
-                        break (SyntaxKind::Error, offset, Some(err));
+                        break (SyntaxKind::Error, position, Some(err));
                     } else {
                         continue;
                     }
                 }
-                '"' => break (SyntaxKind::LiteralString, offset, None),
+                '"' => break (SyntaxKind::LiteralString, position, None),
                 EOF_CHAR => {
-                    break (SyntaxKind::Error, offset, Some("invalid string literal - end of file"))
+                    break (
+                        SyntaxKind::Error,
+                        position,
+                        Some("invalid string literal - end of file"),
+                    )
                 }
                 _ => continue,
             }
         }
     }
 
-    fn take_raw_string(&mut self, offset: usize) -> (SyntaxKind, usize, Option<&'static str>) {
+    fn take_raw_string(
+        &mut self,
+        position: Position,
+    ) -> (SyntaxKind, Position, Option<&'static str>) {
         loop {
             self.take_while(|c| c != '"');
             let start_of_quotes = self.consumed();
@@ -339,20 +374,20 @@ impl<'a> Lexer<'a> {
                 0 => {
                     break (
                         SyntaxKind::Error,
-                        offset,
+                        position,
                         Some("invalid raw string literal - end of file"),
                     )
                 }
                 1 | 2 => continue,
-                3 | 4 | 5 => break (SyntaxKind::LiteralRawString, offset, None),
+                3 | 4 | 5 => break (SyntaxKind::LiteralRawString, position, None),
                 _ => unreachable!(),
             }
         }
     }
 
     #[inline]
-    fn take_integer_or_number(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_integer_or_number(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         // NOTE: The PureScript parser does not allow multiple leading 0s - the best way to handle
         // it is maybe to report the same errors as PureScript or we try to parse a super-set.
         // NOTE: The first rune has to be a digit, but after that underscores are allowed in
@@ -362,7 +397,7 @@ impl<'a> Lexer<'a> {
         if self.first() == '.' {
             // `1..x` => [LiteralInteger, Period2, Lower]
             if self.second() == '.' {
-                return (SyntaxKind::LiteralInteger, offset, None);
+                return (SyntaxKind::LiteralInteger, position, None);
             }
 
             // `1.2` => [LiteralNumber]
@@ -377,36 +412,36 @@ impl<'a> Lexer<'a> {
                     }
                     self.take_while(|c| c.is_ascii_digit() || c == '_');
                 }
-                return (SyntaxKind::LiteralNumber, offset, None);
+                return (SyntaxKind::LiteralNumber, position, None);
             }
 
             // `1.` => [Error]
             assert_eq!(self.take(), '.');
-            return (SyntaxKind::Error, offset, Some("invalid number literal"));
+            return (SyntaxKind::Error, position, Some("invalid number literal"));
         }
 
-        return (SyntaxKind::LiteralInteger, offset, None);
+        (SyntaxKind::LiteralInteger, position, None)
     }
 
     #[inline]
-    fn take_whitespace(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_whitespace(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         self.take_while(|c| c.is_whitespace());
-        (SyntaxKind::Whitespace, offset, None)
+        (SyntaxKind::Whitespace, position, None)
     }
 
     #[inline]
-    fn take_line_comment(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_line_comment(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         assert_eq!(self.take(), '-');
         assert_eq!(self.take(), '-');
         self.take_while(|c| c != '\n');
-        (SyntaxKind::LineComment, offset, None)
+        (SyntaxKind::LineComment, position, None)
     }
 
     #[inline]
-    fn take_block_comment(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_block_comment(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         assert_eq!(self.take(), '{');
         assert_eq!(self.take(), '-');
         let mut level = 1;
@@ -429,16 +464,16 @@ impl<'a> Lexer<'a> {
             }
             self.take();
         }
-        (SyntaxKind::BlockComment, offset, None)
+        (SyntaxKind::BlockComment, position, None)
     }
 
     #[inline]
-    fn take_hole(&mut self) -> (SyntaxKind, usize, Option<&str>) {
-        let offset = self.consumed();
+    fn take_hole(&mut self) -> (SyntaxKind, Position, Option<&str>) {
+        let position = self.position();
         assert_eq!(self.take(), '?');
         assert!(is_ident(self.take()));
         self.take_while(is_ident);
-        (SyntaxKind::Hole, offset, None)
+        (SyntaxKind::Hole, position, None)
     }
 }
 
@@ -469,7 +504,7 @@ pub fn lex(source: &str) -> Lexed {
     let mut lexed = Lexed::new(source);
     loop {
         if lexer.is_eof() {
-            lexed.push(SyntaxKind::EndOfFile, lexer.consumed(), None);
+            lexed.push(SyntaxKind::EndOfFile, lexer.position(), None);
             break;
         }
         let (kind, offset, error) = lexer.take_token();
@@ -496,7 +531,7 @@ mod tests {
                 "{} {:>2} {:3}@{:<18} {} {:<18}",
                 if actual == expected { " " } else { "X" },
                 i,
-                lexed.offsets[i],
+                lexed.positions[i].offset,
                 format!("{:?}", actual),
                 if actual == expected { " " } else { "X" },
                 format!("{:?}", expected),

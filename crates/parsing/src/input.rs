@@ -2,8 +2,10 @@
 
 use syntax::SyntaxKind;
 
+use crate::position::Position;
+
 #[allow(dead_code)]
 pub struct Input {
     tokens: Vec<SyntaxKind>,
-    columns: Vec<u32>,
+    positions: Vec<Position>,
 }
