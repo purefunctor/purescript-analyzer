@@ -40,6 +40,12 @@ impl Input {
     }
 }
 
+impl Default for Input {
+    fn default() -> Input {
+        Input::new()
+    }
+}
+
 impl Lexed<'_> {
     pub fn as_input(&self) -> Input {
         let mut input = Input::new();
