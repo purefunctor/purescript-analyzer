@@ -96,6 +96,7 @@ impl Parser {
 }
 
 impl Parser {
+    /// Starts a new node, returning a [`NodeMarker`].
     pub fn start(&mut self) -> NodeMarker {
         let index = self.events.len();
         self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
@@ -114,6 +115,7 @@ impl NodeMarker {
         NodeMarker { index, bomb }
     }
 
+    /// Finishes a node's construction.
     pub fn end(&mut self, parser: &mut Parser, kind: SyntaxKind) {
         self.bomb.defuse();
         match &mut parser.events[self.index] {
@@ -125,6 +127,7 @@ impl NodeMarker {
         parser.events.push(Event::Finish);
     }
 
+    /// Cancels a node's construction.
     pub fn cancel(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
         if self.index == parser.events.len() - 1 {
