@@ -87,6 +87,7 @@ pub enum SyntaxKind {
     InfixrKw,
     InfixKw,
 
+    Sentinel,
     Error,
     EndOfFile,
 }

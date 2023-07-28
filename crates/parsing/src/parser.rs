@@ -1,3 +1,4 @@
+use drop_bomb::DropBomb;
 use syntax::SyntaxKind;
 
 use crate::{
@@ -51,8 +52,8 @@ impl Parser {
         self.layouts.pop();
     }
 
-    /// Determines if the current token belongs to the next group of tokens or layout context.
-    pub fn layout_or_group_done(&self) -> bool {
+    /// Determines if the current token belongs to the next layout context.
+    pub fn layout_done(&self) -> bool {
         if self.is_eof() {
             return true;
         }
@@ -69,6 +70,68 @@ impl Parser {
             LayoutKind::Instance => position.column <= layout.position.column,
             // NOTE: handled by is_eof
             LayoutKind::Parenthesis => false,
+        }
+    }
+
+    /// Determines if the current token belongs to the next token group.
+    pub fn group_done(&self) -> bool {
+        if self.is_eof() {
+            return true;
+        }
+
+        let position = self.input.position(self.index);
+        let layout = self.layouts.last().unwrap();
+
+        assert!(position.line >= layout.position.line);
+
+        match layout.kind {
+            LayoutKind::Root => panic!("Invalid call."),
+            // NOTE: handled by is_eof
+            LayoutKind::Module => position.column == layout.position.column,
+            LayoutKind::Instance => position.column <= layout.position.column,
+            // NOTE: handled by is_eof
+            LayoutKind::Parenthesis => false,
+        }
+    }
+}
+
+impl Parser {
+    pub fn start(&mut self) -> NodeMarker {
+        let index = self.events.len();
+        self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
+        NodeMarker::new(index)
+    }
+}
+
+pub struct NodeMarker {
+    index: usize,
+    bomb: DropBomb,
+}
+
+impl NodeMarker {
+    pub fn new(index: usize) -> NodeMarker {
+        let bomb = DropBomb::new("failed to call end or cancel");
+        NodeMarker { index, bomb }
+    }
+
+    pub fn end(&mut self, parser: &mut Parser, kind: SyntaxKind) {
+        self.bomb.defuse();
+        match &mut parser.events[self.index] {
+            Event::Start { kind: sentinel } => {
+                *sentinel = kind;
+            }
+            _ => unreachable!(),
+        }
+        parser.events.push(Event::Finish);
+    }
+
+    pub fn cancel(&mut self, parser: &mut Parser) {
+        self.bomb.defuse();
+        if self.index == parser.events.len() - 1 {
+            match parser.events.pop() {
+                Some(Event::Start { kind: SyntaxKind::Sentinel }) => (),
+                _ => unreachable!(),
+            }
         }
     }
 }
@@ -127,7 +190,7 @@ mod tests {
         parser.layout_start(LayoutKind::Module);
         loop {
             parse_value_declaration(parser);
-            if parser.layout_or_group_done() {
+            if parser.layout_done() {
                 break;
             }
         }
@@ -139,6 +202,7 @@ mod tests {
     }
 
     fn parse_value_declaration(parser: &mut Parser) {
+        let mut marker = parser.start();
         loop {
             if parser.at(SyntaxKind::LeftParenthesis) {
                 parser.layout_start(LayoutKind::Parenthesis);
@@ -147,10 +211,11 @@ mod tests {
                 parser.layout_end();
             }
             parser.consume();
-            if parser.layout_or_group_done() {
+            if parser.group_done() {
                 break;
             }
         }
+        marker.end(parser, SyntaxKind::ValueDeclaration);
     }
 
     #[test]
