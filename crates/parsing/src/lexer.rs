@@ -499,7 +499,7 @@ fn is_ident(c: char) -> bool {
 }
 
 fn is_ident_start(c: char) -> bool {
-    c.is_alphabetic() || c == '_'
+    c.is_letter_lowercase() || c == '_'
 }
 
 fn is_hex_digit(c: char) -> bool {
