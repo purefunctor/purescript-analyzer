@@ -111,8 +111,8 @@ struct Lexer<'a> {
 impl<'a> Lexer<'a> {
     fn new(source: &'a str) -> Lexer<'a> {
         let chars = source.chars();
-        let line = 0;
-        let column = 0;
+        let line = 1;
+        let column = 1;
         Lexer { source, chars, line, column }
     }
 
