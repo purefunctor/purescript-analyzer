@@ -30,6 +30,14 @@ impl Input {
         assert!(index < self.positions.len());
         self.positions[index]
     }
+
+    pub fn len(&self) -> usize {
+        self.tokens.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl Lexed<'_> {
