@@ -58,6 +58,30 @@ impl Parser {
 
         after_layout_line && before_layout_column
     }
+
+    fn at_layout_sep(&self) -> bool {
+        if self.is_eof() {
+            return true;
+        }
+
+        let position = self.input.position(self.index);
+        let layout = self.layouts.last().unwrap();
+
+        let after_layout_line = position.line > layout.position.line;
+        let before_layout_column = position.column <= layout.position.column;
+
+        after_layout_line && before_layout_column
+    }
+}
+
+impl Parser {
+    fn start_node(&mut self, kind: SyntaxKind) {
+        self.events.push(Event::Start { kind });
+    }
+
+    fn finish_node(&mut self) {
+        self.events.push(Event::Finish);
+    }
 }
 
 impl Parser {
@@ -89,6 +113,12 @@ impl Parser {
         self.events.push(Event::Token { kind });
         true
     }
+
+    fn bump_any(&mut self) {
+        let kind = self.current();
+        self.index += 1;
+        self.events.push(Event::Token { kind });
+    }
 }
 
 #[cfg(test)]
@@ -100,18 +130,20 @@ mod tests {
     use super::Parser;
 
     fn parse_module(parser: &mut Parser) {
+        parser.start_node(Module);
         parser.eat(ModuleKw);
         parse_module_name(parser);
         parser.eat(WhereKw);
 
         parser.start_layout(LayoutKind::Module);
         loop {
+            parse_value_declaration(parser);
             if parser.at_layout_end() {
                 break;
             }
-            parse_value_declaration(parser)
         }
         parser.finish_layout();
+        parser.finish_node();
     }
 
     fn parse_module_name(parser: &mut Parser) {
@@ -119,16 +151,24 @@ mod tests {
     }
 
     fn parse_value_declaration(parser: &mut Parser) {
-        parser.eat(SyntaxKind::Lower);
-        parser.eat(SyntaxKind::Equal);
-        parser.eat(SyntaxKind::Lower);
+        parser.start_node(ValueDeclaration);
+        loop {
+            parser.bump_any();
+            if parser.at_layout_sep() {
+                break;
+            }
+        }
+        parser.finish_node();
     }
 
     #[test]
     fn grammar_api_test() {
         let lexed = lex(r"module Hello where
 hello = world
-world = hello
+  world = hello
+
+one = two
+  two = one
   ");
         let input = lexed.as_input();
         let mut parser = Parser::new(input);
