@@ -32,20 +32,27 @@ impl Parser {
         let events = vec![];
         Parser { input, index, layouts: layout, events }
     }
+
+    pub fn is_eof(&self) -> bool {
+        self.index == self.input.len()
+    }
 }
 
 impl Parser {
-    fn start_layout(&mut self, kind: LayoutKind) {
+    /// Starts a new layout context.
+    pub fn layout_start(&mut self, kind: LayoutKind) {
         assert!(!self.is_eof());
         let position = self.input.position(self.index);
         self.layouts.push(Layout::new(kind, position));
     }
 
-    fn finish_layout(&mut self) {
+    /// Finishes the current layout context.
+    pub fn layout_end(&mut self) {
         self.layouts.pop();
     }
 
-    fn at_layout_end(&self) -> bool {
+    /// Determines if the current token belongs to the next group of tokens or layout context.
+    pub fn layout_or_group_done(&self) -> bool {
         if self.is_eof() {
             return true;
         }
@@ -53,71 +60,54 @@ impl Parser {
         let position = self.input.position(self.index);
         let layout = self.layouts.last().unwrap();
 
-        let after_layout_line = position.line > layout.position.line;
-        let before_layout_column = position.column < layout.position.column;
+        assert!(position.line >= layout.position.line);
 
-        after_layout_line && before_layout_column
-    }
-
-    fn at_layout_sep(&self) -> bool {
-        if self.is_eof() {
-            return true;
+        match layout.kind {
+            LayoutKind::Root => panic!("Invalid call."),
+            // NOTE: handled by is_eof
+            LayoutKind::Module => false,
+            LayoutKind::Instance => position.column <= layout.position.column,
+            // NOTE: handled by is_eof
+            LayoutKind::Parenthesis => false,
         }
-
-        let position = self.input.position(self.index);
-        let layout = self.layouts.last().unwrap();
-
-        let after_layout_line = position.line > layout.position.line;
-        let before_layout_column = position.column <= layout.position.column;
-
-        after_layout_line && before_layout_column
     }
 }
 
 impl Parser {
-    fn start_node(&mut self, kind: SyntaxKind) {
-        self.events.push(Event::Start { kind });
-    }
-
-    fn finish_node(&mut self) {
-        self.events.push(Event::Finish);
-    }
-}
-
-impl Parser {
-    fn is_eof(&self) -> bool {
-        self.index == self.input.len()
-    }
-
-    fn current(&self) -> SyntaxKind {
-        self.nth(0)
-    }
-
-    fn nth(&self, offset: usize) -> SyntaxKind {
+    /// Returns the nth token given an `offset`.
+    pub fn nth(&self, offset: usize) -> SyntaxKind {
         self.input.kind(self.index + offset)
     }
 
-    fn at(&self, kind: SyntaxKind) -> bool {
-        self.nth_at(0, kind)
-    }
-
-    fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
+    /// Determines if an nth token matches a `kind`.
+    pub fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
         self.nth(offset) == kind
     }
 
-    fn eat(&mut self, kind: SyntaxKind) -> bool {
+    /// Returns the current token.
+    pub fn current(&self) -> SyntaxKind {
+        self.nth(0)
+    }
+
+    /// Determines if the current token matches a `kind`.
+    pub fn at(&self, kind: SyntaxKind) -> bool {
+        self.nth_at(0, kind)
+    }
+
+    /// Consumes a token, advancing the parser.
+    pub fn consume(&mut self) {
+        let kind = self.current();
+        self.index += 1;
+        self.events.push(Event::Token { kind })
+    }
+
+    /// Consumes a token if it matches the `kind`.
+    pub fn eat(&mut self, kind: SyntaxKind) -> bool {
         if !self.at(kind) {
             return false;
         }
-        self.index += 1;
-        self.events.push(Event::Token { kind });
+        self.consume();
         true
-    }
-
-    fn bump_any(&mut self) {
-        let kind = self.current();
-        self.index += 1;
-        self.events.push(Event::Token { kind });
     }
 }
 
@@ -130,20 +120,18 @@ mod tests {
     use super::Parser;
 
     fn parse_module(parser: &mut Parser) {
-        parser.start_node(Module);
         parser.eat(ModuleKw);
         parse_module_name(parser);
         parser.eat(WhereKw);
 
-        parser.start_layout(LayoutKind::Module);
+        parser.layout_start(LayoutKind::Module);
         loop {
             parse_value_declaration(parser);
-            if parser.at_layout_end() {
+            if parser.layout_or_group_done() {
                 break;
             }
         }
-        parser.finish_layout();
-        parser.finish_node();
+        parser.layout_end();
     }
 
     fn parse_module_name(parser: &mut Parser) {
@@ -151,24 +139,32 @@ mod tests {
     }
 
     fn parse_value_declaration(parser: &mut Parser) {
-        parser.start_node(ValueDeclaration);
         loop {
-            parser.bump_any();
-            if parser.at_layout_sep() {
+            if parser.at(SyntaxKind::LeftParenthesis) {
+                parser.layout_start(LayoutKind::Parenthesis);
+            }
+            if parser.at(SyntaxKind::RightParenthesis) {
+                parser.layout_end();
+            }
+            parser.consume();
+            if parser.layout_or_group_done() {
                 break;
             }
         }
-        parser.finish_node();
     }
 
     #[test]
     fn grammar_api_test() {
         let lexed = lex(r"module Hello where
 hello = world
-  world = hello
+  0 'a' 1.2
 
-one = two
-  two = one
+hello = (
+world
+0 
+'a' 
+1.2
+)
   ");
         let input = lexed.as_input();
         let mut parser = Parser::new(input);
