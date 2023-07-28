@@ -687,4 +687,9 @@ mod tests {
     fn lex_emojis() {
         lex("👋🌟😊🚀🔥");
     }
+
+    #[test]
+    fn lex_upper() {
+        expect_tokens("Hello World", &[Upper, Whitespace, Upper, EndOfFile])
+    }
 }
