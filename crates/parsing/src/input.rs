@@ -20,6 +20,16 @@ impl Input {
         self.tokens.push(kind);
         self.positions.push(position);
     }
+
+    pub fn kind(&self, index: usize) -> SyntaxKind {
+        assert!(index <= self.tokens.len());
+        self.tokens[index]
+    }
+
+    pub fn position(&self, index: usize) -> Position {
+        assert!(index < self.positions.len());
+        self.positions[index]
+    }
 }
 
 impl Lexed<'_> {
