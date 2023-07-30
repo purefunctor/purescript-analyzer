@@ -17,6 +17,7 @@ use crate::position::Position;
 const EOF_CHAR: char = '\0';
 
 /// A sequence of [`SyntaxKind`]s.
+#[derive(Debug)]
 pub struct Lexed<'a> {
     source: &'a str,
     kinds: Vec<SyntaxKind>,
@@ -76,13 +77,13 @@ impl<'a> Lexed<'a> {
 
     /// Returns the kind for an index.
     pub fn kind(&self, index: usize) -> SyntaxKind {
-        assert!(index < self.len());
+        assert!(index <= self.len());
         self.kinds[index]
     }
 
     /// Returns the position for an index.
     pub fn position(&self, index: usize) -> Position {
-        assert!(index < self.len());
+        assert!(index <= self.len());
         self.positions[index]
     }
 

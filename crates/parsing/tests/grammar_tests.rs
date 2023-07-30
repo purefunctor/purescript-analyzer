@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::qualified_name,
+    grammar::*,
     lexer::lex,
     parser::{Event, Parser},
 };
@@ -43,7 +43,7 @@ where
 
 #[test]
 fn test_qualified_constructor() {
-    expect_parse("qualified-constructor", "Hello.World $", qualified_name);
+    expect_parse("qualified-constructor", "Hello.World $", qualified_propper_name);
 }
 
 #[test]
@@ -54,4 +54,19 @@ fn test_qualified_variable() {
 #[test]
 fn test_qualified_variable_as() {
     expect_parse("qualified-variable-as", "Hello.World.as", qualified_name);
+}
+
+#[test]
+fn test_export_list() {
+    expect_parse("test_export_list", "(a, (+), module B, class C, T, type (+))", export_list);
+}
+
+#[test]
+fn test_export_list_empty() {
+    expect_parse("test_export_list_empty", "", export_list);
+}
+
+#[test]
+fn test_export_list_only_braces() {
+    expect_parse("test_export_list_only_brace", "( )", export_list);
 }

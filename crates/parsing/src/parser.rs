@@ -102,9 +102,10 @@ impl Parser {
 impl Parser {
     /// Starts a new node, returning a [`NodeMarker`].
     pub fn start(&mut self) -> NodeMarker {
+        // Maybe add some intent here?
         let index = self.events.len();
         self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
-        NodeMarker::new(index)
+        NodeMarker::new(index, format!("Failed to call end or cancel (from {:?})", self.input.position(index)))
     }
 }
 
@@ -114,8 +115,8 @@ pub struct NodeMarker {
 }
 
 impl NodeMarker {
-    pub fn new(index: usize) -> NodeMarker {
-        let bomb = DropBomb::new("failed to call end or cancel");
+    pub fn new(index: usize, message: impl Into<String>) -> NodeMarker {
+        let bomb = DropBomb::new(message.into());
         NodeMarker { index, bomb }
     }
 
@@ -262,7 +263,5 @@ world
         let input = lexed.as_input();
         let mut parser = Parser::new(input);
         parse_module(&mut parser);
-        dbg!(parser.layouts);
-        dbg!(parser.events);
     }
 }

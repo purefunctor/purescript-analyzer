@@ -22,13 +22,13 @@ impl Input {
     }
 
     pub fn kind(&self, index: usize) -> SyntaxKind {
-        assert!(index <= self.tokens.len());
-        self.tokens[index]
+        assert!(!self.is_empty());
+        self.tokens[index.min(self.tokens.len() - 1)]
     }
 
     pub fn position(&self, index: usize) -> Position {
-        assert!(index < self.positions.len());
-        self.positions[index]
+        assert!(!self.is_empty());
+        self.positions[index.min(self.tokens.len() - 1)]
     }
 
     pub fn len(&self) -> usize {
@@ -50,7 +50,8 @@ impl Lexed<'_> {
     pub fn as_input(&self) -> Input {
         let mut input = Input::new();
 
-        for index in 0..self.len() {
+        // Remember to copy over the EoF
+        for index in 0..(self.len() + 1) {
             let kind = self.kind(index);
             let position = self.position(index);
 
@@ -75,6 +76,6 @@ mod tests {
     fn lexed_to_input() {
         let lexed = lex("hello world {- removed -} -- removed");
         let input = lexed.as_input();
-        assert_eq!(input.tokens, &[SyntaxKind::Lower, SyntaxKind::Lower]);
+        assert_eq!(input.tokens, &[SyntaxKind::Lower, SyntaxKind::Lower, SyntaxKind::EndOfFile]);
     }
 }

@@ -1,0 +1,8 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: 
+Start { kind: ExportList }
+Finish
+

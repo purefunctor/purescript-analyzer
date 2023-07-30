@@ -13,6 +13,13 @@ pub enum SyntaxKind {
     WhereKw,
 
     ExportList,
+    ExportName,
+    ExportOperator,
+    ExportType,
+    ExportTypeOperator,
+    ExportClass,
+    ExportModule,
+
     ImportList,
 
     ImportDeclaration,
@@ -20,6 +27,7 @@ pub enum SyntaxKind {
     AsKw,
 
     QualifiedName,
+    QualifiedPropperName,
     QualifiedPrefix,
     ModuleName,
     Upper,

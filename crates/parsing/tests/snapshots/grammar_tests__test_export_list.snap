@@ -1,0 +1,57 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: (a, (+), module B, class C, T, type (+))
+Start { kind: ExportList }
+  Token { kind: LeftParenthesis }
+  Start { kind: ExportName }
+    Start { kind: QualifiedName }
+      Start { kind: QualifiedPrefix }
+      Finish
+      Token { kind: Lower }
+    Finish
+  Finish
+  Token { kind: Comma }
+  Start { kind: ExportOperator }
+    Token { kind: LeftParenthesis }
+    Token { kind: Operator }
+    Token { kind: RightParenthesis }
+  Finish
+  Token { kind: Comma }
+  Start { kind: ExportModule }
+    Token { kind: ModuleKw }
+    Start { kind: QualifiedPropperName }
+      Start { kind: QualifiedPrefix }
+      Finish
+      Token { kind: Upper }
+    Finish
+  Finish
+  Token { kind: Comma }
+  Start { kind: ExportClass }
+    Token { kind: ClassKw }
+    Start { kind: QualifiedPropperName }
+      Start { kind: QualifiedPrefix }
+      Finish
+      Token { kind: Upper }
+    Finish
+  Finish
+  Token { kind: Comma }
+  Start { kind: ExportType }
+    Error { message: "expected TypeKw" }
+    Start { kind: QualifiedPropperName }
+      Start { kind: QualifiedPrefix }
+      Finish
+      Token { kind: Upper }
+    Finish
+  Finish
+  Token { kind: Comma }
+  Start { kind: ExportTypeOperator }
+    Token { kind: TypeKw }
+    Token { kind: LeftParenthesis }
+    Token { kind: Operator }
+    Token { kind: RightParenthesis }
+  Finish
+  Token { kind: RightParenthesis }
+Finish
+
