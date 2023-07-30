@@ -1,3 +1,4 @@
+pub mod grammar;
 pub mod input;
 pub mod layout;
 pub mod lexer;

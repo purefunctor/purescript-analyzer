@@ -1,0 +1,13 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: Hello.World $
+Start { kind: QualifiedName }
+  Start { kind: QualifiedPrefix }
+    Token { kind: Upper }
+    Token { kind: Period }
+  Finish
+  Token { kind: Upper }
+Finish
+
