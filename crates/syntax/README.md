@@ -20,8 +20,11 @@ ModuleHeader =
 ModuleName =
   #Upper ('.' #Upper)*
 
+QualifiedPrefix =
+  ( #Upper '.' )* #Upper
+
 QualifiedName =
-  ModuleName? ( #Upper | #Lower )
+  QualifiedPrefix ( #Upper | #Lower )
 
 ExportList =
   '(' ExportItem* ')'

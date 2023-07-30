@@ -20,6 +20,7 @@ pub enum SyntaxKind {
     AsKw,
 
     QualifiedName,
+    QualifiedPrefix,
     ModuleName,
     Upper,
     Lower,
