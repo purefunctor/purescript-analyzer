@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::qualified_name,
+    grammar::{expression_atom, qualified_name},
     lexer::lex,
     parser::{Event, Parser},
 };
@@ -67,4 +67,9 @@ fn test_qualified_name_plural() {
         qualified_name(parser);
         qualified_name(parser);
     })
+}
+
+#[test]
+fn test_expression_atom_literal_int() {
+    expect_parse("literal-int", "1", expression_atom);
 }

@@ -2,6 +2,21 @@ use syntax::SyntaxKind;
 
 use crate::parser::Parser;
 
+pub fn expression_atom(parser: &mut Parser) {
+    match parser.current() {
+        SyntaxKind::LiteralChar
+        | SyntaxKind::LiteralString
+        | SyntaxKind::LiteralRawString
+        | SyntaxKind::LiteralInteger
+        | SyntaxKind::LiteralNumber
+        | SyntaxKind::LiteralTrue
+        | SyntaxKind::LiteralFalse => {
+            parser.consume();
+        }
+        _ => (),
+    }
+}
+
 pub fn qualified_name(parser: &mut Parser) {
     let mut qualified = parser.start();
 
