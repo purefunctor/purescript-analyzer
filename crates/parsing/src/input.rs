@@ -27,7 +27,7 @@ impl Input {
     }
 
     pub fn position(&self, index: usize) -> Position {
-        assert!(index < self.positions.len());
+        assert!(index < self.positions.len(), "invariant violated: end of file");
         self.positions[index]
     }
 
