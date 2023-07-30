@@ -2,7 +2,7 @@
 source: crates/parsing/tests/grammar_tests.rs
 expression: result
 ---
-Input: Hello.World.(import $
+Input: Hello.World.(import
 Start { kind: QualifiedName }
   Start { kind: QualifiedPrefix }
     Start { kind: NameRef }

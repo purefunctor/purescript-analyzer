@@ -43,7 +43,7 @@ where
 
 #[test]
 fn test_qualified_constructor() {
-    expect_parse("qualified-constructor", "Hello.World $", qualified_name);
+    expect_parse("qualified-constructor", "Hello.World", qualified_name);
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn test_qualified_variable_as() {
 
 #[test]
 fn test_qualified_name_error() {
-    expect_parse("qualified-error", "Hello.World.(import $", qualified_name);
+    expect_parse("qualified-error", "Hello.World.(import", qualified_name);
 }
 
 #[test]

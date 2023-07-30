@@ -22,8 +22,7 @@ impl Input {
     }
 
     pub fn kind(&self, index: usize) -> SyntaxKind {
-        assert!(index <= self.tokens.len());
-        self.tokens[index]
+        self.tokens.get(index).copied().unwrap_or(SyntaxKind::EndOfFile)
     }
 
     pub fn position(&self, index: usize) -> Position {
