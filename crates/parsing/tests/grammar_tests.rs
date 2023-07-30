@@ -55,3 +55,16 @@ fn test_qualified_variable() {
 fn test_qualified_variable_as() {
     expect_parse("qualified-variable-as", "Hello.World.as", qualified_name);
 }
+
+#[test]
+fn test_qualified_name_error() {
+    expect_parse("qualified-error", "Hello.World.(import $", qualified_name);
+}
+
+#[test]
+fn test_qualified_name_plural() {
+    expect_parse("qualified-plural", "(hello) world", |parser| {
+        qualified_name(parser);
+        qualified_name(parser);
+    })
+}

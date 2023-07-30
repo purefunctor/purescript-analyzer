@@ -5,11 +5,17 @@ expression: result
 Input: Hello.World.as
 Start { kind: QualifiedName }
   Start { kind: QualifiedPrefix }
-    Token { kind: Upper }
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
     Token { kind: Period }
-    Token { kind: Upper }
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
     Token { kind: Period }
   Finish
-  Token { kind: Lower }
+  Start { kind: NameRef }
+    Token { kind: Lower }
+  Finish
 Finish
 

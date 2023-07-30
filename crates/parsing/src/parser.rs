@@ -192,6 +192,13 @@ impl Parser {
         self.events.push(Event::Error { message })
     }
 
+    pub fn error_recover(&mut self, message: impl Into<String>) {
+        let mut error = self.start();
+        self.index += 1;
+        self.error(message);
+        error.end(self, SyntaxKind::Error);
+    }
+
     /// Expect to consume a `kind`, emitting an error otherwise.
     pub fn expect(&mut self, kind: SyntaxKind) -> bool {
         if self.eat(kind) {
