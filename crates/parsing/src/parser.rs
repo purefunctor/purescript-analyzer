@@ -186,7 +186,7 @@ impl Parser {
         true
     }
 
-    /// Emit an error with a `message`
+    /// Emit an error with a `message`.
     pub fn error(&mut self, message: impl Into<String>) {
         let message = message.into();
         self.events.push(Event::Error { message })
