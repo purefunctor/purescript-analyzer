@@ -19,9 +19,11 @@ pub enum SyntaxKind {
     ImportKw,
     AsKw,
 
+    ModuleName,
     QualifiedName,
     QualifiedPrefix,
-    ModuleName,
+    Name,
+    NameRef,
     Upper,
     Lower,
     Hole,
