@@ -7,7 +7,7 @@ use crate::{
     position::Position,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Event {
     Start { kind: SyntaxKind },
     Token { kind: SyntaxKind },
@@ -36,6 +36,10 @@ impl Parser {
 
     pub fn is_eof(&self) -> bool {
         self.index == self.input.len()
+    }
+
+    pub fn as_output(self) -> Vec<Event> {
+        self.events
     }
 }
 
@@ -167,6 +171,12 @@ impl Parser {
         self.events.push(Event::Token { kind })
     }
 
+    /// Consumes a token as a different `kind`.
+    pub fn consume_as(&mut self, kind: SyntaxKind) {
+        self.index += 1;
+        self.events.push(Event::Token { kind });
+    }
+
     /// Consumes a token if it matches the `kind`.
     pub fn eat(&mut self, kind: SyntaxKind) -> bool {
         if !self.at(kind) {
@@ -174,6 +184,21 @@ impl Parser {
         }
         self.consume();
         true
+    }
+
+    /// Emit an error with a `message`
+    pub fn error(&mut self, message: impl Into<String>) {
+        let message = message.into();
+        self.events.push(Event::Error { message })
+    }
+
+    /// Expect to consume a `kind`, emitting an error otherwise.
+    pub fn expect(&mut self, kind: SyntaxKind) -> bool {
+        if self.eat(kind) {
+            return true;
+        }
+        self.error(format!("expected {kind:?}"));
+        false
     }
 }
 
