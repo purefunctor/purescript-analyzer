@@ -1,0 +1,28 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: forall (a :: Type). Type
+Start { kind: ForallType }
+  Token { kind: ForallKw }
+  Start { kind: TypeVariableBinding }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: Labeled }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+        Token { kind: Colon2 }
+        Start { kind: ConstructorType }
+          Token { kind: Upper }
+        Finish
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+  Finish
+  Token { kind: Period }
+  Start { kind: ConstructorType }
+    Token { kind: Upper }
+  Finish
+Finish
+

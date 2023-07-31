@@ -8,7 +8,7 @@ pub fn expression(parser: &mut Parser) {
 
     if parser.at(SyntaxKind::Colon2) {
         parser.consume();
-        type_(parser);
+        type_0(parser);
         typed.end(parser, SyntaxKind::TypedExpression);
     } else {
         typed.cancel(parser);
@@ -165,8 +165,25 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
     Some(kind)
 }
 
-pub fn type_(parser: &mut Parser) {
-    type_atom(parser);
+pub fn type_0(parser: &mut Parser) {
+    let mut kinded = parser.start();
+    type_1(parser);
+
+    if parser.at(SyntaxKind::Colon2) {
+        parser.consume();
+        type_1(parser);
+        kinded.end(parser, SyntaxKind::KindedType);
+    } else {
+        kinded.cancel(parser);
+    }
+}
+
+fn type_1(parser: &mut Parser) {
+    if parser.at(SyntaxKind::ForallKw) {
+        type_forall(parser);
+    } else {
+        type_atom(parser);
+    }
 }
 
 fn type_atom(parser: &mut Parser) -> bool {
@@ -186,4 +203,70 @@ fn type_atom(parser: &mut Parser) -> bool {
     }
     marker.cancel(parser);
     false
+}
+
+fn type_forall(parser: &mut Parser) {
+    let mut forall = parser.start();
+    parser.expect(SyntaxKind::ForallKw);
+
+    type_variable_binding_with_visibility(parser);
+
+    parser.expect(SyntaxKind::Period);
+
+    type_1(parser);
+
+    forall.end(parser, SyntaxKind::ForallType);
+}
+
+fn type_variable_binding_plain(parser: &mut Parser) {
+    type_variable_binding(parser, |parser| {
+        let mut name = parser.start();
+        parser.expect(SyntaxKind::Lower);
+        name.end(parser, SyntaxKind::Name);
+    });
+}
+
+fn type_variable_binding_with_visibility(parser: &mut Parser) {
+    type_variable_binding(parser, |parser| {
+        let mut prefixed = parser.start();
+        let has_prefix = parser.at(SyntaxKind::At);
+
+        if has_prefix {
+            parser.consume();
+        }
+
+        let mut name = parser.start();
+        parser.expect(SyntaxKind::Lower);
+        name.end(parser, SyntaxKind::Name);
+
+        if has_prefix {
+            prefixed.end(parser, SyntaxKind::Prefixed);
+        } else {
+            prefixed.cancel(parser);
+        }
+    });
+}
+
+fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)) {
+    let mut marker = parser.start();
+
+    if parser.at(SyntaxKind::LeftParenthesis) {
+        let mut wrapped = parser.start();
+        parser.consume();
+
+        let mut kinded = parser.start();
+
+        binding_name(parser);
+        parser.expect(SyntaxKind::Colon2);
+        type_1(parser);
+
+        kinded.end(parser, SyntaxKind::Labeled);
+
+        parser.expect(SyntaxKind::RightParenthesis);
+        wrapped.end(parser, SyntaxKind::Wrapped);
+    } else {
+        binding_name(parser);
+    }
+
+    marker.end(parser, SyntaxKind::TypeVariableBinding);
 }

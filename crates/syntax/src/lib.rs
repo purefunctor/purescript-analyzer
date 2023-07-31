@@ -29,6 +29,7 @@ pub enum SyntaxKind {
     Hole,
     Operator,
 
+    At,
     Equal,
     Period,
     Period2,
@@ -67,6 +68,28 @@ pub enum SyntaxKind {
     LiteralFalse,
 
     ConstructorType,
+    ForallType,
+    TypeVariableBinding,
+    /*
+
+    TypeVariableBinding
+      Token "@"
+      Lower
+
+    TypeVariableBinding
+      Lower
+      DoubleColon
+      Type
+
+    TypeVariableBinding
+      Token "@"
+      Labeled
+
+
+     */
+    PlainTypeVariableBinding,
+    PlainKindedTypeVariableBinding,
+    KindedType,
     VariableType,
 
     Pattern,
@@ -101,6 +124,10 @@ pub enum SyntaxKind {
     InfixlKw,
     InfixrKw,
     InfixKw,
+
+    Labeled,
+    Prefixed,
+    Wrapped,
 
     Sentinel,
     Error,
@@ -189,15 +216,18 @@ mod tests {
         print(2, purescript_module.clone().into());
 
         let module_name = purescript_module
-            .children().next()
+            .children()
+            .next()
             .unwrap()
-            .children().next()
+            .children()
+            .next()
             .and_then(ast::ModuleName::cast)
             .unwrap();
 
         let rust_module = SyntaxNode::new_root(
             module_name
-                .segments().next()
+                .segments()
+                .next()
                 .unwrap()
                 .replace_with(rowan::GreenToken::new(SyntaxKind::Upper.into(), "Rust")),
         );

@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::expression,
+    grammar::{expression, type_0},
     lexer::lex,
     parser::{Event, Parser},
 };
@@ -64,4 +64,13 @@ fn test_expression() {
 fn test_expression_error() {
     expect_parse("qualified-operator-name-not-operator", "Hello.(as)", expression);
     expect_parse("qualified-operator-name-unfinished", "Hello.(+ 1", expression);
+}
+
+#[test]
+fn test_type() {
+    expect_parse("kinded-type", "Type :: Type", type_0);
+    expect_parse("forall-type-plain", "forall a. Type", type_0);
+    expect_parse("forall-type-plain-kinded", "forall (a :: Type). Type", type_0);
+    expect_parse("forall-type-visible", "forall @a. Type", type_0);
+    expect_parse("forall-type-visible-kinded", "forall (@a :: Type). Type", type_0);
 }
