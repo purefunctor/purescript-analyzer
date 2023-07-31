@@ -5,21 +5,23 @@ expression: result
 Input: forall (a :: Type). Type
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: TypeVariableBinding }
-    Start { kind: Wrapped }
-      Token { kind: LeftParenthesis }
-      Start { kind: Labeled }
-        Start { kind: Prefixed }
-          Start { kind: Name }
-            Token { kind: Lower }
+  Start { kind: OneOrMore }
+    Start { kind: TypeVariableBinding }
+      Start { kind: Wrapped }
+        Token { kind: LeftParenthesis }
+        Start { kind: Labeled }
+          Start { kind: Prefixed }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Token { kind: Upper }
           Finish
         Finish
-        Token { kind: Colon2 }
-        Start { kind: ConstructorType }
-          Token { kind: Upper }
-        Finish
+        Token { kind: RightParenthesis }
       Finish
-      Token { kind: RightParenthesis }
     Finish
   Finish
   Token { kind: Period }

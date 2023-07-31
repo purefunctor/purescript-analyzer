@@ -5,10 +5,12 @@ expression: result
 Input: forall a. Type
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: TypeVariableBinding }
-    Start { kind: Prefixed }
-      Start { kind: Name }
-        Token { kind: Lower }
+  Start { kind: OneOrMore }
+    Start { kind: TypeVariableBinding }
+      Start { kind: Prefixed }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
       Finish
     Finish
   Finish

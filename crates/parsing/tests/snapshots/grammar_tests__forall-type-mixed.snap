@@ -5,54 +5,56 @@ expression: result
 Input: forall a (b :: C) @d (@e :: F). Type
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: TypeVariableBinding }
-    Start { kind: Prefixed }
-      Start { kind: Name }
-        Token { kind: Lower }
+  Start { kind: OneOrMore }
+    Start { kind: TypeVariableBinding }
+      Start { kind: Prefixed }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
       Finish
     Finish
-  Finish
-  Start { kind: TypeVariableBinding }
-    Start { kind: Wrapped }
-      Token { kind: LeftParenthesis }
-      Start { kind: Labeled }
-        Start { kind: Prefixed }
-          Start { kind: Name }
-            Token { kind: Lower }
+    Start { kind: TypeVariableBinding }
+      Start { kind: Wrapped }
+        Token { kind: LeftParenthesis }
+        Start { kind: Labeled }
+          Start { kind: Prefixed }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Token { kind: Upper }
           Finish
         Finish
-        Token { kind: Colon2 }
-        Start { kind: ConstructorType }
-          Token { kind: Upper }
+        Token { kind: RightParenthesis }
+      Finish
+    Finish
+    Start { kind: TypeVariableBinding }
+      Start { kind: Prefixed }
+        Token { kind: At }
+        Start { kind: Name }
+          Token { kind: Lower }
         Finish
       Finish
-      Token { kind: RightParenthesis }
     Finish
-  Finish
-  Start { kind: TypeVariableBinding }
-    Start { kind: Prefixed }
-      Token { kind: At }
-      Start { kind: Name }
-        Token { kind: Lower }
-      Finish
-    Finish
-  Finish
-  Start { kind: TypeVariableBinding }
-    Start { kind: Wrapped }
-      Token { kind: LeftParenthesis }
-      Start { kind: Labeled }
-        Start { kind: Prefixed }
-          Token { kind: At }
-          Start { kind: Name }
-            Token { kind: Lower }
+    Start { kind: TypeVariableBinding }
+      Start { kind: Wrapped }
+        Token { kind: LeftParenthesis }
+        Start { kind: Labeled }
+          Start { kind: Prefixed }
+            Token { kind: At }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Token { kind: Upper }
           Finish
         Finish
-        Token { kind: Colon2 }
-        Start { kind: ConstructorType }
-          Token { kind: Upper }
-        Finish
+        Token { kind: RightParenthesis }
       Finish
-      Token { kind: RightParenthesis }
     Finish
   Finish
   Token { kind: Period }
