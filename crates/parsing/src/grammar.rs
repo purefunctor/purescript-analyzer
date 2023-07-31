@@ -15,7 +15,7 @@ pub fn expression(parser: &mut Parser) {
     }
 }
 
-pub fn expression_1(parser: &mut Parser) {
+fn expression_1(parser: &mut Parser) {
     let mut operator = parser.start();
     expression_2(parser);
 
@@ -41,7 +41,7 @@ pub fn expression_1(parser: &mut Parser) {
     }
 }
 
-pub fn expression_2(parser: &mut Parser) {
+fn expression_2(parser: &mut Parser) {
     let mut application = parser.start();
     expression_atom(parser);
 
@@ -65,7 +65,7 @@ pub fn expression_2(parser: &mut Parser) {
     }
 }
 
-pub fn expression_atom(parser: &mut Parser) -> bool {
+fn expression_atom(parser: &mut Parser) -> bool {
     let mut marker = parser.start();
     match parser.current() {
         SyntaxKind::LiteralChar
@@ -141,7 +141,7 @@ pub fn type_(parser: &mut Parser) {
     type_atom(parser);
 }
 
-pub fn type_atom(parser: &mut Parser) -> bool {
+fn type_atom(parser: &mut Parser) -> bool {
     let mut marker = parser.start();
     match parser.current() {
         SyntaxKind::Lower => {

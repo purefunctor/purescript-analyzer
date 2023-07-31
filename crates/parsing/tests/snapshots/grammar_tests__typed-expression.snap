@@ -4,8 +4,6 @@ expression: result
 ---
 Input: 1 :: Int
 Start { kind: TypedExpression }
-  Start { kind: Sentinel }
-  Start { kind: Sentinel }
   Start { kind: LiteralExpression }
     Token { kind: LiteralInteger }
   Finish
