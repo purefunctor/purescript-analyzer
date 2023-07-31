@@ -9,8 +9,10 @@ Start { kind: ForallType }
     Start { kind: Wrapped }
       Token { kind: LeftParenthesis }
       Start { kind: Labeled }
-        Start { kind: Name }
-          Token { kind: Lower }
+        Start { kind: Prefixed }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
         Finish
         Token { kind: Colon2 }
         Start { kind: ConstructorType }

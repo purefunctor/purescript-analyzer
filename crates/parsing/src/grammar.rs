@@ -239,9 +239,7 @@ fn type_variable_binding_plain(parser: &mut Parser) {
 fn type_variable_binding_with_visibility(parser: &mut Parser) {
     type_variable_binding(parser, |parser| {
         let mut prefixed = parser.start();
-        let has_prefix = parser.at(SyntaxKind::At);
-
-        if has_prefix {
+        if parser.at(SyntaxKind::At) {
             parser.consume();
         }
 
@@ -249,11 +247,7 @@ fn type_variable_binding_with_visibility(parser: &mut Parser) {
         parser.expect(SyntaxKind::Lower);
         name.end(parser, SyntaxKind::Name);
 
-        if has_prefix {
-            prefixed.end(parser, SyntaxKind::Prefixed);
-        } else {
-            prefixed.cancel(parser);
-        }
+        prefixed.end(parser, SyntaxKind::Prefixed);
     });
 }
 

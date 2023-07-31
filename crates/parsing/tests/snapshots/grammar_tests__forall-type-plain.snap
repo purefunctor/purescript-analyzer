@@ -6,8 +6,10 @@ Input: forall a. Type
 Start { kind: ForallType }
   Token { kind: ForallKw }
   Start { kind: TypeVariableBinding }
-    Start { kind: Name }
-      Token { kind: Lower }
+    Start { kind: Prefixed }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
     Finish
   Finish
   Token { kind: Period }

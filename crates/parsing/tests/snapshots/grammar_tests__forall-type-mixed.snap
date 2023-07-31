@@ -6,16 +6,20 @@ Input: forall a (b :: C) @d (@e :: F). Type
 Start { kind: ForallType }
   Token { kind: ForallKw }
   Start { kind: TypeVariableBinding }
-    Start { kind: Name }
-      Token { kind: Lower }
+    Start { kind: Prefixed }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
     Finish
   Finish
   Start { kind: TypeVariableBinding }
     Start { kind: Wrapped }
       Token { kind: LeftParenthesis }
       Start { kind: Labeled }
-        Start { kind: Name }
-          Token { kind: Lower }
+        Start { kind: Prefixed }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
         Finish
         Token { kind: Colon2 }
         Start { kind: ConstructorType }
