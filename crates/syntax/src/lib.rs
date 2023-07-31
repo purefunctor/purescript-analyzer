@@ -49,8 +49,11 @@ pub enum SyntaxKind {
     Pipe,
 
     ApplicationExpression,
+    LiteralExpression,
     OperatorChain,
     ParenthesizedExpression,
+    TernaryExpression,
+    TypedExpression,
 
     LiteralChar,
     LiteralString,
@@ -60,7 +63,9 @@ pub enum SyntaxKind {
     LiteralTrue,
     LiteralFalse,
 
-    Type,
+    ConstructorType,
+    VariableType,
+
     Pattern,
 
     ValueDeclaration,

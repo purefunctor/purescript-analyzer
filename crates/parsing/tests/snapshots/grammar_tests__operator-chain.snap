@@ -5,12 +5,18 @@ expression: result
 Input: 1 + 2 + 3
 Start { kind: OperatorChain }
   Start { kind: Sentinel }
-  Token { kind: LiteralInteger }
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
   Token { kind: Operator }
   Start { kind: Sentinel }
-  Token { kind: LiteralInteger }
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
   Token { kind: Operator }
   Start { kind: Sentinel }
-  Token { kind: LiteralInteger }
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
 Finish
 

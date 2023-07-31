@@ -4,5 +4,7 @@ expression: result
 ---
 Input: 1
 Start { kind: Sentinel }
-Token { kind: LiteralInteger }
+Start { kind: LiteralExpression }
+  Token { kind: LiteralInteger }
+Finish
 

@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::{expression_1, expression_2, expression_atom, qualified_name},
+    grammar::{expression, expression_1, expression_2, expression_atom, qualified_name},
     lexer::lex,
     parser::{Event, Parser},
 };
@@ -101,4 +101,9 @@ fn test_expression_function_application() {
 #[test]
 fn test_expression_function_application_empty_spine() {
     expect_parse("application-expression-empty-spine", "1", expression_2);
+}
+
+#[test]
+fn test_expression_typed_expression() {
+    expect_parse("typed-expression", "1 :: Int", expression);
 }

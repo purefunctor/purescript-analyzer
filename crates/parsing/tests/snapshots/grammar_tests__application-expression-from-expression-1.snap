@@ -5,7 +5,11 @@ expression: result
 Input: 1 2
 Start { kind: Sentinel }
 Start { kind: ApplicationExpression }
-  Token { kind: LiteralInteger }
-  Token { kind: LiteralInteger }
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
 Finish
 

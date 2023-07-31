@@ -489,7 +489,7 @@ fn is_operator(c: char) -> bool {
     match c {
         // These are the only valid ASCII operators
         '!' | '#' | '$' | '%' | '&' | '*' | '+' | '.' | '/' | '<' | '=' | '>' | '?' | '@'
-        | '\\' | '^' | '|' | '-' | '~' => true,
+        | '\\' | '^' | '|' | '-' | '~' | ':' => true,
         _ => c.is_symbol() && !c.is_ascii(),
     }
 }
