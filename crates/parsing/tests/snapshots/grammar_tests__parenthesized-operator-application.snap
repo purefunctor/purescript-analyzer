@@ -1,0 +1,33 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: (1 2) + (3 4)
+Start { kind: OperatorChain }
+  Start { kind: ParenthesizedExpression }
+    Token { kind: LeftParenthesis }
+    Start { kind: ApplicationExpression }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Token { kind: RightParenthesis }
+  Finish
+  Token { kind: Operator }
+  Start { kind: ParenthesizedExpression }
+    Token { kind: LeftParenthesis }
+    Start { kind: ApplicationExpression }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Token { kind: RightParenthesis }
+  Finish
+Finish
+

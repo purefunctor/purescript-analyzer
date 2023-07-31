@@ -79,6 +79,13 @@ fn expression_atom(parser: &mut Parser) -> bool {
             marker.end(parser, SyntaxKind::LiteralExpression);
             return true;
         }
+        SyntaxKind::LeftParenthesis => {
+            parser.consume();
+            expression(parser);
+            parser.expect(SyntaxKind::RightParenthesis);
+            marker.end(parser, SyntaxKind::ParenthesizedExpression);
+            return true;
+        }
         _ => (),
     }
 

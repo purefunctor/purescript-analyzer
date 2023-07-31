@@ -49,11 +49,13 @@ pub enum SyntaxKind {
     Pipe,
 
     ApplicationExpression,
+    ConstructorExpression,
     LiteralExpression,
     OperatorChain,
     ParenthesizedExpression,
     TernaryExpression,
     TypedExpression,
+    VariableExpression,
 
     LiteralChar,
     LiteralString,
