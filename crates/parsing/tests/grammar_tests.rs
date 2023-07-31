@@ -89,6 +89,11 @@ fn test_expression_operator_chain_empty() {
 }
 
 #[test]
+fn test_application_expression_from_expression_1() {
+    expect_parse("application-expression-from-expression-1", "1 2", expression_1)
+}
+
+#[test]
 fn test_expression_function_application() {
     expect_parse("application-expression", "1 2", expression_2);
 }
