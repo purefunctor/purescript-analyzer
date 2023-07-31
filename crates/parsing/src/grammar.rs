@@ -57,7 +57,7 @@ fn expression_2(parser: &mut Parser) {
             break;
         }
 
-        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis = parser.current() {
+        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis | SyntaxKind::Colon2 = parser.current() {
             break;
         }
 

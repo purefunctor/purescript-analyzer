@@ -8,8 +8,10 @@ Start { kind: ApplicationExpression }
     Token { kind: LiteralInteger }
   Finish
   Start { kind: OneOrMore }
-    Start { kind: LiteralExpression }
-      Token { kind: LiteralInteger }
+    Start { kind: TermArgument }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
     Finish
   Finish
 Finish
