@@ -275,6 +275,7 @@ impl<'a> Lexer<'a> {
             "=>" => SyntaxKind::RightThickArrow,
             "|" => SyntaxKind::Pipe,
             "@" => SyntaxKind::At,
+            "-" => SyntaxKind::Minus,
             _ => SyntaxKind::Operator,
         };
         (kind, position, None)

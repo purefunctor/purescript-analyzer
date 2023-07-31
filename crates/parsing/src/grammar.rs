@@ -26,14 +26,15 @@ fn expression_1(parser: &mut Parser) {
             break;
         }
 
-        if parser.at(SyntaxKind::Operator) {
-            let mut pair = parser.start();
-            parser.consume();
-            expression_2(parser);
-            pair.end(parser, SyntaxKind::Pair);
-            entries += 1;
-        } else {
-            break;
+        match parser.current() {
+            SyntaxKind::Operator | SyntaxKind::Minus => {
+                let mut pair = parser.start();
+                parser.consume_as(SyntaxKind::Operator);
+                expression_2(parser);
+                pair.end(parser, SyntaxKind::Pair);
+                entries += 1;
+            }
+            _ => break,
         }
     }
 
@@ -52,7 +53,7 @@ fn expression_2(parser: &mut Parser) {
 
     let mut one_or_more = parser.start();
     let mut entries = 0;
-    
+
     loop {
         if parser.is_eof() {
             break;
@@ -118,6 +119,18 @@ fn tick_expression_1(parser: &mut Parser) {
 }
 
 fn expression_3(parser: &mut Parser) {
+    let mut negate = parser.start();
+    if parser.at(SyntaxKind::Minus) {
+        parser.consume_as(SyntaxKind::Operator);
+        expression_3(parser);
+        negate.end(parser, SyntaxKind::NegateExpression);
+    } else {
+        expression_4(parser);
+        negate.cancel(parser);
+    }
+}
+
+fn expression_4(parser: &mut Parser) {
     let mut application = parser.start();
     expression_atom(parser);
 
@@ -128,8 +141,11 @@ fn expression_3(parser: &mut Parser) {
             break;
         }
 
-        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis | SyntaxKind::Colon2 | SyntaxKind::Tick =
-            parser.current()
+        if let SyntaxKind::Operator
+        | SyntaxKind::Minus
+        | SyntaxKind::RightParenthesis
+        | SyntaxKind::Colon2
+        | SyntaxKind::Tick = parser.current()
         {
             break;
         }
@@ -174,14 +190,17 @@ fn expression_atom(parser: &mut Parser) -> bool {
             true
         }
         SyntaxKind::LeftParenthesis => {
-            if parser.nth_at(1, SyntaxKind::Operator) {
-                operator_name(parser);
-                marker.end(parser, SyntaxKind::OperatorNameExpression);
-            } else {
-                parser.expect(SyntaxKind::LeftParenthesis);
-                expression(parser);
-                parser.expect(SyntaxKind::RightParenthesis);
-                marker.end(parser, SyntaxKind::ParenthesizedExpression);
+            match parser.nth(1) {
+                SyntaxKind::Operator | SyntaxKind::Minus => {
+                    operator_name(parser);
+                    marker.end(parser, SyntaxKind::OperatorNameExpression);
+                }
+                _ => {
+                    parser.expect(SyntaxKind::LeftParenthesis);
+                    expression(parser);
+                    parser.expect(SyntaxKind::RightParenthesis);
+                    marker.end(parser, SyntaxKind::ParenthesizedExpression);
+                }
             }
             true
         }
@@ -260,12 +279,15 @@ fn operator_name(parser: &mut Parser) {
     let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftParenthesis);
 
-    if parser.at(SyntaxKind::Operator) {
-        let mut name = parser.start();
-        parser.consume();
-        name.end(parser, SyntaxKind::NameRef);
-    } else {
-        parser.error_recover("expected Operator");
+    match parser.current() {
+        SyntaxKind::Operator | SyntaxKind::Minus => {
+            let mut name = parser.start();
+            parser.consume_as(SyntaxKind::Operator);
+            name.end(parser, SyntaxKind::NameRef);
+        }
+        _ => {
+            parser.error_recover("expected Operator");
+        }
     }
 
     parser.expect(SyntaxKind::RightParenthesis);

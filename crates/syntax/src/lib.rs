@@ -48,6 +48,7 @@ pub enum SyntaxKind {
     Tick,
     Comma,
     Pipe,
+    Minus,
 
     ApplicationExpression,
     TermArgument,
@@ -55,6 +56,7 @@ pub enum SyntaxKind {
     ConstructorExpression,
     LiteralExpression,
     InfixChain,
+    NegateExpression,
     OperatorChain,
     OperatorNameExpression,
     ParenthesizedExpression,
