@@ -1,0 +1,10 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: 1 2
+Start { kind: ApplicationExpression }
+  Token { kind: LiteralInteger }
+  Token { kind: LiteralInteger }
+Finish
+

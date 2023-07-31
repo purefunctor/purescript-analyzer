@@ -48,6 +48,10 @@ pub enum SyntaxKind {
     Comma,
     Pipe,
 
+    ApplicationExpression,
+    OperatorChain,
+    ParenthesizedExpression,
+
     LiteralChar,
     LiteralString,
     LiteralRawString,
