@@ -136,38 +136,43 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
 
     qualified_prefix(parser);
 
-    let mut name = parser.start();
     let kind = match parser.current() {
         SyntaxKind::Upper => {
+            let mut name = parser.start();
             parser.consume();
+            name.end(parser, SyntaxKind::NameRef);
             SyntaxKind::ConstructorExpression
         }
         SyntaxKind::Lower | SyntaxKind::AsKw => {
+            let mut name = parser.start();
             parser.consume_as(SyntaxKind::Lower);
+            name.end(parser, SyntaxKind::NameRef);
             SyntaxKind::VariableExpression
         }
         SyntaxKind::LeftParenthesis => {
+            let mut wrapped = parser.start();
             parser.consume();
 
             if parser.at(SyntaxKind::Operator) {
-                parser.consume();
+                let mut name = parser.start();
+                   parser.consume();
+                name.end(parser, SyntaxKind::NameRef);
             } else {
                 parser.error_recover("expected Operator");
             }
 
             parser.expect(SyntaxKind::RightParenthesis);
+            wrapped.end(parser, SyntaxKind::Wrapped);
 
             SyntaxKind::OperatorNameExpression
         }
         _ => {
-            name.cancel(parser);
             qualified.cancel(parser);
             parser.error_recover("expected Upper, Lower, or LeftParenthesis");
             return None;
         }
     };
 
-    name.end(parser, SyntaxKind::NameRef);
     qualified.end(parser, SyntaxKind::QualifiedName);
 
     Some(kind)

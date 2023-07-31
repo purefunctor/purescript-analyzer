@@ -11,7 +11,7 @@ Start { kind: OperatorNameExpression }
       Finish
       Token { kind: Period }
     Finish
-    Start { kind: NameRef }
+    Start { kind: Wrapped }
       Token { kind: LeftParenthesis }
       Start { kind: Error }
         Error { message: "expected Operator" }

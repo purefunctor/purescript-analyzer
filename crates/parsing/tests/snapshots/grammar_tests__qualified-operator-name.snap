@@ -11,9 +11,11 @@ Start { kind: OperatorNameExpression }
       Finish
       Token { kind: Period }
     Finish
-    Start { kind: NameRef }
+    Start { kind: Wrapped }
       Token { kind: LeftParenthesis }
-      Token { kind: Operator }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
       Token { kind: RightParenthesis }
     Finish
   Finish
