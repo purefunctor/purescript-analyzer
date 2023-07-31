@@ -1,0 +1,26 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: Hello.(+ 1
+Start { kind: ApplicationExpression }
+  Start { kind: OperatorNameExpression }
+    Start { kind: QualifiedName }
+      Start { kind: QualifiedPrefix }
+        Start { kind: NameRef }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+      Finish
+      Start { kind: NameRef }
+        Token { kind: LeftParenthesis }
+        Token { kind: Operator }
+        Error { message: "expected RightParenthesis" }
+      Finish
+    Finish
+  Finish
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
+Finish
+
