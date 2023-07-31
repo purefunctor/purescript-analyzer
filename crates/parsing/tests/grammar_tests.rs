@@ -47,12 +47,12 @@ where
 
 #[test]
 fn test_expression() {
-    // expect_parse("literal-int", "1", expression);
-    // expect_parse("operator-chain", "1 + 2 * 3", expression);
-    // expect_parse("application-expression", "1 2", expression);
-    // expect_parse("typed-expression", "1 :: Int", expression);
-    // expect_parse("parenthesized-expression", "(1)", expression);
-    // expect_parse("parenthesized-application", "(1 2)", expression);
+    expect_parse("literal-int", "1", expression);
+    expect_parse("operator-chain", "1 + 2 * 3", expression);
+    expect_parse("application-expression", "1 2", expression);
+    expect_parse("typed-expression", "1 :: Int", expression);
+    expect_parse("parenthesized-expression", "(1)", expression);
+    expect_parse("parenthesized-application", "(1 2)", expression);
     expect_parse("parenthesized-operator-application", "(1 2) + (3 4)", expression);
     expect_parse("qualified-lower-name", "Hello.as", expression);
     expect_parse("qualified-upper-name", "Hello.As", expression);
