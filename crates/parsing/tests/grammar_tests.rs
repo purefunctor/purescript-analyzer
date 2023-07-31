@@ -73,4 +73,5 @@ fn test_type() {
     expect_parse("forall-type-plain-kinded", "forall (a :: Type). Type", type_0);
     expect_parse("forall-type-visible", "forall @a. Type", type_0);
     expect_parse("forall-type-visible-kinded", "forall (@a :: Type). Type", type_0);
+    expect_parse("forall-type-mixed", "forall a (b :: C) @d (@e :: F). Type", type_0);
 }

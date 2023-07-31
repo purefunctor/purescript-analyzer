@@ -209,7 +209,17 @@ fn type_forall(parser: &mut Parser) {
     let mut forall = parser.start();
     parser.expect(SyntaxKind::ForallKw);
 
-    type_variable_binding_with_visibility(parser);
+    loop {
+        if parser.is_eof() {
+            break;
+        }
+
+        if parser.at(SyntaxKind::Period) {
+            break;
+        }
+
+        type_variable_binding_with_visibility(parser);
+    }
 
     parser.expect(SyntaxKind::Period);
 
