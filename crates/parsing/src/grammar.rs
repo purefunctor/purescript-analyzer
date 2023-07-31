@@ -86,14 +86,37 @@ fn expression_atom(parser: &mut Parser) -> bool {
             marker.end(parser, SyntaxKind::ParenthesizedExpression);
             return true;
         }
-        _ => (),
+        SyntaxKind::LeftSquare => {
+            todo!("Array");
+        }
+        SyntaxKind::LeftBracket => {
+            todo!("Record");
+        }
+        SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
+            if let Some(kind) = qualified_name(parser) {
+                match kind {
+                    SyntaxKind::Upper => {
+                        marker.end(parser, SyntaxKind::ConstructorExpression);
+                    }
+                    SyntaxKind::Lower => {
+                        marker.end(parser, SyntaxKind::VariableExpression);
+                    }
+                    SyntaxKind::Operator => {
+                        marker.end(parser, SyntaxKind::OperatorNameExpression);
+                    }
+                    _ => unreachable!(),
+                }
+            }
+            return true;
+        }
+        _ => {
+            marker.cancel(parser);
+            return false;
+        }
     }
-
-    marker.cancel(parser);
-    false
 }
 
-pub fn qualified_prefix(parser: &mut Parser) {
+fn qualified_prefix(parser: &mut Parser) {
     let mut prefix = parser.start();
     loop {
         if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Period) {
@@ -108,40 +131,46 @@ pub fn qualified_prefix(parser: &mut Parser) {
     prefix.end(parser, SyntaxKind::QualifiedPrefix);
 }
 
-pub fn qualified_name(parser: &mut Parser) {
+fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
     let mut qualified = parser.start();
 
     qualified_prefix(parser);
 
-    match parser.current() {
-        SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
-            let mut name = parser.start();
-            if parser.at(SyntaxKind::AsKw) {
-                parser.consume_as(SyntaxKind::Lower);
-            } else {
-                parser.consume();
-            }
-            name.end(parser, SyntaxKind::NameRef);
+    let mut name = parser.start();
+    let kind = match parser.current() {
+        SyntaxKind::Upper => {
+            parser.consume();
+            SyntaxKind::Upper
+        }
+        SyntaxKind::Lower | SyntaxKind::AsKw => {
+            parser.consume_as(SyntaxKind::Lower);
+            SyntaxKind::Lower
         }
         SyntaxKind::LeftParenthesis => {
             parser.consume();
 
-            let mut name = parser.start();
             if parser.at(SyntaxKind::Operator) {
                 parser.consume();
             } else {
-                parser.error_recover("expected an operator");
+                parser.error_recover("expected Operator");
             }
-            name.end(parser, SyntaxKind::NameRef);
 
             parser.expect(SyntaxKind::RightParenthesis);
+
+            SyntaxKind::Operator
         }
         _ => {
-            parser.error_recover("expected a name");
+            name.cancel(parser);
+            qualified.cancel(parser);
+            parser.error_recover("expected Upper, Lower, or LeftParenthesis");
+            return None;
         }
-    }
+    };
 
+    name.end(parser, SyntaxKind::NameRef);
     qualified.end(parser, SyntaxKind::QualifiedName);
+
+    Some(kind)
 }
 
 pub fn type_(parser: &mut Parser) {

@@ -1,0 +1,19 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: Hello.As
+Start { kind: ConstructorExpression }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+    Finish
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
+  Finish
+Finish
+

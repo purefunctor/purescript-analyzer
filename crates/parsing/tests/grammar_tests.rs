@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::{expression, qualified_name},
+    grammar::expression,
     lexer::lex,
     parser::{Event, Parser},
 };
@@ -46,34 +46,6 @@ where
 }
 
 #[test]
-fn test_qualified_constructor() {
-    expect_parse("qualified-constructor", "Hello.World", qualified_name);
-}
-
-#[test]
-fn test_qualified_variable() {
-    expect_parse("qualified-variable", "Hello.World.hello", qualified_name);
-}
-
-#[test]
-fn test_qualified_variable_as() {
-    expect_parse("qualified-variable-as", "Hello.World.as", qualified_name);
-}
-
-#[test]
-fn test_qualified_name_error() {
-    expect_parse("qualified-error", "Hello.World.(import", qualified_name);
-}
-
-#[test]
-fn test_qualified_name_plural() {
-    expect_parse("qualified-plural", "(hello) world", |parser| {
-        qualified_name(parser);
-        qualified_name(parser);
-    })
-}
-
-#[test]
 fn test_expression() {
     expect_parse("literal-int", "1", expression);
     expect_parse("operator-chain", "1 + 2 * 3", expression);
@@ -82,4 +54,8 @@ fn test_expression() {
     expect_parse("parenthesized-expression", "(1)", expression);
     expect_parse("parenthesized-application", "(1 2)", expression);
     expect_parse("parenthesized-operator-application", "(1 2) + (3 4)", expression);
+    expect_parse("qualified-lower-name", "Hello.as", expression);
+    expect_parse("qualified-upper-name", "Hello.As", expression);
+    expect_parse("qualified-operator-name", "Hello.(+)", expression);
+    expect_parse("qualified-application", "Hello.as Hello.we + Hello.go", expression);
 }
