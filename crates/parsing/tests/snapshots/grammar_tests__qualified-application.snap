@@ -32,17 +32,21 @@ Start { kind: OperatorChain }
       Finish
     Finish
   Finish
-  Token { kind: Operator }
-  Start { kind: VariableExpression }
-    Start { kind: QualifiedName }
-      Start { kind: QualifiedPrefix }
-        Start { kind: NameRef }
-          Token { kind: Upper }
+  Start { kind: OneOrMore }
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: QualifiedPrefix }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
+            Token { kind: Period }
+          Finish
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
         Finish
-        Token { kind: Period }
-      Finish
-      Start { kind: NameRef }
-        Token { kind: Lower }
       Finish
     Finish
   Finish

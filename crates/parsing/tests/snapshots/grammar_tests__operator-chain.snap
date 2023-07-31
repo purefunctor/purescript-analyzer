@@ -7,13 +7,19 @@ Start { kind: OperatorChain }
   Start { kind: LiteralExpression }
     Token { kind: LiteralInteger }
   Finish
-  Token { kind: Operator }
-  Start { kind: LiteralExpression }
-    Token { kind: LiteralInteger }
-  Finish
-  Token { kind: Operator }
-  Start { kind: LiteralExpression }
-    Token { kind: LiteralInteger }
+  Start { kind: OneOrMore }
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
   Finish
 Finish
 

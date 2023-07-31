@@ -19,6 +19,7 @@ fn expression_1(parser: &mut Parser) {
     let mut operator = parser.start();
     expression_2(parser);
 
+    let mut one_or_more = parser.start();
     let mut entries = 0;
     loop {
         if parser.is_eof() {
@@ -26,8 +27,10 @@ fn expression_1(parser: &mut Parser) {
         }
 
         if parser.at(SyntaxKind::Operator) {
+            let mut pair = parser.start();
             parser.consume();
             expression_2(parser);
+            pair.end(parser, SyntaxKind::Pair);
             entries += 1;
         } else {
             break;
@@ -36,8 +39,10 @@ fn expression_1(parser: &mut Parser) {
 
     if entries > 0 {
         operator.end(parser, SyntaxKind::OperatorChain);
+        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         operator.cancel(parser);
+        one_or_more.cancel(parser);
     }
 }
 

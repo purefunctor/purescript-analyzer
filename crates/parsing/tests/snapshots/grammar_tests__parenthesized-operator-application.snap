@@ -16,18 +16,22 @@ Start { kind: OperatorChain }
     Finish
     Token { kind: RightParenthesis }
   Finish
-  Token { kind: Operator }
-  Start { kind: ParenthesizedExpression }
-    Token { kind: LeftParenthesis }
-    Start { kind: ApplicationExpression }
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
-      Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
+  Start { kind: OneOrMore }
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: ParenthesizedExpression }
+        Token { kind: LeftParenthesis }
+        Start { kind: ApplicationExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+        Finish
+        Token { kind: RightParenthesis }
       Finish
     Finish
-    Token { kind: RightParenthesis }
   Finish
 Finish
 
