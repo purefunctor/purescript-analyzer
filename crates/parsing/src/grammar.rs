@@ -47,6 +47,77 @@ fn expression_1(parser: &mut Parser) {
 }
 
 fn expression_2(parser: &mut Parser) {
+    let mut infix = parser.start();
+    expression_3(parser);
+
+    let mut one_or_more = parser.start();
+    let mut entries = 0;
+    
+    loop {
+        if parser.is_eof() {
+            break;
+        }
+
+        if parser.at(SyntaxKind::Tick) {
+            let mut pair = parser.start();
+            tick_expression(parser);
+            expression_3(parser);
+            pair.end(parser, SyntaxKind::Pair);
+            entries += 1;
+        } else {
+            break;
+        }
+    }
+
+    if entries > 0 {
+        infix.end(parser, SyntaxKind::InfixChain);
+        one_or_more.end(parser, SyntaxKind::OneOrMore);
+    } else {
+        infix.cancel(parser);
+        one_or_more.cancel(parser);
+    }
+}
+
+fn tick_expression(parser: &mut Parser) {
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::Tick);
+    tick_expression_1(parser);
+    parser.expect(SyntaxKind::Tick);
+    wrapped.end(parser, SyntaxKind::Wrapped);
+}
+
+fn tick_expression_1(parser: &mut Parser) {
+    let mut operator = parser.start();
+    expression_3(parser);
+
+    let mut one_or_more = parser.start();
+    let mut entries = 0;
+    loop {
+        if parser.is_eof() {
+            break;
+        }
+
+        if parser.at(SyntaxKind::Operator) {
+            let mut pair = parser.start();
+            parser.consume();
+            expression_3(parser);
+            pair.end(parser, SyntaxKind::Pair);
+            entries += 1;
+        } else {
+            break;
+        }
+    }
+
+    if entries > 0 {
+        operator.end(parser, SyntaxKind::OperatorChain);
+        one_or_more.end(parser, SyntaxKind::OneOrMore);
+    } else {
+        operator.cancel(parser);
+        one_or_more.cancel(parser);
+    }
+}
+
+fn expression_3(parser: &mut Parser) {
     let mut application = parser.start();
     expression_atom(parser);
 
@@ -57,7 +128,7 @@ fn expression_2(parser: &mut Parser) {
             break;
         }
 
-        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis | SyntaxKind::Colon2 =
+        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis | SyntaxKind::Colon2 | SyntaxKind::Tick =
             parser.current()
         {
             break;

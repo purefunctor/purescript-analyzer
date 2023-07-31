@@ -54,6 +54,7 @@ pub enum SyntaxKind {
     TypeArgument,
     ConstructorExpression,
     LiteralExpression,
+    InfixChain,
     OperatorChain,
     OperatorNameExpression,
     ParenthesizedExpression,
