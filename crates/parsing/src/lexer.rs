@@ -181,8 +181,8 @@ impl<'a> Lexer<'a> {
             ')' => self.take_single(SyntaxKind::RightParenthesis),
             '{' => self.take_single(SyntaxKind::LeftBracket),
             '}' => self.take_single(SyntaxKind::RightBracket),
-            '[' => self.take_single(SyntaxKind::LeftBrace),
-            ']' => self.take_single(SyntaxKind::RightBrace),
+            '[' => self.take_single(SyntaxKind::LeftSquare),
+            ']' => self.take_single(SyntaxKind::RightSquare),
 
             '`' => self.take_single(SyntaxKind::Tick),
             ',' => self.take_single(SyntaxKind::Comma),
