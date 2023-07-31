@@ -50,23 +50,26 @@ fn expression_2(parser: &mut Parser) {
     let mut application = parser.start();
     expression_atom(parser);
 
-    let mut arguments = 0;
+    let mut one_or_more = parser.start();
+    let mut entries = 0;
     loop {
         if parser.is_eof() {
             break;
         }
 
         if expression_atom(parser) {
-            arguments += 1;
+            entries += 1;
         } else {
             break;
         }
     }
 
-    if arguments > 0 {
+    if entries > 0 {
         application.end(parser, SyntaxKind::ApplicationExpression);
+        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         application.cancel(parser);
+        one_or_more.cancel(parser);
     }
 }
 

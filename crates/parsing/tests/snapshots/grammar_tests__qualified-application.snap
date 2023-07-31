@@ -18,16 +18,18 @@ Start { kind: OperatorChain }
         Finish
       Finish
     Finish
-    Start { kind: VariableExpression }
-      Start { kind: QualifiedName }
-        Start { kind: QualifiedPrefix }
-          Start { kind: NameRef }
-            Token { kind: Upper }
+    Start { kind: OneOrMore }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: QualifiedPrefix }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
+            Token { kind: Period }
           Finish
-          Token { kind: Period }
-        Finish
-        Start { kind: NameRef }
-          Token { kind: Lower }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
         Finish
       Finish
     Finish

@@ -19,8 +19,10 @@ Start { kind: ApplicationExpression }
       Finish
     Finish
   Finish
-  Start { kind: LiteralExpression }
-    Token { kind: LiteralInteger }
+  Start { kind: OneOrMore }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
+    Finish
   Finish
 Finish
 

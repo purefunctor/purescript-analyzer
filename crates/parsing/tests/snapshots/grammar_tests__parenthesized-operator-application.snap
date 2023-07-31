@@ -10,8 +10,10 @@ Start { kind: OperatorChain }
       Start { kind: LiteralExpression }
         Token { kind: LiteralInteger }
       Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
+      Start { kind: OneOrMore }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
       Finish
     Finish
     Token { kind: RightParenthesis }
@@ -25,8 +27,10 @@ Start { kind: OperatorChain }
           Start { kind: LiteralExpression }
             Token { kind: LiteralInteger }
           Finish
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
+          Start { kind: OneOrMore }
+            Start { kind: LiteralExpression }
+              Token { kind: LiteralInteger }
+            Finish
           Finish
         Finish
         Token { kind: RightParenthesis }
