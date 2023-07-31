@@ -57,7 +57,9 @@ fn expression_2(parser: &mut Parser) {
             break;
         }
 
-        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis | SyntaxKind::Colon2 = parser.current() {
+        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis | SyntaxKind::Colon2 =
+            parser.current()
+        {
             break;
         }
 
@@ -101,10 +103,15 @@ fn expression_atom(parser: &mut Parser) -> bool {
             true
         }
         SyntaxKind::LeftParenthesis => {
-            parser.consume();
-            expression(parser);
-            parser.expect(SyntaxKind::RightParenthesis);
-            marker.end(parser, SyntaxKind::ParenthesizedExpression);
+            if parser.nth_at(1, SyntaxKind::Operator) {
+                operator_name(parser);
+                marker.end(parser, SyntaxKind::OperatorNameExpression);
+            } else {
+                parser.expect(SyntaxKind::LeftParenthesis);
+                expression(parser);
+                parser.expect(SyntaxKind::RightParenthesis);
+                marker.end(parser, SyntaxKind::ParenthesizedExpression);
+            }
             true
         }
         SyntaxKind::LeftSquare => {
@@ -163,20 +170,7 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
             SyntaxKind::VariableExpression
         }
         SyntaxKind::LeftParenthesis => {
-            let mut wrapped = parser.start();
-            parser.consume();
-
-            if parser.at(SyntaxKind::Operator) {
-                let mut name = parser.start();
-                parser.consume();
-                name.end(parser, SyntaxKind::NameRef);
-            } else {
-                parser.error_recover("expected Operator");
-            }
-
-            parser.expect(SyntaxKind::RightParenthesis);
-            wrapped.end(parser, SyntaxKind::Wrapped);
-
+            operator_name(parser);
             SyntaxKind::OperatorNameExpression
         }
         _ => {
@@ -189,6 +183,22 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
     qualified.end(parser, SyntaxKind::QualifiedName);
 
     Some(kind)
+}
+
+fn operator_name(parser: &mut Parser) {
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::LeftParenthesis);
+
+    if parser.at(SyntaxKind::Operator) {
+        let mut name = parser.start();
+        parser.consume();
+        name.end(parser, SyntaxKind::NameRef);
+    } else {
+        parser.error_recover("expected Operator");
+    }
+
+    parser.expect(SyntaxKind::RightParenthesis);
+    wrapped.end(parser, SyntaxKind::Wrapped);
 }
 
 pub fn type_0(parser: &mut Parser) {

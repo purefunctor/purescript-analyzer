@@ -59,6 +59,7 @@ fn test_expression() {
     expect_parse("qualified-operator-name", "Hello.(+)", expression);
     expect_parse("qualified-application", "Hello.as Hello.we + Hello.go", expression);
     expect_parse("type-application", "f @a @b 1 2", expression);
+    expect_parse("unqualified-operator-name", "(+) 1 2", expression);
 }
 
 #[test]
