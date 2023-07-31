@@ -50,6 +50,8 @@ pub enum SyntaxKind {
     Pipe,
 
     ApplicationExpression,
+    TermArgument,
+    TypeArgument,
     ConstructorExpression,
     LiteralExpression,
     OperatorChain,

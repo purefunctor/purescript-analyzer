@@ -57,11 +57,12 @@ fn expression_2(parser: &mut Parser) {
             break;
         }
 
-        if expression_atom(parser) {
-            entries += 1;
-        } else {
+        if let SyntaxKind::Operator | SyntaxKind::RightParenthesis = parser.current() {
             break;
         }
+
+        expression_spine(parser);
+        entries += 1;
     }
 
     if entries > 0 {
@@ -70,6 +71,18 @@ fn expression_2(parser: &mut Parser) {
     } else {
         application.cancel(parser);
         one_or_more.cancel(parser);
+    }
+}
+
+fn expression_spine(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.at(SyntaxKind::At) {
+        parser.consume();
+        type_0(parser);
+        marker.end(parser, SyntaxKind::TypeArgument);
+    } else {
+        expression_atom(parser);
+        marker.end(parser, SyntaxKind::TermArgument);
     }
 }
 
@@ -155,7 +168,7 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
 
             if parser.at(SyntaxKind::Operator) {
                 let mut name = parser.start();
-                   parser.consume();
+                parser.consume();
                 name.end(parser, SyntaxKind::NameRef);
             } else {
                 parser.error_recover("expected Operator");
