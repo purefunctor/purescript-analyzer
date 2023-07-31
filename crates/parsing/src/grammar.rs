@@ -78,7 +78,7 @@ fn expression_spine(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::At) {
         parser.consume();
-        type_0(parser);
+        type_atom(parser);
         marker.end(parser, SyntaxKind::TypeArgument);
     } else {
         expression_atom(parser);
