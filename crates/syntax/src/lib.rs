@@ -70,25 +70,6 @@ pub enum SyntaxKind {
     ConstructorType,
     ForallType,
     TypeVariableBinding,
-    /*
-
-    TypeVariableBinding
-      Token "@"
-      Lower
-
-    TypeVariableBinding
-      Lower
-      DoubleColon
-      Type
-
-    TypeVariableBinding
-      Token "@"
-      Labeled
-
-
-     */
-    PlainTypeVariableBinding,
-    PlainKindedTypeVariableBinding,
     KindedType,
     VariableType,
 
