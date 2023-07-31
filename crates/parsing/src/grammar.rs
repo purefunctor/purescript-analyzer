@@ -77,14 +77,14 @@ fn expression_atom(parser: &mut Parser) -> bool {
         | SyntaxKind::LiteralFalse => {
             parser.consume();
             marker.end(parser, SyntaxKind::LiteralExpression);
-            return true;
+            true
         }
         SyntaxKind::LeftParenthesis => {
             parser.consume();
             expression(parser);
             parser.expect(SyntaxKind::RightParenthesis);
             marker.end(parser, SyntaxKind::ParenthesizedExpression);
-            return true;
+            true
         }
         SyntaxKind::LeftSquare => {
             todo!("Array");
@@ -95,15 +95,15 @@ fn expression_atom(parser: &mut Parser) -> bool {
         SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
             if let Some(kind) = qualified_name(parser) {
                 marker.end(parser, kind);
-                return true;
+                true
             } else {
                 marker.cancel(parser);
-                return false;
+                false
             }
         }
         _ => {
             marker.cancel(parser);
-            return false;
+            false
         }
     }
 }

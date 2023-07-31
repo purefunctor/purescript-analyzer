@@ -189,18 +189,15 @@ mod tests {
         print(2, purescript_module.clone().into());
 
         let module_name = purescript_module
-            .children()
-            .nth(0)
+            .children().next()
             .unwrap()
-            .children()
-            .nth(0)
+            .children().next()
             .and_then(ast::ModuleName::cast)
             .unwrap();
 
         let rust_module = SyntaxNode::new_root(
             module_name
-                .segments()
-                .nth(0)
+                .segments().next()
                 .unwrap()
                 .replace_with(rowan::GreenToken::new(SyntaxKind::Upper.into(), "Rust")),
         );

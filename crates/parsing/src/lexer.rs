@@ -530,7 +530,7 @@ mod tests {
 
     use super::lex;
 
-    fn expect_tokens<'a>(source: &'a str, expected: &[SyntaxKind]) {
+    fn expect_tokens(source: &str, expected: &[SyntaxKind]) {
         println!();
         let lexed = lex(source);
         let mut success = true;
@@ -557,7 +557,7 @@ mod tests {
             success = false;
         }
         if !success {
-            assert!(false, "test failed for source: <{source}>");
+            panic!("test failed for source: <{source}>");
         }
     }
 
