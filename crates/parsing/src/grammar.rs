@@ -94,20 +94,12 @@ fn expression_atom(parser: &mut Parser) -> bool {
         }
         SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
             if let Some(kind) = qualified_name(parser) {
-                match kind {
-                    SyntaxKind::Upper => {
-                        marker.end(parser, SyntaxKind::ConstructorExpression);
-                    }
-                    SyntaxKind::Lower => {
-                        marker.end(parser, SyntaxKind::VariableExpression);
-                    }
-                    SyntaxKind::Operator => {
-                        marker.end(parser, SyntaxKind::OperatorNameExpression);
-                    }
-                    _ => unreachable!(),
-                }
+                marker.end(parser, kind);
+                return true;
+            } else {
+                marker.cancel(parser);
+                return false;
             }
-            return true;
         }
         _ => {
             marker.cancel(parser);
@@ -140,11 +132,11 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
     let kind = match parser.current() {
         SyntaxKind::Upper => {
             parser.consume();
-            SyntaxKind::Upper
+            SyntaxKind::ConstructorExpression
         }
         SyntaxKind::Lower | SyntaxKind::AsKw => {
             parser.consume_as(SyntaxKind::Lower);
-            SyntaxKind::Lower
+            SyntaxKind::VariableExpression
         }
         SyntaxKind::LeftParenthesis => {
             parser.consume();
@@ -157,7 +149,7 @@ fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {
 
             parser.expect(SyntaxKind::RightParenthesis);
 
-            SyntaxKind::Operator
+            SyntaxKind::OperatorNameExpression
         }
         _ => {
             name.cancel(parser);
