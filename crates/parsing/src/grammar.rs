@@ -132,7 +132,7 @@ fn expression_3(parser: &mut Parser) {
 
 fn expression_4(parser: &mut Parser) {
     let mut application = parser.start();
-    expression_atom(parser);
+    expression_5(parser);
 
     let mut one_or_more = parser.start();
     let mut entries = 0;
@@ -145,7 +145,9 @@ fn expression_4(parser: &mut Parser) {
         | SyntaxKind::Minus
         | SyntaxKind::RightParenthesis
         | SyntaxKind::Colon2
-        | SyntaxKind::Tick = parser.current()
+        | SyntaxKind::Tick
+        | SyntaxKind::ThenKw
+        | SyntaxKind::ElseKw = parser.current()
         {
             break;
         }
@@ -170,9 +172,35 @@ fn expression_spine(parser: &mut Parser) {
         type_atom(parser);
         marker.end(parser, SyntaxKind::TypeArgument);
     } else {
-        expression_atom(parser);
+        expression_5(parser);
         marker.end(parser, SyntaxKind::TermArgument);
     }
+}
+
+fn expression_5(parser: &mut Parser) {
+    match parser.current() {
+        SyntaxKind::IfKw => {
+            expression_if(parser);
+        }
+        _ => {
+            expression_atom(parser);
+        }
+    }
+}
+
+fn expression_if(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::IfKw);
+    expression(parser);
+
+    parser.expect(SyntaxKind::ThenKw);
+    expression(parser);
+
+    parser.expect(SyntaxKind::ElseKw);
+    expression(parser);
+
+    marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
 fn expression_atom(parser: &mut Parser) -> bool {
