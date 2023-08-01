@@ -26,7 +26,7 @@ Start { kind: IfThenElseExpression }
     Finish
   Finish
   Token { kind: ThenKw }
-  Start { kind: OperatorChain }
+  Start { kind: ExpressionOperatorChain }
     Start { kind: VariableExpression }
       Start { kind: QualifiedName }
         Start { kind: NameRef }
@@ -48,7 +48,7 @@ Start { kind: IfThenElseExpression }
     Finish
   Finish
   Token { kind: ElseKw }
-  Start { kind: InfixChain }
+  Start { kind: ExpressionInfixChain }
     Start { kind: VariableExpression }
       Start { kind: QualifiedName }
         Start { kind: NameRef }
