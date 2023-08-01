@@ -47,22 +47,22 @@ where
 
 #[test]
 fn test_expression() {
-    // expect_parse("literal-int", "1", expression);
-    // expect_parse("operator-chain", "1 + 2 * 3", expression);
-    // expect_parse("application-expression", "1 2", expression);
-    // expect_parse("typed-expression", "1 :: Int", expression);
-    // expect_parse("parenthesized-expression", "(1)", expression);
-    // expect_parse("parenthesized-application", "(1 2)", expression);
-    // expect_parse("parenthesized-operator-application", "(1 2) + (3 4)", expression);
-    // expect_parse("qualified-lower-name", "Hello.as", expression);
-    // expect_parse("qualified-upper-name", "Hello.As", expression);
-    // expect_parse("qualified-operator-name", "Hello.(+)", expression);
-    // expect_parse("qualified-application", "Hello.as Hello.we + Hello.go", expression);
-    // expect_parse("type-application", "f @a @b 1 2", expression);
-    // expect_parse("unqualified-operator-name", "(+) 1 2", expression);
-    // expect_parse("tick-expression", "a `plus` b `plus` c", expression);
-    // expect_parse("tick-expression-operator-name", "a `(+)` b", expression);
-    // expect_parse("tick-expression-multiple", "a `plus plus` b", expression);
+    expect_parse("literal-int", "1", expression);
+    expect_parse("operator-chain", "1 + 2 * 3", expression);
+    expect_parse("application-expression", "1 2", expression);
+    expect_parse("typed-expression", "1 :: Int", expression);
+    expect_parse("parenthesized-expression", "(1)", expression);
+    expect_parse("parenthesized-application", "(1 2)", expression);
+    expect_parse("parenthesized-operator-application", "(1 2) + (3 4)", expression);
+    expect_parse("qualified-lower-name", "Hello.as", expression);
+    expect_parse("qualified-upper-name", "Hello.As", expression);
+    expect_parse("qualified-operator-name", "Hello.(+)", expression);
+    expect_parse("qualified-application", "Hello.as Hello.we + Hello.go", expression);
+    expect_parse("type-application", "f @a @b 1 2", expression);
+    expect_parse("unqualified-operator-name", "(+) 1 2", expression);
+    expect_parse("tick-expression", "a `plus` b `plus` c", expression);
+    expect_parse("tick-expression-operator-name", "a `(+)` b", expression);
+    expect_parse("tick-expression-multiple", "a `plus plus` b", expression);
     expect_parse("negate-expression", "-1", expression);
     expect_parse("multiple-negate-expression", "- -1", expression);
     expect_parse("minus-is-operator", "1 - 2", expression);
