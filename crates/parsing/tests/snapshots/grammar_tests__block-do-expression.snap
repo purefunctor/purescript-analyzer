@@ -3,7 +3,7 @@ source: crates/parsing/tests/grammar_tests.rs
 expression: result
 ---
 Input: 
-run Hello.do
+run do
   f x
   g y
 Start { kind: ApplicationExpression }
@@ -18,12 +18,6 @@ Start { kind: ApplicationExpression }
     Start { kind: TermArgument }
       Start { kind: DoExpression }
         Start { kind: QualifiedDo }
-          Start { kind: QualifiedPrefix }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
-            Token { kind: Period }
-          Finish
           Token { kind: DoKw }
         Finish
         Start { kind: OneOrMore }

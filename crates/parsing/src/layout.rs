@@ -11,6 +11,7 @@ pub enum LayoutKind {
     Root,
     Module,
     Instance,
+    Do,
     Parenthesis,
 }
 

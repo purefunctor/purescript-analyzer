@@ -56,6 +56,7 @@ pub enum SyntaxKind {
     DoExpression,
     DoKw,
     QualifiedDo,
+    DoDiscard,
     ApplicationExpression,
     TermArgument,
     TypeArgument,

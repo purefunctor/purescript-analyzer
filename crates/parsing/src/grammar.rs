@@ -1,7 +1,7 @@
 use either::Either::{self, Left, Right};
 use syntax::SyntaxKind;
 
-use crate::parser::Parser;
+use crate::{layout::LayoutKind, parser::Parser};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -138,7 +138,7 @@ fn expression_4(parser: &mut Parser) {
     let mut one_or_more = parser.start();
     let mut entries = 0;
     loop {
-        if parser.is_eof() {
+        if parser.group_done() {
             break;
         }
 
@@ -184,25 +184,36 @@ fn expression_5(parser: &mut Parser) {
             expression_if(parser);
         }
         SyntaxKind::Upper => {
-            let mut name_expression = parser.start();
+            let mut expression = parser.start();
             let mut qualified_do_or_ado = parser.start();
 
             match qualified_name_or_do_ado(parser) {
                 Some(Left(kind)) => {
-                    name_expression.end(parser, kind);
+                    expression.end(parser, kind);
                     qualified_do_or_ado.cancel(parser);
                 }
                 Some(Right(kind)) => {
                     qualified_do_or_ado.end(parser, kind);
-                    name_expression.cancel(parser);
+
+                    expression_do_statements(parser);
+                    expression.end(parser, SyntaxKind::DoExpression);
                 }
                 None => {
+                    expression.cancel(parser);
+                    qualified_do_or_ado.cancel(parser);
                     return;
                 }
             }
         }
         SyntaxKind::DoKw => {
-            todo!("PARSE DO!");
+            let mut do_expression = parser.start();
+
+            let mut qualified_do = parser.start();
+            parser.consume();
+            qualified_do.end(parser, SyntaxKind::QualifiedDo);
+
+            expression_do_statements(parser);
+            do_expression.end(parser, SyntaxKind::DoExpression);
         }
         SyntaxKind::AdoKw => {
             todo!("PARSE ADO!");
@@ -226,6 +237,24 @@ fn expression_if(parser: &mut Parser) {
     expression(parser);
 
     marker.end(parser, SyntaxKind::IfThenElseExpression);
+}
+
+fn expression_do_statements(parser: &mut Parser) {
+    parser.layout_start(LayoutKind::Do);
+
+    let mut one_or_more = parser.start();
+    loop {
+        if parser.layout_done() {
+            break;
+        }
+
+        let mut do_discard = parser.start();
+        expression(parser);
+        do_discard.end(parser, SyntaxKind::DoDiscard);
+    }
+    one_or_more.end(parser, SyntaxKind::OneOrMore);
+
+    parser.layout_end();
 }
 
 fn expression_atom(parser: &mut Parser) {

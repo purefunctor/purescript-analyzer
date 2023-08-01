@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use parsing::{
     grammar::{expression, type_0},
+    layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},
 };
@@ -14,6 +15,7 @@ where
     let lexed = lex(source);
     let input = lexed.as_input();
     let mut parser = Parser::new(input);
+    parser.layout_start(LayoutKind::Module);
     let _ = rule(&mut parser);
 
     let mut result = String::new();
@@ -70,10 +72,30 @@ fn test_expression() {
     expect_parse("if-then-else-expression", "if f x then g + y else h `finally` z", expression);
     expect_parse("block-if-then-else", "f if g then h else i", expression);
     expect_parse("optional-qualified-prefix", "a", expression);
-    expect_parse("qualified-do-expression", "Hello.do", expression);
-    expect_parse("qualified-ado-expression", "Hello.ado", expression);
-    expect_parse("block-qualified-do-expression", "run Hello.do", expression);
-    expect_parse("block qualified-ado-expression", "run Hello.ado", expression);
+
+    let source = r"
+do
+  f x
+  g y";
+    expect_parse("do-expression", source, expression);
+
+    let source = r"
+run do
+  f x
+  g y";
+    expect_parse("block-do-expression", source, expression);
+
+    let source = r"
+Hello.do
+  f x
+  g y";
+    expect_parse("qualified-do-expression", source, expression);
+
+    let source = r"
+run Hello.do
+  f x
+  g y";
+    expect_parse("block-qualified-do-expression", source, expression);
 }
 
 #[test]
