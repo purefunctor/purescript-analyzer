@@ -78,8 +78,8 @@ pub enum SyntaxKind {
     LetBindingName,
     LetBindingPattern,
 
-    InfixChain,
-    OperatorChain,
+    ExpressionInfixChain,
+    ExpressionOperatorChain,
     NegateExpression,
 
     ConstructorExpression,

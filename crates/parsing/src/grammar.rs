@@ -43,7 +43,7 @@ fn expression_1(parser: &mut Parser) {
     }
 
     if entries > 0 {
-        operator.end(parser, SyntaxKind::OperatorChain);
+        operator.end(parser, SyntaxKind::ExpressionOperatorChain);
         one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         operator.cancel(parser);
@@ -75,7 +75,7 @@ fn expression_2(parser: &mut Parser) {
     }
 
     if entries > 0 {
-        infix.end(parser, SyntaxKind::InfixChain);
+        infix.end(parser, SyntaxKind::ExpressionInfixChain);
         one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         infix.cancel(parser);
@@ -114,7 +114,7 @@ fn tick_expression_1(parser: &mut Parser) {
     }
 
     if entries > 0 {
-        operator.end(parser, SyntaxKind::OperatorChain);
+        operator.end(parser, SyntaxKind::ExpressionOperatorChain);
         one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         operator.cancel(parser);
