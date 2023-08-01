@@ -72,7 +72,7 @@ Start { kind: DoExpression }
               Token { kind: LeftParenthesis }
               Start { kind: ConstructorBinder }
                 Start { kind: QualifiedName }
-                  Start { kind: Name }
+                  Start { kind: NameRef }
                     Token { kind: Upper }
                   Finish
                 Finish
@@ -118,7 +118,7 @@ Start { kind: DoExpression }
         Start { kind: LetBindingPattern }
           Start { kind: ConstructorBinder }
             Start { kind: QualifiedName }
-              Start { kind: Name }
+              Start { kind: NameRef }
                 Token { kind: Upper }
               Finish
             Finish

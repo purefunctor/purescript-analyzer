@@ -416,12 +416,6 @@ fn upper_name_ref(parser: &mut Parser) {
     name.end(parser, SyntaxKind::NameRef);
 }
 
-fn upper_name(parser: &mut Parser) {
-    let mut name = parser.start();
-    parser.expect(SyntaxKind::Upper);
-    name.end(parser, SyntaxKind::Name);
-}
-
 fn lower_name_ref(parser: &mut Parser) {
     let mut name = parser.start();
     parser.consume_as(SyntaxKind::Lower);
@@ -625,7 +619,7 @@ fn binder_2(parser: &mut Parser) {
             qualified_prefix(parser);
 
             if parser.at(SyntaxKind::Upper) {
-                upper_name(parser);
+                upper_name_ref(parser);
                 qualified_name.end(parser, SyntaxKind::QualifiedName);
             } else {
                 parser.error_recover("expected Upper");
@@ -680,7 +674,7 @@ fn binder_atom(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::VariableBinder);
         }
         SyntaxKind::Upper => {
-            upper_name(parser);
+            upper_name_ref(parser);
             marker.end(parser, SyntaxKind::ConstructorBinder);
         }
         SyntaxKind::LeftParenthesis => {

@@ -5,7 +5,7 @@ expression: result
 Input: Cons 1
 Start { kind: ConstructorBinder }
   Start { kind: QualifiedName }
-    Start { kind: Name }
+    Start { kind: NameRef }
       Token { kind: Upper }
     Finish
   Finish

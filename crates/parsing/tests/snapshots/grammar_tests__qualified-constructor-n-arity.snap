@@ -15,7 +15,7 @@ Start { kind: ConstructorBinder }
       Finish
       Token { kind: Period }
     Finish
-    Start { kind: Name }
+    Start { kind: NameRef }
       Token { kind: Upper }
     Finish
   Finish
