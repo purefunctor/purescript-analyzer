@@ -193,6 +193,10 @@ impl SyntaxKind {
     pub fn is_whitespace_or_comment(&self) -> bool {
         matches!(self, Self::Whitespace | Self::LineComment | Self::BlockComment)
     }
+
+    pub fn is_operator(&self) -> bool {
+        matches!(self, Self::Operator | Self::Minus)
+    }
 }
 
 #[cfg(test)]

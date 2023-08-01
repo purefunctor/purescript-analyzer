@@ -1,7 +1,11 @@
+mod combinators;
+
 use either::Either::{self, Left, Right};
 use syntax::SyntaxKind;
 
 use crate::{layout::LayoutKind, parser::Parser};
+
+use self::combinators::one_or_more;
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -20,31 +24,27 @@ fn expression_1(parser: &mut Parser) {
     let mut operator = parser.start();
     expression_2(parser);
 
-    let mut one_or_more = parser.start();
-    let mut entries = 0;
-    loop {
-        if parser.is_eof() {
-            break;
+    let has_chain = one_or_more(parser, |parser| {
+        if parser.group_done() {
+            return false;
         }
 
-        match parser.current() {
-            SyntaxKind::Operator | SyntaxKind::Minus => {
-                let mut pair = parser.start();
-                parser.consume_as(SyntaxKind::Operator);
-                expression_2(parser);
-                pair.end(parser, SyntaxKind::Pair);
-                entries += 1;
-            }
-            _ => break,
+        if parser.current().is_operator() {
+            let mut pair = parser.start();
+            parser.consume_as(SyntaxKind::Operator);
+            expression_2(parser);
+            pair.end(parser, SyntaxKind::Pair);
+        } else {
+            return false;
         }
-    }
 
-    if entries > 0 {
+        true
+    });
+
+    if has_chain {
         operator.end(parser, SyntaxKind::ExpressionOperatorChain);
-        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         operator.cancel(parser);
-        one_or_more.cancel(parser);
     }
 }
 
