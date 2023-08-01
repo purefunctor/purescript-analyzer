@@ -1,0 +1,18 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: Cons 1
+Start { kind: ConstructorBinder }
+  Start { kind: QualifiedName }
+    Start { kind: Name }
+      Token { kind: Upper }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: LiteralBinder }
+      Token { kind: LiteralInteger }
+    Finish
+  Finish
+Finish
+

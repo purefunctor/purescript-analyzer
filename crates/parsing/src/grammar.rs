@@ -409,6 +409,12 @@ fn upper_name_ref(parser: &mut Parser) {
     name.end(parser, SyntaxKind::NameRef);
 }
 
+fn upper_name(parser: &mut Parser) {
+    let mut name = parser.start();
+    parser.expect(SyntaxKind::Upper);
+    name.end(parser, SyntaxKind::Name);
+}
+
 fn lower_name_ref(parser: &mut Parser) {
     let mut name = parser.start();
     parser.consume_as(SyntaxKind::Lower);
@@ -599,25 +605,68 @@ fn binder_1(parser: &mut Parser) {
 }
 
 fn binder_2(parser: &mut Parser) {
-    if parser.at(SyntaxKind::Minus) {
-        let mut negative = parser.start();
-        parser.consume();
+    match parser.current() {
+        SyntaxKind::Minus => {
+            let mut negative = parser.start();
+            parser.consume();
 
-        let mut literal = parser.start();
-        match parser.current() {
-            SyntaxKind::LiteralInteger | SyntaxKind::LiteralNumber => {
-                parser.consume();
-                literal.end(parser, SyntaxKind::LiteralBinder);
+            let mut literal = parser.start();
+            match parser.current() {
+                SyntaxKind::LiteralInteger | SyntaxKind::LiteralNumber => {
+                    parser.consume();
+                    literal.end(parser, SyntaxKind::LiteralBinder);
+                }
+                _ => {
+                    parser.error("expected LiteralInteger or LiteralNumber");
+                    literal.cancel(parser)
+                }
             }
-            _ => {
-                parser.error("expected LiteralInteger or LiteralNumber");
-                literal.cancel(parser)
-            }
+
+            negative.end(parser, SyntaxKind::NegativeBinder);
         }
+        SyntaxKind::Upper => {
+            let mut constructor = parser.start();
+            let mut qualified_name = parser.start();
+            qualified_prefix(parser);
 
-        negative.end(parser, SyntaxKind::NegativeBinder);
-    } else {
-        binder_atom(parser);
+            if parser.at(SyntaxKind::Upper) {
+                upper_name(parser);
+                qualified_name.end(parser, SyntaxKind::QualifiedName);
+            } else {
+                parser.error_recover("expected Upper");
+                qualified_name.cancel(parser);
+            }
+
+            let mut one_or_more = parser.start();
+            let mut at_least_one = false;
+            loop {
+                if parser.group_done() {
+                    break;
+                }
+
+                if let SyntaxKind::Pipe
+                | SyntaxKind::Equal
+                | SyntaxKind::RightArrow
+                | SyntaxKind::RightParenthesis = parser.current()
+                {
+                    break;
+                }
+
+                binder_atom(parser);
+                at_least_one = true;
+            }
+
+            if at_least_one {
+                one_or_more.end(parser, SyntaxKind::OneOrMore);
+            } else {
+                one_or_more.cancel(parser);
+            }
+
+            constructor.end(parser, SyntaxKind::ConstructorBinder);
+        }
+        _ => {
+            binder_atom(parser);
+        }
     }
 }
 
@@ -637,6 +686,14 @@ fn binder_atom(parser: &mut Parser) {
         SyntaxKind::Underscore => {
             parser.consume();
             marker.end(parser, SyntaxKind::WildcardBinder);
+        }
+        SyntaxKind::Lower => {
+            lower_name(parser);
+            marker.end(parser, SyntaxKind::VariableBinder);
+        }
+        SyntaxKind::Upper => {
+            upper_name(parser);
+            marker.end(parser, SyntaxKind::ConstructorBinder);
         }
         SyntaxKind::LeftParenthesis => {
             parser.consume();

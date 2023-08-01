@@ -1,0 +1,23 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: Data.List.Nil
+Start { kind: ConstructorBinder }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+    Finish
+    Start { kind: Name }
+      Token { kind: Upper }
+    Finish
+  Finish
+Finish
+

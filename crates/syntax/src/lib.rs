@@ -105,10 +105,12 @@ pub enum SyntaxKind {
     VariableType,
 
     BinderOperatorChain,
+    ConstructorBinder,
     LiteralBinder,
     NegativeBinder,
     ParenthesizedBinder,
     TypedBinder,
+    VariableBinder,
     WildcardBinder,
 
     ValueDeclaration,

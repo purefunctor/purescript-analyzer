@@ -129,4 +129,10 @@ fn test_binder() {
     expect_parse("parenthesized-binder-negative", "(-1)", binder);
     expect_parse("parenthesized-binder-literal", "(1.0)", binder);
     expect_parse("parenthesized-binder-nested", "(((1.0)))", binder);
+    expect_parse("variable-binder", "f", binder);
+    expect_parse("constructor-zero-arity", "Nil", binder);
+    expect_parse("qualified-constructor-zero-arity", "Data.List.Nil", binder);
+    expect_parse("constructor-n-arity", "Cons 1", binder);
+    expect_parse("qualified-constructor-n-arity", "Data.List.Cons 1", binder);
+    expect_parse("complex-binder", "Tuple (Cons 0 Nil) (Cons 1 Nil)", binder);
 }
