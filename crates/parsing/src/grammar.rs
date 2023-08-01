@@ -5,7 +5,7 @@ use syntax::SyntaxKind;
 
 use crate::{layout::LayoutKind, parser::Parser};
 
-use self::combinators::one_or_more;
+use self::combinators::{one_or_more, zero_or_more};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -25,18 +25,14 @@ fn expression_1(parser: &mut Parser) {
     expression_2(parser);
 
     let has_chain = one_or_more(parser, |parser| {
-        if parser.group_done() {
+        if parser.group_done() || !parser.current().is_operator() {
             return false;
         }
 
-        if parser.current().is_operator() {
-            let mut pair = parser.start();
-            parser.consume_as(SyntaxKind::Operator);
-            expression_2(parser);
-            pair.end(parser, SyntaxKind::Pair);
-        } else {
-            return false;
-        }
+        let mut pair = parser.start();
+        parser.consume_as(SyntaxKind::Operator);
+        expression_2(parser);
+        pair.end(parser, SyntaxKind::Pair);
 
         true
     });
@@ -52,31 +48,23 @@ fn expression_2(parser: &mut Parser) {
     let mut infix = parser.start();
     expression_3(parser);
 
-    let mut one_or_more = parser.start();
-    let mut entries = 0;
-
-    loop {
-        if parser.is_eof() {
-            break;
+    let has_chain = one_or_more(parser, |parser| {
+        if parser.group_done() || !parser.at(SyntaxKind::Tick) {
+            return false;
         }
 
-        if parser.at(SyntaxKind::Tick) {
-            let mut pair = parser.start();
-            tick_expression(parser);
-            expression_3(parser);
-            pair.end(parser, SyntaxKind::Pair);
-            entries += 1;
-        } else {
-            break;
-        }
-    }
+        let mut pair = parser.start();
+        tick_expression(parser);
+        expression_3(parser);
+        pair.end(parser, SyntaxKind::Pair);
 
-    if entries > 0 {
+        true
+    });
+
+    if has_chain {
         infix.end(parser, SyntaxKind::ExpressionInfixChain);
-        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         infix.cancel(parser);
-        one_or_more.cancel(parser);
     }
 }
 
@@ -92,30 +80,23 @@ fn tick_expression_1(parser: &mut Parser) {
     let mut operator = parser.start();
     expression_3(parser);
 
-    let mut one_or_more = parser.start();
-    let mut entries = 0;
-    loop {
-        if parser.is_eof() {
-            break;
+    let has_chain = one_or_more(parser, |parser| {
+        if parser.group_done() || !parser.at(SyntaxKind::Operator) {
+            return false;
         }
 
-        if parser.at(SyntaxKind::Operator) {
-            let mut pair = parser.start();
-            parser.consume();
-            expression_3(parser);
-            pair.end(parser, SyntaxKind::Pair);
-            entries += 1;
-        } else {
-            break;
-        }
-    }
+        let mut pair = parser.start();
+        parser.consume();
+        expression_3(parser);
+        pair.end(parser, SyntaxKind::Pair);
 
-    if entries > 0 {
+        true
+    });
+
+    if has_chain {
         operator.end(parser, SyntaxKind::ExpressionOperatorChain);
-        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         operator.cancel(parser);
-        one_or_more.cancel(parser);
     }
 }
 
@@ -135,34 +116,30 @@ fn expression_4(parser: &mut Parser) {
     let mut application = parser.start();
     expression_5(parser);
 
-    let mut one_or_more = parser.start();
-    let mut entries = 0;
-    loop {
-        if parser.group_done() {
-            break;
-        }
-
-        if let SyntaxKind::Operator
-        | SyntaxKind::Minus
-        | SyntaxKind::RightParenthesis
-        | SyntaxKind::Colon2
-        | SyntaxKind::Tick
-        | SyntaxKind::ThenKw
-        | SyntaxKind::ElseKw = parser.current()
+    let has_arguments = one_or_more(parser, |parser| {
+        if parser.group_done()
+            || parser.current().is_operator()
+            || matches!(
+                parser.current(),
+                SyntaxKind::RightParenthesis
+                    | SyntaxKind::Colon2
+                    | SyntaxKind::Tick
+                    | SyntaxKind::ThenKw
+                    | SyntaxKind::ElseKw
+            )
         {
-            break;
+            return false;
         }
 
         expression_spine(parser);
-        entries += 1;
-    }
 
-    if entries > 0 {
+        true
+    });
+
+    if has_arguments {
         application.end(parser, SyntaxKind::ApplicationExpression);
-        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         application.cancel(parser);
-        one_or_more.cancel(parser);
     }
 }
 
@@ -242,14 +219,15 @@ fn expression_if(parser: &mut Parser) {
 fn expression_do_statements(parser: &mut Parser) {
     parser.layout_start(LayoutKind::Do);
 
-    let mut one_or_more = parser.start();
-    loop {
+    one_or_more(parser, |parser| {
         if parser.layout_done() {
-            break;
+            return false;
         }
+
         do_statement(parser);
-    }
-    one_or_more.end(parser, SyntaxKind::OneOrMore);
+
+        true
+    });
 
     parser.layout_end();
 }
@@ -259,16 +237,17 @@ fn do_statement(parser: &mut Parser) {
 
     let kind = if parser.at(SyntaxKind::LetKw) {
         parser.expect(SyntaxKind::LetKw);
-        parser.layout_start(LayoutKind::Do);
 
-        let mut one_or_more = parser.start();
-        loop {
+        parser.layout_start(LayoutKind::Let);
+        one_or_more(parser, |parser| {
             if parser.layout_done() {
-                break;
+                return false;
             }
+
             let_binding(parser);
-        }
-        one_or_more.end(parser, SyntaxKind::OneOrMore);
+
+            true
+        });
         parser.layout_end();
 
         SyntaxKind::DoLetBinding
@@ -343,14 +322,15 @@ fn let_binding(parser: &mut Parser) {
         SyntaxKind::Lower => {
             lower_name(parser);
 
-            let mut zero_or_more = parser.start();
-            loop {
-                if let SyntaxKind::Equal = parser.current() {
-                    break;
+            zero_or_more(parser, |parser| {
+                if matches!(parser.current(), SyntaxKind::Equal) {
+                    return false;
                 }
+
                 binder_atom(parser);
-            }
-            zero_or_more.end(parser, SyntaxKind::ZeroOrMore);
+
+                true
+            });
 
             parser.expect(SyntaxKind::Equal);
 
@@ -517,19 +497,15 @@ fn type_forall(parser: &mut Parser) {
     let mut forall = parser.start();
     parser.expect(SyntaxKind::ForallKw);
 
-    let mut one_or_more = parser.start();
-    loop {
-        if parser.is_eof() {
-            break;
-        }
-
-        if parser.at(SyntaxKind::Period) {
-            break;
+    one_or_more(parser, |parser| {
+        if parser.group_done() || parser.at(SyntaxKind::Period) {
+            return false;
         }
 
         type_variable_binding_with_visibility(parser);
-    }
-    one_or_more.end(parser, SyntaxKind::OneOrMore);
+
+        true
+    });
 
     parser.expect(SyntaxKind::Period);
 
@@ -603,31 +579,23 @@ fn binder_1(parser: &mut Parser) {
     let mut operator = parser.start();
     binder_2(parser);
 
-    let mut one_or_more = parser.start();
-    let mut entries = 0;
-    loop {
-        if parser.is_eof() {
-            break;
+    let has_chain = one_or_more(parser, |parser| {
+        if parser.group_done() || !parser.current().is_operator() {
+            return false;
         }
 
-        match parser.current() {
-            SyntaxKind::Operator | SyntaxKind::Minus => {
-                let mut pair = parser.start();
-                parser.consume_as(SyntaxKind::Operator);
-                binder_2(parser);
-                pair.end(parser, SyntaxKind::Pair);
-                entries += 1;
-            }
-            _ => break,
-        }
-    }
+        let mut pair = parser.start();
+        parser.consume_as(SyntaxKind::Operator);
+        binder_2(parser);
+        pair.end(parser, SyntaxKind::Pair);
 
-    if entries > 0 {
+        true
+    });
+
+    if has_chain {
         operator.end(parser, SyntaxKind::BinderOperatorChain);
-        one_or_more.end(parser, SyntaxKind::OneOrMore);
     } else {
         operator.cancel(parser);
-        one_or_more.cancel(parser);
     }
 }
 
@@ -664,30 +632,23 @@ fn binder_2(parser: &mut Parser) {
                 qualified_name.cancel(parser);
             }
 
-            let mut one_or_more = parser.start();
-            let mut at_least_one = false;
-            loop {
-                if parser.group_done() {
-                    break;
-                }
-
-                if let SyntaxKind::Pipe
-                | SyntaxKind::Equal
-                | SyntaxKind::RightArrow
-                | SyntaxKind::RightParenthesis = parser.current()
+            one_or_more(parser, |parser| {
+                if parser.group_done()
+                    || matches!(
+                        parser.current(),
+                        SyntaxKind::Pipe
+                            | SyntaxKind::Equal
+                            | SyntaxKind::RightArrow
+                            | SyntaxKind::RightParenthesis
+                    )
                 {
-                    break;
+                    return false;
                 }
 
                 binder_atom(parser);
-                at_least_one = true;
-            }
 
-            if at_least_one {
-                one_or_more.end(parser, SyntaxKind::OneOrMore);
-            } else {
-                one_or_more.cancel(parser);
-            }
+                true
+            });
 
             constructor.end(parser, SyntaxKind::ConstructorBinder);
         }
