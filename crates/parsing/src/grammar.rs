@@ -1,10 +1,7 @@
 use either::Either::{self, Left, Right};
 use syntax::SyntaxKind;
 
-use crate::{
-    layout::{self, LayoutKind},
-    parser::Parser,
-};
+use crate::{layout::LayoutKind, parser::Parser};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -508,6 +505,7 @@ fn type_forall(parser: &mut Parser) {
     forall.end(parser, SyntaxKind::ForallType);
 }
 
+#[allow(unused)]
 fn type_variable_binding_plain(parser: &mut Parser) {
     type_variable_binding(parser, |parser| {
         let mut name = parser.start();
@@ -553,4 +551,107 @@ fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)
     }
 
     marker.end(parser, SyntaxKind::TypeVariableBinding);
+}
+
+pub fn binder(parser: &mut Parser) {
+    let mut typed = parser.start();
+    binder_1(parser);
+
+    if parser.at(SyntaxKind::Colon2) {
+        parser.consume();
+        type_0(parser);
+        typed.end(parser, SyntaxKind::TypedBinder);
+    } else {
+        typed.cancel(parser);
+    }
+}
+
+fn binder_1(parser: &mut Parser) {
+    let mut operator = parser.start();
+    binder_2(parser);
+
+    let mut one_or_more = parser.start();
+    let mut entries = 0;
+    loop {
+        if parser.is_eof() {
+            break;
+        }
+
+        match parser.current() {
+            SyntaxKind::Operator | SyntaxKind::Minus => {
+                let mut pair = parser.start();
+                parser.consume_as(SyntaxKind::Operator);
+                binder_2(parser);
+                pair.end(parser, SyntaxKind::Pair);
+                entries += 1;
+            }
+            _ => break,
+        }
+    }
+
+    if entries > 0 {
+        operator.end(parser, SyntaxKind::BinderOperatorChain);
+        one_or_more.end(parser, SyntaxKind::OneOrMore);
+    } else {
+        operator.cancel(parser);
+        one_or_more.cancel(parser);
+    }
+}
+
+fn binder_2(parser: &mut Parser) {
+    if parser.at(SyntaxKind::Minus) {
+        let mut negative = parser.start();
+        parser.consume();
+
+        let mut literal = parser.start();
+        match parser.current() {
+            SyntaxKind::LiteralInteger | SyntaxKind::LiteralNumber => {
+                parser.consume();
+                literal.end(parser, SyntaxKind::LiteralBinder);
+            }
+            _ => {
+                parser.error("expected LiteralInteger or LiteralNumber");
+                literal.cancel(parser)
+            }
+        }
+
+        negative.end(parser, SyntaxKind::NegativeBinder);
+    } else {
+        binder_atom(parser);
+    }
+}
+
+fn binder_atom(parser: &mut Parser) {
+    let mut marker = parser.start();
+    match parser.current() {
+        SyntaxKind::LiteralChar
+        | SyntaxKind::LiteralString
+        | SyntaxKind::LiteralRawString
+        | SyntaxKind::LiteralInteger
+        | SyntaxKind::LiteralNumber
+        | SyntaxKind::LiteralTrue
+        | SyntaxKind::LiteralFalse => {
+            parser.consume();
+            marker.end(parser, SyntaxKind::LiteralBinder);
+        }
+        SyntaxKind::Underscore => {
+            parser.consume();
+            marker.end(parser, SyntaxKind::WildcardBinder);
+        }
+        SyntaxKind::LeftParenthesis => {
+            parser.consume();
+            binder(parser);
+            parser.expect(SyntaxKind::RightParenthesis);
+            marker.end(parser, SyntaxKind::ParenthesizedBinder);
+        }
+        SyntaxKind::LeftBracket => {
+            panic!("Record Binder");
+        }
+        SyntaxKind::LeftSquare => {
+            panic!("Array Binder");
+        }
+        _ => {
+            marker.cancel(parser);
+        }
+    }
 }

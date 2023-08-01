@@ -1,0 +1,9 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: _
+Start { kind: WildcardBinder }
+  Token { kind: Underscore }
+Finish
+

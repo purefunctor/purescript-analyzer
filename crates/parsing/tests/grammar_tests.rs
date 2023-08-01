@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::{expression, type_0},
+    grammar::{binder, expression, type_0},
     layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},
@@ -113,4 +113,20 @@ fn test_type() {
     expect_parse("forall-type-visible", "forall @a. Type", type_0);
     expect_parse("forall-type-visible-kinded", "forall (@a :: Type). Type", type_0);
     expect_parse("forall-type-mixed", "forall a (b :: C) @d (@e :: F). Type", type_0);
+}
+
+#[test]
+fn test_binder() {
+    expect_parse("typed-binder", "1 :: Type", binder);
+    expect_parse("negative-binder", "-1", binder);
+    expect_parse("integer-binder", "1", binder);
+    expect_parse("number-binder", "1.0", binder);
+    expect_parse("string-binder", "\"hi!\"", binder);
+    expect_parse("char-binder", "'a'", binder);
+    expect_parse("true-binder", "true", binder);
+    expect_parse("false-binder", "false", binder);
+    expect_parse("wildcard-binder", "_", binder);
+    expect_parse("parenthesized-binder-negative", "(-1)", binder);
+    expect_parse("parenthesized-binder-literal", "(1.0)", binder);
+    expect_parse("parenthesized-binder-nested", "(((1.0)))", binder);
 }

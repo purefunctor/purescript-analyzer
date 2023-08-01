@@ -104,7 +104,12 @@ pub enum SyntaxKind {
     KindedType,
     VariableType,
 
-    Pattern,
+    BinderOperatorChain,
+    LiteralBinder,
+    NegativeBinder,
+    ParenthesizedBinder,
+    TypedBinder,
+    WildcardBinder,
 
     ValueDeclaration,
     AnnotationDeclaration,
