@@ -1,0 +1,15 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: Hello.do
+Start { kind: QualifiedDo }
+  Start { kind: QualifiedPrefix }
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
+    Token { kind: Period }
+  Finish
+  Token { kind: DoKw }
+Finish
+

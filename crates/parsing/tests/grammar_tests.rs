@@ -70,6 +70,10 @@ fn test_expression() {
     expect_parse("if-then-else-expression", "if f x then g + y else h `finally` z", expression);
     expect_parse("block-if-then-else", "f if g then h else i", expression);
     expect_parse("optional-qualified-prefix", "a", expression);
+    expect_parse("qualified-do-expression", "Hello.do", expression);
+    expect_parse("qualified-ado-expression", "Hello.ado", expression);
+    expect_parse("block-qualified-do-expression", "run Hello.do", expression);
+    expect_parse("block qualified-ado-expression", "run Hello.ado", expression);
 }
 
 #[test]

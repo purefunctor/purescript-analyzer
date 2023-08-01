@@ -224,10 +224,12 @@ impl<'a> Lexer<'a> {
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
+            "ado" => SyntaxKind::AdoKw,
             "as" => SyntaxKind::AsKw,
             "class" => SyntaxKind::ClassKw,
             "data" => SyntaxKind::DataKw,
             "derive" => SyntaxKind::DeriveKw,
+            "do" => SyntaxKind::DoKw,
             "else" => SyntaxKind::ElseKw,
             "false" => SyntaxKind::LiteralFalse,
             "forall" => SyntaxKind::ForallKw,

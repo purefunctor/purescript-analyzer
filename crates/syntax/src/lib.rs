@@ -50,6 +50,12 @@ pub enum SyntaxKind {
     Pipe,
     Minus,
 
+    AdoExpression,
+    AdoKw,
+    QualifiedAdo,
+    DoExpression,
+    DoKw,
+    QualifiedDo,
     ApplicationExpression,
     TermArgument,
     TypeArgument,

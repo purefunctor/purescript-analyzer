@@ -1,0 +1,28 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: run Hello.ado
+Start { kind: ApplicationExpression }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: TermArgument }
+      Start { kind: QualifiedAdo }
+        Start { kind: QualifiedPrefix }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+          Token { kind: Period }
+        Finish
+        Token { kind: AdoKw }
+      Finish
+    Finish
+  Finish
+Finish
+

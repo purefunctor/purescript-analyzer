@@ -182,6 +182,51 @@ fn expression_5(parser: &mut Parser) {
         SyntaxKind::IfKw => {
             expression_if(parser);
         }
+        SyntaxKind::Upper => {
+            let mut marker = parser.start();
+            let mut qualified = parser.start();
+
+            qualified_prefix(parser);
+
+            let kind = match parser.current() {
+                SyntaxKind::Upper => {
+                    let mut name = parser.start();
+                    parser.consume();
+                    name.end(parser, SyntaxKind::NameRef);
+                    SyntaxKind::ConstructorExpression
+                }
+                SyntaxKind::Lower | SyntaxKind::AsKw => {
+                    let mut name = parser.start();
+                    parser.consume_as(SyntaxKind::Lower);
+                    name.end(parser, SyntaxKind::NameRef);
+                    SyntaxKind::VariableExpression
+                }
+                SyntaxKind::LeftParenthesis => {
+                    operator_name(parser);
+                    SyntaxKind::OperatorNameExpression
+                }
+                SyntaxKind::DoKw => {
+                    parser.consume();
+                    SyntaxKind::QualifiedDo
+                }
+                SyntaxKind::AdoKw => {
+                    parser.consume();
+                    SyntaxKind::QualifiedAdo
+                }
+                _ => {
+                    marker.cancel(parser);
+                    return parser
+                        .error_recover("expected Upper, Lower, LeftParenthesis, DoKw, or AdoKw");
+                }
+            };
+
+            marker.end(parser, kind);
+            if let SyntaxKind::QualifiedDo | SyntaxKind::QualifiedAdo = kind {
+                qualified.cancel(parser);
+            } else {
+                qualified.end(parser, SyntaxKind::QualifiedName);
+            }
+        }
         _ => {
             expression_atom(parser);
         }
@@ -203,7 +248,7 @@ fn expression_if(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
-fn expression_atom(parser: &mut Parser) -> bool {
+fn expression_atom(parser: &mut Parser) {
     let mut marker = parser.start();
     match parser.current() {
         SyntaxKind::LiteralChar
@@ -215,23 +260,19 @@ fn expression_atom(parser: &mut Parser) -> bool {
         | SyntaxKind::LiteralFalse => {
             parser.consume();
             marker.end(parser, SyntaxKind::LiteralExpression);
-            true
         }
-        SyntaxKind::LeftParenthesis => {
-            match parser.nth(1) {
-                SyntaxKind::Operator | SyntaxKind::Minus => {
-                    operator_name(parser);
-                    marker.end(parser, SyntaxKind::OperatorNameExpression);
-                }
-                _ => {
-                    parser.expect(SyntaxKind::LeftParenthesis);
-                    expression(parser);
-                    parser.expect(SyntaxKind::RightParenthesis);
-                    marker.end(parser, SyntaxKind::ParenthesizedExpression);
-                }
+        SyntaxKind::LeftParenthesis => match parser.nth(1) {
+            SyntaxKind::Operator | SyntaxKind::Minus => {
+                operator_name(parser);
+                marker.end(parser, SyntaxKind::OperatorNameExpression);
             }
-            true
-        }
+            _ => {
+                parser.expect(SyntaxKind::LeftParenthesis);
+                expression(parser);
+                parser.expect(SyntaxKind::RightParenthesis);
+                marker.end(parser, SyntaxKind::ParenthesizedExpression);
+            }
+        },
         SyntaxKind::LeftSquare => {
             todo!("Array");
         }
@@ -241,15 +282,12 @@ fn expression_atom(parser: &mut Parser) -> bool {
         SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
             if let Some(kind) = qualified_name(parser) {
                 marker.end(parser, kind);
-                true
             } else {
                 marker.cancel(parser);
-                false
             }
         }
         _ => {
             marker.cancel(parser);
-            false
         }
     }
 }
