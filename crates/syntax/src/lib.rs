@@ -152,6 +152,8 @@ pub enum SyntaxKind {
     Wrapped,
     /// Convenience node for a non-empty array of elements.
     OneOrMore,
+    /// Convenience node for an array of elements.
+    ZeroOrMore,
     /// Convenience node for a tuple of elements.
     Pair,
 

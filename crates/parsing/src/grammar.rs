@@ -269,6 +269,7 @@ fn do_statement(parser: &mut Parser) {
             let_binding(parser);
         }
         one_or_more.end(parser, SyntaxKind::OneOrMore);
+        parser.layout_end();
 
         SyntaxKind::DoLetBinding
     } else {
@@ -330,16 +331,42 @@ fn expression_atom(parser: &mut Parser) {
 }
 
 fn let_binding(parser: &mut Parser) {
-    let mut signature = parser.start();
+    let mut binding = parser.start();
 
     match parser.current() {
         SyntaxKind::Lower if parser.nth_at(1, SyntaxKind::Colon2) => {
             lower_name(parser);
             parser.consume();
             type_0(parser);
-            signature.end(parser, SyntaxKind::LetBindingSignature)
+            binding.end(parser, SyntaxKind::LetBindingSignature)
         }
-        _ => todo!("LetBindingPattern, LetBindingName"),
+        SyntaxKind::Lower => {
+            lower_name(parser);
+
+            let mut zero_or_more = parser.start();
+            loop {
+                if let SyntaxKind::Equal = parser.current() {
+                    break;
+                }
+                binder_atom(parser);
+            }
+            zero_or_more.end(parser, SyntaxKind::ZeroOrMore);
+
+            parser.expect(SyntaxKind::Equal);
+
+            expression(parser);
+
+            binding.end(parser, SyntaxKind::LetBindingName);
+        }
+        _ => {
+            binder_1(parser);
+
+            parser.expect(SyntaxKind::Equal);
+
+            expression(parser);
+
+            binding.end(parser, SyntaxKind::LetBindingPattern);
+        }
     }
 }
 

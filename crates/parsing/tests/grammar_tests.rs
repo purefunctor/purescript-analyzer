@@ -93,10 +93,18 @@ Hello.do
 
     let source = r"
 do
-  let 
+  let
     a :: Int
+    a = 0
+
+    f x = x
+    g (Tuple y z) = y + z
+
+    Tuple a b = Tuple 0 1
+
+  pure hello
     ";
-    expect_parse("do-let-binding", source, expression)
+    expect_parse("do-expression-various", source, expression)
 }
 
 #[test]
