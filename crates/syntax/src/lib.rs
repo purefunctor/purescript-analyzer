@@ -49,31 +49,46 @@ pub enum SyntaxKind {
     Comma,
     Pipe,
     Minus,
+    Underscore,
 
     AdoExpression,
-    AdoKw,
     QualifiedAdo,
+    AdoKw,
+
     DoExpression,
-    DoKw,
     QualifiedDo,
+    DoKw,
+
+    DoLetBinding,
     DoDiscard,
+
     ApplicationExpression,
     TermArgument,
     TypeArgument,
-    ConstructorExpression,
-    LiteralExpression,
+
     IfThenElseExpression,
     IfKw,
     ThenKw,
     ElseKw,
+
+    LetInExpression,
+    LetKw,
+    InKw,
+    LetBindingSignature,
+    LetBindingName,
+    LetBindingPattern,
+
     InfixChain,
-    NegateExpression,
     OperatorChain,
+    NegateExpression,
+
+    ConstructorExpression,
     OperatorNameExpression,
-    ParenthesizedExpression,
-    TernaryExpression,
-    TypedExpression,
     VariableExpression,
+
+    LiteralExpression,
+    ParenthesizedExpression,
+    TypedExpression,
 
     LiteralChar,
     LiteralString,

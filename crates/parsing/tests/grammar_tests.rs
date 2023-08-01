@@ -92,10 +92,11 @@ Hello.do
     expect_parse("qualified-do-expression", source, expression);
 
     let source = r"
-run Hello.do
-  f x
-  g y";
-    expect_parse("block-qualified-do-expression", source, expression);
+do
+  let 
+    a :: Int
+    ";
+    expect_parse("do-let-binding", source, expression)
 }
 
 #[test]

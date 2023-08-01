@@ -1,7 +1,10 @@
 use either::Either::{self, Left, Right};
 use syntax::SyntaxKind;
 
-use crate::{layout::LayoutKind, parser::Parser};
+use crate::{
+    layout::{self, LayoutKind},
+    parser::Parser,
+};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -247,14 +250,36 @@ fn expression_do_statements(parser: &mut Parser) {
         if parser.layout_done() {
             break;
         }
-
-        let mut do_discard = parser.start();
-        expression(parser);
-        do_discard.end(parser, SyntaxKind::DoDiscard);
+        do_statement(parser);
     }
     one_or_more.end(parser, SyntaxKind::OneOrMore);
 
     parser.layout_end();
+}
+
+fn do_statement(parser: &mut Parser) {
+    let mut statement = parser.start();
+
+    let kind = if parser.at(SyntaxKind::LetKw) {
+        parser.expect(SyntaxKind::LetKw);
+        parser.layout_start(LayoutKind::Do);
+
+        let mut one_or_more = parser.start();
+        loop {
+            if parser.layout_done() {
+                break;
+            }
+            let_binding(parser);
+        }
+        one_or_more.end(parser, SyntaxKind::OneOrMore);
+
+        SyntaxKind::DoLetBinding
+    } else {
+        expression(parser);
+        SyntaxKind::DoDiscard
+    };
+
+    statement.end(parser, kind);
 }
 
 fn expression_atom(parser: &mut Parser) {
@@ -272,7 +297,7 @@ fn expression_atom(parser: &mut Parser) {
         }
         SyntaxKind::LeftParenthesis => match parser.nth(1) {
             SyntaxKind::Operator | SyntaxKind::Minus => {
-                operator_name(parser);
+                operator_name_ref(parser);
                 marker.end(parser, SyntaxKind::OperatorNameExpression);
             }
             _ => {
@@ -307,6 +332,20 @@ fn expression_atom(parser: &mut Parser) {
     }
 }
 
+fn let_binding(parser: &mut Parser) {
+    let mut signature = parser.start();
+
+    match parser.current() {
+        SyntaxKind::Lower if parser.nth_at(1, SyntaxKind::Colon2) => {
+            lower_name(parser);
+            parser.consume();
+            type_0(parser);
+            signature.end(parser, SyntaxKind::LetBindingSignature)
+        }
+        _ => todo!("LetBindingPattern, LetBindingName"),
+    }
+}
+
 fn qualified_prefix(parser: &mut Parser) {
     let mut prefix = parser.start();
 
@@ -336,17 +375,17 @@ fn qualified_name_or_do_ado(parser: &mut Parser) -> Option<Either<SyntaxKind, Sy
 
     match parser.current() {
         SyntaxKind::Upper => {
-            upper_name(parser);
+            upper_name_ref(parser);
             qualified_name.end(parser, SyntaxKind::QualifiedName);
             Some(Left(SyntaxKind::ConstructorExpression))
         }
         SyntaxKind::Lower | SyntaxKind::AsKw => {
-            lower_name(parser);
+            lower_name_ref(parser);
             qualified_name.end(parser, SyntaxKind::QualifiedName);
             Some(Left(SyntaxKind::VariableExpression))
         }
         SyntaxKind::LeftParenthesis => {
-            operator_name(parser);
+            operator_name_ref(parser);
             qualified_name.end(parser, SyntaxKind::QualifiedName);
             Some(Left(SyntaxKind::OperatorNameExpression))
         }
@@ -367,19 +406,25 @@ fn qualified_name_or_do_ado(parser: &mut Parser) -> Option<Either<SyntaxKind, Sy
     }
 }
 
-fn upper_name(parser: &mut Parser) {
+fn upper_name_ref(parser: &mut Parser) {
     let mut name = parser.start();
     parser.expect(SyntaxKind::Upper);
+    name.end(parser, SyntaxKind::NameRef);
+}
+
+fn lower_name_ref(parser: &mut Parser) {
+    let mut name = parser.start();
+    parser.consume_as(SyntaxKind::Lower);
     name.end(parser, SyntaxKind::NameRef);
 }
 
 fn lower_name(parser: &mut Parser) {
     let mut name = parser.start();
     parser.consume_as(SyntaxKind::Lower);
-    name.end(parser, SyntaxKind::NameRef);
+    name.end(parser, SyntaxKind::Name);
 }
 
-fn operator_name(parser: &mut Parser) {
+fn operator_name_ref(parser: &mut Parser) {
     let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftParenthesis);
 

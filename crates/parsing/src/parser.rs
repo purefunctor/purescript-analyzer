@@ -73,6 +73,7 @@ impl Parser {
             LayoutKind::Module => false,
             LayoutKind::Instance => position.column < layout.position.column,
             LayoutKind::Do => position.column < layout.position.column,
+            LayoutKind::Let => position.column < layout.position.column,
             // NOTE: handled by is_eof
             LayoutKind::Parenthesis => false,
         }
@@ -95,6 +96,7 @@ impl Parser {
             LayoutKind::Module => position.column == layout.position.column,
             LayoutKind::Instance => position.column <= layout.position.column,
             LayoutKind::Do => position.column <= layout.position.column,
+            LayoutKind::Let => position.column <= layout.position.column,
             // NOTE: handled by is_eof
             LayoutKind::Parenthesis => false,
         }

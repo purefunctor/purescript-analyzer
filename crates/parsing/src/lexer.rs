@@ -191,6 +191,7 @@ impl<'a> Lexer<'a> {
             '"' => self.take_string(),
 
             '?' if is_ident(self.second()) => self.take_hole(),
+            '_' if !is_ident(self.second()) => self.take_single(SyntaxKind::Underscore),
 
             identifier => {
                 if is_ident_start(identifier) {
@@ -236,10 +237,12 @@ impl<'a> Lexer<'a> {
             "foreign" => SyntaxKind::ForeignKw,
             "if" => SyntaxKind::IfKw,
             "import" => SyntaxKind::ImportKw,
+            "in" => SyntaxKind::InKw,
             "infix" => SyntaxKind::InfixKw,
             "infixl" => SyntaxKind::InfixlKw,
             "infixr" => SyntaxKind::InfixrKw,
             "instance" => SyntaxKind::InstanceKw,
+            "let" => SyntaxKind::LetKw,
             "module" => SyntaxKind::ModuleKw,
             "newtype" => SyntaxKind::NewtypeKw,
             "then" => SyntaxKind::ThenKw,
@@ -698,5 +701,10 @@ mod tests {
     #[test]
     fn lex_upper() {
         expect_tokens("Hello World", &[Upper, Whitespace, Upper, EndOfFile])
+    }
+
+    #[test]
+    fn lex_underscore() {
+        expect_tokens("_", &[Underscore, EndOfFile]);
     }
 }

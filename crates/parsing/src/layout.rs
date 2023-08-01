@@ -12,6 +12,7 @@ pub enum LayoutKind {
     Module,
     Instance,
     Do,
+    Let,
     Parenthesis,
 }
 
