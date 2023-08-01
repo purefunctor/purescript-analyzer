@@ -6,8 +6,6 @@ Input: f @a @b 1 2
 Start { kind: ApplicationExpression }
   Start { kind: VariableExpression }
     Start { kind: QualifiedName }
-      Start { kind: QualifiedPrefix }
-      Finish
       Start { kind: NameRef }
         Token { kind: Lower }
       Finish

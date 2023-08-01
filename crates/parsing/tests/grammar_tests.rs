@@ -69,6 +69,7 @@ fn test_expression() {
     expect_parse("minus-is-operator-name", "(-)", expression);
     expect_parse("if-then-else-expression", "if f x then g + y else h `finally` z", expression);
     expect_parse("block-if-then-else", "f if g then h else i", expression);
+    expect_parse("optional-qualified-prefix", "a", expression);
 }
 
 #[test]

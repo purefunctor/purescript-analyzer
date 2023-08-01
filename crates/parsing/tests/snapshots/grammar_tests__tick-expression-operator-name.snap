@@ -6,8 +6,6 @@ Input: a `(+)` b
 Start { kind: InfixChain }
   Start { kind: VariableExpression }
     Start { kind: QualifiedName }
-      Start { kind: QualifiedPrefix }
-      Finish
       Start { kind: NameRef }
         Token { kind: Lower }
       Finish
@@ -30,8 +28,6 @@ Start { kind: InfixChain }
       Finish
       Start { kind: VariableExpression }
         Start { kind: QualifiedName }
-          Start { kind: QualifiedPrefix }
-          Finish
           Start { kind: NameRef }
             Token { kind: Lower }
           Finish

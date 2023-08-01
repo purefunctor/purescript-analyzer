@@ -256,17 +256,24 @@ fn expression_atom(parser: &mut Parser) -> bool {
 
 fn qualified_prefix(parser: &mut Parser) {
     let mut prefix = parser.start();
+
+    let mut at_least_one = false;
     loop {
         if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Period) {
             let mut name = parser.start();
             parser.consume();
             name.end(parser, SyntaxKind::NameRef);
             parser.consume();
+            at_least_one = true;
         } else {
             break;
         }
     }
-    prefix.end(parser, SyntaxKind::QualifiedPrefix);
+    if at_least_one {
+        prefix.end(parser, SyntaxKind::QualifiedPrefix);
+    } else {
+        prefix.cancel(parser);
+    }
 }
 
 fn qualified_name(parser: &mut Parser) -> Option<SyntaxKind> {

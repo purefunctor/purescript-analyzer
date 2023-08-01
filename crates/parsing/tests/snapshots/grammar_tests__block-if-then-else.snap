@@ -6,8 +6,6 @@ Input: f if g then h else i
 Start { kind: ApplicationExpression }
   Start { kind: VariableExpression }
     Start { kind: QualifiedName }
-      Start { kind: QualifiedPrefix }
-      Finish
       Start { kind: NameRef }
         Token { kind: Lower }
       Finish
@@ -19,8 +17,6 @@ Start { kind: ApplicationExpression }
         Token { kind: IfKw }
         Start { kind: VariableExpression }
           Start { kind: QualifiedName }
-            Start { kind: QualifiedPrefix }
-            Finish
             Start { kind: NameRef }
               Token { kind: Lower }
             Finish
@@ -29,8 +25,6 @@ Start { kind: ApplicationExpression }
         Token { kind: ThenKw }
         Start { kind: VariableExpression }
           Start { kind: QualifiedName }
-            Start { kind: QualifiedPrefix }
-            Finish
             Start { kind: NameRef }
               Token { kind: Lower }
             Finish
@@ -39,8 +33,6 @@ Start { kind: ApplicationExpression }
         Token { kind: ElseKw }
         Start { kind: VariableExpression }
           Start { kind: QualifiedName }
-            Start { kind: QualifiedPrefix }
-            Finish
             Start { kind: NameRef }
               Token { kind: Lower }
             Finish

@@ -6,8 +6,6 @@ Input: a `plus` b `plus` c
 Start { kind: InfixChain }
   Start { kind: VariableExpression }
     Start { kind: QualifiedName }
-      Start { kind: QualifiedPrefix }
-      Finish
       Start { kind: NameRef }
         Token { kind: Lower }
       Finish
@@ -19,8 +17,6 @@ Start { kind: InfixChain }
         Token { kind: Tick }
         Start { kind: VariableExpression }
           Start { kind: QualifiedName }
-            Start { kind: QualifiedPrefix }
-            Finish
             Start { kind: NameRef }
               Token { kind: Lower }
             Finish
@@ -30,8 +26,6 @@ Start { kind: InfixChain }
       Finish
       Start { kind: VariableExpression }
         Start { kind: QualifiedName }
-          Start { kind: QualifiedPrefix }
-          Finish
           Start { kind: NameRef }
             Token { kind: Lower }
           Finish
@@ -43,8 +37,6 @@ Start { kind: InfixChain }
         Token { kind: Tick }
         Start { kind: VariableExpression }
           Start { kind: QualifiedName }
-            Start { kind: QualifiedPrefix }
-            Finish
             Start { kind: NameRef }
               Token { kind: Lower }
             Finish
@@ -54,8 +46,6 @@ Start { kind: InfixChain }
       Finish
       Start { kind: VariableExpression }
         Start { kind: QualifiedName }
-          Start { kind: QualifiedPrefix }
-          Finish
           Start { kind: NameRef }
             Token { kind: Lower }
           Finish
