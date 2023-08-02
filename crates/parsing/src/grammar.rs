@@ -126,6 +126,7 @@ fn expression_4(parser: &mut Parser) {
                     | SyntaxKind::Tick
                     | SyntaxKind::ThenKw
                     | SyntaxKind::ElseKw
+                    | SyntaxKind::WhereKw
             )
         {
             return false;
@@ -258,21 +259,8 @@ fn do_statement(parser: &mut Parser) {
 
 fn do_let_binding(parser: &mut Parser) {
     let mut marker = parser.start();
-
     parser.expect(SyntaxKind::LetKw);
-
-    parser.layout_start(LayoutKind::Let);
-    one_or_more(parser, |parser| {
-        if parser.layout_done() {
-            return false;
-        }
-
-        let_binding(parser);
-
-        true
-    });
-    parser.layout_end();
-
+    let_bindings(parser);
     marker.end(parser, SyntaxKind::DoLetBinding);
 }
 
@@ -341,6 +329,20 @@ fn expression_atom(parser: &mut Parser) {
     }
 }
 
+fn let_bindings(parser: &mut Parser) {
+    parser.layout_start(LayoutKind::Let);
+    one_or_more(parser, |parser| {
+        if parser.layout_done() {
+            return false;
+        }
+
+        let_binding(parser);
+
+        true
+    });
+    parser.layout_end();
+}
+
 fn let_binding(parser: &mut Parser) {
     match parser.current() {
         SyntaxKind::Lower if parser.nth_at(1, SyntaxKind::Colon2) => {
@@ -399,8 +401,23 @@ fn let_binding_pattern(parser: &mut Parser) {
     let mut binding = parser.start();
     binder_1(parser);
     parser.expect(SyntaxKind::Equal);
-    expression(parser);
+    where_expression(parser);
     binding.end(parser, SyntaxKind::LetBindingPattern);
+}
+
+fn where_expression(parser: &mut Parser) {
+    let mut marker = parser.start();
+    expression(parser);
+
+    if parser.at(SyntaxKind::WhereKw) {
+        parser.consume();
+
+        parser.layout_start(LayoutKind::Where);
+        let_bindings(parser);
+        parser.layout_end();
+    }
+
+    marker.end(parser, SyntaxKind::WhereExpression);
 }
 
 fn qualified_prefix(parser: &mut Parser) {

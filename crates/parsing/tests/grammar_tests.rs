@@ -117,6 +117,16 @@ do
   else c
     ";
     expect_parse("ternary-in-do", source, expression);
+
+    let source = r"
+do
+  let 
+    _ = a + b
+      where 
+        a = 2
+        b = 2
+    ";
+    expect_parse("where-expression-in-let-pattern", source, expression);
 }
 
 #[test]

@@ -13,6 +13,7 @@ pub enum LayoutKind {
     Instance,
     Do,
     Let,
+    Where,
     Parenthesis,
 }
 

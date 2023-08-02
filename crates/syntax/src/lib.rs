@@ -78,6 +78,7 @@ pub enum SyntaxKind {
     LetBindingSignature,
     LetBindingName,
     LetBindingPattern,
+    WhereExpression,
 
     ExpressionInfixChain,
     ExpressionOperatorChain,

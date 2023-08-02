@@ -140,23 +140,25 @@ Start { kind: DoExpression }
             Finish
           Finish
           Token { kind: Equal }
-          Start { kind: ApplicationExpression }
-            Start { kind: ConstructorExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
+          Start { kind: WhereExpression }
+            Start { kind: ApplicationExpression }
+              Start { kind: ConstructorExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
                 Finish
               Finish
-            Finish
-            Start { kind: OneOrMore }
-              Start { kind: TermArgument }
-                Start { kind: LiteralExpression }
-                  Token { kind: LiteralInteger }
+              Start { kind: OneOrMore }
+                Start { kind: TermArgument }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralInteger }
+                  Finish
                 Finish
-              Finish
-              Start { kind: TermArgument }
-                Start { kind: LiteralExpression }
-                  Token { kind: LiteralInteger }
+                Start { kind: TermArgument }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralInteger }
+                  Finish
                 Finish
               Finish
             Finish
