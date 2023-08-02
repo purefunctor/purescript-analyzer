@@ -1,0 +1,17 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/type/kinded-type.input
+---
+Input: Type :: Type
+
+Start { kind: KindedType }
+  Start { kind: ConstructorType }
+    Token { kind: Upper }
+  Finish
+  Token { kind: Colon2 }
+  Start { kind: ConstructorType }
+    Token { kind: Upper }
+  Finish
+Finish
+

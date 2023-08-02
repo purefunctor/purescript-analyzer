@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use insta::glob;
 use parsing::{
-    grammar::expression,
+    grammar::{expression, ty},
     layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},
@@ -64,15 +64,13 @@ fn test_expression_failing() {
     })
 }
 
-// #[test]
-// fn test_type() {
-//     expect_parse("kinded-type", "Type :: Type", ty);
-//     expect_parse("forall-type-plain", "forall a. Type", ty);
-//     expect_parse("forall-type-plain-kinded", "forall (a :: Type). Type", ty);
-//     expect_parse("forall-type-visible", "forall @a. Type", ty);
-//     expect_parse("forall-type-visible-kinded", "forall (@a :: Type). Type", ty);
-//     expect_parse("forall-type-mixed", "forall a (b :: C) @d (@e :: F). Type", ty);
-// }
+#[test]
+fn test_type() {
+    glob!("inputs/passing/type", "*.input", |path| {
+        let source = std::fs::read_to_string(path).unwrap();
+        expect_parse(&source, ty);
+    });
+}
 
 // #[test]
 // fn test_binder() {
