@@ -1,0 +1,25 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/failing/expression/invalid-record-field.input
+---
+Input: { 1: "hello" }
+
+Start { kind: LiteralExpression }
+  Start { kind: LiteralRecord }
+    Token { kind: LeftBracket }
+    Start { kind: Separated }
+      Start { kind: RecordField }
+        Start { kind: Error }
+          Error { message: "expected Lower or LiteralString" }
+        Finish
+        Token { kind: Colon }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralString }
+        Finish
+      Finish
+    Finish
+    Token { kind: RightBracket }
+  Finish
+Finish
+

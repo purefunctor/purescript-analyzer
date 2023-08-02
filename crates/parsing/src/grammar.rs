@@ -473,26 +473,31 @@ fn literal_array(parser: &mut Parser) {
 fn record_item(parser: &mut Parser) {
     let mut marker = parser.start();
 
-    match parser.current() {
-        SyntaxKind::Lower | SyntaxKind::LiteralString | SyntaxKind::LiteralRawString
-            if parser.nth_at(1, SyntaxKind::Colon) =>
-        {
-            label_name(parser);
-            parser.expect(SyntaxKind::Colon);
-            expression(parser);
-            marker.end(parser, SyntaxKind::RecordField);
-        }
+    let optional_field = match parser.current() {
         SyntaxKind::Lower => {
             label_name(parser);
-            marker.end(parser, SyntaxKind::RecordPun);
+            true
         }
         SyntaxKind::LiteralString | SyntaxKind::LiteralRawString => {
-            parser.error_recover("expected Lower as RecordPun");
+            label_name(parser);
+            false
         }
         _ => {
-            parser.error_recover("expected Lower, LiteralString, or RawLiteralString");
+            parser.error_recover("expected Lower or LiteralString");
+            false
+        }
+    };
+
+    if optional_field {
+        if !parser.at(SyntaxKind::Colon) {
+            marker.end(parser, SyntaxKind::RecordPun);
+            return;
         }
     }
+
+    parser.expect(SyntaxKind::Colon);
+    expression(parser);
+    marker.end(parser, SyntaxKind::RecordField);
 }
 
 fn literal_record(parser: &mut Parser) {
