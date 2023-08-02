@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use insta::glob;
 use parsing::{
-    grammar::{expression, ty, binder},
+    grammar::{binder, expression, ty},
     layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},

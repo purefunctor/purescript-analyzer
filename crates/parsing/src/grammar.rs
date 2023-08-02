@@ -424,7 +424,7 @@ fn expression_atom(parser: &mut Parser) {
             expression(parser);
             parser.expect(SyntaxKind::RightParenthesis);
             marker.end(parser, SyntaxKind::ParenthesizedExpression);
-        },
+        }
         SyntaxKind::LeftSquare => {
             todo!("Array");
         }
