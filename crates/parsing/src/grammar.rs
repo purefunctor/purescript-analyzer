@@ -412,19 +412,18 @@ fn expression_atom(parser: &mut Parser) {
             parser.consume();
             marker.end(parser, SyntaxKind::LiteralExpression);
         }
-        SyntaxKind::LeftParenthesis => match parser.nth(1) {
-            SyntaxKind::Operator | SyntaxKind::Minus => match qualified_name_or_do_ado(parser) {
-                Some(Left(SyntaxKind::OperatorNameExpression)) => {
-                    marker.end(parser, SyntaxKind::OperatorNameExpression);
-                }
-                _ => unreachable!(),
-            },
-            _ => {
-                parser.expect(SyntaxKind::LeftParenthesis);
-                expression(parser);
-                parser.expect(SyntaxKind::RightParenthesis);
-                marker.end(parser, SyntaxKind::ParenthesizedExpression);
+        SyntaxKind::LeftParenthesis => {
+            if attempt(parser, |parser| {
+                qualified_name_or_do_ado(parser);
+            }) {
+                marker.end(parser, SyntaxKind::OperatorNameExpression);
+                return;
             }
+
+            parser.expect(SyntaxKind::LeftParenthesis);
+            expression(parser);
+            parser.expect(SyntaxKind::RightParenthesis);
+            marker.end(parser, SyntaxKind::ParenthesizedExpression);
         },
         SyntaxKind::LeftSquare => {
             todo!("Array");

@@ -50,7 +50,7 @@ where
 
 #[test]
 fn test_expression() {
-    glob!("inputs/passing/expression/*.input", |path| {
+    glob!("inputs/passing/expression", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
         expect_parse(&source, expression);
     })
