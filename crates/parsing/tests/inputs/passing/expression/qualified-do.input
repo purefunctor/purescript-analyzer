@@ -1,0 +1,4 @@
+Hello.do
+  f x
+  let _ = a
+  a <- b

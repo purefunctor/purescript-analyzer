@@ -1,0 +1,61 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/expression/do-bind.input
+---
+Input: do
+  a <- b
+  Tuple c d <- e
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: DoBind }
+      Start { kind: VariableBinder }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: DoBind }
+      Start { kind: ConstructorBinder }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: VariableBinder }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: VariableBinder }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+Finish
+

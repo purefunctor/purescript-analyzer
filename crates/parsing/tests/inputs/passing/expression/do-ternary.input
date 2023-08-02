@@ -1,0 +1,4 @@
+do
+  if f
+  then g
+  else h
