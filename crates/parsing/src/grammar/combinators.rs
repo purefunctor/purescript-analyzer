@@ -48,9 +48,7 @@ pub fn attempt(parser: &mut Parser, rule: impl Fn(&mut Parser)) -> bool {
 pub fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
 
-    dbg!("BEFORE RULE");
     rule(parser);
-    dbg!("AFTER RULE");
     loop {
         if parser.at(separator) {
             parser.consume();

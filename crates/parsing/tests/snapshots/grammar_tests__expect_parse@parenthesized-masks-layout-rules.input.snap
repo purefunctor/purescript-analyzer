@@ -14,6 +14,11 @@ but
 it
 is
   )
+  [
+this,
+as,
+well
+  ]
 
 Start { kind: DoExpression }
   Start { kind: QualifiedDo }
@@ -98,6 +103,39 @@ Start { kind: DoExpression }
           Finish
         Finish
         Token { kind: RightParenthesis }
+      Finish
+    Finish
+    Start { kind: DoDiscard }
+      Start { kind: LiteralExpression }
+        Start { kind: LiteralArray }
+          Token { kind: LeftSquare }
+          Start { kind: Separated }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: RightSquare }
+        Finish
       Finish
     Finish
   Finish

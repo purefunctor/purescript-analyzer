@@ -122,6 +122,8 @@ fn expression_4(parser: &mut Parser) {
             || matches!(
                 parser.current(),
                 SyntaxKind::RightParenthesis
+                    | SyntaxKind::RightSquare
+                    | SyntaxKind::RightBracket
                     | SyntaxKind::Colon2
                     | SyntaxKind::Tick
                     | SyntaxKind::ThenKw
@@ -428,9 +430,9 @@ fn expression_atom(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::ParenthesizedExpression);
         }
         SyntaxKind::LeftSquare => {
-            todo!("Array");
+            literal_array(parser);
+            marker.end(parser, SyntaxKind::LiteralExpression);
         }
-
         SyntaxKind::LeftBracket => {
             todo!("Record");
         }
@@ -451,6 +453,18 @@ fn expression_atom(parser: &mut Parser) {
             marker.cancel(parser);
         }
     }
+}
+
+fn literal_array(parser: &mut Parser) {
+    let mut array = parser.start();
+
+    parser.layout_start(LayoutKind::Parenthesis);
+    parser.expect(SyntaxKind::LeftSquare);
+    separated(parser, SyntaxKind::Comma, expression);
+    parser.expect(SyntaxKind::RightSquare);
+    parser.layout_end();
+
+    array.end(parser, SyntaxKind::LiteralArray);
 }
 
 pub fn ty(parser: &mut Parser) {
@@ -694,7 +708,8 @@ fn binder_atom(parser: &mut Parser) {
             panic!("Record Binder");
         }
         SyntaxKind::LeftSquare => {
-            panic!("Array Binder");
+            parser.error("todo: array binder");
+            marker.cancel(parser);
         }
         _ => {
             marker.cancel(parser);

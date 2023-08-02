@@ -99,6 +99,8 @@ pub enum SyntaxKind {
     LiteralNumber,
     LiteralTrue,
     LiteralFalse,
+    LiteralArray,
+    LiteralRecord,
 
     ConstructorType,
     ForallType,
