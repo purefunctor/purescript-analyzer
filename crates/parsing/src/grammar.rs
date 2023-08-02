@@ -342,35 +342,15 @@ fn expression_atom(parser: &mut Parser) {
 }
 
 fn let_binding(parser: &mut Parser) {
-    let mut binding = parser.start();
-
     match parser.current() {
         SyntaxKind::Lower if parser.nth_at(1, SyntaxKind::Colon2) => {
-            lower_name(parser);
-            parser.consume();
-            ty(parser);
-            binding.end(parser, SyntaxKind::LetBindingSignature)
+            let_binding_signature(parser);
         }
         SyntaxKind::Lower => {
-            lower_name(parser);
-
-            zero_or_more(parser, |parser| {
-                if matches!(parser.current(), SyntaxKind::Equal) {
-                    return false;
-                }
-
-                binder_atom(parser);
-
-                true
-            });
-
-            parser.expect(SyntaxKind::Equal);
-
-            expression(parser);
-
-            binding.end(parser, SyntaxKind::LetBindingName);
+            let_binding_name(parser);
         }
         SyntaxKind::Equal => {
+            let mut binding = parser.start();
             let mut error = parser.start();
             parser.error("expected Identifier or Binder");
             error.end(parser, SyntaxKind::Error);
@@ -380,15 +360,47 @@ fn let_binding(parser: &mut Parser) {
             binding.end(parser, SyntaxKind::Error);
         }
         _ => {
-            binder_1(parser);
-
-            parser.expect(SyntaxKind::Equal);
-
-            expression(parser);
-
-            binding.end(parser, SyntaxKind::LetBindingPattern);
+            let_binding_pattern(parser);
         }
     }
+}
+
+fn let_binding_signature(parser: &mut Parser) {
+    let mut marker = parser.start();
+    lower_name(parser);
+    parser.expect(SyntaxKind::Colon2);
+    ty(parser);
+    marker.end(parser, SyntaxKind::LetBindingSignature);
+}
+
+fn let_binding_name(parser: &mut Parser) {
+    let mut binding = parser.start();
+
+    lower_name(parser);
+
+    zero_or_more(parser, |parser| {
+        if matches!(parser.current(), SyntaxKind::Equal) {
+            return false;
+        }
+
+        binder_atom(parser);
+
+        true
+    });
+
+    parser.expect(SyntaxKind::Equal);
+
+    expression(parser);
+
+    binding.end(parser, SyntaxKind::LetBindingName);
+}
+
+fn let_binding_pattern(parser: &mut Parser) {
+    let mut binding = parser.start();
+    binder_1(parser);
+    parser.expect(SyntaxKind::Equal);
+    expression(parser);
+    binding.end(parser, SyntaxKind::LetBindingPattern);
 }
 
 fn qualified_prefix(parser: &mut Parser) {
