@@ -420,9 +420,11 @@ fn expression_atom(parser: &mut Parser) {
                 return;
             }
 
+            parser.layout_start(LayoutKind::Parenthesis);
             parser.expect(SyntaxKind::LeftParenthesis);
             expression(parser);
             parser.expect(SyntaxKind::RightParenthesis);
+            parser.layout_end();
             marker.end(parser, SyntaxKind::ParenthesizedExpression);
         }
         SyntaxKind::LeftSquare => {
