@@ -108,7 +108,15 @@ do
 
   pure hello
     ";
-    expect_parse("do-expression-various", source, expression)
+    expect_parse("do-expression-various", source, expression);
+
+    let source = r"
+do
+  if a
+  then b
+  else c
+    ";
+    expect_parse("ternary-in-do", source, expression);
 }
 
 #[test]
