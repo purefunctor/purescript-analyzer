@@ -450,6 +450,7 @@ fn expression_atom(parser: &mut Parser) {
             }
         }
         _ => {
+            parser.error("expected Expression");
             marker.cancel(parser);
         }
     }
@@ -460,8 +461,12 @@ fn literal_array(parser: &mut Parser) {
 
     parser.layout_start(LayoutKind::Parenthesis);
     parser.expect(SyntaxKind::LeftSquare);
-    separated(parser, SyntaxKind::Comma, expression);
-    parser.expect(SyntaxKind::RightSquare);
+    if parser.at(SyntaxKind::RightSquare) {
+        parser.expect(SyntaxKind::RightSquare);
+    } else {
+        separated(parser, SyntaxKind::Comma, expression);
+        parser.expect(SyntaxKind::RightSquare);
+    }
     parser.layout_end();
 
     array.end(parser, SyntaxKind::LiteralArray);

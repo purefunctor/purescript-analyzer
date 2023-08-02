@@ -36,8 +36,6 @@ Start { kind: LiteralExpression }
       Start { kind: LiteralExpression }
         Start { kind: LiteralArray }
           Token { kind: LeftSquare }
-          Start { kind: Separated }
-          Finish
           Token { kind: RightSquare }
         Finish
       Finish
