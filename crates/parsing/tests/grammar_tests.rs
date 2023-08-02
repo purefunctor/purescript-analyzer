@@ -131,6 +131,15 @@ do
   if c then d
     ";
     expect_parse("invalid-do-statement", source, expression);
+
+    let source = r"
+do
+  let
+    a = b
+    = c
+    e = f
+    ";
+    expect_parse("invalid-let-binding", source, expression);
 }
 
 #[test]

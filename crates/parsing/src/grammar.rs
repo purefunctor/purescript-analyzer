@@ -370,6 +370,15 @@ fn let_binding(parser: &mut Parser) {
 
             binding.end(parser, SyntaxKind::LetBindingName);
         }
+        SyntaxKind::Equal => {
+            let mut error = parser.start();
+            parser.error("expected Identifier or Binder");
+            error.end(parser, SyntaxKind::Error);
+
+            parser.expect(SyntaxKind::Equal);
+            expression(parser);
+            binding.end(parser, SyntaxKind::Error);
+        }
         _ => {
             binder_1(parser);
 
