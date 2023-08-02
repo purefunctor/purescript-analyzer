@@ -356,9 +356,7 @@ fn qualified_prefix(parser: &mut Parser) {
     let mut at_least_one = false;
     loop {
         if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Period) {
-            let mut name = parser.start();
-            parser.consume();
-            name.end(parser, SyntaxKind::NameRef);
+            upper_name_ref(parser);
             parser.consume();
             at_least_one = true;
         } else {
