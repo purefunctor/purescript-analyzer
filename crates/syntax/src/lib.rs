@@ -59,6 +59,7 @@ pub enum SyntaxKind {
     QualifiedDo,
     DoKw,
 
+    DoBind,
     DoLetBinding,
     DoDiscard,
 

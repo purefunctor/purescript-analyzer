@@ -30,3 +30,16 @@ pub fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
     }
     marker.end(parser, SyntaxKind::ZeroOrMore);
 }
+
+/// Performs a `rule` and conditionally backtracks.
+pub fn attempt(parser: &mut Parser, rule: impl Fn(&mut Parser)) -> bool {
+    let mut save = parser.save();
+    rule(parser);
+    if save.has_error(parser) {
+        save.load(parser);
+        false
+    } else {
+        save.delete(parser);
+        true
+    }
+}

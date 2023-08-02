@@ -102,6 +102,10 @@ do
 
     Tuple a b = Tuple 0 1
 
+  x <- f
+  Tuple a b <- f
+  (Left a) <- f
+
   pure hello
     ";
     expect_parse("do-expression-various", source, expression)

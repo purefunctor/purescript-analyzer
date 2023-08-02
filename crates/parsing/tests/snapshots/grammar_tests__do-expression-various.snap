@@ -13,6 +13,10 @@ do
 
     Tuple a b = Tuple 0 1
 
+  x <- f
+  Tuple a b <- f
+  (Left a) <- f
+
   pure hello
     
 Start { kind: DoExpression }
@@ -156,6 +160,78 @@ Start { kind: DoExpression }
                 Finish
               Finish
             Finish
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: DoBind }
+      Start { kind: VariableBinder }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: DoBind }
+      Start { kind: ConstructorBinder }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: VariableBinder }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: VariableBinder }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: DoBind }
+      Start { kind: ParenthesizedBinder }
+        Token { kind: LeftParenthesis }
+        Start { kind: ConstructorBinder }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
+          Finish
+          Start { kind: OneOrMore }
+            Start { kind: VariableBinder }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: RightParenthesis }
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
           Finish
         Finish
       Finish

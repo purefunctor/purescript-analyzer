@@ -5,7 +5,7 @@ use syntax::SyntaxKind;
 
 use crate::{layout::LayoutKind, parser::Parser};
 
-use self::combinators::{one_or_more, zero_or_more};
+use self::combinators::{attempt, one_or_more, zero_or_more};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -233,30 +233,61 @@ fn expression_do_statements(parser: &mut Parser) {
 }
 
 fn do_statement(parser: &mut Parser) {
-    let mut statement = parser.start();
-
-    let kind = if parser.at(SyntaxKind::LetKw) {
-        parser.expect(SyntaxKind::LetKw);
-
-        parser.layout_start(LayoutKind::Let);
-        one_or_more(parser, |parser| {
-            if parser.layout_done() {
-                return false;
-            }
-
-            let_binding(parser);
-
-            true
-        });
-        parser.layout_end();
-
-        SyntaxKind::DoLetBinding
+    if parser.at(SyntaxKind::LetKw) {
+        do_let_binding(parser);
     } else {
-        expression(parser);
-        SyntaxKind::DoDiscard
-    };
+        if attempt(parser, do_bind) {
+            return;
+        }
 
-    statement.end(parser, kind);
+        if attempt(parser, do_discard) {
+            return;
+        }
+
+        // TODO: error_recover_until_next_group?
+        let mut error = parser.start();
+        loop {
+            if parser.group_done() {
+                break;
+            }
+            parser.consume();
+        }
+        error.end(parser, SyntaxKind::Error);
+    };
+}
+
+fn do_let_binding(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::LetKw);
+
+    parser.layout_start(LayoutKind::Let);
+    one_or_more(parser, |parser| {
+        if parser.layout_done() {
+            return false;
+        }
+
+        let_binding(parser);
+
+        true
+    });
+    parser.layout_end();
+
+    marker.end(parser, SyntaxKind::DoLetBinding);
+}
+
+fn do_bind(parser: &mut Parser) {
+    let mut marker = parser.start();
+    binder(parser);
+    parser.expect(SyntaxKind::LeftArrow);
+    expression(parser);
+    marker.end(parser, SyntaxKind::DoBind);
+}
+
+fn do_discard(parser: &mut Parser) {
+    let mut marker = parser.start();
+    expression(parser);
+    marker.end(parser, SyntaxKind::DoDiscard);
 }
 
 fn expression_atom(parser: &mut Parser) {
@@ -287,6 +318,7 @@ fn expression_atom(parser: &mut Parser) {
         SyntaxKind::LeftSquare => {
             todo!("Array");
         }
+
         SyntaxKind::LeftBracket => {
             todo!("Record");
         }
@@ -630,6 +662,7 @@ fn binder_2(parser: &mut Parser) {
                         parser.current(),
                         SyntaxKind::Pipe
                             | SyntaxKind::Equal
+                            | SyntaxKind::LeftArrow
                             | SyntaxKind::RightArrow
                             | SyntaxKind::RightParenthesis
                     )
