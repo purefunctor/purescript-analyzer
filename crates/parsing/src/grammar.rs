@@ -420,101 +420,6 @@ fn where_expression(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::WhereExpression);
 }
 
-fn qualified_prefix(parser: &mut Parser) {
-    let mut prefix = parser.start();
-
-    let mut at_least_one = false;
-    loop {
-        if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Period) {
-            upper_name_ref(parser);
-            parser.consume();
-            at_least_one = true;
-        } else {
-            break;
-        }
-    }
-    if at_least_one {
-        prefix.end(parser, SyntaxKind::QualifiedPrefix);
-    } else {
-        prefix.cancel(parser);
-    }
-}
-
-fn qualified_name_or_do_ado(parser: &mut Parser) -> Option<Either<SyntaxKind, SyntaxKind>> {
-    let mut qualified_name = parser.start();
-
-    qualified_prefix(parser);
-
-    match parser.current() {
-        SyntaxKind::Upper => {
-            upper_name_ref(parser);
-            qualified_name.end(parser, SyntaxKind::QualifiedName);
-            Some(Left(SyntaxKind::ConstructorExpression))
-        }
-        SyntaxKind::Lower | SyntaxKind::AsKw => {
-            lower_name_ref(parser);
-            qualified_name.end(parser, SyntaxKind::QualifiedName);
-            Some(Left(SyntaxKind::VariableExpression))
-        }
-        SyntaxKind::LeftParenthesis => {
-            operator_name_ref(parser);
-            qualified_name.end(parser, SyntaxKind::QualifiedName);
-            Some(Left(SyntaxKind::OperatorNameExpression))
-        }
-        SyntaxKind::DoKw => {
-            parser.consume();
-            qualified_name.cancel(parser);
-            Some(Right(SyntaxKind::QualifiedDo))
-        }
-        SyntaxKind::AdoKw => {
-            parser.consume();
-            qualified_name.cancel(parser);
-            Some(Right(SyntaxKind::QualifiedAdo))
-        }
-        _ => {
-            parser.error_recover("expected Upper, Lower, LeftParenthesis, DoKw, or AdoKw");
-            None
-        }
-    }
-}
-
-fn upper_name_ref(parser: &mut Parser) {
-    let mut name = parser.start();
-    parser.expect(SyntaxKind::Upper);
-    name.end(parser, SyntaxKind::NameRef);
-}
-
-fn lower_name_ref(parser: &mut Parser) {
-    let mut name = parser.start();
-    parser.consume_as(SyntaxKind::Lower);
-    name.end(parser, SyntaxKind::NameRef);
-}
-
-fn lower_name(parser: &mut Parser) {
-    let mut name = parser.start();
-    parser.consume_as(SyntaxKind::Lower);
-    name.end(parser, SyntaxKind::Name);
-}
-
-fn operator_name_ref(parser: &mut Parser) {
-    let mut wrapped = parser.start();
-    parser.expect(SyntaxKind::LeftParenthesis);
-
-    match parser.current() {
-        SyntaxKind::Operator | SyntaxKind::Minus => {
-            let mut name = parser.start();
-            parser.consume_as(SyntaxKind::Operator);
-            name.end(parser, SyntaxKind::NameRef);
-        }
-        _ => {
-            parser.error_recover("expected Operator");
-        }
-    }
-
-    parser.expect(SyntaxKind::RightParenthesis);
-    wrapped.end(parser, SyntaxKind::Wrapped);
-}
-
 pub fn ty(parser: &mut Parser) {
     let mut kinded = parser.start();
     type_1(parser);
@@ -762,4 +667,99 @@ fn binder_atom(parser: &mut Parser) {
             marker.cancel(parser);
         }
     }
+}
+
+fn qualified_prefix(parser: &mut Parser) {
+    let mut prefix = parser.start();
+
+    let mut at_least_one = false;
+    loop {
+        if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Period) {
+            upper_name_ref(parser);
+            parser.consume();
+            at_least_one = true;
+        } else {
+            break;
+        }
+    }
+    if at_least_one {
+        prefix.end(parser, SyntaxKind::QualifiedPrefix);
+    } else {
+        prefix.cancel(parser);
+    }
+}
+
+fn qualified_name_or_do_ado(parser: &mut Parser) -> Option<Either<SyntaxKind, SyntaxKind>> {
+    let mut qualified_name = parser.start();
+
+    qualified_prefix(parser);
+
+    match parser.current() {
+        SyntaxKind::Upper => {
+            upper_name_ref(parser);
+            qualified_name.end(parser, SyntaxKind::QualifiedName);
+            Some(Left(SyntaxKind::ConstructorExpression))
+        }
+        SyntaxKind::Lower | SyntaxKind::AsKw => {
+            lower_name_ref(parser);
+            qualified_name.end(parser, SyntaxKind::QualifiedName);
+            Some(Left(SyntaxKind::VariableExpression))
+        }
+        SyntaxKind::LeftParenthesis => {
+            operator_name_ref(parser);
+            qualified_name.end(parser, SyntaxKind::QualifiedName);
+            Some(Left(SyntaxKind::OperatorNameExpression))
+        }
+        SyntaxKind::DoKw => {
+            parser.consume();
+            qualified_name.cancel(parser);
+            Some(Right(SyntaxKind::QualifiedDo))
+        }
+        SyntaxKind::AdoKw => {
+            parser.consume();
+            qualified_name.cancel(parser);
+            Some(Right(SyntaxKind::QualifiedAdo))
+        }
+        _ => {
+            parser.error_recover("expected Upper, Lower, LeftParenthesis, DoKw, or AdoKw");
+            None
+        }
+    }
+}
+
+fn upper_name_ref(parser: &mut Parser) {
+    let mut name = parser.start();
+    parser.expect(SyntaxKind::Upper);
+    name.end(parser, SyntaxKind::NameRef);
+}
+
+fn lower_name_ref(parser: &mut Parser) {
+    let mut name = parser.start();
+    parser.consume_as(SyntaxKind::Lower);
+    name.end(parser, SyntaxKind::NameRef);
+}
+
+fn lower_name(parser: &mut Parser) {
+    let mut name = parser.start();
+    parser.consume_as(SyntaxKind::Lower);
+    name.end(parser, SyntaxKind::Name);
+}
+
+fn operator_name_ref(parser: &mut Parser) {
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::LeftParenthesis);
+
+    match parser.current() {
+        SyntaxKind::Operator | SyntaxKind::Minus => {
+            let mut name = parser.start();
+            parser.consume_as(SyntaxKind::Operator);
+            name.end(parser, SyntaxKind::NameRef);
+        }
+        _ => {
+            parser.error_recover("expected Operator");
+        }
+    }
+
+    parser.expect(SyntaxKind::RightParenthesis);
+    wrapped.end(parser, SyntaxKind::Wrapped);
 }
