@@ -148,6 +148,55 @@ impl NodeMarker {
 }
 
 impl Parser {
+    /// Starts a new node, returning a [`SaveMarker`].
+    pub fn save(&mut self) -> SaveMarker {
+        let input_index = self.index;
+        let layout_index = self.layouts.len();
+        let event_index = self.events.len();
+        self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
+        SaveMarker::new(input_index, layout_index, event_index)
+    }
+}
+
+pub struct SaveMarker {
+    input_index: usize,
+    layout_index: usize,
+    event_index: usize,
+    bomb: DropBomb,
+}
+
+impl SaveMarker {
+    pub fn new(input_index: usize, layout_index: usize, event_index: usize) -> SaveMarker {
+        let bomb = DropBomb::new("failed to call load or delete");
+        SaveMarker { input_index, layout_index, event_index, bomb }
+    }
+
+    /// Returns `true` if [`Event::Error`] is emitted after the marker.
+    pub fn has_error(&self, parser: &Parser) -> bool {
+        parser.events[self.event_index..].iter().any(|event| matches!(event, Event::Error { .. }))
+    }
+
+    /// Resets the state of the [`Parser`] to before [`Parser::save`] is called.
+    pub fn load(&mut self, parser: &mut Parser) {
+        self.bomb.defuse();
+        parser.index = self.input_index;
+        parser.events.truncate(self.event_index);
+        parser.layouts.truncate(self.layout_index);
+    }
+
+    /// Ignores the [`SaveMarker`] and retains the state of the [`Parser`].
+    pub fn delete(&mut self, parser: &mut Parser) {
+        self.bomb.defuse();
+        if self.event_index == parser.events.len() - 1 {
+            match parser.events.pop() {
+                Some(Event::Start { kind: SyntaxKind::Sentinel }) => (),
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+impl Parser {
     /// Returns the nth token given an `offset`.
     pub fn nth(&self, offset: usize) -> SyntaxKind {
         self.input.kind(self.index + offset)
