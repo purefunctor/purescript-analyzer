@@ -413,10 +413,12 @@ fn expression_atom(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::LiteralExpression);
         }
         SyntaxKind::LeftParenthesis => match parser.nth(1) {
-            SyntaxKind::Operator | SyntaxKind::Minus => {
-                operator_name_ref(parser);
-                marker.end(parser, SyntaxKind::OperatorNameExpression);
-            }
+            SyntaxKind::Operator | SyntaxKind::Minus => match qualified_name_or_do_ado(parser) {
+                Some(Left(SyntaxKind::OperatorNameExpression)) => {
+                    marker.end(parser, SyntaxKind::OperatorNameExpression);
+                }
+                _ => unreachable!(),
+            },
             _ => {
                 parser.expect(SyntaxKind::LeftParenthesis);
                 expression(parser);

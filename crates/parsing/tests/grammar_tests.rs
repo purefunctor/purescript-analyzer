@@ -129,9 +129,9 @@ fn test_expression() {
 
 //     let source = r"
 // do
-//   let 
+//   let
 //     _ = a + b
-//       where 
+//       where
 //         a = 2
 //         b = 2
 // ";

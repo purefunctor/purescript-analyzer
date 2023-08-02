@@ -6,12 +6,14 @@ input_file: crates/parsing/tests/inputs/passing/expression/minus-is-operator-nam
 Input: (-)
 
 Start { kind: OperatorNameExpression }
-  Start { kind: Wrapped }
-    Token { kind: LeftParenthesis }
-    Start { kind: NameRef }
-      Token { kind: Operator }
+  Start { kind: QualifiedName }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
+      Token { kind: RightParenthesis }
     Finish
-    Token { kind: RightParenthesis }
   Finish
 Finish
 
