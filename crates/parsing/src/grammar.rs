@@ -247,10 +247,10 @@ fn do_statement(parser: &mut Parser) {
         // TODO: error_recover_until_next_group?
         let mut error = parser.start();
         loop {
+            parser.consume();
             if parser.group_done() {
                 break;
             }
-            parser.consume();
         }
         error.end(parser, SyntaxKind::Error);
     };

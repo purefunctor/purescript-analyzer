@@ -115,6 +115,14 @@ do
 fn test_expression_error() {
     expect_parse("qualified-operator-name-not-operator", "Hello.(as)", expression);
     expect_parse("qualified-operator-name-unfinished", "Hello.(+ 1", expression);
+
+    let source = r"
+do
+  if a then b
+  f x
+  if c then d
+    ";
+    expect_parse("invalid-do-statement", source, expression);
 }
 
 #[test]

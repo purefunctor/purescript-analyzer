@@ -1,0 +1,52 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+---
+Input: 
+do
+  if a then b
+  f x
+  if c then d
+    
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: Error }
+      Token { kind: IfKw }
+      Token { kind: Lower }
+      Token { kind: ThenKw }
+      Token { kind: Lower }
+    Finish
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: TermArgument }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: Error }
+      Token { kind: IfKw }
+      Token { kind: Lower }
+      Token { kind: ThenKw }
+      Token { kind: Lower }
+    Finish
+  Finish
+Finish
+
