@@ -7,7 +7,7 @@ do
   if a
   then b
   else c
-    
+
 Start { kind: DoExpression }
   Start { kind: QualifiedDo }
     Token { kind: DoKw }

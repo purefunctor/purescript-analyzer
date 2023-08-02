@@ -107,7 +107,7 @@ do
   (Left a) <- f
 
   pure hello
-    ";
+";
     expect_parse("do-expression-various", source, expression);
 
     let source = r"
@@ -115,7 +115,7 @@ do
   if a
   then b
   else c
-    ";
+";
     expect_parse("ternary-in-do", source, expression);
 
     let source = r"
@@ -125,7 +125,7 @@ do
       where 
         a = 2
         b = 2
-    ";
+";
     expect_parse("where-expression-in-let-pattern", source, expression);
 
     let source = r"
@@ -151,7 +151,7 @@ do
   if a then b
   f x
   if c then d
-    ";
+";
     expect_parse("invalid-do-statement", source, expression);
 
     let source = r"
@@ -160,7 +160,7 @@ do
     a = b
     = c
     e = f
-    ";
+";
     expect_parse("invalid-let-binding", source, expression);
 }
 

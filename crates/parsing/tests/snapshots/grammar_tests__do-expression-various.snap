@@ -18,7 +18,7 @@ do
   (Left a) <- f
 
   pure hello
-    
+
 Start { kind: DoExpression }
   Start { kind: QualifiedDo }
     Token { kind: DoKw }

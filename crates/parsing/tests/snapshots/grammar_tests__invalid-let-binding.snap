@@ -8,7 +8,7 @@ do
     a = b
     = c
     e = f
-    
+
 Start { kind: DoExpression }
   Start { kind: QualifiedDo }
     Token { kind: DoKw }

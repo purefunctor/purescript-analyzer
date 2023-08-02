@@ -9,7 +9,7 @@ do
       where 
         a = 2
         b = 2
-    
+
 Start { kind: DoExpression }
   Start { kind: QualifiedDo }
     Token { kind: DoKw }
