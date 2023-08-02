@@ -1,0 +1,39 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/expression/unqualified.input
+---
+Input: (+) Foo bar
+
+Start { kind: ApplicationExpression }
+  Start { kind: OperatorNameExpression }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: TermArgument }
+      Start { kind: ConstructorExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: TermArgument }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+Finish
+

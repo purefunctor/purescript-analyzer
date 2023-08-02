@@ -1,0 +1,33 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/expression/operators.input
+---
+Input: 1 + 2 * 3 / 4
+
+Start { kind: ExpressionOperatorChain }
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Start { kind: Pair }
+      Token { kind: Operator }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+  Finish
+Finish
+
