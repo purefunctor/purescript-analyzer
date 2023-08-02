@@ -1,0 +1,25 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/failing/expression/qualified-operator-unfinished.input
+---
+Input: Add.(+
+
+Start { kind: OperatorNameExpression }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+    Finish
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
+      Error { message: "expected RightParenthesis" }
+    Finish
+  Finish
+Finish
+

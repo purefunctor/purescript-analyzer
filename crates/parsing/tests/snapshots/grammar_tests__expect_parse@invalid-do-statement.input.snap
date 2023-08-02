@@ -1,0 +1,43 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/failing/expression/invalid-do-statement.input
+---
+Input: do
+  if a
+  f x
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: Error }
+      Token { kind: IfKw }
+      Token { kind: Lower }
+    Finish
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: TermArgument }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+Finish
+

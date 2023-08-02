@@ -1,0 +1,25 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/failing/expression/not-qualified-operator.input
+---
+Input: Invalid.(invalid)
+
+Start { kind: OperatorNameExpression }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+    Finish
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: Error }
+        Error { message: "expected Operator" }
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+  Finish
+Finish
+
