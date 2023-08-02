@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use insta::glob;
 use parsing::{
-    grammar::{expression, ty},
+    grammar::{expression, ty, binder},
     layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},
@@ -72,24 +72,10 @@ fn test_type() {
     });
 }
 
-// #[test]
-// fn test_binder() {
-//     expect_parse("typed-binder", "1 :: Type", binder);
-//     expect_parse("negative-binder", "-1", binder);
-//     expect_parse("integer-binder", "1", binder);
-//     expect_parse("number-binder", "1.0", binder);
-//     expect_parse("string-binder", "\"hi!\"", binder);
-//     expect_parse("char-binder", "'a'", binder);
-//     expect_parse("true-binder", "true", binder);
-//     expect_parse("false-binder", "false", binder);
-//     expect_parse("wildcard-binder", "_", binder);
-//     expect_parse("parenthesized-binder-negative", "(-1)", binder);
-//     expect_parse("parenthesized-binder-literal", "(1.0)", binder);
-//     expect_parse("parenthesized-binder-nested", "(((1.0)))", binder);
-//     expect_parse("variable-binder", "f", binder);
-//     expect_parse("constructor-zero-arity", "Nil", binder);
-//     expect_parse("qualified-constructor-zero-arity", "Data.List.Nil", binder);
-//     expect_parse("constructor-n-arity", "Cons 1", binder);
-//     expect_parse("qualified-constructor-n-arity", "Data.List.Cons 1", binder);
-//     expect_parse("complex-binder", "Tuple (Cons 0 Nil) (Cons 1 Nil)", binder);
-// }
+#[test]
+fn test_binder() {
+    glob!("inputs/passing/binder", "*.input", |path| {
+        let source = std::fs::read_to_string(path).unwrap();
+        expect_parse(&source, binder);
+    });
+}

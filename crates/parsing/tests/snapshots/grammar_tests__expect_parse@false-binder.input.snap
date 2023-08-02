@@ -1,0 +1,10 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/binder/false-binder.input
+---
+Input: false
+Start { kind: LiteralBinder }
+  Token { kind: LiteralFalse }
+Finish
+

@@ -1,0 +1,14 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/binder/parenthesized-binder-literal.input
+---
+Input: (1.0)
+Start { kind: ParenthesizedBinder }
+  Token { kind: LeftParenthesis }
+  Start { kind: LiteralBinder }
+    Token { kind: LiteralNumber }
+  Finish
+  Token { kind: RightParenthesis }
+Finish
+
