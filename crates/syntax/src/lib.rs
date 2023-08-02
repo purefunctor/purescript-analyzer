@@ -209,7 +209,7 @@ impl SyntaxKind {
     }
 
     pub fn is_operator(&self) -> bool {
-        matches!(self, Self::Operator | Self::Minus)
+        matches!(self, Self::Operator | Self::Minus | Self::Colon)
     }
 }
 
