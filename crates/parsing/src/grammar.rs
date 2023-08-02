@@ -173,7 +173,7 @@ fn expression_5(parser: &mut Parser) {
                 Some(Right(kind)) => {
                     qualified_do_or_ado.end(parser, kind);
 
-                    expression_do_statements(parser);
+                    do_statements(parser);
                     expression.end(parser, SyntaxKind::DoExpression);
                 }
                 None => {
@@ -190,7 +190,7 @@ fn expression_5(parser: &mut Parser) {
             parser.consume();
             qualified_do.end(parser, SyntaxKind::QualifiedDo);
 
-            expression_do_statements(parser);
+            do_statements(parser);
             do_expression.end(parser, SyntaxKind::DoExpression);
         }
         SyntaxKind::AdoKw => {
@@ -217,7 +217,7 @@ fn expression_if(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
-fn expression_do_statements(parser: &mut Parser) {
+fn do_statements(parser: &mut Parser) {
     parser.layout_start(LayoutKind::Do);
 
     one_or_more(parser, |parser| {
