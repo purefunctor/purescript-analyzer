@@ -5,7 +5,7 @@ use syntax::SyntaxKind;
 
 use crate::{layout::LayoutKind, parser::Parser};
 
-use self::combinators::{attempt, one_or_more, zero_or_more};
+use self::combinators::{attempt, one_or_more, separated, zero_or_more};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -127,6 +127,9 @@ fn expression_4(parser: &mut Parser) {
                     | SyntaxKind::ThenKw
                     | SyntaxKind::ElseKw
                     | SyntaxKind::WhereKw
+                    | SyntaxKind::Equal
+                    | SyntaxKind::LeftArrow
+                    | SyntaxKind::Comma
             )
         {
             return false;
@@ -330,7 +333,7 @@ fn let_binding_name(parser: &mut Parser) {
     lower_name(parser);
 
     zero_or_more(parser, |parser| {
-        if matches!(parser.current(), SyntaxKind::Equal) {
+        if matches!(parser.current(), SyntaxKind::Equal | SyntaxKind::Pipe) {
             return false;
         }
 
@@ -339,9 +342,7 @@ fn let_binding_name(parser: &mut Parser) {
         true
     });
 
-    parser.expect(SyntaxKind::Equal);
-
-    expression(parser);
+    guarded_binding(parser, SyntaxKind::Equal);
 
     binding.end(parser, SyntaxKind::LetBindingName);
 }
@@ -352,6 +353,35 @@ fn let_binding_pattern(parser: &mut Parser) {
     parser.expect(SyntaxKind::Equal);
     where_expression(parser);
     binding.end(parser, SyntaxKind::LetBindingPattern);
+}
+
+fn pattern_guard(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    attempt(parser, |parser| {
+        binder(parser);
+        parser.expect(SyntaxKind::LeftArrow);
+    });
+
+    expression(parser);
+
+    marker.end(parser, SyntaxKind::PatternGuard);
+}
+
+fn guarded_binding(parser: &mut Parser, separator: SyntaxKind) {
+    let mut marker = parser.start();
+
+    if parser.at(separator) {
+        parser.consume();
+        where_expression(parser);
+        marker.end(parser, SyntaxKind::Unconditional);
+    } else if parser.at(SyntaxKind::Pipe) {
+        parser.consume();
+        separated(parser, SyntaxKind::Comma, pattern_guard);
+        parser.expect(separator);
+        where_expression(parser);
+        marker.end(parser, SyntaxKind::Guarded);
+    }
 }
 
 fn where_expression(parser: &mut Parser) {

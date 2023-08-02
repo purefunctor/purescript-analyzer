@@ -146,6 +146,11 @@ pub enum SyntaxKind {
     InfixrKw,
     InfixKw,
 
+    Unconditional,
+    Guarded,
+    PatternGuard,
+    GuardedExpression,
+
     /// Convenience node for patterns such as `l: e` or `e :: T`.
     Labeled,
     /// Convenience node for patterns such as `@variable` or `?hole`.
@@ -158,6 +163,8 @@ pub enum SyntaxKind {
     ZeroOrMore,
     /// Convenience node for a tuple of elements.
     Pair,
+    /// Convenience node for patterns such as `a , b , c`
+    Separated,
 
     Sentinel,
     Error,

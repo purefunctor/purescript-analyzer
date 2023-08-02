@@ -42,9 +42,13 @@ Start { kind: DoExpression }
           Finish
           Start { kind: ZeroOrMore }
           Finish
-          Token { kind: Equal }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
+          Start { kind: Unconditional }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: LiteralExpression }
+                Token { kind: LiteralInteger }
+              Finish
+            Finish
           Finish
         Finish
         Start { kind: LetBindingName }
@@ -58,11 +62,15 @@ Start { kind: DoExpression }
               Finish
             Finish
           Finish
-          Token { kind: Equal }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
+          Start { kind: Unconditional }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
               Finish
             Finish
           Finish
@@ -96,22 +104,26 @@ Start { kind: DoExpression }
               Token { kind: RightParenthesis }
             Finish
           Finish
-          Token { kind: Equal }
-          Start { kind: ExpressionOperatorChain }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-              Start { kind: Pair }
-                Token { kind: Operator }
+          Start { kind: Unconditional }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: ExpressionOperatorChain }
                 Start { kind: VariableExpression }
                   Start { kind: QualifiedName }
                     Start { kind: NameRef }
                       Token { kind: Lower }
+                    Finish
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                  Start { kind: Pair }
+                    Token { kind: Operator }
+                    Start { kind: VariableExpression }
+                      Start { kind: QualifiedName }
+                        Start { kind: NameRef }
+                          Token { kind: Lower }
+                        Finish
+                      Finish
                     Finish
                   Finish
                 Finish

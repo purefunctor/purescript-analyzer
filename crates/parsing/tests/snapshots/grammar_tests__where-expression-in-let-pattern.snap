@@ -53,9 +53,13 @@ Start { kind: DoExpression }
                 Finish
                 Start { kind: ZeroOrMore }
                 Finish
-                Token { kind: Equal }
-                Start { kind: LiteralExpression }
-                  Token { kind: LiteralInteger }
+                Start { kind: Unconditional }
+                  Token { kind: Equal }
+                  Start { kind: WhereExpression }
+                    Start { kind: LiteralExpression }
+                      Token { kind: LiteralInteger }
+                    Finish
+                  Finish
                 Finish
               Finish
               Start { kind: LetBindingName }
@@ -64,9 +68,13 @@ Start { kind: DoExpression }
                 Finish
                 Start { kind: ZeroOrMore }
                 Finish
-                Token { kind: Equal }
-                Start { kind: LiteralExpression }
-                  Token { kind: LiteralInteger }
+                Start { kind: Unconditional }
+                  Token { kind: Equal }
+                  Start { kind: WhereExpression }
+                    Start { kind: LiteralExpression }
+                      Token { kind: LiteralInteger }
+                    Finish
+                  Finish
                 Finish
               Finish
             Finish

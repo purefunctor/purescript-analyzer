@@ -23,11 +23,15 @@ Start { kind: DoExpression }
           Finish
           Start { kind: ZeroOrMore }
           Finish
-          Token { kind: Equal }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
+          Start { kind: Unconditional }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
               Finish
             Finish
           Finish
@@ -51,11 +55,15 @@ Start { kind: DoExpression }
           Finish
           Start { kind: ZeroOrMore }
           Finish
-          Token { kind: Equal }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
+          Start { kind: Unconditional }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
               Finish
             Finish
           Finish

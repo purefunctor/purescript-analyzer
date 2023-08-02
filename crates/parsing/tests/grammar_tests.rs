@@ -127,6 +127,18 @@ do
         b = 2
     ";
     expect_parse("where-expression-in-let-pattern", source, expression);
+
+    let source = r"
+do
+  let
+    a | true = false";
+    expect_parse("guarded-with-expression", source, expression);
+    let source = r"
+do
+  let
+    a | Just b <- c
+      , Just d <- e = false";
+    expect_parse("guarded-with-pattern", source, expression);
 }
 
 #[test]
