@@ -32,7 +32,7 @@ pub fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
 }
 
 /// Performs a `rule` and conditionally backtracks.
-pub fn attempt(parser: &mut Parser, rule: impl Fn(&mut Parser)) -> bool {
+pub fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -> bool {
     let mut save = parser.save();
     rule(parser);
     if save.has_error(parser) {

@@ -184,7 +184,6 @@ fn expression_5(parser: &mut Parser) {
                 None => {
                     expression.cancel(parser);
                     qualified_do_or_ado.cancel(parser);
-                    return;
                 }
             }
         }
@@ -415,9 +414,7 @@ fn expression_atom(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::LiteralExpression);
         }
         SyntaxKind::LeftParenthesis => {
-            if attempt(parser, |parser| {
-                qualified_name_or_do_ado(parser);
-            }) {
+            if attempt(parser, qualified_name_or_do_ado) {
                 marker.end(parser, SyntaxKind::OperatorNameExpression);
                 return;
             }
