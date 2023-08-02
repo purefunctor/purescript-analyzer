@@ -26,6 +26,7 @@ pub enum SyntaxKind {
     NameRef,
     Upper,
     Lower,
+    Label,
     Hole,
     Operator,
 
@@ -101,6 +102,8 @@ pub enum SyntaxKind {
     LiteralFalse,
     LiteralArray,
     LiteralRecord,
+    RecordPun,
+    RecordField,
 
     ConstructorType,
     ForallType,

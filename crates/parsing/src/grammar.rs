@@ -434,7 +434,8 @@ fn expression_atom(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::LiteralExpression);
         }
         SyntaxKind::LeftBracket => {
-            todo!("Record");
+            literal_record(parser);
+            marker.end(parser, SyntaxKind::LiteralExpression);
         }
         SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
             match qualified_name_or_do_ado(parser) {
@@ -470,6 +471,47 @@ fn literal_array(parser: &mut Parser) {
     parser.layout_end();
 
     array.end(parser, SyntaxKind::LiteralArray);
+}
+
+fn record_item(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    match parser.current() {
+        SyntaxKind::Lower | SyntaxKind::LiteralString | SyntaxKind::LiteralRawString
+            if parser.nth_at(1, SyntaxKind::Colon) =>
+        {
+            label_name(parser);
+            parser.expect(SyntaxKind::Colon);
+            expression(parser);
+            marker.end(parser, SyntaxKind::RecordField);
+        }
+        SyntaxKind::Lower => {
+            label_name(parser);
+            marker.end(parser, SyntaxKind::RecordPun);
+        }
+        SyntaxKind::LiteralString | SyntaxKind::LiteralRawString => {
+            parser.error_recover("expected Lower as RecordPun");
+        }
+        _ => {
+            parser.error_recover("expected Lower, LiteralString, or RawLiteralString");
+        }
+    }
+}
+
+fn literal_record(parser: &mut Parser) {
+    let mut record = parser.start();
+
+    parser.layout_start(LayoutKind::Parenthesis);
+    parser.expect(SyntaxKind::LeftBracket);
+    if parser.at(SyntaxKind::RightBracket) {
+        parser.expect(SyntaxKind::RightBracket);
+    } else {
+        separated(parser, SyntaxKind::Comma, record_item);
+        parser.expect(SyntaxKind::RightBracket);
+    }
+    parser.layout_end();
+
+    record.end(parser, SyntaxKind::LiteralRecord);
 }
 
 pub fn ty(parser: &mut Parser) {
@@ -795,6 +837,12 @@ fn lower_name_ref(parser: &mut Parser) {
 fn lower_name(parser: &mut Parser) {
     let mut name = parser.start();
     parser.consume_as(SyntaxKind::Lower);
+    name.end(parser, SyntaxKind::Name);
+}
+
+fn label_name(parser: &mut Parser) {
+    let mut name = parser.start();
+    parser.consume_as(SyntaxKind::Label);
     name.end(parser, SyntaxKind::Name);
 }
 
