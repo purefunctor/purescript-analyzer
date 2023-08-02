@@ -26,12 +26,12 @@ pub struct Parser {
 impl Parser {
     pub fn new(input: Input) -> Parser {
         let index = 0;
-        let layout = vec![Layout {
+        let layouts = vec![Layout {
             kind: LayoutKind::Root,
             position: Position { offset: 0, line: 1, column: 1 },
         }];
         let events = vec![];
-        Parser { input, index, layouts: layout, events }
+        Parser { input, index, layouts, events }
     }
 
     pub fn is_eof(&self) -> bool {
