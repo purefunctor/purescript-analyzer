@@ -278,57 +278,6 @@ fn do_discard(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::DoDiscard);
 }
 
-fn expression_atom(parser: &mut Parser) {
-    let mut marker = parser.start();
-    match parser.current() {
-        SyntaxKind::LiteralChar
-        | SyntaxKind::LiteralString
-        | SyntaxKind::LiteralRawString
-        | SyntaxKind::LiteralInteger
-        | SyntaxKind::LiteralNumber
-        | SyntaxKind::LiteralTrue
-        | SyntaxKind::LiteralFalse => {
-            parser.consume();
-            marker.end(parser, SyntaxKind::LiteralExpression);
-        }
-        SyntaxKind::LeftParenthesis => match parser.nth(1) {
-            SyntaxKind::Operator | SyntaxKind::Minus => {
-                operator_name_ref(parser);
-                marker.end(parser, SyntaxKind::OperatorNameExpression);
-            }
-            _ => {
-                parser.expect(SyntaxKind::LeftParenthesis);
-                expression(parser);
-                parser.expect(SyntaxKind::RightParenthesis);
-                marker.end(parser, SyntaxKind::ParenthesizedExpression);
-            }
-        },
-        SyntaxKind::LeftSquare => {
-            todo!("Array");
-        }
-
-        SyntaxKind::LeftBracket => {
-            todo!("Record");
-        }
-        SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
-            match qualified_name_or_do_ado(parser) {
-                Some(Left(kind)) => {
-                    marker.end(parser, kind);
-                }
-                Some(Right(_)) => {
-                    unreachable!("should have been handled by `expression_5`");
-                }
-                None => {
-                    marker.cancel(parser);
-                }
-            }
-        }
-        _ => {
-            marker.cancel(parser);
-        }
-    }
-}
-
 fn let_bindings(parser: &mut Parser) {
     parser.layout_start(LayoutKind::Let);
     one_or_more(parser, |parser| {
@@ -418,6 +367,57 @@ fn where_expression(parser: &mut Parser) {
     }
 
     marker.end(parser, SyntaxKind::WhereExpression);
+}
+
+fn expression_atom(parser: &mut Parser) {
+    let mut marker = parser.start();
+    match parser.current() {
+        SyntaxKind::LiteralChar
+        | SyntaxKind::LiteralString
+        | SyntaxKind::LiteralRawString
+        | SyntaxKind::LiteralInteger
+        | SyntaxKind::LiteralNumber
+        | SyntaxKind::LiteralTrue
+        | SyntaxKind::LiteralFalse => {
+            parser.consume();
+            marker.end(parser, SyntaxKind::LiteralExpression);
+        }
+        SyntaxKind::LeftParenthesis => match parser.nth(1) {
+            SyntaxKind::Operator | SyntaxKind::Minus => {
+                operator_name_ref(parser);
+                marker.end(parser, SyntaxKind::OperatorNameExpression);
+            }
+            _ => {
+                parser.expect(SyntaxKind::LeftParenthesis);
+                expression(parser);
+                parser.expect(SyntaxKind::RightParenthesis);
+                marker.end(parser, SyntaxKind::ParenthesizedExpression);
+            }
+        },
+        SyntaxKind::LeftSquare => {
+            todo!("Array");
+        }
+
+        SyntaxKind::LeftBracket => {
+            todo!("Record");
+        }
+        SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw => {
+            match qualified_name_or_do_ado(parser) {
+                Some(Left(kind)) => {
+                    marker.end(parser, kind);
+                }
+                Some(Right(_)) => {
+                    unreachable!("should have been handled by `expression_5`");
+                }
+                None => {
+                    marker.cancel(parser);
+                }
+            }
+        }
+        _ => {
+            marker.cancel(parser);
+        }
+    }
 }
 
 pub fn ty(parser: &mut Parser) {
