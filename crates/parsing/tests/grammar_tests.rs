@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use parsing::{
-    grammar::{binder, expression, type_0},
+    grammar::{binder, expression, ty},
     layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},
@@ -135,12 +135,12 @@ do
 
 #[test]
 fn test_type() {
-    expect_parse("kinded-type", "Type :: Type", type_0);
-    expect_parse("forall-type-plain", "forall a. Type", type_0);
-    expect_parse("forall-type-plain-kinded", "forall (a :: Type). Type", type_0);
-    expect_parse("forall-type-visible", "forall @a. Type", type_0);
-    expect_parse("forall-type-visible-kinded", "forall (@a :: Type). Type", type_0);
-    expect_parse("forall-type-mixed", "forall a (b :: C) @d (@e :: F). Type", type_0);
+    expect_parse("kinded-type", "Type :: Type", ty);
+    expect_parse("forall-type-plain", "forall a. Type", ty);
+    expect_parse("forall-type-plain-kinded", "forall (a :: Type). Type", ty);
+    expect_parse("forall-type-visible", "forall @a. Type", ty);
+    expect_parse("forall-type-visible-kinded", "forall (@a :: Type). Type", ty);
+    expect_parse("forall-type-mixed", "forall a (b :: C) @d (@e :: F). Type", ty);
 }
 
 #[test]

@@ -13,7 +13,7 @@ pub fn expression(parser: &mut Parser) {
 
     if parser.at(SyntaxKind::Colon2) {
         parser.consume();
-        type_0(parser);
+        ty(parser);
         typed.end(parser, SyntaxKind::TypedExpression);
     } else {
         typed.cancel(parser);
@@ -348,7 +348,7 @@ fn let_binding(parser: &mut Parser) {
         SyntaxKind::Lower if parser.nth_at(1, SyntaxKind::Colon2) => {
             lower_name(parser);
             parser.consume();
-            type_0(parser);
+            ty(parser);
             binding.end(parser, SyntaxKind::LetBindingSignature)
         }
         SyntaxKind::Lower => {
@@ -477,7 +477,7 @@ fn operator_name_ref(parser: &mut Parser) {
     wrapped.end(parser, SyntaxKind::Wrapped);
 }
 
-pub fn type_0(parser: &mut Parser) {
+pub fn ty(parser: &mut Parser) {
     let mut kinded = parser.start();
     type_1(parser);
 
@@ -592,7 +592,7 @@ pub fn binder(parser: &mut Parser) {
 
     if parser.at(SyntaxKind::Colon2) {
         parser.consume();
-        type_0(parser);
+        ty(parser);
         typed.end(parser, SyntaxKind::TypedBinder);
     } else {
         typed.cancel(parser);
