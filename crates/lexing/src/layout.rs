@@ -321,6 +321,107 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
+            SyntaxKind::Pipe => {
+                let collapse = self.collapse(InsertWithLayout::offside_end_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::Of)] => {
+                        collapse.commit(self.machine);
+                        self.push_stack(self.now_position, Delimiter::CaseGuard);
+                        self.insert_token(self.now_token);
+                    }
+                    [.., (_, Delimiter::Let | Delimiter::LetStmt | Delimiter::Where)] => {
+                        collapse.commit(self.machine);
+                        self.push_stack(self.now_position, Delimiter::DeclGuard);
+                        self.insert_token(self.now_token);
+                    }
+                    _ => {
+                        self.insert_default();
+                    }
+                }
+            }
+
+            SyntaxKind::Tick => {
+                let collapse = self.collapse(InsertWithLayout::indented_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::Tick)] => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
+                        self.insert_token(self.now_token);
+                    }
+                    _ => {
+                        self.collapse_and_commit(InsertWithLayout::offside_end_p);
+                        self.insert_sep();
+                        self.insert_token(self.now_token);
+                        self.push_stack(self.now_position, Delimiter::Tick);
+                    }
+                }
+            }
+
+            SyntaxKind::Comma => {
+                self.collapse_and_commit(InsertWithLayout::indented_p);
+                if let Some((_, Delimiter::Brace)) = self.machine.stack.last() {
+                    self.insert_token(self.now_token);
+                    self.push_stack(self.now_position, Delimiter::Property);
+                } else {
+                    self.insert_token(self.now_token);
+                }
+            }
+
+            SyntaxKind::Period => {
+                self.insert_default();
+                if let Some((_, Delimiter::Forall)) = self.machine.stack.last() {
+                    self.pop_stack();
+                } else {
+                    self.push_stack(self.now_position, Delimiter::Property);
+                }
+            }
+
+            SyntaxKind::LeftParenthesis => {
+                self.insert_default();
+                self.push_stack(self.now_position, Delimiter::Paren);
+            }
+
+            SyntaxKind::LeftBracket => {
+                self.insert_default();
+                self.push_stack(self.now_position, Delimiter::Brace);
+                self.push_stack(self.now_position, Delimiter::Property);
+            }
+
+            SyntaxKind::LeftSquare => {
+                self.insert_default();
+                self.push_stack(self.now_position, Delimiter::Square);
+            }
+
+            SyntaxKind::RightParenthesis => {
+                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.pop_stack_if(|delimiter| delimiter == Delimiter::Paren);
+                self.insert_token(self.now_token);
+            }
+
+            SyntaxKind::RightBracket => {
+                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
+                self.pop_stack_if(|delimiter| delimiter == Delimiter::Brace);
+                self.insert_token(self.now_token);
+            }
+
+            SyntaxKind::RightSquare => {
+                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.pop_stack_if(|delimiter| delimiter == Delimiter::Square);
+                self.insert_token(self.now_token);
+            }
+
+            SyntaxKind::LiteralString | SyntaxKind::LiteralRawString | SyntaxKind::Lower => {
+                self.insert_default();
+                self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
+            }
+
+            k if k.is_operator() => {
+                self.collapse_and_commit(InsertWithLayout::offside_end_p);
+                self.insert_sep();
+                self.insert_token(self.now_token);
+            }
+
             _ => {
                 self.insert_default();
             }
