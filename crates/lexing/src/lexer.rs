@@ -99,23 +99,22 @@ impl<'a> Lexer<'a> {
 
             '`' => self.take_single(SyntaxKind::Tick),
             ',' => self.take_single(SyntaxKind::Comma),
+            '?' => self.take_single(SyntaxKind::Question),
+            '_' if !is_lower(self.second()) => self.take_single(SyntaxKind::Underscore),
 
             '\'' => self.take_char(),
             '"' => self.take_string(),
 
-            '?' if is_lower(self.second()) => self.take_hole(),
-            '_' if !is_lower(self.second()) => self.take_single(SyntaxKind::Underscore),
-
-            identifier => {
-                if is_lower_start(identifier) {
+            i => {
+                if is_lower_start(i) {
                     self.take_lower()
-                } else if identifier.is_letter_uppercase() {
+                } else if i.is_letter_uppercase() {
                     self.take_upper()
-                } else if is_operator(identifier) {
+                } else if is_operator(i) {
                     self.take_operator()
-                } else if identifier.is_whitespace() {
+                } else if i.is_whitespace() {
                     self.take_whitespace()
-                } else if identifier.is_ascii_digit() {
+                } else if i.is_ascii_digit() {
                     self.take_integer_or_number()
                 } else {
                     panic!("Unknown token!")
@@ -390,15 +389,6 @@ impl<'a> Lexer<'a> {
             self.take();
         }
         self.lexed.push(SyntaxKind::BlockComment, position, None)
-    }
-
-    #[inline]
-    fn take_hole(&mut self) {
-        let position = self.position();
-        assert_eq!(self.take(), '?');
-        assert!(is_lower(self.take()));
-        self.take_while(is_lower);
-        self.lexed.push(SyntaxKind::Hole, position, None)
     }
 }
 
