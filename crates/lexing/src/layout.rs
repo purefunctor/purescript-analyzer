@@ -165,24 +165,29 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             },
 
-            SyntaxKind::InKw => match self.collapse_and_preview(InsertWithLayout::in_p) {
-                [.., (_, Delimiter::Ado), (_, Delimiter::LetStmt)] => {
-                    self.pop_stack();
-                    self.pop_stack();
-                    self.insert_end();
-                    self.insert_end();
-                    self.insert_token(self.now_token);
+            SyntaxKind::InKw => {
+                let collapse = self.collapse(InsertWithLayout::in_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::Ado), (_, Delimiter::LetStmt)] => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
+                        self.pop_stack();
+                        self.insert_end();
+                        self.insert_end();
+                        self.insert_token(self.now_token);
+                    }
+                    [.., (_, delimiter)] if delimiter.is_indented() => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
+                        self.insert_end();
+                        self.insert_token(self.now_token);
+                    }
+                    _ => {
+                        self.insert_default();
+                        self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
+                    }
                 }
-                [.., (_, delimiter)] if delimiter.is_indented() => {
-                    self.pop_stack();
-                    self.insert_end();
-                    self.insert_token(self.now_token);
-                }
-                _ => {
-                    self.insert_default();
-                    self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
-                }
-            },
+            }
 
             SyntaxKind::LetKw => {
                 self.insert_keyword_property(|this| match &this.machine.stack[..] {
@@ -220,18 +225,22 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 });
             }
 
-            SyntaxKind::OfKw => match self.collapse_and_preview(InsertWithLayout::indented_p) {
-                [.., (_, Delimiter::Case)] => {
-                    self.pop_stack();
-                    self.insert_token(self.now_token);
-                    self.insert_start(Delimiter::Of);
-                    self.push_stack(self.next_position, Delimiter::CaseBinders);
+            SyntaxKind::OfKw => {
+                let collapse = self.collapse(InsertWithLayout::indented_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::Case)] => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
+                        self.insert_token(self.now_token);
+                        self.insert_start(Delimiter::Of);
+                        self.push_stack(self.next_position, Delimiter::CaseBinders);
+                    }
+                    _ => {
+                        self.insert_default();
+                        self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
+                    }
                 }
-                _ => {
-                    self.insert_default();
-                    self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
-                }
-            },
+            }
 
             SyntaxKind::IfKw => {
                 self.insert_keyword_property(|this| {
@@ -239,34 +248,42 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 });
             }
 
-            SyntaxKind::ThenKw => match self.collapse_and_preview(InsertWithLayout::indented_p) {
-                [.., (_, Delimiter::If)] => {
-                    self.pop_stack();
-                    self.insert_token(self.now_token);
-                    self.push_stack(self.now_position, Delimiter::Then);
-                }
-                _ => {
-                    self.insert_default();
-                    self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
-                }
-            },
-
-            SyntaxKind::ElseKw => match self.collapse_and_preview(InsertWithLayout::indented_p) {
-                [.., (_, Delimiter::Then)] => {
-                    self.pop_stack();
-                    self.insert_token(self.now_token);
-                }
-                _ => {
-                    self.collapse_and_commit(InsertWithLayout::offside_p);
-                    if self.is_top_declaration(self.now_position) {
+            SyntaxKind::ThenKw => {
+                let collapse = self.collapse(InsertWithLayout::indented_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::If)] => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
                         self.insert_token(self.now_token);
-                    } else {
-                        self.insert_sep();
-                        self.insert_token(self.now_token);
+                        self.push_stack(self.now_position, Delimiter::Then);
+                    }
+                    _ => {
+                        self.insert_default();
                         self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
                     }
                 }
-            },
+            }
+
+            SyntaxKind::ElseKw => {
+                let collapse = self.collapse(InsertWithLayout::indented_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::Then)] => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
+                        self.insert_token(self.now_token);
+                    }
+                    _ => {
+                        self.collapse_and_commit(InsertWithLayout::offside_p);
+                        if self.is_top_declaration(self.now_position) {
+                            self.insert_token(self.now_token);
+                        } else {
+                            self.insert_sep();
+                            self.insert_token(self.now_token);
+                            self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
+                        }
+                    }
+                }
+            }
 
             SyntaxKind::ForallKw => {
                 self.insert_keyword_property(|this| {
@@ -290,15 +307,19 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::Equal => match self.collapse_and_preview(InsertWithLayout::equals_p) {
-                [.., (_, Delimiter::DeclGuard)] => {
-                    self.pop_stack();
-                    self.insert_token(self.now_token);
+            SyntaxKind::Equal => {
+                let collapse = self.collapse(InsertWithLayout::equals_p);
+                match collapse.preview(self.machine) {
+                    [.., (_, Delimiter::DeclGuard)] => {
+                        collapse.commit(self.machine);
+                        self.pop_stack();
+                        self.insert_token(self.now_token);
+                    }
+                    _ => {
+                        self.insert_default();
+                    }
                 }
-                _ => {
-                    self.insert_default();
-                }
-            },
+            }
 
             _ => {
                 self.insert_default();
@@ -416,13 +437,6 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
 
     fn collapse_and_commit(&mut self, predicate: impl Fn(&Self, Position, Delimiter) -> bool) {
         self.collapse(predicate).commit(self.machine);
-    }
-
-    fn collapse_and_preview(
-        &mut self,
-        predicate: impl Fn(&Self, Position, Delimiter) -> bool,
-    ) -> &[(Position, Delimiter)] {
-        self.collapse(predicate).preview(self.machine)
     }
 
     fn indented_p(&self, _: Position, delimiter: Delimiter) -> bool {
