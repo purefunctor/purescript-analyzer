@@ -38,11 +38,3 @@ pub fn layout(lexed: &Lexed) -> Vec<SyntaxKind> {
         machine.take_token();
     }
 }
-
-#[test]
-fn __() {
-    let lexed = lex("\\");
-    dbg!(lexed.kind(0));
-    // let tokens = layout(&lexed);
-    // dbg!(tokens);
-}
