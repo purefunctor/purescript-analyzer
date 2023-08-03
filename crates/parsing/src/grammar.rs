@@ -218,7 +218,12 @@ fn expression_if(parser: &mut Parser) {
     expression(parser);
 
     parser.expect(SyntaxKind::ElseKw);
-    expression(parser);
+
+    if !parser.group_done() {
+        expression(parser);
+    } else {
+        parser.error("expected Expression");
+    }
 
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
