@@ -5,7 +5,12 @@ use std::ops::Range;
 use position::Position;
 use syntax::SyntaxKind;
 
-/// A sequence of [`SyntaxKind`]s.
+/// A sequence of tokens with metadata.
+///
+/// Information such as token position and error messages are stored alongside
+/// the sequence of tokens. While the parser only consumes the latter, we want
+/// to keep this around such that we can intersperse whitespace and comments,
+/// among other things.
 pub struct Lexed<'a> {
     source: &'a str,
     kinds: Vec<SyntaxKind>,

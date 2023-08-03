@@ -1,3 +1,5 @@
+//! Implements the layout algorithm.
+
 use position::Position;
 use syntax::SyntaxKind;
 
