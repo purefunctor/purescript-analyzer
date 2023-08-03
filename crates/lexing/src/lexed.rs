@@ -39,6 +39,10 @@ impl<'a> Lexed<'a> {
         }
     }
 
+    pub(crate) fn eof_position(&self) -> Position {
+        self.positions[self.positions.len() - 1]
+    }
+
     /// # Invariant
     ///
     /// [`Lexed`] always contains [`SyntaxKind::EndOfFile`] as its final element.

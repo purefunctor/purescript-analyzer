@@ -7,12 +7,15 @@
 //! [`rustc_lexer`]: https://doc.rust-lang.org/stable/nightly-rustc/rustc_lexer/
 //! [`rust-analyzer`]: https://github.com/rust-lang/rust-analyzer/
 
+mod layout;
 mod lexed;
 mod lexer;
 mod position;
 
+use layout::Machine;
 use lexed::Lexed;
 use lexer::Lexer;
+use syntax::SyntaxKind;
 
 /// Lexes a `&str` into [`Lexed`].
 pub fn lex(source: &str) -> Lexed {
@@ -23,4 +26,29 @@ pub fn lex(source: &str) -> Lexed {
         }
         lexer.take_token();
     }
+}
+
+/// Applies the layout algorithm to [`Lexed`].
+pub fn layout(lexed: &Lexed) -> Vec<SyntaxKind> {
+    let mut machine = Machine::new(lexed);
+    loop {
+        if machine.is_eof() {
+            break machine.finalize();
+        }
+        machine.take_token();
+    }
+}
+
+#[test]
+fn __() {
+    let lexed = lex("
+do
+  hello
+  if a
+  then b
+  else c
+  world
+    ");
+    let tokens = layout(&lexed);
+    dbg!(tokens);
 }

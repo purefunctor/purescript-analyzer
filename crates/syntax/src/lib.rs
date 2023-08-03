@@ -82,6 +82,10 @@ pub enum SyntaxKind {
     LetBindingPattern,
     WhereExpression,
 
+    CaseExpression,
+    CaseKw,
+    OfKw,
+
     ExpressionInfixChain,
     ExpressionOperatorChain,
     NegateExpression,
@@ -171,6 +175,10 @@ pub enum SyntaxKind {
     Pair,
     /// Convenience node for patterns such as `a , b , c`
     Separated,
+
+    LayoutStart,
+    LayoutSep,
+    LayoutEnd,
 
     Sentinel,
     Error,

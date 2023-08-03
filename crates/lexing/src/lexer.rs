@@ -139,6 +139,7 @@ impl<'a> Lexer<'a> {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
             "ado" => SyntaxKind::AdoKw,
             "as" => SyntaxKind::AsKw,
+            "case" => SyntaxKind::CaseKw,
             "class" => SyntaxKind::ClassKw,
             "data" => SyntaxKind::DataKw,
             "derive" => SyntaxKind::DeriveKw,
@@ -157,6 +158,7 @@ impl<'a> Lexer<'a> {
             "let" => SyntaxKind::LetKw,
             "module" => SyntaxKind::ModuleKw,
             "newtype" => SyntaxKind::NewtypeKw,
+            "of" => SyntaxKind::OfKw,
             "then" => SyntaxKind::ThenKw,
             "true" => SyntaxKind::LiteralTrue,
             "type" => SyntaxKind::TypeKw,
