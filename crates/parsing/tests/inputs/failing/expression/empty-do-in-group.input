@@ -1,0 +1,4 @@
+do
+  pure "b"
+  do
+  'a' pure

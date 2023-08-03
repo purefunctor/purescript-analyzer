@@ -1,0 +1,62 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/failing/expression/empty-do-in-group.input
+---
+Input: do
+  pure "b"
+  do
+  'a' pure
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: TermArgument }
+            Start { kind: LiteralExpression }
+              Token { kind: LiteralString }
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: DoDiscard }
+      Start { kind: DoExpression }
+        Start { kind: QualifiedDo }
+          Token { kind: DoKw }
+        Finish
+        Error { message: "expected DoStatement" }
+      Finish
+    Finish
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralChar }
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: TermArgument }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+Finish
+

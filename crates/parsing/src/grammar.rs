@@ -117,23 +117,7 @@ fn expression_4(parser: &mut Parser) {
     expression_5(parser);
 
     let has_arguments = one_or_more(parser, |parser| {
-        if parser.group_done()
-            || parser.current().is_operator()
-            || matches!(
-                parser.current(),
-                SyntaxKind::RightParenthesis
-                    | SyntaxKind::RightSquare
-                    | SyntaxKind::RightBracket
-                    | SyntaxKind::Colon2
-                    | SyntaxKind::Tick
-                    | SyntaxKind::ThenKw
-                    | SyntaxKind::ElseKw
-                    | SyntaxKind::WhereKw
-                    | SyntaxKind::Equal
-                    | SyntaxKind::LeftArrow
-                    | SyntaxKind::Comma
-            )
-        {
+        if parser.group_done() || at_expression_boundary(parser) {
             return false;
         }
 
@@ -147,6 +131,24 @@ fn expression_4(parser: &mut Parser) {
     } else {
         application.cancel(parser);
     }
+}
+
+fn at_expression_boundary(parser: &Parser) -> bool {
+    parser.current().is_operator()
+        || matches!(
+            parser.current(),
+            SyntaxKind::RightParenthesis
+                | SyntaxKind::RightSquare
+                | SyntaxKind::RightBracket
+                | SyntaxKind::Colon2
+                | SyntaxKind::Tick
+                | SyntaxKind::ThenKw
+                | SyntaxKind::ElseKw
+                | SyntaxKind::WhereKw
+                | SyntaxKind::Equal
+                | SyntaxKind::LeftArrow
+                | SyntaxKind::Comma
+        )
 }
 
 fn expression_spine(parser: &mut Parser) {
@@ -222,6 +224,10 @@ fn expression_if(parser: &mut Parser) {
 }
 
 fn do_statements(parser: &mut Parser) {
+    if parser.group_done() || at_expression_boundary(parser) {
+        return parser.error("expected DoStatement");
+    }
+
     parser.layout_start(LayoutKind::Do);
 
     one_or_more(parser, |parser| {
@@ -245,19 +251,7 @@ fn do_statement(parser: &mut Parser) {
             return;
         }
 
-        if attempt(parser, do_discard) {
-            return;
-        }
-
-        // TODO: error_recover_until_next_group?
-        let mut error = parser.start();
-        loop {
-            parser.consume();
-            if parser.group_done() {
-                break;
-            }
-        }
-        error.end(parser, SyntaxKind::Error);
+        do_discard(parser);
     };
 }
 
@@ -278,6 +272,7 @@ fn do_bind(parser: &mut Parser) {
 
 fn do_discard(parser: &mut Parser) {
     let mut marker = parser.start();
+    println!("i tried a discard");
     expression(parser);
     marker.end(parser, SyntaxKind::DoDiscard);
 }

@@ -12,12 +12,9 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Start { kind: OneOrMore }
-    Start { kind: Error }
-      Token { kind: IfKw }
-      Token { kind: Lower }
-    Finish
     Start { kind: DoDiscard }
-      Start { kind: ApplicationExpression }
+      Start { kind: IfThenElseExpression }
+        Token { kind: IfKw }
         Start { kind: VariableExpression }
           Start { kind: QualifiedName }
             Start { kind: NameRef }
@@ -25,17 +22,29 @@ Start { kind: DoExpression }
             Finish
           Finish
         Finish
-        Start { kind: OneOrMore }
-          Start { kind: TermArgument }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
+        Error { message: "expected ThenKw" }
+        Start { kind: ApplicationExpression }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Start { kind: OneOrMore }
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
                 Finish
               Finish
             Finish
           Finish
         Finish
+        Error { message: "expected ElseKw" }
+        Error { message: "expected Expression" }
       Finish
     Finish
   Finish
