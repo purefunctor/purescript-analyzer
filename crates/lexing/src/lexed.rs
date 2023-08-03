@@ -1,4 +1,5 @@
 //! The lexer's output type.
+
 use std::ops::Range;
 
 use syntax::SyntaxKind;

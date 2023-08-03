@@ -6,6 +6,7 @@
 //! [`lexer`]: https://github.com/purescript/purescript/blob/master/src/Language/PureScript/CST/Lexer.hs
 //! [`rustc_lexer`]: https://doc.rust-lang.org/stable/nightly-rustc/rustc_lexer/
 //! [`rust-analyzer`]: https://github.com/rust-lang/rust-analyzer/
+
 mod lexed;
 mod lexer;
 mod position;
