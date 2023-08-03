@@ -51,6 +51,7 @@ pub enum SyntaxKind {
     Pipe,
     Minus,
     Underscore,
+    Question,
 
     AdoExpression,
     QualifiedAdo,
