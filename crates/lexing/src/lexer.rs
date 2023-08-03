@@ -198,6 +198,7 @@ impl<'a> Lexer<'a> {
             "|" => SyntaxKind::Pipe,
             "@" => SyntaxKind::At,
             "-" => SyntaxKind::Minus,
+            "\\" => SyntaxKind::Backslash,
             _ => SyntaxKind::Operator,
         };
         self.lexed.push(kind, position, None)

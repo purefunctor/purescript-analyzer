@@ -41,14 +41,8 @@ pub fn layout(lexed: &Lexed) -> Vec<SyntaxKind> {
 
 #[test]
 fn __() {
-    let lexed = lex("
-do
-  hello
-  if a
-  then b
-  else c
-  world
-    ");
-    let tokens = layout(&lexed);
-    dbg!(tokens);
+    let lexed = lex("\\");
+    dbg!(lexed.kind(0));
+    // let tokens = layout(&lexed);
+    // dbg!(tokens);
 }

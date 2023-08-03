@@ -266,7 +266,39 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                         self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
                     }
                 }
+            },
+
+            SyntaxKind::ForallKw => {
+                self.insert_keyword_property(|this| {
+                    this.push_stack(this.now_position, Delimiter::Forall);
+                });
             }
+
+            SyntaxKind::Backslash => {
+                self.insert_default();
+                self.push_stack(self.now_position, Delimiter::LambdaBinders);
+            }
+
+            SyntaxKind::RightArrow => {
+                self.collapse_and_commit(InsertWithLayout::arrow_p);
+                self.pop_stack_if(|delimiter| {
+                    matches!(
+                        delimiter,
+                        Delimiter::CaseBinders | Delimiter::CaseGuard | Delimiter::LambdaBinders
+                    )
+                });
+                self.insert_token(self.now_token);
+            }
+
+            SyntaxKind::Equal => match self.collapse_and_preview(InsertWithLayout::equals_p) {
+                [.., (_, Delimiter::DeclGuard)] => {
+                    self.pop_stack();
+                    self.insert_token(self.now_token);
+                }
+                _ => {
+                    self.insert_default();
+                }
+            },
 
             _ => {
                 self.insert_default();
@@ -427,6 +459,18 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
         } else {
             delimiter.is_indented()
         }
+    }
+
+    fn arrow_p(&self, position: Position, delimiter: Delimiter) -> bool {
+        match delimiter {
+            Delimiter::Do => true,
+            Delimiter::Of => false,
+            _ => self.offside_end_p(position, delimiter),
+        }
+    }
+
+    fn equals_p(&self, _: Position, delimiter: Delimiter) -> bool {
+        matches!(delimiter, Delimiter::Where | Delimiter::Let | Delimiter::LetStmt)
     }
 }
 
