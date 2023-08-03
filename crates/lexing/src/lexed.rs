@@ -15,7 +15,7 @@ pub struct Lexed<'a> {
 }
 
 #[derive(Debug)]
-pub struct LexError {
+struct LexError {
     message: String,
     index: u32,
 }

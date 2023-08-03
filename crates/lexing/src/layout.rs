@@ -42,7 +42,7 @@ impl Delimiter {
     }
 }
 
-pub struct Machine<'a> {
+pub(crate) struct Machine<'a> {
     lexed: &'a Lexed<'a>,
     now_index: usize,
 

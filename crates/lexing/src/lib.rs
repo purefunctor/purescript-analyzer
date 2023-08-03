@@ -10,10 +10,11 @@
 mod layout;
 mod lexed;
 mod lexer;
-mod position;
+pub mod position;
+
+pub use lexed::Lexed;
 
 use layout::Machine;
-use lexed::Lexed;
 use lexer::Lexer;
 use syntax::SyntaxKind;
 
