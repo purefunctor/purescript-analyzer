@@ -2,10 +2,11 @@
 
 use std::str::Chars;
 
+use position::Position;
 use syntax::SyntaxKind;
 use unicode_categories::UnicodeCategories;
 
-use crate::{lexed::Lexed, position::Position};
+use crate::lexed::Lexed;
 
 const EOF_CHAR: char = '\0';
 

@@ -10,7 +10,6 @@
 mod layout;
 mod lexed;
 mod lexer;
-pub mod position;
 
 pub use lexed::Lexed;
 

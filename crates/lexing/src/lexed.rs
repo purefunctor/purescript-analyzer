@@ -2,9 +2,8 @@
 
 use std::ops::Range;
 
+use position::Position;
 use syntax::SyntaxKind;
-
-use crate::position::Position;
 
 /// A sequence of [`SyntaxKind`]s.
 pub struct Lexed<'a> {
