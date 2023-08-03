@@ -417,19 +417,14 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
     fn collapse(&self, predicate: impl Fn(&Self, Position, Delimiter) -> bool) -> Collapse {
         let mut stack_len = self.machine.stack.len();
         let mut end_tokens = 0;
-        loop {
-            match self.machine.stack.last() {
-                Some((position, delimiter)) => {
-                    if predicate(self, *position, *delimiter) {
-                        stack_len = stack_len.saturating_sub(1);
-                        if delimiter.is_indented() {
-                            end_tokens += 1;
-                        }
-                    } else {
-                        break;
-                    }
+        for (position, delimiter) in self.machine.stack.iter().rev() {
+            if predicate(self, *position, *delimiter) {
+                stack_len = stack_len.saturating_sub(1);
+                if delimiter.is_indented() {
+                    end_tokens += 1;
                 }
-                None => unreachable!(),
+            } else {
+                break;
             }
         }
         Collapse { stack_len, end_tokens }
