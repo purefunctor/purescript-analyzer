@@ -103,11 +103,11 @@ impl<'a> Lexer<'a> {
             '\'' => self.take_char(),
             '"' => self.take_string(),
 
-            '?' if is_ident(self.second()) => self.take_hole(),
-            '_' if !is_ident(self.second()) => self.take_single(SyntaxKind::Underscore),
+            '?' if is_lower(self.second()) => self.take_hole(),
+            '_' if !is_lower(self.second()) => self.take_single(SyntaxKind::Underscore),
 
             identifier => {
-                if is_ident_start(identifier) {
+                if is_lower_start(identifier) {
                     self.take_lower()
                 } else if identifier.is_letter_uppercase() {
                     self.take_upper()
@@ -134,7 +134,7 @@ impl<'a> Lexer<'a> {
     #[inline]
     fn take_lower(&mut self) {
         let position @ Position { offset, .. } = self.position();
-        self.take_while(is_ident);
+        self.take_while(is_lower);
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
@@ -396,8 +396,8 @@ impl<'a> Lexer<'a> {
     fn take_hole(&mut self) {
         let position = self.position();
         assert_eq!(self.take(), '?');
-        assert!(is_ident(self.take()));
-        self.take_while(is_ident);
+        assert!(is_lower(self.take()));
+        self.take_while(is_lower);
         self.lexed.push(SyntaxKind::Hole, position, None)
     }
 }
@@ -411,11 +411,11 @@ fn is_operator(c: char) -> bool {
     }
 }
 
-fn is_ident(c: char) -> bool {
+fn is_lower(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == '\''
 }
 
-fn is_ident_start(c: char) -> bool {
+fn is_lower_start(c: char) -> bool {
     c.is_letter_lowercase() || c == '_'
 }
 
