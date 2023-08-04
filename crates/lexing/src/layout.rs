@@ -165,6 +165,8 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
                 _ => {
                     self.collapse_and_commit(InsertWithLayout::where_p);
+                    self.insert_token(self.now_token);
+                    self.insert_start(Delimiter::Where);
                 }
             },
 
