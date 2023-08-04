@@ -31,11 +31,19 @@ pub enum SyntaxKind {
     Operator,
 
     At,
-    Equal,
-    Period,
-    Period2,
+    Backslash,
     Colon,
     Colon2,
+    Comma,
+    Equal,
+    Minus,
+    Period,
+    Period2,
+    Pipe,
+    Question,
+    Tick,
+    Underscore,
+
     LeftArrow,
     RightArrow,
     LeftThickArrow,
@@ -46,11 +54,6 @@ pub enum SyntaxKind {
     RightBracket,
     LeftSquare,
     RightSquare,
-    Tick,
-    Comma,
-    Pipe,
-    Minus,
-    Underscore,
 
     AdoExpression,
     QualifiedAdo,
@@ -80,6 +83,10 @@ pub enum SyntaxKind {
     LetBindingName,
     LetBindingPattern,
     WhereExpression,
+
+    CaseExpression,
+    CaseKw,
+    OfKw,
 
     ExpressionInfixChain,
     ExpressionOperatorChain,
@@ -170,6 +177,10 @@ pub enum SyntaxKind {
     Pair,
     /// Convenience node for patterns such as `a , b , c`
     Separated,
+
+    LayoutStart,
+    LayoutSep,
+    LayoutEnd,
 
     Sentinel,
     Error,

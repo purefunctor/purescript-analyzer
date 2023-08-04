@@ -1,0 +1,11 @@
+[package]
+name = "lexing"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+position = { version = "0.1.0", path = "../position" }
+syntax = { version = "0.1.0", path = "../syntax" }
+unicode_categories = "0.1.1"
