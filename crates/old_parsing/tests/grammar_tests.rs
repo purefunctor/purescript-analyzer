@@ -1,12 +1,12 @@
 use std::fmt::Write;
 
-use insta::glob;
-use parsing::{
+use old_parsing::{
     grammar::{binder, expression, ty},
     layout::LayoutKind,
     lexer::lex,
     parser::{Event, Parser},
 };
+use insta::glob;
 use syntax::SyntaxKind;
 
 fn expect_parse<F, T>(source: &str, rule: F)

@@ -1,5 +1,5 @@
 [package]
-name = "parsing"
+name = "old_parsing"
 version = "0.1.0"
 edition = "2021"
 

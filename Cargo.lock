@@ -152,7 +152,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "parsing"
+name = "old_parsing"
 version = "0.1.0"
 dependencies = [
  "drop_bomb",
