@@ -73,17 +73,22 @@ impl<'a> Parser<'a> {
         assert!(self.eat(kind));
     }
 
-    pub(crate) fn start(&mut self, kind: SyntaxKind) -> NodeMarker {
+    pub(crate) fn start(&mut self) -> NodeMarker {
         let index = self.output.len();
         self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
         NodeMarker::new(index)
     }
 
-    pub fn save(&mut self) -> SaveMarker {
+    pub(crate) fn save(&mut self) -> SaveMarker {
         let input_index = self.index;
         let output_index = self.output.len();
         self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
         SaveMarker::new(input_index, output_index)
+    }
+
+    pub(crate) fn error(&mut self, message: impl Into<String>) {
+        let message = message.into();
+        self.output.push(Event::Error { message })
     }
 }
 
