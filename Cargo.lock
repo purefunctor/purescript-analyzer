@@ -163,6 +163,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "parsing"
+version = "0.1.0"
+dependencies = [
+ "drop_bomb",
+ "lexing",
+ "syntax",
+]
+
+[[package]]
 name = "position"
 version = "0.1.0"
 
