@@ -9,6 +9,7 @@ edition = "2021"
 drop_bomb = "0.1.5"
 either = "1.9.0"
 insta = { version = "1.31.0", features = ["glob"] }
+lexing = { version = "0.1.0", path = "../lexing" }
 syntax = { version = "0.1.0", path = "../syntax" }
 unicode_categories = "0.1.1"
 

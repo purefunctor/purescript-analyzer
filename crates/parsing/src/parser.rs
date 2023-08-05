@@ -1,12 +1,6 @@
 use drop_bomb::DropBomb;
 use syntax::SyntaxKind;
 
-use crate::{
-    input::Input,
-    layout::{Layout, LayoutKind},
-    position::Position,
-};
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Event {
     Start { kind: SyntaxKind },
@@ -15,23 +9,17 @@ pub enum Event {
     Finish,
 }
 
-pub struct Parser {
-    input: Input,
+pub struct Parser<'a> {
+    input: &'a [SyntaxKind],
     index: usize,
-
-    layouts: Vec<Layout>,
     events: Vec<Event>,
 }
 
-impl Parser {
-    pub fn new(input: Input) -> Parser {
+impl<'a> Parser<'a> {
+    pub fn new(input: &'a [SyntaxKind]) -> Parser<'a> {
         let index = 0;
-        let layouts = vec![Layout {
-            kind: LayoutKind::Root,
-            position: Position { offset: 0, line: 1, column: 1 },
-        }];
         let events = vec![];
-        Parser { input, index, layouts, events }
+        Parser { input, index, events }
     }
 
     pub fn is_eof(&self) -> bool {
@@ -43,69 +31,7 @@ impl Parser {
     }
 }
 
-impl Parser {
-    /// Starts a new layout context.
-    pub fn layout_start(&mut self, kind: LayoutKind) {
-        assert!(!self.is_eof());
-        let position = self.input.position(self.index);
-        self.layouts.push(Layout::new(kind, position));
-    }
-
-    /// Finishes the current layout context.
-    pub fn layout_end(&mut self) {
-        self.layouts.pop();
-    }
-
-    /// Determines if the current token belongs to the next layout context.
-    pub fn layout_done(&self) -> bool {
-        if self.is_eof() {
-            return true;
-        }
-
-        let position = self.input.position(self.index);
-        let layout = self.layouts.last().unwrap();
-
-        assert!(position.line >= layout.position.line);
-
-        match layout.kind {
-            LayoutKind::Root => panic!("Invalid call."),
-            // NOTE: handled by is_eof
-            LayoutKind::Module => false,
-            LayoutKind::Instance => position.column < layout.position.column,
-            LayoutKind::Do => position.column < layout.position.column,
-            LayoutKind::Let => position.column < layout.position.column,
-            LayoutKind::Where => position.column < layout.position.column,
-            // NOTE: handled by is_eof
-            LayoutKind::Parenthesis => false,
-        }
-    }
-
-    /// Determines if the current token belongs to the next token group.
-    pub fn group_done(&self) -> bool {
-        if self.is_eof() {
-            return true;
-        }
-
-        let position = self.input.position(self.index);
-        let layout = self.layouts.last().unwrap();
-
-        assert!(position.line >= layout.position.line);
-
-        match layout.kind {
-            LayoutKind::Root => panic!("Invalid call."),
-            // NOTE: handled by is_eof
-            LayoutKind::Module => position.column == layout.position.column,
-            LayoutKind::Instance => position.column <= layout.position.column,
-            LayoutKind::Do => position.column <= layout.position.column,
-            LayoutKind::Let => position.column <= layout.position.column,
-            LayoutKind::Where => position.column <= layout.position.column,
-            // NOTE: handled by is_eof
-            LayoutKind::Parenthesis => false,
-        }
-    }
-}
-
-impl Parser {
+impl<'a> Parser<'a> {
     /// Starts a new node, returning a [`NodeMarker`].
     pub fn start(&mut self) -> NodeMarker {
         let index = self.events.len();
@@ -149,28 +75,26 @@ impl NodeMarker {
     }
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     /// Starts a new node, returning a [`SaveMarker`].
     pub fn save(&mut self) -> SaveMarker {
         let input_index = self.index;
-        let layout_index = self.layouts.len();
         let event_index = self.events.len();
         self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
-        SaveMarker::new(input_index, layout_index, event_index)
+        SaveMarker::new(input_index, event_index)
     }
 }
 
 pub struct SaveMarker {
     input_index: usize,
-    layout_index: usize,
     event_index: usize,
     bomb: DropBomb,
 }
 
 impl SaveMarker {
-    pub fn new(input_index: usize, layout_index: usize, event_index: usize) -> SaveMarker {
+    pub fn new(input_index: usize, event_index: usize) -> SaveMarker {
         let bomb = DropBomb::new("failed to call load or delete");
-        SaveMarker { input_index, layout_index, event_index, bomb }
+        SaveMarker { input_index, event_index, bomb }
     }
 
     /// Returns `true` if [`Event::Error`] is emitted after the marker.
@@ -183,7 +107,6 @@ impl SaveMarker {
         self.bomb.defuse();
         parser.index = self.input_index;
         parser.events.truncate(self.event_index);
-        parser.layouts.truncate(self.layout_index);
     }
 
     /// Ignores the [`SaveMarker`] and retains the state of the [`Parser`].
@@ -198,10 +121,10 @@ impl SaveMarker {
     }
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     /// Returns the nth token given an `offset`.
     pub fn nth(&self, offset: usize) -> SyntaxKind {
-        self.input.kind(self.index + offset)
+        self.input.get(self.index + offset).cloned().unwrap_or(SyntaxKind::EndOfFile)
     }
 
     /// Determines if an nth token matches a `kind`.
@@ -261,70 +184,5 @@ impl Parser {
         }
         self.error(format!("expected {kind:?}"));
         false
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use syntax::SyntaxKind::{self, *};
-
-    use crate::{layout::LayoutKind, lexer::lex};
-
-    use super::Parser;
-
-    fn parse_module(parser: &mut Parser) {
-        parser.eat(ModuleKw);
-        parse_module_name(parser);
-        parser.eat(WhereKw);
-
-        parser.layout_start(LayoutKind::Module);
-        loop {
-            parse_value_declaration(parser);
-            if parser.layout_done() {
-                break;
-            }
-        }
-        parser.layout_end();
-    }
-
-    fn parse_module_name(parser: &mut Parser) {
-        parser.eat(SyntaxKind::Upper);
-    }
-
-    fn parse_value_declaration(parser: &mut Parser) {
-        let mut marker = parser.start();
-        loop {
-            if parser.at(SyntaxKind::LeftParenthesis) {
-                parser.layout_start(LayoutKind::Parenthesis);
-            }
-            if parser.at(SyntaxKind::RightParenthesis) {
-                parser.layout_end();
-            }
-            parser.consume();
-            if parser.group_done() {
-                break;
-            }
-        }
-        marker.end(parser, SyntaxKind::ValueDeclaration);
-    }
-
-    #[test]
-    fn grammar_api_test() {
-        let lexed = lex(r"module Hello where
-hello = world
-  0 'a' 1.2
-
-hello = (
-world
-0 
-'a' 
-1.2
-)
-  ");
-        let input = lexed.as_input();
-        let mut parser = Parser::new(input);
-        parse_module(&mut parser);
-        dbg!(parser.layouts);
-        dbg!(parser.events);
     }
 }
