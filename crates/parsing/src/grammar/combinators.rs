@@ -75,12 +75,12 @@ pub fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
             SyntaxKind::LayoutSep => {
                 parser.consume();
                 rule(parser);
-            },
+            }
             SyntaxKind::LayoutEnd => {
                 marker.end(parser, SyntaxKind::OneOrMore);
                 parser.consume();
                 break;
-            },
+            }
             _ => {
                 parser.error("expected LayoutSep or LayoutEnd");
                 break;

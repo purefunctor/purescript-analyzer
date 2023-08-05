@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use drop_bomb::DropBomb;
 use syntax::SyntaxKind;
 
@@ -13,13 +15,17 @@ pub struct Parser<'a> {
     input: &'a [SyntaxKind],
     index: usize,
     events: Vec<Event>,
+    steps: Cell<u32>,
 }
+
+const PARSER_LIMIT: u32 = 10_000_000;
 
 impl<'a> Parser<'a> {
     pub fn new(input: &'a [SyntaxKind]) -> Parser<'a> {
         let index = 0;
         let events = vec![];
-        Parser { input, index, events }
+        let steps = Cell::new(0);
+        Parser { input, index, events, steps }
     }
 
     pub fn is_eof(&self) -> bool {
@@ -124,6 +130,11 @@ impl SaveMarker {
 impl<'a> Parser<'a> {
     /// Returns the nth token given an `offset`.
     pub fn nth(&self, offset: usize) -> SyntaxKind {
+        let steps = self.steps.get();
+        if steps > PARSER_LIMIT {
+            panic!("infinite loop in parser");
+        }
+        self.steps.set(steps + 1);
         self.input.get(self.index + offset).cloned().unwrap_or(SyntaxKind::EndOfFile)
     }
 
@@ -145,13 +156,13 @@ impl<'a> Parser<'a> {
     /// Consumes a token, advancing the parser.
     pub fn consume(&mut self) {
         let kind = self.current();
-        self.index += 1;
-        self.events.push(Event::Token { kind })
+        self.consume_as(kind);
     }
 
     /// Consumes a token as a different `kind`.
     pub fn consume_as(&mut self, kind: SyntaxKind) {
         self.index += 1;
+        self.steps.set(0);
         self.events.push(Event::Token { kind });
     }
 
@@ -173,6 +184,7 @@ impl<'a> Parser<'a> {
     pub fn error_recover(&mut self, message: impl Into<String>) {
         let mut error = self.start();
         self.index += 1;
+        self.steps.set(0);
         self.error(message);
         error.end(self, SyntaxKind::Error);
     }
