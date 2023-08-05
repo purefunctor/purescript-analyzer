@@ -21,7 +21,7 @@ where
     writeln!(result, "Input: {source}").unwrap();
 
     let mut indentation = 0;
-    for actual in parser.as_output() {
+    for actual in parser.finalize() {
         if let Event::Start { kind: SyntaxKind::Sentinel } = actual {
             continue;
         }

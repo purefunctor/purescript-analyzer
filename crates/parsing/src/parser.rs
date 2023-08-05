@@ -14,7 +14,7 @@ pub enum Event {
 pub struct Parser<'a> {
     input: &'a [SyntaxKind],
     index: usize,
-    events: Vec<Event>,
+    output: Vec<Event>,
     steps: Cell<u32>,
 }
 
@@ -25,24 +25,89 @@ impl<'a> Parser<'a> {
         let index = 0;
         let events = vec![];
         let steps = Cell::new(0);
-        Parser { input, index, events, steps }
+        Parser { input, index, output: events, steps }
+    }
+
+    pub fn finalize(self) -> Vec<Event> {
+        self.output
     }
 
     pub fn is_eof(&self) -> bool {
         self.index == self.input.len()
     }
 
-    pub fn as_output(self) -> Vec<Event> {
-        self.events
+    pub fn nth(&self, offset: usize) -> SyntaxKind {
+        let steps = self.steps.get();
+        if steps > PARSER_LIMIT {
+            panic!("infinite loop in parser");
+        }
+        self.steps.set(steps + 1);
+        self.input.get(self.index + offset).cloned().unwrap_or(SyntaxKind::EndOfFile)
     }
-}
 
-impl<'a> Parser<'a> {
-    /// Starts a new node, returning a [`NodeMarker`].
+    pub fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
+        self.nth(offset) == kind
+    }
+
+    pub fn current(&self) -> SyntaxKind {
+        self.nth(0)
+    }
+
+    pub fn at(&self, kind: SyntaxKind) -> bool {
+        self.nth_at(0, kind)
+    }
+
+    pub fn consume(&mut self) {
+        let kind = self.current();
+        self.consume_as(kind);
+    }
+
+    pub fn consume_as(&mut self, kind: SyntaxKind) {
+        self.index += 1;
+        self.steps.set(0);
+        self.output.push(Event::Token { kind });
+    }
+
+    pub fn eat(&mut self, kind: SyntaxKind) -> bool {
+        if !self.at(kind) {
+            return false;
+        }
+        self.consume();
+        true
+    }
+
+    pub fn error(&mut self, message: impl Into<String>) {
+        let message = message.into();
+        self.output.push(Event::Error { message })
+    }
+
+    pub fn error_recover(&mut self, message: impl Into<String>) {
+        let mut error = self.start();
+        self.index += 1;
+        self.steps.set(0);
+        self.error(message);
+        error.end(self, SyntaxKind::Error);
+    }
+
+    pub fn expect(&mut self, kind: SyntaxKind) -> bool {
+        if self.eat(kind) {
+            return true;
+        }
+        self.error(format!("expected {kind:?}"));
+        false
+    }
+
     pub fn start(&mut self) -> NodeMarker {
-        let index = self.events.len();
-        self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
+        let index = self.output.len();
+        self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
         NodeMarker::new(index)
+    }
+
+    pub fn save(&mut self) -> SaveMarker {
+        let input_index = self.index;
+        let event_index = self.output.len();
+        self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
+        SaveMarker::new(input_index, event_index)
     }
 }
 
@@ -57,40 +122,27 @@ impl NodeMarker {
         NodeMarker { index, bomb }
     }
 
-    /// Finishes a node's construction.
     pub fn end(&mut self, parser: &mut Parser, kind: SyntaxKind) {
         self.bomb.defuse();
-        match &mut parser.events[self.index] {
+        match &mut parser.output[self.index] {
             Event::Start { kind: sentinel } => {
                 *sentinel = kind;
             }
             _ => unreachable!(),
         }
-        parser.events.push(Event::Finish);
+        parser.output.push(Event::Finish);
     }
 
-    /// Cancels a node's construction.
     pub fn cancel(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
-        if self.index == parser.events.len() - 1 {
-            match parser.events.pop() {
+        if self.index == parser.output.len() - 1 {
+            match parser.output.pop() {
                 Some(Event::Start { kind: SyntaxKind::Sentinel }) => (),
                 _ => unreachable!(),
             }
         }
     }
 }
-
-impl<'a> Parser<'a> {
-    /// Starts a new node, returning a [`SaveMarker`].
-    pub fn save(&mut self) -> SaveMarker {
-        let input_index = self.index;
-        let event_index = self.events.len();
-        self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
-        SaveMarker::new(input_index, event_index)
-    }
-}
-
 pub struct SaveMarker {
     input_index: usize,
     event_index: usize,
@@ -103,98 +155,23 @@ impl SaveMarker {
         SaveMarker { input_index, event_index, bomb }
     }
 
-    /// Returns `true` if [`Event::Error`] is emitted after the marker.
     pub fn has_error(&self, parser: &Parser) -> bool {
-        parser.events[self.event_index..].iter().any(|event| matches!(event, Event::Error { .. }))
+        parser.output[self.event_index..].iter().any(|event| matches!(event, Event::Error { .. }))
     }
 
-    /// Resets the state of the [`Parser`] to before [`Parser::save`] is called.
     pub fn load(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
         parser.index = self.input_index;
-        parser.events.truncate(self.event_index);
+        parser.output.truncate(self.event_index);
     }
 
-    /// Ignores the [`SaveMarker`] and retains the state of the [`Parser`].
     pub fn delete(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
-        if self.event_index == parser.events.len() - 1 {
-            match parser.events.pop() {
+        if self.event_index == parser.output.len() - 1 {
+            match parser.output.pop() {
                 Some(Event::Start { kind: SyntaxKind::Sentinel }) => (),
                 _ => unreachable!(),
             }
         }
-    }
-}
-
-impl<'a> Parser<'a> {
-    /// Returns the nth token given an `offset`.
-    pub fn nth(&self, offset: usize) -> SyntaxKind {
-        let steps = self.steps.get();
-        if steps > PARSER_LIMIT {
-            panic!("infinite loop in parser");
-        }
-        self.steps.set(steps + 1);
-        self.input.get(self.index + offset).cloned().unwrap_or(SyntaxKind::EndOfFile)
-    }
-
-    /// Determines if an nth token matches a `kind`.
-    pub fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
-        self.nth(offset) == kind
-    }
-
-    /// Returns the current token.
-    pub fn current(&self) -> SyntaxKind {
-        self.nth(0)
-    }
-
-    /// Determines if the current token matches a `kind`.
-    pub fn at(&self, kind: SyntaxKind) -> bool {
-        self.nth_at(0, kind)
-    }
-
-    /// Consumes a token, advancing the parser.
-    pub fn consume(&mut self) {
-        let kind = self.current();
-        self.consume_as(kind);
-    }
-
-    /// Consumes a token as a different `kind`.
-    pub fn consume_as(&mut self, kind: SyntaxKind) {
-        self.index += 1;
-        self.steps.set(0);
-        self.events.push(Event::Token { kind });
-    }
-
-    /// Consumes a token if it matches the `kind`.
-    pub fn eat(&mut self, kind: SyntaxKind) -> bool {
-        if !self.at(kind) {
-            return false;
-        }
-        self.consume();
-        true
-    }
-
-    /// Emit an error with a `message`.
-    pub fn error(&mut self, message: impl Into<String>) {
-        let message = message.into();
-        self.events.push(Event::Error { message })
-    }
-
-    pub fn error_recover(&mut self, message: impl Into<String>) {
-        let mut error = self.start();
-        self.index += 1;
-        self.steps.set(0);
-        self.error(message);
-        error.end(self, SyntaxKind::Error);
-    }
-
-    /// Expect to consume a `kind`, emitting an error otherwise.
-    pub fn expect(&mut self, kind: SyntaxKind) -> bool {
-        if self.eat(kind) {
-            return true;
-        }
-        self.error(format!("expected {kind:?}"));
-        false
     }
 }
