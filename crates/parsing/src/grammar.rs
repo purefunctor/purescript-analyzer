@@ -248,10 +248,6 @@ fn expression_if(parser: &mut Parser) {
 }
 
 fn do_statement(parser: &mut Parser) {
-    if parser.at(SyntaxKind::LayoutEnd) {
-        return parser.error("expected DoStatement");
-    }
-
     if parser.at(SyntaxKind::LetKw) {
         do_let_binding(parser);
     } else {

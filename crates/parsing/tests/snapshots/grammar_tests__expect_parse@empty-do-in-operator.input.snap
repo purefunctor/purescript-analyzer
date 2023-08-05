@@ -12,7 +12,9 @@ Start { kind: ExpressionOperatorChain }
     Finish
     Token { kind: LayoutStart }
     Start { kind: OneOrMore }
-      Error { message: "expected DoStatement" }
+      Start { kind: DoDiscard }
+        Error { message: "expected Expression" }
+      Finish
     Finish
     Token { kind: LayoutEnd }
   Finish

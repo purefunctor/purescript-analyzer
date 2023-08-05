@@ -82,6 +82,7 @@ pub fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
                 break;
             }
             _ => {
+                marker.cancel(parser);
                 parser.error("expected LayoutSep or LayoutEnd");
                 break;
             }
