@@ -24,6 +24,7 @@ Start { kind: DoExpression }
   Start { kind: QualifiedDo }
     Token { kind: DoKw }
   Finish
+  Token { kind: LayoutStart }
   Start { kind: OneOrMore }
     Start { kind: DoDiscard }
       Start { kind: ParenthesizedExpression }
@@ -105,6 +106,7 @@ Start { kind: DoExpression }
         Token { kind: RightParenthesis }
       Finish
     Finish
+    Token { kind: LayoutSep }
     Start { kind: DoDiscard }
       Start { kind: LiteralExpression }
         Start { kind: LiteralArray }
@@ -139,5 +141,6 @@ Start { kind: DoExpression }
       Finish
     Finish
   Finish
+  Token { kind: LayoutEnd }
 Finish
 

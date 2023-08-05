@@ -1,15 +1,15 @@
 //! Implements the layout algorithm.
-//! 
+//!
 //! ## Extension: Qualified Masking
-//! 
+//!
 //! Since the [`crate::lexer`] does not glue module name tokens together,
 //! we introduce the [`Delimiter::Qualified`] mask such that the algorithm
 //! does not introduce a [`Delimiter::Property`] context when it sees a
 //! [`SyntaxKind::Period`] token. For all other tokens, the mask is removed
 //! unconditionally.
-//! 
+//!
 //! For example, `Qualified.do`:
-//! 
+//!
 //! ```text
 //! Upper,    [Root]
 //! Period,   [Root, Qualified]
@@ -17,7 +17,6 @@
 //! ...,      [Root, Do]
 //! ```
 //!
-
 
 use position::Position;
 use syntax::SyntaxKind;
@@ -175,22 +174,23 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::WhereKw => { 
+            SyntaxKind::WhereKw => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 match &self.machine.stack[..] {
-                [.., (_, Delimiter::TopDeclHead)] => {
-                    self.pop_stack();
-                    self.insert_token(self.now_token);
-                    self.insert_start(Delimiter::Where);
+                    [.., (_, Delimiter::TopDeclHead)] => {
+                        self.pop_stack();
+                        self.insert_token(self.now_token);
+                        self.insert_start(Delimiter::Where);
+                    }
+                    [.., (_, Delimiter::Property)] => {
+                        self.pop_stack();
+                        self.insert_token(self.now_token);
+                    }
+                    _ => {
+                        self.collapse_and_commit(InsertWithLayout::where_p);
+                    }
                 }
-                [.., (_, Delimiter::Property)] => {
-                    self.pop_stack();
-                    self.insert_token(self.now_token);
-                }
-                _ => {
-                    self.collapse_and_commit(InsertWithLayout::where_p);
-                }
-            }},
+            }
 
             SyntaxKind::InKw => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);

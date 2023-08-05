@@ -10,7 +10,11 @@ Start { kind: ExpressionOperatorChain }
     Start { kind: QualifiedDo }
       Token { kind: DoKw }
     Finish
-    Error { message: "expected DoStatement" }
+    Token { kind: LayoutStart }
+    Start { kind: OneOrMore }
+      Error { message: "expected DoStatement" }
+    Finish
+    Token { kind: LayoutEnd }
   Finish
   Start { kind: OneOrMore }
     Start { kind: Pair }

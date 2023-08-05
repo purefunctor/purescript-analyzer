@@ -19,9 +19,11 @@ Start { kind: DoExpression }
   Start { kind: QualifiedDo }
     Token { kind: DoKw }
   Finish
+  Token { kind: LayoutStart }
   Start { kind: OneOrMore }
     Start { kind: DoLetBinding }
       Token { kind: LetKw }
+      Token { kind: LayoutStart }
       Start { kind: OneOrMore }
         Start { kind: LetBindingSignature }
           Start { kind: Name }
@@ -32,6 +34,7 @@ Start { kind: DoExpression }
             Token { kind: Upper }
           Finish
         Finish
+        Token { kind: LayoutSep }
         Start { kind: LetBindingName }
           Start { kind: Name }
             Token { kind: Lower }
@@ -47,6 +50,7 @@ Start { kind: DoExpression }
             Finish
           Finish
         Finish
+        Token { kind: LayoutSep }
         Start { kind: LetBindingName }
           Start { kind: Name }
             Token { kind: Lower }
@@ -71,6 +75,7 @@ Start { kind: DoExpression }
             Finish
           Finish
         Finish
+        Token { kind: LayoutSep }
         Start { kind: LetBindingName }
           Start { kind: Name }
             Token { kind: Lower }
@@ -98,6 +103,7 @@ Start { kind: DoExpression }
             Finish
           Finish
         Finish
+        Token { kind: LayoutSep }
         Start { kind: LetBindingName }
           Start { kind: Name }
             Token { kind: Lower }
@@ -155,7 +161,9 @@ Start { kind: DoExpression }
           Finish
         Finish
       Finish
+      Token { kind: LayoutEnd }
     Finish
   Finish
+  Token { kind: LayoutEnd }
 Finish
 

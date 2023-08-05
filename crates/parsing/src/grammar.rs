@@ -3,9 +3,9 @@ mod combinators;
 use either::Either::{self, Left, Right};
 use syntax::SyntaxKind;
 
-use crate::{layout::LayoutKind, parser::Parser};
+use crate::parser::Parser;
 
-use self::combinators::{attempt, one_or_more, separated, zero_or_more};
+use self::combinators::{attempt, layout_one_or_more, one_or_more, separated, zero_or_more};
 
 pub fn expression(parser: &mut Parser) {
     let mut typed = parser.start();
@@ -25,7 +25,11 @@ fn expression_1(parser: &mut Parser) {
     expression_2(parser);
 
     let has_chain = one_or_more(parser, |parser| {
-        if parser.group_done() || !parser.current().is_operator() {
+        if matches!(
+            parser.current(),
+            SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+        ) || !parser.current().is_operator()
+        {
             return false;
         }
 
@@ -49,7 +53,11 @@ fn expression_2(parser: &mut Parser) {
     expression_3(parser);
 
     let has_chain = one_or_more(parser, |parser| {
-        if parser.group_done() || !parser.at(SyntaxKind::Tick) {
+        if matches!(
+            parser.current(),
+            SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+        ) || !parser.at(SyntaxKind::Tick)
+        {
             return false;
         }
 
@@ -81,7 +89,11 @@ fn tick_expression_1(parser: &mut Parser) {
     expression_3(parser);
 
     let has_chain = one_or_more(parser, |parser| {
-        if parser.group_done() || !parser.at(SyntaxKind::Operator) {
+        if matches!(
+            parser.current(),
+            SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+        ) || !parser.at(SyntaxKind::Operator)
+        {
             return false;
         }
 
@@ -117,7 +129,11 @@ fn expression_4(parser: &mut Parser) {
     expression_5(parser);
 
     let has_arguments = one_or_more(parser, |parser| {
-        if parser.group_done() || at_expression_boundary(parser) {
+        if matches!(
+            parser.current(),
+            SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+        ) || at_expression_boundary(parser)
+        {
             return false;
         }
 
@@ -180,7 +196,7 @@ fn expression_5(parser: &mut Parser) {
                 Some(Right(kind)) => {
                     qualified_do_or_ado.end(parser, kind);
 
-                    do_statements(parser);
+                    layout_one_or_more(parser, do_statement);
                     expression.end(parser, SyntaxKind::DoExpression);
                 }
                 None => {
@@ -196,7 +212,7 @@ fn expression_5(parser: &mut Parser) {
             parser.consume();
             qualified_do.end(parser, SyntaxKind::QualifiedDo);
 
-            do_statements(parser);
+            layout_one_or_more(parser, do_statement);
             do_expression.end(parser, SyntaxKind::DoExpression);
         }
         SyntaxKind::AdoKw => {
@@ -219,7 +235,10 @@ fn expression_if(parser: &mut Parser) {
 
     parser.expect(SyntaxKind::ElseKw);
 
-    if !parser.group_done() {
+    if !matches!(
+        parser.current(),
+        SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+    ) {
         expression(parser);
     } else {
         parser.error("expected Expression");
@@ -228,27 +247,11 @@ fn expression_if(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
-fn do_statements(parser: &mut Parser) {
-    if parser.group_done() || at_expression_boundary(parser) {
+fn do_statement(parser: &mut Parser) {
+    if parser.at(SyntaxKind::LayoutEnd) {
         return parser.error("expected DoStatement");
     }
 
-    parser.layout_start(LayoutKind::Do);
-
-    one_or_more(parser, |parser| {
-        if parser.layout_done() {
-            return false;
-        }
-
-        do_statement(parser);
-
-        true
-    });
-
-    parser.layout_end();
-}
-
-fn do_statement(parser: &mut Parser) {
     if parser.at(SyntaxKind::LetKw) {
         do_let_binding(parser);
     } else {
@@ -263,7 +266,7 @@ fn do_statement(parser: &mut Parser) {
 fn do_let_binding(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::LetKw);
-    let_bindings(parser);
+    layout_one_or_more(parser, let_binding);
     marker.end(parser, SyntaxKind::DoLetBinding);
 }
 
@@ -277,23 +280,8 @@ fn do_bind(parser: &mut Parser) {
 
 fn do_discard(parser: &mut Parser) {
     let mut marker = parser.start();
-    println!("i tried a discard");
     expression(parser);
     marker.end(parser, SyntaxKind::DoDiscard);
-}
-
-fn let_bindings(parser: &mut Parser) {
-    parser.layout_start(LayoutKind::Let);
-    one_or_more(parser, |parser| {
-        if parser.layout_done() {
-            return false;
-        }
-
-        let_binding(parser);
-
-        true
-    });
-    parser.layout_end();
 }
 
 fn let_binding(parser: &mut Parser) {
@@ -391,10 +379,7 @@ fn where_expression(parser: &mut Parser) {
 
     if parser.at(SyntaxKind::WhereKw) {
         parser.consume();
-
-        parser.layout_start(LayoutKind::Where);
-        let_bindings(parser);
-        parser.layout_end();
+        layout_one_or_more(parser, let_binding);
     }
 
     marker.end(parser, SyntaxKind::WhereExpression);
@@ -419,11 +404,9 @@ fn expression_atom(parser: &mut Parser) {
                 return;
             }
 
-            parser.layout_start(LayoutKind::Parenthesis);
             parser.expect(SyntaxKind::LeftParenthesis);
             expression(parser);
             parser.expect(SyntaxKind::RightParenthesis);
-            parser.layout_end();
             marker.end(parser, SyntaxKind::ParenthesizedExpression);
         }
         SyntaxKind::LeftSquare => {
@@ -457,7 +440,6 @@ fn expression_atom(parser: &mut Parser) {
 fn literal_array(parser: &mut Parser) {
     let mut array = parser.start();
 
-    parser.layout_start(LayoutKind::Parenthesis);
     parser.expect(SyntaxKind::LeftSquare);
     if parser.at(SyntaxKind::RightSquare) {
         parser.expect(SyntaxKind::RightSquare);
@@ -465,7 +447,6 @@ fn literal_array(parser: &mut Parser) {
         separated(parser, SyntaxKind::Comma, expression);
         parser.expect(SyntaxKind::RightSquare);
     }
-    parser.layout_end();
 
     array.end(parser, SyntaxKind::LiteralArray);
 }
@@ -488,11 +469,9 @@ fn record_item(parser: &mut Parser) {
         }
     };
 
-    if optional_field {
-        if !parser.at(SyntaxKind::Colon) {
-            marker.end(parser, SyntaxKind::RecordPun);
-            return;
-        }
+    if optional_field && !parser.at(SyntaxKind::Colon) {
+        marker.end(parser, SyntaxKind::RecordPun);
+        return;
     }
 
     parser.expect(SyntaxKind::Colon);
@@ -503,7 +482,6 @@ fn record_item(parser: &mut Parser) {
 fn literal_record(parser: &mut Parser) {
     let mut record = parser.start();
 
-    parser.layout_start(LayoutKind::Parenthesis);
     parser.expect(SyntaxKind::LeftBracket);
     if parser.at(SyntaxKind::RightBracket) {
         parser.expect(SyntaxKind::RightBracket);
@@ -511,7 +489,6 @@ fn literal_record(parser: &mut Parser) {
         separated(parser, SyntaxKind::Comma, record_item);
         parser.expect(SyntaxKind::RightBracket);
     }
-    parser.layout_end();
 
     record.end(parser, SyntaxKind::LiteralRecord);
 }
@@ -561,7 +538,11 @@ fn type_forall(parser: &mut Parser) {
     parser.expect(SyntaxKind::ForallKw);
 
     one_or_more(parser, |parser| {
-        if parser.group_done() || parser.at(SyntaxKind::Period) {
+        if matches!(
+            parser.current(),
+            SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+        ) || parser.at(SyntaxKind::Period)
+        {
             return false;
         }
 
@@ -643,7 +624,11 @@ fn binder_1(parser: &mut Parser) {
     binder_2(parser);
 
     let has_chain = one_or_more(parser, |parser| {
-        if parser.group_done() || !parser.current().is_operator() {
+        if matches!(
+            parser.current(),
+            SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+        ) || !parser.current().is_operator()
+        {
             return false;
         }
 
@@ -696,16 +681,17 @@ fn binder_2(parser: &mut Parser) {
             }
 
             one_or_more(parser, |parser| {
-                if parser.group_done()
-                    || matches!(
-                        parser.current(),
-                        SyntaxKind::Pipe
-                            | SyntaxKind::Equal
-                            | SyntaxKind::LeftArrow
-                            | SyntaxKind::RightArrow
-                            | SyntaxKind::RightParenthesis
-                    )
-                {
+                if matches!(
+                    parser.current(),
+                    SyntaxKind::LayoutSep | SyntaxKind::LayoutEnd | SyntaxKind::EndOfFile
+                ) || matches!(
+                    parser.current(),
+                    SyntaxKind::Pipe
+                        | SyntaxKind::Equal
+                        | SyntaxKind::LeftArrow
+                        | SyntaxKind::RightArrow
+                        | SyntaxKind::RightParenthesis
+                ) {
                     return false;
                 }
 

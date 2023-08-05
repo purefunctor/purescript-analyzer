@@ -18,6 +18,7 @@ Start { kind: DoExpression }
     Finish
     Token { kind: DoKw }
   Finish
+  Token { kind: LayoutStart }
   Start { kind: OneOrMore }
     Start { kind: DoDiscard }
       Start { kind: ApplicationExpression }
@@ -41,8 +42,10 @@ Start { kind: DoExpression }
         Finish
       Finish
     Finish
+    Token { kind: LayoutSep }
     Start { kind: DoLetBinding }
       Token { kind: LetKw }
+      Token { kind: LayoutStart }
       Start { kind: OneOrMore }
         Start { kind: LetBindingPattern }
           Start { kind: WildcardBinder }
@@ -60,7 +63,9 @@ Start { kind: DoExpression }
           Finish
         Finish
       Finish
+      Token { kind: LayoutEnd }
     Finish
+    Token { kind: LayoutSep }
     Start { kind: DoBind }
       Start { kind: VariableBinder }
         Start { kind: Name }
@@ -77,5 +82,6 @@ Start { kind: DoExpression }
       Finish
     Finish
   Finish
+  Token { kind: LayoutEnd }
 Finish
 

@@ -1,10 +1,9 @@
 use std::fmt::Write;
 
 use insta::glob;
+use lexing::{layout, lex};
 use parsing::{
     grammar::{binder, expression, ty},
-    layout::LayoutKind,
-    lexer::lex,
     parser::{Event, Parser},
 };
 use syntax::SyntaxKind;
@@ -14,9 +13,8 @@ where
     F: Fn(&mut Parser) -> T,
 {
     let lexed = lex(source);
-    let input = lexed.as_input();
-    let mut parser = Parser::new(input);
-    parser.layout_start(LayoutKind::Module);
+    let input = layout(&lexed);
+    let mut parser = Parser::new(&input);
     let _ = rule(&mut parser);
 
     let mut result = String::new();
