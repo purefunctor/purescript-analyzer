@@ -23,9 +23,9 @@ const PARSER_LIMIT: u32 = 10_000_000;
 impl<'a> Parser<'a> {
     pub fn new(input: &'a [SyntaxKind]) -> Parser<'a> {
         let index = 0;
-        let events = vec![];
+        let output = vec![];
         let steps = Cell::new(0);
-        Parser { input, index, output: events, steps }
+        Parser { input, index, output, steps }
     }
 
     pub fn finalize(self) -> Vec<Event> {
