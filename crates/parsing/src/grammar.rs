@@ -362,10 +362,22 @@ fn guarded_binding(parser: &mut Parser, separator: SyntaxKind) {
         where_expression(parser);
         marker.end(parser, SyntaxKind::Unconditional);
     } else if parser.at(SyntaxKind::Pipe) {
-        parser.consume();
-        separated(parser, SyntaxKind::Comma, pattern_guard);
-        parser.expect(separator);
-        where_expression(parser);
+        one_or_more(parser, |parser| {
+            if matches!(
+                parser.current(),
+                SyntaxKind::LayoutEnd | SyntaxKind::LayoutSep | SyntaxKind::EndOfFile
+            ) || parser.at(separator)
+            {
+                return false;
+            }
+            let mut marker = parser.start();
+            parser.expect(SyntaxKind::Pipe);
+            separated(parser, SyntaxKind::Comma, pattern_guard);
+            parser.expect(separator);
+            where_expression(parser);
+            marker.end(parser, SyntaxKind::GuardedExpression);
+            true
+        });
         marker.end(parser, SyntaxKind::Guarded);
     }
 }
