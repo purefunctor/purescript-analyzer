@@ -848,3 +848,36 @@ fn operator_name_ref(parser: &mut Parser) {
     parser.expect(SyntaxKind::RightParenthesis);
     wrapped.end(parser, SyntaxKind::Wrapped);
 }
+
+pub fn declaration(parser: &mut Parser) {
+    match parser.current() {
+        SyntaxKind::Lower => {
+            annotation_or_value_declaration(parser);
+        }
+        _ => {
+            parser.error("expected Declaration");
+        }
+    }
+}
+
+fn annotation_or_value_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+    lower_name(parser);
+    if parser.at(SyntaxKind::Colon2) {
+        parser.consume();
+        ty(parser);
+        marker.end(parser, SyntaxKind::AnnotationDeclaration);
+    } else {
+        zero_or_more(parser, |parser| {
+            if matches!(parser.current(), SyntaxKind::Equal | SyntaxKind::Pipe) {
+                return false;
+            }
+
+            binder_atom(parser);
+
+            true
+        });
+        guarded_binding(parser, SyntaxKind::Equal);
+        marker.end(parser, SyntaxKind::ValueDeclaration);
+    }
+}
