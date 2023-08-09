@@ -3,7 +3,7 @@ use std::fmt::Write;
 use insta::glob;
 use lexing::{layout, lex};
 use parsing::{
-    grammar::{binder, expression, ty},
+    grammar::{binder, declaration, expression, ty},
     parser::{Event, Parser},
 };
 use syntax::SyntaxKind;
@@ -75,5 +75,13 @@ fn test_binder() {
     glob!("inputs/passing/binder", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
         expect_parse(&source, binder);
+    });
+}
+
+#[test]
+fn test_declaration() {
+    glob!("inputs/passing/declaration", "*.input", |path| {
+        let source = std::fs::read_to_string(path).unwrap();
+        expect_parse(&source, declaration);
     });
 }
