@@ -153,17 +153,18 @@ fn at_expression_boundary(parser: &Parser) -> bool {
     parser.current().is_operator()
         || matches!(
             parser.current(),
-            SyntaxKind::RightParenthesis
-                | SyntaxKind::RightSquare
-                | SyntaxKind::RightBracket
-                | SyntaxKind::Colon2
-                | SyntaxKind::Tick
-                | SyntaxKind::ThenKw
+            SyntaxKind::Colon2
+                | SyntaxKind::Comma
                 | SyntaxKind::ElseKw
-                | SyntaxKind::WhereKw
                 | SyntaxKind::Equal
                 | SyntaxKind::LeftArrow
-                | SyntaxKind::Comma
+                | SyntaxKind::Pipe
+                | SyntaxKind::RightBracket
+                | SyntaxKind::RightParenthesis
+                | SyntaxKind::RightSquare
+                | SyntaxKind::ThenKw
+                | SyntaxKind::Tick
+                | SyntaxKind::WhereKw
         )
 }
 
