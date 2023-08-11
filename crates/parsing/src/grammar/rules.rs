@@ -211,9 +211,7 @@ fn expr_5(parser: &mut Parser) {
             expr_do(parser, qualified, expression);
         }
         SyntaxKind::AdoKw => {
-            parser.consume();
-            qualified.end(parser, SyntaxKind::QualifiedAdo);
-            expression.end(parser, SyntaxKind::AdoExpression);
+            expr_ado(parser, qualified, expression);
         }
         SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw | SyntaxKind::LeftParenthesis => {
             name_ref_or_parenthesized_expr(parser, has_prefix, qualified, expression);
@@ -242,7 +240,7 @@ fn expr_if(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
-fn expr_case(parser: &mut Parser) {
+fn expr_case(_: &mut Parser) {
     todo!("case kw");
 }
 
@@ -545,9 +543,9 @@ fn name_ref_or_parenthesized_expr(
     }
 }
 
-pub(crate) fn type_0(parser: &mut Parser) {}
+pub(crate) fn type_0(_: &mut Parser) {}
 
-fn type_atom(parser: &mut Parser) {}
+fn type_atom(_: &mut Parser) {}
 
 // pat_1 '::' type_0 | pat_1
 pub(crate) fn pat_0(parser: &mut Parser) {
