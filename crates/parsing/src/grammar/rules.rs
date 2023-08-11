@@ -742,7 +742,7 @@ fn pat_constructor(parser: &mut Parser) {
     }
     qualified.end(parser, SyntaxKind::QualifiedName);
 
-    zero_or_more(parser, |parser| {
+    one_or_more(parser, |parser| {
         if at_pat_start(parser) {
             pat_atom(parser);
             true
