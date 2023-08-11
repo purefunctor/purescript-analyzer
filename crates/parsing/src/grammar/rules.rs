@@ -511,6 +511,7 @@ fn name_ref_or_parenthesized_expr(
             expression.end(parser, SyntaxKind::VariableExpression);
         }
         SyntaxKind::LeftParenthesis => {
+            let mut wrapped = parser.start();
             parser.expect(SyntaxKind::LeftParenthesis);
             if parser.current().is_operator() {
                 let mut name = parser.start();
@@ -518,18 +519,21 @@ fn name_ref_or_parenthesized_expr(
                 name.end(parser, SyntaxKind::NameRef);
 
                 parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.end(parser, SyntaxKind::Wrapped);
                 qualified.end(parser, SyntaxKind::QualifiedName);
                 expression.end(parser, SyntaxKind::OperatorNameExpression);
             } else if has_prefix {
                 parser.error_recover("expected an operator");
 
                 parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.end(parser, SyntaxKind::Wrapped);
                 qualified.end(parser, SyntaxKind::QualifiedName);
                 expression.end(parser, SyntaxKind::OperatorNameExpression);
             } else {
                 expr_0(parser);
 
                 parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.cancel(parser);
                 qualified.cancel(parser);
                 expression.end(parser, SyntaxKind::ParenthesizedExpression);
             };
