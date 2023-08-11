@@ -804,7 +804,9 @@ fn record_field_or_pun(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(
         }
     } else {
         parser.error_recover("expected a label");
-        marker.cancel(parser);
+        parser.expect(SyntaxKind::Colon);
+        rule(parser);
+        marker.end(parser, SyntaxKind::RecordField);
     }
 }
 
