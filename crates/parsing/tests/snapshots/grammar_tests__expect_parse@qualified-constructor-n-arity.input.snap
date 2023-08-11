@@ -1,7 +1,7 @@
 ---
 source: crates/parsing/tests/grammar_tests.rs
 expression: result
-input_file: crates/parsing/tests/inputs/passing/binder/qualified-constructor-n-arity.input
+input_file: crates/parsing/tests/inputs/passing/pattern/qualified-constructor-n-arity.input
 ---
 Input: Data.List.Cons 1
 Start { kind: ConstructorBinder }

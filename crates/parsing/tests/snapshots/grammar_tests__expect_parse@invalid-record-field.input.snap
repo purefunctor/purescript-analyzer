@@ -11,7 +11,7 @@ Start { kind: LiteralExpression }
     Start { kind: Separated }
       Start { kind: RecordField }
         Start { kind: Error }
-          Error { message: "expected Lower or LiteralString" }
+          Error { message: "expected a label" }
         Finish
         Token { kind: Colon }
         Start { kind: LiteralExpression }

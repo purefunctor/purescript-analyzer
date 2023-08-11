@@ -16,7 +16,7 @@ Start { kind: LiteralExpression }
         Token { kind: LayoutStart }
         Start { kind: OneOrMore }
           Start { kind: DoDiscard }
-            Error { message: "expected Expression" }
+            Error { message: "expected an expression" }
           Finish
         Finish
         Token { kind: LayoutEnd }

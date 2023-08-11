@@ -36,7 +36,7 @@ Start { kind: DoExpression }
           Finish
         Finish
         Token { kind: ElseKw }
-        Error { message: "expected Expression" }
+        Error { message: "expected an expression" }
       Finish
     Finish
     Token { kind: LayoutSep }

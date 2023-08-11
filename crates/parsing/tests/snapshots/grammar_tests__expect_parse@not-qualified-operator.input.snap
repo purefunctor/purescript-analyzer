@@ -16,7 +16,7 @@ Start { kind: OperatorNameExpression }
     Start { kind: Wrapped }
       Token { kind: LeftParenthesis }
       Start { kind: Error }
-        Error { message: "expected Operator" }
+        Error { message: "expected an operator" }
       Finish
       Token { kind: RightParenthesis }
     Finish

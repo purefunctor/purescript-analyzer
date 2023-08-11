@@ -13,7 +13,7 @@ Start { kind: LiteralExpression }
         Token { kind: LiteralInteger }
       Finish
       Token { kind: Comma }
-      Error { message: "expected Expression" }
+      Error { message: "expected an expression" }
     Finish
     Token { kind: RightSquare }
   Finish

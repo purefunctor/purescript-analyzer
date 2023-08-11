@@ -41,7 +41,7 @@ Start { kind: DoExpression }
           Finish
           Start { kind: ZeroOrMore }
           Finish
-          Start { kind: Unconditional }
+          Start { kind: UnconditionalBinding }
             Token { kind: Equal }
             Start { kind: WhereExpression }
               Start { kind: LiteralExpression }
@@ -62,7 +62,7 @@ Start { kind: DoExpression }
               Finish
             Finish
           Finish
-          Start { kind: Unconditional }
+          Start { kind: UnconditionalBinding }
             Token { kind: Equal }
             Start { kind: WhereExpression }
               Start { kind: VariableExpression }
@@ -82,7 +82,7 @@ Start { kind: DoExpression }
           Finish
           Start { kind: ZeroOrMore }
           Finish
-          Start { kind: Guarded }
+          Start { kind: GuardedBinding }
             Start { kind: OneOrMore }
               Start { kind: GuardedExpression }
                 Token { kind: Pipe }
@@ -114,7 +114,7 @@ Start { kind: DoExpression }
           Finish
           Start { kind: ZeroOrMore }
           Finish
-          Start { kind: Guarded }
+          Start { kind: GuardedBinding }
             Start { kind: OneOrMore }
               Start { kind: GuardedExpression }
                 Token { kind: Pipe }

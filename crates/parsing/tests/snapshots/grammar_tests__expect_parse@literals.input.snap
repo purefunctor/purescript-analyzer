@@ -52,7 +52,7 @@ Start { kind: LiteralExpression }
           Token { kind: LeftBracket }
           Start { kind: Separated }
             Start { kind: RecordPun }
-              Start { kind: Name }
+              Start { kind: NameRef }
                 Token { kind: Label }
               Finish
             Finish
