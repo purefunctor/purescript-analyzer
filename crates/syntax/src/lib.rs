@@ -158,8 +158,8 @@ pub enum SyntaxKind {
     InfixrKw,
     InfixKw,
 
-    Unconditional,
-    Guarded,
+    UnconditionalBinding,
+    GuardedBinding,
     PatternGuard,
     GuardedExpression,
 
@@ -221,6 +221,47 @@ impl SyntaxKind {
 
     pub fn is_operator(&self) -> bool {
         matches!(self, Self::Operator | Self::Minus | Self::Colon)
+    }
+
+    pub fn is_lower(&self) -> bool {
+        matches!(self, Self::Lower | Self::AsKw)
+    }
+
+    pub fn is_label(&self) -> bool {
+        matches!(
+            self,
+            SyntaxKind::ModuleKw
+                | SyntaxKind::WhereKw
+                | SyntaxKind::ImportKw
+                | SyntaxKind::AsKw
+                | SyntaxKind::AdoKw
+                | SyntaxKind::DoKw
+                | SyntaxKind::IfKw
+                | SyntaxKind::ThenKw
+                | SyntaxKind::ElseKw
+                | SyntaxKind::LetKw
+                | SyntaxKind::InKw
+                | SyntaxKind::CaseKw
+                | SyntaxKind::OfKw
+                | SyntaxKind::DataKw
+                | SyntaxKind::NewtypeKw
+                | SyntaxKind::ForallKw
+                | SyntaxKind::TypeKw
+                | SyntaxKind::ClassKw
+                | SyntaxKind::InstanceKw
+                | SyntaxKind::DeriveKw
+                | SyntaxKind::ForeignKw
+                | SyntaxKind::InfixlKw
+                | SyntaxKind::InfixrKw
+                | SyntaxKind::InfixKw
+                | SyntaxKind::LiteralString
+                | SyntaxKind::LiteralRawString
+                | SyntaxKind::Lower
+        )
+    }
+
+    pub fn is_end(&self) -> bool {
+        matches!(self, Self::LayoutSep | Self::LayoutEnd | Self::EndOfFile)
     }
 }
 

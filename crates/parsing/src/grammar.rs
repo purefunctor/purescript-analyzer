@@ -1,4 +1,5 @@
 mod combinators;
+mod rules;
 
 use either::Either::{self, Left, Right};
 use syntax::SyntaxKind;
@@ -137,7 +138,7 @@ fn expression_4(parser: &mut Parser) {
             return false;
         }
 
-        expression_spine(parser);
+        expr_spine(parser);
 
         true
     });
@@ -168,7 +169,7 @@ fn at_expression_boundary(parser: &Parser) -> bool {
         )
 }
 
-fn expression_spine(parser: &mut Parser) {
+fn expr_spine(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::At) {
         parser.consume();
@@ -360,7 +361,7 @@ fn guarded_binding(parser: &mut Parser, separator: SyntaxKind) {
     if parser.at(separator) {
         parser.consume();
         where_expression(parser);
-        marker.end(parser, SyntaxKind::Unconditional);
+        marker.end(parser, SyntaxKind::UnconditionalBinding);
     } else if parser.at(SyntaxKind::Pipe) {
         one_or_more(parser, |parser| {
             if matches!(
@@ -378,7 +379,7 @@ fn guarded_binding(parser: &mut Parser, separator: SyntaxKind) {
             marker.end(parser, SyntaxKind::GuardedExpression);
             true
         });
-        marker.end(parser, SyntaxKind::Guarded);
+        marker.end(parser, SyntaxKind::GuardedBinding);
     }
 }
 
