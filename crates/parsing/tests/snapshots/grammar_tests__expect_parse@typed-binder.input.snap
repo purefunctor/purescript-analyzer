@@ -1,7 +1,7 @@
 ---
 source: crates/parsing/tests/grammar_tests.rs
 expression: result
-input_file: crates/parsing/tests/inputs/passing/binder/typed-binder.input
+input_file: crates/parsing/tests/inputs/passing/pattern/typed-binder.input
 ---
 Input: 1 :: Type
 Start { kind: TypedBinder }
@@ -10,7 +10,11 @@ Start { kind: TypedBinder }
   Finish
   Token { kind: Colon2 }
   Start { kind: ConstructorType }
-    Token { kind: Upper }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
   Finish
 Finish
 

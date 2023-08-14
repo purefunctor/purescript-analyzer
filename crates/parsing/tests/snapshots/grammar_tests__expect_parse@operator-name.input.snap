@@ -1,0 +1,17 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/type/operator-name.input
+---
+Input: (+)
+
+Start { kind: OperatorNameType }
+  Start { kind: QualifiedName }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Token { kind: Operator }
+      Token { kind: RightParenthesis }
+    Finish
+  Finish
+Finish
+

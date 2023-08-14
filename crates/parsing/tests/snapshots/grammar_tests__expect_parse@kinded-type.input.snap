@@ -7,11 +7,19 @@ Input: Type :: Type
 
 Start { kind: KindedType }
   Start { kind: ConstructorType }
-    Token { kind: Upper }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
   Finish
   Token { kind: Colon2 }
   Start { kind: ConstructorType }
-    Token { kind: Upper }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
   Finish
 Finish
 

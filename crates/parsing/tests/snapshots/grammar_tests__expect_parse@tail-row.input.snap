@@ -1,0 +1,22 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/type/tail-row.input
+---
+Input: ( | r )
+
+Start { kind: RowType }
+  Start { kind: Wrapped }
+    Token { kind: LeftParenthesis }
+    Start { kind: RowTail }
+      Token { kind: Pipe }
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+    Finish
+    Token { kind: RightParenthesis }
+  Finish
+Finish
+

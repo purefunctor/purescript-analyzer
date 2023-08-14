@@ -31,7 +31,11 @@ Start { kind: DoExpression }
           Finish
           Token { kind: Colon2 }
           Start { kind: ConstructorType }
-            Token { kind: Upper }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
           Finish
         Finish
         Token { kind: LayoutSep }

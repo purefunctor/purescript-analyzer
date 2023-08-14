@@ -556,11 +556,12 @@ pub(crate) fn type_0(parser: &mut Parser) {
     }
 }
 
+// type_forall | type_2
 fn type_1(parser: &mut Parser) {
     if parser.at(SyntaxKind::ForallKw) {
         type_forall(parser);
     } else {
-        type_atom(parser);
+        type_2(parser);
     }
 }
 
@@ -588,7 +589,11 @@ fn type_variable_binding_with_visibility(parser: &mut Parser) {
         }
 
         let mut name = parser.start();
-        parser.expect(SyntaxKind::Lower);
+        if parser.current().is_lower() {
+            parser.consume_as(SyntaxKind::Lower);
+        } else {
+            parser.error_recover("expected type variable");
+        }
         name.end(parser, SyntaxKind::Name);
 
         prefixed.end(parser, SyntaxKind::Prefixed);
@@ -613,23 +618,276 @@ fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)
     marker.end(parser, SyntaxKind::TypeVariableBinding);
 }
 
-fn type_atom(parser: &mut Parser) {
+// type_3 '->' type_1 | type_3 '=>' type_1 | type_3
+fn type_2(parser: &mut Parser) {
     let mut marker = parser.start();
+    type_3(parser);
     match parser.current() {
-        SyntaxKind::Lower => {
+        SyntaxKind::RightArrow => {
             parser.consume();
-            marker.end(parser, SyntaxKind::VariableType);
+            type_1(parser);
+            marker.end(parser, SyntaxKind::ArrowType);
         }
-        SyntaxKind::Upper => {
+        SyntaxKind::RightThickArrow => {
             parser.consume();
-            marker.end(parser, SyntaxKind::ConstructorType);
+            type_1(parser);
+            marker.end(parser, SyntaxKind::ConstrainedType);
         }
         _ => {
-            parser.error("expected a type");
             marker.cancel(parser);
         }
     }
 }
+
+// type_4 ('operator' type_4)+ | type_4
+fn type_3(parser: &mut Parser) {
+    let mut marker = parser.start();
+    type_4(parser);
+    let at_least_one = one_or_more(parser, |parser| {
+        if at_operator_start(parser) {
+            let mut marker = parser.start();
+            // FIXME: mark as NameRef to make it subject to name resolution...
+            parser.consume_as(SyntaxKind::Operator);
+            type_4(parser);
+            marker.end(parser, SyntaxKind::Pair);
+            true
+        } else {
+            false
+        }
+    });
+    if at_least_one {
+        marker.end(parser, SyntaxKind::TypeOperatorChain);
+    } else {
+        marker.cancel(parser);
+    }
+}
+
+fn type_4(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.at(SyntaxKind::Minus) {
+        parser.consume();
+        parser.expect(SyntaxKind::LiteralInteger);
+        marker.end(parser, SyntaxKind::IntegerType);
+    } else {
+        type_5(parser);
+        marker.cancel(parser);
+    }
+}
+
+fn at_type_start(parser: &mut Parser) -> bool {
+    if parser.current().is_end() {
+        return false;
+    }
+    matches!(
+        parser.current(),
+        SyntaxKind::Lower
+            | SyntaxKind::Upper
+            | SyntaxKind::LiteralInteger
+            | SyntaxKind::Minus
+            | SyntaxKind::LeftParenthesis
+    )
+}
+
+fn type_5(parser: &mut Parser) {
+    let mut marker = parser.start();
+    type_atom(parser);
+    let at_least_one = one_or_more(parser, |parser| {
+        if at_type_start(parser) {
+            type_atom(parser);
+            true
+        } else {
+            false
+        }
+    });
+    if at_least_one {
+        marker.end(parser, SyntaxKind::ApplicationType);
+    } else {
+        marker.cancel(parser);
+    }
+}
+
+fn type_atom(parser: &mut Parser) {
+    let mut ty = parser.start();
+    match parser.current() {
+        token if token.is_lower() => {
+            let mut name = parser.start();
+            parser.consume_as(SyntaxKind::Lower);
+            name.end(parser, SyntaxKind::NameRef);
+            ty.end(parser, SyntaxKind::VariableType);
+            return;
+        }
+        SyntaxKind::LiteralString => {
+            parser.consume();
+            ty.end(parser, SyntaxKind::StringType);
+            return;
+        }
+        SyntaxKind::LiteralInteger => {
+            parser.consume();
+            ty.end(parser, SyntaxKind::IntegerType);
+            return;
+        }
+        SyntaxKind::Underscore => {
+            parser.consume();
+            ty.end(parser, SyntaxKind::WildcardType);
+            return;
+        }
+        _ => {}
+    }
+
+    let mut qualified = parser.start();
+    let has_prefix = if parser.at(SyntaxKind::Upper) { qualified_prefix(parser) } else { false };
+
+    match parser.current() {
+        SyntaxKind::Upper | SyntaxKind::LeftParenthesis => {
+            qualified_name_or_row_or_parenthesized(parser, has_prefix, qualified, ty);
+        }
+        _ => {
+            parser.error("expected a type");
+            ty.cancel(parser);
+            qualified.cancel(parser);
+        }
+    }
+}
+
+fn qualified_name_or_row_or_parenthesized(
+    parser: &mut Parser,
+    has_prefix: bool,
+    mut qualified: NodeMarker,
+    mut ty: NodeMarker,
+) {
+    match parser.current() {
+        SyntaxKind::Upper => {
+            let mut name = parser.start();
+            parser.consume();
+            name.end(parser, SyntaxKind::NameRef);
+            qualified.end(parser, SyntaxKind::QualifiedName);
+            ty.end(parser, SyntaxKind::ConstructorType);
+        }
+        SyntaxKind::LeftParenthesis => {
+            let mut wrapped = parser.start();
+            parser.expect(SyntaxKind::LeftParenthesis);
+
+            let mut operator_name_end = |parser: &mut Parser| {
+                parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.end(parser, SyntaxKind::Wrapped);
+                qualified.end(parser, SyntaxKind::QualifiedName);
+                ty.end(parser, SyntaxKind::OperatorNameType);
+            };
+
+            if parser.current().is_operator() {
+                parser.consume_as(SyntaxKind::Operator);
+                operator_name_end(parser);
+            } else if has_prefix {
+                if parser.current().is_reserved_operator() {
+                    parser.error_recover("unexpected reserved operator");
+                } else {
+                    parser.error_recover("expected an operator");
+                }
+                operator_name_end(parser);
+            } else {
+                qualified.cancel(parser);
+                row_or_parenthesized_open(parser, wrapped, ty);
+            }
+        }
+        _ => {
+            qualified.cancel(parser);
+            ty.cancel(parser);
+        }
+    }
+}
+
+fn row_or_parenthesized_open(parser: &mut Parser, mut wrapped: NodeMarker, mut ty: NodeMarker) {
+    let mut row_type_end = |parser: &mut Parser| {
+        parser.expect(SyntaxKind::RightParenthesis);
+        wrapped.end(parser, SyntaxKind::Wrapped);
+        ty.end(parser, SyntaxKind::RowType);
+    };
+    match parser.current() {
+        // '(' ')'
+        SyntaxKind::RightParenthesis => {
+            row_type_end(parser);
+        }
+        // '(' '|' type_0 ')'
+        SyntaxKind::Pipe => {
+            row_tail(parser);
+            row_type_end(parser);
+        }
+        // '(' ('label' '::' type_0)+? ('|' type_0?) ')'
+        token if token.is_label() => {
+            separated(parser, SyntaxKind::Comma, row_field);
+            row_tail(parser);
+            row_type_end(parser);
+        }
+        _ => {
+            type_0(parser);
+            parser.expect(SyntaxKind::RightParenthesis);
+            wrapped.cancel(parser);
+            ty.end(parser, SyntaxKind::ParenthesizedType);
+        }
+    }
+}
+
+fn row_field(parser: &mut Parser) {
+    let mut field = parser.start();
+    if parser.current().is_label() {
+        let mut name = parser.start();
+        parser.consume_as(SyntaxKind::Label);
+        name.end(parser, SyntaxKind::Name);
+    } else {
+        parser.error_recover("expected a label");
+    }
+    parser.expect(SyntaxKind::Colon2);
+    type_0(parser);
+    field.end(parser, SyntaxKind::RowField);
+}
+
+fn row_tail(parser: &mut Parser) {
+    let mut tail = parser.start();
+    if parser.at(SyntaxKind::Pipe) {
+        parser.expect(SyntaxKind::Pipe);
+        type_0(parser);
+        tail.end(parser, SyntaxKind::RowTail);
+    } else {
+        tail.cancel(parser);
+    }
+}
+
+/*
+
+Empty Row:
+'(' ')'
+
+Parenthesized Type:
+'(' type_0 ')'
+
+With Fields:
+'(' field (',' field)* ('|' type_0)? ')'
+
+field:
+  'label' '::' type_0
+
+Kinded Variable:
+'(' '(' 'lower' ')' '::' type_0 ')'
+
+Tail Row:
+'(' '|' type_0 ')'
+
+Probably just better to write an alternative chain for
+this rather than manually encoding the backtracing rules.
+
+Empty Row and Tail Row is trivial as it's ultimately a
+single-token lookahead in order to determine whether
+we descend into them.
+
+For Kinded Variable, we can look at least two tokens
+into the future to determine if we should descend
+into it or a nested parenthesized type.
+
+For With Fields, we can look at least two tokens into
+the future to determine if we're parsing a field, much
+like we do with record literals.
+
+*/
 
 // pat_1 '::' type_0 | pat_1
 pub(crate) fn pat_0(parser: &mut Parser) {

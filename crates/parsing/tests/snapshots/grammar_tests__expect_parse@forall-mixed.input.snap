@@ -26,7 +26,11 @@ Start { kind: ForallType }
           Finish
           Token { kind: Colon2 }
           Start { kind: ConstructorType }
-            Token { kind: Upper }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
           Finish
         Finish
         Token { kind: RightParenthesis }
@@ -52,7 +56,11 @@ Start { kind: ForallType }
           Finish
           Token { kind: Colon2 }
           Start { kind: ConstructorType }
-            Token { kind: Upper }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
           Finish
         Finish
         Token { kind: RightParenthesis }
@@ -61,7 +69,11 @@ Start { kind: ForallType }
   Finish
   Token { kind: Period }
   Start { kind: ConstructorType }
-    Token { kind: Upper }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
   Finish
 Finish
 

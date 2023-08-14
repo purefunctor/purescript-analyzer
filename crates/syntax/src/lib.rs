@@ -112,11 +112,25 @@ pub enum SyntaxKind {
     RecordPun,
     RecordField,
 
-    ConstructorType,
     ForallType,
     TypeVariableBinding,
+
+    ArrowType,
+    ConstrainedType,
+
+    ApplicationType,
+    ConstructorType,
+    IntegerType,
     KindedType,
+    OperatorNameType,
+    ParenthesizedType,
+    RowType,
+    RowField,
+    RowTail,
+    StringType,
+    TypeOperatorChain,
     VariableType,
+    WildcardType,
 
     BinderOperatorChain,
     ConstructorBinder,
@@ -221,6 +235,10 @@ impl SyntaxKind {
 
     pub fn is_operator(&self) -> bool {
         matches!(self, Self::Operator | Self::Minus | Self::Colon)
+    }
+
+    pub fn is_reserved_operator(&self) -> bool {
+        matches!(self, Self::RightArrow | Self::RightThickArrow)
     }
 
     pub fn is_lower(&self) -> bool {
