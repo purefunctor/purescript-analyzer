@@ -739,7 +739,7 @@ fn type_atom(parser: &mut Parser) {
 
     match parser.current() {
         SyntaxKind::Upper | SyntaxKind::LeftParenthesis => {
-            qualified_name_or_row_or_parenthesized(parser, has_prefix, qualified, ty);
+            qualified_name_or_row_or_parenthesized_type(parser, has_prefix, qualified, ty);
         }
         _ => {
             parser.error("expected a type");
@@ -749,7 +749,7 @@ fn type_atom(parser: &mut Parser) {
     }
 }
 
-fn qualified_name_or_row_or_parenthesized(
+fn qualified_name_or_row_or_parenthesized_type(
     parser: &mut Parser,
     has_prefix: bool,
     mut qualified: NodeMarker,
@@ -813,7 +813,7 @@ fn row_or_parenthesized_open(parser: &mut Parser, mut wrapped: NodeMarker, mut t
             row_type_end(parser);
         }
         // '(' ('label' '::' type_0)+? ('|' type_0?) ')'
-        token if token.is_label() => {
+        token if token.is_label() && parser.nth_at(1, SyntaxKind::Colon2) => {
             separated(parser, SyntaxKind::Comma, row_field);
             row_tail(parser);
             row_type_end(parser);
