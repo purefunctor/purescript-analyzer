@@ -9,7 +9,9 @@ Start { kind: OperatorNameType }
   Start { kind: QualifiedName }
     Start { kind: Wrapped }
       Token { kind: LeftParenthesis }
-      Token { kind: Operator }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
       Token { kind: RightParenthesis }
     Finish
   Finish

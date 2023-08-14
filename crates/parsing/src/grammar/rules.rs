@@ -32,8 +32,7 @@ fn expr_1(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut marker = parser.start();
-            // FIXME: mark as NameRef to make it subject to name resolution...
-            parser.consume_as(SyntaxKind::Operator);
+            name_ref(parser, SyntaxKind::Operator);
             expr_2(parser);
             marker.end(parser, SyntaxKind::Pair);
             true
@@ -94,8 +93,7 @@ fn tick_expr_1(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut marker = parser.start();
-            // FIXME: mark as NameRef to make it subject to name resolution...
-            parser.consume_as(SyntaxKind::Operator);
+            name_ref(parser, SyntaxKind::Operator);
             expr_3(parser);
             marker.end(parser, SyntaxKind::Pair);
             true
@@ -114,8 +112,7 @@ fn tick_expr_1(parser: &mut Parser) {
 fn expr_3(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::Minus) {
-        // FIXME: make this a NameRef as well??
-        parser.consume_as(SyntaxKind::Operator);
+        name_ref(parser, SyntaxKind::Operator);
         expr_3(parser);
         marker.end(parser, SyntaxKind::NegateExpression);
     } else {
@@ -285,10 +282,7 @@ fn expr_let_binding(parser: &mut Parser) {
 fn expr_let_binding_signature(parser: &mut Parser) {
     let mut marker = parser.start();
 
-    let mut name = parser.start();
-    parser.consume_as(SyntaxKind::Lower);
-    name.end(parser, SyntaxKind::Name);
-
+    name(parser, SyntaxKind::Lower);
     parser.expect(SyntaxKind::Colon2);
     type_0(parser);
 
@@ -299,10 +293,7 @@ fn expr_let_binding_signature(parser: &mut Parser) {
 fn expr_let_binding_name(parser: &mut Parser) {
     let mut marker = parser.start();
 
-    let mut name = parser.start();
-    parser.consume_as(SyntaxKind::Lower);
-    name.end(parser, SyntaxKind::Name);
-
+    name(parser, SyntaxKind::Lower);
     zero_or_more(parser, |parser| {
         if at_pat_start(parser) {
             pat_atom(parser);
@@ -495,26 +486,23 @@ fn name_ref_or_parenthesized_expr(
 ) {
     match parser.current() {
         SyntaxKind::Upper => {
-            let mut name = parser.start();
-            parser.consume();
-            name.end(parser, SyntaxKind::NameRef);
+            name_ref(parser, SyntaxKind::Upper);
+
             qualified.end(parser, SyntaxKind::QualifiedName);
             expression.end(parser, SyntaxKind::ConstructorExpression);
         }
         token if token.is_lower() => {
-            let mut name = parser.start();
-            parser.consume_as(SyntaxKind::Lower);
-            name.end(parser, SyntaxKind::NameRef);
+            name_ref(parser, SyntaxKind::Lower);
+
             qualified.end(parser, SyntaxKind::QualifiedName);
             expression.end(parser, SyntaxKind::VariableExpression);
         }
         SyntaxKind::LeftParenthesis => {
             let mut wrapped = parser.start();
             parser.expect(SyntaxKind::LeftParenthesis);
+
             if parser.current().is_operator() {
-                let mut name = parser.start();
-                parser.consume_as(SyntaxKind::Operator);
-                name.end(parser, SyntaxKind::NameRef);
+                name_ref(parser, SyntaxKind::Operator);
 
                 parser.expect(SyntaxKind::RightParenthesis);
                 wrapped.end(parser, SyntaxKind::Wrapped);
@@ -588,13 +576,11 @@ fn type_variable_binding_with_visibility(parser: &mut Parser) {
             parser.consume();
         }
 
-        let mut name = parser.start();
         if parser.current().is_lower() {
-            parser.consume_as(SyntaxKind::Lower);
+            name(parser, SyntaxKind::Lower);
         } else {
             parser.error_recover("expected type variable");
         }
-        name.end(parser, SyntaxKind::Name);
 
         prefixed.end(parser, SyntaxKind::Prefixed);
     });
@@ -646,8 +632,7 @@ fn type_3(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut marker = parser.start();
-            // FIXME: mark as NameRef to make it subject to name resolution...
-            parser.consume_as(SyntaxKind::Operator);
+            name_ref(parser, SyntaxKind::Operator);
             type_4(parser);
             marker.end(parser, SyntaxKind::Pair);
             true
@@ -710,9 +695,7 @@ fn type_atom(parser: &mut Parser) {
     let mut ty = parser.start();
     match parser.current() {
         token if token.is_lower() => {
-            let mut name = parser.start();
-            parser.consume_as(SyntaxKind::Lower);
-            name.end(parser, SyntaxKind::NameRef);
+            name_ref(parser, SyntaxKind::Lower);
             ty.end(parser, SyntaxKind::VariableType);
             return;
         }
@@ -757,9 +740,7 @@ fn qualified_name_or_row_or_parenthesized_type(
 ) {
     match parser.current() {
         SyntaxKind::Upper => {
-            let mut name = parser.start();
-            parser.consume();
-            name.end(parser, SyntaxKind::NameRef);
+            name_ref(parser, SyntaxKind::Upper);
             qualified.end(parser, SyntaxKind::QualifiedName);
             ty.end(parser, SyntaxKind::ConstructorType);
         }
@@ -775,7 +756,7 @@ fn qualified_name_or_row_or_parenthesized_type(
             };
 
             if parser.current().is_operator() {
-                parser.consume_as(SyntaxKind::Operator);
+                name_ref(parser, SyntaxKind::Operator);
                 operator_name_end(parser);
             } else if has_prefix {
                 if parser.current().is_reserved_operator() {
@@ -830,9 +811,7 @@ fn row_or_parenthesized_open(parser: &mut Parser, mut wrapped: NodeMarker, mut t
 fn row_field(parser: &mut Parser) {
     let mut field = parser.start();
     if parser.current().is_label() {
-        let mut name = parser.start();
-        parser.consume_as(SyntaxKind::Label);
-        name.end(parser, SyntaxKind::Name);
+        name(parser, SyntaxKind::Label);
     } else {
         parser.error_recover("expected a label");
     }
@@ -872,8 +851,7 @@ fn pat_1(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut pair = parser.start();
-            // FIXME: mark as NameRef here too...
-            parser.consume_as(SyntaxKind::Operator);
+            name_ref(parser, SyntaxKind::Operator);
             pat_2(parser);
             pair.end(parser, SyntaxKind::Pair);
             true
@@ -955,9 +933,7 @@ fn pat_constructor(parser: &mut Parser) {
     qualified_prefix(parser);
 
     if parser.at(SyntaxKind::Upper) {
-        let mut name = parser.start();
-        parser.consume();
-        name.end(parser, SyntaxKind::NameRef);
+        name_ref(parser, SyntaxKind::Upper);
     } else {
         parser.error_recover("expected Upper");
     }
@@ -993,17 +969,13 @@ fn pat_atom(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::WildcardBinder);
         }
         token if token.is_lower() => {
-            let mut name = parser.start();
-            parser.consume_as(SyntaxKind::Lower);
-            name.end(parser, SyntaxKind::Name);
+            name(parser, SyntaxKind::Lower);
             marker.end(parser, SyntaxKind::VariableBinder);
         }
         SyntaxKind::Upper => {
             let mut qualified = parser.start();
             qualified_prefix(parser);
-            let mut name = parser.start();
-            parser.consume();
-            name.end(parser, SyntaxKind::NameRef);
+            name_ref(parser, SyntaxKind::Upper);
             qualified.end(parser, SyntaxKind::QualifiedName);
             marker.end(parser, SyntaxKind::ConstructorBinder);
         }
@@ -1045,10 +1017,8 @@ fn qualified_prefix(parser: &mut Parser) -> bool {
         // constructors too early, for example: just Hello should not
         // have a prefix while Hello.World should leave World uneaten.
         if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Period) {
-            let mut marker = parser.start();
-            parser.consume();
-            marker.end(parser, SyntaxKind::NameRef);
-            parser.consume();
+            name_ref(parser, SyntaxKind::Upper);
+            parser.expect(SyntaxKind::Period);
             at_least_one = true;
         } else {
             break;
@@ -1097,6 +1067,7 @@ fn record_field_or_pun(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(
     if parser.current().is_label() {
         let punnable = matches!(parser.current(), SyntaxKind::Lower);
 
+        // FIXME: use name/name_ref instead?
         let mut name = parser.start();
         parser.consume_as(SyntaxKind::Label);
 
@@ -1115,4 +1086,16 @@ fn record_field_or_pun(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(
         rule(parser);
         marker.end(parser, SyntaxKind::RecordField);
     }
+}
+
+fn name(parser: &mut Parser, kind: SyntaxKind) {
+    let mut marker = parser.start();
+    parser.consume_as(kind);
+    marker.end(parser, SyntaxKind::Name);
+}
+
+fn name_ref(parser: &mut Parser, kind: SyntaxKind) {
+    let mut marker = parser.start();
+    parser.consume_as(kind);
+    marker.end(parser, SyntaxKind::NameRef);
 }

@@ -6,7 +6,9 @@ input_file: crates/parsing/tests/inputs/passing/expression/negate-simple.input
 Input: -1
 
 Start { kind: NegateExpression }
-  Token { kind: Operator }
+  Start { kind: NameRef }
+    Token { kind: Operator }
+  Finish
   Start { kind: LiteralExpression }
     Token { kind: LiteralInteger }
   Finish

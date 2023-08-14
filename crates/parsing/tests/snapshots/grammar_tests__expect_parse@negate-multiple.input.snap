@@ -6,9 +6,13 @@ input_file: crates/parsing/tests/inputs/passing/expression/negate-multiple.input
 Input: - -1
 
 Start { kind: NegateExpression }
-  Token { kind: Operator }
-  Start { kind: NegateExpression }
+  Start { kind: NameRef }
     Token { kind: Operator }
+  Finish
+  Start { kind: NegateExpression }
+    Start { kind: NameRef }
+      Token { kind: Operator }
+    Finish
     Start { kind: LiteralExpression }
       Token { kind: LiteralInteger }
     Finish

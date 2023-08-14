@@ -11,7 +11,9 @@ Start { kind: ExpressionOperatorChain }
   Finish
   Start { kind: OneOrMore }
     Start { kind: Pair }
-      Token { kind: Operator }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
       Start { kind: LiteralExpression }
         Token { kind: LiteralInteger }
       Finish
