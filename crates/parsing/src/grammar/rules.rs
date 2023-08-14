@@ -32,7 +32,7 @@ fn expr_1(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut marker = parser.start();
-            name_ref(parser, SyntaxKind::Operator);
+            operator_ref(parser);
             expr_2(parser);
             marker.end(parser, SyntaxKind::Pair);
             true
@@ -93,7 +93,7 @@ fn tick_expr_1(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut marker = parser.start();
-            name_ref(parser, SyntaxKind::Operator);
+            operator_ref(parser);
             expr_3(parser);
             marker.end(parser, SyntaxKind::Pair);
             true
@@ -112,7 +112,7 @@ fn tick_expr_1(parser: &mut Parser) {
 fn expr_3(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::Minus) {
-        name_ref(parser, SyntaxKind::Operator);
+        operator_ref(parser);
         expr_3(parser);
         marker.end(parser, SyntaxKind::NegateExpression);
     } else {
@@ -632,7 +632,7 @@ fn type_3(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut marker = parser.start();
-            name_ref(parser, SyntaxKind::Operator);
+            operator_ref(parser);
             type_4(parser);
             marker.end(parser, SyntaxKind::Pair);
             true
@@ -851,7 +851,7 @@ fn pat_1(parser: &mut Parser) {
     let at_least_one = one_or_more(parser, |parser| {
         if at_operator_start(parser) {
             let mut pair = parser.start();
-            name_ref(parser, SyntaxKind::Operator);
+            operator_ref(parser);
             pat_2(parser);
             pair.end(parser, SyntaxKind::Pair);
             true
@@ -1098,4 +1098,11 @@ fn name_ref(parser: &mut Parser, kind: SyntaxKind) {
     let mut marker = parser.start();
     parser.consume_as(kind);
     marker.end(parser, SyntaxKind::NameRef);
+}
+
+fn operator_ref(parser: &mut Parser) {
+    assert!(parser.current().is_operator());
+    let mut marker = parser.start();
+    name_ref(parser, SyntaxKind::Operator);
+    marker.end(parser, SyntaxKind::QualifiedName);
 }
