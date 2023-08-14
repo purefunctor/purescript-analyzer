@@ -852,43 +852,6 @@ fn row_tail(parser: &mut Parser) {
     }
 }
 
-/*
-
-Empty Row:
-'(' ')'
-
-Parenthesized Type:
-'(' type_0 ')'
-
-With Fields:
-'(' field (',' field)* ('|' type_0)? ')'
-
-field:
-  'label' '::' type_0
-
-Kinded Variable:
-'(' '(' 'lower' ')' '::' type_0 ')'
-
-Tail Row:
-'(' '|' type_0 ')'
-
-Probably just better to write an alternative chain for
-this rather than manually encoding the backtracing rules.
-
-Empty Row and Tail Row is trivial as it's ultimately a
-single-token lookahead in order to determine whether
-we descend into them.
-
-For Kinded Variable, we can look at least two tokens
-into the future to determine if we should descend
-into it or a nested parenthesized type.
-
-For With Fields, we can look at least two tokens into
-the future to determine if we're parsing a field, much
-like we do with record literals.
-
-*/
-
 // pat_1 '::' type_0 | pat_1
 pub(crate) fn pat_0(parser: &mut Parser) {
     let mut marker = parser.start();
