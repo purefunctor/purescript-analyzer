@@ -714,6 +714,10 @@ fn type_atom(parser: &mut Parser) {
             ty.end(parser, SyntaxKind::WildcardType);
             return;
         }
+        SyntaxKind::LeftBracket => {
+            type_record(parser, ty);
+            return;
+        }
         _ => {}
     }
 
@@ -730,6 +734,32 @@ fn type_atom(parser: &mut Parser) {
             qualified.cancel(parser);
         }
     }
+}
+
+fn type_record(parser: &mut Parser, mut ty: NodeMarker) {
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::LeftBracket);
+
+    let mut inner = parser.start();
+
+    match parser.current() {
+        // '{' '}'
+        SyntaxKind::RightBracket => (),
+        // '{' '|' type_0 '}'
+        SyntaxKind::Pipe => {
+            row_tail(parser);
+        }
+        // '{' ('label' '::' type_0)+? ('|' type_0?) '}'
+        _ => {
+            separated(parser, SyntaxKind::Comma, row_field);
+            row_tail(parser);
+        }
+    }
+
+    inner.end(parser, SyntaxKind::RowInner);
+    parser.expect(SyntaxKind::RightBracket);
+    wrapped.end(parser, SyntaxKind::Wrapped);
+    ty.end(parser, SyntaxKind::RecordType);
 }
 
 fn qualified_name_or_row_or_parenthesized_type(
@@ -767,7 +797,7 @@ fn qualified_name_or_row_or_parenthesized_type(
                 operator_name_end(parser);
             } else {
                 qualified.cancel(parser);
-                row_or_parenthesized_open(parser, wrapped, ty);
+                open_row_or_parenthesized_type(parser, wrapped, ty);
             }
         }
         _ => {
@@ -777,8 +807,14 @@ fn qualified_name_or_row_or_parenthesized_type(
     }
 }
 
-fn row_or_parenthesized_open(parser: &mut Parser, mut wrapped: NodeMarker, mut ty: NodeMarker) {
+fn open_row_or_parenthesized_type(
+    parser: &mut Parser,
+    mut wrapped: NodeMarker,
+    mut ty: NodeMarker,
+) {
+    let mut inner = parser.start();
     let mut row_type_end = |parser: &mut Parser| {
+        inner.end(parser, SyntaxKind::RowInner);
         parser.expect(SyntaxKind::RightParenthesis);
         wrapped.end(parser, SyntaxKind::Wrapped);
         ty.end(parser, SyntaxKind::RowType);
@@ -802,6 +838,7 @@ fn row_or_parenthesized_open(parser: &mut Parser, mut wrapped: NodeMarker, mut t
         _ => {
             type_0(parser);
             parser.expect(SyntaxKind::RightParenthesis);
+            inner.cancel(parser);
             wrapped.cancel(parser);
             ty.end(parser, SyntaxKind::ParenthesizedType);
         }

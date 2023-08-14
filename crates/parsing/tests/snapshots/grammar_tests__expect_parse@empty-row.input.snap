@@ -8,6 +8,8 @@ Input: ()
 Start { kind: RowType }
   Start { kind: Wrapped }
     Token { kind: LeftParenthesis }
+    Start { kind: RowInner }
+    Finish
     Token { kind: RightParenthesis }
   Finish
 Finish
