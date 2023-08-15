@@ -459,11 +459,7 @@ fn expr_6(parser: &mut Parser) {
 
 fn record_update_leaf_or_branch(parser: &mut Parser) {
     let mut leaf_or_branch = parser.start();
-    if parser.current().is_label() {
-        name(parser, SyntaxKind::Label);
-    } else {
-        parser.error_recover("expected a label");
-    }
+    label_name(parser);
     match parser.current() {
         SyntaxKind::Equal => {
             parser.consume();
@@ -483,7 +479,15 @@ fn record_update_leaf_or_branch(parser: &mut Parser) {
 }
 
 fn expr_7(parser: &mut Parser) {
+    let mut marker = parser.start();
     expr_atom(parser);
+    if parser.at(SyntaxKind::Period) {
+        parser.consume();
+        separated(parser, SyntaxKind::Period, label_name);
+        marker.end(parser, SyntaxKind::RecordAccessExpression);
+    } else {
+        marker.cancel(parser);
+    }
 }
 
 fn expr_atom(parser: &mut Parser) {
@@ -881,11 +885,7 @@ fn open_row_or_parenthesized_type(
 
 fn row_field(parser: &mut Parser) {
     let mut field = parser.start();
-    if parser.current().is_label() {
-        name(parser, SyntaxKind::Label);
-    } else {
-        parser.error_recover("expected a label");
-    }
+    label_name(parser);
     parser.expect(SyntaxKind::Colon2);
     type_0(parser);
     field.end(parser, SyntaxKind::RowField);
@@ -1169,6 +1169,14 @@ fn name_ref(parser: &mut Parser, kind: SyntaxKind) {
     let mut marker = parser.start();
     parser.consume_as(kind);
     marker.end(parser, SyntaxKind::NameRef);
+}
+
+fn label_name(parser: &mut Parser<'_>) {
+    if parser.current().is_label() {
+        name(parser, SyntaxKind::Label);
+    } else {
+        parser.error_recover("expected a label");
+    }
 }
 
 fn operator_ref(parser: &mut Parser) {
