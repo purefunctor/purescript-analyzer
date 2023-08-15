@@ -99,7 +99,7 @@ pub enum SyntaxKind {
     LiteralExpression,
     ParenthesizedExpression,
     RecordAccessExpression,
-    RecordUpdate,
+    RecordUpdateExpression,
     RecordUpdateLeaf,
     RecordUpdateBranch,
     TypedExpression,

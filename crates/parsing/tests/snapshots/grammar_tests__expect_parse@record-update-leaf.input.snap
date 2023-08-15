@@ -5,7 +5,7 @@ input_file: crates/parsing/tests/inputs/passing/expression/record-update-leaf.in
 ---
 Input: a { b = 0, c = 1 }
 
-Start { kind: RecordUpdate }
+Start { kind: RecordUpdateExpression }
   Start { kind: VariableExpression }
     Start { kind: QualifiedName }
       Start { kind: NameRef }

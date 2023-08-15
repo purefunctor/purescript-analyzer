@@ -451,7 +451,7 @@ fn expr_6(parser: &mut Parser) {
         separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
         parser.expect(SyntaxKind::RightBracket);
         wrapped.end(parser, SyntaxKind::Wrapped);
-        marker.end(parser, SyntaxKind::RecordUpdate);
+        marker.end(parser, SyntaxKind::RecordUpdateExpression);
     } else {
         marker.cancel(parser);
     }
