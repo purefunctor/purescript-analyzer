@@ -513,9 +513,41 @@ fn expr_atom(parser: &mut Parser) {
     let mut qualified = parser.start();
     let has_prefix = if parser.at(SyntaxKind::Upper) { qualified_prefix(parser) } else { false };
 
+    let mut name_end = |parser: &mut Parser, kind: SyntaxKind| {
+        qualified.end(parser, SyntaxKind::QualifiedName);
+        expression.end(parser, kind);
+    };
+
     match parser.current() {
-        SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw | SyntaxKind::LeftParenthesis => {
-            name_ref_or_parenthesized_expr(parser, has_prefix, qualified, expression);
+        SyntaxKind::Upper => {
+            name_ref(parser, SyntaxKind::Upper);
+            name_end(parser, SyntaxKind::ConstructorExpression);
+        }
+        token if token.is_lower() => {
+            name_ref(parser, SyntaxKind::Lower);
+            name_end(parser, SyntaxKind::VariableExpression);
+        }
+        SyntaxKind::LeftParenthesis => {
+            let mut wrapped = parser.start();
+            parser.expect(SyntaxKind::LeftParenthesis);
+
+            if parser.current().is_operator() {
+                name_ref(parser, SyntaxKind::Operator);
+                parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.end(parser, SyntaxKind::Wrapped);
+                name_end(parser, SyntaxKind::OperatorNameExpression);
+            } else if has_prefix {
+                parser.error_recover("expected an operator");
+                parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.end(parser, SyntaxKind::Wrapped);
+                name_end(parser, SyntaxKind::OperatorNameExpression);
+            } else {
+                expr_0(parser);
+                parser.expect(SyntaxKind::RightParenthesis);
+                wrapped.cancel(parser);
+                qualified.cancel(parser);
+                expression.end(parser, SyntaxKind::ParenthesizedExpression);
+            };
         }
         _ => {
             parser.error("expected an expression");
@@ -531,68 +563,6 @@ fn expr_array(parser: &mut Parser) {
 
 fn expr_record(parser: &mut Parser) {
     record_container(parser, SyntaxKind::NameRef, expr_0);
-}
-
-/// Shared code between [`expr_5`] and [`expr_atom`] for qualified names.
-///
-/// Because of qualified do/ado-notation, we end up handling qualified names
-/// earlier in the [`expr_5`] rule. We want [`expr_atom`] to handle those too,
-/// as it can be called standalone much like [`type_atom`].
-///
-/// This rule also handles parenthesized expressions, as implied by its name.
-/// If `has_prefix` is true, as in if [`qualified_prefix`] succeeds, the rule
-/// emits an error node rather than descending into [`expr_0`].
-fn name_ref_or_parenthesized_expr(
-    parser: &mut Parser,
-    has_prefix: bool,
-    mut qualified: NodeMarker,
-    mut expression: NodeMarker,
-) {
-    match parser.current() {
-        SyntaxKind::Upper => {
-            name_ref(parser, SyntaxKind::Upper);
-
-            qualified.end(parser, SyntaxKind::QualifiedName);
-            expression.end(parser, SyntaxKind::ConstructorExpression);
-        }
-        token if token.is_lower() => {
-            name_ref(parser, SyntaxKind::Lower);
-
-            qualified.end(parser, SyntaxKind::QualifiedName);
-            expression.end(parser, SyntaxKind::VariableExpression);
-        }
-        SyntaxKind::LeftParenthesis => {
-            let mut wrapped = parser.start();
-            parser.expect(SyntaxKind::LeftParenthesis);
-
-            if parser.current().is_operator() {
-                name_ref(parser, SyntaxKind::Operator);
-
-                parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.end(parser, SyntaxKind::Wrapped);
-                qualified.end(parser, SyntaxKind::QualifiedName);
-                expression.end(parser, SyntaxKind::OperatorNameExpression);
-            } else if has_prefix {
-                parser.error_recover("expected an operator");
-
-                parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.end(parser, SyntaxKind::Wrapped);
-                qualified.end(parser, SyntaxKind::QualifiedName);
-                expression.end(parser, SyntaxKind::OperatorNameExpression);
-            } else {
-                expr_0(parser);
-
-                parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.cancel(parser);
-                qualified.cancel(parser);
-                expression.end(parser, SyntaxKind::ParenthesizedExpression);
-            };
-        }
-        _ => {
-            qualified.cancel(parser);
-            expression.cancel(parser);
-        }
-    }
 }
 
 // type_1 '::' type_1 | type_1
