@@ -86,8 +86,3 @@ fn test_pattern() {
 //         expect_parse(&source, declaration);
 //     });
 // }
-
-// #[test]
-// fn test_record_update() {
-//     expect_parse("Hello.do", expression);
-// }

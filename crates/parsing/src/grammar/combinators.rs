@@ -2,8 +2,7 @@ use syntax::SyntaxKind;
 
 use crate::parser::Parser;
 
-/// Performs `rule` until it returns `false`.
-pub fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) -> bool {
+pub(super) fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) -> bool {
     let mut marker = parser.start();
     let mut at_least_one = false;
     loop {
@@ -20,8 +19,7 @@ pub fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) -> b
     at_least_one
 }
 
-/// Performs `rule` until it returns `false.
-pub fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
+pub(super) fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
     let mut marker = parser.start();
     loop {
         if !rule(parser) {
@@ -31,8 +29,7 @@ pub fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
     marker.end(parser, SyntaxKind::ZeroOrMore);
 }
 
-/// Performs a `rule` and conditionally backtracks.
-pub fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -> bool {
+pub(super) fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -> bool {
     let mut save = parser.save();
     rule(parser);
     if save.has_error(parser) {
@@ -44,8 +41,7 @@ pub fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -> bool 
     }
 }
 
-/// Parses `rule`s separated by the `separator`.
-pub fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl Fn(&mut Parser)) {
+pub(super) fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
 
     rule(parser);
@@ -61,7 +57,7 @@ pub fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl Fn(&mut 
     marker.end(parser, SyntaxKind::Separated);
 }
 
-pub fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
+pub(super) fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
     if !parser.expect(SyntaxKind::LayoutStart) {
         return;
     }
