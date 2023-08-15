@@ -98,6 +98,9 @@ pub enum SyntaxKind {
 
     LiteralExpression,
     ParenthesizedExpression,
+    RecordUpdate,
+    RecordUpdateLeaf,
+    RecordUpdateBranch,
     TypedExpression,
 
     LiteralChar,

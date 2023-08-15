@@ -58,6 +58,7 @@ fn test_expression() {
 fn test_expression_failing() {
     glob!("inputs/failing/expression", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
+        println!("{path:?}");
         expect_parse(&source, expression);
     })
 }
@@ -84,4 +85,9 @@ fn test_pattern() {
 //         let source = std::fs::read_to_string(path).unwrap();
 //         expect_parse(&source, declaration);
 //     });
+// }
+
+// #[test]
+// fn test_record_update() {
+//     expect_parse("Hello.do", expression);
 // }

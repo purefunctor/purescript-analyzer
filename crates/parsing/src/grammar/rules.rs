@@ -184,7 +184,7 @@ fn expr_sp(parser: &mut Parser) {
     }
 }
 
-// expr_if | expr_case | qualified_prefix? ( expr_do | expr_ado ) | expr_atom
+// expr_if | expr_case | expr_let | qualified_prefix? ( expr_do | expr_ado ) | expr_6
 fn expr_5(parser: &mut Parser) {
     match parser.current() {
         SyntaxKind::IfKw => {
@@ -199,26 +199,30 @@ fn expr_5(parser: &mut Parser) {
         _ => (),
     }
 
+    // We only backtrack parsing for `qualified_prefix` rather than the
+    // entire `do`/`ado` expression, allowing us to preserve errors.
+    let mut save = parser.save();
     let mut expression = parser.start();
     let mut qualified = parser.start();
-    let has_prefix = if parser.at(SyntaxKind::Upper) { qualified_prefix(parser) } else { false };
-
+    if parser.at(SyntaxKind::Upper) {
+        qualified_prefix(parser);
+    }
     match parser.current() {
         SyntaxKind::DoKw => {
-            expr_do(parser, qualified, expression);
+            save.delete(parser);
+            return expr_do(parser, qualified, expression);
         }
         SyntaxKind::AdoKw => {
-            expr_ado(parser, qualified, expression);
+            save.delete(parser);
+            return expr_ado(parser, qualified, expression);
         }
-        SyntaxKind::Upper | SyntaxKind::Lower | SyntaxKind::AsKw | SyntaxKind::LeftParenthesis => {
-            name_ref_or_parenthesized_expr(parser, has_prefix, qualified, expression);
-        }
-        _ => {
-            expression.cancel(parser);
-            qualified.cancel(parser);
-            expr_atom(parser)
-        }
+        _ => (),
     }
+    expression.cancel(parser);
+    qualified.cancel(parser);
+    save.load(parser);
+
+    expr_6(parser);
 }
 
 // 'if' expr_0 'then' expr_0 'else' expr_0
@@ -420,6 +424,66 @@ fn expr_ado(parser: &mut Parser, mut qualified: NodeMarker, mut expression: Node
     qualified.end(parser, SyntaxKind::QualifiedAdo);
 
     expression.end(parser, SyntaxKind::DoExpression);
+}
+
+fn at_record_update(parser: &Parser) -> bool {
+    if !parser.at(SyntaxKind::LeftBracket) {
+        return false;
+    }
+
+    if !parser.nth(1).is_label() {
+        return false;
+    }
+
+    if !matches!(parser.nth(2), SyntaxKind::Equal | SyntaxKind::LeftBracket) {
+        return false;
+    }
+
+    true
+}
+
+fn expr_6(parser: &mut Parser) {
+    let mut marker = parser.start();
+    expr_7(parser);
+    if at_record_update(parser) {
+        let mut wrapped = parser.start();
+        parser.expect(SyntaxKind::LeftBracket);
+        separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
+        parser.expect(SyntaxKind::RightBracket);
+        wrapped.end(parser, SyntaxKind::Wrapped);
+        marker.end(parser, SyntaxKind::RecordUpdate);
+    } else {
+        marker.cancel(parser);
+    }
+}
+
+fn record_update_leaf_or_branch(parser: &mut Parser) {
+    let mut leaf_or_branch = parser.start();
+    if parser.current().is_label() {
+        name(parser, SyntaxKind::Label);
+    } else {
+        parser.error_recover("expected a label");
+    }
+    match parser.current() {
+        SyntaxKind::Equal => {
+            parser.consume();
+            expr_0(parser);
+            leaf_or_branch.end(parser, SyntaxKind::RecordUpdateLeaf);
+        }
+        SyntaxKind::LeftBracket => {
+            let mut wrapped = parser.start();
+            parser.consume();
+            separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
+            parser.expect(SyntaxKind::RightBracket);
+            wrapped.end(parser, SyntaxKind::Wrapped);
+            leaf_or_branch.end(parser, SyntaxKind::RecordUpdateBranch);
+        }
+        _ => parser.error_recover("expected '=' or '{'"),
+    }
+}
+
+fn expr_7(parser: &mut Parser) {
+    expr_atom(parser);
 }
 
 fn expr_atom(parser: &mut Parser) {

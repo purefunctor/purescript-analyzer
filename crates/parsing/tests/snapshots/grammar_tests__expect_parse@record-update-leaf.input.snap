@@ -1,0 +1,42 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/expression/record-update-leaf.input
+---
+Input: a { b = 0, c = 1 }
+
+Start { kind: RecordUpdate }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Start { kind: Wrapped }
+    Token { kind: LeftBracket }
+    Start { kind: Separated }
+      Start { kind: RecordUpdateLeaf }
+        Start { kind: Name }
+          Token { kind: Label }
+        Finish
+        Token { kind: Equal }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+      Finish
+      Token { kind: Comma }
+      Start { kind: RecordUpdateLeaf }
+        Start { kind: Name }
+          Token { kind: Label }
+        Finish
+        Token { kind: Equal }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+      Finish
+    Finish
+    Token { kind: RightBracket }
+  Finish
+Finish
+
