@@ -79,7 +79,7 @@ impl<'a> Lexed<'a> {
 
     /// Returns the position for an index.
     pub fn position(&self, index: usize) -> Position {
-        assert!(index < self.len());
+        assert!(index <= self.len());
         self.positions[index]
     }
 
