@@ -9,14 +9,30 @@ pub enum SyntaxKind {
 
     Module,
     ModuleHeader,
+    ModuleImports,
     ModuleKw,
     WhereKw,
 
     ExportList,
+    ExportTypeOp,
+    ExportClass,
+    ExportModule,
+    ExportOp,
+    ExportValue,
+    ExportType,
+
     ImportList,
+    ImportOp,
+    ImportType,
+    ImportTypeOp,
+    ImportClass,
+    ImportValue,
 
     ImportDeclaration,
     ImportKw,
+    ImportHidden,
+    HidingKw,
+    ImportQualified,
     AsKw,
 
     ModuleName,

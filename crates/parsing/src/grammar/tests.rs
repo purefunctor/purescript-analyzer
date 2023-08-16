@@ -5,7 +5,7 @@ use lexing::{layout, lex};
 use syntax::SyntaxKind;
 
 use crate::{
-    grammar::{expression, pattern, ty},
+    grammar::{rules::expr_0, rules::module, rules::pat_0, rules::type_0},
     parser::{Event, Parser},
 };
 
@@ -51,7 +51,7 @@ where
 fn test_expression() {
     glob!("inputs/passing/expression", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, expression);
+        expect_parse(&source, expr_0);
     })
 }
 
@@ -60,7 +60,7 @@ fn test_expression_failing() {
     glob!("inputs/failing/expression", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
         println!("{path:?}");
-        expect_parse(&source, expression);
+        expect_parse(&source, expr_0);
     })
 }
 
@@ -68,7 +68,7 @@ fn test_expression_failing() {
 fn test_type() {
     glob!("inputs/passing/type", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, ty);
+        expect_parse(&source, type_0);
     });
 }
 
@@ -76,6 +76,14 @@ fn test_type() {
 fn test_pattern() {
     glob!("inputs/passing/pattern", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, pattern);
+        expect_parse(&source, pat_0);
+    });
+}
+
+#[test]
+fn test_file() {
+    glob!("inputs/passing/file", "*.input", |path| {
+        let source = std::fs::read_to_string(path).unwrap();
+        expect_parse(&source, module);
     });
 }

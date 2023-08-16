@@ -21,3 +21,5 @@ pub(crate) fn ty(parser: &mut Parser) {
 pub(crate) fn pattern(parser: &mut Parser) {
     pat_0(parser);
 }
+
+pub(crate) use rules::module;

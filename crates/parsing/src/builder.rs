@@ -25,6 +25,7 @@ impl<'a> Builder<'a> {
     }
 
     pub(crate) fn finalize(mut self) -> (SyntaxNode, Vec<ParseError>) {
+        self.eat_whitespace_or_comments();
         self.inner.finish_node();
         (SyntaxNode::new_root(self.inner.finish()), self.errors)
     }

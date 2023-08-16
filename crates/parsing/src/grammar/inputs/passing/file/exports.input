@@ -1,0 +1,1 @@
+module Main (value, Type, module Module.Name, class TypeClass, type (+), (-)) where

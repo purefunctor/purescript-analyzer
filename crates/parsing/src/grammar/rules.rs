@@ -1185,3 +1185,198 @@ fn operator_ref(parser: &mut Parser) {
     name_ref(parser, SyntaxKind::Operator);
     marker.end(parser, SyntaxKind::QualifiedName);
 }
+
+fn operator_name_ref(parser: &mut Parser) {
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::LeftParenthesis);
+    if parser.current().is_operator() {
+        name_ref(parser, SyntaxKind::Operator);
+    } else if parser.current().is_reserved_operator() {
+        parser.error_recover("unexpected reserved operator");
+    } else {
+        parser.error_recover("expected an operator");
+    }
+    parser.expect(SyntaxKind::RightParenthesis);
+    wrapped.end(parser, SyntaxKind::Wrapped);
+}
+
+pub(crate) fn module(parser: &mut Parser) {
+    let mut marker = parser.start();
+    module_header(parser);
+    parser.expect(SyntaxKind::LayoutStart);
+    module_imports(parser);
+    module_body(parser);
+    parser.expect(SyntaxKind::LayoutEnd);
+    marker.end(parser, SyntaxKind::Module);
+}
+
+fn module_header(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::ModuleKw);
+    module_name(parser);
+    if parser.at(SyntaxKind::LeftParenthesis) {
+        export_list(parser);
+    }
+    parser.expect(SyntaxKind::WhereKw);
+    marker.end(parser, SyntaxKind::ModuleHeader);
+}
+
+fn module_name(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.at(SyntaxKind::Upper) {
+        name_ref(parser, SyntaxKind::Upper)
+    } else {
+        parser.error_recover("expected a module name");
+    }
+    loop {
+        if parser.at(SyntaxKind::Period) {
+            parser.consume();
+        } else {
+            break;
+        }
+        if parser.at(SyntaxKind::Upper) {
+            name_ref(parser, SyntaxKind::Upper);
+        } else {
+            parser.error_recover("expected a module segment");
+        }
+    }
+    marker.end(parser, SyntaxKind::ModuleName);
+}
+
+fn export_list(parser: &mut Parser) {
+    let mut marker = parser.start();
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::LeftParenthesis);
+    separated(parser, SyntaxKind::Comma, export_item);
+    parser.expect(SyntaxKind::RightParenthesis);
+    wrapped.end(parser, SyntaxKind::Wrapped);
+    marker.end(parser, SyntaxKind::ExportList);
+}
+
+fn export_item(parser: &mut Parser) {
+    let mut marker = parser.start();
+    match parser.current() {
+        SyntaxKind::TypeKw => {
+            parser.consume();
+            operator_name_ref(parser);
+            marker.end(parser, SyntaxKind::ExportTypeOp);
+        }
+        SyntaxKind::ClassKw => {
+            parser.consume();
+            name_ref(parser, SyntaxKind::Upper);
+            marker.end(parser, SyntaxKind::ExportClass);
+        }
+        SyntaxKind::ModuleKw => {
+            parser.consume();
+            module_name(parser);
+            marker.end(parser, SyntaxKind::ExportModule);
+        }
+        SyntaxKind::LeftParenthesis => {
+            operator_name_ref(parser);
+            marker.end(parser, SyntaxKind::ExportOp);
+        }
+        token if token.is_lower() => {
+            name_ref(parser, SyntaxKind::Lower);
+            marker.end(parser, SyntaxKind::ExportValue);
+        }
+        SyntaxKind::Upper => {
+            name_ref(parser, SyntaxKind::Upper);
+            marker.end(parser, SyntaxKind::ExportType);
+        }
+        _ => {
+            parser.error("expected an export item");
+            marker.cancel(parser);
+        }
+    }
+}
+
+fn module_imports(parser: &mut Parser) {
+    let mut marker = parser.start();
+    zero_or_more(parser, |parser| {
+        if !parser.at(SyntaxKind::ImportKw) {
+            return false;
+        }
+        import_declaration(parser);
+        match parser.current() {
+            SyntaxKind::LayoutSep => {
+                parser.consume();
+                true
+            }
+            SyntaxKind::LayoutEnd => false,
+            _ => {
+                parser.error("expected LayoutEnd or LayoutSep");
+                false
+            }
+        }
+    });
+    marker.end(parser, SyntaxKind::ModuleImports);
+}
+
+fn import_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::ImportKw);
+    module_name(parser);
+
+    match parser.current() {
+        SyntaxKind::LeftParenthesis | SyntaxKind::HidingKw => {
+            import_list(parser);
+        }
+        _ => (),
+    }
+
+    if parser.at(SyntaxKind::AsKw) {
+        let mut qualified = parser.start();
+        parser.consume();
+        module_name(parser);
+        qualified.end(parser, SyntaxKind::ImportQualified);
+    }
+
+    marker.end(parser, SyntaxKind::ImportDeclaration);
+}
+
+fn import_list(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.at(SyntaxKind::HidingKw) {
+        parser.consume();
+    }
+    let mut wrapped = parser.start();
+    parser.expect(SyntaxKind::LeftParenthesis);
+    separated(parser, SyntaxKind::Comma, import_item);
+    parser.expect(SyntaxKind::RightParenthesis);
+    wrapped.end(parser, SyntaxKind::Wrapped);
+    marker.end(parser, SyntaxKind::ImportList);
+}
+
+fn import_item(parser: &mut Parser) {
+    let mut marker = parser.start();
+    match parser.current() {
+        SyntaxKind::LeftParenthesis => {
+            operator_name_ref(parser);
+            marker.end(parser, SyntaxKind::ImportOp);
+        }
+        SyntaxKind::Upper => {
+            name_ref(parser, SyntaxKind::Upper);
+            marker.end(parser, SyntaxKind::ImportType);
+        }
+        SyntaxKind::TypeKw => {
+            parser.consume();
+            operator_name_ref(parser);
+            marker.end(parser, SyntaxKind::ImportTypeOp);
+        }
+        SyntaxKind::ClassKw => {
+            parser.consume();
+            name_ref(parser, SyntaxKind::Upper);
+            marker.end(parser, SyntaxKind::ImportClass);
+        }
+        token if token.is_lower() => {
+            name_ref(parser, SyntaxKind::Lower);
+            marker.end(parser, SyntaxKind::ImportValue);
+        }
+        _ => {
+            marker.cancel(parser);
+            parser.error("expected an import item");
+        }
+    }
+}
+
+fn module_body(_: &mut Parser) {}

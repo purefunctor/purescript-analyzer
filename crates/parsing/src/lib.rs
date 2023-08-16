@@ -5,7 +5,7 @@ mod parser;
 
 use builder::Builder;
 use error::ParseError;
-use grammar::{expression, pattern, ty};
+use grammar::{expression, module, pattern, ty};
 use lexing::{layout, lex, Lexed};
 use parser::{Event, Parser};
 use syntax::{SyntaxKind, SyntaxNode};
@@ -74,4 +74,31 @@ pub fn parse_pattern(source: &str) -> (SyntaxNode, Vec<ParseError>) {
     let output = parser.finalize();
 
     process_output(&lexed, output)
+}
+
+pub fn parse_module(source: &str) -> (SyntaxNode, Vec<ParseError>) {
+    let lexed = lex(source);
+    let input = layout(&lexed);
+
+    let mut parser = Parser::new(&input);
+    module(&mut parser);
+    let output = parser.finalize();
+
+    process_output(&lexed, output)
+}
+
+#[test]
+fn __() {
+    let (node, _) = parse_module("
+module Main where
+
+import A
+import B.B (c, d)
+import E.E.E hiding (f, g)
+import H.H.H.H (i, j) as K
+import L.L.L.L.L hiding (m, n) as O
+    
+import Types ((-), Type, type (+), class TypeClass, value)
+");
+    println!("{:#?}", node);
 }
