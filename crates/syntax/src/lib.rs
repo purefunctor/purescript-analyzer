@@ -203,6 +203,7 @@ pub enum SyntaxKind {
     LayoutEnd,
 
     Sentinel,
+    Source,
     Error,
     EndOfFile,
 }
@@ -286,6 +287,10 @@ impl SyntaxKind {
 
     pub fn is_end(&self) -> bool {
         matches!(self, Self::LayoutSep | Self::LayoutEnd | Self::EndOfFile)
+    }
+
+    pub fn is_layout(&self) -> bool {
+        matches!(self, Self::LayoutStart | Self::LayoutSep | Self::LayoutEnd)
     }
 }
 
