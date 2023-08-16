@@ -14,7 +14,7 @@ fn process_output(
     lexed: &Lexed<'_>,
     output: impl IntoIterator<Item = Event>,
 ) -> (SyntaxNode, Vec<ParseError>) {
-    let mut builder = Builder::new(&lexed);
+    let mut builder = Builder::new(lexed);
     for event in output {
         if matches!(event, Event::Start { kind: SyntaxKind::Sentinel }) {
             continue;
