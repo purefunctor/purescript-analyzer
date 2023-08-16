@@ -1,0 +1,62 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/pattern/complex-binder.input
+---
+Input: Tuple (Cons 0 Nil) (Cons 1 Nil)
+Start { kind: ConstructorBinder }
+  Start { kind: QualifiedName }
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: ParenthesizedBinder }
+      Token { kind: LeftParenthesis }
+      Start { kind: ConstructorBinder }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: LiteralBinder }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: ConstructorBinder }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+    Start { kind: ParenthesizedBinder }
+      Token { kind: LeftParenthesis }
+      Start { kind: ConstructorBinder }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: LiteralBinder }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: ConstructorBinder }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+  Finish
+Finish
+

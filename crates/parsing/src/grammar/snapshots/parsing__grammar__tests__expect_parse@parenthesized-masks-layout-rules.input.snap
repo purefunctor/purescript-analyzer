@@ -1,0 +1,146 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/expression/parenthesized-masks-layout-rules.input
+---
+Input: do
+  (
+this
+should
+not
+be
+legal
+but
+it
+is
+  )
+  [
+this,
+as,
+well
+  ]
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: OneOrMore }
+    Start { kind: DoDiscard }
+      Start { kind: ParenthesizedExpression }
+        Token { kind: LeftParenthesis }
+        Start { kind: ApplicationExpression }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Start { kind: OneOrMore }
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: RightParenthesis }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoDiscard }
+      Start { kind: LiteralExpression }
+        Start { kind: LiteralArray }
+          Token { kind: LeftSquare }
+          Start { kind: Separated }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: RightSquare }
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
+

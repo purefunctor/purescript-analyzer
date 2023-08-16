@@ -2,11 +2,12 @@ use std::fmt::Write;
 
 use insta::glob;
 use lexing::{layout, lex};
-use parsing::{
+use syntax::SyntaxKind;
+
+use crate::{
     grammar::{expression, pattern, ty},
     parser::{Event, Parser},
 };
-use syntax::SyntaxKind;
 
 fn expect_parse<F, T>(source: &str, rule: F)
 where
@@ -78,11 +79,3 @@ fn test_pattern() {
         expect_parse(&source, pattern);
     });
 }
-
-// #[test]
-// fn test_declaration() {
-//     glob!("inputs/passing/declaration", "*.input", |path| {
-//         let source = std::fs::read_to_string(path).unwrap();
-//         expect_parse(&source, declaration);
-//     });
-// }

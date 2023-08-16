@@ -1,0 +1,21 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/failing/expression/trailing-comma.input
+---
+Input: [ 1, ]
+
+Start { kind: LiteralExpression }
+  Start { kind: LiteralArray }
+    Token { kind: LeftSquare }
+    Start { kind: Separated }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+      Token { kind: Comma }
+      Error { message: "expected an expression" }
+    Finish
+    Token { kind: RightSquare }
+  Finish
+Finish
+

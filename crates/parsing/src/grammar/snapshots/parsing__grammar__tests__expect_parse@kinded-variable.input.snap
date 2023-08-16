@@ -1,0 +1,31 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/type/kinded-variable.input
+---
+Input: ((a) :: Int)
+
+Start { kind: ParenthesizedType }
+  Token { kind: LeftParenthesis }
+  Start { kind: KindedType }
+    Start { kind: ParenthesizedType }
+      Token { kind: LeftParenthesis }
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+    Token { kind: Colon2 }
+    Start { kind: ConstructorType }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Upper }
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: RightParenthesis }
+Finish
+

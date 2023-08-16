@@ -1,11 +1,11 @@
 mod builder;
 pub mod error;
-pub mod grammar;
-pub mod parser;
+mod grammar;
+mod parser;
 
 use builder::Builder;
 use error::ParseError;
-use grammar::expression;
+use grammar::{expression, pattern, ty};
 use lexing::{layout, lex, Lexed};
 use parser::{Event, Parser};
 use syntax::{SyntaxKind, SyntaxNode};
@@ -52,11 +52,26 @@ pub fn parse_expression(source: &str) -> (SyntaxNode, Vec<ParseError>) {
     process_output(&lexed, output)
 }
 
-#[test]
-fn ___() {
-    let (node, errors) = parse_expression("1.");
-    for error in errors {
-        println!("'{}' at {:?}", error.message(), error.position());
-    }
-    println!("{:#?}", node);
+// FIXME: remove
+pub fn parse_type(source: &str) -> (SyntaxNode, Vec<ParseError>) {
+    let lexed = lex(source);
+    let input = layout(&lexed);
+
+    let mut parser = Parser::new(&input);
+    ty(&mut parser);
+    let output = parser.finalize();
+
+    process_output(&lexed, output)
+}
+
+// FIXME: remove
+pub fn parse_pattern(source: &str) -> (SyntaxNode, Vec<ParseError>) {
+    let lexed = lex(source);
+    let input = layout(&lexed);
+
+    let mut parser = Parser::new(&input);
+    pattern(&mut parser);
+    let output = parser.finalize();
+
+    process_output(&lexed, output)
 }

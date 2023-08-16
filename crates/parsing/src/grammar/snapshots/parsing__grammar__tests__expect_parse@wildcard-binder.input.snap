@@ -1,0 +1,10 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/pattern/wildcard-binder.input
+---
+Input: _
+Start { kind: WildcardBinder }
+  Token { kind: Underscore }
+Finish
+
