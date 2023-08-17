@@ -11,7 +11,7 @@ import E.E.E hiding (f, g)
 import H.H.H.H (i, j) as K
 import L.L.L.L.L hiding (m, n) as O
 
-import Types ((-), Type, type (+), class TypeClass, value)
+import Types ((-), Type, type (+), class TypeClass, value, List(Cons, Nil), Maybe(..), Either())
 
 Start { kind: Module }
   Start { kind: ModuleHeader }
@@ -253,6 +253,52 @@ Start { kind: Module }
               Start { kind: ImportValue }
                 Start { kind: NameRef }
                   Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: Comma }
+              Start { kind: ImportType }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+                Start { kind: DataEnumerated }
+                  Start { kind: Wrapped }
+                    Token { kind: LeftParenthesis }
+                    Start { kind: Separated }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
+                      Finish
+                      Token { kind: Comma }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
+                      Finish
+                    Finish
+                    Token { kind: RightParenthesis }
+                  Finish
+                Finish
+              Finish
+              Token { kind: Comma }
+              Start { kind: ImportType }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+                Start { kind: DataAll }
+                  Start { kind: Wrapped }
+                    Token { kind: LeftParenthesis }
+                    Token { kind: Period2 }
+                    Token { kind: RightParenthesis }
+                  Finish
+                Finish
+              Finish
+              Token { kind: Comma }
+              Start { kind: ImportType }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+                Start { kind: DataEnumerated }
+                  Start { kind: Wrapped }
+                    Token { kind: LeftParenthesis }
+                    Token { kind: RightParenthesis }
+                  Finish
                 Finish
               Finish
             Finish

@@ -24,6 +24,8 @@ pub enum SyntaxKind {
     ImportList,
     ImportOp,
     ImportType,
+    DataAll,
+    DataEnumerated,
     ImportTypeOp,
     ImportClass,
     ImportValue,

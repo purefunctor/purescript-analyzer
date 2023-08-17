@@ -89,7 +89,8 @@ pub fn parse_module(source: &str) -> (SyntaxNode, Vec<ParseError>) {
 
 #[test]
 fn __() {
-    let (node, _) = parse_module("
+    let (node, _) = parse_module(
+        "
 module Main where
 
 import A
@@ -99,6 +100,7 @@ import H.H.H.H (i, j) as K
 import L.L.L.L.L hiding (m, n) as O
     
 import Types ((-), Type, type (+), class TypeClass, value)
-");
+",
+    );
     println!("{:#?}", node);
 }
