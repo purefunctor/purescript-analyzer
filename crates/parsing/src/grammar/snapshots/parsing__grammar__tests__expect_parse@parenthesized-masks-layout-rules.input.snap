@@ -110,33 +110,35 @@ Start { kind: DoExpression }
     Start { kind: DoDiscard }
       Start { kind: LiteralExpression }
         Start { kind: LiteralArray }
-          Token { kind: LeftSquare }
-          Start { kind: Separated }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
+          Start { kind: Wrapped }
+            Token { kind: LeftSquare }
+            Start { kind: Separated }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+              Token { kind: Comma }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+              Token { kind: Comma }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
                 Finish
               Finish
             Finish
-            Token { kind: Comma }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Token { kind: Comma }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
+            Token { kind: RightSquare }
           Finish
-          Token { kind: RightSquare }
         Finish
       Finish
     Finish

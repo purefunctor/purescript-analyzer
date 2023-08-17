@@ -1107,6 +1107,7 @@ fn qualified_prefix(parser: &mut Parser) -> bool {
 // '[' rule (',' rule)* ']'
 fn array_container(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
+    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftSquare);
     if parser.at(SyntaxKind::RightSquare) {
         parser.expect(SyntaxKind::RightSquare);
@@ -1114,12 +1115,14 @@ fn array_container(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
         separated(parser, SyntaxKind::Comma, rule);
         parser.expect(SyntaxKind::RightSquare);
     }
+    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::LiteralArray);
 }
 
 // '{' record_field_or_pun (',' record_field_or_pun)* '}'
 fn record_container(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
+    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftBracket);
     if parser.at(SyntaxKind::RightBracket) {
         parser.expect(SyntaxKind::RightBracket);
@@ -1129,6 +1132,7 @@ fn record_container(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(&mu
         });
         parser.expect(SyntaxKind::RightBracket);
     }
+    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::LiteralRecord);
 }
 

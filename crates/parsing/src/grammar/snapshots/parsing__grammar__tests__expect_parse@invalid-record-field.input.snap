@@ -7,19 +7,21 @@ Input: { 1: "hello" }
 
 Start { kind: LiteralExpression }
   Start { kind: LiteralRecord }
-    Token { kind: LeftBracket }
-    Start { kind: Separated }
-      Start { kind: RecordField }
-        Start { kind: Error }
-          Error { message: "expected a label" }
-        Finish
-        Token { kind: Colon }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralString }
+    Start { kind: Wrapped }
+      Token { kind: LeftBracket }
+      Start { kind: Separated }
+        Start { kind: RecordField }
+          Start { kind: Error }
+            Error { message: "expected a label" }
+          Finish
+          Token { kind: Colon }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralString }
+          Finish
         Finish
       Finish
+      Token { kind: RightBracket }
     Finish
-    Token { kind: RightBracket }
   Finish
 Finish
 
