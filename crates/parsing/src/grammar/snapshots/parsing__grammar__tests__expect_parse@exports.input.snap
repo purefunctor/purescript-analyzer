@@ -80,6 +80,10 @@ Start { kind: Module }
     Start { kind: ZeroOrMore }
     Finish
   Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
   Token { kind: LayoutEnd }
 Finish
 

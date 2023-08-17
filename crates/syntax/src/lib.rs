@@ -10,6 +10,7 @@ pub enum SyntaxKind {
     Module,
     ModuleHeader,
     ModuleImports,
+    ModuleBody,
     ModuleKw,
     WhereKw,
 

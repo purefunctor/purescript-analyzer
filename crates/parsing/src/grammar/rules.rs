@@ -1412,4 +1412,51 @@ fn import_item(parser: &mut Parser) {
     }
 }
 
-fn module_body(_: &mut Parser) {}
+// FIXME: support all other declarations...
+fn module_body(parser: &mut Parser) {
+    let mut marker = parser.start();
+    zero_or_more(parser, |parser| {
+        if parser.at(SyntaxKind::LayoutEnd) {
+            return false;
+        }
+        annotation_or_value_declaration(parser);
+        match parser.current() {
+            SyntaxKind::LayoutSep => {
+                parser.consume();
+                true
+            }
+            SyntaxKind::LayoutEnd => false,
+            _ => {
+                parser.error("expected LayoutEnd or LayoutSep");
+                false
+            }
+        }
+    });
+    marker.end(parser, SyntaxKind::ModuleBody);
+}
+
+// 'lower' '::' type_0 | 'lower' pat_atom* expr_binding
+fn annotation_or_value_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.current().is_lower() {
+        name(parser, SyntaxKind::Lower);
+    } else {
+        parser.error_recover("expected a name");
+    }
+    if parser.at(SyntaxKind::Colon2) {
+        parser.consume();
+        type_0(parser);
+        marker.end(parser, SyntaxKind::AnnotationDeclaration);
+    } else {
+        zero_or_more(parser, |parser| {
+            if at_pat_start(parser) {
+                pat_atom(parser);
+                true
+            } else {
+                false
+            }
+        });
+        expr_binding(parser, SyntaxKind::Equal);
+        marker.end(parser, SyntaxKind::ValueDeclaration);
+    }
+}
