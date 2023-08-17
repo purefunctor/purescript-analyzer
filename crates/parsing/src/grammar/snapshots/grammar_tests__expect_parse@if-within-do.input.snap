@@ -1,0 +1,55 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/failing/expression/if-within-do.input
+---
+Input: do
+  if 
+  a 
+  then
+  b 
+  else 
+  c
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: OneOrMore }
+    Start { kind: DoDiscard }
+      Start { kind: IfThenElseExpression }
+        Token { kind: IfKw }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: ThenKw }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: ElseKw }
+        Error { message: "expected an expression" }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoDiscard }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
+

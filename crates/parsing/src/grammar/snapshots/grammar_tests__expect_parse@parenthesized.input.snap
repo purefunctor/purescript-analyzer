@@ -1,0 +1,96 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/expression/parenthesized.input
+---
+Input: (1 + 2) * (3 * 4) / ((f x))
+
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ParenthesizedExpression }
+    Token { kind: LeftParenthesis }
+    Start { kind: ExpressionOperatorChain }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+      Start { kind: OneOrMore }
+        Start { kind: Pair }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Operator }
+            Finish
+          Finish
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: RightParenthesis }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: Pair }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
+      Finish
+      Start { kind: ParenthesizedExpression }
+        Token { kind: LeftParenthesis }
+        Start { kind: ExpressionOperatorChain }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: OneOrMore }
+            Start { kind: Pair }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Operator }
+                Finish
+              Finish
+              Start { kind: LiteralExpression }
+                Token { kind: LiteralInteger }
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: RightParenthesis }
+      Finish
+    Finish
+    Start { kind: Pair }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
+      Finish
+      Start { kind: ParenthesizedExpression }
+        Token { kind: LeftParenthesis }
+        Start { kind: ParenthesizedExpression }
+          Token { kind: LeftParenthesis }
+          Start { kind: ApplicationExpression }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: TermArgument }
+                Start { kind: VariableExpression }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Lower }
+                    Finish
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
+        Finish
+        Token { kind: RightParenthesis }
+      Finish
+    Finish
+  Finish
+Finish
+

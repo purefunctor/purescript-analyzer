@@ -1,0 +1,4 @@
+module Main where
+
+a :: Int
+a = 0

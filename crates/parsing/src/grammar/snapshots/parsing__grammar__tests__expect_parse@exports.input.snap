@@ -1,0 +1,89 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/file/exports.input
+---
+Input: module Main (value, Type, module Module.Name, class TypeClass, type (+), (-)) where
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Start { kind: ExportList }
+      Start { kind: Wrapped }
+        Token { kind: LeftParenthesis }
+        Start { kind: Separated }
+          Start { kind: ExportValue }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ExportType }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ExportModule }
+            Token { kind: ModuleKw }
+            Start { kind: ModuleName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+              Token { kind: Period }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ExportClass }
+            Token { kind: ClassKw }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ExportTypeOp }
+            Token { kind: TypeKw }
+            Start { kind: Wrapped }
+              Token { kind: LeftParenthesis }
+              Start { kind: NameRef }
+                Token { kind: Operator }
+              Finish
+              Token { kind: RightParenthesis }
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ExportOp }
+            Start { kind: Wrapped }
+              Token { kind: LeftParenthesis }
+              Start { kind: NameRef }
+                Token { kind: Operator }
+              Finish
+              Token { kind: RightParenthesis }
+            Finish
+          Finish
+        Finish
+        Token { kind: RightParenthesis }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
+

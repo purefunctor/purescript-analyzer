@@ -1,0 +1,14 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/pattern/constructor-zero-arity.input
+---
+Input: Nil
+Start { kind: ConstructorBinder }
+  Start { kind: QualifiedName }
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
+  Finish
+Finish
+

@@ -1,116 +1,111 @@
+//! Implements a generic parser API.
+
+use std::cell::Cell;
+
 use drop_bomb::DropBomb;
 use syntax::SyntaxKind;
 
-use crate::{
-    input::Input,
-    layout::{Layout, LayoutKind},
-    position::Position,
-};
-
 #[derive(Debug, PartialEq, Eq)]
-pub enum Event {
+pub(crate) enum Event {
     Start { kind: SyntaxKind },
     Token { kind: SyntaxKind },
     Error { message: String },
     Finish,
 }
 
-pub struct Parser {
-    input: Input,
+pub(crate) struct Parser<'a> {
+    input: &'a [SyntaxKind],
     index: usize,
-
-    layouts: Vec<Layout>,
-    events: Vec<Event>,
+    output: Vec<Event>,
+    steps: Cell<u32>,
 }
 
-impl Parser {
-    pub fn new(input: Input) -> Parser {
+const PARSER_LIMIT: u32 = 10_000_000;
+
+impl<'a> Parser<'a> {
+    pub(crate) fn new(input: &'a [SyntaxKind]) -> Parser<'a> {
         let index = 0;
-        let layouts = vec![Layout {
-            kind: LayoutKind::Root,
-            position: Position { offset: 0, line: 1, column: 1 },
-        }];
-        let events = vec![];
-        Parser { input, index, layouts, events }
+        let output = vec![];
+        let steps = Cell::new(0);
+        Parser { input, index, output, steps }
     }
 
-    pub fn is_eof(&self) -> bool {
-        self.index == self.input.len()
+    pub(crate) fn finalize(self) -> Vec<Event> {
+        self.output
     }
 
-    pub fn as_output(self) -> Vec<Event> {
-        self.events
-    }
-}
-
-impl Parser {
-    /// Starts a new layout context.
-    pub fn layout_start(&mut self, kind: LayoutKind) {
-        assert!(!self.is_eof());
-        let position = self.input.position(self.index);
-        self.layouts.push(Layout::new(kind, position));
+    pub(crate) fn nth(&self, offset: usize) -> SyntaxKind {
+        let steps = self.steps.get();
+        if steps > PARSER_LIMIT {
+            panic!("infinite loop in parser");
+        }
+        self.steps.set(steps + 1);
+        self.input.get(self.index + offset).cloned().unwrap_or(SyntaxKind::EndOfFile)
     }
 
-    /// Finishes the current layout context.
-    pub fn layout_end(&mut self) {
-        self.layouts.pop();
+    pub(crate) fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
+        self.nth(offset) == kind
     }
 
-    /// Determines if the current token belongs to the next layout context.
-    pub fn layout_done(&self) -> bool {
-        if self.is_eof() {
+    pub(crate) fn current(&self) -> SyntaxKind {
+        self.nth(0)
+    }
+
+    pub(crate) fn at(&self, kind: SyntaxKind) -> bool {
+        self.nth_at(0, kind)
+    }
+
+    pub(crate) fn consume(&mut self) {
+        let kind = self.current();
+        self.consume_as(kind);
+    }
+
+    pub(crate) fn consume_as(&mut self, kind: SyntaxKind) {
+        self.index += 1;
+        self.steps.set(0);
+        self.output.push(Event::Token { kind });
+    }
+
+    pub(crate) fn eat(&mut self, kind: SyntaxKind) -> bool {
+        if !self.at(kind) {
+            return false;
+        }
+        self.consume();
+        true
+    }
+
+    pub(crate) fn error(&mut self, message: impl Into<String>) {
+        let message = message.into();
+        self.output.push(Event::Error { message })
+    }
+
+    pub(crate) fn error_recover(&mut self, message: impl Into<String>) {
+        let mut error = self.start();
+        self.index += 1;
+        self.steps.set(0);
+        self.error(message);
+        error.end(self, SyntaxKind::Error);
+    }
+
+    pub(crate) fn expect(&mut self, kind: SyntaxKind) -> bool {
+        if self.eat(kind) {
             return true;
         }
-
-        let position = self.input.position(self.index);
-        let layout = self.layouts.last().unwrap();
-
-        assert!(position.line >= layout.position.line);
-
-        match layout.kind {
-            LayoutKind::Root => panic!("Invalid call."),
-            // NOTE: handled by is_eof
-            LayoutKind::Module => false,
-            LayoutKind::Instance => position.column < layout.position.column,
-            LayoutKind::Do => position.column < layout.position.column,
-            LayoutKind::Let => position.column < layout.position.column,
-            LayoutKind::Where => position.column < layout.position.column,
-            // NOTE: handled by is_eof
-            LayoutKind::Parenthesis => false,
-        }
+        self.error(format!("expected {kind:?}"));
+        false
     }
 
-    /// Determines if the current token belongs to the next token group.
-    pub fn group_done(&self) -> bool {
-        if self.is_eof() {
-            return true;
-        }
-
-        let position = self.input.position(self.index);
-        let layout = self.layouts.last().unwrap();
-
-        assert!(position.line >= layout.position.line);
-
-        match layout.kind {
-            LayoutKind::Root => panic!("Invalid call."),
-            // NOTE: handled by is_eof
-            LayoutKind::Module => position.column == layout.position.column,
-            LayoutKind::Instance => position.column <= layout.position.column,
-            LayoutKind::Do => position.column <= layout.position.column,
-            LayoutKind::Let => position.column <= layout.position.column,
-            LayoutKind::Where => position.column <= layout.position.column,
-            // NOTE: handled by is_eof
-            LayoutKind::Parenthesis => false,
-        }
-    }
-}
-
-impl Parser {
-    /// Starts a new node, returning a [`NodeMarker`].
-    pub fn start(&mut self) -> NodeMarker {
-        let index = self.events.len();
-        self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
+    pub(crate) fn start(&mut self) -> NodeMarker {
+        let index = self.output.len();
+        self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
         NodeMarker::new(index)
+    }
+
+    pub(crate) fn save(&mut self) -> SaveMarker {
+        let input_index = self.index;
+        let event_index = self.output.len();
+        self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
+        SaveMarker::new(input_index, event_index)
     }
 }
 
@@ -120,211 +115,61 @@ pub struct NodeMarker {
 }
 
 impl NodeMarker {
-    pub fn new(index: usize) -> NodeMarker {
+    pub(crate) fn new(index: usize) -> NodeMarker {
         let bomb = DropBomb::new("failed to call end or cancel");
         NodeMarker { index, bomb }
     }
 
-    /// Finishes a node's construction.
-    pub fn end(&mut self, parser: &mut Parser, kind: SyntaxKind) {
+    pub(crate) fn end(&mut self, parser: &mut Parser, kind: SyntaxKind) {
         self.bomb.defuse();
-        match &mut parser.events[self.index] {
+        match &mut parser.output[self.index] {
             Event::Start { kind: sentinel } => {
                 *sentinel = kind;
             }
             _ => unreachable!(),
         }
-        parser.events.push(Event::Finish);
+        parser.output.push(Event::Finish);
     }
 
-    /// Cancels a node's construction.
-    pub fn cancel(&mut self, parser: &mut Parser) {
+    pub(crate) fn cancel(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
-        if self.index == parser.events.len() - 1 {
-            match parser.events.pop() {
+        if self.index == parser.output.len() - 1 {
+            match parser.output.pop() {
                 Some(Event::Start { kind: SyntaxKind::Sentinel }) => (),
                 _ => unreachable!(),
             }
         }
     }
 }
-
-impl Parser {
-    /// Starts a new node, returning a [`SaveMarker`].
-    pub fn save(&mut self) -> SaveMarker {
-        let input_index = self.index;
-        let layout_index = self.layouts.len();
-        let event_index = self.events.len();
-        self.events.push(Event::Start { kind: SyntaxKind::Sentinel });
-        SaveMarker::new(input_index, layout_index, event_index)
-    }
-}
-
 pub struct SaveMarker {
     input_index: usize,
-    layout_index: usize,
     event_index: usize,
     bomb: DropBomb,
 }
 
 impl SaveMarker {
-    pub fn new(input_index: usize, layout_index: usize, event_index: usize) -> SaveMarker {
+    pub(crate) fn new(input_index: usize, event_index: usize) -> SaveMarker {
         let bomb = DropBomb::new("failed to call load or delete");
-        SaveMarker { input_index, layout_index, event_index, bomb }
+        SaveMarker { input_index, event_index, bomb }
     }
 
-    /// Returns `true` if [`Event::Error`] is emitted after the marker.
-    pub fn has_error(&self, parser: &Parser) -> bool {
-        parser.events[self.event_index..].iter().any(|event| matches!(event, Event::Error { .. }))
+    pub(crate) fn has_error(&self, parser: &Parser) -> bool {
+        parser.output[self.event_index..].iter().any(|event| matches!(event, Event::Error { .. }))
     }
 
-    /// Resets the state of the [`Parser`] to before [`Parser::save`] is called.
-    pub fn load(&mut self, parser: &mut Parser) {
+    pub(crate) fn load(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
         parser.index = self.input_index;
-        parser.events.truncate(self.event_index);
-        parser.layouts.truncate(self.layout_index);
+        parser.output.truncate(self.event_index);
     }
 
-    /// Ignores the [`SaveMarker`] and retains the state of the [`Parser`].
-    pub fn delete(&mut self, parser: &mut Parser) {
+    pub(crate) fn delete(&mut self, parser: &mut Parser) {
         self.bomb.defuse();
-        if self.event_index == parser.events.len() - 1 {
-            match parser.events.pop() {
+        if self.event_index == parser.output.len() - 1 {
+            match parser.output.pop() {
                 Some(Event::Start { kind: SyntaxKind::Sentinel }) => (),
                 _ => unreachable!(),
             }
         }
-    }
-}
-
-impl Parser {
-    /// Returns the nth token given an `offset`.
-    pub fn nth(&self, offset: usize) -> SyntaxKind {
-        self.input.kind(self.index + offset)
-    }
-
-    /// Determines if an nth token matches a `kind`.
-    pub fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
-        self.nth(offset) == kind
-    }
-
-    /// Returns the current token.
-    pub fn current(&self) -> SyntaxKind {
-        self.nth(0)
-    }
-
-    /// Determines if the current token matches a `kind`.
-    pub fn at(&self, kind: SyntaxKind) -> bool {
-        self.nth_at(0, kind)
-    }
-
-    /// Consumes a token, advancing the parser.
-    pub fn consume(&mut self) {
-        let kind = self.current();
-        self.index += 1;
-        self.events.push(Event::Token { kind })
-    }
-
-    /// Consumes a token as a different `kind`.
-    pub fn consume_as(&mut self, kind: SyntaxKind) {
-        self.index += 1;
-        self.events.push(Event::Token { kind });
-    }
-
-    /// Consumes a token if it matches the `kind`.
-    pub fn eat(&mut self, kind: SyntaxKind) -> bool {
-        if !self.at(kind) {
-            return false;
-        }
-        self.consume();
-        true
-    }
-
-    /// Emit an error with a `message`.
-    pub fn error(&mut self, message: impl Into<String>) {
-        let message = message.into();
-        self.events.push(Event::Error { message })
-    }
-
-    pub fn error_recover(&mut self, message: impl Into<String>) {
-        let mut error = self.start();
-        self.index += 1;
-        self.error(message);
-        error.end(self, SyntaxKind::Error);
-    }
-
-    /// Expect to consume a `kind`, emitting an error otherwise.
-    pub fn expect(&mut self, kind: SyntaxKind) -> bool {
-        if self.eat(kind) {
-            return true;
-        }
-        self.error(format!("expected {kind:?}"));
-        false
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use syntax::SyntaxKind::{self, *};
-
-    use crate::{layout::LayoutKind, lexer::lex};
-
-    use super::Parser;
-
-    fn parse_module(parser: &mut Parser) {
-        parser.eat(ModuleKw);
-        parse_module_name(parser);
-        parser.eat(WhereKw);
-
-        parser.layout_start(LayoutKind::Module);
-        loop {
-            parse_value_declaration(parser);
-            if parser.layout_done() {
-                break;
-            }
-        }
-        parser.layout_end();
-    }
-
-    fn parse_module_name(parser: &mut Parser) {
-        parser.eat(SyntaxKind::Upper);
-    }
-
-    fn parse_value_declaration(parser: &mut Parser) {
-        let mut marker = parser.start();
-        loop {
-            if parser.at(SyntaxKind::LeftParenthesis) {
-                parser.layout_start(LayoutKind::Parenthesis);
-            }
-            if parser.at(SyntaxKind::RightParenthesis) {
-                parser.layout_end();
-            }
-            parser.consume();
-            if parser.group_done() {
-                break;
-            }
-        }
-        marker.end(parser, SyntaxKind::ValueDeclaration);
-    }
-
-    #[test]
-    fn grammar_api_test() {
-        let lexed = lex(r"module Hello where
-hello = world
-  0 'a' 1.2
-
-hello = (
-world
-0 
-'a' 
-1.2
-)
-  ");
-        let input = lexed.as_input();
-        let mut parser = Parser::new(input);
-        parse_module(&mut parser);
-        dbg!(parser.layouts);
-        dbg!(parser.events);
     }
 }

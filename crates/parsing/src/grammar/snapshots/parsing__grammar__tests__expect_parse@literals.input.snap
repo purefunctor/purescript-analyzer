@@ -1,0 +1,95 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/expression/literals.input
+---
+Input: [ 1, 1.0, "hello", 'a', true, false, [], {}, { a, b: "c", "d": "e" } ]
+
+Start { kind: LiteralExpression }
+  Start { kind: LiteralArray }
+    Start { kind: Wrapped }
+      Token { kind: LeftSquare }
+      Start { kind: Separated }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralNumber }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralString }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralChar }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralTrue }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralFalse }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralArray }
+            Start { kind: Wrapped }
+              Token { kind: LeftSquare }
+              Token { kind: RightSquare }
+            Finish
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralRecord }
+            Start { kind: Wrapped }
+              Token { kind: LeftBracket }
+              Token { kind: RightBracket }
+            Finish
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralRecord }
+            Start { kind: Wrapped }
+              Token { kind: LeftBracket }
+              Start { kind: Separated }
+                Start { kind: RecordPun }
+                  Start { kind: NameRef }
+                    Token { kind: Label }
+                  Finish
+                Finish
+                Token { kind: Comma }
+                Start { kind: RecordField }
+                  Start { kind: Name }
+                    Token { kind: Label }
+                  Finish
+                  Token { kind: Colon }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralString }
+                  Finish
+                Finish
+                Token { kind: Comma }
+                Start { kind: RecordField }
+                  Start { kind: Name }
+                    Token { kind: Label }
+                  Finish
+                  Token { kind: Colon }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralString }
+                  Finish
+                Finish
+              Finish
+              Token { kind: RightBracket }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: RightSquare }
+    Finish
+  Finish
+Finish
+

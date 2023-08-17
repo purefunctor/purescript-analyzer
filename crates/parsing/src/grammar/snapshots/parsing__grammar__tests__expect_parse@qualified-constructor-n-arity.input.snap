@@ -1,0 +1,29 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/pattern/qualified-constructor-n-arity.input
+---
+Input: Data.List.Cons 1
+Start { kind: ConstructorBinder }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+    Finish
+    Start { kind: NameRef }
+      Token { kind: Upper }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: LiteralBinder }
+      Token { kind: LiteralInteger }
+    Finish
+  Finish
+Finish
+

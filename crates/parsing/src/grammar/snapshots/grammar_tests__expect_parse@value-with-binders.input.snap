@@ -1,0 +1,82 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/declaration/value-with-binders.input
+---
+Input: hello a _ (Tuple b c) = a + b + c
+
+Start { kind: ValueDeclaration }
+  Start { kind: Name }
+    Token { kind: Lower }
+  Finish
+  Start { kind: ZeroOrMore }
+    Start { kind: VariableBinder }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
+    Finish
+    Start { kind: WildcardBinder }
+      Token { kind: Underscore }
+    Finish
+    Start { kind: ParenthesizedBinder }
+      Token { kind: LeftParenthesis }
+      Start { kind: ConstructorBinder }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: VariableBinder }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: VariableBinder }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+  Finish
+  Start { kind: Unconditional }
+    Token { kind: Equal }
+    Start { kind: WhereExpression }
+      Start { kind: ExpressionOperatorChain }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+          Start { kind: Pair }
+            Token { kind: Operator }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Start { kind: Pair }
+            Token { kind: Operator }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+Finish
+

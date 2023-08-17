@@ -1,0 +1,28 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/type/forall-plain.input
+---
+Input: forall a. Type
+
+Start { kind: ForallType }
+  Token { kind: ForallKw }
+  Start { kind: OneOrMore }
+    Start { kind: TypeVariableBinding }
+      Start { kind: Prefixed }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: Period }
+  Start { kind: ConstructorType }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
+  Finish
+Finish
+

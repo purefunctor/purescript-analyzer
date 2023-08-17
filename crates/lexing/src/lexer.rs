@@ -149,6 +149,7 @@ impl<'a> Lexer<'a> {
             "false" => SyntaxKind::LiteralFalse,
             "forall" => SyntaxKind::ForallKw,
             "foreign" => SyntaxKind::ForeignKw,
+            "hiding" => SyntaxKind::HidingKw,
             "if" => SyntaxKind::IfKw,
             "import" => SyntaxKind::ImportKw,
             "in" => SyntaxKind::InKw,

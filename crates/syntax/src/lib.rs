@@ -9,14 +9,33 @@ pub enum SyntaxKind {
 
     Module,
     ModuleHeader,
+    ModuleImports,
+    ModuleBody,
     ModuleKw,
     WhereKw,
 
     ExportList,
+    ExportTypeOp,
+    ExportClass,
+    ExportModule,
+    ExportOp,
+    ExportValue,
+    ExportType,
+
     ImportList,
+    ImportOp,
+    ImportType,
+    DataAll,
+    DataEnumerated,
+    ImportTypeOp,
+    ImportClass,
+    ImportValue,
 
     ImportDeclaration,
     ImportKw,
+    ImportHidden,
+    HidingKw,
+    ImportQualified,
     AsKw,
 
     ModuleName,
@@ -98,6 +117,10 @@ pub enum SyntaxKind {
 
     LiteralExpression,
     ParenthesizedExpression,
+    RecordAccessExpression,
+    RecordUpdateExpression,
+    RecordUpdateLeaf,
+    RecordUpdateBranch,
     TypedExpression,
 
     LiteralChar,
@@ -112,11 +135,27 @@ pub enum SyntaxKind {
     RecordPun,
     RecordField,
 
-    ConstructorType,
     ForallType,
     TypeVariableBinding,
+
+    ArrowType,
+    ConstrainedType,
+
+    ApplicationType,
+    ConstructorType,
+    IntegerType,
     KindedType,
+    OperatorNameType,
+    ParenthesizedType,
+    RecordType,
+    RowType,
+    RowInner,
+    RowField,
+    RowTail,
+    StringType,
+    TypeOperatorChain,
     VariableType,
+    WildcardType,
 
     BinderOperatorChain,
     ConstructorBinder,
@@ -158,8 +197,8 @@ pub enum SyntaxKind {
     InfixrKw,
     InfixKw,
 
-    Unconditional,
-    Guarded,
+    UnconditionalBinding,
+    GuardedBinding,
     PatternGuard,
     GuardedExpression,
 
@@ -183,6 +222,7 @@ pub enum SyntaxKind {
     LayoutEnd,
 
     Sentinel,
+    Source,
     Error,
     EndOfFile,
 }
@@ -221,6 +261,55 @@ impl SyntaxKind {
 
     pub fn is_operator(&self) -> bool {
         matches!(self, Self::Operator | Self::Minus | Self::Colon)
+    }
+
+    pub fn is_reserved_operator(&self) -> bool {
+        matches!(self, Self::RightArrow | Self::RightThickArrow)
+    }
+
+    pub fn is_lower(&self) -> bool {
+        matches!(self, Self::Lower | Self::AsKw)
+    }
+
+    pub fn is_label(&self) -> bool {
+        matches!(
+            self,
+            SyntaxKind::ModuleKw
+                | SyntaxKind::WhereKw
+                | SyntaxKind::ImportKw
+                | SyntaxKind::AsKw
+                | SyntaxKind::AdoKw
+                | SyntaxKind::DoKw
+                | SyntaxKind::IfKw
+                | SyntaxKind::ThenKw
+                | SyntaxKind::ElseKw
+                | SyntaxKind::LetKw
+                | SyntaxKind::InKw
+                | SyntaxKind::CaseKw
+                | SyntaxKind::OfKw
+                | SyntaxKind::DataKw
+                | SyntaxKind::NewtypeKw
+                | SyntaxKind::ForallKw
+                | SyntaxKind::TypeKw
+                | SyntaxKind::ClassKw
+                | SyntaxKind::InstanceKw
+                | SyntaxKind::DeriveKw
+                | SyntaxKind::ForeignKw
+                | SyntaxKind::InfixlKw
+                | SyntaxKind::InfixrKw
+                | SyntaxKind::InfixKw
+                | SyntaxKind::LiteralString
+                | SyntaxKind::LiteralRawString
+                | SyntaxKind::Lower
+        )
+    }
+
+    pub fn is_end(&self) -> bool {
+        matches!(self, Self::LayoutSep | Self::LayoutEnd | Self::EndOfFile)
+    }
+
+    pub fn is_layout(&self) -> bool {
+        matches!(self, Self::LayoutStart | Self::LayoutSep | Self::LayoutEnd)
     }
 }
 

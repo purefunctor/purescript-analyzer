@@ -188,6 +188,9 @@ dependencies = [
  "drop_bomb",
  "either",
  "insta",
+ "lexing",
+ "position",
+ "rowan",
  "syntax",
  "unicode_categories",
 ]

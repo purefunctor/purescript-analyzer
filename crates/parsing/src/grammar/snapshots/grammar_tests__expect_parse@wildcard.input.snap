@@ -1,0 +1,17 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/type/wildcard.input
+---
+Input: _ -> _
+
+Start { kind: ArrowType }
+  Start { kind: WildcardType }
+    Token { kind: Underscore }
+  Finish
+  Token { kind: RightArrow }
+  Start { kind: WildcardType }
+    Token { kind: Underscore }
+  Finish
+Finish
+

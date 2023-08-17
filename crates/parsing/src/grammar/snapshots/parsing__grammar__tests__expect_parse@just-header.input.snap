@@ -1,0 +1,33 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/file/just-header.input
+---
+Input: module Hello.World where
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
+

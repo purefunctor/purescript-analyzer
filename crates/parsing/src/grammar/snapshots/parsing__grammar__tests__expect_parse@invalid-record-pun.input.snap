@@ -1,0 +1,25 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/failing/expression/invalid-record-pun.input
+---
+Input: { "a" }
+
+Start { kind: LiteralExpression }
+  Start { kind: LiteralRecord }
+    Start { kind: Wrapped }
+      Token { kind: LeftBracket }
+      Start { kind: Separated }
+        Start { kind: RecordField }
+          Start { kind: Name }
+            Token { kind: Label }
+          Finish
+          Error { message: "expected Colon" }
+          Error { message: "expected an expression" }
+        Finish
+      Finish
+      Token { kind: RightBracket }
+    Finish
+  Finish
+Finish
+

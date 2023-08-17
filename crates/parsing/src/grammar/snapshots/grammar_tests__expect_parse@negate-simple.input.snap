@@ -1,0 +1,18 @@
+---
+source: crates/parsing/tests/grammar_tests.rs
+expression: result
+input_file: crates/parsing/tests/inputs/passing/expression/negate-simple.input
+---
+Input: -1
+
+Start { kind: NegateExpression }
+  Start { kind: QualifiedName }
+    Start { kind: NameRef }
+      Token { kind: Operator }
+    Finish
+  Finish
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
+Finish
+
