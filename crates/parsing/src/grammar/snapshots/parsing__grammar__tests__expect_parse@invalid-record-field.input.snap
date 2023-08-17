@@ -12,6 +12,7 @@ Start { kind: LiteralExpression }
       Start { kind: Separated }
         Start { kind: RecordField }
           Start { kind: Error }
+            Token { kind: LiteralInteger }
             Error { message: "expected a label" }
           Finish
           Token { kind: Colon }
