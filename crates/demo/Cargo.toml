@@ -1,10 +1,14 @@
 [package]
-name = "syntax"
+name = "demo"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+files = { version = "0.1.0", path = "../files" }
+parsing = { version = "0.1.0", path = "../parsing" }
 rowan = "0.15.11"
+salsa = "0.17.0-pre.2"
 smol_str = "0.2.0"
+syntax = { version = "0.1.0", path = "../syntax" }
