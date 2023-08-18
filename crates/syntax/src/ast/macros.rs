@@ -83,9 +83,9 @@ macro_rules! _create_ast_v {
             )*
         }
 
-        _create_ast!($key_0);
+        _create_ast!($value_0);
         $(
-            _create_ast!($key);
+            _create_ast!($value);
         )*
 
         impl rowan::ast::AstNode for $kind {
