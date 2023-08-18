@@ -1,9 +1,10 @@
+mod surface;
+
 use std::sync::Arc;
 
 use files::FileId;
 use parsing::{error::ParseError, parse_module};
-use smol_str::SmolStr;
-use syntax::{SyntaxKind, SyntaxNode};
+use syntax::SyntaxNode;
 
 #[salsa::query_group(CompilerDatabase)]
 trait Compiler {
@@ -34,9 +35,9 @@ mod tests {
 
     use files::{ChangedFile, Files};
     use rowan::ast::AstNode;
-    use syntax::ast::{Binding, Declaration, Module};
+    use syntax::ast;
 
-    use crate::{Compiler, CompilerImpl};
+    use crate::{surface::lower_module, Compiler, CompilerImpl};
 
     #[test]
     fn server_loop() {
@@ -49,10 +50,7 @@ mod tests {
                 "
 module Main where
 
-a (-1) = 0
-
-b | false = true
-  | true = false
+a [0, 1, 2] = [0, 1, 2]
 "
                 .into(),
             ),
@@ -65,56 +63,15 @@ b | false = true
         }
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        let (node, _) = db.file_syntax(file_id);
+        let (source, _) = db.file_syntax(file_id);
 
-        println!("{:#?}", node);
+        println!("{:#?}", source);
 
-        let module_node = Module::cast(node.children().next().unwrap()).unwrap();
-        for declaration in module_node.body().unwrap().declarations().unwrap().children() {
-            if let Declaration::ValueDeclaration(declaration) = declaration {
-                match declaration.binding().unwrap() {
-                    Binding::UnconditionalBinding(t) => {
-                        dbg!(t.where_expression());
-                    }
-                    Binding::GuardedBinding(t) => {
-                        for t in t.guarded_expressions().unwrap().children() {
-                            dbg!(t.where_expression());
-                        }
-                    }
-                }
-            }
-        }
+        let module = ast::Module::cast(source.children().next().unwrap()).unwrap();
+        let module = lower_module(module).unwrap();
+
+        println!("{:#?}", module);
     }
-}
-
-fn lower_expr(node: SyntaxNode) -> Expr {
-    match node.kind() {
-        SyntaxKind::LiteralExpression => {
-            let literal = node.first_token().unwrap();
-            match literal.kind() {
-                SyntaxKind::LiteralInteger => {
-                    Expr::Literal(Literal::Int(literal.text().parse().unwrap()))
-                }
-                SyntaxKind::LiteralNumber => Expr::Literal(Literal::Number(literal.text().into())),
-                _ => todo!("I cannot lower, halp!"),
-            }
-        }
-        _ => todo!("I cannot lower, halp!"),
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum Literal {
-    Int(usize),
-    Number(SmolStr),
-    String(SmolStr),
-    Char(char),
-    Boolean(bool),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum Expr {
-    Literal(Literal),
 }
 
 /*
