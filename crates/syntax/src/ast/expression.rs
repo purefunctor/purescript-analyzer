@@ -1,8 +1,8 @@
 use rowan::ast::AstNode;
 
-use crate::SyntaxToken;
+use crate::{PureScript, SyntaxToken};
 
-use super::{LetBinding, OneOrMore, Type};
+use super::{LetBinding, Name, NameRef, OneOrMore, Type};
 
 _create_ast_v!(
     Expression,
@@ -25,6 +25,8 @@ _create_ast_v!(
 );
 
 _create_ast_v!(Argument, TermArgument(TermArgument), TypeArgument(TypeArgument));
+
+_create_ast_v!(RecordItem, RecordField(RecordField), RecordPun(RecordPun));
 
 impl ApplicationExpression {
     pub fn head(&self) -> Option<Expression> {
@@ -59,5 +61,24 @@ impl LetInExpression {
 
     pub fn expression(&self) -> Option<Expression> {
         Expression::cast(self.node.last_child()?)
+    }
+}
+
+impl RecordField {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+
+    pub fn value<T>(&self) -> Option<T>
+    where
+        T: AstNode<Language = PureScript>,
+    {
+        T::cast(self.node.last_child()?)
+    }
+}
+
+impl RecordPun {
+    pub fn name_ref(&self) -> Option<NameRef> {
+        NameRef::cast(self.node.first_child()?)
     }
 }
