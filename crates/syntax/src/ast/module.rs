@@ -1,6 +1,6 @@
 use rowan::ast::AstNode;
 
-use super::{Declaration, ZeroOrMore};
+use super::{Declaration, ModuleName, ZeroOrMore};
 
 _create_ast!(Module, ModuleHeader, ModuleImports, ModuleBody);
 
@@ -15,6 +15,12 @@ impl Module {
 
     pub fn body(&self) -> Option<ModuleBody> {
         ModuleBody::cast(self.node.last_child()?)
+    }
+}
+
+impl ModuleHeader {
+    pub fn name(&self) -> Option<ModuleName> {
+        ModuleName::cast(self.node.first_child()?)
     }
 }
 
