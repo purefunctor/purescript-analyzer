@@ -17,7 +17,7 @@ Start { kind: Module }
   Start { kind: ModuleHeader }
     Token { kind: ModuleKw }
     Start { kind: ModuleName }
-      Start { kind: NameRef }
+      Start { kind: Name }
         Token { kind: Upper }
       Finish
     Finish
@@ -29,7 +29,7 @@ Start { kind: Module }
       Start { kind: ImportDeclaration }
         Token { kind: ImportKw }
         Start { kind: ModuleName }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
@@ -38,11 +38,11 @@ Start { kind: Module }
       Start { kind: ImportDeclaration }
         Token { kind: ImportKw }
         Start { kind: ModuleName }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
@@ -70,15 +70,15 @@ Start { kind: Module }
       Start { kind: ImportDeclaration }
         Token { kind: ImportKw }
         Start { kind: ModuleName }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
@@ -107,19 +107,19 @@ Start { kind: Module }
       Start { kind: ImportDeclaration }
         Token { kind: ImportKw }
         Start { kind: ModuleName }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
@@ -145,7 +145,7 @@ Start { kind: Module }
         Start { kind: ImportQualified }
           Token { kind: AsKw }
           Start { kind: ModuleName }
-            Start { kind: NameRef }
+            Start { kind: Name }
               Token { kind: Upper }
             Finish
           Finish
@@ -155,23 +155,23 @@ Start { kind: Module }
       Start { kind: ImportDeclaration }
         Token { kind: ImportKw }
         Start { kind: ModuleName }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
           Token { kind: Period }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
@@ -198,7 +198,7 @@ Start { kind: Module }
         Start { kind: ImportQualified }
           Token { kind: AsKw }
           Start { kind: ModuleName }
-            Start { kind: NameRef }
+            Start { kind: Name }
               Token { kind: Upper }
             Finish
           Finish
@@ -208,7 +208,7 @@ Start { kind: Module }
       Start { kind: ImportDeclaration }
         Token { kind: ImportKw }
         Start { kind: ModuleName }
-          Start { kind: NameRef }
+          Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
