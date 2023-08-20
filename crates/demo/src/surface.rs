@@ -2,10 +2,7 @@ use std::sync::Arc;
 
 use rowan::{ast::AstNode, NodeOrToken};
 use smol_str::SmolStr;
-use syntax::{
-    ast::{self, ValueDeclaration},
-    SyntaxKind, SyntaxNode,
-};
+use syntax::{ast, SyntaxKind};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Module {
