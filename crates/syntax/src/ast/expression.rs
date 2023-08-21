@@ -78,6 +78,10 @@ impl RecordField {
 }
 
 impl RecordPun {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+
     pub fn name_ref(&self) -> Option<NameRef> {
         NameRef::cast(self.node.first_child()?)
     }

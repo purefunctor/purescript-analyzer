@@ -1,5 +1,6 @@
 mod declaration_map;
 mod module_map;
+mod surface_ast;
 
 use std::sync::Arc;
 
@@ -28,8 +29,8 @@ trait Source {
     #[salsa::invoke(file_module_name_query)]
     fn file_module_name(&self, file_id: FileId) -> Option<Arc<str>>;
 
-    #[salsa::invoke(file_declarations_query)]
-    fn file_declarations(&self, file_id: FileId) -> Arc<DeclarationMap>;
+    #[salsa::invoke(file_declaration_map_query)]
+    fn file_declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
 }
 
 fn file_syntax_query(db: &dyn Source, file_id: FileId) -> (SyntaxNode, Arc<Vec<ParseError>>) {
@@ -45,7 +46,7 @@ fn file_module_name_query(db: &dyn Source, file_id: FileId) -> Option<Arc<str>> 
     Some(Arc::from(name))
 }
 
-fn file_declarations_query(db: &dyn Source, file_id: FileId) -> Arc<DeclarationMap> {
+fn file_declaration_map_query(db: &dyn Source, file_id: FileId) -> Arc<DeclarationMap> {
     let (node, _) = db.file_syntax(file_id);
     Arc::new(DeclarationMap::from_source(&node))
 }
@@ -63,10 +64,14 @@ mod tests {
     use std::sync::Arc;
 
     use files::{ChangedFile, Files};
-    use rowan::ast::AstNode;
-    use syntax::ast;
+    use rowan::{ast::AstNode, TextSize, TextRange};
+    use syntax::{ast, SyntaxKind};
 
-    use crate::{module_map::ModuleMap, Source, SourceImpl};
+    use crate::{
+        module_map::ModuleMap,
+        surface_ast::{Surface, SurfaceImpl},
+        Source, SourceImpl,
+    };
 
     #[test]
     fn server_loop() {
@@ -79,7 +84,7 @@ mod tests {
             "./Main.purs".into(),
             Some(
                 "module Hello.World where
-a = 0"
+a = [0, 1, 2]"
                     .into(),
             ),
         );
@@ -103,14 +108,51 @@ a = 0"
         // To obtain a declaration ID, we can query for the file's declaration map
         // and then lookup using the syntax pointer that we have. This syntax pointer
         // may also come from a traversal e.g. given an offset.
-        for t in module.body().unwrap().declarations().unwrap().children() {
-            match t {
-                ast::Declaration::AnnotationDeclaration(_) => (),
+        let declaration_id = module
+            .body()
+            .unwrap()
+            .declarations()
+            .unwrap()
+            .children()
+            .find_map(|t| match t {
+                ast::Declaration::AnnotationDeclaration(_) => None,
                 ast::Declaration::ValueDeclaration(t) => {
-                    let declaration_id = db.file_declarations(file_id).find(&t);
-                    println!("{}: {:?}", t.name().unwrap().as_str().unwrap(), declaration_id);
+                    Some(db.file_declaration_map(file_id).find(&t))
                 }
-            }
+            })
+            .unwrap();
+
+        // We then proceed to create an instance of `SurfaceImpl`, which we'll use
+        // for lowering alongside type checking. We can think of this as an ephemeral
+        // database that exists for each file.
+        let mut surface_db = SurfaceImpl::default();
+        let (node, _) = db.file_syntax(file_id);
+        let declaration_map = db.file_declaration_map(file_id);
+        surface_db.set_syntax_and_declaration_map((node, declaration_map));
+
+        // We can use the surface to perform operations such as lowering:
+        let declaration_data = surface_db.lower_declaration(declaration_id);
+        dbg!(&declaration_data);
+
+        // and type inference:
+        let inference_result = surface_db.infer_declaration(declaration_id);
+        dbg!(&inference_result);
+
+        // With this information, we can recover inference coming from a source offset:
+        let start = TextSize::new(30);
+        let end = TextSize::new(31);
+        let (node, _) = db.file_syntax(file_id);
+        
+        let hover_element = node.covering_element(TextRange::new(start, end));
+        
+        match hover_element.kind() {
+            SyntaxKind::LiteralInteger => {
+                let expr_ptr = &hover_element.parent().unwrap();
+                let expr_id = declaration_data.source_map.get_expr_id(expr_ptr).unwrap();
+                let expr_ty = &inference_result[expr_id];
+                println!("{:?} has type {:?}", expr_ptr, expr_ty);
+            },
+            _ => (),
         }
     }
 }
