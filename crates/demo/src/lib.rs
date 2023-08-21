@@ -64,7 +64,7 @@ mod tests {
     use std::sync::Arc;
 
     use files::{ChangedFile, Files};
-    use rowan::{ast::AstNode, TextSize, TextRange};
+    use rowan::{ast::AstNode, TextRange, TextSize};
     use syntax::{ast, SyntaxKind};
 
     use crate::{
@@ -142,16 +142,16 @@ a = [0, 1, 2]"
         let start = TextSize::new(30);
         let end = TextSize::new(31);
         let (node, _) = db.file_syntax(file_id);
-        
+
         let hover_element = node.covering_element(TextRange::new(start, end));
-        
+
         match hover_element.kind() {
             SyntaxKind::LiteralInteger => {
                 let expr_ptr = &hover_element.parent().unwrap();
                 let expr_id = declaration_data.source_map.get_expr_id(expr_ptr).unwrap();
                 let expr_ty = &inference_result[expr_id];
                 println!("{:?} has type {:?}", expr_ptr, expr_ty);
-            },
+            }
             _ => (),
         }
     }
