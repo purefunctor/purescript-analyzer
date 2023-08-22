@@ -1,161 +1,175 @@
-mod declaration_map;
-mod module_map;
-mod surface_ast;
+pub mod id;
+pub mod source;
+pub mod surface;
 
-use std::sync::Arc;
-
-use declaration_map::DeclarationMap;
-use files::FileId;
-use itertools::Itertools;
-use module_map::ModuleId;
-use parsing::{error::ParseError, parse_module};
-use rowan::ast::AstNode;
-use syntax::{ast, SyntaxNode};
-
-#[salsa::query_group(SourceDatabase)]
-trait Source {
-    #[salsa::input]
-    fn file_contents(&self, file_id: FileId) -> Arc<str>;
-
-    // NOTE: rather than associating FileIds to ModuleIds
-    // individually, we could pass a graph here that keeps
-    // track of this information.
-    #[salsa::input]
-    fn file_module_id(&self, file_id: FileId) -> ModuleId;
-
-    #[salsa::invoke(file_syntax_query)]
-    fn file_syntax(&self, file_id: FileId) -> (SyntaxNode, Arc<Vec<ParseError>>);
-
-    #[salsa::invoke(file_module_name_query)]
-    fn file_module_name(&self, file_id: FileId) -> Option<Arc<str>>;
-
-    #[salsa::invoke(file_declaration_map_query)]
-    fn file_declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
-}
-
-fn file_syntax_query(db: &dyn Source, file_id: FileId) -> (SyntaxNode, Arc<Vec<ParseError>>) {
-    let contents = db.file_contents(file_id);
-    let (node, errors) = parse_module(&contents);
-    (node, Arc::new(errors))
-}
-
-fn file_module_name_query(db: &dyn Source, file_id: FileId) -> Option<Arc<str>> {
-    let (node, _) = db.file_syntax(file_id);
-    let module: ast::Module = ast::Source::cast(node)?.child()?;
-    let name = module.header()?.name()?.children().flat_map(|name| name.as_str()).join(".");
-    Some(Arc::from(name))
-}
-
-fn file_declaration_map_query(db: &dyn Source, file_id: FileId) -> Arc<DeclarationMap> {
-    let (node, _) = db.file_syntax(file_id);
-    Arc::new(DeclarationMap::from_source(&node))
-}
-
-#[salsa::database(SourceDatabase)]
 #[derive(Default)]
-pub struct SourceImpl {
-    storage: salsa::Storage<SourceImpl>,
+#[salsa::database(source::SourceStorage, surface::SurfaceStorage)]
+pub struct RootDatabase {
+    storage: salsa::Storage<RootDatabase>,
 }
 
-impl salsa::Database for SourceImpl {}
+impl salsa::Database for RootDatabase {}
 
-#[cfg(test)]
-mod tests {
-    use std::sync::Arc;
+// mod declaration_map;
+// mod module_map;
+// mod surface_ast;
 
-    use files::{ChangedFile, Files};
-    use rowan::{ast::AstNode, TextRange, TextSize};
-    use syntax::{ast, SyntaxKind};
+// mod source;
 
-    use crate::{
-        module_map::ModuleMap,
-        surface_ast::{Surface, SurfaceImpl},
-        Source, SourceImpl,
-    };
+// use std::sync::Arc;
 
-    #[test]
-    fn server_loop() {
-        let mut db = SourceImpl::default();
+// use declaration_map::DeclarationMap;
+// use files::FileId;
+// use itertools::Itertools;
+// use module_map::ModuleId;
+// use parsing::{error::ParseError, parse_module};
+// use rowan::ast::AstNode;
+// use syntax::{ast, SyntaxNode};
 
-        let mut files = Files::default();
-        let mut module_map = ModuleMap::default();
+// #[salsa::query_group(SourceDatabase)]
+// trait Source {
+//     #[salsa::input]
+//     fn file_contents(&self, file_id: FileId) -> Arc<str>;
 
-        files.set_file_contents(
-            "./Main.purs".into(),
-            Some(
-                "module Hello.World where
-a = [0, 1, 2]"
-                    .into(),
-            ),
-        );
-        if files.has_changes() {
-            for ChangedFile { file_id, .. } in files.take_changes() {
-                let contents = std::str::from_utf8(files.file_contents(file_id)).unwrap();
-                db.set_file_contents(file_id, Arc::from(contents));
+//     // NOTE: rather than associating FileIds to ModuleIds
+//     // individually, we could pass a graph here that keeps
+//     // track of this information.
+//     #[salsa::input]
+//     fn file_module_id(&self, file_id: FileId) -> ModuleId;
 
-                if let Some(module_name) = db.file_module_name(file_id) {
-                    let module_id = module_map.allocate(module_name);
-                    db.set_file_module_id(file_id, module_id);
-                }
-            }
-        }
+//     #[salsa::invoke(file_syntax_query)]
+//     fn file_syntax(&self, file_id: FileId) -> (SyntaxNode, Arc<Vec<ParseError>>);
 
-        let file_id = files.file_id("./Main.purs".into()).unwrap();
+//     #[salsa::invoke(file_module_name_query)]
+//     fn file_module_name(&self, file_id: FileId) -> Option<Arc<str>>;
 
-        let (node, _) = db.file_syntax(file_id);
-        let module: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
+//     #[salsa::invoke(file_declaration_map_query)]
+//     fn file_declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
+// }
 
-        // To obtain a declaration ID, we can query for the file's declaration map
-        // and then lookup using the syntax pointer that we have. This syntax pointer
-        // may also come from a traversal e.g. given an offset.
-        let declaration_id = module
-            .body()
-            .unwrap()
-            .declarations()
-            .unwrap()
-            .children()
-            .find_map(|t| match t {
-                ast::Declaration::AnnotationDeclaration(_) => None,
-                ast::Declaration::ValueDeclaration(t) => {
-                    Some(db.file_declaration_map(file_id).find(&t))
-                }
-            })
-            .unwrap();
+// fn file_syntax_query(db: &dyn Source, file_id: FileId) -> (SyntaxNode, Arc<Vec<ParseError>>) {
+//     let contents = db.file_contents(file_id);
+//     let (node, errors) = parse_module(&contents);
+//     (node, Arc::new(errors))
+// }
 
-        // We then proceed to create an instance of `SurfaceImpl`, which we'll use
-        // for lowering alongside type checking. We can think of this as an ephemeral
-        // database that exists for each file.
-        let mut surface_db = SurfaceImpl::default();
-        let (node, _) = db.file_syntax(file_id);
-        let declaration_map = db.file_declaration_map(file_id);
-        surface_db.set_syntax_and_declaration_map((node, declaration_map));
+// fn file_module_name_query(db: &dyn Source, file_id: FileId) -> Option<Arc<str>> {
+//     let (node, _) = db.file_syntax(file_id);
+//     let module: ast::Module = ast::Source::cast(node)?.child()?;
+//     let name = module.header()?.name()?.children().flat_map(|name| name.as_str()).join(".");
+//     Some(Arc::from(name))
+// }
 
-        // We can use the surface to perform operations such as lowering:
-        let declaration_data = surface_db.lower_declaration(declaration_id);
-        dbg!(&declaration_data);
+// fn file_declaration_map_query(db: &dyn Source, file_id: FileId) -> Arc<DeclarationMap> {
+//     let (node, _) = db.file_syntax(file_id);
+//     Arc::new(DeclarationMap::from_source(&node))
+// }
 
-        // and type inference:
-        let inference_result = surface_db.infer_declaration(declaration_id);
-        dbg!(&inference_result);
+// #[salsa::database(SourceDatabase)]
+// #[derive(Default)]
+// pub struct SourceImpl {
+//     storage: salsa::Storage<SourceImpl>,
+// }
 
-        // With this information, we can recover inference coming from a source offset:
-        let start = TextSize::new(30);
-        let end = TextSize::new(31);
-        let (node, _) = db.file_syntax(file_id);
+// impl salsa::Database for SourceImpl {}
 
-        let hover_element = node.covering_element(TextRange::new(start, end));
+// #[cfg(test)]
+// mod tests {
+//     use std::sync::Arc;
 
-        match hover_element.kind() {
-            SyntaxKind::LiteralInteger => {
-                let expr_ptr = &hover_element.parent().unwrap();
-                let expr_id = declaration_data.source_map.get_expr_id(expr_ptr).unwrap();
-                let expr_ty = &inference_result[expr_id];
-                println!("{:?} has type {:?}", expr_ptr, expr_ty);
-            }
-            _ => (),
-        }
-    }
-}
+//     use files::{ChangedFile, Files};
+//     use rowan::{ast::AstNode, TextRange, TextSize};
+//     use syntax::{ast, SyntaxKind};
+
+//     use crate::{
+//         module_map::ModuleMap,
+//         surface_ast::{Surface, SurfaceImpl},
+//         Source, SourceImpl,
+//     };
+
+//     #[test]
+//     fn server_loop() {
+//         let mut db = SourceImpl::default();
+
+//         let mut files = Files::default();
+//         let mut module_map = ModuleMap::default();
+
+//         files.set_file_contents(
+//             "./Main.purs".into(),
+//             Some(
+//                 "module Hello.World where
+// a = [0, 1, 2]"
+//                     .into(),
+//             ),
+//         );
+//         if files.has_changes() {
+//             for ChangedFile { file_id, .. } in files.take_changes() {
+//                 let contents = std::str::from_utf8(files.file_contents(file_id)).unwrap();
+//                 db.set_file_contents(file_id, Arc::from(contents));
+
+//                 if let Some(module_name) = db.file_module_name(file_id) {
+//                     let module_id = module_map.allocate(module_name);
+//                     db.set_file_module_id(file_id, module_id);
+//                 }
+//             }
+//         }
+
+//         let file_id = files.file_id("./Main.purs".into()).unwrap();
+
+//         let (node, _) = db.file_syntax(file_id);
+//         let module: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
+
+//         // To obtain a declaration ID, we can query for the file's declaration map
+//         // and then lookup using the syntax pointer that we have. This syntax pointer
+//         // may also come from a traversal e.g. given an offset.
+//         let declaration_id = module
+//             .body()
+//             .unwrap()
+//             .declarations()
+//             .unwrap()
+//             .children()
+//             .find_map(|t| match t {
+//                 ast::Declaration::AnnotationDeclaration(_) => None,
+//                 ast::Declaration::ValueDeclaration(t) => {
+//                     Some(db.file_declaration_map(file_id).find(&t))
+//                 }
+//             })
+//             .unwrap();
+
+//         // We then proceed to create an instance of `SurfaceImpl`, which we'll use
+//         // for lowering alongside type checking. We can think of this as an ephemeral
+//         // database that exists for each file.
+//         let mut surface_db = SurfaceImpl::default();
+//         let (node, _) = db.file_syntax(file_id);
+//         let declaration_map = db.file_declaration_map(file_id);
+//         surface_db.set_syntax_and_declaration_map((node, declaration_map));
+
+//         // We can use the surface to perform operations such as lowering:
+//         let declaration_data = surface_db.lower_declaration(declaration_id);
+//         dbg!(&declaration_data);
+
+//         // and type inference:
+//         let inference_result = surface_db.infer_declaration(declaration_id);
+//         dbg!(&inference_result);
+
+//         // With this information, we can recover inference coming from a source offset:
+//         let start = TextSize::new(30);
+//         let end = TextSize::new(31);
+//         let (node, _) = db.file_syntax(file_id);
+
+//         let hover_element = node.covering_element(TextRange::new(start, end));
+
+//         match hover_element.kind() {
+//             SyntaxKind::LiteralInteger => {
+//                 let expr_ptr = &hover_element.parent().unwrap();
+//                 let expr_id = declaration_data.source_map.get_expr_id(expr_ptr).unwrap();
+//                 let expr_ty = &inference_result[expr_id];
+//                 println!("{:?} has type {:?}", expr_ptr, expr_ty);
+//             }
+//             _ => (),
+//         }
+//     }
+// }
 
 /*
 
