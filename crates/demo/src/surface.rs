@@ -8,7 +8,7 @@ use rowan::ast::{AstNode, AstPtr};
 use syntax::{ast, PureScript, SyntaxNode, SyntaxNodePtr};
 
 use crate::{
-    id::{AstId, CstId},
+    id::{AstId, CstId, InFileAstId},
     source::SourceDatabase,
 };
 
@@ -29,14 +29,7 @@ impl DeclarationMap {
 
         let module: ast::Module = ast::Source::cast(node.clone()).unwrap().child().unwrap();
         for declaration in module.body().unwrap().declarations().unwrap().children() {
-            match declaration {
-                ast::Declaration::AnnotationDeclaration(declaration) => {
-                    declaration_map.allocate(&declaration.syntax());
-                }
-                ast::Declaration::ValueDeclaration(declaration) => {
-                    declaration_map.allocate(&declaration.syntax());
-                }
-            }
+            declaration_map.allocate(&declaration.syntax());
         }
 
         declaration_map
@@ -64,9 +57,29 @@ impl DeclarationMap {
 #[salsa::query_group(SurfaceStorage)]
 pub trait SurfaceDatabase: SourceDatabase {
     fn declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
+
+    fn lower_declaration(&self, declaration_id: InFileAstId<ast::Declaration>) -> ();
 }
 
 fn declaration_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<DeclarationMap> {
     let parse_result = db.parse_file(file_id);
     Arc::new(DeclarationMap::from_source(&parse_result.syntax))
+}
+
+fn lower_declaration(
+    db: &dyn SurfaceDatabase,
+    declaration_id: InFileAstId<ast::Declaration>,
+) -> () {
+    let parse_result = db.parse_file(declaration_id.file_id);
+    let ast_ptr = declaration_id.ast_ptr(db);
+    let declaration = ast_ptr.to_node(&parse_result.syntax);
+
+    match declaration {
+        ast::Declaration::AnnotationDeclaration(declaration) => {
+            dbg!(declaration);
+        }
+        ast::Declaration::ValueDeclaration(declaration) => {
+            dbg!(declaration);
+        }
+    }
 }

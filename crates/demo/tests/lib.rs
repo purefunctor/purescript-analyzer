@@ -35,15 +35,7 @@ a = [0, 1, 2]"
     let module: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
 
     for declaration in module.body().unwrap().declarations().unwrap().children() {
-        match declaration {
-            ast::Declaration::AnnotationDeclaration(declaration) => {
-                let ast_id = db.declaration_map(file_id).lookup(&declaration).in_file(file_id);
-                dbg!(ast_id);
-            }
-            ast::Declaration::ValueDeclaration(declaration) => {
-                let ast_id = db.declaration_map(file_id).lookup(&declaration).in_file(file_id);
-                dbg!(ast_id);
-            }
-        }
+        let declaration_id = db.declaration_map(file_id).lookup(&declaration).in_file(file_id);
+        dbg!(declaration_id);
     }
 }
