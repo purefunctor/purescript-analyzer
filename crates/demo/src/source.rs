@@ -17,11 +17,12 @@ pub trait SourceDatabase {
     #[salsa::input]
     fn file_source(&self, file_id: FileId) -> Arc<str>;
 
-    #[salsa::invoke(parse_file_query)]
+    #[salsa::transparent]
     fn parse_file(&self, file_id: FileId) -> Arc<ParseResult>;
 }
 
-fn parse_file_query(db: &dyn SourceDatabase, file_id: FileId) -> Arc<ParseResult> {
+fn parse_file(db: &dyn SourceDatabase, file_id: FileId) -> Arc<ParseResult> {
+    dbg!("parse_file is called...");
     let source = db.file_source(file_id);
     let (syntax, errors) = parse_module(&source);
     Arc::new(ParseResult { syntax, errors })

@@ -1,10 +1,10 @@
 //! Queries related to a file as a module.
-
-use std::sync::Arc;
+use std::{ops::Index, sync::Arc};
 
 use files::FileId;
-use la_arena::Arena;
+use la_arena::{Arena, Idx};
 use rowan::ast::{AstNode, AstPtr};
+use smol_str::SmolStr;
 use syntax::{ast, PureScript, SyntaxNode, SyntaxNodePtr};
 
 use crate::{
@@ -54,11 +54,88 @@ impl DeclarationMap {
     }
 }
 
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
+struct DeclarationData {
+    value: Arena<ValueDeclarationData>,
+}
+
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
+pub struct ValueDeclarationData {
+    name: SmolStr,
+}
+
+impl Index<Idx<ValueDeclarationData>> for ModuleSurface {
+    type Output = ValueDeclarationData;
+
+    fn index(&self, index: Idx<ValueDeclarationData>) -> &Self::Output {
+        &self.inner.value[index]
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ModuleSurface {
+    items: Vec<ValueDeclarationId>,
+    inner: DeclarationData,
+}
+
+impl ModuleSurface {
+    fn module_surface_query(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<ModuleSurface> {
+        let node = db.parse_file(file_id).syntax.clone();
+        let module: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
+
+        let mut inner = DeclarationData::default();
+        let mut items = vec![];
+
+        for declaration in module.body().unwrap().declarations().unwrap().children() {
+            match declaration {
+                ast::Declaration::AnnotationDeclaration(_) => (),
+                ast::Declaration::ValueDeclaration(t) => {
+                    let data = ValueDeclarationData { name: t.name().unwrap().as_str().unwrap() };
+                    let ast_id = db.declaration_map(file_id).lookup(&t).in_file(file_id);
+                    let lower_id = inner.value.alloc(data);
+                    items.push(
+                        db.intern_value_declaration(ValueDeclarationLocation { ast_id, lower_id }),
+                    );
+                }
+            }
+        }
+
+        Arc::new(ModuleSurface { inner, items })
+    }
+
+    pub fn value_declarations(&self) -> &[ValueDeclarationId] {
+        &self.items
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ValueDeclarationLocation {
+    pub ast_id: InFileAstId<ast::ValueDeclaration>,
+    pub lower_id: Idx<ValueDeclarationData>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ValueDeclarationId(salsa::InternId);
+
+impl salsa::InternKey for ValueDeclarationId {
+    fn from_intern_id(v: salsa::InternId) -> Self {
+        ValueDeclarationId(v)
+    }
+
+    fn as_intern_id(&self) -> salsa::InternId {
+        self.0
+    }
+}
+
 #[salsa::query_group(SurfaceStorage)]
 pub trait SurfaceDatabase: SourceDatabase {
     fn declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
 
-    fn lower_declaration(&self, declaration_id: InFileAstId<ast::Declaration>) -> ();
+    #[salsa::invoke(ModuleSurface::module_surface_query)]
+    fn module_surface(&self, file_id: FileId) -> Arc<ModuleSurface>;
+
+    #[salsa::interned]
+    fn intern_value_declaration(&self, location: ValueDeclarationLocation) -> ValueDeclarationId;
 }
 
 fn declaration_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<DeclarationMap> {
@@ -66,20 +143,25 @@ fn declaration_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<Declaration
     Arc::new(DeclarationMap::from_source(&parse_result.syntax))
 }
 
-fn lower_declaration(
-    db: &dyn SurfaceDatabase,
-    declaration_id: InFileAstId<ast::Declaration>,
-) -> () {
-    let parse_result = db.parse_file(declaration_id.file_id);
-    let ast_ptr = declaration_id.ast_ptr(db);
-    let declaration = ast_ptr.to_node(&parse_result.syntax);
+/*
 
-    match declaration {
-        ast::Declaration::AnnotationDeclaration(declaration) => {
-            dbg!(declaration);
-        }
-        ast::Declaration::ValueDeclaration(declaration) => {
-            dbg!(declaration);
-        }
-    }
-}
+Lowering code is invoked as many times as there are changes
+in the source file, much like with the declaration map. The
+idea is that other operations should be insensitive to syntax
+changes.
+
+DeclarationMap encapsulates this sort of behaviour already,
+in that it gets recomputed each time the syntax changes, but
+the declaration IDs that it yields remain the same. This allows
+us to use IDs to refer to syntax that changes all the time.
+
+IDs are out of sync of the syntax, and the DeclarationMap is
+in sync with it all the time.
+
+What we want is out of sync IDs for stuff like declaration
+information, while the declarations themselves stay in sync
+with the syntax.
+
+InFileAstId<N> -> ValueDeclarationId
+
+*/
