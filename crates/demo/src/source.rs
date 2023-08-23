@@ -22,7 +22,6 @@ pub trait SourceDatabase {
 }
 
 fn parse_file(db: &dyn SourceDatabase, file_id: FileId) -> Arc<ParseResult> {
-    dbg!("parse_file is called...");
     let source = db.file_source(file_id);
     let (syntax, errors) = parse_module(&source);
     Arc::new(ParseResult { syntax, errors })
