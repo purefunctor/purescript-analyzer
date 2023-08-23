@@ -49,7 +49,7 @@ pub type InFileAstId<N> = InFile<AstId<N>>;
 
 impl<N: AstNode<Language = PureScript>> InFileAstId<N> {
     pub fn ast_ptr(&self, db: &dyn SurfaceDatabase) -> AstPtr<N> {
-        db.declaration_map(self.file_id).get(self.value)
+        db.positional_map(self.file_id).get(self.value)
     }
 }
 

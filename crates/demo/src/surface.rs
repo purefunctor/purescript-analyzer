@@ -20,13 +20,13 @@ use crate::{
 /// is rebuilt for each change in the source code, the IDs, which are used
 /// as keys are not directly invalidated.
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct DeclarationMap {
+pub struct PositionalMap {
     inner: Arena<SyntaxNodePtr>,
 }
 
-impl DeclarationMap {
-    pub(crate) fn from_source(node: &SyntaxNode) -> DeclarationMap {
-        let mut declaration_map = DeclarationMap::default();
+impl PositionalMap {
+    pub(crate) fn from_source(node: &SyntaxNode) -> PositionalMap {
+        let mut declaration_map = PositionalMap::default();
 
         let module: ast::Module = ast::Source::cast(node.clone()).unwrap().child().unwrap();
         for declaration in module.body().unwrap().declarations().unwrap().children() {
@@ -78,15 +78,15 @@ impl NominalMap {
 
 #[salsa::query_group(SurfaceStorage)]
 pub trait SurfaceDatabase: SourceDatabase {
-    fn declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
+    fn positional_map(&self, file_id: FileId) -> Arc<PositionalMap>;
 
     fn nominal_map(&self, file_id: FileId) -> Arc<NominalMap>;
 }
 
-fn declaration_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<DeclarationMap> {
+fn positional_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<PositionalMap> {
     let node = db.parse_file(file_id).syntax.clone();
-    let declaration_map = DeclarationMap::from_source(&node);
-    Arc::new(declaration_map)
+    let positional_map = PositionalMap::from_source(&node);
+    Arc::new(positional_map)
 }
 
 // FIXME: figure out how to do name resolution for imported values...
@@ -100,12 +100,12 @@ fn nominal_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<NominalMap> {
         match declaration {
             ast::Declaration::AnnotationDeclaration(declaration) => {
                 let name = declaration.name().unwrap().as_str().unwrap();
-                let value = db.declaration_map(file_id).lookup(&declaration).in_file(file_id);
+                let value = db.positional_map(file_id).lookup(&declaration).in_file(file_id);
                 nominal_map.annotation_declarations.insert(name, value);
             }
             ast::Declaration::ValueDeclaration(declaration) => {
                 let name = declaration.name().unwrap().as_str().unwrap();
-                let value = db.declaration_map(file_id).lookup(&declaration).in_file(file_id);
+                let value = db.positional_map(file_id).lookup(&declaration).in_file(file_id);
                 nominal_map.value_declarations.insert(name, value);
             }
         }
