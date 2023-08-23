@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
-use demo::{source::SourceDatabase, RootDatabase, surface::SurfaceDatabase};
+use demo::{source::SourceDatabase, surface::SurfaceDatabase, RootDatabase};
 use files::{ChangedFile, Files};
+use rowan::ast::AstNode;
+use syntax::ast;
 
 #[test]
 fn server_loop() {
@@ -29,30 +31,23 @@ a = [0, 1, 2]"
 
     let file_id = fs.file_id("./Main.purs".into()).unwrap();
 
-    // let node = db.parse_file(file_id).syntax.clone();
-    // let _: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
+    let node = db.parse_file(file_id).syntax.clone();
+    let module: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
 
-    for value_declaration in db.module_surface(file_id).value_declarations() {
-        let _ = db.lookup_intern_value_declaration(*value_declaration);
-    }
+    let ast_id = {
+        let ast_ptr = module.body().unwrap().declarations().unwrap().children().next().unwrap();
+        db.declaration_map(file_id).lookup(&ast_ptr).in_file(file_id)
+    };
 
-    /*
-    
-    Question:
+    dbg!("Starting demo...");
+    db.type_infer_declaration(ast_id);
 
-    AstPtr -> DeclarationId
+    db.set_file_source(file_id, "module Hello.World where
 
-    Given an AstPtr, how do we find its corresponding DeclarationId.
-    One way is by searching the module surface and determining if
-    one declaration encapsulates this specific pointer. For instance
-    if we had a pointer to an expression, we can ascend to its ancestors
-    to determine the declaration it belongs to.
 
-    Then, we can scan the value declarations available in the surface
-    to figure out which of them match with a specific pointer, since
-    we store the InFileAstId information which can then be turned into
-    the corresponding AstPtr, which can then be compared to.
+a = [0, 1, 2]
+".into());
 
-     */
-
+    dbg!("declaration_map, lower_declaration, parse_file is refreshed...");
+    db.type_infer_declaration(ast_id);
 }
