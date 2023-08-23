@@ -1,5 +1,5 @@
 //! Queries related to a file as a module.
-use std::{ops::Index, sync::Arc};
+use std::sync::Arc;
 
 use files::FileId;
 use la_arena::Arena;
@@ -13,12 +13,12 @@ use crate::{
     source::SourceDatabase,
 };
 
-/// A mapping from AST pointers to stable IDs.
+/// A mapping from AST pointers to IDs.
 ///
-/// Stable IDs are derived from the declaration's relative position in
-/// the source file, as in 0th, 1st, and 2nd. The idea is that while
-/// [`DeclarationMap`] is still recomputed when the source code changes,
-/// the values attached to the ID keys remain unaffected.
+/// IDs are derived from the declaration's relative position in the source
+/// file, as in 0th, 1st, and 2nd. The idea is that while [`DeclarationMap`]
+/// is rebuilt for each change in the source code, the IDs, which are used
+/// as keys are not directly invalidated.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DeclarationMap {
     inner: Arena<SyntaxNodePtr>,
@@ -61,6 +61,11 @@ pub struct NominalMap {
     value_declarations: FxHashMap<SmolStr, InFileAstId<ast::ValueDeclaration>>,
 }
 
+/// A mapping from names to AST IDs.
+///
+/// This is primarily used for name resolution within a file. It's sensitive
+/// to changes in the source file similar to [`DeclarationMap`], but provides
+/// a mapping from names to IDs that are used as keys.
 impl NominalMap {
     pub fn get_annotation(&self, k: &str) -> InFileAstId<ast::AnnotationDeclaration> {
         self.annotation_declarations.get(k).unwrap().clone()
@@ -76,10 +81,6 @@ pub trait SurfaceDatabase: SourceDatabase {
     fn declaration_map(&self, file_id: FileId) -> Arc<DeclarationMap>;
 
     fn nominal_map(&self, file_id: FileId) -> Arc<NominalMap>;
-
-    // fn lower_declaration(&self, ast_id: InFileAstId<ast::Declaration>) -> Arc<Declaration>;
-
-    // fn type_infer_declaration(&self, ast_id: InFileAstId<ast::Declaration>) -> ();
 }
 
 fn declaration_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<DeclarationMap> {
@@ -88,6 +89,7 @@ fn declaration_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<Declaration
     Arc::new(declaration_map)
 }
 
+// FIXME: figure out how to do name resolution for imported values...
 fn nominal_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<NominalMap> {
     let node = db.parse_file(file_id).syntax.clone();
     let module: ast::Module = ast::Source::cast(node).unwrap().child().unwrap();
@@ -111,94 +113,3 @@ fn nominal_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<NominalMap> {
 
     Arc::new(nominal_map)
 }
-
-// fn lower_declaration(
-//     db: &dyn SurfaceDatabase,
-//     ast_id: InFileAstId<ast::Declaration>,
-// ) -> Arc<Declaration> {
-//     dbg!("Called lower_declaration...");
-//     let InFile { file_id, value: ast_id } = ast_id;
-//     let ast_ptr = db.declaration_map(file_id).get(ast_id);
-
-//     let root = db.parse_file(file_id).syntax.clone();
-
-//     match ast_ptr.to_node(&root) {
-//         ast::Declaration::AnnotationDeclaration(_) => todo!("AnnotationDeclaration"),
-//         ast::Declaration::ValueDeclaration(t) => {
-//             let name = t.name().unwrap().as_str().unwrap();
-//             Arc::new(Declaration::ValueDeclaration { name })
-//         }
-//     }
-// }
-
-// fn type_infer_declaration(db: &dyn SurfaceDatabase, ast_id: InFileAstId<ast::Declaration>) -> () {
-//     dbg!("Called type_infer_declaration...");
-//     let _ = db.lower_declaration(ast_id);
-//     ()
-// }
-
-/*
-
-Question:
-
-Should lowering include information about the body as well?
-Similarly, what qualifies as the body? In rust-analyzer, the
-body pertains to whatever is in the `{}` block for a function
-where parameters and the name is treated as the data.
-
-The idea for this seems to be to disconnect the interface
-of some node to its implementation. For example, if we change
-the signature of the function, anything that depends on it
-won't have to repeat lowering for the expression body.
-
-Likewise, other declarations also do not have function bodies,
-like data declarations for instance, so they only have data.
-
-For type checking, there's a few queries that we need:
-1. type_infer_value
-
-This is simple in that it simply infers the type of a value
-declaration. It may call into other type inference declarations
-for information.
-
-2. type_infer_data
-
-In the traditional compiler architecture, constructors are
-inserted to the environment after they're type checked, but
-for our purposes, type checking (and consequently, name resolution)
-is performed on-demand.
-
-Inference for constructor then would take the assigned ID for
-a constructor, then the query will find the corresponding data
-declaration for it among other information like parameters.
-
-Speaking of name resolution, let's imagine a scheme where we're
-trying to name-resolve the following declaration during lowering.
-
-a = Just
-
-The idea is that we want to be able to define a structure that
-we can index nominally that will return indices to us. Where
-DeclarationMap provides a mapping from syntax node pointers to
-ast IDs, a NominalMap provides a mapping from names to IDs given
-whatever is currently visible.
-
-DeclarationMap is constructed from the source by traversing
-the declarations, getting their pointers, and then assigning
-them to arenas.
-
-On the other hand, NominalMap is constructed from the source,
-traversing the imports and declarations, and assigning the ID
-for each name.
-
-// Returns an ID that we can use for type inference, among other things...
-db.nominal_map(file_id).lookup(None, Nominal::Constructor("Just".into()))
-
-db.nominal_map(file_id).lookup(Some("Data.Maybe".into()), Nominal::Constructor("Just".into()))
-
-Note that the NominalMap also does resolution based on the
-current set of imports by analyzing them, calling into the
-nominal maps of other files, and then performing an unqualified
-lookup.
-
-*/
