@@ -1,9 +1,10 @@
 pub mod id;
+pub mod infer;
 pub mod source;
 pub mod surface;
 
 #[derive(Default)]
-#[salsa::database(source::SourceStorage, surface::SurfaceStorage)]
+#[salsa::database(infer::InferStorage, source::SourceStorage, surface::SurfaceStorage)]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
