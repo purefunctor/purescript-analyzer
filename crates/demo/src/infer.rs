@@ -15,11 +15,11 @@ use crate::{id::InFileAstId, surface::SurfaceDatabase};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ValueInfer {
-    expr_type: FxHashMap<ExprId, Type>,
+    pub expr_type: FxHashMap<ExprId, Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Type {
+pub enum Type {
     Unknown,
     Int,
     Number,
@@ -33,8 +33,8 @@ pub(crate) enum Type {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueData {
     expr_arena: Arena<Expr>,
-    name: SmolStr,
-    expr_id: ExprId,
+    pub name: SmolStr,
+    pub expr_id: ExprId,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -143,6 +143,8 @@ fn infer_expression(value_infer: &mut ValueInfer, expr_arena: &Arena<Expr>, expr
                         if is_consistent { Type::Array(Arc::new(head_ty)) } else { Type::Unknown };
 
                     value_infer.expr_type.insert(expr_id, expr_ty);
+                } else {
+                    value_infer.expr_type.insert(expr_id, Type::Array(Arc::new(Type::Unknown)));
                 }
             }
             Literal::Record(_) => todo!("Not supported, come back later..."),
