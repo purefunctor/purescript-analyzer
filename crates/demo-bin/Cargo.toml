@@ -1,0 +1,14 @@
+[package]
+name = "demo-bin"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+demo = { version = "0.1.0", path = "../demo" }
+files = { version = "0.1.0", path = "../files" }
+rowan = "0.15.11"
+syntax = { version = "0.1.0", path = "../syntax" }
+tokio = { version = "1.32.0", features = ["macros", "rt", "full"] }
+tower-lsp = "0.20.0"
