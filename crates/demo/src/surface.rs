@@ -67,12 +67,12 @@ pub struct NominalMap {
 /// to changes in the source file similar to [`DeclarationMap`], but provides
 /// a mapping from names to IDs that are used as keys.
 impl NominalMap {
-    pub fn get_annotation(&self, k: &str) -> InFileAstId<ast::AnnotationDeclaration> {
-        self.annotation_declarations.get(k).unwrap().clone()
+    pub fn get_annotation(&self, k: &str) -> Option<InFileAstId<ast::AnnotationDeclaration>> {
+        self.annotation_declarations.get(k).cloned()
     }
 
-    pub fn get_value(&self, k: &str) -> InFileAstId<ast::ValueDeclaration> {
-        self.value_declarations.get(k).unwrap().clone()
+    pub fn get_value(&self, k: &str) -> Option<InFileAstId<ast::ValueDeclaration>> {
+        self.value_declarations.get(k).cloned()
     }
 }
 

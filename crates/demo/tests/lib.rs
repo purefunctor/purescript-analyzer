@@ -29,7 +29,7 @@ a = [0, 1, 2]"
 
     let file_id = fs.file_id("./Main.purs".into()).unwrap();
 
-    let id = db.nominal_map(file_id).get_value("a");
+    let id = db.nominal_map(file_id).get_value("a").unwrap();
 
     dbg!("Infer once...");
     dbg!(db.infer_value_declaration(id));

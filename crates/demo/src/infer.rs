@@ -158,11 +158,15 @@ fn infer_expression(
             Literal::Record(_) => todo!("Not supported, come back later..."),
         },
         Expr::Variable(name) => {
-            let variable_id = db.nominal_map(file_id).get_value(name);
-            let variable_data = db.lower_value_declaration(variable_id);
-            let infer_result = db.infer_value_declaration(variable_id);
-            let variable_ty = infer_result.expr_type.get(&variable_data.expr_id).unwrap().clone();
-            value_infer.expr_type.insert(expr_id, variable_ty);
+            if let Some(variable_id) = db.nominal_map(file_id).get_value(&name) {
+                let variable_data = db.lower_value_declaration(variable_id);
+                let infer_result = db.infer_value_declaration(variable_id);
+                let variable_ty =
+                    infer_result.expr_type.get(&variable_data.expr_id).unwrap().clone();
+                value_infer.expr_type.insert(expr_id, variable_ty);
+            } else {
+                value_infer.expr_type.insert(expr_id, Type::Unknown);
+            }
         }
     }
 }
