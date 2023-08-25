@@ -25,7 +25,7 @@ pub struct AstId<N: AstNode<Language = PureScript>> {
 
 impl<N: AstNode<Language = PureScript>> Clone for AstId<N> {
     fn clone(&self) -> Self {
-        Self { raw: self.raw.clone(), _marker: PhantomData::default() }
+        Self { raw: self.raw, _marker: PhantomData }
     }
 }
 
@@ -36,7 +36,7 @@ where
     N: AstNode<Language = PureScript>,
 {
     pub(crate) fn new(raw: CstId) -> AstId<N> {
-        AstId { raw, _marker: PhantomData::default() }
+        AstId { raw, _marker: PhantomData }
     }
 
     pub fn in_file(self, file_id: FileId) -> InFileAstId<N> {

@@ -31,10 +31,8 @@ impl QualifiedName {
         // at the first position, and then the second...
         if let Some(name_ref) = NameRef::cast(self.node.first_child()?) {
             Some(name_ref)
-        } else if let Some(name_ref) = NameRef::cast(self.node.children().nth(1)?) {
-            Some(name_ref)
         } else {
-            None
+            NameRef::cast(self.node.children().nth(1)?)
         }
     }
 }

@@ -106,9 +106,8 @@ impl LanguageServer for Analyzer {
         };
 
         if let Some(significant_token) = dbg!(significant_token) {
-            let declaration: Option<ast::ValueDeclaration> = significant_token
-                .parent_ancestors()
-                .find_map(|ancestor| ast::ValueDeclaration::cast(ancestor));
+            let declaration: Option<ast::ValueDeclaration> =
+                significant_token.parent_ancestors().find_map(ast::ValueDeclaration::cast);
 
             if let Some(declaration) = declaration {
                 let declaration_id =
@@ -120,7 +119,7 @@ impl LanguageServer for Analyzer {
                     significant_token.parent_ancestors().find_map(ast::Expression::cast);
 
                 if let Some(expression) = expression {
-                    let expr_id = source_map.get_expr_id(&expression.syntax()).unwrap();
+                    let expr_id = source_map.get_expr_id(expression.syntax()).unwrap();
                     let expr_ty = infer_result.expr_type.get(&expr_id).unwrap();
 
                     let text_range = expression.syntax().text_range();

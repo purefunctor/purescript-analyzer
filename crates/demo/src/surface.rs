@@ -31,7 +31,7 @@ impl PositionalMap {
 
         let module: ast::Module = ast::Source::cast(node.clone()).unwrap().child().unwrap();
         for declaration in module.body().unwrap().declarations().unwrap().children() {
-            declaration_map.allocate(&declaration.syntax());
+            declaration_map.allocate(declaration.syntax());
         }
 
         declaration_map
@@ -39,7 +39,7 @@ impl PositionalMap {
 
     /// Returns the ID for an AST pointer.
     pub fn lookup<N: AstNode<Language = PureScript>>(&self, ast_ptr: &N) -> AstId<N> {
-        let target = SyntaxNodePtr::new(&ast_ptr.syntax());
+        let target = SyntaxNodePtr::new(ast_ptr.syntax());
         self.inner
             .iter()
             .find_map(|(raw, inner)| if &target == inner { Some(AstId::new(raw)) } else { None })
@@ -70,9 +70,9 @@ pub struct NominalMap {
 impl NominalMap {
     fn extend(&mut self, other: &NominalMap) {
         self.annotation_declarations
-            .extend(other.annotation_declarations.iter().map(|(a, b)| (a.clone(), b.clone())));
+            .extend(other.annotation_declarations.iter().map(|(a, b)| (a.clone(), *b)));
         self.value_declarations
-            .extend(other.value_declarations.iter().map(|(a, b)| (a.clone(), b.clone())));
+            .extend(other.value_declarations.iter().map(|(a, b)| (a.clone(), *b)));
     }
 
     pub fn get_annotation(&self, k: &str) -> Option<InFileAstId<ast::AnnotationDeclaration>> {

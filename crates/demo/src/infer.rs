@@ -158,7 +158,7 @@ fn infer_expression(
             Literal::Record(_) => todo!("Not supported, come back later..."),
         },
         Expr::Variable(name) => {
-            if let Some(variable_id) = db.nominal_map(file_id).get_value(&name) {
+            if let Some(variable_id) = db.nominal_map(file_id).get_value(name) {
                 let variable_data = db.lower_value_declaration(variable_id);
                 let infer_result = db.infer_value_declaration(variable_id);
                 let variable_ty =
@@ -222,7 +222,7 @@ impl LowerContext {
         dbg!(node);
         let expr = match node {
             ast::Expression::LiteralExpression(literal) => {
-                Some(Expr::Literal(self.lower_literal_expression(&literal)?))
+                Some(Expr::Literal(self.lower_literal_expression(literal)?))
             }
             ast::Expression::VariableExpression(variable) => {
                 Some(Expr::Variable(variable.qualified_name()?.name_ref()?.as_str()?))
@@ -230,11 +230,7 @@ impl LowerContext {
             _ => None,
         };
 
-        if let Some(expr) = expr {
-            Some(self.alloc_expr(expr, node))
-        } else {
-            None
-        }
+        expr.map(|expr| self.alloc_expr(expr, node))
     }
 
     fn lower_literal_expression(&mut self, t: &ast::LiteralExpression) -> Option<Literal<ExprId>> {
