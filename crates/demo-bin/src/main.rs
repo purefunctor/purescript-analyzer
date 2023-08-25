@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use demo::infer::InferDatabase;
@@ -5,15 +7,16 @@ use demo::source::SourceDatabase;
 use demo::surface::SurfaceDatabase;
 use demo::RootDatabase;
 use files::{ChangedFile, Files};
+use glob::glob;
 use rowan::ast::AstNode;
 use rowan::{TextSize, TokenAtOffset};
 use syntax::ast;
 use tokio::sync::Mutex;
 use tower_lsp::jsonrpc::{Error, Result};
 use tower_lsp::lsp_types::{
-    DidChangeTextDocumentParams, DidOpenTextDocumentParams, Hover, HoverContents, HoverParams,
-    HoverProviderCapability, InitializeParams, InitializedParams, MarkedString, MessageType,
-    Position, Range, ServerCapabilities, TextDocumentSyncKind,
+    DidChangeTextDocumentParams, Hover, HoverContents, HoverParams, HoverProviderCapability,
+    InitializeParams, InitializedParams, MarkedString, MessageType, Position, Range,
+    ServerCapabilities, TextDocumentSyncKind,
 };
 use tower_lsp::{lsp_types::InitializeResult, Client, LanguageServer};
 use tower_lsp::{LspService, Server};
@@ -26,7 +29,30 @@ struct Analyzer {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Analyzer {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+        let mut db = self.db.lock().await;
+        let mut files = self.files.lock().await;
+
+        // FIXME: support non-folder editing
+        let project_folder =
+            params.root_uri.map(|url| PathBuf::from(url.path())).unwrap_or(PathBuf::new());
+
+        let mut source_paths = vec![];
+        for path in glob("**/*.purs").unwrap().flatten() {
+            let path = project_folder.join(path);
+            eprintln!("Loading {:?}", path);
+            let contents = fs::read(path.clone()).unwrap();
+            files.set_file_contents(path.clone(), Some(contents));
+            source_paths.push(files.file_id(path))
+        }
+
+        for ChangedFile { file_id, .. } in files.take_changes() {
+            let contents = files.file_contents(file_id);
+            db.set_file_source(file_id, std::str::from_utf8(contents).unwrap().into());
+        }
+
+        eprintln!("Loaded files...");
+
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
@@ -129,27 +155,6 @@ impl LanguageServer for Analyzer {
             Ok(None)
         } else {
             Ok(None)
-        }
-    }
-
-    async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        self.client
-            .log_message(
-                MessageType::INFO,
-                format!("did_open: ['{}']", params.text_document.uri.path()),
-            )
-            .await;
-
-        let mut db = self.db.lock().await;
-        let mut files = self.files.lock().await;
-
-        let path = params.text_document.uri.path().into();
-        let contents = params.text_document.text.as_bytes().into();
-        files.set_file_contents(path, Some(contents));
-
-        for ChangedFile { file_id, .. } in files.take_changes() {
-            let contents = std::str::from_utf8(files.file_contents(file_id)).unwrap().into();
-            db.set_file_source(file_id, contents);
         }
     }
 
