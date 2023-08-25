@@ -20,7 +20,7 @@ use tower_lsp::{LspService, Server};
 
 struct Analyzer {
     client: Client,
-    database: Arc<Mutex<RootDatabase>>,
+    db: Arc<Mutex<RootDatabase>>,
     files: Arc<Mutex<Files>>,
 }
 
@@ -48,7 +48,7 @@ impl LanguageServer for Analyzer {
     }
 
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
-        let db = self.database.lock().await;
+        let db = self.db.lock().await;
         let files = self.files.lock().await;
 
         let path = params.text_document_position_params.text_document.uri.path();
@@ -140,7 +140,7 @@ impl LanguageServer for Analyzer {
             )
             .await;
 
-        let mut db = self.database.lock().await;
+        let mut db = self.db.lock().await;
         let mut files = self.files.lock().await;
 
         let path = params.text_document.uri.path().into();
@@ -161,7 +161,7 @@ impl LanguageServer for Analyzer {
             )
             .await;
 
-        let mut db = self.database.lock().await;
+        let mut db = self.db.lock().await;
         let mut files = self.files.lock().await;
 
         for change_event in &params.content_changes {
@@ -235,9 +235,9 @@ async fn main() {
     let stdout = tokio::io::stdout();
 
     let (service, socket) = LspService::new(|client| {
-        let database = Arc::new(Mutex::new(RootDatabase::default()));
+        let db = Arc::new(Mutex::new(RootDatabase::default()));
         let files = Arc::new(Mutex::new(Files::default()));
-        Analyzer { client, database, files }
+        Analyzer { client, db, files }
     });
     Server::new(stdin, stdout, socket).serve(service).await;
 }
