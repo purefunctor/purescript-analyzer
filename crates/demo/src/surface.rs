@@ -16,7 +16,7 @@ use crate::{
 /// A mapping from AST pointers to IDs.
 ///
 /// IDs are derived from the declaration's relative position in the source
-/// file, as in 0th, 1st, and 2nd. The idea is that while [`DeclarationMap`]
+/// file, as in 0th, 1st, and 2nd. The idea is that while [`PositionalMap`]
 /// is rebuilt for each change in the source code, the IDs, which are used
 /// as keys are not directly invalidated.
 #[derive(Debug, Default, PartialEq, Eq)]
