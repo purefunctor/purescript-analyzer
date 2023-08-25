@@ -9,7 +9,7 @@ Start { kind: Module }
   Start { kind: ModuleHeader }
     Token { kind: ModuleKw }
     Start { kind: ModuleName }
-      Start { kind: NameRef }
+      Start { kind: Name }
         Token { kind: Upper }
       Finish
     Finish
@@ -32,11 +32,11 @@ Start { kind: Module }
           Start { kind: ExportModule }
             Token { kind: ModuleKw }
             Start { kind: ModuleName }
-              Start { kind: NameRef }
+              Start { kind: Name }
                 Token { kind: Upper }
               Finish
               Token { kind: Period }
-              Start { kind: NameRef }
+              Start { kind: Name }
                 Token { kind: Upper }
               Finish
             Finish

@@ -2,7 +2,7 @@
 
 use position::Position;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ParseError {
     position: Position,
     message: String,

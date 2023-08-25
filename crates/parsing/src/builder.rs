@@ -35,7 +35,7 @@ impl<'a> Builder<'a> {
     }
 
     fn eat_token(&mut self, kind: SyntaxKind) {
-        if kind.is_layout() {
+        if self.is_eof() {
             return;
         }
         let text = self.lexed.text(self.index);

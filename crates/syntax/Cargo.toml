@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 rowan = "0.15.11"
+smol_str = "0.2.0"

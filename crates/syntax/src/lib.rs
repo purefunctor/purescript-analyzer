@@ -251,6 +251,7 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
 
 pub type SyntaxNode = rowan::SyntaxNode<PureScript>;
 pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<PureScript>;
+pub type SyntaxNodePtr = rowan::ast::SyntaxNodePtr<PureScript>;
 pub type SyntaxToken = rowan::SyntaxToken<PureScript>;
 pub type SyntaxElement = rowan::SyntaxElement<PureScript>;
 
@@ -310,75 +311,5 @@ impl SyntaxKind {
 
     pub fn is_layout(&self) -> bool {
         matches!(self, Self::LayoutStart | Self::LayoutSep | Self::LayoutEnd)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use rowan::{ast::AstNode, NodeOrToken};
-
-    use crate::{ast, SyntaxElement, SyntaxKind, SyntaxNode};
-
-    fn print(indent: usize, element: SyntaxElement) {
-        let kind: SyntaxKind = element.kind();
-        print!("{:indent$}", "", indent = indent);
-        match element {
-            NodeOrToken::Node(node) => {
-                println!("- {:?}", kind);
-                for child in node.children_with_tokens() {
-                    print(indent + 2, child);
-                }
-            }
-            NodeOrToken::Token(token) => println!("- {:?} {:?}", token.text(), kind),
-        }
-    }
-
-    #[test]
-    fn syntax_playground() {
-        let mut builder = rowan::GreenNodeBuilder::default();
-
-        builder.start_node(SyntaxKind::Module.into());
-        builder.start_node(SyntaxKind::ModuleHeader.into());
-        builder.token(SyntaxKind::ModuleKw.into(), "module");
-        builder.token(SyntaxKind::Whitespace.into(), " ");
-        builder.start_node(SyntaxKind::ModuleName.into());
-        builder.token(SyntaxKind::Upper.into(), "PureScript");
-        builder.token(SyntaxKind::Period.into(), ".");
-        builder.token(SyntaxKind::Upper.into(), "Main");
-        builder.finish_node();
-        builder.token(SyntaxKind::Whitespace.into(), " ");
-        builder.start_node(SyntaxKind::ExportList.into());
-        builder.token(SyntaxKind::LeftParenthesis.into(), "(");
-        builder.token(SyntaxKind::RightParenthesis.into(), ")");
-        builder.finish_node();
-        builder.token(SyntaxKind::Whitespace.into(), " ");
-        builder.token(SyntaxKind::WhereKw.into(), "where");
-        builder.finish_node();
-        builder.finish_node();
-
-        let purescript_module = SyntaxNode::new_root(builder.finish());
-
-        println!("{}", purescript_module);
-        print(2, purescript_module.clone().into());
-
-        let module_name = purescript_module
-            .children()
-            .next()
-            .unwrap()
-            .children()
-            .next()
-            .and_then(ast::ModuleName::cast)
-            .unwrap();
-
-        let rust_module = SyntaxNode::new_root(
-            module_name
-                .segments()
-                .next()
-                .unwrap()
-                .replace_with(rowan::GreenToken::new(SyntaxKind::Upper.into(), "Rust")),
-        );
-
-        println!("{}", rust_module);
-        print(2, rust_module.into());
     }
 }

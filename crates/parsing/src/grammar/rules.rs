@@ -1228,7 +1228,7 @@ fn module_header(parser: &mut Parser) {
 fn module_name(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::Upper) {
-        name_ref(parser, SyntaxKind::Upper)
+        name(parser, SyntaxKind::Upper)
     } else {
         parser.error_recover("expected a module name");
     }
@@ -1239,7 +1239,7 @@ fn module_name(parser: &mut Parser) {
             break;
         }
         if parser.at(SyntaxKind::Upper) {
-            name_ref(parser, SyntaxKind::Upper);
+            name(parser, SyntaxKind::Upper);
         } else {
             parser.error_recover("expected a module segment");
         }

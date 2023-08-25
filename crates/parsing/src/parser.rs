@@ -81,8 +81,7 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn error_recover(&mut self, message: impl Into<String>) {
         let mut error = self.start();
-        self.index += 1;
-        self.steps.set(0);
+        self.consume();
         self.error(message);
         error.end(self, SyntaxKind::Error);
     }

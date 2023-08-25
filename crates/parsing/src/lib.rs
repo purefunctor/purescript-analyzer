@@ -86,21 +86,3 @@ pub fn parse_module(source: &str) -> (SyntaxNode, Vec<ParseError>) {
 
     process_output(&lexed, output)
 }
-
-#[test]
-fn __() {
-    let (node, _) = parse_module(
-        "
-module Main where
-
-import A
-import B.B (c, d)
-import E.E.E hiding (f, g)
-import H.H.H.H (i, j) as K
-import L.L.L.L.L hiding (m, n) as O
-    
-import Types ((-), Type, type (+), class TypeClass, value)
-",
-    );
-    println!("{:#?}", node);
-}
