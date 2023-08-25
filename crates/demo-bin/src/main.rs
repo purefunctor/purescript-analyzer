@@ -37,14 +37,15 @@ impl LanguageServer for Analyzer {
         let project_folder =
             params.root_uri.map(|url| PathBuf::from(url.path())).unwrap_or(PathBuf::new());
 
-        let mut source_paths = vec![];
+        let mut file_ids = vec![];
         for path in glob("**/*.purs").unwrap().flatten() {
             let path = project_folder.join(path);
             eprintln!("Loading {:?}", path);
             let contents = fs::read(path.clone()).unwrap();
             files.set_file_contents(path.clone(), Some(contents));
-            source_paths.push(files.file_id(path))
+            file_ids.push(files.file_id(path).unwrap());
         }
+        db.set_file_ids_with_durability(file_ids.into(), salsa::Durability::MEDIUM);
 
         for ChangedFile { file_id, .. } in files.take_changes() {
             let contents = files.file_contents(file_id);

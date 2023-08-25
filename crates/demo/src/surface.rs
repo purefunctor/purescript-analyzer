@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 use files::FileId;
+use itertools::Itertools;
 use la_arena::Arena;
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashMap;
@@ -67,6 +68,13 @@ pub struct NominalMap {
 /// to changes in the source file similar to [`DeclarationMap`], but provides
 /// a mapping from names to IDs that are used as keys.
 impl NominalMap {
+    fn extend(&mut self, other: &NominalMap) {
+        self.annotation_declarations
+            .extend(other.annotation_declarations.iter().map(|(a, b)| (a.clone(), b.clone())));
+        self.value_declarations
+            .extend(other.value_declarations.iter().map(|(a, b)| (a.clone(), b.clone())));
+    }
+
     pub fn get_annotation(&self, k: &str) -> Option<InFileAstId<ast::AnnotationDeclaration>> {
         self.annotation_declarations.get(k).cloned()
     }
@@ -111,34 +119,14 @@ fn nominal_map(db: &dyn SurfaceDatabase, file_id: FileId) -> Arc<NominalMap> {
         }
     }
 
+    for import in module.imports().unwrap().imports().unwrap().children() {
+        let module_name =
+            import.module_name().unwrap().children().map(|name| name.as_str().unwrap()).join(".");
+        let file_id = db.module_map().get_file_id(&module_name).unwrap();
+
+        let other = db.nominal_map(file_id);
+        nominal_map.extend(&other);
+    }
+
     Arc::new(nominal_map)
 }
-
-/*
-
-What we want is to be able to go from ModuleName to FileId,
-we can accomplish this by first parsing the file to obtain
-its module name, which can then be inserted to a mapping,
-which is used as an input.
-
-The idea is that on initialization, we index the workspace
-folder to obtain the source files and their contents, and
-we insert them onto the virtual file system, which gives
-us file IDs, which we then insert onto the database using
-set_file_source.
-
-Then, we can proceed to fill up the module mapping with
-the parsed module names and their associated file IDs.
-
-Ideally, we should also be able to update the module
-mapping as the source file changes. After all, the module
-name for a file is sensitive to the contents of a file.
-
-file_module_name(&self, file_id: FileId) -> Arc<str>;
-
-module_map(&self, module_name: &str) -> Arc<ModuleMap>;
-
-For the module_map to work, we have to give the database
-the list of files in the virtual file system as an input.
-
-*/

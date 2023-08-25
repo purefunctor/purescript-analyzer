@@ -170,6 +170,7 @@ dependencies = [
  "files",
  "glob",
  "rowan",
+ "salsa",
  "syntax",
  "tokio",
  "tower-lsp",

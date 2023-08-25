@@ -2,7 +2,13 @@ use rowan::ast::AstNode;
 
 use super::{Declaration, ModuleName, ZeroOrMore};
 
-_create_ast!(Module, ModuleHeader, ModuleImports, ModuleBody);
+_create_ast!(ImportDeclaration, Module, ModuleHeader, ModuleImports, ModuleBody);
+
+impl ImportDeclaration {
+    pub fn module_name(&self) -> Option<ModuleName> {
+        ModuleName::cast(self.node.first_child()?)
+    }
+}
 
 impl Module {
     pub fn header(&self) -> Option<ModuleHeader> {
@@ -21,6 +27,12 @@ impl Module {
 impl ModuleHeader {
     pub fn name(&self) -> Option<ModuleName> {
         ModuleName::cast(self.node.first_child()?)
+    }
+}
+
+impl ModuleImports {
+    pub fn imports(&self) -> Option<ZeroOrMore<ImportDeclaration>> {
+        ZeroOrMore::cast(self.node.first_child()?)
     }
 }
 
