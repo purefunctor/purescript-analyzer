@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::{PureScript, SyntaxToken};
 
-use super::{LetBinding, Name, NameRef, OneOrMore, Type};
+use super::{LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
 
 _create_ast_v!(
     Expression,
@@ -84,5 +84,11 @@ impl RecordPun {
 
     pub fn name_ref(&self) -> Option<NameRef> {
         NameRef::cast(self.node.first_child()?)
+    }
+}
+
+impl VariableExpression {
+    pub fn qualified_name(&self) -> Option<QualifiedName> {
+        QualifiedName::cast(self.node.first_child()?)
     }
 }

@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use files::FileId;
 use la_arena::{Arena, Idx};
 use rowan::{
     ast::{AstNode, AstPtr},
@@ -61,6 +62,7 @@ impl SourceMap {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
     Literal(Literal<ExprId>),
+    Variable(SmolStr),
 }
 
 pub type ExprId = Idx<Expr>;
@@ -101,11 +103,17 @@ fn infer_value_declaration(
     dbg!("Called infer_value_declaration...");
     let mut value_infer = ValueInfer::default();
     let value_data = db.lower_value_declaration(id);
-    infer_expression(&mut value_infer, &value_data.expr_arena, value_data.expr_id);
+    infer_expression(db, id.file_id, &mut value_infer, &value_data.expr_arena, value_data.expr_id);
     Arc::new(value_infer)
 }
 
-fn infer_expression(value_infer: &mut ValueInfer, expr_arena: &Arena<Expr>, expr_id: ExprId) {
+fn infer_expression(
+    db: &dyn InferDatabase,
+    file_id: FileId,
+    value_infer: &mut ValueInfer,
+    expr_arena: &Arena<Expr>,
+    expr_id: ExprId,
+) {
     match &expr_arena[expr_id] {
         Expr::Literal(literal) => match literal {
             Literal::Int(_) => {
@@ -126,12 +134,12 @@ fn infer_expression(value_infer: &mut ValueInfer, expr_arena: &Arena<Expr>, expr
             Literal::Array(expr_ids) => {
                 let mut expr_ids = expr_ids.iter();
                 if let Some(head_id) = expr_ids.next() {
-                    infer_expression(value_infer, expr_arena, *head_id);
+                    infer_expression(db, file_id, value_infer, expr_arena, *head_id);
                     let head_ty = value_infer.expr_type.get(head_id).unwrap().clone();
 
                     let mut is_consistent = true;
                     for tail_id in expr_ids {
-                        infer_expression(value_infer, expr_arena, *tail_id);
+                        infer_expression(db, file_id, value_infer, expr_arena, *tail_id);
                         let tail_ty = value_infer.expr_type.get(tail_id).unwrap().clone();
 
                         if head_ty != tail_ty {
@@ -149,6 +157,13 @@ fn infer_expression(value_infer: &mut ValueInfer, expr_arena: &Arena<Expr>, expr
             }
             Literal::Record(_) => todo!("Not supported, come back later..."),
         },
+        Expr::Variable(name) => {
+            let variable_id = db.nominal_map(file_id).get_value(name);
+            let variable_data = db.lower_value_declaration(variable_id);
+            let infer_result = db.infer_value_declaration(variable_id);
+            let variable_ty = infer_result.expr_type.get(&variable_data.expr_id).unwrap().clone();
+            value_infer.expr_type.insert(expr_id, variable_ty);
+        }
     }
 }
 
@@ -200,9 +215,13 @@ impl LowerContext {
     }
 
     fn lower_expression(&mut self, node: &ast::Expression) -> Option<ExprId> {
+        dbg!(node);
         let expr = match node {
             ast::Expression::LiteralExpression(literal) => {
                 Some(Expr::Literal(self.lower_literal_expression(&literal)?))
+            }
+            ast::Expression::VariableExpression(variable) => {
+                Some(Expr::Variable(variable.qualified_name()?.name_ref()?.as_str()?))
             }
             _ => None,
         };
