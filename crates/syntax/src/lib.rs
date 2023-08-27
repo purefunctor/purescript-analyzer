@@ -80,6 +80,7 @@ pub enum SyntaxKind {
 
     DoExpression,
     QualifiedDo,
+    // UnqualifiedDo,
     DoKw,
 
     DoBind,

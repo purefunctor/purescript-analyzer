@@ -1419,7 +1419,17 @@ fn module_body(parser: &mut Parser) {
         if parser.at(SyntaxKind::LayoutEnd) {
             return false;
         }
-        annotation_or_value_declaration(parser);
+        match parser.current() {
+            SyntaxKind::TypeKw => {
+                annotation_or_type_declaration(parser);
+            }
+            SyntaxKind::Lower => {
+                annotation_or_value_declaration(parser);
+            }
+            _ => {
+                parser.error("Unknown start to toplevel declaration");
+            }
+        }
         match parser.current() {
             SyntaxKind::LayoutSep => {
                 parser.consume();
@@ -1459,4 +1469,54 @@ fn annotation_or_value_declaration(parser: &mut Parser) {
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::ValueDeclaration);
     }
+}
+
+// 'type' Upper '::' type_0 | 'type' Upper manyOrEmpty(type_var_binding_plain) '=' type_0
+fn annotation_or_type_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::TypeKw);
+    if matches!(parser.current(), SyntaxKind::Upper) {
+        name(parser, SyntaxKind::Upper);
+    } else {
+        parser.error_recover("expected a name");
+    }
+
+    if parser.at(SyntaxKind::Colon2) {
+        parser.consume();
+        type_0(parser);
+        marker.end(parser, SyntaxKind::AnnotationDeclaration);
+    } else {
+        zero_or_more(parser, |parser| {
+            if at_type_var_binding_plain(parser) {
+                type_var_binding_plain(parser);
+                true
+            } else {
+                false
+            }
+        });
+        parser.expect(SyntaxKind::Equal);
+        type_0(parser);
+        marker.end(parser, SyntaxKind::TypeDeclaration);
+    }
+}
+
+fn at_type_var_binding_plain(parser: &mut Parser) -> bool {
+    parser.current().is_lower() || matches!(parser.current(), SyntaxKind::LeftParenthesis)
+}
+
+// Upper | '(' Upper '::' type_0 ')'
+fn type_var_binding_plain(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.current().is_lower() {
+        name(parser, SyntaxKind::Lower);
+    } else {
+        parser.expect(SyntaxKind::LeftParenthesis);
+        name(parser, SyntaxKind::Lower);
+        parser.expect(SyntaxKind::Colon2);
+        type_0(parser);
+        parser.expect(SyntaxKind::RightParenthesis);
+    }
+    marker.end(parser, SyntaxKind::TypeVariableBinding);
+
 }
