@@ -2,7 +2,7 @@
 //!
 //! In particular, the [`ResolverDatabase`] indexes information about source
 //! files to facilitate processes such as name resolution, as in finding the
-//! corresponding [`FileId`] for a [`ModuleName`], or assigning stable IDs 
+//! corresponding [`FileId`] for a [`ModuleName`], or assigning stable IDs
 //! [`AstId`] to positional information [`AstPtr`].
 //!
 //! [`AstPtr`]: rowan::ast::AstPtr
