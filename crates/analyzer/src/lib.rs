@@ -1,5 +1,6 @@
 //! The core of the analyzer.
 
+pub mod id;
 pub mod names;
 pub mod resolver;
 pub mod source;
