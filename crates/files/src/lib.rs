@@ -44,7 +44,7 @@ pub struct Files {
 }
 
 impl Files {
-    /// Returns the [`FileID`] for a `path`.
+    /// Returns the [`FileId`] for a `path`.
     pub fn file_id(&self, path: PathBuf) -> Option<FileId> {
         self.interner.get(path).filter(|&file_id| self.get(file_id).is_some())
     }
