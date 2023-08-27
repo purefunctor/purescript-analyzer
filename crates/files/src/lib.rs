@@ -91,6 +91,18 @@ impl Files {
         mem::take(&mut self.changes)
     }
 
+    /// Returns an iterator of [`FileId`]s and their associated paths.
+    pub fn iter(&self) -> impl Iterator<Item = (FileId, PathBuf)> + '_ {
+        self.files.iter().enumerate().filter_map(|(index, contents)| {
+            if contents.is_none() {
+                return None;
+            }
+            let file_id = FileId(index as u32);
+            let file_path = self.file_path(file_id);
+            Some((file_id, file_path))
+        })
+    }
+
     fn allocate_file_id(&mut self, path: PathBuf) -> FileId {
         let file_id = self.interner.intern(path);
         let idx = file_id.0 as usize;
