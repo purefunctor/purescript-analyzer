@@ -20,7 +20,7 @@ impl From<ast::ModuleName> for ModuleName {
             if let Some(name) = name.as_str() {
                 accumulator.push_str(&name);
             } else {
-                let name = format!("${}", name.syntax().text().to_string());
+                let name = format!("${}", name.syntax().text());
                 accumulator.push_str(&name);
             }
         }
