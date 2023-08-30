@@ -17,5 +17,5 @@ pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Lit {
-    Integer(usize),
+    Int(usize),
 }
