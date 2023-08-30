@@ -6,7 +6,7 @@ use rowan::ast::AstNode;
 use syntax::ast;
 
 /// e.g. `Main`, `Data.Maybe`
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleName {
     inner: Arc<str>,
 }
