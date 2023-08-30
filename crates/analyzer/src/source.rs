@@ -14,8 +14,10 @@ pub trait SourceDatabase {
     #[salsa::input]
     fn file_paths(&self) -> Arc<[(FileId, PathBuf)]>;
 
+    #[salsa::transparent]
     fn parse_file(&self, file_id: FileId) -> SyntaxNode;
 
+    #[salsa::transparent]
     fn parse_file_with_errors(&self, file_id: FileId) -> (SyntaxNode, Arc<[ParseError]>);
 }
 
