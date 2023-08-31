@@ -10,7 +10,7 @@ use crate::id::{AstId, InFile};
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ValueDeclarationData {
     pub expr_arena: Arena<Expr>,
-    pub expr_id: Idx<Expr>,
+    pub binding: Binding,
     /// The type annotation for this value declaration, if it exists.
     pub annotation: Option<AstId<ast::AnnotationDeclaration>>,
     /// PureScript supports "equational" style declarations.
@@ -23,9 +23,14 @@ pub struct ValueDeclarationData {
     pub siblings: Arc<[InFile<AstId<ast::ValueDeclaration>>]>,
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum Binding {
+    Unconditional { expr_id: Idx<Expr> },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
-    Literal(Lit),
+    Lit(Lit),
 }
 
 pub type ExprId = Idx<Expr>;

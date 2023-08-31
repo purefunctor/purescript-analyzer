@@ -29,5 +29,5 @@ impl<N: AstNode<Language = PureScript>> AstId<N> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InFile<T> {
     pub(crate) file_id: FileId,
-    value: T,
+    pub(crate) value: T,
 }
