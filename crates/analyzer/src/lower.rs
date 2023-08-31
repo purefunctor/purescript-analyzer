@@ -78,13 +78,18 @@ impl LowerContext {
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {
         match binding {
             ast::Binding::UnconditionalBinding(unconditional) => {
-                // FIXME: WhereExpr
-                let expression = unconditional.where_expression()?.expression()?;
-                let expr_id = self.lower_expr(&expression)?;
-                Some(surface::Binding::Unconditional { expr_id })
+                let where_expression = unconditional.where_expression()?;
+                let where_expr = self.lower_where_expr(&where_expression)?;
+                Some(surface::Binding::Unconditional { where_expr })
             }
             ast::Binding::GuardedBinding(_) => None,
         }
+    }
+
+    fn lower_where_expr(&mut self, where_expression: &ast::WhereExpression) -> Option<WhereExpr> {
+        let expression = where_expression.expression()?;
+        let expr_id = self.lower_expr(&expression)?;
+        Some(WhereExpr { expr_id })
     }
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {

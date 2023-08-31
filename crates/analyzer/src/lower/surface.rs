@@ -25,7 +25,12 @@ pub struct ValueDeclarationData {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Binding {
-    Unconditional { expr_id: Idx<Expr> },
+    Unconditional { where_expr: WhereExpr },
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct WhereExpr {
+    pub expr_id: Idx<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
