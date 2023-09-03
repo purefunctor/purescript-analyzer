@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use itertools::Itertools;
 use rowan::ast::AstNode;
 use syntax::ast;
 
@@ -13,19 +14,18 @@ pub struct ModuleName {
 
 impl From<ast::ModuleName> for ModuleName {
     fn from(value: ast::ModuleName) -> Self {
-        let capacity = value.syntax().text().len().into();
-        let mut accumulator = String::with_capacity(capacity);
+        let inner = value
+            .children()
+            .map(|name| {
+                if let Some(name) = name.as_str() {
+                    name.into()
+                } else {
+                    format!("${}", name.syntax().text())
+                }
+            })
+            .join(".")
+            .into();
 
-        for name in value.children() {
-            if let Some(name) = name.as_str() {
-                accumulator.push_str(&name);
-            } else {
-                let name = format!("${}", name.syntax().text());
-                accumulator.push_str(&name);
-            }
-        }
-
-        let inner = accumulator.into();
         ModuleName { inner }
     }
 }
