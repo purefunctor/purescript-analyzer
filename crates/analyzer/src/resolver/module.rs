@@ -42,7 +42,7 @@ impl ModuleMap {
         self.name_to_id.get(&module_name).copied()
     }
 
-    pub fn file_id(&self, module_name: ModuleName) -> Option<FileId> {
-        self.id_to_file.get(self.module_id(module_name)?).cloned()
+    pub fn file_id(&self, module_id: ModuleId) -> Option<FileId> {
+        self.id_to_file.get(module_id).cloned()
     }
 }
