@@ -29,3 +29,21 @@ impl From<ast::ModuleName> for ModuleName {
         ModuleName { inner }
     }
 }
+
+impl From<ast::QualifiedPrefix> for ModuleName {
+    fn from(value: ast::QualifiedPrefix) -> Self {
+        let inner = value
+            .children()
+            .map(|name| {
+                if let Some(name) = name.as_str() {
+                    name.into()
+                } else {
+                    format!("${}", name.syntax().text())
+                }
+            })
+            .join(".")
+            .into();
+
+        ModuleName { inner }
+    }
+}
