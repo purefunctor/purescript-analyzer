@@ -8,6 +8,7 @@
 //! [`AstPtr`]: rowan::ast::AstPtr
 //! [`AstId`]: crate::id::AstId
 
+pub mod import;
 pub mod module;
 pub mod nominal;
 pub mod positional;
@@ -18,6 +19,7 @@ use files::FileId;
 
 use crate::SourceDatabase;
 
+pub use import::QualifiedImports;
 pub use module::ModuleMap;
 pub use nominal::NominalMap;
 pub use positional::PositionalMap;
@@ -32,4 +34,7 @@ pub trait ResolverDatabase: SourceDatabase {
 
     #[salsa::invoke(PositionalMap::positional_map_query)]
     fn positional_map(&self, file_id: FileId) -> Arc<PositionalMap>;
+
+    #[salsa::invoke(QualifiedImports::qualified_imports_query)]
+    fn qualified_imports(&self, file_id: FileId) -> Arc<QualifiedImports>;
 }

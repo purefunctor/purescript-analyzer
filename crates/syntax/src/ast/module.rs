@@ -2,9 +2,19 @@ use rowan::ast::AstNode;
 
 use super::{Declaration, ModuleName, ZeroOrMore};
 
-_create_ast!(ImportDeclaration, Module, ModuleHeader, ModuleImports, ModuleBody);
+_create_ast!(ImportDeclaration, ImportQualified, Module, ModuleHeader, ModuleImports, ModuleBody);
 
 impl ImportDeclaration {
+    pub fn module_name(&self) -> Option<ModuleName> {
+        ModuleName::cast(self.node.first_child()?)
+    }
+
+    pub fn import_qualified(&self) -> Option<ImportQualified> {
+        ImportQualified::cast(self.node.last_child()?)
+    }
+}
+
+impl ImportQualified {
     pub fn module_name(&self) -> Option<ModuleName> {
         ModuleName::cast(self.node.first_child()?)
     }
