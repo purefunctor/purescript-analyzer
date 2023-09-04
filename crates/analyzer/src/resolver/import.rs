@@ -4,7 +4,7 @@ use files::FileId;
 use la_arena::{Arena, Idx};
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
-use syntax::ast;
+use syntax::{ast, SyntaxNode};
 
 use crate::{id::InFile, names::ModuleName, ResolverDatabase};
 
@@ -40,22 +40,24 @@ impl QualifiedImports {
         file_id: FileId,
     ) -> Arc<QualifiedImports> {
         let mut qualified_imports = QualifiedImports::default();
-
         let node = db.parse_file(file_id);
-        let imports = ast::Source::<ast::Module>::cast(node)
-            .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
-        if let Some(imports) = imports {
-            for import in imports {
-                if let Some(import_qualified) = import.import_qualified() {
-                    let module_name = ModuleName::from(import_qualified.module_name().unwrap());
-                    let import_declaration = ImportDeclaration { module_name: module_name.clone() };
-                    let import_id = qualified_imports.inner.alloc(import_declaration);
-                    qualified_imports.name_to_id.insert(module_name, ImportId::new(import_id));
-                }
-            }
+        qualified_imports.collect_imports(node);
+        Arc::new(qualified_imports)
+    }
+
+    fn collect_imports(&mut self, node: SyntaxNode) -> Option<()> {
+        let import_declarations =
+            ast::Source::<ast::Module>::cast(node)?.child()?.imports()?.imports()?.children();
+
+        for import_declaration in import_declarations {
+            let import_qualified = import_declaration.import_qualified()?;
+            let module_name = ModuleName::from(import_qualified.module_name()?);
+            let import_declaration = ImportDeclaration { module_name: module_name.clone() };
+            let import_id = ImportId::new(self.inner.alloc(import_declaration));
+            self.name_to_id.insert(module_name, import_id);
         }
 
-        Arc::new(qualified_imports)
+        Some(())
     }
 
     pub fn import_declaration(&self, import_id: ImportId) -> &ImportDeclaration {
