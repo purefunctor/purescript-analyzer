@@ -11,7 +11,7 @@ pub use source::SourceDatabase;
 
 /// The analyzer's core database.
 #[derive(Default)]
-#[salsa::database(resolver::ResolverStorage, source::SourceStorage)]
+#[salsa::database(resolver::ResolverStorage, lower::LowerStorage, source::SourceStorage)]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
@@ -23,9 +23,11 @@ mod tests {
     use std::sync::Arc;
 
     use files::{ChangedFile, Files};
+    use rowan::ast::AstNode;
     use salsa::Durability;
+    use syntax::ast;
 
-    use crate::{RootDatabase, SourceDatabase};
+    use crate::{lower::LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -40,7 +42,7 @@ mod tests {
         );
         files.set_file_contents(
             "./Hello.purs".into(),
-            Some("module Hello where\n\nhello = 0".into()),
+            Some("module Hello where\n\nhello = M.fromMaybe".into()),
         );
         // Then, we feed it to the database through the `take_changes` method.
         for ChangedFile { file_id, .. } in files.take_changes() {
@@ -52,11 +54,23 @@ mod tests {
         // as often as something like editing a file would with the file contents.
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
-        // let file_id = files.file_id("./Main.purs".into()).unwrap();
-        // let qualified_imports = db.qualified_imports(file_id);
-        // let import_id = qualified_imports.import_id(&ModuleName { inner: "H".into() }).unwrap();
-        // let import_declaration = qualified_imports.import_declaration(import_id);
-        // let import_in_file = import_id.in_file(file_id);
-        // dbg!(import_declaration, import_in_file);
+        let file_id = files.file_id("./Hello.purs".into()).unwrap();
+        let source = ast::Source::<ast::Module>::cast(db.parse_file(file_id)).unwrap();
+        dbg!(&source);
+        let declaration = source
+            .child()
+            .unwrap()
+            .body()
+            .unwrap()
+            .declarations()
+            .unwrap()
+            .children()
+            .next()
+            .unwrap();
+        if let ast::Declaration::ValueDeclaration(value_declaration) = declaration {
+            let declaration_id =
+                db.positional_map(file_id).ast_id(&value_declaration).in_file(file_id);
+            dbg!(&db.lower_value_declaration(declaration_id));
+        }
     }
 }
