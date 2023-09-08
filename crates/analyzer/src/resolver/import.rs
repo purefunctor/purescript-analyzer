@@ -4,7 +4,7 @@ use files::FileId;
 use la_arena::{Arena, Idx};
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
-use syntax::{ast, SyntaxNode};
+use syntax::ast;
 
 use crate::{id::InFile, names::ModuleName, ResolverDatabase};
 
@@ -40,23 +40,25 @@ impl QualifiedImports {
         file_id: FileId,
     ) -> Arc<QualifiedImports> {
         let mut qualified_imports = QualifiedImports::default();
+
         let node = db.parse_file(file_id);
-        qualified_imports.collect_imports(node);
+        let import_declarations = ast::Source::<ast::Module>::cast(node)
+            .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
+        if let Some(import_declarations) = import_declarations {
+            for import_declaration in import_declarations {
+                qualified_imports.collect_import(import_declaration);
+            }
+        }
+
         Arc::new(qualified_imports)
     }
 
-    fn collect_imports(&mut self, node: SyntaxNode) -> Option<()> {
-        let import_declarations =
-            ast::Source::<ast::Module>::cast(node)?.child()?.imports()?.imports()?.children();
-
-        for import_declaration in import_declarations {
-            let import_qualified = import_declaration.import_qualified()?;
-            let module_name = ModuleName::try_from(import_qualified.module_name()?).ok()?;
-            let import_declaration = ImportDeclaration { module_name: module_name.clone() };
-            let import_id = ImportId::new(self.inner.alloc(import_declaration));
-            self.name_to_id.insert(module_name, import_id);
-        }
-
+    fn collect_import(&mut self, import_declaration: ast::ImportDeclaration) -> Option<()> {
+        let import_qualified = import_declaration.import_qualified()?;
+        let module_name = ModuleName::try_from(import_qualified.module_name()?).ok()?;
+        let import_declaration = ImportDeclaration { module_name: module_name.clone() };
+        let import_id = ImportId::new(self.inner.alloc(import_declaration));
+        self.name_to_id.insert(module_name, import_id);
         Some(())
     }
 
