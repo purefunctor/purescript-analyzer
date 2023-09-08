@@ -38,7 +38,7 @@ impl QualifiedName {
 }
 
 impl QualifiedPrefix {
-    pub fn children(&self) -> AstChildren<Name> {
+    pub fn children(&self) -> AstChildren<NameRef> {
         support::children(&self.node)
     }
 }
