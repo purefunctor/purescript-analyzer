@@ -5,7 +5,10 @@ use std::sync::Arc;
 use la_arena::{Arena, Idx};
 use syntax::ast;
 
-use crate::id::{AstId, InFile};
+use crate::{
+    id::{AstId, InFile},
+    names::{NameRef, Qualified},
+};
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ValueDeclarationData {
@@ -36,6 +39,7 @@ pub struct WhereExpr {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
     Lit(Lit),
+    Var(Qualified<NameRef>),
 }
 
 pub type ExprId = Idx<Expr>;

@@ -97,6 +97,11 @@ impl LowerContext {
             ast::Expression::LiteralExpression(literal) => {
                 Some(Expr::Lit(self.lower_lit(literal)?))
             }
+            ast::Expression::VariableExpression(variable) => {
+                let qualified = variable.qualified_name()?;
+                let name_ref = qualified.try_into().ok()?;
+                Some(Expr::Var(name_ref))
+            }
             _ => None,
         };
         expr.map(|expr| self.alloc_expr(expr, expression))
