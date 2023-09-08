@@ -8,6 +8,7 @@
 //! [`AstPtr`]: rowan::ast::AstPtr
 //! [`AstId`]: crate::id::AstId
 
+pub mod export;
 pub mod import;
 pub mod module;
 pub mod nominal;
@@ -19,6 +20,7 @@ use files::FileId;
 
 use crate::SourceDatabase;
 
+pub use export::Exports;
 pub use import::QualifiedImports;
 pub use module::ModuleMap;
 pub use nominal::NominalMap;
@@ -37,4 +39,7 @@ pub trait ResolverDatabase: SourceDatabase {
 
     #[salsa::invoke(QualifiedImports::qualified_imports_query)]
     fn qualified_imports(&self, file_id: FileId) -> Arc<QualifiedImports>;
+
+    #[salsa::invoke(Exports::exports_query)]
+    fn exports(&self, file_id: FileId) -> Arc<Exports>;
 }
