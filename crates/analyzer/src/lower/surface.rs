@@ -47,9 +47,17 @@ pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Lit {
+    Array(Box<[ExprId]>),
+    Record(Box<[RecordItem]>),
     Int(usize),
     Number(SmolStr),
     String(SmolStr),
     Char(SmolStr),
     Boolean(bool),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum RecordItem {
+    RecordPun(SmolStr),
+    RecordField(SmolStr, ExprId),
 }

@@ -109,7 +109,51 @@ impl LowerContext {
 
     fn lower_lit(&mut self, node: &ast::LiteralExpression) -> Option<Lit> {
         match node.syntax().first_child_or_token()? {
-            NodeOrToken::Node(_) => None,
+            NodeOrToken::Node(n) => match n.kind() {
+                SyntaxKind::LiteralArray => {
+                    let wrapped =
+                        ast::Wrapped::<ast::Separated<ast::Expression>>::cast(n.first_child()?)?;
+
+                    let contents = wrapped
+                        .child()
+                        .and_then(|separated| {
+                            separated
+                                .children()
+                                .map(|expression| self.lower_expr(&expression))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+
+                    Some(Lit::Array(contents))
+                }
+                SyntaxKind::LiteralRecord => {
+                    let wrapped =
+                        ast::Wrapped::<ast::Separated<ast::RecordItem>>::cast(n.first_child()?)?;
+
+                    let contents = wrapped
+                        .child()
+                        .and_then(|separated| {
+                            separated
+                                .children()
+                                .map(|item| match item {
+                                    ast::RecordItem::RecordField(field) => {
+                                        let name = field.name()?.as_str()?;
+                                        let value = self.lower_expr(&field.value()?)?;
+                                        Some(RecordItem::RecordField(name, value))
+                                    }
+                                    ast::RecordItem::RecordPun(pun) => {
+                                        let name = pun.name()?.as_str()?;
+                                        Some(RecordItem::RecordPun(name))
+                                    }
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+
+                    Some(Lit::Record(contents))
+                }
+                _ => None,
+            },
             NodeOrToken::Token(t) => match t.kind() {
                 SyntaxKind::LiteralInteger => Some(Lit::Int(t.text().parse().ok()?)),
                 SyntaxKind::LiteralNumber => Some(Lit::Number(t.text().into())),
