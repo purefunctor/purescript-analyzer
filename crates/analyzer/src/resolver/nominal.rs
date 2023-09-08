@@ -15,8 +15,8 @@ use crate::{
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct NominalMap {
-    annotations: FxHashMap<SmolStr, InFile<AstId<ast::AnnotationDeclaration>>>,
-    values: FxHashMap<SmolStr, Vec<InFile<AstId<ast::ValueDeclaration>>>>,
+    annotation: FxHashMap<SmolStr, InFile<AstId<ast::AnnotationDeclaration>>>,
+    value: FxHashMap<SmolStr, Vec<InFile<AstId<ast::ValueDeclaration>>>>,
 }
 
 impl NominalMap {
@@ -28,22 +28,41 @@ impl NominalMap {
             .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
         if let Some(declarations) = declarations {
             for declaration in declarations {
-                match declaration {
-                    ast::Declaration::AnnotationDeclaration(annotation) => {
-                        let name = annotation.name().unwrap().as_str().unwrap();
-                        let id = db.positional_map(file_id).ast_id(&annotation).in_file(file_id);
-                        nominal_map.annotations.insert(name, id);
-                    }
-                    ast::Declaration::ValueDeclaration(value) => {
-                        let name = value.name().unwrap().as_str().unwrap();
-                        let id = db.positional_map(file_id).ast_id(&value).in_file(file_id);
-                        nominal_map.values.entry(name).or_default().push(id);
-                    }
-                }
+                nominal_map.collect_declaration(db, file_id, &declaration);
             }
         }
 
         Arc::new(nominal_map)
+    }
+
+    fn collect_declaration(
+        &mut self,
+        db: &dyn ResolverDatabase,
+        file_id: FileId,
+        declaration: &ast::Declaration,
+    ) -> Option<()> {
+        match declaration {
+            ast::Declaration::AnnotationDeclaration(annotation) => {
+                let name = annotation.name()?.as_str()?;
+                let id = db.positional_map(file_id).ast_id(annotation).in_file(file_id);
+                self.annotation.insert(name, id);
+            }
+            ast::Declaration::ValueDeclaration(value) => {
+                let name = value.name()?.as_str()?;
+                let id = db.positional_map(file_id).ast_id(value).in_file(file_id);
+                self.value.entry(name).or_default().push(id);
+            }
+        }
+
+        Some(())
+    }
+
+    pub fn get_annotation(&self, name: &str) -> Option<InFile<AstId<ast::AnnotationDeclaration>>> {
+        self.annotation.get(name).copied()
+    }
+
+    pub fn get_value(&self, name: &str) -> Option<&[InFile<AstId<ast::ValueDeclaration>>]> {
+        self.value.get(name).map(Vec::as_slice)
     }
 }
 

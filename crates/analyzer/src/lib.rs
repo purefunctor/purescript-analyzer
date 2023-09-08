@@ -23,9 +23,7 @@ mod tests {
     use std::sync::Arc;
 
     use files::{ChangedFile, Files};
-    use rowan::ast::AstNode;
     use salsa::Durability;
-    use syntax::ast;
 
     use crate::{lower::LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
@@ -55,22 +53,7 @@ mod tests {
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Hello.purs".into()).unwrap();
-        let source = ast::Source::<ast::Module>::cast(db.parse_file(file_id)).unwrap();
-        dbg!(&source);
-        let declaration = source
-            .child()
-            .unwrap()
-            .body()
-            .unwrap()
-            .declarations()
-            .unwrap()
-            .children()
-            .next()
-            .unwrap();
-        if let ast::Declaration::ValueDeclaration(value_declaration) = declaration {
-            let declaration_id =
-                db.positional_map(file_id).ast_id(&value_declaration).in_file(file_id);
-            dbg!(&db.lower_value_declaration(declaration_id));
-        }
+        let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        dbg!(db.lower_value_declaration(hello_id));
     }
 }
