@@ -51,7 +51,7 @@ impl QualifiedImports {
 
         for import_declaration in import_declarations {
             let import_qualified = import_declaration.import_qualified()?;
-            let module_name = ModuleName::from(import_qualified.module_name()?);
+            let module_name = ModuleName::try_from(import_qualified.module_name()?).ok()?;
             let import_declaration = ImportDeclaration { module_name: module_name.clone() };
             let import_id = ImportId::new(self.inner.alloc(import_declaration));
             self.name_to_id.insert(module_name, import_id);

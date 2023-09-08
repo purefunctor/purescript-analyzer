@@ -2,8 +2,6 @@
 
 use std::sync::Arc;
 
-use itertools::Itertools;
-use rowan::ast::AstNode;
 use syntax::ast;
 
 /// e.g. `Main`, `Data.Maybe`
@@ -12,39 +10,29 @@ pub struct ModuleName {
     inner: Arc<str>,
 }
 
-impl From<ast::ModuleName> for ModuleName {
-    fn from(value: ast::ModuleName) -> Self {
-        let inner = value
-            .children()
-            .map(|name| {
-                if let Some(name) = name.as_str() {
-                    name.into()
-                } else {
-                    format!("${}", name.syntax().text())
-                }
-            })
-            .join(".")
-            .into();
+impl TryFrom<ast::ModuleName> for ModuleName {
+    type Error = &'static str;
 
-        ModuleName { inner }
+    fn try_from(value: ast::ModuleName) -> Result<Self, Self::Error> {
+        let inner: Result<Vec<_>, _> = value
+            .children()
+            .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
+            .collect();
+        let inner = inner?.join(".").into();
+        Ok(ModuleName { inner })
     }
 }
 
-impl From<ast::QualifiedPrefix> for ModuleName {
-    fn from(value: ast::QualifiedPrefix) -> Self {
-        let inner = value
-            .children()
-            .map(|name| {
-                if let Some(name) = name.as_str() {
-                    name.into()
-                } else {
-                    format!("${}", name.syntax().text())
-                }
-            })
-            .join(".")
-            .into();
+impl TryFrom<ast::QualifiedPrefix> for ModuleName {
+    type Error = &'static str;
 
-        ModuleName { inner }
+    fn try_from(value: ast::QualifiedPrefix) -> Result<Self, Self::Error> {
+        let inner: Result<Vec<_>, _> = value
+            .children()
+            .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
+            .collect();
+        let inner = inner?.join(".").into();
+        Ok(ModuleName { inner })
     }
 }
 
@@ -74,7 +62,7 @@ impl TryFrom<ast::QualifiedName> for Qualified<NameRef> {
     type Error = &'static str;
 
     fn try_from(value: ast::QualifiedName) -> Result<Self, Self::Error> {
-        let prefix = value.prefix().map(ModuleName::from);
+        let prefix = value.prefix().map(ModuleName::try_from).transpose()?;
         let value =
             value.name_ref().ok_or("QualifiedName has no NameRef").and_then(NameRef::try_from)?;
         Ok(Qualified { prefix, value })

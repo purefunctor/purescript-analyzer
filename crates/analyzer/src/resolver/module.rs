@@ -28,7 +28,7 @@ impl ModuleMap {
             let node = db.parse_file(*file_id);
             let module_name = ast::Source::<ast::Module>::cast(node)
                 .and_then(|source| source.child()?.header()?.name())
-                .map(ModuleName::from);
+                .and_then(|module_name| ModuleName::try_from(module_name).ok());
             if let Some(module_name) = module_name {
                 let module_id = module_map.inner.alloc(module_name.clone());
                 module_map.name_to_id.insert(module_name, module_id);
