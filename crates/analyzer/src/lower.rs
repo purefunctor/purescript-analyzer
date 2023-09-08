@@ -112,13 +112,13 @@ impl LowerContext {
             NodeOrToken::Node(_) => None,
             NodeOrToken::Token(t) => match t.kind() {
                 SyntaxKind::LiteralInteger => Some(Lit::Int(t.text().parse().ok()?)),
-                // SyntaxKind::LiteralNumber => Some(Literal::Number(t.text().into())),
-                // SyntaxKind::LiteralString | SyntaxKind::LiteralRawString => {
-                //     Some(Literal::String(t.text().into()))
-                // }
-                // SyntaxKind::LiteralChar => Some(Literal::Char(t.text().into())),
-                // SyntaxKind::LiteralTrue => Some(Literal::Boolean(true)),
-                // SyntaxKind::LiteralFalse => Some(Literal::Boolean(false)),
+                SyntaxKind::LiteralNumber => Some(Lit::Number(t.text().into())),
+                SyntaxKind::LiteralString | SyntaxKind::LiteralRawString => {
+                    Some(Lit::String(t.text().into()))
+                }
+                SyntaxKind::LiteralChar => Some(Lit::Char(t.text().into())),
+                SyntaxKind::LiteralTrue => Some(Lit::Boolean(true)),
+                SyntaxKind::LiteralFalse => Some(Lit::Boolean(false)),
                 _ => None,
             },
         }

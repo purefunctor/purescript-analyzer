@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use la_arena::{Arena, Idx};
+use smol_str::SmolStr;
 use syntax::ast;
 
 use crate::{
@@ -47,4 +48,8 @@ pub type ExprId = Idx<Expr>;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Lit {
     Int(usize),
+    Number(SmolStr),
+    String(SmolStr),
+    Char(SmolStr),
+    Boolean(bool),
 }
