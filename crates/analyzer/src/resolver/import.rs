@@ -54,11 +54,15 @@ impl QualifiedImports {
     }
 
     fn collect_import(&mut self, import_declaration: ast::ImportDeclaration) -> Option<()> {
-        let import_qualified = import_declaration.import_qualified()?;
-        let module_name = ModuleName::try_from(import_qualified.module_name()?).ok()?;
-        let import_declaration = ImportDeclaration { module_name: module_name.clone() };
+        let imported_module_name = ModuleName::try_from(import_declaration.module_name()?).ok()?;
+        let qualified_as_module_name =
+            ModuleName::try_from(import_declaration.import_qualified()?.module_name()?).ok()?;
+
+        let import_declaration = ImportDeclaration { module_name: imported_module_name.clone() };
         let import_id = ImportId::new(self.inner.alloc(import_declaration));
-        self.name_to_id.insert(module_name, import_id);
+
+        self.name_to_id.insert(qualified_as_module_name, import_id);
+
         Some(())
     }
 
