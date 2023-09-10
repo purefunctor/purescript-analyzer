@@ -10,7 +10,7 @@ use crate::{id::InFile, names::ModuleName, ResolverDatabase};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportDeclaration {
-    module_name: ModuleName,
+    pub(crate) module_name: ModuleName,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

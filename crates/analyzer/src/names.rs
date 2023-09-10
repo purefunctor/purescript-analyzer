@@ -60,8 +60,8 @@ impl TryFrom<ast::NameRef> for NameRef {
 /// e.g. `M.Just`, `M.fromMaybe`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Qualified<N> {
-    prefix: Option<ModuleName>,
-    value: N,
+    pub(crate) prefix: Option<ModuleName>,
+    pub(crate) value: N,
 }
 
 impl TryFrom<ast::QualifiedName> for Qualified<NameRef> {

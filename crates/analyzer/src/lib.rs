@@ -1,6 +1,7 @@
 //! The core of the analyzer.
 
 pub mod id;
+pub mod infer;
 pub mod lower;
 pub mod names;
 pub mod resolver;
@@ -12,12 +13,27 @@ pub use source::SourceDatabase;
 
 /// The analyzer's core database.
 #[derive(Default)]
-#[salsa::database(resolver::ResolverStorage, lower::LowerStorage, source::SourceStorage)]
+#[salsa::database(
+    infer::InferStorage,
+    resolver::ResolverStorage,
+    lower::LowerStorage,
+    source::SourceStorage
+)]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 
 impl salsa::Database for RootDatabase {}
+
+pub trait Upcast<T: ?Sized> {
+    fn upcast(&self) -> &T;
+}
+
+impl Upcast<dyn ResolverDatabase> for RootDatabase {
+    fn upcast(&self) -> &(dyn ResolverDatabase + 'static) {
+        &*self
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -26,7 +42,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{ResolverDatabase, RootDatabase, SourceDatabase};
+    use crate::{infer::InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -37,11 +53,11 @@ mod tests {
         // Given the source file glob, we take all purs files and load them onto the file system.
         files.set_file_contents(
             "./Main.purs".into(),
-            Some("module Main where\n\nimport Hello as H".into()),
+            Some("module Main where\n\nimport Hello as H\n\nhello = H.hello".into()),
         );
         files.set_file_contents(
             "./Hello.purs".into(),
-            Some("module Hello (hello) where\n\nhello = M.fromMaybe".into()),
+            Some("module Hello (hello) where\n\nhello = 0".into()),
         );
         // Then, we feed it to the database through the `take_changes` method.
         for ChangedFile { file_id, .. } in files.take_changes() {
@@ -53,9 +69,8 @@ mod tests {
         // as often as something like editing a file would with the file contents.
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
-        let file_id = files.file_id("./Hello.purs".into()).unwrap();
-        dbg!(db.exports(file_id));
-        // let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
-        // dbg!(db.lower_value_declaration(hello_id));
+        let file_id = files.file_id("./Main.purs".into()).unwrap();
+        let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        db.infer_value_declaration(hello_id);
     }
 }
