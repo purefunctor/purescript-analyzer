@@ -57,12 +57,18 @@ impl NominalMap {
         Some(())
     }
 
-    pub fn get_annotation(&self, name: &str) -> Option<InFile<AstId<ast::AnnotationDeclaration>>> {
-        self.annotation.get(name).copied()
+    pub fn get_annotation(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<InFile<AstId<ast::AnnotationDeclaration>>> {
+        self.annotation.get(name.as_ref()).copied()
     }
 
-    pub fn get_value(&self, name: &str) -> Option<&[InFile<AstId<ast::ValueDeclaration>>]> {
-        self.value.get(name).map(Vec::as_slice)
+    pub fn get_value(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<Arc<[InFile<AstId<ast::ValueDeclaration>>]>> {
+        self.value.get(name.as_ref()).map(|values| values.as_slice().into())
     }
 }
 

@@ -1,8 +1,17 @@
 use rowan::ast::AstNode;
 
-use super::{Declaration, ModuleName, ZeroOrMore};
+use super::{Declaration, ModuleName, NameRef, Separated, Wrapped, ZeroOrMore};
 
-_create_ast!(ImportDeclaration, ImportQualified, Module, ModuleHeader, ModuleImports, ModuleBody);
+_create_ast!(
+    ImportDeclaration,
+    ImportQualified,
+    Module,
+    ModuleHeader,
+    ExportList,
+    ModuleImports,
+    ModuleBody
+);
+_create_ast_v!(ExportItem, ExportValue(ExportValue));
 
 impl ImportDeclaration {
     pub fn module_name(&self) -> Option<ModuleName> {
@@ -37,6 +46,22 @@ impl Module {
 impl ModuleHeader {
     pub fn name(&self) -> Option<ModuleName> {
         ModuleName::cast(self.node.first_child()?)
+    }
+
+    pub fn export_list(&self) -> Option<ExportList> {
+        ExportList::cast(self.node.last_child()?)
+    }
+}
+
+impl ExportList {
+    pub fn child(&self) -> Option<Wrapped<Separated<ExportItem>>> {
+        Wrapped::cast(self.node.first_child()?)
+    }
+}
+
+impl ExportValue {
+    pub fn name_ref(&self) -> Option<NameRef> {
+        NameRef::cast(self.node.first_child()?)
     }
 }
 

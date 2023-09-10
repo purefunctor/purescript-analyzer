@@ -42,6 +42,12 @@ pub struct NameRef {
     inner: Arc<str>,
 }
 
+impl AsRef<str> for NameRef {
+    fn as_ref(&self) -> &str {
+        &self.inner
+    }
+}
+
 impl TryFrom<ast::NameRef> for NameRef {
     type Error = &'static str;
 

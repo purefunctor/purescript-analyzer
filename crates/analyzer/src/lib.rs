@@ -6,6 +6,7 @@ pub mod names;
 pub mod resolver;
 pub mod source;
 
+pub use lower::LowerDatabase;
 pub use resolver::ResolverDatabase;
 pub use source::SourceDatabase;
 
@@ -25,7 +26,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{lower::LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
+    use crate::{ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -40,7 +41,7 @@ mod tests {
         );
         files.set_file_contents(
             "./Hello.purs".into(),
-            Some("module Hello where\n\nhello = M.fromMaybe".into()),
+            Some("module Hello (hello) where\n\nhello = M.fromMaybe".into()),
         );
         // Then, we feed it to the database through the `take_changes` method.
         for ChangedFile { file_id, .. } in files.take_changes() {
@@ -53,7 +54,8 @@ mod tests {
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Hello.purs".into()).unwrap();
-        let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
-        dbg!(db.lower_value_declaration(hello_id));
+        dbg!(db.exports(file_id));
+        // let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        // dbg!(db.lower_value_declaration(hello_id));
     }
 }
