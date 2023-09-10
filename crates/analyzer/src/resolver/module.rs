@@ -38,8 +38,8 @@ impl ModuleMap {
         Arc::new(module_map)
     }
 
-    pub fn module_id(&self, module_name: ModuleName) -> Option<ModuleId> {
-        self.name_to_id.get(&module_name).copied()
+    pub fn module_id(&self, module_name: &ModuleName) -> Option<ModuleId> {
+        self.name_to_id.get(module_name).copied()
     }
 
     pub fn file_id(&self, module_id: ModuleId) -> Option<FileId> {
