@@ -8,9 +8,10 @@ use syntax::ast;
 
 use crate::{id::InFile, names::ModuleName, ResolverDatabase};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ImportDeclaration {
-    pub(crate) module_name: ModuleName,
+    // FIXME: migrate to ModuleId
+    pub(crate) file_id: FileId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,19 +47,26 @@ impl QualifiedImports {
             .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
         if let Some(import_declarations) = import_declarations {
             for import_declaration in import_declarations {
-                qualified_imports.collect_import(import_declaration);
+                qualified_imports.collect_import(db, import_declaration);
             }
         }
 
         Arc::new(qualified_imports)
     }
 
-    fn collect_import(&mut self, import_declaration: ast::ImportDeclaration) -> Option<()> {
+    fn collect_import(
+        &mut self,
+        db: &dyn ResolverDatabase,
+        import_declaration: ast::ImportDeclaration,
+    ) -> Option<()> {
         let imported_module_name = ModuleName::try_from(import_declaration.module_name()?).ok()?;
         let qualified_as_module_name =
             ModuleName::try_from(import_declaration.import_qualified()?.module_name()?).ok()?;
 
-        let import_declaration = ImportDeclaration { module_name: imported_module_name.clone() };
+        let module_id = db.module_map().module_id(&imported_module_name)?;
+        let file_id = db.module_map().file_id(module_id)?;
+
+        let import_declaration = ImportDeclaration { file_id };
         let import_id = ImportId::new(self.inner.alloc(import_declaration));
 
         self.name_to_id.insert(qualified_as_module_name, import_id);
@@ -66,8 +74,8 @@ impl QualifiedImports {
         Some(())
     }
 
-    pub fn import_declaration(&self, import_id: ImportId) -> &ImportDeclaration {
-        &self.inner[import_id.inner]
+    pub fn import_declaration(&self, import_id: ImportId) -> ImportDeclaration {
+        self.inner[import_id.inner]
     }
 
     pub fn import_id(&self, module_name: &ModuleName) -> Option<ImportId> {
