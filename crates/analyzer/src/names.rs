@@ -1,25 +1,24 @@
 //! Names in PureScript.
 
-use std::sync::Arc;
-
+use smallvec::SmallVec;
+use smol_str::SmolStr;
 use syntax::ast;
 
 /// e.g. `Main`, `Data.Maybe`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleName {
-    inner: Arc<str>,
+    segments: SmallVec<[SmolStr; 3]>,
 }
 
 impl TryFrom<ast::ModuleName> for ModuleName {
     type Error = &'static str;
 
     fn try_from(value: ast::ModuleName) -> Result<Self, Self::Error> {
-        let inner: Result<Vec<_>, _> = value
+        let segments = value
             .children()
             .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
-            .collect();
-        let inner = inner?.join(".").into();
-        Ok(ModuleName { inner })
+            .collect::<Result<_, _>>()?;
+        Ok(ModuleName { segments })
     }
 }
 
@@ -27,24 +26,23 @@ impl TryFrom<ast::QualifiedPrefix> for ModuleName {
     type Error = &'static str;
 
     fn try_from(value: ast::QualifiedPrefix) -> Result<Self, Self::Error> {
-        let inner: Result<Vec<_>, _> = value
+        let segments = value
             .children()
             .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
-            .collect();
-        let inner = inner?.join(".").into();
-        Ok(ModuleName { inner })
+            .collect::<Result<_, _>>()?;
+        Ok(ModuleName { segments })
     }
 }
 
 /// e.g. `Just`, `fromMaybe`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NameRef {
-    inner: Arc<str>,
+    name_ref: SmolStr,
 }
 
 impl AsRef<str> for NameRef {
     fn as_ref(&self) -> &str {
-        &self.inner
+        &self.name_ref
     }
 }
 
@@ -52,8 +50,8 @@ impl TryFrom<ast::NameRef> for NameRef {
     type Error = &'static str;
 
     fn try_from(value: ast::NameRef) -> Result<Self, Self::Error> {
-        let name_ref = value.as_str().ok_or("Cannot convert NameRef")?.to_string();
-        Ok(NameRef { inner: name_ref.into() })
+        let name_ref = value.as_str().ok_or("Cannot convert NameRef")?;
+        Ok(NameRef { name_ref })
     }
 }
 
