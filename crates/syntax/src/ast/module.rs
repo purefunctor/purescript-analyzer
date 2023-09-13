@@ -4,6 +4,7 @@ use super::{Declaration, ModuleName, NameRef, Separated, Wrapped, ZeroOrMore};
 
 _create_ast!(
     ImportDeclaration,
+    ImportList,
     ImportQualified,
     Module,
     ModuleHeader,
@@ -16,6 +17,10 @@ _create_ast_v!(ExportItem, ExportValue(ExportValue));
 impl ImportDeclaration {
     pub fn module_name(&self) -> Option<ModuleName> {
         ModuleName::cast(self.node.first_child()?)
+    }
+
+    pub fn import_list(&self) -> Option<ImportList> {
+        ImportList::cast(self.node.children().nth(1)?)
     }
 
     pub fn import_qualified(&self) -> Option<ImportQualified> {

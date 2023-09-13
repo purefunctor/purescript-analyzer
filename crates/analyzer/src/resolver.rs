@@ -27,6 +27,8 @@ pub use module::ModuleMap;
 pub use nominal::NominalMap;
 pub use positional::PositionalMap;
 
+use self::import::UnqualifiedImports;
+
 #[salsa::query_group(ResolverStorage)]
 pub trait ResolverDatabase: SourceDatabase {
     #[salsa::invoke(ModuleMap::module_map_query)]
@@ -40,6 +42,9 @@ pub trait ResolverDatabase: SourceDatabase {
 
     #[salsa::invoke(QualifiedImports::qualified_imports_query)]
     fn qualified_imports(&self, file_id: FileId) -> Arc<QualifiedImports>;
+
+    #[salsa::invoke(UnqualifiedImports::unqualified_imports_query)]
+    fn unqualified_imports(&self, file_id: FileId) -> Arc<UnqualifiedImports>;
 
     #[salsa::invoke(Exports::exports_query)]
     fn exports(&self, file_id: FileId) -> Arc<Exports>;

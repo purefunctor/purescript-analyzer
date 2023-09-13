@@ -53,7 +53,7 @@ mod tests {
         // Given the source file glob, we take all purs files and load them onto the file system.
         files.set_file_contents(
             "./Main.purs".into(),
-            Some("module Main where\n\nimport Hello as H\n\nhello = H.hello".into()),
+            Some("module Main where\n\nimport Hello\n\nmain = hello".into()),
         );
         files.set_file_contents(
             "./Hello.purs".into(),
@@ -70,7 +70,7 @@ mod tests {
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        let hello_id = db.nominal_map(file_id).get_value("main").unwrap()[0];
         db.infer_value_declaration(hello_id);
     }
 }

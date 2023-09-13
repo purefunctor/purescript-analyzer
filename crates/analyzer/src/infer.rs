@@ -43,6 +43,17 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
                         } else {
                             println!("Nothing!")
                         }
+                    } else {
+                        for (_, import_declaration) in db.unqualified_imports(id.file_id).iter() {
+                            if let Some(values) = db
+                                .exports(import_declaration.file_id)
+                                .lookup_value(db.upcast(), &qualified.value)
+                            {
+                                for value_id in values.iter().cloned() {
+                                    db.infer_value_declaration(value_id);
+                                }
+                            }
+                        }
                     }
                 }
             }
