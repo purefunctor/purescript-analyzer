@@ -19,7 +19,7 @@ use crate::{
 /// of items such as constructors, values, etc. to their [`AstId`]s. This is
 /// particularly useful for module-local name resolution, with [`Exports`]
 /// being one of its primary dependents.
-/// 
+///
 /// [`Exports`]: crate::resolver::Exports
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct NominalMap {

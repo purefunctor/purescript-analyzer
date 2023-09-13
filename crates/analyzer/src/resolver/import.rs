@@ -1,3 +1,4 @@
+//! See documentation for [`QualifiedImports`].
 use std::sync::Arc;
 
 use files::FileId;
@@ -29,6 +30,7 @@ impl ImportId {
     }
 }
 
+/// A file's qualified imports.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct QualifiedImports {
     inner: Arena<ImportDeclaration>,

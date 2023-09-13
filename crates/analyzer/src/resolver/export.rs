@@ -13,6 +13,7 @@ use crate::{
     ResolverDatabase,
 };
 
+/// A file's export list.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Exports {
     file_id: FileId,
