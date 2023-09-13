@@ -7,6 +7,7 @@
 //!
 //! [`AstPtr`]: rowan::ast::AstPtr
 //! [`AstId`]: crate::id::AstId
+//! [`ModuleName`]: crate::names::ModuleName
 
 pub mod export;
 pub mod import;
