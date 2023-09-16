@@ -95,15 +95,9 @@ impl LowerContext {
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
         let expr = match expression {
-            ast::Expression::LiteralExpression(literal) => {
-                Some(Expr::Lit(self.lower_lit(literal)?))
-            }
             ast::Expression::LetInExpression(let_in) => Some(self.lower_let_in(let_in)?),
-            ast::Expression::VariableExpression(variable) => {
-                let qualified = variable.qualified_name()?;
-                let name_ref = qualified.try_into().ok()?;
-                Some(Expr::Var(name_ref))
-            }
+            ast::Expression::LiteralExpression(literal) => Some(self.lower_lit(literal)?),
+            ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
             _ => None,
         };
         expr.map(|expr| self.alloc_expr(expr, expression))
@@ -127,8 +121,8 @@ impl LowerContext {
         Some(Expr::LetIn { let_bindings, in_expr_id })
     }
 
-    fn lower_lit(&mut self, node: &ast::LiteralExpression) -> Option<Lit> {
-        match node.syntax().first_child_or_token()? {
+    fn lower_lit(&mut self, literal: &ast::LiteralExpression) -> Option<Expr> {
+        let lit = match literal.syntax().first_child_or_token()? {
             NodeOrToken::Node(n) => match n.kind() {
                 SyntaxKind::LiteralArray => {
                     let wrapped =
@@ -185,6 +179,14 @@ impl LowerContext {
                 SyntaxKind::LiteralFalse => Some(Lit::Boolean(false)),
                 _ => None,
             },
-        }
+        }?;
+
+        Some(Expr::Lit(lit))
+    }
+
+    fn lower_variable(&mut self, variable: &ast::VariableExpression) -> Option<Expr> {
+        let qualified = variable.qualified_name()?;
+        let name_ref = qualified.try_into().ok()?;
+        Some(Expr::Var(name_ref))
     }
 }
