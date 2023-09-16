@@ -8,7 +8,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    names::{NameRef, Qualified},
+    names::{Name, NameRef, Qualified},
 };
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -27,23 +27,29 @@ pub struct ValueDeclarationData {
     pub siblings: Arc<[InFile<AstId<ast::ValueDeclaration>>]>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Binding {
     Unconditional { where_expr: WhereExpr },
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WhereExpr {
     pub expr_id: Idx<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
+    LetIn { let_bindings: Box<[LetBinding]>, in_expr_id: ExprId },
     Lit(Lit),
     Var(Qualified<NameRef>),
 }
 
 pub type ExprId = Idx<Expr>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum LetBinding {
+    Name { name: Name, binding: Binding },
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Lit {
