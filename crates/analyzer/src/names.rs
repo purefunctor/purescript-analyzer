@@ -34,6 +34,27 @@ impl TryFrom<ast::QualifiedPrefix> for ModuleName {
     }
 }
 
+/// e.g. `a = 0`
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Name {
+    name: SmolStr,
+}
+
+impl AsRef<str> for Name {
+    fn as_ref(&self) -> &str {
+        &self.name
+    }
+}
+
+impl TryFrom<ast::Name> for Name {
+    type Error = &'static str;
+
+    fn try_from(value: ast::Name) -> Result<Self, Self::Error> {
+        let name = value.as_str().ok_or("Cannot convert Name")?;
+        Ok(Name { name })
+    }
+}
+
 /// e.g. `Just`, `fromMaybe`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NameRef {
