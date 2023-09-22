@@ -16,6 +16,9 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
         lower::Binding::Unconditional { where_expr } => {
             let expr = &lowered.expr_arena[where_expr.expr_id];
             match expr {
+                lower::Expr::LetIn { .. } => {
+                    todo!()
+                }
                 lower::Expr::Lit(literal) => match literal {
                     lower::Lit::Array(_) => (),
                     lower::Lit::Record(_) => (),

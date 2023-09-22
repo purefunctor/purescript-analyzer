@@ -5,10 +5,12 @@ pub mod infer;
 pub mod lower;
 pub mod names;
 pub mod resolver;
+pub mod scope;
 pub mod source;
 
 pub use lower::LowerDatabase;
 pub use resolver::ResolverDatabase;
+pub use scope::ScopeDatabase;
 pub use source::SourceDatabase;
 
 /// The analyzer's core database.
@@ -17,6 +19,7 @@ pub use source::SourceDatabase;
     infer::InferStorage,
     resolver::ResolverStorage,
     lower::LowerStorage,
+    scope::ScopeStorage,
     source::SourceStorage
 )]
 pub struct RootDatabase {
@@ -42,7 +45,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{infer::InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
+    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -51,13 +54,29 @@ mod tests {
         let mut files = Files::default();
 
         // Given the source file glob, we take all purs files and load them onto the file system.
+        // files.set_file_contents(
+        //     "./Main.purs".into(),
+        //     Some("module Main where\n\nimport Hello\n\nmain = hello".into()),
+        // );
+        // files.set_file_contents(
+        //     "./Hello.purs".into(),
+        //     Some("module Hello (hello) where\n\nhello = 0".into()),
+        // );
         files.set_file_contents(
             "./Main.purs".into(),
-            Some("module Main where\n\nimport Hello\n\nmain = hello".into()),
-        );
-        files.set_file_contents(
-            "./Hello.purs".into(),
-            Some("module Hello (hello) where\n\nhello = 0".into()),
+            Some(
+                "
+module Main where
+
+hello =
+  let
+    a = 0
+    b = 0
+  in
+    a
+"
+                .into(),
+            ),
         );
         // Then, we feed it to the database through the `take_changes` method.
         for ChangedFile { file_id, .. } in files.take_changes() {
@@ -70,7 +89,7 @@ mod tests {
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        let hello_id = db.nominal_map(file_id).get_value("main").unwrap()[0];
-        db.infer_value_declaration(hello_id);
+        let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        dbg!(db.value_declaration_scope(hello_id));
     }
 }

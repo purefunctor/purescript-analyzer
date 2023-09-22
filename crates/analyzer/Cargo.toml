@@ -9,7 +9,9 @@ edition = "2021"
 files = { version = "0.1.0", path = "../files" }
 itertools = "0.11.0"
 la-arena = "0.3.1"
+nonempty = "0.8.1"
 parsing = { version = "0.1.0", path = "../parsing" }
+petgraph = "0.6.4"
 rowan = "0.15.11"
 rustc-hash = "1.1.0"
 salsa = "0.17.0-pre.2"
