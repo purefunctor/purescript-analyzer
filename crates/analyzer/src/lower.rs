@@ -49,17 +49,32 @@ fn lower_value_declaration_with_source_map(
     let ptr = db.positional_map(id.file_id).ast_ptr(id.value);
     let value_declaration = ptr.to_node(&root);
 
-    let mut context = LowerContext::default();
-    let binding =
-        value_declaration.binding().and_then(|binding| context.lower_binding(&binding)).unwrap();
-
-    let LowerContext { expr_arena, source_map } = context;
-
-    // TODO: Find annotation and sibglings using nominal map
-    let value_declaration_data =
-        ValueDeclarationData { expr_arena, binding, annotation: None, siblings: Arc::from([]) };
+    let context = LowerContext::default();
+    let (value_declaration_data, source_map) =
+        context.lower_value_declaration(&value_declaration).unwrap();
 
     (Arc::new(value_declaration_data), Arc::new(source_map))
+
+    // let binders = value_declaration
+    //     .binders()
+    //     .map(|binders| binders.children().map(|binder| todo!()))
+    //     .unwrap()
+    //     .collect();
+    // let binding =
+    //     value_declaration.binding().and_then(|binding| context.lower_binding(&binding)).unwrap();
+
+    // let LowerContext { expr_arena, source_map } = context;
+
+    // // TODO: Find annotation and sibglings using nominal map
+    // let value_declaration_data = ValueDeclarationData {
+    //     expr_arena,
+    //     binders,
+    //     binding,
+    //     annotation: None,
+    //     siblings: Arc::from([]),
+    // };
+
+    // (Arc::new(value_declaration_data), Arc::new(source_map))
 }
 
 #[derive(Default)]
@@ -74,6 +89,44 @@ impl LowerContext {
         self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(expression.syntax()));
         self.source_map.cst_to_expr.insert(SyntaxNodePtr::new(expression.syntax()), expr_id);
         expr_id
+    }
+
+    fn lower_value_declaration(
+        mut self,
+        value_declaration: &ast::ValueDeclaration,
+    ) -> Option<(ValueDeclarationData, SourceMap)> {
+        let binders = value_declaration
+            .binders()?
+            .children()
+            .map(|binder| self.lower_binder(&binder))
+            .collect::<Option<_>>()?;
+
+        let binding =
+            value_declaration.binding().and_then(|binding| self.lower_binding(&binding))?;
+
+        let value_declaration_data = ValueDeclarationData {
+            expr_arena: self.expr_arena,
+            binders,
+            binding,
+            annotation: None,
+            siblings: Arc::from([]),
+        };
+
+        Some((value_declaration_data, self.source_map))
+    }
+
+    fn lower_binder(&mut self, binder: &ast::Binder) -> Option<Binder> {
+        match binder {
+            ast::Binder::ConstructorBinder(_) => None,
+            ast::Binder::LiteralBinder(_) => None,
+            ast::Binder::NegativeBinder(_) => None,
+            ast::Binder::ParenthesizedBinder(_) => None,
+            ast::Binder::TypedBinder(_) => None,
+            ast::Binder::VariableBinder(variable) => {
+                Some(Binder::Variable(Name::try_from(variable.name()?).ok()?))
+            }
+            ast::Binder::WildcardBinder(_) => None,
+        }
     }
 
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {

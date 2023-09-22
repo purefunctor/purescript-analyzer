@@ -2,6 +2,8 @@ use rowan::ast::AstNode;
 
 use crate::SyntaxToken;
 
+use super::Name;
+
 _create_ast_v!(
     Binder,
     ConstructorBinder(ConstructorBinder),
@@ -26,5 +28,11 @@ impl NegativeBinder {
 
     pub fn literal(&self) -> Option<LiteralBinder> {
         LiteralBinder::cast(self.node.first_child()?)
+    }
+}
+
+impl VariableBinder {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
     }
 }
