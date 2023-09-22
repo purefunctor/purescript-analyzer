@@ -1,7 +1,5 @@
 //! Database for local scope information.
 
-mod binding_groups;
-
 use std::sync::Arc;
 
 use la_arena::{Arena, Idx};
@@ -14,8 +12,6 @@ use crate::{
     names::Name,
     LowerDatabase,
 };
-
-use self::binding_groups::collect_binding_groups;
 
 /// Scope information as a linked list.
 #[derive(Debug, PartialEq, Eq)]
@@ -113,21 +109,27 @@ impl<'a> ScopeCollectContext<'a> {
         self.insert_scope(expr_id, scope_id);
         match &self.expr_arena[expr_id] {
             lower::Expr::LetIn { let_bindings, in_expr_id } => {
-                collect_binding_groups(self.expr_arena, let_bindings.iter());
-                // FIXME: Topologically sort let bindings based on which values
-                // depend on who, such that scope data is properly inserted when
-                // going deeper into the values being bound.
-                let mut bound = FxHashMap::default();
-                for let_binding in let_bindings.iter() {
-                    match let_binding {
+                let let_in = let_bindings
+                    .iter()
+                    .map(|let_binding| match let_binding {
                         lower::LetBinding::Name { name, binding } => match binding {
                             lower::Binding::Unconditional { where_expr } => {
-                                bound.insert(name.clone(), where_expr.expr_id);
+                                (name.clone(), where_expr.expr_id)
                             }
                         },
+                    })
+                    .collect();
+
+                let scope_id = self.alloc_scope(ScopeData::new(scope_id, ScopeKind::LetIn(let_in)));
+
+                for let_binding in let_bindings.iter() {
+                    match let_binding {
+                        lower::LetBinding::Name { binding, .. } => {
+                            self.collect_binding(binding, scope_id);
+                        }
                     }
                 }
-                let scope_id = self.alloc_scope(ScopeData::new(scope_id, ScopeKind::LetIn(bound)));
+
                 self.collect_expr(*in_expr_id, scope_id);
             }
             lower::Expr::Lit(literal) => match literal {

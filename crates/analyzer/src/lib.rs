@@ -45,7 +45,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase};
+    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, LowerDatabase};
 
     #[test]
     fn api() {
@@ -90,6 +90,7 @@ hello =
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
         let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        dbg!(&db.lower_value_declaration(hello_id).expr_arena);
         dbg!(db.value_declaration_scope(hello_id));
     }
 }
