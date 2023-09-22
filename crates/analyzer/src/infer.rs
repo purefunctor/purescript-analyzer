@@ -19,16 +19,16 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
                 lower::Expr::LetIn { .. } => {
                     todo!()
                 }
-                lower::Expr::Lit(literal) => match literal {
-                    lower::Lit::Array(_) => (),
-                    lower::Lit::Record(_) => (),
-                    lower::Lit::Int(_) => println!("Int!"),
-                    lower::Lit::Number(_) => println!("Number!"),
-                    lower::Lit::String(_) => println!("String!"),
-                    lower::Lit::Char(_) => println!("Char!"),
-                    lower::Lit::Boolean(_) => println!("Boolean!"),
+                lower::Expr::Literal(literal) => match literal {
+                    lower::Literal::Array(_) => (),
+                    lower::Literal::Record(_) => (),
+                    lower::Literal::Int(_) => println!("Int!"),
+                    lower::Literal::Number(_) => println!("Number!"),
+                    lower::Literal::String(_) => println!("String!"),
+                    lower::Literal::Char(_) => println!("Char!"),
+                    lower::Literal::Boolean(_) => println!("Boolean!"),
                 },
-                lower::Expr::Var(qualified) => {
+                lower::Expr::Variable(qualified) => {
                     if let Some(prefix) = &qualified.prefix {
                         if let Some(values) = db
                             .qualified_imports(id.file_id)

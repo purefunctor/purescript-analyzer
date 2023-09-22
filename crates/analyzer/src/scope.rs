@@ -132,13 +132,13 @@ impl<'a> ScopeCollectContext<'a> {
 
                 self.collect_expr(*in_expr_id, scope_id);
             }
-            lower::Expr::Lit(literal) => match literal {
-                lower::Lit::Array(elements) => {
+            lower::Expr::Literal(literal) => match literal {
+                lower::Literal::Array(elements) => {
                     for expr_id in elements.iter() {
                         self.collect_expr(*expr_id, scope_id);
                     }
                 }
-                lower::Lit::Record(items) => {
+                lower::Literal::Record(items) => {
                     for item in items.iter() {
                         match item {
                             lower::RecordItem::RecordPun(_) => (),

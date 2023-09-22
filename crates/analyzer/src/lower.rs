@@ -191,7 +191,7 @@ impl LowerContext {
                         })
                         .unwrap_or_default();
 
-                    Some(Lit::Array(contents))
+                    Some(Literal::Array(contents))
                 }
                 SyntaxKind::LiteralRecord => {
                     let wrapped =
@@ -217,29 +217,29 @@ impl LowerContext {
                         })
                         .unwrap_or_default();
 
-                    Some(Lit::Record(contents))
+                    Some(Literal::Record(contents))
                 }
                 _ => None,
             },
             NodeOrToken::Token(t) => match t.kind() {
-                SyntaxKind::LiteralInteger => Some(Lit::Int(t.text().parse().ok()?)),
-                SyntaxKind::LiteralNumber => Some(Lit::Number(t.text().into())),
+                SyntaxKind::LiteralInteger => Some(Literal::Int(t.text().parse().ok()?)),
+                SyntaxKind::LiteralNumber => Some(Literal::Number(t.text().into())),
                 SyntaxKind::LiteralString | SyntaxKind::LiteralRawString => {
-                    Some(Lit::String(t.text().into()))
+                    Some(Literal::String(t.text().into()))
                 }
-                SyntaxKind::LiteralChar => Some(Lit::Char(t.text().into())),
-                SyntaxKind::LiteralTrue => Some(Lit::Boolean(true)),
-                SyntaxKind::LiteralFalse => Some(Lit::Boolean(false)),
+                SyntaxKind::LiteralChar => Some(Literal::Char(t.text().into())),
+                SyntaxKind::LiteralTrue => Some(Literal::Boolean(true)),
+                SyntaxKind::LiteralFalse => Some(Literal::Boolean(false)),
                 _ => None,
             },
         }?;
 
-        Some(Expr::Lit(lit))
+        Some(Expr::Literal(lit))
     }
 
     fn lower_variable(&mut self, variable: &ast::VariableExpression) -> Option<Expr> {
         let qualified = variable.qualified_name()?;
         let name_ref = qualified.try_into().ok()?;
-        Some(Expr::Var(name_ref))
+        Some(Expr::Variable(name_ref))
     }
 }

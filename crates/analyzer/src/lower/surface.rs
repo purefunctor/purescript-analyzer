@@ -46,8 +46,8 @@ pub enum Binder {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
     LetIn { let_bindings: Box<[LetBinding]>, in_expr_id: ExprId },
-    Lit(Lit),
-    Var(Qualified<NameRef>),
+    Literal(Literal),
+    Variable(Qualified<NameRef>),
 }
 
 pub type ExprId = Idx<Expr>;
@@ -58,7 +58,7 @@ pub enum LetBinding {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Lit {
+pub enum Literal {
     Array(Box<[ExprId]>),
     Record(Box<[RecordItem<ExprId>]>),
     Int(usize),
