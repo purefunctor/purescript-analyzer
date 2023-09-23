@@ -36,6 +36,7 @@ pub type ScopeId = Idx<ScopeData>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum ScopeKind {
     Root,
+    Binders(Vec<Name>),
     LetIn(FxHashMap<Name, ExprId>),
 }
 
@@ -63,7 +64,7 @@ impl ValueDeclarationScope {
         let value_declaration = db.lower_value_declaration(id);
         let mut context = ScopeCollectContext::new(&value_declaration.expr_arena);
         let root_scope_id = context.alloc_scope(ScopeData::new_root());
-        context.collect_binding(&value_declaration.binding, root_scope_id);
+        context.collect_value_declaration(&value_declaration, root_scope_id);
         Arc::new(context.as_value_declaration_scope())
     }
 }
@@ -91,6 +92,28 @@ impl<'a> ScopeCollectContext<'a> {
 
     fn insert_scope(&mut self, expr_id: ExprId, scope_id: ScopeId) {
         self.scope_per_expr.insert(expr_id, scope_id);
+    }
+
+    fn alloc_binders(&mut self, parent: ScopeId, binders: &[lower::Binder]) -> ScopeId {
+        let kind = ScopeKind::Binders(
+            binders
+                .iter()
+                .map(|binder| match binder {
+                    lower::Binder::Variable(variable) => variable.clone(),
+                })
+                .collect(),
+        );
+
+        self.alloc_scope(ScopeData::new(parent, kind))
+    }
+
+    fn collect_value_declaration(
+        &mut self,
+        value_declaration: &lower::ValueDeclarationData,
+        scope_id: ScopeId,
+    ) {
+        let scope_id = self.alloc_binders(scope_id, &value_declaration.binders);
+        self.collect_binding(&value_declaration.binding, scope_id);
     }
 
     fn collect_binding(&mut self, binding: &lower::Binding, scope_id: ScopeId) {
