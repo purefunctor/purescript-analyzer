@@ -67,6 +67,33 @@ impl ValueDeclarationScope {
         context.collect_value_declaration(&value_declaration, root_scope_id);
         Arc::new(context.as_value_declaration_scope())
     }
+
+    pub fn expr_scope(&self, expr_id: ExprId) -> &ScopeData {
+        if let Some(scope_id) = self.scope_per_expr.get(&expr_id) {
+            &self.inner[*scope_id]
+        } else {
+            panic!("Invariant violated, ExprId was not assigned a ScopeId");
+        }
+    }
+
+    pub fn resolve(&self, scope: &ScopeData, name: Name) -> bool {
+        let in_current = match &scope.kind {
+            ScopeKind::Root => false,
+            ScopeKind::Binders(binders) => binders.contains(&name),
+            ScopeKind::LetIn(let_in) => let_in.contains_key(&name),
+        };
+
+        if in_current {
+            return true;
+        }
+
+        if let Some(parent_id) = scope.parent {
+            let parent_scope = &self.inner[parent_id];
+            self.resolve(parent_scope, name)
+        } else {
+            false
+        }
+    }
 }
 
 struct ScopeCollectContext<'a> {

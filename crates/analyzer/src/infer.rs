@@ -2,16 +2,20 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    lower, LowerDatabase, ResolverDatabase, Upcast,
+    lower, LowerDatabase, ResolverDatabase, ScopeDatabase, Upcast,
 };
 
 #[salsa::query_group(InferStorage)]
-pub trait InferDatabase: LowerDatabase + ResolverDatabase + Upcast<dyn ResolverDatabase> {
+pub trait InferDatabase:
+    LowerDatabase + ResolverDatabase + ScopeDatabase + Upcast<dyn ResolverDatabase>
+{
     fn infer_value_declaration(&self, id: InFile<AstId<ast::ValueDeclaration>>) -> ();
 }
 
 fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDeclaration>>) {
     let lowered = db.lower_value_declaration(id);
+    let scope_data = db.value_declaration_scope(id);
+
     match &lowered.binding {
         lower::Binding::Unconditional { where_expr } => {
             let expr = &lowered.expr_arena[where_expr.expr_id];
@@ -47,6 +51,13 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
                             println!("Nothing!")
                         }
                     } else {
+                        let expr_scope = scope_data.expr_scope(where_expr.expr_id);
+
+                        if scope_data.resolve(expr_scope, qualified.value.clone().into()) {
+                            dbg!("Found locally!");
+                            return;
+                        }
+
                         for (_, import_declaration) in db.unqualified_imports(id.file_id).iter() {
                             if let Some(values) = db
                                 .exports(import_declaration.file_id)
