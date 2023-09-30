@@ -85,15 +85,17 @@ struct LowerContext {
 }
 
 impl LowerContext {
-    fn alloc_expr(&mut self, expr: Expr, expression: &ast::Expression) -> ExprId {
-        let expr_id = self.expr_arena.alloc(expr);
-        self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(expression.syntax()));
-        self.source_map.cst_to_expr.insert(SyntaxNodePtr::new(expression.syntax()), expr_id);
+    fn alloc_expr(&mut self, lowered: Expr, ast: &ast::Expression) -> ExprId {
+        let expr_id = self.expr_arena.alloc(lowered);
+        self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(ast.syntax()));
+        self.source_map.cst_to_expr.insert(SyntaxNodePtr::new(ast.syntax()), expr_id);
         expr_id
     }
 
-    fn alloc_binder(&mut self, binder: Binder) -> BinderId {
-        let binder_id = self.binder_arena.alloc(binder);
+    fn alloc_binder(&mut self, lowered: Binder, ast: &ast::Binder) -> BinderId {
+        let binder_id = self.binder_arena.alloc(lowered);
+        self.source_map.binder_to_cst.insert(binder_id, SyntaxNodePtr::new(ast.syntax()));
+        self.source_map.cst_to_binder.insert(SyntaxNodePtr::new(ast.syntax()), binder_id);
         binder_id
     }
 
@@ -124,7 +126,7 @@ impl LowerContext {
 
     // FIXME: use unknown if we can't convert
     fn lower_binder(&mut self, binder: &ast::Binder) -> Option<BinderId> {
-        let binder = {
+        let lowered = {
             match binder {
                 ast::Binder::ConstructorBinder(constructor) => {
                     let name = Qualified::try_from(constructor.qualified_name()?).ok()?;
@@ -147,7 +149,7 @@ impl LowerContext {
                 ast::Binder::WildcardBinder(_) => None,
             }
         };
-        binder.map(|binder| self.alloc_binder(binder))
+        lowered.map(|lowered| self.alloc_binder(lowered, binder))
     }
 
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {
@@ -168,12 +170,12 @@ impl LowerContext {
     }
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
-        let expr = match expression {
+        let lowered = match expression {
             ast::Expression::LiteralExpression(literal) => Some(self.lower_lit(literal)?),
             ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
             _ => None,
         };
-        expr.map(|expr| self.alloc_expr(expr, expression))
+        lowered.map(|lowered| self.alloc_expr(lowered, expression))
     }
 
     fn lower_lit(&mut self, literal: &ast::LiteralExpression) -> Option<Expr> {
