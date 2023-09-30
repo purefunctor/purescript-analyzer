@@ -74,7 +74,7 @@ mod tests {
                 "
 module Main where
 
-hello (Cons a) = a
+hello [a, b] = a
 "
                 .into(),
             ),

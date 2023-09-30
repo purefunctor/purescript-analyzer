@@ -136,6 +136,29 @@ impl<'a> ScopeCollectContext<'a> {
             lower::Binder::Constructor { fields, .. } => {
                 fields.iter().copied().flat_map(|field| self.collect_binder_names(field)).collect()
             }
+            lower::Binder::Literal(literal) => match literal {
+                lower::Literal::Array(items) => {
+                    items.iter().flat_map(|item| self.collect_binder_names(*item)).collect()
+                }
+                lower::Literal::Record(items) => items
+                    .iter()
+                    .flat_map(|item| match item {
+                        lower::RecordItem::RecordPun(pun) => {
+                            let mut names = FxIndexSet::default();
+                            names.insert(pun.clone());
+                            names
+                        }
+                        lower::RecordItem::RecordField(_, value) => {
+                            self.collect_binder_names(*value)
+                        }
+                    })
+                    .collect(),
+                lower::Literal::Int(_) => FxIndexSet::default(),
+                lower::Literal::Number(_) => FxIndexSet::default(),
+                lower::Literal::String(_) => FxIndexSet::default(),
+                lower::Literal::Char(_) => FxIndexSet::default(),
+                lower::Literal::Boolean(_) => FxIndexSet::default(),
+            },
             lower::Binder::Parenthesized(binder_id) => self.collect_binder_names(*binder_id),
             lower::Binder::Variable(variable) => {
                 let mut names = FxIndexSet::default();

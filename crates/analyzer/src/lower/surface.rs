@@ -42,6 +42,7 @@ pub struct WhereExpr {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Binder {
     Constructor { name: Qualified<NameRef>, fields: Box<[BinderId]> },
+    Literal(Literal<BinderId>),
     Parenthesized(BinderId),
     Variable(Name),
     Wildcard,
@@ -51,16 +52,16 @@ pub type BinderId = Idx<Binder>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
-    Literal(Literal),
+    Literal(Literal<ExprId>),
     Variable(Qualified<NameRef>),
 }
 
 pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Literal {
-    Array(Box<[ExprId]>),
-    Record(Box<[RecordItem<ExprId>]>),
+pub enum Literal<I> {
+    Array(Box<[I]>),
+    Record(Box<[RecordItem<I>]>),
     Int(usize),
     Number(SmolStr),
     String(SmolStr),

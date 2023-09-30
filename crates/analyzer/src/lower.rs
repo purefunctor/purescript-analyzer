@@ -10,7 +10,8 @@ use rowan::{
     ast::{AstNode, SyntaxNodePtr},
     NodeOrToken,
 };
-use syntax::{ast, SyntaxKind};
+use smol_str::SmolStr;
+use syntax::{ast, PureScript, SyntaxKind};
 
 pub use source_map::*;
 pub use surface::*;
@@ -137,7 +138,7 @@ impl LowerContext {
                         .collect();
                     Some(Binder::Constructor { name, fields })
                 }
-                ast::Binder::LiteralBinder(_) => None,
+                ast::Binder::LiteralBinder(literal) => self.lower_binder_literal(literal),
                 ast::Binder::NegativeBinder(_) => None,
                 ast::Binder::ParenthesizedBinder(parenthesized) => {
                     Some(Binder::Parenthesized(self.lower_binder(&parenthesized.binder()?)?))
@@ -150,6 +151,19 @@ impl LowerContext {
             }
         };
         lowered.map(|lowered| self.alloc_binder(lowered, binder))
+    }
+
+    fn lower_binder_literal(&mut self, literal: &ast::LiteralBinder) -> Option<Binder> {
+        let literal = self.lower_literal(
+            &literal.syntax().first_child_or_token()?,
+            |this, inner_binder| this.lower_binder(inner_binder),
+            |item| match item {
+                ast::RecordItem::RecordField(field) => field.name()?.as_str(),
+                ast::RecordItem::RecordPun(pun) => pun.name()?.as_str(),
+            },
+        )?;
+
+        Some(Binder::Literal(literal))
     }
 
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {
@@ -171,27 +185,44 @@ impl LowerContext {
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
         let lowered = match expression {
-            ast::Expression::LiteralExpression(literal) => Some(self.lower_lit(literal)?),
+            ast::Expression::LiteralExpression(literal) => Some(self.lower_expr_literal(literal)?),
             ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
             _ => None,
         };
         lowered.map(|lowered| self.alloc_expr(lowered, expression))
     }
 
-    fn lower_lit(&mut self, literal: &ast::LiteralExpression) -> Option<Expr> {
-        let lit = match literal.syntax().first_child_or_token()? {
+    fn lower_expr_literal(&mut self, literal: &ast::LiteralExpression) -> Option<Expr> {
+        let literal = self.lower_literal(
+            &literal.syntax().first_child_or_token()?,
+            |this, inner_expression| this.lower_expr(inner_expression),
+            |item| match item {
+                ast::RecordItem::RecordField(field) => field.name()?.as_str(),
+                ast::RecordItem::RecordPun(pun) => pun.name_ref()?.as_str(),
+            },
+        )?;
+
+        Some(Expr::Literal(literal))
+    }
+
+    fn lower_literal<A, I>(
+        &mut self,
+        literal: &syntax::SyntaxElement,
+        lower_inner: impl Fn(&mut Self, &A) -> Option<I>,
+        item_name: impl Fn(&ast::RecordItem) -> Option<SmolStr>,
+    ) -> Option<Literal<I>>
+    where
+        A: AstNode<Language = PureScript>,
+    {
+        match literal {
             NodeOrToken::Node(n) => match n.kind() {
                 SyntaxKind::LiteralArray => {
-                    let wrapped =
-                        ast::Wrapped::<ast::Separated<ast::Expression>>::cast(n.first_child()?)?;
+                    let wrapped = ast::Wrapped::<ast::Separated<A>>::cast(n.first_child()?)?;
 
-                    let contents = wrapped
+                    let contents: Box<[I]> = wrapped
                         .child()
                         .and_then(|separated| {
-                            separated
-                                .children()
-                                .map(|expression| self.lower_expr(&expression))
-                                .collect()
+                            separated.children().map(|inner| lower_inner(self, &inner)).collect()
                         })
                         .unwrap_or_default();
 
@@ -201,20 +232,21 @@ impl LowerContext {
                     let wrapped =
                         ast::Wrapped::<ast::Separated<ast::RecordItem>>::cast(n.first_child()?)?;
 
-                    let contents = wrapped
+                    let contents: Box<[RecordItem<I>]> = wrapped
                         .child()
                         .and_then(|separated| {
                             separated
                                 .children()
-                                .map(|item| match item {
-                                    ast::RecordItem::RecordField(field) => {
-                                        let name = field.name()?.as_str()?;
-                                        let value = self.lower_expr(&field.value()?)?;
-                                        Some(RecordItem::RecordField(name, value))
-                                    }
-                                    ast::RecordItem::RecordPun(pun) => {
-                                        let name = pun.name()?.as_str()?;
-                                        Some(RecordItem::RecordPun(name))
+                                .map(|item| {
+                                    let name = item_name(&item)?;
+                                    match &item {
+                                        ast::RecordItem::RecordField(field) => {
+                                            let value = lower_inner(self, &field.value()?)?;
+                                            Some(RecordItem::RecordField(name, value))
+                                        }
+                                        ast::RecordItem::RecordPun(_) => {
+                                            Some(RecordItem::RecordPun(name))
+                                        }
                                     }
                                 })
                                 .collect()
@@ -236,9 +268,7 @@ impl LowerContext {
                 SyntaxKind::LiteralFalse => Some(Literal::Boolean(false)),
                 _ => None,
             },
-        }?;
-
-        Some(Expr::Literal(lit))
+        }
     }
 
     fn lower_variable(&mut self, variable: &ast::VariableExpression) -> Option<Expr> {
