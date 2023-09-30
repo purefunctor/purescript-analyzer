@@ -38,7 +38,7 @@ pub trait Upcast<T: ?Sized> {
 
 impl Upcast<dyn ResolverDatabase> for RootDatabase {
     fn upcast(&self) -> &(dyn ResolverDatabase + 'static) {
-        &*self
+        self
     }
 }
 

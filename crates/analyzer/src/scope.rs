@@ -65,7 +65,7 @@ impl ValueDeclarationScope {
         let mut context = ScopeCollectContext::new(&value_declaration.expr_arena);
         let root_scope_id = context.alloc_scope(ScopeData::new_root());
         context.collect_value_declaration(&value_declaration, root_scope_id);
-        Arc::new(context.as_value_declaration_scope())
+        Arc::new(context.into_value_declaration_scope())
     }
 
     pub fn expr_scope(&self, expr_id: ExprId) -> &ScopeData {
@@ -111,7 +111,7 @@ impl<'a> ScopeCollectContext<'a> {
         ScopeCollectContext { inner, scope_per_expr, expr_arena }
     }
 
-    fn as_value_declaration_scope(self) -> ValueDeclarationScope {
+    fn into_value_declaration_scope(self) -> ValueDeclarationScope {
         ValueDeclarationScope { inner: self.inner, scope_per_expr: self.scope_per_expr }
     }
 
