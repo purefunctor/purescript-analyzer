@@ -158,30 +158,6 @@ impl<'a> ScopeCollectContext<'a> {
     fn collect_expr(&mut self, expr_id: ExprId, scope_id: ScopeId) {
         self.insert_scope(expr_id, scope_id);
         match &self.expr_arena[expr_id] {
-            lower::Expr::LetIn { let_bindings, in_expr_id } => {
-                let let_in = let_bindings
-                    .iter()
-                    .map(|let_binding| match let_binding {
-                        lower::LetBinding::Name { name, binding } => match binding {
-                            lower::Binding::Unconditional { where_expr } => {
-                                (name.clone(), where_expr.expr_id)
-                            }
-                        },
-                    })
-                    .collect();
-
-                let scope_id = self.alloc_scope(ScopeData::new(scope_id, ScopeKind::LetIn(let_in)));
-
-                for let_binding in let_bindings.iter() {
-                    match let_binding {
-                        lower::LetBinding::Name { binding, .. } => {
-                            self.collect_binding(binding, scope_id);
-                        }
-                    }
-                }
-
-                self.collect_expr(*in_expr_id, scope_id);
-            }
             lower::Expr::Literal(literal) => match literal {
                 lower::Literal::Array(elements) => {
                     for expr_id in elements.iter() {

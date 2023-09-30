@@ -45,17 +45,11 @@ pub enum Binder {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
-    LetIn { let_bindings: Box<[LetBinding]>, in_expr_id: ExprId },
     Literal(Literal),
     Variable(Qualified<NameRef>),
 }
 
 pub type ExprId = Idx<Expr>;
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum LetBinding {
-    Name { name: Name, binding: Binding },
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Literal {
