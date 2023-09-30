@@ -50,7 +50,7 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
                     } else {
                         let expr_scope = scope_data.expr_scope(where_expr.expr_id);
 
-                        if scope_data.resolve(expr_scope, qualified.value.clone().into()) {
+                        if scope_data.resolve(expr_scope, &qualified.value) {
                             dbg!("Found locally!");
                             return;
                         }

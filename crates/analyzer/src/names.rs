@@ -76,12 +76,6 @@ impl TryFrom<ast::NameRef> for NameRef {
     }
 }
 
-impl From<NameRef> for Name {
-    fn from(value: NameRef) -> Self {
-        Name { name: value.name_ref }
-    }
-}
-
 /// e.g. `M.Just`, `M.fromMaybe`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Qualified<N> {

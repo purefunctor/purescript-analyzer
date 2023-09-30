@@ -8,8 +8,12 @@ pub mod resolver;
 pub mod scope;
 pub mod source;
 
+use std::hash::BuildHasherDefault;
+
+use indexmap::IndexSet;
 pub use lower::LowerDatabase;
 pub use resolver::ResolverDatabase;
+use rustc_hash::FxHasher;
 pub use scope::ScopeDatabase;
 pub use source::SourceDatabase;
 
@@ -37,6 +41,8 @@ impl Upcast<dyn ResolverDatabase> for RootDatabase {
         &*self
     }
 }
+
+pub(crate) type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
 
 #[cfg(test)]
 mod tests {

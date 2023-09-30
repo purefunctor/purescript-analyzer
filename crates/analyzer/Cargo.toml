@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 files = { version = "0.1.0", path = "../files" }
+indexmap = "2.0.2"
 itertools = "0.11.0"
 la-arena = "0.3.1"
 parsing = { version = "0.1.0", path = "../parsing" }

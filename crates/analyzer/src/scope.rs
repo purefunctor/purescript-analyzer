@@ -4,13 +4,13 @@ use std::sync::Arc;
 
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
+use smol_str::SmolStr;
 use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
     lower::{self, ExprId},
-    names::Name,
-    LowerDatabase,
+    FxIndexSet, LowerDatabase,
 };
 
 /// Scope information as a linked list.
@@ -36,8 +36,8 @@ pub type ScopeId = Idx<ScopeData>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum ScopeKind {
     Root,
-    Binders(Vec<Name>),
-    LetIn(FxHashMap<Name, ExprId>),
+    Binders(FxIndexSet<SmolStr>),
+    LetIn(FxHashMap<SmolStr, ExprId>),
 }
 
 /// Scope information within a value declaration.
@@ -76,11 +76,13 @@ impl ValueDeclarationScope {
         }
     }
 
-    pub fn resolve(&self, scope: &ScopeData, name: Name) -> bool {
+    pub fn resolve(&self, scope: &ScopeData, name: impl AsRef<str>) -> bool {
+        let name = name.as_ref();
+
         let in_current = match &scope.kind {
             ScopeKind::Root => false,
-            ScopeKind::Binders(binders) => binders.contains(&name),
-            ScopeKind::LetIn(let_in) => let_in.contains_key(&name),
+            ScopeKind::Binders(binders) => binders.contains(name),
+            ScopeKind::LetIn(let_in) => let_in.contains_key(name),
         };
 
         if in_current {
@@ -126,7 +128,7 @@ impl<'a> ScopeCollectContext<'a> {
             binders
                 .iter()
                 .map(|binder| match binder {
-                    lower::Binder::Variable(variable) => variable.clone(),
+                    lower::Binder::Variable(variable) => variable.as_ref().into(),
                 })
                 .collect(),
         );
