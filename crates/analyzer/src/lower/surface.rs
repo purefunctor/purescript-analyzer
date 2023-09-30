@@ -43,6 +43,7 @@ pub struct WhereExpr {
 pub enum Binder {
     Constructor { name: Qualified<NameRef>, fields: Box<[BinderId]> },
     Literal(Literal<BinderId>),
+    Negative(IntOrNumber),
     Parenthesized(BinderId),
     Variable(Name),
     Wildcard,
@@ -67,6 +68,12 @@ pub enum Literal<I> {
     String(SmolStr),
     Char(SmolStr),
     Boolean(bool),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum IntOrNumber {
+    Int(usize),
+    Number(SmolStr),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

@@ -159,6 +159,7 @@ impl<'a> ScopeCollectContext<'a> {
                 lower::Literal::Char(_) => FxIndexSet::default(),
                 lower::Literal::Boolean(_) => FxIndexSet::default(),
             },
+            lower::Binder::Negative(_) => FxIndexSet::default(),
             lower::Binder::Parenthesized(binder_id) => self.collect_binder_names(*binder_id),
             lower::Binder::Variable(variable) => {
                 let mut names = FxIndexSet::default();

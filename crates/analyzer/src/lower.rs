@@ -139,7 +139,7 @@ impl LowerContext {
                     Some(Binder::Constructor { name, fields })
                 }
                 ast::Binder::LiteralBinder(literal) => self.lower_binder_literal(literal),
-                ast::Binder::NegativeBinder(_) => None,
+                ast::Binder::NegativeBinder(negative) => self.lower_negative(negative),
                 ast::Binder::ParenthesizedBinder(parenthesized) => {
                     Some(Binder::Parenthesized(self.lower_binder(&parenthesized.binder()?)?))
                 }
@@ -164,6 +164,21 @@ impl LowerContext {
         )?;
 
         Some(Binder::Literal(literal))
+    }
+
+    fn lower_negative(&mut self, negative: &ast::NegativeBinder) -> Option<Binder> {
+        match negative.literal()?.syntax().first_child_or_token()? {
+            NodeOrToken::Node(_) => None,
+            NodeOrToken::Token(token) => match token.kind() {
+                SyntaxKind::LiteralInteger => {
+                    Some(Binder::Negative(IntOrNumber::Int(token.text().parse().ok()?)))
+                }
+                SyntaxKind::LiteralNumber => {
+                    Some(Binder::Negative(IntOrNumber::Number(token.text().into())))
+                }
+                _ => None,
+            },
+        }
     }
 
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {
