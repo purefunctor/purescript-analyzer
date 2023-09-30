@@ -9,7 +9,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    lower::{self, ExprId},
+    lower::{self, BinderId, ExprId},
     FxIndexSet, LowerDatabase,
 };
 
@@ -62,7 +62,10 @@ impl ValueDeclarationScope {
         id: InFile<AstId<ast::ValueDeclaration>>,
     ) -> Arc<ValueDeclarationScope> {
         let value_declaration = db.lower_value_declaration(id);
-        let mut context = ScopeCollectContext::new(&value_declaration.expr_arena);
+        let mut context = ScopeCollectContext::new(
+            &value_declaration.expr_arena,
+            &value_declaration.binder_arena,
+        );
         let root_scope_id = context.alloc_scope(ScopeData::new_root());
         context.collect_value_declaration(&value_declaration, root_scope_id);
         Arc::new(context.into_value_declaration_scope())
@@ -102,13 +105,17 @@ struct ScopeCollectContext<'a> {
     inner: Arena<ScopeData>,
     scope_per_expr: FxHashMap<ExprId, ScopeId>,
     expr_arena: &'a Arena<lower::Expr>,
+    binder_arena: &'a Arena<lower::Binder>,
 }
 
 impl<'a> ScopeCollectContext<'a> {
-    fn new(expr_arena: &'a Arena<lower::Expr>) -> ScopeCollectContext<'a> {
+    fn new(
+        expr_arena: &'a Arena<lower::Expr>,
+        binder_arena: &'a Arena<lower::Binder>,
+    ) -> ScopeCollectContext<'a> {
         let inner = Arena::default();
         let scope_per_expr = FxHashMap::default();
-        ScopeCollectContext { inner, scope_per_expr, expr_arena }
+        ScopeCollectContext { inner, scope_per_expr, expr_arena, binder_arena }
     }
 
     fn into_value_declaration_scope(self) -> ValueDeclarationScope {
@@ -123,16 +130,25 @@ impl<'a> ScopeCollectContext<'a> {
         self.scope_per_expr.insert(expr_id, scope_id);
     }
 
-    fn alloc_binders(&mut self, parent: ScopeId, binders: &[lower::Binder]) -> ScopeId {
-        let kind = ScopeKind::Binders(
-            binders
-                .iter()
-                .map(|binder| match binder {
-                    lower::Binder::Variable(variable) => variable.as_ref().into(),
-                })
-                .collect(),
-        );
+    // FIXME: Extract this to a struct.
+    fn collect_binder_names(&self, binder_id: BinderId) -> FxIndexSet<SmolStr> {
+        match &self.binder_arena[binder_id] {
+            lower::Binder::Constructor { fields, .. } => {
+                fields.iter().copied().flat_map(|field| self.collect_binder_names(field)).collect()
+            }
+            lower::Binder::Parenthesized(binder_id) => self.collect_binder_names(*binder_id),
+            lower::Binder::Variable(variable) => {
+                let mut names = FxIndexSet::default();
+                names.insert(variable.as_ref().into());
+                names
+            }
+        }
+    }
 
+    fn alloc_binders(&mut self, parent: ScopeId, binders: &[BinderId]) -> ScopeId {
+        let kind = ScopeKind::Binders(
+            binders.iter().flat_map(|binder_id| self.collect_binder_names(*binder_id)).collect(),
+        );
         self.alloc_scope(ScopeData::new(parent, kind))
     }
 

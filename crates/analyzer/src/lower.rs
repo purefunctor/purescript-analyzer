@@ -17,7 +17,7 @@ pub use surface::*;
 
 use crate::{
     id::{AstId, InFile},
-    names::Name,
+    names::{Name, Qualified},
     ResolverDatabase, SourceDatabase,
 };
 
@@ -80,6 +80,7 @@ fn lower_value_declaration_with_source_map(
 #[derive(Default)]
 struct LowerContext {
     expr_arena: Arena<Expr>,
+    binder_arena: Arena<Binder>,
     source_map: SourceMap,
 }
 
@@ -89,6 +90,11 @@ impl LowerContext {
         self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(expression.syntax()));
         self.source_map.cst_to_expr.insert(SyntaxNodePtr::new(expression.syntax()), expr_id);
         expr_id
+    }
+
+    fn alloc_binder(&mut self, binder: Binder) -> BinderId {
+        let binder_id = self.binder_arena.alloc(binder);
+        binder_id
     }
 
     fn lower_value_declaration(
@@ -106,6 +112,7 @@ impl LowerContext {
 
         let value_declaration_data = ValueDeclarationData {
             expr_arena: self.expr_arena,
+            binder_arena: self.binder_arena,
             binders,
             binding,
             annotation: None,
@@ -115,18 +122,32 @@ impl LowerContext {
         Some((value_declaration_data, self.source_map))
     }
 
-    fn lower_binder(&mut self, binder: &ast::Binder) -> Option<Binder> {
-        match binder {
-            ast::Binder::ConstructorBinder(_) => None,
-            ast::Binder::LiteralBinder(_) => None,
-            ast::Binder::NegativeBinder(_) => None,
-            ast::Binder::ParenthesizedBinder(_) => None,
-            ast::Binder::TypedBinder(_) => None,
-            ast::Binder::VariableBinder(variable) => {
-                Some(Binder::Variable(Name::try_from(variable.name()?).ok()?))
+    // FIXME: use unknown if we can't convert
+    fn lower_binder(&mut self, binder: &ast::Binder) -> Option<BinderId> {
+        let binder = {
+            match binder {
+                ast::Binder::ConstructorBinder(constructor) => {
+                    let name = Qualified::try_from(constructor.qualified_name()?).ok()?;
+                    let fields = constructor
+                        .fields()?
+                        .children()
+                        .filter_map(|field| self.lower_binder(&field))
+                        .collect();
+                    Some(Binder::Constructor { name, fields })
+                }
+                ast::Binder::LiteralBinder(_) => None,
+                ast::Binder::NegativeBinder(_) => None,
+                ast::Binder::ParenthesizedBinder(parenthesized) => {
+                    Some(Binder::Parenthesized(self.lower_binder(&parenthesized.binder()?)?))
+                }
+                ast::Binder::TypedBinder(_) => None,
+                ast::Binder::VariableBinder(variable) => {
+                    Some(Binder::Variable(Name::try_from(variable.name()?).ok()?))
+                }
+                ast::Binder::WildcardBinder(_) => None,
             }
-            ast::Binder::WildcardBinder(_) => None,
-        }
+        };
+        binder.map(|binder| self.alloc_binder(binder))
     }
 
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {

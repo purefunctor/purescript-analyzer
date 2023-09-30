@@ -14,7 +14,8 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ValueDeclarationData {
     pub expr_arena: Arena<Expr>,
-    pub binders: Box<[Binder]>,
+    pub binder_arena: Arena<Binder>,
+    pub binders: Box<[BinderId]>,
     pub binding: Binding,
     /// The type annotation for this value declaration, if it exists.
     pub annotation: Option<AstId<ast::AnnotationDeclaration>>,
@@ -40,8 +41,12 @@ pub struct WhereExpr {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Binder {
+    Constructor { name: Qualified<NameRef>, fields: Box<[BinderId]> },
+    Parenthesized(BinderId),
     Variable(Name),
 }
+
+pub type BinderId = Idx<Binder>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
