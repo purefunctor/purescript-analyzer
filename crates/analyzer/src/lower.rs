@@ -146,7 +146,7 @@ impl LowerContext {
                 ast::Binder::VariableBinder(variable) => {
                     Some(Binder::Variable(Name::try_from(variable.name()?).ok()?))
                 }
-                ast::Binder::WildcardBinder(_) => None,
+                ast::Binder::WildcardBinder(_) => Some(Binder::Wildcard),
             }
         };
         lowered.map(|lowered| self.alloc_binder(lowered, binder))

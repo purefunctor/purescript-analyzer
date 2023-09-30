@@ -44,6 +44,7 @@ pub enum Binder {
     Constructor { name: Qualified<NameRef>, fields: Box<[BinderId]> },
     Parenthesized(BinderId),
     Variable(Name),
+    Wildcard,
 }
 
 pub type BinderId = Idx<Binder>;

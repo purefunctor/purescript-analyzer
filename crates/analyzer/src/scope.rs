@@ -142,6 +142,7 @@ impl<'a> ScopeCollectContext<'a> {
                 names.insert(variable.as_ref().into());
                 names
             }
+            lower::Binder::Wildcard => FxIndexSet::default(),
         }
     }
 
