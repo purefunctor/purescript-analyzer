@@ -1,4 +1,5 @@
 //! The core AST used for semantic analysis.
+pub mod visitor;
 
 use std::sync::Arc;
 
