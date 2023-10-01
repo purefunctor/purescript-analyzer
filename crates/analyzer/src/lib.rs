@@ -76,7 +76,7 @@ mod tests {
                 "
 module Main where
 
-hello (-1) = a
+hello [a] = a
 "
                 .into(),
             ),
@@ -93,9 +93,7 @@ hello (-1) = a
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
         let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
-        dbg!(db.lower_value_declaration(hello_id));
+        db.lower_value_declaration(hello_id);
         db.infer_value_declaration(hello_id);
-        // dbg!(db.lower_value_declaration(hello_id));
-        // dbg!(db.value_declaration_scope(hello_id));
     }
 }

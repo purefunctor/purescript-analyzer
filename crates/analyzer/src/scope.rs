@@ -9,7 +9,11 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    lower::{self, BinderId, ExprId},
+    lower::{
+        self,
+        visitor::{default_visit_binder, default_visit_expr, Visitor},
+        BinderId, ExprId,
+    },
     FxIndexSet, LowerDatabase,
 };
 
@@ -130,44 +134,10 @@ impl<'a> ScopeCollectContext<'a> {
         self.scope_per_expr.insert(expr_id, scope_id);
     }
 
-    // FIXME: Extract this to a struct.
     fn collect_binder_names(&self, binder_id: BinderId) -> FxIndexSet<SmolStr> {
-        match &self.binder_arena[binder_id] {
-            lower::Binder::Constructor { fields, .. } => {
-                fields.iter().copied().flat_map(|field| self.collect_binder_names(field)).collect()
-            }
-            lower::Binder::Literal(literal) => match literal {
-                lower::Literal::Array(items) => {
-                    items.iter().flat_map(|item| self.collect_binder_names(*item)).collect()
-                }
-                lower::Literal::Record(items) => items
-                    .iter()
-                    .flat_map(|item| match item {
-                        lower::RecordItem::RecordPun(pun) => {
-                            let mut names = FxIndexSet::default();
-                            names.insert(pun.clone());
-                            names
-                        }
-                        lower::RecordItem::RecordField(_, value) => {
-                            self.collect_binder_names(*value)
-                        }
-                    })
-                    .collect(),
-                lower::Literal::Int(_) => FxIndexSet::default(),
-                lower::Literal::Number(_) => FxIndexSet::default(),
-                lower::Literal::String(_) => FxIndexSet::default(),
-                lower::Literal::Char(_) => FxIndexSet::default(),
-                lower::Literal::Boolean(_) => FxIndexSet::default(),
-            },
-            lower::Binder::Negative(_) => FxIndexSet::default(),
-            lower::Binder::Parenthesized(binder_id) => self.collect_binder_names(*binder_id),
-            lower::Binder::Variable(variable) => {
-                let mut names = FxIndexSet::default();
-                names.insert(variable.as_ref().into());
-                names
-            }
-            lower::Binder::Wildcard => FxIndexSet::default(),
-        }
+        let mut context = CollectBinderNames::new(self.expr_arena, self.binder_arena);
+        context.visit_binder(binder_id);
+        context.collected_names
     }
 
     fn alloc_binders(&mut self, parent: ScopeId, binders: &[BinderId]) -> ScopeId {
@@ -220,6 +190,47 @@ impl<'a> ScopeCollectContext<'a> {
                 _ => (),
             },
             _ => (),
+        }
+    }
+}
+
+struct CollectBinderNames<'a> {
+    expr_arena: &'a Arena<lower::Expr>,
+    binder_arena: &'a Arena<lower::Binder>,
+    collected_names: FxIndexSet<SmolStr>,
+}
+
+impl<'a> CollectBinderNames<'a> {
+    fn new(
+        expr_arena: &'a Arena<lower::Expr>,
+        binder_arena: &'a Arena<lower::Binder>,
+    ) -> CollectBinderNames<'a> {
+        let collected_names = FxIndexSet::default();
+        CollectBinderNames { expr_arena, binder_arena, collected_names }
+    }
+
+    fn collect_name(&mut self, name: impl AsRef<str>) {
+        self.collected_names.insert(name.as_ref().into());
+    }
+}
+
+impl<'a> Visitor<'a> for CollectBinderNames<'a> {
+    fn expr_arena(&self) -> &'a Arena<lower::Expr> {
+        self.expr_arena
+    }
+
+    fn binder_arena(&self) -> &'a Arena<lower::Binder> {
+        self.binder_arena
+    }
+
+    fn visit_expr(&mut self, expr_id: ExprId) {
+        default_visit_expr(self, expr_id);
+    }
+
+    fn visit_binder(&mut self, binder_id: BinderId) {
+        match &self.binder_arena[binder_id] {
+            lower::Binder::Variable(variable) => self.collect_name(variable),
+            _ => default_visit_binder(self, binder_id),
         }
     }
 }
