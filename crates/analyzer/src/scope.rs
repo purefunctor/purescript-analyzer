@@ -11,7 +11,7 @@ use crate::{
     id::{AstId, InFile},
     lower::{
         self,
-        visitor::{default_visit_binder, default_visit_expr, Visitor},
+        visitor::{default_visit_binder, Visitor},
         BinderId, ExprId,
     },
     FxIndexSet, LowerDatabase,
@@ -221,10 +221,6 @@ impl<'a> Visitor<'a> for CollectBinderNames<'a> {
 
     fn binder_arena(&self) -> &'a Arena<lower::Binder> {
         self.binder_arena
-    }
-
-    fn visit_expr(&mut self, expr_id: ExprId) {
-        default_visit_expr(self, expr_id);
     }
 
     fn visit_binder(&mut self, binder_id: BinderId) {

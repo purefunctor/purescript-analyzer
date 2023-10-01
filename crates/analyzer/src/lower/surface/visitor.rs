@@ -2,14 +2,18 @@ use la_arena::Arena;
 
 use super::{Binder, BinderId, Expr, ExprId, Literal};
 
-pub trait Visitor<'a> {
+pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
 
     fn binder_arena(&self) -> &'a Arena<Binder>;
 
-    fn visit_expr(&mut self, expr_id: ExprId);
+    fn visit_expr(&mut self, expr_id: ExprId) {
+        default_visit_expr(self, expr_id);
+    }
 
-    fn visit_binder(&mut self, binder_id: BinderId);
+    fn visit_binder(&mut self, binder_id: BinderId) {
+        default_visit_binder(self, binder_id);
+    }
 }
 
 pub fn default_visit_expr<'a, V>(visitor: &mut V, expr_id: ExprId)
