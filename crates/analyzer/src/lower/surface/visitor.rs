@@ -1,6 +1,6 @@
 use la_arena::Arena;
 
-use super::{Binder, BinderId, Expr, ExprId, Literal};
+use super::{Binder, BinderId, Binding, Expr, ExprId, Literal, ValueDeclarationData};
 
 pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
@@ -13,6 +13,10 @@ pub trait Visitor<'a>: Sized {
 
     fn visit_binder(&mut self, binder_id: BinderId) {
         default_visit_binder(self, binder_id);
+    }
+
+    fn visit_value_declaration(&mut self, value_declaration: &'a ValueDeclarationData) {
+        default_visit_value_declaration(self, value_declaration);
     }
 }
 
@@ -73,5 +77,21 @@ where
         }
         Binder::Variable(_) => (),
         Binder::Wildcard => (),
+    }
+}
+
+pub fn default_visit_value_declaration<'a, V>(
+    visitor: &mut V,
+    value_declaration: &'a ValueDeclarationData,
+) where
+    V: Visitor<'a>,
+{
+    for binder_id in value_declaration.binders.iter() {
+        visitor.visit_binder(*binder_id);
+    }
+    match &value_declaration.binding {
+        Binding::Unconditional { where_expr } => {
+            visitor.visit_expr(where_expr.expr_id);
+        }
     }
 }
