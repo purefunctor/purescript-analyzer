@@ -55,27 +55,6 @@ fn lower_value_declaration_with_source_map(
         context.lower_value_declaration(&value_declaration).unwrap();
 
     (Arc::new(value_declaration_data), Arc::new(source_map))
-
-    // let binders = value_declaration
-    //     .binders()
-    //     .map(|binders| binders.children().map(|binder| todo!()))
-    //     .unwrap()
-    //     .collect();
-    // let binding =
-    //     value_declaration.binding().and_then(|binding| context.lower_binding(&binding)).unwrap();
-
-    // let LowerContext { expr_arena, source_map } = context;
-
-    // // TODO: Find annotation and sibglings using nominal map
-    // let value_declaration_data = ValueDeclarationData {
-    //     expr_arena,
-    //     binders,
-    //     binding,
-    //     annotation: None,
-    //     siblings: Arc::from([]),
-    // };
-
-    // (Arc::new(value_declaration_data), Arc::new(source_map))
 }
 
 #[derive(Default)]
