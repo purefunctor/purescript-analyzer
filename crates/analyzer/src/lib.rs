@@ -10,7 +10,7 @@ pub mod source;
 
 use std::hash::BuildHasherDefault;
 
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
 pub use lower::LowerDatabase;
 pub use resolver::ResolverDatabase;
 use rustc_hash::FxHasher;
@@ -43,6 +43,7 @@ impl Upcast<dyn ResolverDatabase> for RootDatabase {
 }
 
 pub(crate) type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
+pub(crate) type FxIndexMap<K, V> = IndexMap<K, V, BuildHasherDefault<FxHasher>>;
 
 #[cfg(test)]
 mod tests {
@@ -76,12 +77,13 @@ mod tests {
                 "
 module Main where
 
-hello _ =
+hello =
   let
-    a = 0
-    b = 0
+    int = 21
+    number = 21.0
+    char = 'f'
   in
-    [a, b]
+    [int, number, char]
 "
                 .into(),
             ),
