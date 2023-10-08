@@ -26,6 +26,18 @@ where
 {
     let expr_arena = visitor.expr_arena();
     match &expr_arena[expr_id] {
+        Expr::LetIn(let_bindings, let_body) => {
+            for let_binding in let_bindings.iter() {
+                match let_binding {
+                    super::LetBinding::Name { binding, .. } => match binding {
+                        Binding::Unconditional { where_expr } => {
+                            visitor.visit_expr(where_expr.expr_id);
+                        }
+                    },
+                }
+                visitor.visit_expr(*let_body);
+            }
+        }
         Expr::Literal(literal) => match literal {
             Literal::Array(items) => items.iter().for_each(|item| {
                 visitor.visit_expr(*item);

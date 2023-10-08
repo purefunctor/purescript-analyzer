@@ -76,7 +76,12 @@ mod tests {
                 "
 module Main where
 
-hello [a] = a
+hello _ =
+  let
+    a = 0
+    b = 0
+  in
+    [a, b]
 "
                 .into(),
             ),
@@ -97,3 +102,130 @@ hello [a] = a
         db.infer_value_declaration(hello_id);
     }
 }
+
+/*
+
+Self-recursion:
+
+Name bindings can be self-recursive, provided that they're thunked:
+
+a = a       # invalid, fails at compile-time.
+f _ = f {}  # valid, fails at runtime.
+
+However, pattern bindings cannot be self-recursive:
+
+{ a } = f a
+
+Mutual recursion:
+
+Name bindings can be self-recursive, provided that they're thunked:
+
+# Invalid
+
+a = b
+b = a
+
+# Valid
+
+f _ = g {}
+g _ = f {}
+
+Pattern bindings cannot be mutually recursive.
+
+Algorithm:
+
+All let-bound names are available within the let-body,
+however, the available let-bound names for a let-binding
+is restricted by certain rules.
+
+Due to purity, evaluation order for let-bindings may not
+necessarily come from the order in which they appear in
+source code. Let-bindings can be reordered or floated by
+an optimizing compiler if it sees it fit.
+
+Draft #1
+
+Given a name binding, we always make it visible to itself,
+at least initially. During the traversal, we can check if
+a variable is a valid use of itself. For instance:
+
+a = a           -- no!
+a _ = a {}      -- yes!
+a = \_ -> a {}  -- kinda?
+
+The tricky part is the special casing for the "thunked"
+contexts, but here's my idea for both: certain ScopeKinds
+introduce "thunking", for example, the presence of `Binders`
+implies that an expression is behind a function application.
+
+The idea is for the scope linked list to look like this
+for the following examples:
+
+a = a
+LetBound({ "a" })
+
+a _ = a {}
+LetBound({ "a" })
+Binders({ })
+
+a = \_ -> a {}
+LetBound({ "a" })
+Binders({ })
+
+Notice how the `a` does not immediately resolve to `LetBound`
+because of the `Binders` that were introduced by the function
+abstraction. For self-recursion, this is enough information
+to know if the use of a name is valid or not.
+
+Moving on to mutually recursive bindings, take the following
+examples:
+
+f = g  -- No!
+g = f
+
+f _ = g {}  -- Yes!
+g _ = f {}
+
+f = g
+g _ = f {}  -- No!
+
+For the first example, their scopes would look like this:
+
+f = g
+LetBound({ "f", "g" })
+
+g = f
+LetBound({ "f", "g" })  -- Shared with `f`
+
+Currently, `LetBound` does not encode information about binding
+groups which can be used to determine if a name is valid within
+the bound value for another name. If it had information about
+which binding group a name belongs to, then the check would
+look like this:
+
+For the declaration for `f`, if a name like `g` resolves
+immediately through a `LetBound`, and the binding group
+for `g` is the same as `f`, then it's an invalid reference.
+This check would allow for the following to still work:
+
+f _ = g {}  -- f = \_ -> g {}
+g _ = f {}  -- g = \_ -> f {}
+
+For cases such as:
+
+f = g
+LetBound({ "f", "g" })
+
+g _ = f {}
+LetBound({ "f", "g" })
+Binders({ })
+
+`g` resolves immediately to `LetBound`, and it exists
+within the same binding group as `f`, so it's an invalid
+use.
+
+`f` does not immediately resolve to `LetBound` because
+of thunking with `Binders`, so even if it's in the same
+binding group as `g`.
+
+*/

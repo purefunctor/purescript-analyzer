@@ -19,7 +19,9 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
     match &lowered.binding {
         lower::Binding::Unconditional { where_expr } => {
             let expr = &lowered.expr_arena[where_expr.expr_id];
+            dbg!(scope_data.expr_scope(where_expr.expr_id));
             match expr {
+                lower::Expr::LetIn(_, _) => (),
                 lower::Expr::Literal(literal) => match literal {
                     lower::Literal::Array(_) => (),
                     lower::Literal::Record(_) => (),
@@ -48,12 +50,14 @@ fn infer_value_declaration(db: &dyn InferDatabase, id: InFile<AstId<ast::ValueDe
                             println!("Nothing!")
                         }
                     } else {
-                        let expr_scope = scope_data.expr_scope(where_expr.expr_id);
+                        // dbg!(scope_data.expr_scope(where_expr.expr_id));
 
-                        if scope_data.resolve(expr_scope, &qualified.value) {
-                            dbg!("Found locally!");
-                            return;
-                        }
+                        // let expr_scope = scope_data.expr_scope(where_expr.expr_id);
+
+                        // if scope_data.resolve(expr_scope, &qualified.value) {
+                        //     dbg!("Found locally!");
+                        //     return;
+                        // }
 
                         for (_, import_declaration) in db.unqualified_imports(id.file_id).iter() {
                             if let Some(values) = db

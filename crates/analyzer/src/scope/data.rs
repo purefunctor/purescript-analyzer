@@ -28,6 +28,7 @@ pub type ScopeId = Idx<ScopeData>;
 pub enum ScopeKind {
     Root,
     Binders(FxIndexSet<SmolStr>),
+    LetBound(FxIndexSet<SmolStr>),
 }
 
 /// Scope information within a value declaration.
@@ -46,6 +47,8 @@ impl ValueDeclarationScope {
     }
 
     pub fn expr_scope(&self, expr_id: ExprId) -> &ScopeData {
+        dbg!(&self.scope_arena);
+        dbg!(&self.scope_per_expr);
         if let Some(scope_id) = self.scope_per_expr.get(&expr_id) {
             &self.scope_arena[*scope_id]
         } else {

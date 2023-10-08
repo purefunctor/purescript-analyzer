@@ -179,11 +179,30 @@ impl LowerContext {
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
         let lowered = match expression {
+            ast::Expression::LetInExpression(let_in) => Some(self.lower_let_in(let_in)?),
             ast::Expression::LiteralExpression(literal) => Some(self.lower_expr_literal(literal)?),
             ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
             _ => None,
         };
         lowered.map(|lowered| self.alloc_expr(lowered, expression))
+    }
+
+    fn lower_let_in(&mut self, let_in: &ast::LetInExpression) -> Option<Expr> {
+        let let_bindings = let_in
+            .bindings()?
+            .children()
+            .map(|let_binding| match let_binding {
+                ast::LetBinding::LetBindingName(let_binding_name) => {
+                    let name = Name::try_from(let_binding_name.name()?).ok()?;
+                    let binding = self.lower_binding(&let_binding_name.binding()?)?;
+                    Some(LetBinding::Name { name, binding })
+                }
+                ast::LetBinding::LetBindingPattern(_) => todo!(),
+                ast::LetBinding::LetBindingSignature(_) => todo!(),
+            })
+            .collect::<Option<_>>()?;
+        let let_body = self.lower_expr(&let_in.body()?)?;
+        Some(Expr::LetIn(let_bindings, let_body))
     }
 
     fn lower_expr_literal(&mut self, literal: &ast::LiteralExpression) -> Option<Expr> {
