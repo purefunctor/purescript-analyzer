@@ -6,7 +6,7 @@ use crate::{
         visitor::{
             default_visit_binder, default_visit_expr, default_visit_value_declaration, Visitor,
         },
-        Binder, BinderId, Expr, ExprId, ValueDeclarationData,
+        Binder, BinderId, Expr, ExprId, ValueDeclarationData, LetBinding, WhereExpr,
     },
     FxIndexSet,
 };
@@ -80,7 +80,7 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
                 let mut let_bound = FxIndexSet::default();
                 for let_binding in let_bindings.iter() {
                     match let_binding {
-                        crate::lower::LetBinding::Name { name, .. } => {
+                        LetBinding::Name { name, .. } => {
                             let_bound.insert(name.as_ref().into());
                         }
                     }
@@ -93,7 +93,7 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
 
                 for let_binding in let_bindings.iter() {
                     match let_binding {
-                        crate::lower::LetBinding::Name { binding, .. } => {
+                        LetBinding::Name { binding, .. } => {
                             self.visit_binding(binding);
                         }
                     }
@@ -127,11 +127,11 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
         default_visit_value_declaration(self, value_declaration);
     }
 
-    fn visit_where_expr(&mut self, where_expr: &'a crate::lower::WhereExpr) {
+    fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
         let mut let_bound = FxIndexSet::default();
         for let_binding in where_expr.let_bindings.iter() {
             match let_binding {
-                crate::lower::LetBinding::Name { name, .. } => {
+                LetBinding::Name { name, .. } => {
                     let_bound.insert(name.as_ref().into());
                 }
             }
@@ -143,7 +143,7 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
 
         for let_binding in where_expr.let_bindings.iter() {
             match let_binding {
-                crate::lower::LetBinding::Name { binding, .. } => {
+                LetBinding::Name { binding, .. } => {
                     self.visit_binding(binding);
                 }
             }
