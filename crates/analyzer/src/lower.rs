@@ -172,9 +172,14 @@ impl LowerContext {
     }
 
     fn lower_where_expr(&mut self, where_expression: &ast::WhereExpression) -> Option<WhereExpr> {
-        let expression = where_expression.expression()?;
-        let expr_id = self.lower_expr(&expression)?;
-        Some(WhereExpr { expr_id })
+        let let_bindings = where_expression
+            .let_bindings()
+            .and_then(|let_bindings| self.lower_let_bindings(&let_bindings))
+            .unwrap_or_default();
+
+        let expr_id = self.lower_expr(&where_expression.expression()?)?;
+
+        Some(WhereExpr { expr_id, let_bindings })
     }
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
@@ -188,19 +193,7 @@ impl LowerContext {
     }
 
     fn lower_let_in(&mut self, let_in: &ast::LetInExpression) -> Option<Expr> {
-        let let_bindings = let_in
-            .bindings()?
-            .children()
-            .map(|let_binding| match let_binding {
-                ast::LetBinding::LetBindingName(let_binding_name) => {
-                    let name = Name::try_from(let_binding_name.name()?).ok()?;
-                    let binding = self.lower_binding(&let_binding_name.binding()?)?;
-                    Some(LetBinding::Name { name, binding })
-                }
-                ast::LetBinding::LetBindingPattern(_) => todo!(),
-                ast::LetBinding::LetBindingSignature(_) => todo!(),
-            })
-            .collect::<Option<_>>()?;
+        let let_bindings = self.lower_let_bindings(&let_in.let_bindings()?)?;
         let let_body = self.lower_expr(&let_in.body()?)?;
         Some(Expr::LetIn(let_bindings, let_body))
     }
@@ -288,5 +281,23 @@ impl LowerContext {
         let qualified = variable.qualified_name()?;
         let name_ref = qualified.try_into().ok()?;
         Some(Expr::Variable(name_ref))
+    }
+
+    fn lower_let_bindings(
+        &mut self,
+        let_bindings: &ast::OneOrMore<ast::LetBinding>,
+    ) -> Option<Box<[LetBinding]>> {
+        let_bindings
+            .children()
+            .map(|let_binding| match let_binding {
+                ast::LetBinding::LetBindingName(let_binding_name) => {
+                    let name = Name::try_from(let_binding_name.name()?).ok()?;
+                    let binding = self.lower_binding(&let_binding_name.binding()?)?;
+                    Some(LetBinding::Name { name, binding })
+                }
+                ast::LetBinding::LetBindingPattern(_) => None,
+                ast::LetBinding::LetBindingSignature(_) => None,
+            })
+            .collect()
     }
 }

@@ -38,6 +38,7 @@ pub enum Binding {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WhereExpr {
     pub expr_id: Idx<Expr>,
+    pub let_bindings: Box<[LetBinding]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
