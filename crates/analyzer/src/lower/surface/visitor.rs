@@ -1,6 +1,8 @@
 use la_arena::Arena;
 
-use super::{Binder, BinderId, Binding, Expr, ExprId, Literal, ValueDeclarationData};
+use super::{
+    Binder, BinderId, Binding, Expr, ExprId, LetBinding, Literal, ValueDeclarationData, WhereExpr,
+};
 
 pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
@@ -13,6 +15,14 @@ pub trait Visitor<'a>: Sized {
 
     fn visit_binder(&mut self, binder_id: BinderId) {
         default_visit_binder(self, binder_id);
+    }
+
+    fn visit_binding(&mut self, binding: &'a Binding) {
+        default_visit_binding(self, binding);
+    }
+
+    fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
+        default_visit_where_expr(self, where_expr);
     }
 
     fn visit_value_declaration(&mut self, value_declaration: &'a ValueDeclarationData) {
@@ -29,7 +39,7 @@ where
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
                 match let_binding {
-                    super::LetBinding::Name { binding, .. } => match binding {
+                    LetBinding::Name { binding, .. } => match binding {
                         Binding::Unconditional { where_expr } => {
                             visitor.visit_expr(where_expr.expr_id);
                         }
@@ -92,6 +102,31 @@ where
     }
 }
 
+pub fn default_visit_binding<'a, V>(visitor: &mut V, binding: &'a Binding)
+where
+    V: Visitor<'a>,
+{
+    match binding {
+        Binding::Unconditional { where_expr } => {
+            visitor.visit_where_expr(where_expr);
+        }
+    }
+}
+
+pub fn default_visit_where_expr<'a, V>(visitor: &mut V, where_expr: &'a WhereExpr)
+where
+    V: Visitor<'a>,
+{
+    for let_binding in where_expr.let_bindings.iter() {
+        match let_binding {
+            LetBinding::Name { binding, .. } => {
+                visitor.visit_binding(binding);
+            }
+        }
+    }
+    visitor.visit_expr(where_expr.expr_id);
+}
+
 pub fn default_visit_value_declaration<'a, V>(
     visitor: &mut V,
     value_declaration: &'a ValueDeclarationData,
@@ -101,9 +136,5 @@ pub fn default_visit_value_declaration<'a, V>(
     for binder_id in value_declaration.binders.iter() {
         visitor.visit_binder(*binder_id);
     }
-    match &value_declaration.binding {
-        Binding::Unconditional { where_expr } => {
-            visitor.visit_expr(where_expr.expr_id);
-        }
-    }
+    visitor.visit_binding(&value_declaration.binding);
 }
