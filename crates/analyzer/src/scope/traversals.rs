@@ -93,11 +93,9 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
 
                 for let_binding in let_bindings.iter() {
                     match let_binding {
-                        crate::lower::LetBinding::Name { binding, .. } => match binding {
-                            crate::lower::Binding::Unconditional { where_expr } => {
-                                self.visit_expr(where_expr.expr_id);
-                            }
-                        },
+                        crate::lower::LetBinding::Name { binding, .. } => {
+                            self.visit_binding(binding);
+                        }
                     }
                 }
                 self.visit_expr(*let_body);
@@ -127,5 +125,29 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
         let scope_kind = ScopeKind::Binders(FxIndexSet::default());
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
         default_visit_value_declaration(self, value_declaration);
+    }
+
+    fn visit_where_expr(&mut self, where_expr: &'a crate::lower::WhereExpr) {
+        let mut let_bound = FxIndexSet::default();
+        for let_binding in where_expr.let_bindings.iter() {
+            match let_binding {
+                crate::lower::LetBinding::Name { name, .. } => {
+                    let_bound.insert(name.as_ref().into());
+                }
+            }
+        }
+
+        let scope_parent = self.current_scope;
+        let scope_kind = ScopeKind::LetBound(let_bound);
+        self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
+
+        for let_binding in where_expr.let_bindings.iter() {
+            match let_binding {
+                crate::lower::LetBinding::Name { binding, .. } => {
+                    self.visit_binding(binding);
+                }
+            }
+        }
+        self.visit_expr(where_expr.expr_id);
     }
 }

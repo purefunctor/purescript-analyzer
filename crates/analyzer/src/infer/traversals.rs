@@ -94,9 +94,11 @@ impl<'a> Visitor<'a> for InferValueDeclarationContext<'a> {
                                 self.type_per_expr
                                     .insert(expr_id, format!("Array {}", head_ty).into());
                             } else {
-                                self.type_per_expr.insert(expr_id, "Unknown".into());
+                                self.type_per_expr.insert(expr_id, "Array Unknown".into());
                             }
                         }
+                    } else {
+                        self.type_per_expr.insert(expr_id, "Array Unknown".into());
                     }
                 }
                 Literal::Record(_) => (),
@@ -125,5 +127,21 @@ impl<'a> Visitor<'a> for InferValueDeclarationContext<'a> {
                 }
             }
         }
+    }
+
+    fn visit_where_expr(&mut self, where_expr: &'a crate::lower::WhereExpr) {
+        for let_binding in where_expr.let_bindings.iter() {
+            match let_binding {
+                LetBinding::Name { name, binding } => match binding {
+                    Binding::Unconditional { where_expr } => {
+                        self.visit_where_expr(where_expr);
+                        if let Some(binding_ty) = self.type_per_expr.get(&where_expr.expr_id) {
+                            self.type_per_name.insert(name.as_ref().into(), binding_ty.clone());
+                        }
+                    }
+                },
+            }
+        }
+        self.visit_expr(where_expr.expr_id);
     }
 }

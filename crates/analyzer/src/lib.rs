@@ -83,7 +83,10 @@ hello =
     number = 21.0
     char = 'f'
   in
-    [int, number, char]
+    [int, number, char, string, boolean]
+  where
+    string = \"I am a string.\"
+    boolean = false
 "
                 .into(),
             ),
