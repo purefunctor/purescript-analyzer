@@ -4,6 +4,7 @@ use smol_str::SmolStr;
 use crate::{
     lower::{
         visitor::Visitor, Binder, Binding, Expr, ExprId, LetBinding, Literal, ValueDeclarationData,
+        WhereExpr,
     },
     scope::ValueDeclarationScope,
     FxIndexMap,
@@ -129,7 +130,7 @@ impl<'a> Visitor<'a> for InferValueDeclarationContext<'a> {
         }
     }
 
-    fn visit_where_expr(&mut self, where_expr: &'a crate::lower::WhereExpr) {
+    fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
         for let_binding in where_expr.let_bindings.iter() {
             match let_binding {
                 LetBinding::Name { name, binding } => match binding {

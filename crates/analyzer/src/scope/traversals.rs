@@ -6,7 +6,7 @@ use crate::{
         visitor::{
             default_visit_binder, default_visit_expr, default_visit_value_declaration, Visitor,
         },
-        Binder, BinderId, Expr, ExprId, ValueDeclarationData, LetBinding, WhereExpr,
+        Binder, BinderId, Expr, ExprId, LetBinding, ValueDeclarationData, WhereExpr,
     },
     FxIndexSet,
 };
