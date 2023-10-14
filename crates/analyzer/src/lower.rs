@@ -184,12 +184,28 @@ impl LowerContext {
 
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
         let lowered = match expression {
+            ast::Expression::ApplicationExpression(application) => {
+                Some(self.lower_application(application)?)
+            }
             ast::Expression::LetInExpression(let_in) => Some(self.lower_let_in(let_in)?),
             ast::Expression::LiteralExpression(literal) => Some(self.lower_expr_literal(literal)?),
             ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
             _ => None,
         };
         lowered.map(|lowered| self.alloc_expr(lowered, expression))
+    }
+
+    fn lower_application(&mut self, application: &ast::ApplicationExpression) -> Option<Expr> {
+        let function = self.lower_expr(&application.head()?)?;
+        let arguments = application
+            .spine()?
+            .children()
+            .filter_map(|argument| match argument {
+                ast::Argument::TermArgument(e) => self.lower_expr(&e.expression()?),
+                ast::Argument::TypeArgument(_) => None,
+            })
+            .collect();
+        Some(Expr::Application(function, arguments))
     }
 
     fn lower_let_in(&mut self, let_in: &ast::LetInExpression) -> Option<Expr> {

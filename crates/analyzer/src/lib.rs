@@ -77,16 +77,8 @@ mod tests {
                 "
 module Main where
 
-hello =
-  let
-    int = 21
-    number = 21.0
-    char = 'f'
-  in
-    [int, number, char, string, boolean]
-  where
-    string = \"I am a string.\"
-    boolean = false
+hello _ = world 0
+world _ = hello 0
 "
                 .into(),
             ),

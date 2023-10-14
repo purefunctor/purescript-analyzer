@@ -36,6 +36,12 @@ where
 {
     let expr_arena = visitor.expr_arena();
     match &expr_arena[expr_id] {
+        Expr::Application(function, arguments) => {
+            visitor.visit_expr(*function);
+            for argument in arguments.iter() {
+                visitor.visit_expr(*argument);
+            }
+        }
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
                 match let_binding {
