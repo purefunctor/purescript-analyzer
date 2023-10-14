@@ -55,11 +55,11 @@ impl TypeArgument {
 }
 
 impl LetInExpression {
-    pub fn bindings(&self) -> Option<OneOrMore<LetBinding>> {
+    pub fn let_bindings(&self) -> Option<OneOrMore<LetBinding>> {
         OneOrMore::cast(self.node.first_child()?)
     }
 
-    pub fn expression(&self) -> Option<Expression> {
+    pub fn body(&self) -> Option<Expression> {
         Expression::cast(self.node.last_child()?)
     }
 }

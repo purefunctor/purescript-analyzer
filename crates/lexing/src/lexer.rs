@@ -253,9 +253,9 @@ impl<'a> Lexer<'a> {
             // "" => an empty string
             2 => self.lexed.push(SyntaxKind::LiteralString, position, None),
             // """...""" => a raw string with leading quotes
-            3 | 4 | 5 => self.take_raw_string(position),
+            3..=5 => self.take_raw_string(position),
             // """"""" => Trailing and leading quotes in a raw string
-            6 | 7 | 8 => self.lexed.push(SyntaxKind::LiteralRawString, position, None),
+            6..=8 => self.lexed.push(SyntaxKind::LiteralRawString, position, None),
             _ => unreachable!(),
         }
     }
@@ -308,7 +308,7 @@ impl<'a> Lexer<'a> {
                     )
                 }
                 1 | 2 => continue,
-                3 | 4 | 5 => break self.lexed.push(SyntaxKind::LiteralRawString, position, None),
+                3..=5 => break self.lexed.push(SyntaxKind::LiteralRawString, position, None),
                 _ => unreachable!(),
             }
         }

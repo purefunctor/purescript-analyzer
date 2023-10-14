@@ -44,7 +44,7 @@ pub struct Files {
 }
 
 impl Files {
-    /// Returns the [`FileID`] for a `path`.
+    /// Returns the [`FileId`] for a `path`.
     pub fn file_id(&self, path: PathBuf) -> Option<FileId> {
         self.interner.get(path).filter(|&file_id| self.get(file_id).is_some())
     }
@@ -89,6 +89,18 @@ impl Files {
     /// Takes all changes logged so far by the file system.
     pub fn take_changes(&mut self) -> Vec<ChangedFile> {
         mem::take(&mut self.changes)
+    }
+
+    /// Returns an iterator of [`FileId`]s and their associated paths.
+    pub fn iter(&self) -> impl Iterator<Item = (FileId, PathBuf)> + '_ {
+        self.files.iter().enumerate().filter_map(|(index, contents)| {
+            if contents.is_none() {
+                return None;
+            }
+            let file_id = FileId(index as u32);
+            let file_path = self.file_path(file_id);
+            Some((file_id, file_path))
+        })
     }
 
     fn allocate_file_id(&mut self, path: PathBuf) -> FileId {

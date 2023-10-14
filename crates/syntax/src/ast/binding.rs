@@ -1,6 +1,6 @@
 use rowan::ast::AstNode;
 
-use super::{Expression, OneOrMore};
+use super::{Expression, LetBinding, OneOrMore};
 
 _create_ast_v!(Binding, UnconditionalBinding(UnconditionalBinding), GuardedBinding(GuardedBinding));
 
@@ -27,5 +27,9 @@ impl GuardedExpression {
 impl WhereExpression {
     pub fn expression(&self) -> Option<Expression> {
         Expression::cast(self.node.first_child()?)
+    }
+
+    pub fn let_bindings(&self) -> Option<OneOrMore<LetBinding>> {
+        OneOrMore::cast(self.node.last_child()?)
     }
 }
