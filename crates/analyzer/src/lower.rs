@@ -24,6 +24,11 @@ use crate::{
 
 #[salsa::query_group(LowerStorage)]
 pub trait LowerDatabase: SourceDatabase + ResolverDatabase {
+    fn lower_foreign_data(
+        &self,
+        id: InFile<AstId<ast::ForeignDataDeclaration>>,
+    ) -> Arc<ForeignDataDeclarationData>;
+
     fn lower_value_declaration(
         &self,
         id: InFile<AstId<ast::ValueDeclaration>>,
@@ -33,6 +38,21 @@ pub trait LowerDatabase: SourceDatabase + ResolverDatabase {
         &self,
         id: InFile<AstId<ast::ValueDeclaration>>,
     ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>);
+}
+
+fn lower_foreign_data(
+    db: &dyn LowerDatabase,
+    id: InFile<AstId<ast::ForeignDataDeclaration>>,
+) -> Arc<ForeignDataDeclarationData> {
+    let root = db.parse_file(id.file_id);
+    let ptr = db.positional_map(id.file_id).ast_ptr(id.value);
+    let foreign_data_declaration = ptr.to_node(&root);
+
+    let context = LowerContext::default();
+    let foreign_data_declaration_data =
+        context.lower_foreign_data(&foreign_data_declaration).unwrap();
+
+    Arc::new(foreign_data_declaration_data)
 }
 
 fn lower_value_declaration(
@@ -59,6 +79,7 @@ fn lower_value_declaration_with_source_map(
 
 #[derive(Default)]
 struct LowerContext {
+    type_arena: Arena<Type>,
     expr_arena: Arena<Expr>,
     binder_arena: Arena<Binder>,
     source_map: SourceMap,
@@ -77,6 +98,24 @@ impl LowerContext {
         self.source_map.binder_to_cst.insert(binder_id, SyntaxNodePtr::new(ast.syntax()));
         self.source_map.cst_to_binder.insert(SyntaxNodePtr::new(ast.syntax()), binder_id);
         binder_id
+    }
+
+    fn alloc_type(&mut self, lowered: Type, ast: &ast::Type) -> TypeId {
+        let type_id = self.type_arena.alloc(lowered);
+        self.source_map.type_to_cst.insert(type_id, SyntaxNodePtr::new(ast.syntax()));
+        self.source_map.cst_to_type.insert(SyntaxNodePtr::new(ast.syntax()), type_id);
+        type_id
+    }
+}
+
+impl LowerContext {
+    fn lower_foreign_data(
+        mut self,
+        foreign_data_declaration: &ast::ForeignDataDeclaration,
+    ) -> Option<ForeignDataDeclarationData> {
+        let name = Name::try_from(foreign_data_declaration.name()?).ok()?;
+        let type_id = self.lower_type(&foreign_data_declaration.ty()?)?;
+        Some(ForeignDataDeclarationData { type_arena: self.type_arena, name, type_id })
     }
 
     fn lower_value_declaration(
@@ -103,7 +142,9 @@ impl LowerContext {
 
         Some((value_declaration_data, self.source_map))
     }
+}
 
+impl LowerContext {
     // FIXME: use unknown if we can't convert
     fn lower_binder(&mut self, binder: &ast::Binder) -> Option<BinderId> {
         let lowered = {
@@ -315,5 +356,41 @@ impl LowerContext {
                 ast::LetBinding::LetBindingSignature(_) => None,
             })
             .collect()
+    }
+
+    fn lower_type(&mut self, t: &ast::Type) -> Option<TypeId> {
+        let lowered = match t {
+            ast::Type::ApplicationType(application) => self.lower_application_type(application),
+            ast::Type::ConstructorType(constructor) => self.lower_constructor_type(constructor),
+            ast::Type::IntegerType(_) => None,
+            ast::Type::KindedType(_) => None,
+            ast::Type::OperatorNameType(_) => None,
+            ast::Type::ParenthesizedType(parenthesized) => {
+                Some(Type::Parenthesized(self.lower_type(&parenthesized.ty()?)?))
+            }
+            ast::Type::RecordType(_) => None,
+            ast::Type::RowType(_) => None,
+            ast::Type::StringType(_) => None,
+            ast::Type::TypeOperatorChain(_) => None,
+            ast::Type::VariableType(_) => None,
+            ast::Type::WildcardType(_) => None,
+        };
+        lowered.map(|lowered| self.alloc_type(lowered, t))
+    }
+
+    fn lower_application_type(&mut self, application: &ast::ApplicationType) -> Option<Type> {
+        let head = self.lower_type(&application.head()?)?;
+        let spine = application
+            .spine()?
+            .children()
+            .map(|argument| self.lower_type(&argument))
+            .collect::<Option<_>>()?;
+        Some(Type::Application(head, spine))
+    }
+
+    fn lower_constructor_type(&mut self, constructor: &ast::ConstructorType) -> Option<Type> {
+        let qualified = constructor.qualified_name()?;
+        let name_ref = qualified.try_into().ok()?;
+        Some(Type::Constructor(name_ref))
     }
 }

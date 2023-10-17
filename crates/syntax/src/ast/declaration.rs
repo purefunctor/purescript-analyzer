@@ -1,6 +1,6 @@
 use rowan::ast::AstNode;
 
-use super::{Binder, Binding, Name, ZeroOrMore};
+use super::{Binder, Binding, Name, Type, ZeroOrMore};
 
 _create_ast_v!(
     Declaration,
@@ -25,6 +25,10 @@ impl AnnotationDeclaration {
 impl ForeignDataDeclaration {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
+    }
+
+    pub fn ty(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
     }
 }
 

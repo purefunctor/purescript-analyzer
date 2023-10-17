@@ -52,9 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{
-        ResolverDatabase, RootDatabase, SourceDatabase,
-    };
+    use crate::{LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -69,7 +67,7 @@ mod tests {
                 "
 module Main where
 
-foreign import data Hello :: Int
+foreign import data Hello :: Function Int Int
 
 hello = 0 1 2
 "
@@ -91,5 +89,7 @@ hello = 0 1 2
         let value_hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
 
         dbg!((foreign_hello_id, value_hello_id));
+
+        dbg!(db.lower_foreign_data(foreign_hello_id));
     }
 }

@@ -13,6 +13,13 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub struct ForeignDataDeclarationData {
+    pub type_arena: Arena<Type>,
+    pub name: Name,
+    pub type_id: TypeId,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ValueDeclarationData {
     pub expr_arena: Arena<Expr>,
     pub binder_arena: Arena<Binder>,
@@ -90,3 +97,12 @@ pub enum RecordItem<I> {
     RecordPun(SmolStr),
     RecordField(SmolStr, I),
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Type {
+    Application(TypeId, Box<[TypeId]>),
+    Constructor(Qualified<NameRef>),
+    Parenthesized(TypeId),
+}
+
+pub type TypeId = Idx<Type>;
