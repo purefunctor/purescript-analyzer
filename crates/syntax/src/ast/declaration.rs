@@ -5,6 +5,7 @@ use super::{Binder, Binding, Name, ZeroOrMore};
 _create_ast_v!(
     Declaration,
     AnnotationDeclaration(AnnotationDeclaration),
+    ForeignDataDeclaration(ForeignDataDeclaration),
     ValueDeclaration(ValueDeclaration)
 );
 
@@ -16,6 +17,12 @@ _create_ast_v!(
 );
 
 impl AnnotationDeclaration {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+}
+
+impl ForeignDataDeclaration {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
     }

@@ -1419,7 +1419,14 @@ fn module_body(parser: &mut Parser) {
         if parser.at(SyntaxKind::LayoutEnd) {
             return false;
         }
-        annotation_or_value_declaration(parser);
+        match parser.current() {
+            SyntaxKind::ForeignKw => {
+                foreign_import_declaration(parser);
+            }
+            _ => {
+                annotation_or_value_declaration(parser);
+            }
+        }
         match parser.current() {
             SyntaxKind::LayoutSep => {
                 parser.consume();
@@ -1459,4 +1466,23 @@ fn annotation_or_value_declaration(parser: &mut Parser) {
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::ValueDeclaration);
     }
+}
+
+//   'foreign' 'import' 'lower' '::' type_0
+// | 'foreign' 'import' 'data' 'upper' '::' type_0
+fn foreign_import_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::ForeignKw);
+    parser.expect(SyntaxKind::ImportKw);
+    parser.expect(SyntaxKind::DataKw);
+    if parser.at(SyntaxKind::Upper) {
+        name(parser, SyntaxKind::Upper);
+    } else {
+        parser.error_recover("expected an Upper");
+    }
+    parser.expect(SyntaxKind::Colon2);
+    type_0(parser);
+
+    marker.end(parser, SyntaxKind::ForeignDataDeclaration);
 }
