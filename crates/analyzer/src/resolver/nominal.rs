@@ -24,6 +24,7 @@ use crate::{
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct NominalMap {
     annotation: FxHashMap<SmolStr, InFile<AstId<ast::AnnotationDeclaration>>>,
+    foreign_data: FxHashMap<SmolStr, InFile<AstId<ast::ForeignDataDeclaration>>>,
     value: FxHashMap<SmolStr, Vec<InFile<AstId<ast::ValueDeclaration>>>>,
 }
 
@@ -55,6 +56,11 @@ impl NominalMap {
                 let id = db.positional_map(file_id).ast_id(annotation).in_file(file_id);
                 self.annotation.insert(name, id);
             }
+            ast::Declaration::ForeignDataDeclaration(data) => {
+                let name = data.name()?.as_str()?;
+                let id = db.positional_map(file_id).ast_id(data).in_file(file_id);
+                self.foreign_data.insert(name, id);
+            }
             ast::Declaration::ValueDeclaration(value) => {
                 let name = value.name()?.as_str()?;
                 let id = db.positional_map(file_id).ast_id(value).in_file(file_id);
@@ -70,6 +76,13 @@ impl NominalMap {
         name: impl AsRef<str>,
     ) -> Option<InFile<AstId<ast::AnnotationDeclaration>>> {
         self.annotation.get(name.as_ref()).copied()
+    }
+
+    pub fn get_foreign_data(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<InFile<AstId<ast::ForeignDataDeclaration>>> {
+        self.foreign_data.get(name.as_ref()).copied()
     }
 
     pub fn get_value(
