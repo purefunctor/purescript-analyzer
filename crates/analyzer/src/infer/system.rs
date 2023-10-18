@@ -11,7 +11,7 @@ use crate::{
     },
 };
 
-use super::{constraint::Constraint, tiny, InferDatabase, Type, TypeId, Unification};
+use super::{constraint::Constraint, trees, InferDatabase, Type, TypeId, Unification};
 
 pub(crate) struct InferValueDeclarationContext<'a> {
     db: &'a dyn InferDatabase,
@@ -97,11 +97,11 @@ impl<'a> InferValueDeclarationContext<'a> {
                         default_visit_expr(self, expr_id);
                         Type::NotImplemented
                     }
-                    surface::Literal::Int(_) => Type::Literal(tiny::Literal::Int),
-                    surface::Literal::Number(_) => Type::Literal(tiny::Literal::Number),
-                    surface::Literal::String(_) => Type::Literal(tiny::Literal::String),
-                    surface::Literal::Char(_) => Type::Literal(tiny::Literal::Char),
-                    surface::Literal::Boolean(_) => Type::Literal(tiny::Literal::Boolean),
+                    surface::Literal::Int(_) => Type::Literal(trees::Literal::Int),
+                    surface::Literal::Number(_) => Type::Literal(trees::Literal::Number),
+                    surface::Literal::String(_) => Type::Literal(trees::Literal::String),
+                    surface::Literal::Char(_) => Type::Literal(trees::Literal::Char),
+                    surface::Literal::Boolean(_) => Type::Literal(trees::Literal::Boolean),
                 };
                 self.db.intern_type(literal)
             }

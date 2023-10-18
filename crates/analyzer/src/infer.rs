@@ -1,6 +1,6 @@
 mod constraint;
 mod system;
-mod tiny;
+mod trees;
 
 use std::sync::Arc;
 
@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub use system::InferValueDeclarationResult;
-pub use tiny::*;
+pub use trees::*;
 
 #[salsa::query_group(InferStorage)]
 pub trait InferDatabase: SurfaceDatabase {
