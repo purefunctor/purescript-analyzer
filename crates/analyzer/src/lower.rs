@@ -228,6 +228,9 @@ impl LowerContext {
             ast::Expression::ApplicationExpression(application) => {
                 Some(self.lower_application(application)?)
             }
+            ast::Expression::ConstructorExpression(constructor) => {
+                Some(self.lower_constructor(constructor)?)
+            }
             ast::Expression::LetInExpression(let_in) => Some(self.lower_let_in(let_in)?),
             ast::Expression::LiteralExpression(literal) => Some(self.lower_expr_literal(literal)?),
             ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
@@ -247,6 +250,12 @@ impl LowerContext {
             })
             .collect();
         Some(Expr::Application(function, arguments))
+    }
+
+    fn lower_constructor(&mut self, constructor: &ast::ConstructorExpression) -> Option<Expr> {
+        let qualified = constructor.qualified_name()?;
+        let name_ref = qualified.try_into().ok()?;
+        Some(Expr::Constructor(name_ref))
     }
 
     fn lower_let_in(&mut self, let_in: &ast::LetInExpression) -> Option<Expr> {

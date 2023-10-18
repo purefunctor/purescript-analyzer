@@ -63,6 +63,7 @@ pub type BinderId = Idx<Binder>;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
     Application(ExprId, Box<[ExprId]>),
+    Constructor(Qualified<NameRef>),
     LetIn(Box<[LetBinding]>, ExprId),
     Literal(Literal<ExprId>),
     Variable(Qualified<NameRef>),

@@ -42,6 +42,7 @@ where
                 visitor.visit_expr(*argument);
             }
         }
+        Expr::Constructor(_) => (),
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
                 match let_binding {

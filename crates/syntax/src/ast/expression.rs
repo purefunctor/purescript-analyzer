@@ -38,6 +38,12 @@ impl ApplicationExpression {
     }
 }
 
+impl ConstructorExpression {
+    pub fn qualified_name(&self) -> Option<QualifiedName> {
+        QualifiedName::cast(self.node.first_child()?)
+    }
+}
+
 impl TermArgument {
     pub fn expression(&self) -> Option<Expression> {
         Expression::cast(self.node.first_child()?)

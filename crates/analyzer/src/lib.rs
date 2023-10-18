@@ -69,7 +69,7 @@ module Main where
 
 foreign import data Hello :: Function Int Int
 
-hello = 0 1 2
+hello = Hello 42
 "
                 .into(),
             ),
@@ -91,5 +91,6 @@ hello = 0 1 2
         dbg!((foreign_hello_id, value_hello_id));
 
         dbg!(db.lower_foreign_data(foreign_hello_id));
+        dbg!(db.lower_value_declaration(value_hello_id));
     }
 }

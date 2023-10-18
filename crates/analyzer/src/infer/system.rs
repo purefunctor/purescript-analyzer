@@ -76,6 +76,7 @@ impl<'a> InferValueDeclarationContext<'a> {
 
                 self.db.intern_type(Type::NotImplemented)
             }
+            Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Literal(literal) => {
                 let literal = match literal {
