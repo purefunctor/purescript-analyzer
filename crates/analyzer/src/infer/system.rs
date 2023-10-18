@@ -1,3 +1,4 @@
+//! Implements the PureScript type system.
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use syntax::ast;

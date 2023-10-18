@@ -1,3 +1,4 @@
+//! Database for type inference.
 mod constraint;
 mod system;
 mod trees;
