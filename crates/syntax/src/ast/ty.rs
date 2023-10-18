@@ -2,7 +2,7 @@
 
 use rowan::ast::AstNode;
 
-use super::{OneOrMore, QualifiedName};
+use super::{NameRef, OneOrMore, QualifiedName};
 
 _create_ast_v!(
     Type,
@@ -39,5 +39,11 @@ impl ConstructorType {
 impl ParenthesizedType {
     pub fn ty(&self) -> Option<Type> {
         Type::cast(self.node.first_child()?)
+    }
+}
+
+impl VariableType {
+    pub fn name_ref(&self) -> Option<NameRef> {
+        NameRef::cast(self.node.first_child()?)
     }
 }

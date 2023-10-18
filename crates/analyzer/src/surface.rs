@@ -125,9 +125,17 @@ impl LowerContext {
 }
 
 impl LowerContext {
-    fn surface_data(self, data_declaration: &ast::DataDeclaration) -> Option<DataDeclarationData> {
+    fn surface_data(
+        mut self,
+        data_declaration: &ast::DataDeclaration,
+    ) -> Option<DataDeclarationData> {
         let name = Name::try_from(data_declaration.name()?).ok()?;
-        Some(DataDeclarationData { name })
+        let constructors = data_declaration
+            .constructors()?
+            .children()
+            .map(|constructor| self.lower_data_constructor(&constructor))
+            .collect::<Option<_>>()?;
+        Some(DataDeclarationData { type_arena: self.type_arena, name, constructors })
     }
 
     fn surface_foreign_data(
@@ -166,6 +174,19 @@ impl LowerContext {
 }
 
 impl LowerContext {
+    fn lower_data_constructor(
+        &mut self,
+        constructor: &ast::DataConstructor,
+    ) -> Option<DataConstructorData> {
+        let name = Name::try_from(constructor.name()?).ok()?;
+        let fields = constructor
+            .fields()?
+            .children()
+            .map(|field| self.lower_type(&field))
+            .collect::<Option<_>>()?;
+        Some(DataConstructorData { name, fields })
+    }
+
     // FIXME: use unknown if we can't convert
     fn lower_binder(&mut self, binder: &ast::Binder) -> Option<BinderId> {
         let lowered = {
@@ -402,7 +423,7 @@ impl LowerContext {
             ast::Type::RowType(_) => None,
             ast::Type::StringType(_) => None,
             ast::Type::TypeOperatorChain(_) => None,
-            ast::Type::VariableType(_) => None,
+            ast::Type::VariableType(variable) => self.lower_variable_type(variable),
             ast::Type::WildcardType(_) => None,
         };
         lowered.map(|lowered| self.alloc_type(lowered, t))
@@ -422,5 +443,10 @@ impl LowerContext {
         let qualified = constructor.qualified_name()?;
         let name_ref = qualified.try_into().ok()?;
         Some(Type::Constructor(name_ref))
+    }
+
+    fn lower_variable_type(&self, variable: &ast::VariableType) -> Option<Type> {
+        let name_ref = variable.name_ref()?.try_into().ok()?;
+        Some(Type::Variable(name_ref))
     }
 }

@@ -14,7 +14,15 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct DataDeclarationData {
+    pub type_arena: Arena<Type>,
     pub name: Name,
+    pub constructors: Box<[DataConstructorData]>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct DataConstructorData {
+    pub name: Name,
+    pub fields: Box<[TypeId]>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -109,6 +117,7 @@ pub enum Type {
     Application(TypeId, Box<[TypeId]>),
     Constructor(Qualified<NameRef>),
     Parenthesized(TypeId),
+    Variable(NameRef),
 }
 
 pub type TypeId = Idx<Type>;

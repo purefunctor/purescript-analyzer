@@ -1,6 +1,6 @@
 use rowan::ast::AstNode;
 
-use super::{Binder, Binding, Name, Type, ZeroOrMore};
+use super::{Binder, Binding, Name, Separated, Type, ZeroOrMore};
 
 _create_ast_v!(
     Declaration,
@@ -9,6 +9,8 @@ _create_ast_v!(
     ForeignDataDeclaration(ForeignDataDeclaration),
     ValueDeclaration(ValueDeclaration)
 );
+
+_create_ast!(DataConstructor);
 
 _create_ast_v!(
     LetBinding,
@@ -26,6 +28,20 @@ impl AnnotationDeclaration {
 impl DataDeclaration {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
+    }
+
+    pub fn constructors(&self) -> Option<Separated<DataConstructor>> {
+        Separated::cast(self.node.last_child()?)
+    }
+}
+
+impl DataConstructor {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+
+    pub fn fields(&self) -> Option<ZeroOrMore<Type>> {
+        ZeroOrMore::cast(self.node.last_child()?)
     }
 }
 
