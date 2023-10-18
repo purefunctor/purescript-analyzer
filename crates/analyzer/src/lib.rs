@@ -8,12 +8,12 @@ pub mod scope;
 pub mod source;
 pub mod surface;
 
+use indexmap::{IndexMap, IndexSet};
+use rustc_hash::FxHasher;
 use std::hash::BuildHasherDefault;
 
-use indexmap::{IndexMap, IndexSet};
 pub use infer::InferDatabase;
 pub use resolver::ResolverDatabase;
-use rustc_hash::FxHasher;
 pub use scope::ScopeDatabase;
 pub use source::SourceDatabase;
 pub use surface::SurfaceDatabase;
