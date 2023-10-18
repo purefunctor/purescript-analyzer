@@ -76,7 +76,16 @@ impl<'a> InferValueDeclarationContext<'a> {
 
                 self.db.intern_type(Type::NotImplemented)
             }
-            Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
+            Expr::Constructor(constructor) => {
+                // FIXME: Resolve against other types of declarations...
+                if let Some(id) =
+                    self.db.nominal_map(self.id.file_id).get_foreign_data(&constructor.value)
+                {
+                    self.db.infer_foreign_data_query(id)
+                } else {
+                    self.db.intern_type(Type::NotImplemented)
+                }
+            }
             Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Literal(literal) => {
                 let literal = match literal {

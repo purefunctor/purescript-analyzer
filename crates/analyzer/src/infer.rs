@@ -17,6 +17,9 @@ pub use tiny::*;
 
 #[salsa::query_group(InferStorage)]
 pub trait InferDatabase: LowerDatabase {
+    #[salsa::invoke(infer_foreign_data_query)]
+    fn infer_foreign_data_query(&self, id: InFile<AstId<ast::ForeignDataDeclaration>>) -> TypeId;
+
     #[salsa::invoke(infer_value_declaration_query)]
     fn infer_value_declaration(
         &self,
@@ -28,6 +31,14 @@ pub trait InferDatabase: LowerDatabase {
 
     #[salsa::interned]
     fn intern_type(&self, t: Type) -> TypeId;
+}
+
+fn infer_foreign_data_query(
+    db: &dyn InferDatabase,
+    id: InFile<AstId<ast::ForeignDataDeclaration>>,
+) -> TypeId {
+    let _ = db.lower_foreign_data(id);
+    db.intern_type(Type::NotImplemented)
 }
 
 fn infer_value_declaration_query(

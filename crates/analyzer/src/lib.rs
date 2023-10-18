@@ -52,7 +52,9 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
+    use crate::{
+        infer::InferDatabase, LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
+    };
 
     #[test]
     fn api() {
@@ -85,12 +87,13 @@ hello = Hello 42
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        let foreign_hello_id = db.nominal_map(file_id).get_foreign_data("Hello").unwrap();
+        // let foreign_hello_id = db.nominal_map(file_id).get_foreign_data("Hello").unwrap();
         let value_hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
 
-        dbg!((foreign_hello_id, value_hello_id));
+        db.infer_value_declaration(value_hello_id);
 
-        dbg!(db.lower_foreign_data(foreign_hello_id));
-        dbg!(db.lower_value_declaration(value_hello_id));
+        // dbg!((foreign_hello_id, value_hello_id));
+        // dbg!(db.lower_foreign_data(foreign_hello_id));
+        // dbg!(db.lower_value_declaration(value_hello_id));
     }
 }
