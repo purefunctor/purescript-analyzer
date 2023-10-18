@@ -607,6 +607,18 @@ fn type_forall(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::ForallType);
 }
 
+fn type_variable_binding_plain(parser: &mut Parser) {
+    type_variable_binding(parser, |parser| {
+        let mut prefixed = parser.start();
+        if parser.current().is_lower() {
+            name(parser, SyntaxKind::Lower);
+        } else {
+            parser.error_recover("expected type variable");
+        }
+        prefixed.end(parser, SyntaxKind::Prefixed);
+    });
+}
+
 fn type_variable_binding_with_visibility(parser: &mut Parser) {
     type_variable_binding(parser, |parser| {
         let mut prefixed = parser.start();
@@ -640,6 +652,18 @@ fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)
         binding_name(parser);
     }
     marker.end(parser, SyntaxKind::TypeVariableBinding);
+}
+
+fn at_type_variable_binding_start(parser: &Parser) -> bool {
+    if parser.current().is_end() {
+        false
+    } else {
+        match parser.current() {
+            SyntaxKind::LeftParenthesis => true,
+            token if token.is_lower() => true,
+            _ => false,
+        }
+    }
 }
 
 // type_3 '->' type_1 | type_3 '=>' type_1 | type_3
@@ -1420,6 +1444,9 @@ fn module_body(parser: &mut Parser) {
             return false;
         }
         match parser.current() {
+            SyntaxKind::DataKw => {
+                data_declaration(parser);
+            }
             SyntaxKind::ForeignKw => {
                 foreign_import_declaration(parser);
             }
@@ -1466,6 +1493,56 @@ fn annotation_or_value_declaration(parser: &mut Parser) {
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::ValueDeclaration);
     }
+}
+
+//   'data' 'upper' type_variable_binding_plain*
+// | 'data' 'upper' type_variable_binding_plain* '=' data_constructor ('|' data_constructor)*
+fn data_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::DataKw);
+    if parser.at(SyntaxKind::Upper) {
+        name(parser, SyntaxKind::Upper);
+    } else {
+        parser.error_recover("expected an Upper");
+    }
+    zero_or_more(parser, |parser| {
+        if at_type_variable_binding_start(parser) {
+            type_variable_binding_plain(parser);
+            true
+        } else {
+            false
+        }
+    });
+
+    if parser.at(SyntaxKind::Equal) {
+        parser.expect(SyntaxKind::Equal);
+        separated(parser, SyntaxKind::Pipe, data_constructor);
+    }
+
+    marker.end(parser, SyntaxKind::DataDeclaration);
+}
+
+// 'upper' type_atom
+fn data_constructor(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    if parser.at(SyntaxKind::Upper) {
+        name(parser, SyntaxKind::Upper);
+    } else {
+        parser.error_recover("expected an Upper");
+    }
+
+    zero_or_more(parser, |parser| {
+        if at_type_start(parser) {
+            type_atom(parser);
+            true
+        } else {
+            false
+        }
+    });
+
+    marker.end(parser, SyntaxKind::DataConstructor);
 }
 
 //   'foreign' 'import' 'lower' '::' type_0

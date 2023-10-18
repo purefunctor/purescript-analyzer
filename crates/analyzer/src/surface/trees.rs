@@ -13,6 +13,11 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub struct DataDeclarationData {
+    pub name: Name,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ForeignDataDeclarationData {
     pub type_arena: Arena<Type>,
     pub name: Name,

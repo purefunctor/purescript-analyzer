@@ -24,6 +24,8 @@ use crate::{
 
 #[salsa::query_group(LowerStorage)]
 pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
+    fn surface_data(&self, id: InFile<AstId<ast::DataDeclaration>>) -> Arc<DataDeclarationData>;
+
     fn surface_foreign_data(
         &self,
         id: InFile<AstId<ast::ForeignDataDeclaration>>,
@@ -38,6 +40,20 @@ pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
         &self,
         id: InFile<AstId<ast::ValueDeclaration>>,
     ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>);
+}
+
+fn surface_data(
+    db: &dyn SurfaceDatabase,
+    id: InFile<AstId<ast::DataDeclaration>>,
+) -> Arc<DataDeclarationData> {
+    let root = db.parse_file(id.file_id);
+    let ptr = db.positional_map(id.file_id).ast_ptr(id.value);
+    let data_declaration = ptr.to_node(&root);
+
+    let context = LowerContext::default();
+    let data_declaration_data = context.surface_data(&data_declaration).unwrap();
+
+    Arc::new(data_declaration_data)
 }
 
 fn surface_foreign_data(
@@ -109,6 +125,11 @@ impl LowerContext {
 }
 
 impl LowerContext {
+    fn surface_data(self, data_declaration: &ast::DataDeclaration) -> Option<DataDeclarationData> {
+        let name = Name::try_from(data_declaration.name()?).ok()?;
+        Some(DataDeclarationData { name })
+    }
+
     fn surface_foreign_data(
         mut self,
         foreign_data_declaration: &ast::ForeignDataDeclaration,

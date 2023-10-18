@@ -53,9 +53,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{
-        infer::InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
-    };
+    use crate::{InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase};
 
     #[test]
     fn api() {
@@ -70,7 +68,7 @@ mod tests {
                 "
 module Main where
 
-foreign import data Hello :: Function Int Int
+data List a = Cons a (List a) | Nil
 
 hello = Hello 42
 "
@@ -88,13 +86,7 @@ hello = Hello 42
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        // let foreign_hello_id = db.nominal_map(file_id).get_foreign_data("Hello").unwrap();
-        let value_hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
-
-        db.infer_value_declaration(value_hello_id);
-
-        // dbg!((foreign_hello_id, value_hello_id));
-        // dbg!(db.surface_foreign_data(foreign_hello_id));
-        // dbg!(db.surface_value_declaration(value_hello_id));
+        let list_id = db.nominal_map(file_id).get_data("List").unwrap();
+        dbg!(db.surface_data(list_id));
     }
 }
