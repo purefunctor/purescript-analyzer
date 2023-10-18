@@ -2,7 +2,7 @@ use la_arena::Arena;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    lower::{
+    surface::{
         visitor::{
             default_visit_binder, default_visit_expr, default_visit_value_declaration, Visitor,
         },

@@ -8,15 +8,15 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    lower::visitor::Visitor,
-    LowerDatabase,
+    surface::visitor::Visitor,
+    SurfaceDatabase,
 };
 
 pub use system::InferValueDeclarationResult;
 pub use tiny::*;
 
 #[salsa::query_group(InferStorage)]
-pub trait InferDatabase: LowerDatabase {
+pub trait InferDatabase: SurfaceDatabase {
     #[salsa::invoke(infer_foreign_data_query)]
     fn infer_foreign_data_query(&self, id: InFile<AstId<ast::ForeignDataDeclaration>>) -> TypeId;
 
@@ -37,7 +37,7 @@ fn infer_foreign_data_query(
     db: &dyn InferDatabase,
     id: InFile<AstId<ast::ForeignDataDeclaration>>,
 ) -> TypeId {
-    let _ = db.lower_foreign_data(id);
+    let _ = db.surface_foreign_data(id);
     db.intern_type(Type::NotImplemented)
 }
 
@@ -45,7 +45,7 @@ fn infer_value_declaration_query(
     db: &dyn InferDatabase,
     id: InFile<AstId<ast::ValueDeclaration>>,
 ) -> Arc<InferValueDeclarationResult> {
-    let value_declaration = db.lower_value_declaration(id);
+    let value_declaration = db.surface_value_declaration(id);
     let mut context = system::InferValueDeclarationContext::new(
         db,
         id,

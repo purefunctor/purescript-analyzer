@@ -4,7 +4,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    lower::{
+    surface::{
         self,
         visitor::{default_visit_expr, Visitor},
         Binder, BinderId, Expr, ExprId,
@@ -89,19 +89,19 @@ impl<'a> InferValueDeclarationContext<'a> {
             Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Literal(literal) => {
                 let literal = match literal {
-                    lower::Literal::Array(_) => {
+                    surface::Literal::Array(_) => {
                         default_visit_expr(self, expr_id);
                         Type::NotImplemented
                     }
-                    lower::Literal::Record(_) => {
+                    surface::Literal::Record(_) => {
                         default_visit_expr(self, expr_id);
                         Type::NotImplemented
                     }
-                    lower::Literal::Int(_) => Type::Literal(tiny::Literal::Int),
-                    lower::Literal::Number(_) => Type::Literal(tiny::Literal::Number),
-                    lower::Literal::String(_) => Type::Literal(tiny::Literal::String),
-                    lower::Literal::Char(_) => Type::Literal(tiny::Literal::Char),
-                    lower::Literal::Boolean(_) => Type::Literal(tiny::Literal::Boolean),
+                    surface::Literal::Int(_) => Type::Literal(tiny::Literal::Int),
+                    surface::Literal::Number(_) => Type::Literal(tiny::Literal::Number),
+                    surface::Literal::String(_) => Type::Literal(tiny::Literal::String),
+                    surface::Literal::Char(_) => Type::Literal(tiny::Literal::Char),
+                    surface::Literal::Boolean(_) => Type::Literal(tiny::Literal::Boolean),
                 };
                 self.db.intern_type(literal)
             }

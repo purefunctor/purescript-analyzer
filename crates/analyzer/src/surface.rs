@@ -1,7 +1,7 @@
 //! Database for lowering the CST.
 
 mod source_map;
-pub mod surface;
+mod trees;
 
 use std::sync::Arc;
 
@@ -14,7 +14,7 @@ use smol_str::SmolStr;
 use syntax::{ast, PureScript, SyntaxKind};
 
 pub use source_map::*;
-pub use surface::*;
+pub use trees::*;
 
 use crate::{
     id::{AstId, InFile},
@@ -23,25 +23,25 @@ use crate::{
 };
 
 #[salsa::query_group(LowerStorage)]
-pub trait LowerDatabase: SourceDatabase + ResolverDatabase {
-    fn lower_foreign_data(
+pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
+    fn surface_foreign_data(
         &self,
         id: InFile<AstId<ast::ForeignDataDeclaration>>,
     ) -> Arc<ForeignDataDeclarationData>;
 
-    fn lower_value_declaration(
+    fn surface_value_declaration(
         &self,
         id: InFile<AstId<ast::ValueDeclaration>>,
     ) -> Arc<ValueDeclarationData>;
 
-    fn lower_value_declaration_with_source_map(
+    fn surface_value_declaration_with_source_map(
         &self,
         id: InFile<AstId<ast::ValueDeclaration>>,
     ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>);
 }
 
-fn lower_foreign_data(
-    db: &dyn LowerDatabase,
+fn surface_foreign_data(
+    db: &dyn SurfaceDatabase,
     id: InFile<AstId<ast::ForeignDataDeclaration>>,
 ) -> Arc<ForeignDataDeclarationData> {
     let root = db.parse_file(id.file_id);
@@ -50,20 +50,20 @@ fn lower_foreign_data(
 
     let context = LowerContext::default();
     let foreign_data_declaration_data =
-        context.lower_foreign_data(&foreign_data_declaration).unwrap();
+        context.surface_foreign_data(&foreign_data_declaration).unwrap();
 
     Arc::new(foreign_data_declaration_data)
 }
 
-fn lower_value_declaration(
-    db: &dyn LowerDatabase,
+fn surface_value_declaration(
+    db: &dyn SurfaceDatabase,
     id: InFile<AstId<ast::ValueDeclaration>>,
 ) -> Arc<ValueDeclarationData> {
-    db.lower_value_declaration_with_source_map(id).0
+    db.surface_value_declaration_with_source_map(id).0
 }
 
-fn lower_value_declaration_with_source_map(
-    db: &dyn LowerDatabase,
+fn surface_value_declaration_with_source_map(
+    db: &dyn SurfaceDatabase,
     id: InFile<AstId<ast::ValueDeclaration>>,
 ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>) {
     let root = db.parse_file(id.file_id);
@@ -72,7 +72,7 @@ fn lower_value_declaration_with_source_map(
 
     let context = LowerContext::default();
     let (value_declaration_data, source_map) =
-        context.lower_value_declaration(&value_declaration).unwrap();
+        context.surface_value_declaration(&value_declaration).unwrap();
 
     (Arc::new(value_declaration_data), Arc::new(source_map))
 }
@@ -109,7 +109,7 @@ impl LowerContext {
 }
 
 impl LowerContext {
-    fn lower_foreign_data(
+    fn surface_foreign_data(
         mut self,
         foreign_data_declaration: &ast::ForeignDataDeclaration,
     ) -> Option<ForeignDataDeclarationData> {
@@ -118,7 +118,7 @@ impl LowerContext {
         Some(ForeignDataDeclarationData { type_arena: self.type_arena, name, type_id })
     }
 
-    fn lower_value_declaration(
+    fn surface_value_declaration(
         mut self,
         value_declaration: &ast::ValueDeclaration,
     ) -> Option<(ValueDeclarationData, SourceMap)> {
@@ -206,7 +206,7 @@ impl LowerContext {
             ast::Binding::UnconditionalBinding(unconditional) => {
                 let where_expression = unconditional.where_expression()?;
                 let where_expr = self.lower_where_expr(&where_expression)?;
-                Some(surface::Binding::Unconditional { where_expr })
+                Some(Binding::Unconditional { where_expr })
             }
             ast::Binding::GuardedBinding(_) => None,
         }

@@ -113,7 +113,7 @@ impl LanguageServer for Analyzer {
                 let declaration_id =
                     db.positional_map(file_id).lookup(&declaration).in_file(file_id);
                 let infer_result = db.infer_value_declaration(declaration_id);
-                let (data, source_map) = db.lower_value_declaration_with_source_map(declaration_id);
+                let (data, source_map) = db.surface_value_declaration_with_source_map(declaration_id);
 
                 let expression: Option<ast::Expression> =
                     significant_token.parent_ancestors().find_map(ast::Expression::cast);

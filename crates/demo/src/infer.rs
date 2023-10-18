@@ -88,9 +88,9 @@ pub enum RecordItem<T> {
 pub trait InferDatabase: SurfaceDatabase {
     fn infer_value_declaration(&self, id: InFileAstId<ast::ValueDeclaration>) -> Arc<ValueInfer>;
 
-    fn lower_value_declaration(&self, id: InFileAstId<ast::ValueDeclaration>) -> Arc<ValueData>;
+    fn surface_value_declaration(&self, id: InFileAstId<ast::ValueDeclaration>) -> Arc<ValueData>;
 
-    fn lower_value_declaration_with_source_map(
+    fn surface_value_declaration_with_source_map(
         &self,
         id: InFileAstId<ast::ValueDeclaration>,
     ) -> (Arc<ValueData>, Arc<SourceMap>);
@@ -102,7 +102,7 @@ fn infer_value_declaration(
 ) -> Arc<ValueInfer> {
     dbg!("Called infer_value_declaration...");
     let mut value_infer = ValueInfer::default();
-    let value_data = db.lower_value_declaration(id);
+    let value_data = db.surface_value_declaration(id);
     infer_expression(db, id.file_id, &mut value_infer, &value_data.expr_arena, value_data.expr_id);
     Arc::new(value_infer)
 }
@@ -159,7 +159,7 @@ fn infer_expression(
         },
         Expr::Variable(name) => {
             if let Some(variable_id) = db.nominal_map(file_id).get_value(name) {
-                let variable_data = db.lower_value_declaration(variable_id);
+                let variable_data = db.surface_value_declaration(variable_id);
                 let infer_result = db.infer_value_declaration(variable_id);
                 let variable_ty =
                     infer_result.expr_type.get(&variable_data.expr_id).unwrap().clone();
@@ -171,19 +171,19 @@ fn infer_expression(
     }
 }
 
-fn lower_value_declaration(
+fn surface_value_declaration(
     db: &dyn InferDatabase,
     id: InFileAstId<ast::ValueDeclaration>,
 ) -> Arc<ValueData> {
-    dbg!("Called lower_value_declaration...");
-    db.lower_value_declaration_with_source_map(id).0
+    dbg!("Called surface_value_declaration...");
+    db.surface_value_declaration_with_source_map(id).0
 }
 
-fn lower_value_declaration_with_source_map(
+fn surface_value_declaration_with_source_map(
     db: &dyn InferDatabase,
     id: InFileAstId<ast::ValueDeclaration>,
 ) -> (Arc<ValueData>, Arc<SourceMap>) {
-    dbg!("Called lower_value_declaration_with_source_map...");
+    dbg!("Called surface_value_declaration_with_source_map...");
 
     let mut lower_context = LowerContext::default();
     let root = &db.parse_file(id.file_id).syntax;

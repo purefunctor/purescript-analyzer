@@ -9,14 +9,14 @@ use traversals::ScopeCollectorContext;
 
 use crate::{
     id::{AstId, InFile},
-    lower::visitor::Visitor,
-    LowerDatabase,
+    surface::visitor::Visitor,
+    SurfaceDatabase,
 };
 
 pub use data::{ScopeData, ScopeId, ScopeKind, ValueDeclarationScope};
 
 #[salsa::query_group(ScopeStorage)]
-pub trait ScopeDatabase: LowerDatabase {
+pub trait ScopeDatabase: SurfaceDatabase {
     #[salsa::invoke(value_declaration_scope_query)]
     fn value_declaration_scope(
         &self,
@@ -28,7 +28,7 @@ fn value_declaration_scope_query(
     db: &dyn ScopeDatabase,
     id: InFile<AstId<ast::ValueDeclaration>>,
 ) -> Arc<ValueDeclarationScope> {
-    let value_declaration = db.lower_value_declaration(id);
+    let value_declaration = db.surface_value_declaration(id);
 
     let mut context =
         ScopeCollectorContext::new(&value_declaration.expr_arena, &value_declaration.binder_arena);

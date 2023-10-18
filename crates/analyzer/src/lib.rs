@@ -2,29 +2,29 @@
 
 pub mod id;
 pub mod infer;
-pub mod lower;
 pub mod names;
 pub mod resolver;
 pub mod scope;
 pub mod source;
+pub mod surface;
 
 use std::hash::BuildHasherDefault;
 
 use indexmap::{IndexMap, IndexSet};
-pub use lower::LowerDatabase;
 pub use resolver::ResolverDatabase;
 use rustc_hash::FxHasher;
 pub use scope::ScopeDatabase;
 pub use source::SourceDatabase;
+pub use surface::SurfaceDatabase;
 
 /// The analyzer's core database.
 #[derive(Default)]
 #[salsa::database(
     infer::InferStorage,
     resolver::ResolverStorage,
-    lower::LowerStorage,
     scope::ScopeStorage,
-    source::SourceStorage
+    source::SourceStorage,
+    surface::LowerStorage
 )]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
@@ -53,7 +53,7 @@ mod tests {
     use salsa::Durability;
 
     use crate::{
-        infer::InferDatabase, LowerDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
+        infer::InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
     };
 
     #[test]
@@ -93,7 +93,7 @@ hello = Hello 42
         db.infer_value_declaration(value_hello_id);
 
         // dbg!((foreign_hello_id, value_hello_id));
-        // dbg!(db.lower_foreign_data(foreign_hello_id));
-        // dbg!(db.lower_value_declaration(value_hello_id));
+        // dbg!(db.surface_foreign_data(foreign_hello_id));
+        // dbg!(db.surface_value_declaration(value_hello_id));
     }
 }

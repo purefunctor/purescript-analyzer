@@ -2,7 +2,7 @@ use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
-use crate::{lower::ExprId, FxIndexSet};
+use crate::{surface::ExprId, FxIndexSet};
 
 /// Scope information as a linked list.
 #[derive(Debug, PartialEq, Eq)]
