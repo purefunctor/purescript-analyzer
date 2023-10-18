@@ -11,6 +11,7 @@ pub mod surface;
 use std::hash::BuildHasherDefault;
 
 use indexmap::{IndexMap, IndexSet};
+pub use infer::InferDatabase;
 pub use resolver::ResolverDatabase;
 use rustc_hash::FxHasher;
 pub use scope::ScopeDatabase;
