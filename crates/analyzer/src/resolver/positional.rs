@@ -64,13 +64,25 @@ impl PositionalMap {
             .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
         if let Some(declarations) = declarations {
             for declaration in declarations {
-                let node = match &declaration {
-                    ast::Declaration::AnnotationDeclaration(annotation) => annotation.syntax(),
-                    ast::Declaration::DataDeclaration(data) => data.syntax(),
-                    ast::Declaration::ForeignDataDeclaration(data) => data.syntax(),
-                    ast::Declaration::ValueDeclaration(value) => value.syntax(),
+                match &declaration {
+                    ast::Declaration::AnnotationDeclaration(annotation) => {
+                        positional_map.alloc(annotation.syntax());
+                    }
+                    ast::Declaration::DataDeclaration(data) => {
+                        positional_map.alloc(data.syntax());
+                        if let Some(constructors) = data.constructors() {
+                            for constructor in constructors.children() {
+                                positional_map.alloc(constructor.syntax());
+                            }
+                        }
+                    }
+                    ast::Declaration::ForeignDataDeclaration(data) => {
+                        positional_map.alloc(data.syntax());
+                    }
+                    ast::Declaration::ValueDeclaration(value) => {
+                        positional_map.alloc(value.syntax());
+                    }
                 };
-                positional_map.alloc(node);
             }
         }
 

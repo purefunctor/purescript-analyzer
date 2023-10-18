@@ -25,6 +25,10 @@ use crate::{
 pub struct NominalMap {
     annotation: FxHashMap<SmolStr, InFile<AstId<ast::AnnotationDeclaration>>>,
     data: FxHashMap<SmolStr, InFile<AstId<ast::DataDeclaration>>>,
+    constructor: FxHashMap<
+        SmolStr,
+        (InFile<AstId<ast::DataDeclaration>>, InFile<AstId<ast::DataConstructor>>),
+    >,
     foreign_data: FxHashMap<SmolStr, InFile<AstId<ast::ForeignDataDeclaration>>>,
     value: FxHashMap<SmolStr, Vec<InFile<AstId<ast::ValueDeclaration>>>>,
 }
@@ -59,8 +63,11 @@ impl NominalMap {
             }
             ast::Declaration::DataDeclaration(data) => {
                 let name = data.name()?.as_str()?;
-                let id = db.positional_map(file_id).ast_id(data).in_file(file_id);
-                self.data.insert(name, id);
+                let data_id = db.positional_map(file_id).ast_id(data).in_file(file_id);
+                for constructor in data.constructors()?.children() {
+                    self.collect_constructor(db, file_id, data_id, &constructor);
+                }
+                self.data.insert(name, data_id);
             }
             ast::Declaration::ForeignDataDeclaration(data) => {
                 let name = data.name()?.as_str()?;
@@ -77,6 +84,20 @@ impl NominalMap {
         Some(())
     }
 
+    fn collect_constructor(
+        &mut self,
+        db: &dyn ResolverDatabase,
+        file_id: FileId,
+        data_id: InFile<AstId<ast::DataDeclaration>>,
+        constructor: &ast::DataConstructor,
+    ) -> Option<()> {
+        let name = constructor.name()?.as_str()?;
+        let constructor_id = db.positional_map(file_id).ast_id(constructor).in_file(file_id);
+        self.constructor.insert(name, (data_id, constructor_id));
+
+        Some(())
+    }
+
     pub fn get_annotation(
         &self,
         name: impl AsRef<str>,
@@ -86,6 +107,13 @@ impl NominalMap {
 
     pub fn get_data(&self, name: impl AsRef<str>) -> Option<InFile<AstId<ast::DataDeclaration>>> {
         self.data.get(name.as_ref()).copied()
+    }
+
+    pub fn get_constructor(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<(InFile<AstId<ast::DataDeclaration>>, InFile<AstId<ast::DataConstructor>>)> {
+        self.constructor.get(name.as_ref()).copied()
     }
 
     pub fn get_foreign_data(
