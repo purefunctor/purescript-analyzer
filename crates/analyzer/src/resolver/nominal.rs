@@ -25,12 +25,11 @@ use crate::{
 pub struct NominalMap {
     annotation: FxHashMap<SmolStr, InFile<AstId<ast::AnnotationDeclaration>>>,
     data: FxHashMap<SmolStr, InFile<AstId<ast::DataDeclaration>>>,
-    constructor: FxHashMap<
-        SmolStr,
-        (InFile<AstId<ast::DataDeclaration>>, InFile<AstId<ast::DataConstructor>>),
-    >,
+    constructor: FxHashMap<SmolStr, InFile<AstId<ast::DataConstructor>>>,
     foreign_data: FxHashMap<SmolStr, InFile<AstId<ast::ForeignDataDeclaration>>>,
     value: FxHashMap<SmolStr, Vec<InFile<AstId<ast::ValueDeclaration>>>>,
+    constructor_to_data:
+        FxHashMap<InFile<AstId<ast::DataConstructor>>, InFile<AstId<ast::DataDeclaration>>>,
 }
 
 impl NominalMap {
@@ -93,7 +92,8 @@ impl NominalMap {
     ) -> Option<()> {
         let name = constructor.name()?.as_str()?;
         let constructor_id = db.positional_map(file_id).ast_id(constructor).in_file(file_id);
-        self.constructor.insert(name, (data_id, constructor_id));
+        self.constructor.insert(name, constructor_id);
+        self.constructor_to_data.insert(constructor_id, data_id);
 
         Some(())
     }
@@ -112,7 +112,7 @@ impl NominalMap {
     pub fn get_constructor(
         &self,
         name: impl AsRef<str>,
-    ) -> Option<(InFile<AstId<ast::DataDeclaration>>, InFile<AstId<ast::DataConstructor>>)> {
+    ) -> Option<InFile<AstId<ast::DataConstructor>>> {
         self.constructor.get(name.as_ref()).copied()
     }
 
@@ -128,5 +128,16 @@ impl NominalMap {
         name: impl AsRef<str>,
     ) -> Option<Arc<[InFile<AstId<ast::ValueDeclaration>>]>> {
         self.value.get(name.as_ref()).map(|values| values.as_slice().into())
+    }
+
+    pub fn constructor_of(
+        &self,
+        id: InFile<AstId<ast::DataConstructor>>,
+    ) -> InFile<AstId<ast::DataDeclaration>> {
+        if let Some(id) = self.constructor_to_data.get(&id) {
+            *id
+        } else {
+            panic!("Invariant violated: a constructor was not assigned to a declarations");
+        }
     }
 }
