@@ -53,7 +53,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase};
+    use crate::{InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -86,10 +86,9 @@ hello = Hello 42
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        let list_id = db.nominal_map(file_id).get_data("List").unwrap();
-        let (data_id, cons_id) = db.nominal_map(file_id).get_constructor("Cons").unwrap();
-        assert_eq!(data_id, list_id);
-        dbg!(cons_id);
-        dbg!(db.surface_data(list_id));
+        // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
+        let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
+
+        dbg!(db.infer_data_constructor(cons_id));
     }
 }

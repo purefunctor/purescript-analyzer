@@ -18,6 +18,9 @@ pub use trees::*;
 
 #[salsa::query_group(InferStorage)]
 pub trait InferDatabase: SurfaceDatabase {
+    #[salsa::invoke(infer_data_constructor_query)]
+    fn infer_data_constructor(&self, id: InFile<AstId<ast::DataConstructor>>) -> TypeId;
+
     #[salsa::invoke(infer_foreign_data_query)]
     fn infer_foreign_data_query(&self, id: InFile<AstId<ast::ForeignDataDeclaration>>) -> TypeId;
 
@@ -32,6 +35,21 @@ pub trait InferDatabase: SurfaceDatabase {
 
     #[salsa::interned]
     fn intern_type(&self, t: Type) -> TypeId;
+}
+
+fn infer_data_constructor_query(
+    db: &dyn InferDatabase,
+    id: InFile<AstId<ast::DataConstructor>>,
+) -> TypeId {
+    let data_id = db.nominal_map(id.file_id).data_of_constructor(id);
+    let data_data = db.surface_data(data_id);
+
+    if let Some(constructor) = data_data.constructors.get(&id) {
+        dbg!(constructor);
+        db.intern_type(Type::NotImplemented)
+    } else {
+        panic!("Invariant violated: constructor does not belong to declaration");
+    }
 }
 
 fn infer_foreign_data_query(

@@ -130,14 +130,14 @@ impl NominalMap {
         self.value.get(name.as_ref()).map(|values| values.as_slice().into())
     }
 
-    pub fn constructor_of(
+    pub fn data_of_constructor(
         &self,
         id: InFile<AstId<ast::DataConstructor>>,
     ) -> InFile<AstId<ast::DataDeclaration>> {
         if let Some(id) = self.constructor_to_data.get(&id) {
             *id
         } else {
-            panic!("Invariant violated: a constructor was not assigned to a declarations");
+            panic!("Invariant violated: a constructor was not assigned to a declaration");
         }
     }
 }
