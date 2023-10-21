@@ -5,6 +5,7 @@ mod trees;
 
 use std::sync::Arc;
 
+use files::FileId;
 use la_arena::Arena;
 use rowan::{
     ast::{AstNode, SyntaxNodePtr},
@@ -19,6 +20,7 @@ pub use trees::*;
 use crate::{
     id::{AstId, InFile},
     names::{Name, Qualified},
+    resolver::PositionalMap,
     ResolverDatabase, SourceDatabase,
 };
 
@@ -47,11 +49,13 @@ fn surface_data(
     id: InFile<AstId<ast::DataDeclaration>>,
 ) -> Arc<DataDeclarationData> {
     let root = db.parse_file(id.file_id);
-    let ptr = db.positional_map(id.file_id).ast_ptr(id.value);
+    let positional_map = db.positional_map(id.file_id);
+    let ptr = positional_map.ast_ptr(id.value);
     let data_declaration = ptr.to_node(&root);
 
     let context = LowerContext::default();
-    let data_declaration_data = context.surface_data(&data_declaration).unwrap();
+    let data_declaration_data =
+        context.surface_data(id.file_id, positional_map, &data_declaration).unwrap();
 
     Arc::new(data_declaration_data)
 }
@@ -127,13 +131,18 @@ impl LowerContext {
 impl LowerContext {
     fn surface_data(
         mut self,
+        file_id: FileId,
+        positional_map: Arc<PositionalMap>,
         data_declaration: &ast::DataDeclaration,
     ) -> Option<DataDeclarationData> {
         let name = Name::try_from(data_declaration.name()?).ok()?;
         let constructors = data_declaration
             .constructors()?
             .children()
-            .map(|constructor| self.lower_data_constructor(&constructor))
+            .map(|constructor| {
+                let id = positional_map.ast_id(&constructor).in_file(file_id);
+                Some((id, self.lower_data_constructor(&constructor)?))
+            })
             .collect::<Option<_>>()?;
         Some(DataDeclarationData { type_arena: self.type_arena, name, constructors })
     }

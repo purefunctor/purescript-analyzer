@@ -1,7 +1,7 @@
 //! The core AST used for semantic analysis.
 pub mod visitor;
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
@@ -16,7 +16,7 @@ use crate::{
 pub struct DataDeclarationData {
     pub type_arena: Arena<Type>,
     pub name: Name,
-    pub constructors: Box<[DataConstructorData]>,
+    pub constructors: BTreeMap<InFile<AstId<ast::DataConstructor>>, DataConstructorData>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
