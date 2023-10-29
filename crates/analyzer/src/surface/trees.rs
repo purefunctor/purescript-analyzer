@@ -1,4 +1,5 @@
 //! The core AST used for semantic analysis.
+mod printer;
 pub mod visitor;
 
 use std::collections::BTreeMap;
@@ -6,6 +7,8 @@ use std::collections::BTreeMap;
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
 use syntax::ast;
+
+pub use printer::PrettyPrinter;
 
 use crate::{
     id::{AstId, InFile},

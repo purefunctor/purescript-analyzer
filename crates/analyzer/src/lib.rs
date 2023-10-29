@@ -53,7 +53,9 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
+    use crate::{
+        surface::PrettyPrinter, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
+    };
 
     #[test]
     fn api() {
@@ -70,7 +72,7 @@ module Main where
 
 data List a = Cons a (List a) | Nil
 
-hello = Hello 42
+hello = 0 1.0 \"a\" 'b' true false [0, 1, 2, 3, 4, 5]
 "
                 .into(),
             ),
@@ -87,8 +89,19 @@ hello = Hello 42
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
         // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
-        let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
+        // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
+        let val_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        let val_data = db.surface_value_declaration(val_id);
 
-        dbg!(db.infer_data_constructor(cons_id));
+        let type_arena = la_arena::Arena::default();
+        let pretty_printer =
+            PrettyPrinter::new(&val_data.expr_arena, &val_data.binder_arena, &type_arena);
+        let mut out = String::default();
+        match &val_data.binding {
+            crate::surface::Binding::Unconditional { where_expr } => {
+                pretty_printer.expr(where_expr.expr_id).render_fmt(80, &mut out).unwrap();
+            }
+        }
+        println!("{}", out);
     }
 }
