@@ -203,10 +203,14 @@ impl LowerContext {
                 ast::Binder::ConstructorBinder(constructor) => {
                     let name = Qualified::try_from(constructor.qualified_name()?).ok()?;
                     let fields = constructor
-                        .fields()?
-                        .children()
-                        .filter_map(|field| self.lower_binder(&field))
-                        .collect();
+                        .fields()
+                        .map(|fields| {
+                            fields
+                                .children()
+                                .filter_map(|field| self.lower_binder(&field))
+                                .collect()
+                        })
+                        .unwrap_or_default();
                     Some(Binder::Constructor { name, fields })
                 }
                 ast::Binder::LiteralBinder(literal) => self.lower_binder_literal(literal),

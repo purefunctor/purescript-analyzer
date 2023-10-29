@@ -72,7 +72,7 @@ module Main where
 
 data List a = Cons a (List a) | Nil
 
-hello = 0 1.0 \"a\" 'b' true false [0, 1, 2, 3, 4, 5]
+hello X(X.Cons _ _) = 0 1.0 \"a\" 'b' true false [0, 1, 2, 3, 4, 5]
 "
                 .into(),
             ),
@@ -88,20 +88,45 @@ hello = 0 1.0 \"a\" 'b' true false [0, 1, 2, 3, 4, 5]
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
-        // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
-        let val_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
-        let val_data = db.surface_value_declaration(val_id);
+        let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
+        let list_id = db.nominal_map(file_id).get_data("List").unwrap();
 
-        let type_arena = la_arena::Arena::default();
-        let pretty_printer =
-            PrettyPrinter::new(&val_data.expr_arena, &val_data.binder_arena, &type_arena);
-        let mut out = String::default();
-        match &val_data.binding {
-            crate::surface::Binding::Unconditional { where_expr } => {
-                pretty_printer.expr(where_expr.expr_id).render_fmt(80, &mut out).unwrap();
-            }
+        let list_dt = db.surface_data(list_id);
+        let cons_dt = list_dt.constructors.get(&cons_id).unwrap();
+
+        let expr_arena = Default::default();
+        let binder_arena = Default::default();
+        let pretty_printer = PrettyPrinter::new(&expr_arena, &binder_arena, &list_dt.type_arena);
+
+        let mut out = String::new();
+        for field in cons_dt.fields.iter() {
+            pretty_printer.ty(*field).render_fmt(80, &mut out).unwrap();
+            out.push('\n');
         }
         println!("{}", out);
+
+        // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
+        // // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
+        // let val_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
+        // let val_data = db.surface_value_declaration(val_id);
+
+        // let type_arena = la_arena::Arena::default();
+        // let pretty_printer =
+        //     PrettyPrinter::new(&val_data.expr_arena, &val_data.binder_arena, &type_arena);
+
+        // let mut out = String::default();
+        // for binder_id in val_data.binders.iter() {
+        //     pretty_printer.binder(*binder_id).render_fmt(80, &mut out).unwrap();
+        //     out.push('\n');
+        // }
+        // println!("{}", out);
+
+        // let mut out = String::default();
+        // match &val_data.binding {
+        //     crate::surface::Binding::Unconditional { where_expr } => {
+        //         pretty_printer.expr(where_expr.expr_id).render_fmt(80, &mut out).unwrap();
+        //     }
+        // }
+        // println!("{}", out);
     }
 }
