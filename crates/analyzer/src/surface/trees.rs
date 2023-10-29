@@ -1,7 +1,7 @@
 //! The core AST used for semantic analysis.
 pub mod visitor;
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::collections::BTreeMap;
 
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
@@ -47,7 +47,7 @@ pub struct ValueDeclarationData {
     /// isZero 0 = true
     /// isZero _ = false
     /// ```
-    pub siblings: Arc<[InFile<AstId<ast::ValueDeclaration>>]>,
+    pub siblings: Box<[InFile<AstId<ast::ValueDeclaration>>]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

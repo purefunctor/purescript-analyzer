@@ -175,7 +175,7 @@ impl LowerContext {
             binders,
             binding,
             annotation: None,
-            siblings: Arc::from([]),
+            siblings: Box::from([]),
         };
 
         Some((value_declaration_data, self.source_map))
