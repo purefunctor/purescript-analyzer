@@ -56,11 +56,11 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    surface::{Binder, BinderId, Expr, ExprId},
+    surface::{Binder, BinderId, Expr, ExprId, Literal},
     InferDatabase,
 };
 
-use super::{constraint::Constraint, Type, TypeId};
+use super::{constraint::Constraint, Primitive, Type, TypeId, Unification};
 
 /// Mutable internal state used during inference.
 #[derive(Debug, Default)]
@@ -96,14 +96,14 @@ impl<'a> InferValueDeclarationContext<'a> {
         match &value_declaration_data.binding {
             crate::surface::Binding::Unconditional { where_expr } => {
                 dbg!(db.lookup_intern_type(context.infer_expr(where_expr.expr_id)));
-            },
+            }
         }
     }
 
     fn fresh_unification(&mut self) -> TypeId {
         let index = self.infer_state.index;
         self.infer_state.index += 1;
-        self.db.intern_type(Type::Unification(index, self.id))
+        self.db.intern_type(Type::Unification(Unification(index, self.id)))
     }
 
     fn infer_expr(&mut self, expr_id: ExprId) -> TypeId {
@@ -111,8 +111,20 @@ impl<'a> InferValueDeclarationContext<'a> {
             Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
-            Expr::Literal(_) => self.db.intern_type(Type::NotImplemented),
+            Expr::Literal(literal) => self.infer_expr_literal(literal),
             Expr::Variable(_) => self.db.intern_type(Type::NotImplemented),
+        }
+    }
+
+    fn infer_expr_literal(&mut self, literal: &Literal<la_arena::Idx<Expr>>) -> TypeId {
+        match literal {
+            Literal::Array(_) => self.db.intern_type(Type::NotImplemented),
+            Literal::Record(_) => self.db.intern_type(Type::NotImplemented),
+            Literal::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
+            Literal::Number(_) => self.db.intern_type(Type::Primitive(Primitive::Number)),
+            Literal::String(_) => self.db.intern_type(Type::Primitive(Primitive::String)),
+            Literal::Char(_) => self.db.intern_type(Type::Primitive(Primitive::Char)),
+            Literal::Boolean(_) => self.db.intern_type(Type::Primitive(Primitive::Boolean)),
         }
     }
 }

@@ -27,6 +27,19 @@ impl salsa::InternKey for TypeId {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
-    Unification(u32, InFile<AstId<ast::ValueDeclaration>>),
+    Primitive(Primitive),
+    Unification(Unification),
     NotImplemented,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Primitive {
+    Int,
+    Number,
+    Char,
+    String,
+    Boolean,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Unification(pub u32, pub InFile<AstId<ast::ValueDeclaration>>);

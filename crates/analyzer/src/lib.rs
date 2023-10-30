@@ -54,7 +54,8 @@ mod tests {
     use salsa::Durability;
 
     use crate::{
-        surface::PrettyPrinter, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase, InferDatabase,
+        surface::PrettyPrinter, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
+        SurfaceDatabase,
     };
 
     #[test]
