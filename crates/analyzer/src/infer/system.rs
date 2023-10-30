@@ -56,6 +56,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
+    names::{NameRef, Qualified},
     surface::{Binder, BinderId, Expr, ExprId, Literal},
     InferDatabase,
 };
@@ -112,7 +113,7 @@ impl<'a> InferValueDeclarationContext<'a> {
             Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Literal(literal) => self.infer_expr_literal(literal),
-            Expr::Variable(_) => self.db.intern_type(Type::NotImplemented),
+            Expr::Variable(variable) => self.infer_expr_variable(variable),
         }
     }
 
@@ -126,6 +127,13 @@ impl<'a> InferValueDeclarationContext<'a> {
             Literal::Char(_) => self.db.intern_type(Type::Primitive(Primitive::Char)),
             Literal::Boolean(_) => self.db.intern_type(Type::Primitive(Primitive::Boolean)),
         }
+    }
+
+    fn infer_expr_variable(&self, variable: &Qualified<NameRef>) -> TypeId {
+        // FIXME: replace this with real name resolution
+        self.db.intern_type(Type::Reference(
+            self.db.nominal_map(self.id.file_id).get_value(&variable.value).unwrap()[0],
+        ))
     }
 }
 

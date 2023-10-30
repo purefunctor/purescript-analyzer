@@ -28,6 +28,7 @@ impl salsa::InternKey for TypeId {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Primitive(Primitive),
+    Reference(InFile<AstId<ast::ValueDeclaration>>),
     Unification(Unification),
     NotImplemented,
 }

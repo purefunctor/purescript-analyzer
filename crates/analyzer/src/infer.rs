@@ -22,6 +22,7 @@ pub trait InferDatabase: SurfaceDatabase {
 
     #[salsa::invoke(InferValueDeclarationContext::infer_value_declaration_query)]
     fn infer_value_declaration(&self, id: InFile<AstId<ast::ValueDeclaration>>) -> ();
+
     // #[salsa::invoke(infer_data_constructor_query)]
     // fn infer_data_constructor(&self, id: InFile<AstId<ast::DataConstructor>>) -> TypeId;
 
