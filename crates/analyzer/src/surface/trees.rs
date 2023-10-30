@@ -80,6 +80,7 @@ pub type BinderId = Idx<Binder>;
 pub enum Expr {
     Application(ExprId, Box<[ExprId]>),
     Constructor(Qualified<NameRef>),
+    Lambda(Box<[BinderId]>, ExprId),
     LetIn(Box<[LetBinding]>, ExprId),
     Literal(Literal<ExprId>),
     Variable(Qualified<NameRef>),

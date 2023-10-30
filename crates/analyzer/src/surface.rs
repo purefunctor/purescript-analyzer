@@ -286,6 +286,7 @@ impl LowerContext {
             ast::Expression::ConstructorExpression(constructor) => {
                 Some(self.lower_constructor(constructor)?)
             }
+            ast::Expression::LambdaExpression(lambda) => Some(self.lower_lambda(lambda)?),
             ast::Expression::LetInExpression(let_in) => Some(self.lower_let_in(let_in)?),
             ast::Expression::LiteralExpression(literal) => Some(self.lower_expr_literal(literal)?),
             ast::Expression::VariableExpression(variable) => Some(self.lower_variable(variable)?),
@@ -311,6 +312,16 @@ impl LowerContext {
         let qualified = constructor.qualified_name()?;
         let name_ref = qualified.try_into().ok()?;
         Some(Expr::Constructor(name_ref))
+    }
+
+    fn lower_lambda(&mut self, lambda: &ast::LambdaExpression) -> Option<Expr> {
+        let binders = lambda
+            .binders()?
+            .children()
+            .map(|binder| self.lower_binder(&binder))
+            .collect::<Option<_>>()?;
+        let body = self.lower_expr(&lambda.body()?)?;
+        Some(Expr::Lambda(binders, body))
     }
 
     fn lower_let_in(&mut self, let_in: &ast::LetInExpression) -> Option<Expr> {

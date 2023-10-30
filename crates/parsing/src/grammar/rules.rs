@@ -149,6 +149,7 @@ fn at_expr_start(parser: &Parser) -> bool {
             | SyntaxKind::Question
             | SyntaxKind::Underscore
             | SyntaxKind::At
+            | SyntaxKind::Backslash
     )
 }
 
@@ -184,7 +185,12 @@ fn expr_sp(parser: &mut Parser) {
     }
 }
 
-// expr_if | expr_case | expr_let | qualified_prefix? ( expr_do | expr_ado ) | expr_6
+//   expr_if
+// | expr_case
+// | expr_let
+// | expr_lambda
+// | qualified_prefix? ( expr_do | expr_ado )
+// | expr_6
 fn expr_5(parser: &mut Parser) {
     match parser.current() {
         SyntaxKind::IfKw => {
@@ -195,6 +201,9 @@ fn expr_5(parser: &mut Parser) {
         }
         SyntaxKind::LetKw => {
             return expr_let(parser);
+        }
+        SyntaxKind::Backslash => {
+            return expr_lambda(parser);
         }
         _ => (),
     }
@@ -424,6 +433,23 @@ fn expr_ado(parser: &mut Parser, mut qualified: NodeMarker, mut expression: Node
     qualified.end(parser, SyntaxKind::QualifiedAdo);
 
     expression.end(parser, SyntaxKind::DoExpression);
+}
+
+// '\' pat_atom* '->' expr_0
+fn expr_lambda(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::Backslash);
+    one_or_more(parser, |parser| {
+        if at_pat_start(parser) {
+            pat_atom(parser);
+            true
+        } else {
+            false
+        }
+    });
+    parser.expect(SyntaxKind::RightArrow);
+    expr_0(parser);
+    marker.end(parser, SyntaxKind::LambdaExpression);
 }
 
 fn at_record_update(parser: &Parser) -> bool {

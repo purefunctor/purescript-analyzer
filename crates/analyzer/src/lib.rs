@@ -53,7 +53,9 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
+    use crate::{
+        surface::PrettyPrinter, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
+    };
 
     #[test]
     fn api() {
@@ -68,9 +70,9 @@ mod tests {
                 "
 module Main where
 
-a = 0
+a = \\_ -> 0
 
-b = a
+b = \\_ -> 1
 "
                 .into(),
             ),
@@ -86,11 +88,35 @@ b = a
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
+
         let a_id = db.nominal_map(file_id).get_value("a").unwrap()[0];
         let b_id = db.nominal_map(file_id).get_value("b").unwrap()[0];
 
-        db.infer_value_declaration(a_id);
-        db.infer_value_declaration(b_id);
+        let a_data = db.surface_value_declaration(a_id);
+        let b_data = db.surface_value_declaration(b_id);
+
+        let type_arena = Default::default();
+        let a_printer = PrettyPrinter::new(&a_data.expr_arena, &a_data.binder_arena, &type_arena);
+        let b_printer = PrettyPrinter::new(&b_data.expr_arena, &b_data.binder_arena, &type_arena);
+
+        let mut out = String::default();
+        match &a_data.binding {
+            crate::surface::Binding::Unconditional { where_expr } => {
+                a_printer.expr(where_expr.expr_id).render_fmt(40, &mut out).unwrap();
+            }
+        }
+        println!("{}", out);
+
+        let mut out = String::default();
+        match &b_data.binding {
+            crate::surface::Binding::Unconditional { where_expr } => {
+                b_printer.expr(where_expr.expr_id).render_fmt(80, &mut out).unwrap();
+            }
+        }
+        println!("{}", out);
+
+        // db.infer_value_declaration(a_id);
+        // db.infer_value_declaration(b_id);
 
         // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
         // let list_id = db.nominal_map(file_id).get_data("List").unwrap();

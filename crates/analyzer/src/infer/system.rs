@@ -111,6 +111,7 @@ impl<'a> InferValueDeclarationContext<'a> {
         match &self.expr_arena[expr_id] {
             Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
+            Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
             Expr::Literal(literal) => self.infer_expr_literal(literal),
             Expr::Variable(variable) => self.infer_expr_variable(variable),

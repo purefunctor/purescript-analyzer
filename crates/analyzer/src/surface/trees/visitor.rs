@@ -43,6 +43,12 @@ where
             }
         }
         Expr::Constructor(_) => (),
+        Expr::Lambda(binders, body) => {
+            for binder in binders.iter() {
+                visitor.visit_binder(*binder);
+            }
+            visitor.visit_expr(*body);
+        }
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
                 match let_binding {

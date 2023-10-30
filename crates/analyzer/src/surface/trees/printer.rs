@@ -196,6 +196,11 @@ impl<'a> PrettyPrinter<'a> {
                 let constructor = self.expr_constructor(constructor);
                 self.kinded(kind, constructor)
             }
+            Expr::Lambda(binders, body) => {
+                let kind = self.allocator.text("Lambda");
+                let lambda = self.expr_lambda(binders, body);
+                self.kinded(kind, lambda)
+            }
             Expr::LetIn(_, _) => {
                 let kind = self.allocator.text("LetIn");
                 self.kinded(kind, self.allocator.text("..."))
@@ -225,6 +230,21 @@ impl<'a> PrettyPrinter<'a> {
                 self.allocator.text("?.").append(self.allocator.text(constructor.value.as_ref()))
             }
         }
+    }
+
+    pub fn expr_lambda<'b>(
+        &'b self,
+        binders: &'b [BinderId],
+        body: &'b ExprId,
+    ) -> DocBuilder<'b, BoxAllocator> {
+        let binders = self
+            .allocator
+            .intersperse(binders.iter().map(|binder| self.binder(*binder)), self.allocator.line())
+            .nest(1)
+            .group()
+            .brackets();
+        let body = self.expr(*body);
+        self.allocator.intersperse([binders, body], self.allocator.line())
     }
 
     pub fn expr_literal<'b>(
