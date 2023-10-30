@@ -54,7 +54,8 @@ mod tests {
     use salsa::Durability;
 
     use crate::{
-        surface::PrettyPrinter, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
+        surface::PrettyPrinter, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
+        SurfaceDatabase,
     };
 
     #[test]
@@ -115,8 +116,8 @@ b = \\_ -> 1
         }
         println!("{}", out);
 
-        // db.infer_value_declaration(a_id);
-        // db.infer_value_declaration(b_id);
+        db.infer_value_declaration(a_id);
+        db.infer_value_declaration(b_id);
 
         // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
         // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
