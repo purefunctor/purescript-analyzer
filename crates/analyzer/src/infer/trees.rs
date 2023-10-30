@@ -27,23 +27,6 @@ impl salsa::InternKey for TypeId {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
-    Function(Box<[TypeId]>, TypeId),
-    Literal(Literal),
+    Unification(u32, InFile<AstId<ast::ValueDeclaration>>),
     NotImplemented,
-    Unification(Unification),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Literal {
-    Int,
-    Number,
-    String,
-    Char,
-    Boolean,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Unification {
-    Local(u32, InFile<AstId<ast::ValueDeclaration>>),
-    Global(InFile<AstId<ast::ValueDeclaration>>),
 }

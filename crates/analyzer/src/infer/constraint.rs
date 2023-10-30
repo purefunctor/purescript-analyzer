@@ -1,9 +1,13 @@
 //! Type definitions for the constraint system.
 
-use super::{TypeId, Unification};
+use syntax::ast;
+
+use crate::id::{AstId, InFile};
+
+use super::TypeId;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Constraint {
     UnifyDeep(TypeId, TypeId),
-    UnifySolve(Unification, TypeId),
+    UnifySolve(u32, InFile<AstId<ast::ValueDeclaration>>, TypeId),
 }

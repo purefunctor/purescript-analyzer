@@ -54,7 +54,7 @@ mod tests {
     use salsa::Durability;
 
     use crate::{
-        surface::PrettyPrinter, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
+        surface::PrettyPrinter, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase, InferDatabase,
     };
 
     #[test]
@@ -72,7 +72,7 @@ module Main where
 
 data List a = Cons a (List a) | Nil
 
-hello X(X.Cons _ _) = 0 1.0 \"a\" 'b' true false [0, 1, 2, 3, 4, 5]
+hello = 0
 "
                 .into(),
             ),
@@ -88,22 +88,26 @@ hello X(X.Cons _ _) = 0 1.0 \"a\" 'b' true false [0, 1, 2, 3, 4, 5]
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-        let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
-        let list_id = db.nominal_map(file_id).get_data("List").unwrap();
+        let hello_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
 
-        let list_dt = db.surface_data(list_id);
-        let cons_dt = list_dt.constructors.get(&cons_id).unwrap();
+        db.infer_value_declaration(hello_id);
 
-        let expr_arena = Default::default();
-        let binder_arena = Default::default();
-        let pretty_printer = PrettyPrinter::new(&expr_arena, &binder_arena, &list_dt.type_arena);
+        // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
+        // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
 
-        let mut out = String::new();
-        for field in cons_dt.fields.iter() {
-            pretty_printer.ty(*field).render_fmt(80, &mut out).unwrap();
-            out.push('\n');
-        }
-        println!("{}", out);
+        // let list_dt = db.surface_data(list_id);
+        // let cons_dt = list_dt.constructors.get(&cons_id).unwrap();
+
+        // let expr_arena = Default::default();
+        // let binder_arena = Default::default();
+        // let pretty_printer = PrettyPrinter::new(&expr_arena, &binder_arena, &list_dt.type_arena);
+
+        // let mut out = String::new();
+        // for field in cons_dt.fields.iter() {
+        //     pretty_printer.ty(*field).render_fmt(80, &mut out).unwrap();
+        //     out.push('\n');
+        // }
+        // println!("{}", out);
 
         // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
         // // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
