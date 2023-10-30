@@ -25,7 +25,7 @@ Start { kind: Module }
   Finish
   Start { kind: ModuleBody }
     Start { kind: ZeroOrMore }
-      Start { kind: AnnotationDeclaration }
+      Start { kind: ValueAnnotationDeclaration }
         Start { kind: Name }
           Token { kind: Lower }
         Finish
