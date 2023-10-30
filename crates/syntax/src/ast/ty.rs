@@ -7,6 +7,7 @@ use super::{NameRef, OneOrMore, QualifiedName};
 _create_ast_v!(
     Type,
     ApplicationType(ApplicationType),
+    ArrowType(ArrowType),
     ConstructorType(ConstructorType),
     IntegerType(IntegerType),
     KindedType(KindedType),
@@ -19,6 +20,16 @@ _create_ast_v!(
     VariableType(VariableType),
     WildcardType(WildcardType)
 );
+
+impl ArrowType {
+    pub fn argument(&self) -> Option<Type> {
+        Type::cast(self.node.first_child()?)
+    }
+
+    pub fn result(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
+}
 
 impl ApplicationType {
     pub fn head(&self) -> Option<Type> {

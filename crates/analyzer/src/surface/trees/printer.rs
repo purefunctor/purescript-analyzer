@@ -268,6 +268,11 @@ impl<'a> PrettyPrinter<'a> {
 
     pub fn ty(&self, type_id: TypeId) -> DocBuilder<BoxAllocator> {
         match &self.type_arena[type_id] {
+            Type::Arrow(arguments, result) => {
+                let kind = self.allocator.text("Arrow");
+                let arrow = self.ty_arrow(arguments, result);
+                self.kinded(kind, arrow)
+            }
             Type::Application(head_id, spine_id) => {
                 let kind = self.allocator.text("Application");
                 let head = self.ty(*head_id);
@@ -294,6 +299,21 @@ impl<'a> PrettyPrinter<'a> {
                 self.kinded(kind, variable)
             }
         }
+    }
+
+    pub fn ty_arrow<'b>(
+        &'b self,
+        arguments: &'b [TypeId],
+        result: &'b TypeId,
+    ) -> DocBuilder<'b, BoxAllocator> {
+        let arguments = self
+            .allocator
+            .intersperse(arguments.iter().map(|argument| self.ty(*argument)), self.allocator.line())
+            .nest(1)
+            .group()
+            .brackets();
+        let result = self.ty(*result);
+        self.allocator.intersperse([arguments, result], self.allocator.line())
     }
 
     pub fn ty_constructor<'b>(

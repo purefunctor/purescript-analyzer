@@ -168,7 +168,7 @@ pub enum SyntaxKind {
     WildcardBinder,
 
     ValueDeclaration,
-    AnnotationDeclaration,
+    ValueAnnotationDeclaration,
 
     DataDeclaration,
     DataConstructor,

@@ -4,9 +4,9 @@ use super::{Binder, Binding, Name, Separated, Type, ZeroOrMore};
 
 _create_ast_v!(
     Declaration,
-    AnnotationDeclaration(AnnotationDeclaration),
     DataDeclaration(DataDeclaration),
     ForeignDataDeclaration(ForeignDataDeclaration),
+    ValueAnnotationDeclaration(ValueAnnotationDeclaration),
     ValueDeclaration(ValueDeclaration)
 );
 
@@ -18,12 +18,6 @@ _create_ast_v!(
     LetBindingPattern(LetBindingPattern),
     LetBindingSignature(LetBindingSignature)
 );
-
-impl AnnotationDeclaration {
-    pub fn name(&self) -> Option<Name> {
-        Name::cast(self.node.first_child()?)
-    }
-}
 
 impl DataDeclaration {
     pub fn name(&self) -> Option<Name> {
@@ -66,6 +60,16 @@ impl ValueDeclaration {
 
     pub fn binding(&self) -> Option<Binding> {
         Binding::cast(self.node.last_child()?)
+    }
+}
+
+impl ValueAnnotationDeclaration {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+
+    pub fn ty(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
     }
 }
 

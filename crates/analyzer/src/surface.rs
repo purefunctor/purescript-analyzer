@@ -42,6 +42,11 @@ pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
         &self,
         id: InFile<AstId<ast::ValueDeclaration>>,
     ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>);
+
+    fn surface_value_annotation_declaration(
+        &self,
+        id: InFile<AstId<ast::ValueAnnotationDeclaration>>,
+    ) -> Arc<ValueAnnotationDeclarationData>;
 }
 
 fn surface_data(
@@ -95,6 +100,21 @@ fn surface_value_declaration_with_source_map(
         context.surface_value_declaration(&value_declaration).unwrap();
 
     (Arc::new(value_declaration_data), Arc::new(source_map))
+}
+
+fn surface_value_annotation_declaration(
+    db: &dyn SurfaceDatabase,
+    id: InFile<AstId<ast::ValueAnnotationDeclaration>>,
+) -> Arc<ValueAnnotationDeclarationData> {
+    let root = db.parse_file(id.file_id);
+    let ptr = db.positional_map(id.file_id).ast_ptr(id.value);
+    let value_annotation_declaration = ptr.to_node(&root);
+
+    let context = LowerContext::default();
+    let value_annotation_declaration_data =
+        context.surface_value_annotation_declaration(&value_annotation_declaration).unwrap();
+
+    Arc::new(value_annotation_declaration_data)
 }
 
 #[derive(Default)]
@@ -179,6 +199,14 @@ impl LowerContext {
         };
 
         Some((value_declaration_data, self.source_map))
+    }
+
+    fn surface_value_annotation_declaration(
+        mut self,
+        value_annotation_declaration: &ast::ValueAnnotationDeclaration,
+    ) -> Option<ValueAnnotationDeclarationData> {
+        let ty = self.lower_type(&value_annotation_declaration.ty()?)?;
+        Some(ValueAnnotationDeclarationData { type_arena: self.type_arena, ty })
     }
 }
 
@@ -435,6 +463,7 @@ impl LowerContext {
 
     fn lower_type(&mut self, t: &ast::Type) -> Option<TypeId> {
         let lowered = match t {
+            ast::Type::ArrowType(arrow) => self.lower_arrow_type(arrow),
             ast::Type::ApplicationType(application) => self.lower_application_type(application),
             ast::Type::ConstructorType(constructor) => self.lower_constructor_type(constructor),
             ast::Type::IntegerType(_) => None,
@@ -451,6 +480,19 @@ impl LowerContext {
             ast::Type::WildcardType(_) => None,
         };
         lowered.map(|lowered| self.alloc_type(lowered, t))
+    }
+
+    fn lower_arrow_type(&mut self, arrow: &ast::ArrowType) -> Option<Type> {
+        let mut arguments = vec![self.lower_type(&arrow.argument()?)?];
+        let mut result = arrow.result()?;
+
+        while let ast::Type::ArrowType(arrow) = &result {
+            arguments.push(self.lower_type(&arrow.argument()?)?);
+            result = arrow.result()?;
+        }
+        let result = self.lower_type(&result)?;
+
+        Some(Type::Arrow(arguments.into(), result))
     }
 
     fn lower_application_type(&mut self, application: &ast::ApplicationType) -> Option<Type> {

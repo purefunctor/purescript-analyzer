@@ -42,7 +42,7 @@ pub struct ValueDeclarationData {
     pub binders: Box<[BinderId]>,
     pub binding: Binding,
     /// The type annotation for this value declaration, if it exists.
-    pub annotation: Option<AstId<ast::AnnotationDeclaration>>,
+    pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
     /// PureScript supports "equational" style declarations.
     ///
     /// ```haskell
@@ -51,6 +51,12 @@ pub struct ValueDeclarationData {
     /// isZero _ = false
     /// ```
     pub siblings: Box<[InFile<AstId<ast::ValueDeclaration>>]>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct ValueAnnotationDeclarationData {
+    pub type_arena: Arena<Type>,
+    pub ty: TypeId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -118,6 +124,7 @@ pub enum RecordItem<I> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
+    Arrow(Box<[TypeId]>, TypeId),
     Application(TypeId, Box<[TypeId]>),
     Constructor(Qualified<NameRef>),
     Parenthesized(TypeId),

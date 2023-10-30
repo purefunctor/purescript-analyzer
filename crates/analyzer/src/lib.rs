@@ -71,6 +71,8 @@ mod tests {
                 "
 module Main where
 
+t :: Int -> Int -> Int
+
 a = \\_ -> 0
 
 b = \\_ -> 1
@@ -90,15 +92,25 @@ b = \\_ -> 1
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
 
+        let t_id = db.nominal_map(file_id).get_value_annotation("t").unwrap();
         let a_id = db.nominal_map(file_id).get_value("a").unwrap()[0];
         let b_id = db.nominal_map(file_id).get_value("b").unwrap()[0];
 
+        let t_data = db.surface_value_annotation_declaration(t_id);
         let a_data = db.surface_value_declaration(a_id);
         let b_data = db.surface_value_declaration(b_id);
 
+        let expr_arena = Default::default();
+        let binder_arena = Default::default();
         let type_arena = Default::default();
+
+        let t_printer = PrettyPrinter::new(&expr_arena, &binder_arena, &t_data.type_arena);
         let a_printer = PrettyPrinter::new(&a_data.expr_arena, &a_data.binder_arena, &type_arena);
         let b_printer = PrettyPrinter::new(&b_data.expr_arena, &b_data.binder_arena, &type_arena);
+
+        let mut out = String::default();
+        t_printer.ty(t_data.ty).render_fmt(40, &mut out).unwrap();
+        println!("{}", out);
 
         let mut out = String::default();
         match &a_data.binding {

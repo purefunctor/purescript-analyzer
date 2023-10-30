@@ -65,9 +65,6 @@ impl PositionalMap {
         if let Some(declarations) = declarations {
             for declaration in declarations {
                 match &declaration {
-                    ast::Declaration::AnnotationDeclaration(annotation) => {
-                        positional_map.alloc(annotation.syntax());
-                    }
                     ast::Declaration::DataDeclaration(data) => {
                         positional_map.alloc(data.syntax());
                         if let Some(constructors) = data.constructors() {
@@ -81,6 +78,9 @@ impl PositionalMap {
                     }
                     ast::Declaration::ValueDeclaration(value) => {
                         positional_map.alloc(value.syntax());
+                    }
+                    ast::Declaration::ValueAnnotationDeclaration(annotation) => {
+                        positional_map.alloc(annotation.syntax());
                     }
                 };
             }

@@ -23,11 +23,11 @@ use crate::{
 /// [`Exports`]: crate::resolver::Exports
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct NominalMap {
-    annotation: FxHashMap<SmolStr, InFile<AstId<ast::AnnotationDeclaration>>>,
     data: FxHashMap<SmolStr, InFile<AstId<ast::DataDeclaration>>>,
     constructor: FxHashMap<SmolStr, InFile<AstId<ast::DataConstructor>>>,
     foreign_data: FxHashMap<SmolStr, InFile<AstId<ast::ForeignDataDeclaration>>>,
     value: FxHashMap<SmolStr, Vec<InFile<AstId<ast::ValueDeclaration>>>>,
+    value_annotation: FxHashMap<SmolStr, InFile<AstId<ast::ValueAnnotationDeclaration>>>,
     constructor_to_data:
         FxHashMap<InFile<AstId<ast::DataConstructor>>, InFile<AstId<ast::DataDeclaration>>>,
 }
@@ -55,11 +55,6 @@ impl NominalMap {
         declaration: &ast::Declaration,
     ) -> Option<()> {
         match declaration {
-            ast::Declaration::AnnotationDeclaration(annotation) => {
-                let name = annotation.name()?.as_str()?;
-                let id = db.positional_map(file_id).ast_id(annotation).in_file(file_id);
-                self.annotation.insert(name, id);
-            }
             ast::Declaration::DataDeclaration(data) => {
                 let name = data.name()?.as_str()?;
                 let data_id = db.positional_map(file_id).ast_id(data).in_file(file_id);
@@ -77,6 +72,11 @@ impl NominalMap {
                 let name = value.name()?.as_str()?;
                 let id = db.positional_map(file_id).ast_id(value).in_file(file_id);
                 self.value.entry(name).or_default().push(id);
+            }
+            ast::Declaration::ValueAnnotationDeclaration(annotation) => {
+                let name = annotation.name()?.as_str()?;
+                let id = db.positional_map(file_id).ast_id(annotation).in_file(file_id);
+                self.value_annotation.insert(name, id);
             }
         }
 
@@ -96,13 +96,6 @@ impl NominalMap {
         self.constructor_to_data.insert(constructor_id, data_id);
 
         Some(())
-    }
-
-    pub fn get_annotation(
-        &self,
-        name: impl AsRef<str>,
-    ) -> Option<InFile<AstId<ast::AnnotationDeclaration>>> {
-        self.annotation.get(name.as_ref()).copied()
     }
 
     pub fn get_data(&self, name: impl AsRef<str>) -> Option<InFile<AstId<ast::DataDeclaration>>> {
@@ -128,6 +121,13 @@ impl NominalMap {
         name: impl AsRef<str>,
     ) -> Option<Arc<[InFile<AstId<ast::ValueDeclaration>>]>> {
         self.value.get(name.as_ref()).map(|values| values.as_slice().into())
+    }
+
+    pub fn get_value_annotation(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<InFile<AstId<ast::ValueAnnotationDeclaration>>> {
+        self.value_annotation.get(name.as_ref()).copied()
     }
 
     pub fn data_of_constructor(
