@@ -1,13 +1,17 @@
 //! See documentation for [`PositionalMap`].
 
-use std::sync::Arc;
+use std::{mem, sync::Arc};
 
 use files::FileId;
 use la_arena::{Arena, Idx};
 use rowan::ast::{AstNode, AstPtr};
+use rustc_hash::FxHashSet;
 use syntax::{ast, PureScript, SyntaxNode, SyntaxNodePtr};
 
-use crate::{id::AstId, ResolverDatabase};
+use crate::{
+    id::{AstId, GroupAstId},
+    ResolverDatabase,
+};
 
 /// Assigns [`AstId`]s to [`SyntaxNodePtr`]s.
 ///
@@ -50,6 +54,7 @@ use crate::{id::AstId, ResolverDatabase};
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PositionalMap {
     inner: Arena<SyntaxNodePtr>,
+    group: Arena<FxHashSet<Idx<SyntaxNodePtr>>>,
 }
 
 impl PositionalMap {
@@ -62,6 +67,10 @@ impl PositionalMap {
         let node = db.parse_file(file_id);
         let declarations = ast::Source::<ast::Module>::cast(node)
             .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
+
+        let mut current_value_name = None;
+        let mut current_value_group = FxHashSet::default();
+
         if let Some(declarations) = declarations {
             for declaration in declarations {
                 match &declaration {
@@ -77,10 +86,42 @@ impl PositionalMap {
                         positional_map.alloc(data.syntax());
                     }
                     ast::Declaration::ValueDeclaration(value) => {
-                        positional_map.alloc(value.syntax());
+                        if let Some(name) = value.name().and_then(|name| name.as_str()) {
+                            let id = positional_map.alloc(value.syntax());
+
+                            if current_value_name.is_none() {
+                                current_value_name = Some(name.clone());
+                            }
+
+                            if current_value_name.as_ref() != Some(&name) {
+                                current_value_name = Some(name);
+                                let built_value_group = mem::take(&mut current_value_group);
+                                positional_map.alloc_group(built_value_group);
+                            }
+
+                            current_value_group.insert(id);
+                        } else {
+                            positional_map.alloc(value.syntax());
+                        }
                     }
                     ast::Declaration::ValueAnnotationDeclaration(annotation) => {
-                        positional_map.alloc(annotation.syntax());
+                        if let Some(name) = annotation.name().and_then(|name| name.as_str()) {
+                            let id = positional_map.alloc(annotation.syntax());
+
+                            if current_value_name.is_none() {
+                                current_value_name = Some(name.clone());
+                            }
+
+                            if current_value_name.as_ref() != Some(&name) {
+                                current_value_name = Some(name);
+                                let built_value_group = mem::take(&mut current_value_group);
+                                positional_map.alloc_group(built_value_group);
+                            }
+
+                            current_value_group.insert(id);
+                        } else {
+                            positional_map.alloc(annotation.syntax());
+                        }
                     }
                 };
             }
@@ -101,7 +142,37 @@ impl PositionalMap {
         self.inner[id.raw].clone().cast().unwrap()
     }
 
+    pub fn group_ast_id<N: AstNode<Language = PureScript>>(&self, node: &N) -> GroupAstId<N> {
+        let target = self.ast_id(node);
+        self.group
+            .iter()
+            .find_map(
+                |(raw, inner)| {
+                    if inner.contains(&target.raw) {
+                        Some(GroupAstId::new(raw))
+                    } else {
+                        None
+                    }
+                },
+            )
+            .unwrap()
+    }
+
+    pub fn group_ast_ptrs<N: AstNode<Language = PureScript>>(
+        &self,
+        id: GroupAstId<N>,
+    ) -> impl Iterator<Item = AstPtr<N>> + '_ {
+        self.group[id.raw].iter().map(|id| self.inner[*id].clone().cast().unwrap())
+    }
+
     fn alloc(&mut self, node: &SyntaxNode) -> Idx<SyntaxNodePtr> {
         self.inner.alloc(SyntaxNodePtr::new(node))
+    }
+
+    fn alloc_group(
+        &mut self,
+        group: FxHashSet<Idx<SyntaxNodePtr>>,
+    ) -> Idx<FxHashSet<Idx<SyntaxNodePtr>>> {
+        self.group.alloc(group.into())
     }
 }

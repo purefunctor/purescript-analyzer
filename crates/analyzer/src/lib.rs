@@ -74,6 +74,7 @@ module Main where
 t :: Int
 
 a = t
+a = t
 
 b = a
 "
@@ -95,6 +96,14 @@ b = a
         let t_id = db.nominal_map(file_id).get_value_annotation("t").unwrap();
         let a_id = db.nominal_map(file_id).get_value("a").unwrap()[0];
         let b_id = db.nominal_map(file_id).get_value("b").unwrap()[0];
+
+        let root = db.parse_file(file_id);
+        let a_ptr = db.positional_map(file_id).ast_ptr(a_id.value);
+        let a_ast = a_ptr.to_node(&root);
+        let a_group = db.positional_map(file_id).group_ast_id(&a_ast);
+        for a_group_ptr in db.positional_map(file_id).group_ast_ptrs(a_group) {
+            dbg!(a_group_ptr);
+        }
 
         let t_data = db.surface_value_annotation_declaration(t_id);
         let a_data = db.surface_value_declaration(a_id);
