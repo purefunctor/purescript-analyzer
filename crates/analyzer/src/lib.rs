@@ -71,11 +71,11 @@ mod tests {
                 "
 module Main where
 
-t :: Int -> Int -> Int
+t :: Int
 
-a = \\_ -> 0
+a = t
 
-b = \\_ -> 1
+b = a
 "
                 .into(),
             ),
