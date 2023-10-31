@@ -7,6 +7,8 @@ use la_arena::Idx;
 use rowan::ast::AstNode;
 use syntax::{PureScript, SyntaxNodePtr};
 
+use crate::SurfaceDatabase;
+
 /// See documentation for [`PositionalMap`].
 ///
 /// [`PositionalMap`]: crate::resolver::PositionalMap
@@ -64,4 +66,15 @@ impl<N: AstNode<Language = PureScript>> AstId<N> {
 pub struct InFile<T> {
     pub(crate) file_id: FileId,
     pub(crate) value: T,
+}
+
+impl<T> InFile<AstId<T>>
+where
+    T: AstNode<Language = PureScript>,
+{
+    pub fn to_ast(self, db: &dyn SurfaceDatabase) -> T {
+        let root = db.parse_file(self.file_id);
+        let ptr = db.positional_map(self.file_id).ast_ptr(self.value);
+        ptr.to_node(&root)
+    }
 }
