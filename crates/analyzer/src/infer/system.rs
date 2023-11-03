@@ -143,10 +143,8 @@ impl<'a> InferValueDeclarationContext<'a> {
     fn infer_expr_variable(&self, variable: &Qualified<NameRef>) -> TypeId {
         // FIXME: the following code is here to make it easier to implement the type checker
         let nominal_map = self.db.nominal_map(self.id.file_id);
-        if let Some(value) = nominal_map.get_value(&variable.value) {
-            self.db.intern_type(Type::Reference(value[0]))
-        } else if let Some(annotation) = nominal_map.get_value_annotation(&variable.value) {
-            self.db.infer_value_annotation_declaration(annotation)
+        if let Some(group_id) = nominal_map.value_group_id(&variable.value) {
+            self.db.intern_type(Type::Reference(group_id))
         } else {
             self.db.intern_type(Type::NotImplemented)
         }

@@ -71,11 +71,9 @@ mod tests {
                 "
 module Main where
 
-t :: Int
-
-a = t
-
-b = a
+x :: Int
+x = 0
+x = 1
 "
                 .into(),
             ),
@@ -92,84 +90,8 @@ b = a
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
 
-        let t_id = db.nominal_map(file_id).get_value_annotation("t").unwrap();
-        let a_id = db.nominal_map(file_id).get_value("a").unwrap()[0];
-        let b_id = db.nominal_map(file_id).get_value("b").unwrap()[0];
-
-        let t_data = db.surface_value_annotation_declaration(t_id);
-        let a_data = db.surface_value_declaration(a_id);
-        let b_data = db.surface_value_declaration(b_id);
-
-        let expr_arena = Default::default();
-        let binder_arena = Default::default();
-        let type_arena = Default::default();
-
-        let t_printer = PrettyPrinter::new(&expr_arena, &binder_arena, &t_data.type_arena);
-        let a_printer = PrettyPrinter::new(&a_data.expr_arena, &a_data.binder_arena, &type_arena);
-        let b_printer = PrettyPrinter::new(&b_data.expr_arena, &b_data.binder_arena, &type_arena);
-
-        let mut out = String::default();
-        t_printer.ty(t_data.ty).render_fmt(40, &mut out).unwrap();
-        println!("{}", out);
-
-        let mut out = String::default();
-        match &a_data.binding {
-            crate::surface::Binding::Unconditional { where_expr } => {
-                a_printer.expr(where_expr.expr_id).render_fmt(40, &mut out).unwrap();
-            }
-        }
-        println!("{}", out);
-
-        let mut out = String::default();
-        match &b_data.binding {
-            crate::surface::Binding::Unconditional { where_expr } => {
-                b_printer.expr(where_expr.expr_id).render_fmt(80, &mut out).unwrap();
-            }
-        }
-        println!("{}", out);
-
-        db.infer_value_declaration(a_id);
-        db.infer_value_declaration(b_id);
-
-        // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
-        // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
-
-        // let list_dt = db.surface_data(list_id);
-        // let cons_dt = list_dt.constructors.get(&cons_id).unwrap();
-
-        // let expr_arena = Default::default();
-        // let binder_arena = Default::default();
-        // let pretty_printer = PrettyPrinter::new(&expr_arena, &binder_arena, &list_dt.type_arena);
-
-        // let mut out = String::new();
-        // for field in cons_dt.fields.iter() {
-        //     pretty_printer.ty(*field).render_fmt(80, &mut out).unwrap();
-        //     out.push('\n');
-        // }
-        // println!("{}", out);
-
-        // let list_id = db.nominal_map(file_id).get_data("List").unwrap();
-        // // let cons_id = db.nominal_map(file_id).get_constructor("Cons").unwrap();
-        // let val_id = db.nominal_map(file_id).get_value("hello").unwrap()[0];
-        // let val_data = db.surface_value_declaration(val_id);
-
-        // let type_arena = la_arena::Arena::default();
-        // let pretty_printer =
-        //     PrettyPrinter::new(&val_data.expr_arena, &val_data.binder_arena, &type_arena);
-
-        // let mut out = String::default();
-        // for binder_id in val_data.binders.iter() {
-        //     pretty_printer.binder(*binder_id).render_fmt(80, &mut out).unwrap();
-        //     out.push('\n');
-        // }
-        // println!("{}", out);
-
-        // let mut out = String::default();
-        // match &val_data.binding {
-        //     crate::surface::Binding::Unconditional { where_expr } => {
-        //         pretty_printer.expr(where_expr.expr_id).render_fmt(80, &mut out).unwrap();
-        //     }
-        // }
-        // println!("{}", out);
+        let nominal_map = db.nominal_map(file_id);
+        let x_group_id = nominal_map.value_group_id("x").unwrap();
+        dbg!(nominal_map.value_group_data(x_group_id));
     }
 }

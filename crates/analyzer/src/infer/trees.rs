@@ -10,7 +10,10 @@
 //! [`surface`]: crate::surface
 use syntax::ast;
 
-use crate::id::{AstId, InFile};
+use crate::{
+    id::{AstId, InFile},
+    resolver::ValueGroupId,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(salsa::InternId);
@@ -28,7 +31,7 @@ impl salsa::InternKey for TypeId {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Primitive(Primitive),
-    Reference(InFile<AstId<ast::ValueDeclaration>>),
+    Reference(InFile<ValueGroupId>),
     Unification(Unification),
     NotImplemented,
 }

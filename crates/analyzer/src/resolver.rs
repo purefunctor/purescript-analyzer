@@ -24,7 +24,7 @@ use crate::SourceDatabase;
 pub use export::Exports;
 pub use import::QualifiedImports;
 pub use module::ModuleMap;
-pub use nominal::NominalMap;
+pub use nominal::{NominalMap, ValueGroupData, ValueGroupId};
 pub use positional::PositionalMap;
 
 use self::import::UnqualifiedImports;
