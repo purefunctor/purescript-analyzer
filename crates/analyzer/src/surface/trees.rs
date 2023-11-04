@@ -17,20 +17,20 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct WithArena<T> {
-    pub binder_arena: Arena<Binder>,
     pub expr_arena: Arena<Expr>,
+    pub binder_arena: Arena<Binder>,
     pub type_arena: Arena<Type>,
     pub value: T,
 }
 
 impl<T> WithArena<T> {
     pub fn new(
-        binder_arena: Arena<Binder>,
         expr_arena: Arena<Expr>,
+        binder_arena: Arena<Binder>,
         type_arena: Arena<Type>,
         value: T,
     ) -> WithArena<T> {
-        WithArena { binder_arena, expr_arena, type_arena, value }
+        WithArena { expr_arena, binder_arena, type_arena, value }
     }
 }
 

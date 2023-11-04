@@ -21,8 +21,8 @@ use super::{
 
 #[derive(Default)]
 pub(crate) struct SurfaceContext {
-    binder_arena: Arena<Binder>,
     expr_arena: Arena<Expr>,
+    binder_arena: Arena<Binder>,
     type_arena: Arena<Type>,
     source_map: SourceMap,
 }
@@ -91,8 +91,8 @@ impl SurfaceContext {
             .collect();
 
         let surface_group = WithArena::new(
-            surface_context.binder_arena,
             surface_context.expr_arena,
+            surface_context.binder_arena,
             surface_context.type_arena,
             SurfaceValueGroup { name, annotation, equations },
         );
