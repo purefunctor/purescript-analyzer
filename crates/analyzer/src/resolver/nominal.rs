@@ -16,9 +16,9 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupData {
-    name: SmolStr,
-    annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
-    values: FxHashSet<AstId<ast::ValueDeclaration>>,
+    pub name: SmolStr,
+    pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
+    pub values: FxHashSet<AstId<ast::ValueDeclaration>>,
 }
 
 pub type ValueGroupId = Idx<ValueGroupData>;
