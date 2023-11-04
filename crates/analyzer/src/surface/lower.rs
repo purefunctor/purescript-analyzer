@@ -16,8 +16,7 @@ use crate::{
 use super::{
     Binder, BinderId, Binding, DataConstructorData, DataDeclarationData, Expr, ExprId, IntOrNumber,
     LetBinding, Literal, RecordItem, SourceMap, SurfaceValueAnnotation, SurfaceValueEquation,
-    SurfaceValueGroup, Type, TypeId, ValueAnnotationDeclarationData, ValueDeclarationData,
-    WhereExpr, WithArena,
+    SurfaceValueGroup, Type, TypeId, WhereExpr, WithArena,
 };
 
 #[derive(Default)]
@@ -60,32 +59,6 @@ impl SurfaceContext {
         let context = SurfaceContext::default();
         let positional_map = db.positional_map(id.file_id);
         Arc::new(context.lower_data_declaration(id.file_id, positional_map, &ast).unwrap())
-    }
-
-    pub(crate) fn surface_value_declaration_query(
-        db: &dyn SurfaceDatabase,
-        id: InFile<AstId<ast::ValueDeclaration>>,
-    ) -> Arc<ValueDeclarationData> {
-        db.surface_value_declaration_with_source_map(id).0
-    }
-
-    pub(crate) fn surface_value_declaration_with_source_map_query(
-        db: &dyn SurfaceDatabase,
-        id: InFile<AstId<ast::ValueDeclaration>>,
-    ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>) {
-        let ast = id.to_ast(db);
-        let context = SurfaceContext::default();
-        let (data, source_map) = context.lower_value_declaration(&ast).unwrap();
-        (Arc::new(data), Arc::new(source_map))
-    }
-
-    pub(crate) fn surface_value_annotation_declaration_query(
-        db: &dyn SurfaceDatabase,
-        id: InFile<AstId<ast::ValueAnnotationDeclaration>>,
-    ) -> Arc<ValueAnnotationDeclarationData> {
-        let ast = id.to_ast(db);
-        let context = SurfaceContext::default();
-        Arc::new(context.lower_value_annotation_declaration(&ast).unwrap())
     }
 
     pub(crate) fn surface_value_query(
@@ -163,36 +136,6 @@ impl SurfaceContext {
 }
 
 impl SurfaceContext {
-    fn lower_value_declaration(
-        mut self,
-        ast: &ast::ValueDeclaration,
-    ) -> Option<(ValueDeclarationData, SourceMap)> {
-        let binders = ast
-            .binders()?
-            .children()
-            .map(|binder| self.lower_binder(&binder))
-            .collect::<Option<_>>()?;
-
-        let binding = ast.binding().and_then(|binding| self.lower_binding(&binding))?;
-
-        let value_declaration_data = ValueDeclarationData {
-            expr_arena: self.expr_arena,
-            binder_arena: self.binder_arena,
-            binders,
-            binding,
-        };
-
-        Some((value_declaration_data, self.source_map))
-    }
-
-    fn lower_value_annotation_declaration(
-        mut self,
-        ast: &ast::ValueAnnotationDeclaration,
-    ) -> Option<ValueAnnotationDeclarationData> {
-        let ty = self.lower_type(&ast.ty()?)?;
-        Some(ValueAnnotationDeclarationData { type_arena: self.type_arena, ty })
-    }
-
     fn lower_value_annotation(
         &mut self,
         ast: &ast::ValueAnnotationDeclaration,

@@ -1,7 +1,7 @@
 use la_arena::Arena;
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, LetBinding, Literal, ValueDeclarationData, WhereExpr,
+    Binder, BinderId, Binding, Expr, ExprId, LetBinding, Literal, SurfaceValueEquation, WhereExpr,
 };
 
 pub trait Visitor<'a>: Sized {
@@ -25,8 +25,8 @@ pub trait Visitor<'a>: Sized {
         default_visit_where_expr(self, where_expr);
     }
 
-    fn visit_value_declaration(&mut self, value_declaration: &'a ValueDeclarationData) {
-        default_visit_value_declaration(self, value_declaration);
+    fn visit_value_equation(&mut self, value_equation: &'a SurfaceValueEquation) {
+        default_visit_value_equation(self, value_equation);
     }
 }
 
@@ -140,14 +140,14 @@ where
     visitor.visit_expr(where_expr.expr_id);
 }
 
-pub fn default_visit_value_declaration<'a, V>(
+pub fn default_visit_value_equation<'a, V>(
     visitor: &mut V,
-    value_declaration: &'a ValueDeclarationData,
+    value_equation: &'a SurfaceValueEquation,
 ) where
     V: Visitor<'a>,
 {
-    for binder_id in value_declaration.binders.iter() {
+    for binder_id in value_equation.binders.iter() {
         visitor.visit_binder(*binder_id);
     }
-    visitor.visit_binding(&value_declaration.binding);
+    visitor.visit_binding(&value_equation.binding);
 }

@@ -53,10 +53,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{
-        surface::PrettyPrinter, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
-        SurfaceDatabase,
-    };
+    use crate::{InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, SurfaceDatabase};
 
     #[test]
     fn api() {

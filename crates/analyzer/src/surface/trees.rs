@@ -72,20 +72,6 @@ pub struct ForeignDataDeclarationData {
     pub type_id: TypeId,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ValueDeclarationData {
-    pub expr_arena: Arena<Expr>,
-    pub binder_arena: Arena<Binder>,
-    pub binders: Box<[BinderId]>,
-    pub binding: Binding,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ValueAnnotationDeclarationData {
-    pub type_arena: Arena<Type>,
-    pub ty: TypeId,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Binding {
     Unconditional { where_expr: WhereExpr },

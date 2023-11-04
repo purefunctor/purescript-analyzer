@@ -4,9 +4,9 @@ use rustc_hash::FxHashMap;
 use crate::{
     surface::{
         visitor::{
-            default_visit_binder, default_visit_expr, default_visit_value_declaration, Visitor,
+            default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
         },
-        Binder, BinderId, Expr, ExprId, LetBinding, ValueDeclarationData, WhereExpr,
+        Binder, BinderId, Expr, ExprId, LetBinding, SurfaceValueEquation, WhereExpr,
     },
     FxIndexSet,
 };
@@ -120,11 +120,11 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
         }
     }
 
-    fn visit_value_declaration(&mut self, value_declaration: &'a ValueDeclarationData) {
+    fn visit_value_equation(&mut self, value_equation: &'a SurfaceValueEquation) {
         let scope_parent = self.current_scope;
         let scope_kind = ScopeKind::Binders(FxIndexSet::default());
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
-        default_visit_value_declaration(self, value_declaration);
+        default_visit_value_equation(self, value_equation);
     }
 
     fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {

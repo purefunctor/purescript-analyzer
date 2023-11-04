@@ -26,24 +26,6 @@ pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
         id: InFile<AstId<ast::DataDeclaration>>,
     ) -> Arc<DataDeclarationData>;
 
-    #[salsa::invoke(SurfaceContext::surface_value_declaration_query)]
-    fn surface_value_declaration(
-        &self,
-        id: InFile<AstId<ast::ValueDeclaration>>,
-    ) -> Arc<ValueDeclarationData>;
-
-    #[salsa::invoke(SurfaceContext::surface_value_declaration_with_source_map_query)]
-    fn surface_value_declaration_with_source_map(
-        &self,
-        id: InFile<AstId<ast::ValueDeclaration>>,
-    ) -> (Arc<ValueDeclarationData>, Arc<SourceMap>);
-
-    #[salsa::invoke(SurfaceContext::surface_value_annotation_declaration_query)]
-    fn surface_value_annotation_declaration(
-        &self,
-        id: InFile<AstId<ast::ValueAnnotationDeclaration>>,
-    ) -> Arc<ValueAnnotationDeclarationData>;
-
     #[salsa::invoke(SurfaceContext::surface_value_query)]
     fn surface_value_query(&self, id: InFile<ValueGroupId>) -> Arc<WithArena<SurfaceValueGroup>>;
 
