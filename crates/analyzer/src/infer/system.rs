@@ -124,7 +124,7 @@ impl<'a> InferValueDeclarationContext<'a> {
         });
 
         let values_ty: Vec<_> = data
-            .values
+            .equations
             .iter()
             .map(|value_id| db.infer_value_declaration(value_id.in_file(id.file_id)))
             .collect();

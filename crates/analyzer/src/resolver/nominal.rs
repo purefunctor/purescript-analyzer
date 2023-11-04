@@ -18,7 +18,7 @@ use crate::{
 pub struct ValueGroup {
     pub name: SmolStr,
     pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
-    pub values: FxHashSet<AstId<ast::ValueDeclaration>>,
+    pub equations: FxHashSet<AstId<ast::ValueDeclaration>>,
 }
 
 pub type ValueGroupId = Idx<ValueGroup>;
@@ -124,7 +124,7 @@ impl<'a> Collector<'a> {
                 match &mut self.state {
                     CollectorState::ValueGroup(current_group) if name == current_group.name => {
                         current_group
-                            .values
+                            .equations
                             .insert(self.db.positional_map(self.file_id).ast_id(value));
                     }
                     _ => {
@@ -145,11 +145,11 @@ impl<'a> Collector<'a> {
         annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
         initial_value: Option<AstId<ast::ValueDeclaration>>,
     ) {
-        let mut values = FxHashSet::default();
+        let mut equations = FxHashSet::default();
         if let Some(initial_value) = initial_value {
-            values.insert(initial_value);
+            equations.insert(initial_value);
         }
-        let present_value_group = ValueGroup { name, annotation, values };
+        let present_value_group = ValueGroup { name, annotation, equations };
         let past_state =
             std::mem::replace(&mut self.state, CollectorState::ValueGroup(present_value_group));
         if let CollectorState::ValueGroup(past_value_group) = past_state {
