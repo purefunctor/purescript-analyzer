@@ -1,22 +1,21 @@
 use std::sync::Arc;
 
-use files::FileId;
 use la_arena::Arena;
 use rowan::{ast::AstNode, NodeOrToken};
 use smol_str::SmolStr;
 use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 
 use crate::{
-    id::{AstId, InFile},
+    id::InFile,
     names::{Name, Qualified},
-    resolver::{PositionalMap, ValueGroupId},
+    resolver::ValueGroupId,
     SurfaceDatabase,
 };
 
 use super::{
-    Binder, BinderId, Binding, DataConstructorData, DataDeclarationData, Expr, ExprId, IntOrNumber,
-    LetBinding, Literal, RecordItem, SourceMap, SurfaceValueAnnotation, SurfaceValueEquation,
-    SurfaceValueGroup, Type, TypeId, WhereExpr, WithArena,
+    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, Literal, RecordItem,
+    SourceMap, SurfaceValueAnnotation, SurfaceValueEquation, SurfaceValueGroup, Type, TypeId,
+    WhereExpr, WithArena,
 };
 
 #[derive(Default)]
@@ -51,16 +50,6 @@ impl SurfaceContext {
 }
 
 impl SurfaceContext {
-    pub(crate) fn surface_data_declaration_query(
-        db: &dyn SurfaceDatabase,
-        id: InFile<AstId<ast::DataDeclaration>>,
-    ) -> Arc<DataDeclarationData> {
-        let ast = id.to_ast(db);
-        let context = SurfaceContext::default();
-        let positional_map = db.positional_map(id.file_id);
-        Arc::new(context.lower_data_declaration(id.file_id, positional_map, &ast).unwrap())
-    }
-
     pub(crate) fn value_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
@@ -99,39 +88,6 @@ impl SurfaceContext {
         let source_map = surface_context.source_map;
 
         (Arc::new(surface_group), Arc::new(source_map))
-    }
-}
-
-impl SurfaceContext {
-    fn lower_data_declaration(
-        mut self,
-        file_id: FileId,
-        positional_map: Arc<PositionalMap>,
-        ast: &ast::DataDeclaration,
-    ) -> Option<DataDeclarationData> {
-        let name = Name::try_from(ast.name()?).ok()?;
-        let constructors = ast
-            .constructors()?
-            .children()
-            .map(|constructor| {
-                let id = positional_map.ast_id(&constructor).in_file(file_id);
-                Some((id, self.lower_data_constructor(&constructor)?))
-            })
-            .collect::<Option<_>>()?;
-        Some(DataDeclarationData { type_arena: self.type_arena, name, constructors })
-    }
-
-    fn lower_data_constructor(
-        &mut self,
-        constructor: &ast::DataConstructor,
-    ) -> Option<DataConstructorData> {
-        let name = Name::try_from(constructor.name()?).ok()?;
-        let fields = constructor
-            .fields()?
-            .children()
-            .map(|field| self.lower_type(&field))
-            .collect::<Option<_>>()?;
-        Some(DataConstructorData { name, fields })
     }
 }
 

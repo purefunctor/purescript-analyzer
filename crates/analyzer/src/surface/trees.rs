@@ -52,26 +52,6 @@ pub struct SurfaceValueGroup {
     pub equations: BTreeMap<AstId<ast::ValueEquationDeclaration>, SurfaceValueEquation>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct DataDeclarationData {
-    pub type_arena: Arena<Type>,
-    pub name: Name,
-    pub constructors: BTreeMap<InFile<AstId<ast::DataConstructor>>, DataConstructorData>,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct DataConstructorData {
-    pub name: Name,
-    pub fields: Box<[TypeId]>,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ForeignDataDeclarationData {
-    pub type_arena: Arena<Type>,
-    pub name: Name,
-    pub type_id: TypeId,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Binding {
     Unconditional { where_expr: WhereExpr },
