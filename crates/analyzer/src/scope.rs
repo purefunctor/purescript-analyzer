@@ -16,7 +16,7 @@ pub trait ScopeDatabase: SurfaceDatabase {
 }
 
 fn value_scope_query(db: &dyn ScopeDatabase, id: InFile<ValueGroupId>) -> Arc<ValueGroupScope> {
-    let group_data = db.surface_value(id);
+    let group_data = db.value_surface(id);
 
     let mut collector_context = CollectorContext::new(
         &group_data.binder_arena,

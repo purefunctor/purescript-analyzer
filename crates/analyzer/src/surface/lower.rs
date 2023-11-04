@@ -61,14 +61,14 @@ impl SurfaceContext {
         Arc::new(context.lower_data_declaration(id.file_id, positional_map, &ast).unwrap())
     }
 
-    pub(crate) fn surface_value_query(
+    pub(crate) fn value_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
     ) -> Arc<WithArena<SurfaceValueGroup>> {
-        db.surface_value_with_source_map(id).0
+        db.value_surface_with_source_map(id).0
     }
 
-    pub(crate) fn surface_value_with_source_map_query(
+    pub(crate) fn value_surface_with_source_map_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
     ) -> (Arc<WithArena<SurfaceValueGroup>>, Arc<SourceMap>) {

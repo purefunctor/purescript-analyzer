@@ -92,7 +92,7 @@ x _ = 1
 
         let nominal_map = db.nominal_map(file_id);
         let x_group_id = nominal_map.value_group_id("x").unwrap();
-        dbg!(db.surface_value(x_group_id));
+        dbg!(db.value_surface(x_group_id));
         dbg!(db.value_scope(x_group_id));
         let _ = db.infer_value_declaration_group(x_group_id);
     }
