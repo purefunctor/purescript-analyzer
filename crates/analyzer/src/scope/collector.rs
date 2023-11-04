@@ -56,6 +56,10 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
         self.binder_arena
     }
 
+    fn type_arena(&self) -> &'a Arena<Type> {
+        self.type_arena
+    }
+
     fn visit_expr(&mut self, expr_id: ExprId) {
         self.scope_per_expr.insert(expr_id, self.current_scope);
 

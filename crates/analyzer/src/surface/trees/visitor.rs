@@ -1,13 +1,16 @@
 use la_arena::Arena;
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, LetBinding, Literal, SurfaceValueEquation, WhereExpr,
+    Binder, BinderId, Binding, Expr, ExprId, LetBinding, Literal, SurfaceValueEquation, Type,
+    WhereExpr,
 };
 
 pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
 
     fn binder_arena(&self) -> &'a Arena<Binder>;
+
+    fn type_arena(&self) -> &'a Arena<Type>;
 
     fn visit_expr(&mut self, expr_id: ExprId) {
         default_visit_expr(self, expr_id);
