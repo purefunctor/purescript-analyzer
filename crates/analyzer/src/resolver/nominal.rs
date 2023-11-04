@@ -15,13 +15,13 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupData {
+pub struct ValueGroup {
     pub name: SmolStr,
     pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
     pub values: FxHashSet<AstId<ast::ValueDeclaration>>,
 }
 
-pub type ValueGroupId = Idx<ValueGroupData>;
+pub type ValueGroupId = Idx<ValueGroup>;
 
 /// Maps names to stable IDs.
 ///
@@ -37,7 +37,7 @@ pub type ValueGroupId = Idx<ValueGroupData>;
 /// [`Exports`]: crate::resolver::Exports
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct NominalMap {
-    value_groups: Arena<ValueGroupData>,
+    value_groups: Arena<ValueGroup>,
     values: FxHashMap<SmolStr, InFile<ValueGroupId>>,
 }
 
@@ -61,7 +61,7 @@ impl NominalMap {
         self.values.get(name.as_ref()).copied()
     }
 
-    pub fn value_group_data(&self, id: InFile<ValueGroupId>) -> &ValueGroupData {
+    pub fn value_group_data(&self, id: InFile<ValueGroupId>) -> &ValueGroup {
         &self.value_groups[id.value]
     }
 }
@@ -79,7 +79,7 @@ struct Collector<'a> {
 enum CollectorState {
     #[default]
     Initial,
-    ValueGroup(ValueGroupData),
+    ValueGroup(ValueGroup),
 }
 
 impl<'a> Collector<'a> {
@@ -149,7 +149,7 @@ impl<'a> Collector<'a> {
         if let Some(initial_value) = initial_value {
             values.insert(initial_value);
         }
-        let present_value_group = ValueGroupData { name, annotation, values };
+        let present_value_group = ValueGroup { name, annotation, values };
         let past_state =
             std::mem::replace(&mut self.state, CollectorState::ValueGroup(present_value_group));
         if let CollectorState::ValueGroup(past_value_group) = past_state {
