@@ -16,6 +16,43 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub struct WithArena<T> {
+    pub binder_arena: Arena<Binder>,
+    pub expr_arena: Arena<Expr>,
+    pub type_arena: Arena<Type>,
+    pub value: T,
+}
+
+impl<T> WithArena<T> {
+    pub fn new(
+        binder_arena: Arena<Binder>,
+        expr_arena: Arena<Expr>,
+        type_arena: Arena<Type>,
+        value: T,
+    ) -> WithArena<T> {
+        WithArena { binder_arena, expr_arena, type_arena, value }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct SurfaceValueAnnotation {
+    pub ty: TypeId,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct SurfaceValueEquation {
+    pub binders: Box<[BinderId]>,
+    pub binding: Binding,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct SurfaceValueGroup {
+    pub name: SmolStr,
+    pub annotation: Option<SurfaceValueAnnotation>,
+    pub equations: Vec<SurfaceValueEquation>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct DataDeclarationData {
     pub type_arena: Arena<Type>,
     pub name: Name,

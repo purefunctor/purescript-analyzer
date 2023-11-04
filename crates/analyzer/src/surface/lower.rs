@@ -9,14 +9,15 @@ use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 use crate::{
     id::{AstId, InFile},
     names::{Name, Qualified},
-    resolver::PositionalMap,
+    resolver::{PositionalMap, ValueGroupId},
     SurfaceDatabase,
 };
 
 use super::{
     Binder, BinderId, Binding, DataConstructorData, DataDeclarationData, Expr, ExprId, IntOrNumber,
-    LetBinding, Literal, RecordItem, SourceMap, Type, TypeId, ValueAnnotationDeclarationData,
-    ValueDeclarationData, WhereExpr,
+    LetBinding, Literal, RecordItem, SourceMap, SurfaceValueAnnotation, SurfaceValueEquation,
+    SurfaceValueGroup, Type, TypeId, ValueAnnotationDeclarationData, ValueDeclarationData,
+    WhereExpr, WithArena,
 };
 
 #[derive(Default)]
@@ -86,6 +87,46 @@ impl SurfaceContext {
         let context = SurfaceContext::default();
         Arc::new(context.lower_value_annotation_declaration(&ast).unwrap())
     }
+
+    pub(crate) fn surface_value_query(
+        db: &dyn SurfaceDatabase,
+        id: InFile<ValueGroupId>,
+    ) -> Arc<WithArena<SurfaceValueGroup>> {
+        db.surface_value_with_source_map(id).0
+    }
+
+    pub(crate) fn surface_value_with_source_map_query(
+        db: &dyn SurfaceDatabase,
+        id: InFile<ValueGroupId>,
+    ) -> (Arc<WithArena<SurfaceValueGroup>>, Arc<SourceMap>) {
+        let nominal_map = db.nominal_map(id.file_id);
+        let group_data = nominal_map.value_group_data(id);
+        let mut surface_context = SurfaceContext::default();
+
+        let name = group_data.name.clone();
+        let annotation = group_data.annotation.and_then(|annotation| {
+            let annotation = annotation.in_file(id.file_id).to_ast(db);
+            surface_context.lower_value_annotation(&annotation)
+        });
+        let equations = group_data
+            .equations
+            .iter()
+            .map(|equation| {
+                let equation = equation.in_file(id.file_id).to_ast(db);
+                surface_context.lower_value_equation(&equation).unwrap()
+            })
+            .collect();
+
+        let surface_group = WithArena::new(
+            surface_context.binder_arena,
+            surface_context.expr_arena,
+            surface_context.type_arena,
+            SurfaceValueGroup { name, annotation, equations },
+        );
+        let source_map = surface_context.source_map;
+
+        (Arc::new(surface_group), Arc::new(source_map))
+    }
 }
 
 impl SurfaceContext {
@@ -150,6 +191,27 @@ impl SurfaceContext {
     ) -> Option<ValueAnnotationDeclarationData> {
         let ty = self.lower_type(&ast.ty()?)?;
         Some(ValueAnnotationDeclarationData { type_arena: self.type_arena, ty })
+    }
+
+    fn lower_value_annotation(
+        &mut self,
+        ast: &ast::ValueAnnotationDeclaration,
+    ) -> Option<SurfaceValueAnnotation> {
+        let ty = self.lower_type(&ast.ty()?)?;
+        Some(SurfaceValueAnnotation { ty })
+    }
+
+    fn lower_value_equation(
+        &mut self,
+        ast: &ast::ValueDeclaration,
+    ) -> Option<SurfaceValueEquation> {
+        let binders = ast
+            .binders()?
+            .children()
+            .map(|binder| self.lower_binder(&binder))
+            .collect::<Option<_>>()?;
+        let binding = ast.binding().and_then(|binding| self.lower_binding(&binding))?;
+        Some(SurfaceValueEquation { binders, binding })
     }
 }
 

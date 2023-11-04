@@ -14,6 +14,7 @@ pub use trees::*;
 
 use crate::{
     id::{AstId, InFile},
+    resolver::ValueGroupId,
     ResolverDatabase, SourceDatabase,
 };
 
@@ -42,4 +43,13 @@ pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
         &self,
         id: InFile<AstId<ast::ValueAnnotationDeclaration>>,
     ) -> Arc<ValueAnnotationDeclarationData>;
+
+    #[salsa::invoke(SurfaceContext::surface_value_query)]
+    fn surface_value_query(&self, id: InFile<ValueGroupId>) -> Arc<WithArena<SurfaceValueGroup>>;
+
+    #[salsa::invoke(SurfaceContext::surface_value_with_source_map_query)]
+    fn surface_value_with_source_map(
+        &self,
+        id: InFile<ValueGroupId>,
+    ) -> (Arc<WithArena<SurfaceValueGroup>>, Arc<SourceMap>);
 }
