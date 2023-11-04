@@ -51,13 +51,14 @@ What we should answer:
 */
 
 use la_arena::Arena;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
     infer::lower::LowerContext,
     names::{NameRef, Qualified},
+    resolver::ValueGroupId,
     surface::{Binder, BinderId, Expr, ExprId, Literal},
     InferDatabase,
 };
@@ -86,7 +87,7 @@ impl<'a> InferValueDeclarationContext<'a> {
     pub(crate) fn infer_value_declaration_query(
         db: &'a dyn InferDatabase,
         id: InFile<AstId<ast::ValueDeclaration>>,
-    ) -> () {
+    ) -> TypeId {
         let value_declaration_data = db.surface_value_declaration(id);
         let mut context = InferValueDeclarationContext {
             db,
@@ -97,7 +98,7 @@ impl<'a> InferValueDeclarationContext<'a> {
         };
         match &value_declaration_data.binding {
             crate::surface::Binding::Unconditional { where_expr } => {
-                dbg!(db.lookup_intern_type(context.infer_expr(where_expr.expr_id)));
+                context.infer_expr(where_expr.expr_id)
             }
         }
     }
@@ -109,6 +110,36 @@ impl<'a> InferValueDeclarationContext<'a> {
         let value_annotation_declaration_data = db.surface_value_annotation_declaration(id);
         let lower_context = LowerContext::new(db, &value_annotation_declaration_data.type_arena);
         lower_context.lower_type(value_annotation_declaration_data.ty)
+    }
+
+    pub(crate) fn infer_value_declaration_group_query(
+        db: &'a dyn InferDatabase,
+        id: InFile<ValueGroupId>,
+    ) -> TypeId {
+        let nominal_map = db.nominal_map(id.file_id);
+        let data = nominal_map.value_group_data(id);
+
+        let annotation_ty = data.annotation.map(|annotation_id| {
+            db.infer_value_annotation_declaration(annotation_id.in_file(id.file_id))
+        });
+
+        let values_ty: Vec<_> = data
+            .values
+            .iter()
+            .map(|value_id| db.infer_value_declaration(value_id.in_file(id.file_id)))
+            .collect();
+
+        // With this in mind, the type checker now has to have
+        // two modes: type inference and type checking. If a
+        // desired type is known in advance, as is the case
+        // for when you have an annotation for a declaration,
+        // you would want to call the `check` mode. On the
+        // other hand, if it's purely a synthesis problem,
+        // then you would want to call the `infer` mode.
+
+        dbg!(annotation_ty, values_ty);
+
+        db.intern_type(Type::NotImplemented)
     }
 
     fn fresh_unification(&mut self) -> TypeId {
