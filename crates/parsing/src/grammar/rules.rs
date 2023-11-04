@@ -1517,7 +1517,7 @@ fn annotation_or_value_declaration(parser: &mut Parser) {
             }
         });
         expr_binding(parser, SyntaxKind::Equal);
-        marker.end(parser, SyntaxKind::ValueDeclaration);
+        marker.end(parser, SyntaxKind::ValueEquationDeclaration);
     }
 }
 

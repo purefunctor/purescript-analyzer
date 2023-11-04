@@ -146,7 +146,7 @@ impl SurfaceContext {
 
     fn lower_value_equation(
         &mut self,
-        ast: &ast::ValueDeclaration,
+        ast: &ast::ValueEquationDeclaration,
     ) -> Option<SurfaceValueEquation> {
         let binders = ast
             .binders()?

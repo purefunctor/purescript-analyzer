@@ -18,13 +18,13 @@ pub trait ScopeDatabase: SurfaceDatabase {
     #[salsa::invoke(value_declaration_scope_query)]
     fn value_declaration_scope(
         &self,
-        id: InFile<AstId<ast::ValueDeclaration>>,
+        id: InFile<AstId<ast::ValueEquationDeclaration>>,
     ) -> Arc<ValueDeclarationScope>;
 }
 
 fn value_declaration_scope_query(
     db: &dyn ScopeDatabase,
-    id: InFile<AstId<ast::ValueDeclaration>>,
+    id: InFile<AstId<ast::ValueEquationDeclaration>>,
 ) -> Arc<ValueDeclarationScope> {
     todo!()
     // let value_declaration = db.surface_value_declaration(id);

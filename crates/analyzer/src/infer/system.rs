@@ -76,7 +76,7 @@ struct InferState {
 /// Inference context for value declarations.
 pub(crate) struct InferValueDeclarationContext<'a> {
     db: &'a dyn InferDatabase,
-    id: InFile<AstId<ast::ValueDeclaration>>,
+    id: InFile<AstId<ast::ValueEquationDeclaration>>,
     expr_arena: &'a Arena<Expr>,
     binder_arena: &'a Arena<Binder>,
     infer_state: InferState,

@@ -167,7 +167,7 @@ pub enum SyntaxKind {
     VariableBinder,
     WildcardBinder,
 
-    ValueDeclaration,
+    ValueEquationDeclaration,
     ValueAnnotationDeclaration,
 
     DataDeclaration,

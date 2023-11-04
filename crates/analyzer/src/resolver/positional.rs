@@ -76,7 +76,7 @@ impl PositionalMap {
                     ast::Declaration::ForeignDataDeclaration(data) => {
                         positional_map.alloc(data.syntax());
                     }
-                    ast::Declaration::ValueDeclaration(value) => {
+                    ast::Declaration::ValueEquationDeclaration(value) => {
                         positional_map.alloc(value.syntax());
                     }
                     ast::Declaration::ValueAnnotationDeclaration(annotation) => {

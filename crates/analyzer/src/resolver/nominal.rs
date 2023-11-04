@@ -18,7 +18,7 @@ use crate::{
 pub struct ValueGroup {
     pub name: SmolStr,
     pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
-    pub equations: FxHashSet<AstId<ast::ValueDeclaration>>,
+    pub equations: FxHashSet<AstId<ast::ValueEquationDeclaration>>,
 }
 
 pub type ValueGroupId = Idx<ValueGroup>;
@@ -119,7 +119,7 @@ impl<'a> Collector<'a> {
                     }
                 }
             }
-            ast::Declaration::ValueDeclaration(value) => {
+            ast::Declaration::ValueEquationDeclaration(value) => {
                 let name = value.name()?.as_str()?;
                 match &mut self.state {
                     CollectorState::ValueGroup(current_group) if name == current_group.name => {
@@ -143,7 +143,7 @@ impl<'a> Collector<'a> {
         &mut self,
         name: SmolStr,
         annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
-        initial_value: Option<AstId<ast::ValueDeclaration>>,
+        initial_value: Option<AstId<ast::ValueEquationDeclaration>>,
     ) {
         let mut equations = FxHashSet::default();
         if let Some(initial_value) = initial_value {

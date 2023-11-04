@@ -7,7 +7,7 @@ _create_ast_v!(
     DataDeclaration(DataDeclaration),
     ForeignDataDeclaration(ForeignDataDeclaration),
     ValueAnnotationDeclaration(ValueAnnotationDeclaration),
-    ValueDeclaration(ValueDeclaration)
+    ValueEquationDeclaration(ValueEquationDeclaration)
 );
 
 _create_ast!(DataConstructor);
@@ -49,7 +49,7 @@ impl ForeignDataDeclaration {
     }
 }
 
-impl ValueDeclaration {
+impl ValueEquationDeclaration {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
     }

@@ -46,4 +46,4 @@ pub enum Primitive {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Unification(pub u32, pub InFile<AstId<ast::ValueDeclaration>>);
+pub struct Unification(pub u32, pub InFile<AstId<ast::ValueEquationDeclaration>>);
