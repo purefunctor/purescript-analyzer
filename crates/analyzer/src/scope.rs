@@ -1,38 +1,38 @@
 //! Database for local scope information.
-mod data;
-mod traversals;
-
 use std::sync::Arc;
 
-use syntax::ast;
+mod collector;
+mod data;
 
-use crate::{
-    id::{AstId, InFile},
-    SurfaceDatabase,
-};
+use crate::{id::InFile, resolver::ValueGroupId, surface::visitor::Visitor, SurfaceDatabase};
 
-pub use data::{ScopeData, ScopeId, ScopeKind, ValueDeclarationScope};
+use collector::CollectorContext;
+pub use data::{ScopeData, ScopeId, ScopeKind, ValueGroupScope};
 
 #[salsa::query_group(ScopeStorage)]
 pub trait ScopeDatabase: SurfaceDatabase {
-    #[salsa::invoke(value_declaration_scope_query)]
-    fn value_declaration_scope(
-        &self,
-        id: InFile<AstId<ast::ValueEquationDeclaration>>,
-    ) -> Arc<ValueDeclarationScope>;
+    #[salsa::invoke(value_scope_query)]
+    fn value_scope(&self, id: InFile<ValueGroupId>) -> Arc<ValueGroupScope>;
 }
 
-fn value_declaration_scope_query(
-    db: &dyn ScopeDatabase,
-    id: InFile<AstId<ast::ValueEquationDeclaration>>,
-) -> Arc<ValueDeclarationScope> {
-    todo!()
-    // let value_declaration = db.surface_value_declaration(id);
+fn value_scope_query(db: &dyn ScopeDatabase, id: InFile<ValueGroupId>) -> Arc<ValueGroupScope> {
+    let group_data = db.surface_value(id);
 
-    // let mut context =
-    //     ScopeCollectorContext::new(&value_declaration.expr_arena, &value_declaration.binder_arena);
+    let mut collector_context = CollectorContext::new(
+        &group_data.binder_arena,
+        &group_data.expr_arena,
+        &group_data.type_arena,
+    );
 
-    // context.visit_value_declaration(&value_declaration);
+    let scope_per_equation = group_data
+        .value
+        .equations
+        .iter()
+        .map(|(equation_id, value_equation)| {
+            collector_context.visit_value_equation(value_equation);
+            (*equation_id, collector_context.take_equation())
+        })
+        .collect();
 
-    // Arc::new(context.into_value_declaration_scope())
+    Arc::new(ValueGroupScope::new(collector_context.scope_arena, scope_per_equation))
 }

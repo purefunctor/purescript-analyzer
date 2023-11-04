@@ -6,44 +6,48 @@ use crate::{
         visitor::{
             default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
         },
-        Binder, BinderId, Expr, ExprId, LetBinding, SurfaceValueEquation, WhereExpr,
+        Binder, BinderId, Expr, ExprId, LetBinding, SurfaceValueEquation, Type, WhereExpr,
     },
     FxIndexSet,
 };
 
-use super::{ScopeData, ScopeId, ScopeKind, ValueDeclarationScope};
+use super::{ScopeData, ScopeId, ScopeKind};
 
-pub(crate) struct ScopeCollectorContext<'a> {
-    expr_arena: &'a Arena<Expr>,
+pub(crate) struct CollectorContext<'a> {
     binder_arena: &'a Arena<Binder>,
-    scope_arena: Arena<ScopeData>,
+    expr_arena: &'a Arena<Expr>,
+    type_arena: &'a Arena<Type>,
+    pub(crate) scope_arena: Arena<ScopeData>,
     scope_per_expr: FxHashMap<ExprId, ScopeId>,
     current_scope: ScopeId,
 }
 
-impl<'a> ScopeCollectorContext<'a> {
+impl<'a> CollectorContext<'a> {
     pub(crate) fn new(
-        expr_arena: &'a Arena<Expr>,
         binder_arena: &'a Arena<Binder>,
-    ) -> ScopeCollectorContext<'a> {
+        expr_arena: &'a Arena<Expr>,
+        type_arena: &'a Arena<Type>,
+    ) -> CollectorContext<'a> {
         let mut scope_arena = Arena::default();
         let scope_per_expr = FxHashMap::default();
         let current_scope = scope_arena.alloc(ScopeData::new_root());
-        ScopeCollectorContext {
-            expr_arena,
+        CollectorContext {
             binder_arena,
-            scope_arena,
+            expr_arena,
+            type_arena,
             scope_per_expr,
+            scope_arena,
             current_scope,
         }
     }
 
-    pub(crate) fn into_value_declaration_scope(self) -> ValueDeclarationScope {
-        ValueDeclarationScope::new(self.scope_arena, self.scope_per_expr)
+    pub(crate) fn take_equation(&mut self) -> FxHashMap<ExprId, ScopeId> {
+        self.current_scope = self.scope_arena.alloc(ScopeData::new_root());
+        std::mem::take(&mut self.scope_per_expr)
     }
 }
 
-impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
+impl<'a> Visitor<'a> for CollectorContext<'a> {
     fn expr_arena(&self) -> &'a Arena<Expr> {
         self.expr_arena
     }
@@ -102,8 +106,6 @@ impl<'a> Visitor<'a> for ScopeCollectorContext<'a> {
             }
             _ => default_visit_expr(self, expr_id),
         }
-
-        default_visit_expr(self, expr_id);
     }
 
     fn visit_binder(&mut self, binder_id: BinderId) {

@@ -1,8 +1,9 @@
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use syntax::ast;
 
-use crate::{surface::ExprId, FxIndexSet};
+use crate::{id::AstId, surface::ExprId, FxIndexSet};
 
 /// Scope information as a linked list.
 #[derive(Debug, PartialEq, Eq)]
@@ -31,23 +32,33 @@ pub enum ScopeKind {
     LetBound(FxIndexSet<SmolStr>),
 }
 
-/// Scope information within a value declaration.
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueDeclarationScope {
+pub struct ValueGroupScope {
     scope_arena: Arena<ScopeData>,
-    scope_per_expr: FxHashMap<ExprId, ScopeId>,
+    scope_per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, FxHashMap<ExprId, ScopeId>>,
 }
 
-impl ValueDeclarationScope {
+impl ValueGroupScope {
     pub(crate) fn new(
         scope_arena: Arena<ScopeData>,
-        scope_per_expr: FxHashMap<ExprId, ScopeId>,
-    ) -> ValueDeclarationScope {
-        ValueDeclarationScope { scope_arena, scope_per_expr }
+        scope_per_equation: FxHashMap<
+            AstId<ast::ValueEquationDeclaration>,
+            FxHashMap<ExprId, ScopeId>,
+        >,
+    ) -> ValueGroupScope {
+        ValueGroupScope { scope_arena, scope_per_equation }
     }
 
-    pub fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
-        if let Some(scope_id) = self.scope_per_expr.get(&expr_id) {
+    pub fn expr_scope(
+        &self,
+        equation_id: AstId<ast::ValueEquationDeclaration>,
+        expr_id: ExprId,
+    ) -> ScopeId {
+        if let Some(scope_id) = self
+            .scope_per_equation
+            .get(&equation_id)
+            .and_then(|scope_per_expr| scope_per_expr.get(&expr_id))
+        {
             *scope_id
         } else {
             panic!("Invariant violated, ExprId was not assigned a ScopeId");
