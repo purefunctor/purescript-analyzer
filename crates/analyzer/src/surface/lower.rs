@@ -84,9 +84,9 @@ impl SurfaceContext {
         let equations = group_data
             .equations
             .iter()
-            .map(|equation| {
-                let equation = equation.in_file(id.file_id).to_ast(db);
-                surface_context.lower_value_equation(&equation).unwrap()
+            .map(|equation_id| {
+                let equation_ast = equation_id.in_file(id.file_id).to_ast(db);
+                (*equation_id, surface_context.lower_value_equation(&equation_ast).unwrap())
             })
             .collect();
 

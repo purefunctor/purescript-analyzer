@@ -49,7 +49,7 @@ pub struct SurfaceValueEquation {
 pub struct SurfaceValueGroup {
     pub name: SmolStr,
     pub annotation: Option<SurfaceValueAnnotation>,
-    pub equations: Vec<SurfaceValueEquation>,
+    pub equations: BTreeMap<AstId<ast::ValueEquationDeclaration>, SurfaceValueEquation>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
