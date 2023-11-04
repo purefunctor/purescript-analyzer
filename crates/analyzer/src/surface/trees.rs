@@ -11,7 +11,7 @@ use syntax::ast;
 pub use printer::PrettyPrinter;
 
 use crate::{
-    id::{AstId, InFile},
+    id::AstId,
     names::{Name, NameRef, Qualified},
 };
 
