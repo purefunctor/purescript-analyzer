@@ -41,16 +41,6 @@ pub struct ValueDeclarationData {
     pub binder_arena: Arena<Binder>,
     pub binders: Box<[BinderId]>,
     pub binding: Binding,
-    /// The type annotation for this value declaration, if it exists.
-    pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
-    /// PureScript supports "equational" style declarations.
-    ///
-    /// ```haskell
-    /// isZero :: Int ->
-    /// isZero 0 = true
-    /// isZero _ = false
-    /// ```
-    pub siblings: Box<[InFile<AstId<ast::ValueDeclaration>>]>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

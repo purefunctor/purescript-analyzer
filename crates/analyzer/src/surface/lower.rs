@@ -139,8 +139,6 @@ impl SurfaceContext {
             binder_arena: self.binder_arena,
             binders,
             binding,
-            annotation: None,
-            siblings: Box::from([]),
         };
 
         Some((value_declaration_data, self.source_map))
