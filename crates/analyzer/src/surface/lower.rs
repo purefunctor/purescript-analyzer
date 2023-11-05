@@ -14,8 +14,7 @@ use crate::{
 
 use super::{
     Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, Literal, RecordItem,
-    SourceMap, SurfaceValueAnnotation, SurfaceValueEquation, SurfaceValueGroup, Type, TypeId,
-    WhereExpr, WithArena,
+    SourceMap, Type, TypeId, ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
 };
 
 #[derive(Default)]
@@ -53,14 +52,14 @@ impl SurfaceContext {
     pub(crate) fn value_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
-    ) -> Arc<WithArena<SurfaceValueGroup>> {
+    ) -> Arc<WithArena<ValueGroup>> {
         db.value_surface_with_source_map(id).0
     }
 
     pub(crate) fn value_surface_with_source_map_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
-    ) -> (Arc<WithArena<SurfaceValueGroup>>, Arc<SourceMap>) {
+    ) -> (Arc<WithArena<ValueGroup>>, Arc<SourceMap>) {
         let nominal_map = db.nominal_map(id.file_id);
         let group_data = nominal_map.value_group_data(id);
         let mut surface_context = SurfaceContext::default();
@@ -83,7 +82,7 @@ impl SurfaceContext {
             surface_context.expr_arena,
             surface_context.binder_arena,
             surface_context.type_arena,
-            SurfaceValueGroup { name, annotation, equations },
+            ValueGroup { name, annotation, equations },
         );
         let source_map = surface_context.source_map;
 
@@ -95,22 +94,22 @@ impl SurfaceContext {
     fn lower_value_annotation(
         &mut self,
         ast: &ast::ValueAnnotationDeclaration,
-    ) -> Option<SurfaceValueAnnotation> {
+    ) -> Option<ValueAnnotation> {
         let ty = self.lower_type(&ast.ty()?)?;
-        Some(SurfaceValueAnnotation { ty })
+        Some(ValueAnnotation { ty })
     }
 
     fn lower_value_equation(
         &mut self,
         ast: &ast::ValueEquationDeclaration,
-    ) -> Option<SurfaceValueEquation> {
+    ) -> Option<ValueEquation> {
         let binders = ast
             .binders()?
             .children()
             .map(|binder| self.lower_binder(&binder))
             .collect::<Option<_>>()?;
         let binding = ast.binding().and_then(|binding| self.lower_binding(&binding))?;
-        Some(SurfaceValueEquation { binders, binding })
+        Some(ValueEquation { binders, binding })
     }
 }
 

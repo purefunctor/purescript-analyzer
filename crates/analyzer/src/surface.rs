@@ -15,11 +15,11 @@ use crate::{id::InFile, resolver::ValueGroupId, ResolverDatabase, SourceDatabase
 #[salsa::query_group(LowerStorage)]
 pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
     #[salsa::invoke(SurfaceContext::value_surface_query)]
-    fn value_surface(&self, id: InFile<ValueGroupId>) -> Arc<WithArena<SurfaceValueGroup>>;
+    fn value_surface(&self, id: InFile<ValueGroupId>) -> Arc<WithArena<ValueGroup>>;
 
     #[salsa::invoke(SurfaceContext::value_surface_with_source_map_query)]
     fn value_surface_with_source_map(
         &self,
         id: InFile<ValueGroupId>,
-    ) -> (Arc<WithArena<SurfaceValueGroup>>, Arc<SourceMap>);
+    ) -> (Arc<WithArena<ValueGroup>>, Arc<SourceMap>);
 }

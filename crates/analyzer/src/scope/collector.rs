@@ -6,7 +6,7 @@ use crate::{
         visitor::{
             default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
         },
-        Binder, BinderId, Expr, ExprId, LetBinding, SurfaceValueEquation, Type, WhereExpr,
+        Binder, BinderId, Expr, ExprId, LetBinding, Type, ValueEquation, WhereExpr,
     },
     FxIndexSet,
 };
@@ -126,7 +126,7 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
         }
     }
 
-    fn visit_value_equation(&mut self, value_equation: &'a SurfaceValueEquation) {
+    fn visit_value_equation(&mut self, value_equation: &'a ValueEquation) {
         let scope_parent = self.current_scope;
         let scope_kind = ScopeKind::Binders(FxIndexSet::default());
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));

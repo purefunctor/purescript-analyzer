@@ -35,21 +35,21 @@ impl<T> WithArena<T> {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct SurfaceValueAnnotation {
+pub struct ValueAnnotation {
     pub ty: TypeId,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct SurfaceValueEquation {
+pub struct ValueEquation {
     pub binders: Box<[BinderId]>,
     pub binding: Binding,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct SurfaceValueGroup {
+pub struct ValueGroup {
     pub name: SmolStr,
-    pub annotation: Option<SurfaceValueAnnotation>,
-    pub equations: BTreeMap<AstId<ast::ValueEquationDeclaration>, SurfaceValueEquation>,
+    pub annotation: Option<ValueAnnotation>,
+    pub equations: BTreeMap<AstId<ast::ValueEquationDeclaration>, ValueEquation>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

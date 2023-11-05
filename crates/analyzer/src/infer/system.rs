@@ -67,20 +67,15 @@ impl<'a> InferContext<'a> {
         self.db.intern_type(Type::Unification(Unification { index, provenance }))
     }
 
-    fn infer_value_annotation(&mut self, annotation: &surface::SurfaceValueAnnotation) -> TypeId {
+    fn infer_value_annotation(&mut self, annotation: &surface::ValueAnnotation) -> TypeId {
         LowerContext::new(self.db, self.type_arena).lower_type(annotation.ty)
     }
 
-    fn infer_value_equation(&mut self, equation: &surface::SurfaceValueEquation) -> TypeId {
+    fn infer_value_equation(&mut self, equation: &surface::ValueEquation) -> TypeId {
         self.infer_binding(&equation.binding)
     }
 
-    fn check_value_equation(
-        &mut self,
-        equation: &surface::SurfaceValueEquation,
-        expected_ty: TypeId,
-    ) {
-    }
+    fn check_value_equation(&mut self, equation: &surface::ValueEquation, expected_ty: TypeId) {}
 
     fn infer_binding(&mut self, binding: &surface::Binding) -> TypeId {
         match binding {
