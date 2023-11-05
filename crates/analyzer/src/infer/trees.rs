@@ -8,12 +8,7 @@
 //!
 //! [`Arena`]: la_arena::Arena
 //! [`surface`]: crate::surface
-use syntax::ast;
-
-use crate::{
-    id::{AstId, InFile},
-    resolver::ValueGroupId,
-};
+use crate::{id::InFile, resolver::ValueGroupId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(salsa::InternId);
@@ -45,5 +40,13 @@ pub enum Primitive {
     Boolean,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Unification(pub u32, pub InFile<AstId<ast::ValueEquationDeclaration>>);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Unification {
+    pub index: u32,
+    pub provenance: Provenance,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Provenance {
+    ValueGroup(InFile<ValueGroupId>),
+}
