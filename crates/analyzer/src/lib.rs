@@ -43,6 +43,12 @@ impl Upcast<dyn ResolverDatabase> for RootDatabase {
     }
 }
 
+impl Upcast<dyn InferDatabase> for RootDatabase {
+    fn upcast(&self) -> &(dyn InferDatabase + 'static) {
+        self
+    }
+}
+
 pub(crate) type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
 pub(crate) type FxIndexMap<K, V> = IndexMap<K, V, BuildHasherDefault<FxHasher>>;
 
@@ -53,10 +59,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{
-        InferDatabase, ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase,
-        SurfaceDatabase,
-    };
+    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, Upcast};
 
     #[test]
     fn api() {
@@ -71,9 +74,7 @@ mod tests {
                 "
 module Main where
 
-x :: Int
-x _ = 0
-x _ = 1
+x :: (Int Int) (Int Int)
 "
                 .into(),
             ),
@@ -92,8 +93,7 @@ x _ = 1
 
         let nominal_map = db.nominal_map(file_id);
         let x_group_id = nominal_map.value_group_id("x").unwrap();
-        // dbg!(db.value_surface(x_group_id));
-        // dbg!(db.value_scope(x_group_id));
-        dbg!(db.lookup_intern_type(db.infer_value(x_group_id)));
+        let pp = infer::PrettyPrinter::new(db.upcast());
+        println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
     }
 }
