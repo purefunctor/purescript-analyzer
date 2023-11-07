@@ -27,12 +27,38 @@ impl<'a> LowerContext<'a> {
 
     pub(crate) fn lower_type(&self, type_id: surface::TypeId) -> TypeId {
         match &self.type_arena[type_id] {
-            surface::Type::Arrow(_, _) => self.db.intern_type(Type::NotImplemented),
-            surface::Type::Application(_, _) => self.db.intern_type(Type::NotImplemented),
+            surface::Type::Arrow(arguments, result) => self.lower_type_arrow(arguments, *result),
+            surface::Type::Application(constructor, arguments) => {
+                self.lower_type_application(*constructor, arguments)
+            }
             surface::Type::Constructor(constructor) => self.lower_type_constructor(constructor),
-            surface::Type::Parenthesized(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Type::Parenthesized(parenthesized) => self.lower_type(*parenthesized),
             surface::Type::Variable(_) => self.db.intern_type(Type::NotImplemented),
         }
+    }
+
+    fn lower_type_arrow(&self, arguments: &[surface::TypeId], result: surface::TypeId) -> TypeId {
+        arguments
+            .iter()
+            .copied()
+            .map(|argument| self.lower_type(argument))
+            .rev()
+            .fold(self.lower_type(result), |result_ty, argument_ty| {
+                self.db.intern_type(Type::Function(argument_ty, result_ty))
+            })
+    }
+
+    fn lower_type_application(
+        &self,
+        constructor: surface::TypeId,
+        arguments: &[surface::TypeId],
+    ) -> TypeId {
+        arguments.iter().copied().map(|argument| self.lower_type(argument)).fold(
+            self.lower_type(constructor),
+            |constructor_ty, argument_ty| {
+                self.db.intern_type(Type::Application(constructor_ty, argument_ty))
+            },
+        )
     }
 
     fn lower_type_constructor(&self, constructor: &Qualified<NameRef>) -> TypeId {
