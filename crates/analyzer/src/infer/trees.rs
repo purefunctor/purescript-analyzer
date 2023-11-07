@@ -8,7 +8,11 @@
 //!
 //! [`Arena`]: la_arena::Arena
 //! [`surface`]: crate::surface
+mod printer;
+
 use crate::{id::InFile, resolver::ValueGroupId};
+
+pub use printer::PrettyPrinter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(salsa::InternId);
