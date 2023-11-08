@@ -8,10 +8,6 @@ pub mod scope;
 pub mod source;
 pub mod surface;
 
-use indexmap::{IndexMap, IndexSet};
-use rustc_hash::FxHasher;
-use std::hash::BuildHasherDefault;
-
 pub use infer::InferDatabase;
 pub use resolver::ResolverDatabase;
 pub use scope::ScopeDatabase;
@@ -49,9 +45,6 @@ impl Upcast<dyn InferDatabase> for RootDatabase {
     }
 }
 
-pub(crate) type FxIndexSet<T> = IndexSet<T, BuildHasherDefault<FxHasher>>;
-pub(crate) type FxIndexMap<K, V> = IndexMap<K, V, BuildHasherDefault<FxHasher>>;
-
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -59,7 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, Upcast};
+    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, Upcast, ScopeDatabase};
 
     #[test]
     fn api() {
@@ -75,7 +68,7 @@ mod tests {
 module Main where
 
 x :: Int -> Int -> Int
-x  _ _ = 0
+x a b = 0
 "
                 .into(),
             ),
@@ -96,5 +89,7 @@ x  _ _ = 0
         let x_group_id = nominal_map.value_group_id("x").unwrap();
         let pp = infer::PrettyPrinter::new(db.upcast());
         println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
+
+        dbg!(db.value_scope(x_group_id));
     }
 }

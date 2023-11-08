@@ -1,14 +1,9 @@
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 
-use crate::{
-    surface::{
-        visitor::{
-            default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
-        },
-        Binder, BinderId, Expr, ExprId, LetBinding, Type, ValueEquation, WhereExpr,
-    },
-    FxIndexSet,
+use crate::surface::{
+    visitor::{default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor},
+    Binder, BinderId, Expr, ExprId, LetBinding, Type, ValueEquation, WhereExpr,
 };
 
 use super::{ScopeData, ScopeId, ScopeKind};
@@ -92,11 +87,11 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
                 // duplicate scope-tracking when trying to figure out
                 // which names are being used.
 
-                let mut let_bound = FxIndexSet::default();
-                for let_binding in let_bindings.iter() {
-                    match &self.let_binding_arena[*let_binding] {
+                let mut let_bound = FxHashMap::default();
+                for let_binding_id in let_bindings.iter() {
+                    match &self.let_binding_arena[*let_binding_id] {
                         LetBinding::Name { name, .. } => {
-                            let_bound.insert(name.as_ref().into());
+                            let_bound.insert(name.as_ref().into(), *let_binding_id);
                         }
                     }
                 }
@@ -123,7 +118,7 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
         match &self.binder_arena[binder_id] {
             Binder::Variable(variable) => match &mut self.scope_arena[self.current_scope].kind {
                 ScopeKind::Binders(binders) => {
-                    binders.insert(variable.as_ref().into());
+                    binders.insert(variable.as_ref().into(), binder_id);
                 }
                 _ => unreachable!("Invalid traversal state!"),
             },
@@ -135,17 +130,17 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
 
     fn visit_value_equation(&mut self, value_equation: &'a ValueEquation) {
         let scope_parent = self.current_scope;
-        let scope_kind = ScopeKind::Binders(FxIndexSet::default());
+        let scope_kind = ScopeKind::Binders(FxHashMap::default());
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
         default_visit_value_equation(self, value_equation);
     }
 
     fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
-        let mut let_bound = FxIndexSet::default();
-        for let_binding in where_expr.let_bindings.iter() {
-            match &self.let_binding_arena[*let_binding] {
+        let mut let_bound = FxHashMap::default();
+        for let_binding_id in where_expr.let_bindings.iter() {
+            match &self.let_binding_arena[*let_binding_id] {
                 LetBinding::Name { name, .. } => {
-                    let_bound.insert(name.as_ref().into());
+                    let_bound.insert(name.as_ref().into(), *let_binding_id);
                 }
             }
         }

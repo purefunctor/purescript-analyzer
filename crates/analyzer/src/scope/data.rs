@@ -3,7 +3,10 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::ast;
 
-use crate::{id::AstId, surface::ExprId, FxIndexSet};
+use crate::{
+    id::AstId,
+    surface::{BinderId, ExprId, LetBindingId},
+};
 
 /// Scope information as a linked list.
 #[derive(Debug, PartialEq, Eq)]
@@ -28,8 +31,8 @@ pub type ScopeId = Idx<ScopeData>;
 #[derive(Debug, PartialEq, Eq)]
 pub enum ScopeKind {
     Root,
-    Binders(FxIndexSet<SmolStr>),
-    LetBound(FxIndexSet<SmolStr>),
+    Binders(FxHashMap<SmolStr, BinderId>),
+    LetBound(FxHashMap<SmolStr, LetBindingId>),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -76,12 +79,12 @@ impl ValueGroupScope {
             match &current.kind {
                 ScopeKind::Root => return None,
                 ScopeKind::Binders(binders) => {
-                    if binders.contains(name) {
+                    if binders.contains_key(name) {
                         return Some(scope_id);
                     }
                 }
                 ScopeKind::LetBound(let_bound) => {
-                    if let_bound.contains(name) {
+                    if let_bound.contains_key(name) {
                         return Some(scope_id);
                     }
                 }
