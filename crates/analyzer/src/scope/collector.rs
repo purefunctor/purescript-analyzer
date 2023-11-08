@@ -1,4 +1,4 @@
-use la_arena::Arena;
+use la_arena::{Arena, Idx, RawIdx};
 use rustc_hash::FxHashMap;
 
 use crate::surface::{
@@ -13,9 +13,12 @@ pub(crate) struct CollectorContext<'a> {
     let_binding_arena: &'a Arena<LetBinding>,
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
+
     pub(crate) scope_arena: Arena<ScopeData>,
     scope_per_expr: FxHashMap<ExprId, ScopeId>,
+
     current_scope: ScopeId,
+    root_scope: ScopeId,
 }
 
 impl<'a> CollectorContext<'a> {
@@ -28,6 +31,7 @@ impl<'a> CollectorContext<'a> {
         let mut scope_arena = Arena::default();
         let scope_per_expr = FxHashMap::default();
         let current_scope = scope_arena.alloc(ScopeData::new_root());
+        let root_scope = current_scope;
         CollectorContext {
             expr_arena,
             let_binding_arena,
@@ -36,11 +40,12 @@ impl<'a> CollectorContext<'a> {
             scope_per_expr,
             scope_arena,
             current_scope,
+            root_scope,
         }
     }
 
     pub(crate) fn take_equation(&mut self) -> FxHashMap<ExprId, ScopeId> {
-        self.current_scope = self.scope_arena.alloc(ScopeData::new_root());
+        self.current_scope = self.root_scope;
         std::mem::take(&mut self.scope_per_expr)
     }
 }
