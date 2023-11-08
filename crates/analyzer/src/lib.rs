@@ -21,7 +21,7 @@ pub use surface::SurfaceDatabase;
     resolver::ResolverStorage,
     scope::ScopeStorage,
     source::SourceStorage,
-    surface::LowerStorage
+    surface::SurfaceStorage
 )]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,

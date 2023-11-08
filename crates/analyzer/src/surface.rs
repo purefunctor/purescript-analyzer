@@ -12,7 +12,7 @@ pub use trees::*;
 
 use crate::{id::InFile, resolver::ValueGroupId, ResolverDatabase, SourceDatabase};
 
-#[salsa::query_group(LowerStorage)]
+#[salsa::query_group(SurfaceStorage)]
 pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
     #[salsa::invoke(SurfaceContext::value_surface_query)]
     fn value_surface(&self, id: InFile<ValueGroupId>) -> Arc<WithArena<ValueGroup>>;
