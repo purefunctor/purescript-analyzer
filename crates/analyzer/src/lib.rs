@@ -74,7 +74,8 @@ mod tests {
                 "
 module Main where
 
-x :: (Int Int) (Int Int)
+x :: Int -> Int -> Int
+x  _ _ = 0
 "
                 .into(),
             ),

@@ -9,10 +9,13 @@ use crate::{
     surface, InferDatabase,
 };
 
-use super::{lower::LowerContext, Primitive, Provenance, Type, TypeId, Unification};
+use super::{
+    constraint::Constraint, lower::LowerContext, Primitive, Provenance, Type, TypeId, Unification,
+};
 
 #[derive(Debug, Default)]
 struct InferState {
+    constraints: Vec<Constraint>,
     index: u32,
 }
 
@@ -97,8 +100,6 @@ impl<'a> InferContext<'a> {
             self.db.intern_type(Type::Function(binder_ty, result_ty))
         })
     }
-
-    fn check_value_equation(&mut self, equation: &surface::ValueEquation, expected_ty: TypeId) {}
 
     fn infer_binding(&mut self, binding: &surface::Binding) -> TypeId {
         match binding {
@@ -186,3 +187,93 @@ impl<'a> InferContext<'a> {
         self.fresh_unification()
     }
 }
+
+impl<'a> InferContext<'a> {
+    fn check_value_equation(&mut self, equation: &surface::ValueEquation, expected_ty: TypeId) {
+        let mut arguments_expected_ty = vec![];
+        let mut binding_expected_ty = expected_ty;
+
+        while let Type::Function(argument_ty, result_ty) =
+            self.db.lookup_intern_type(binding_expected_ty)
+        {
+            arguments_expected_ty.push(argument_ty);
+            binding_expected_ty = result_ty;
+        }
+
+        if equation.binders.len() != arguments_expected_ty.len() {
+            panic!("Arity mismatch! Make sure we emit an error for this.");
+        }
+
+        equation.binders.iter().zip(arguments_expected_ty.iter()).for_each(
+            |(binder, argument_expected_ty)| {
+                self.check_binder(*binder, *argument_expected_ty);
+            },
+        );
+
+        self.check_binding(&equation.binding, binding_expected_ty);
+    }
+
+    fn check_binding(&mut self, binding: &surface::Binding, expected_ty: TypeId) {}
+
+    fn check_binder(&mut self, binder_id: surface::BinderId, expected_ty: TypeId) {
+        let binder_ty = self.infer_binder(binder_id);
+        self.unify(binder_ty, expected_ty);
+        // FIXME: This should introduce variables to the local
+        // environment, but only after all binders are introduced.
+        // Ultimately, what this means is that this rule should
+        // return a pair of name to type id which should be
+        // introduced by the upstream rule calling it.
+        // Alternatively, we can also implement this rule
+        // in terms of "binders" as a whole, rather than
+        // checking an individual binder.
+    }
+}
+
+impl<'a> InferContext<'a> {
+    fn unify(&mut self, x: TypeId, y: TypeId) {
+        let x_t = self.db.lookup_intern_type(x);
+        let y_t = self.db.lookup_intern_type(y);
+        match (x_t, y_t) {
+            (Type::Unification(x_u), Type::Unification(y_u)) => {
+                if x_u != y_u {
+                    self.infer_state.constraints.push(Constraint::UnifyDeep(x, y));
+                }
+            }
+            (Type::Unification(x_u), _) => {
+                self.infer_state.constraints.push(Constraint::UnifySolve(x_u, y));
+            }
+            (_, Type::Unification(y_u)) => {
+                self.infer_state.constraints.push(Constraint::UnifySolve(y_u, x));
+            }
+            (x_t, y_t) => {
+                dbg!(x_t, y_t);
+            }
+        }
+    }
+}
+
+// The idea with the `infer` and `check` rules is that they bind
+// types to IDs like `ExprId = TypeId` or `BinderId = TypeId`.
+// What we want is a transaction going from local variables to
+// types; a transition from `SmolStr` -> `BinderId` -> `TypeId`.
+// Currently, our mechanism for scopes only takes note of which
+// variables are introduced by which syntactic constructs. We
+// do not have a way for the desired transaction yet.
+//
+// The question then, is:
+//
+// How should we accomodate introducing local variables while
+// type checking? Should we implement scoping in the type system,
+// by maintaining a vector of hashmaps of names to type ids, or,
+// should we rely on the scope to be able to map names to IDs
+// which they ultimately came from.
+//
+// To begin, we can change the scope data to associate names
+// to IDs rather than just store names. However, for constructs
+// like let bindings, we would have to also change their surface
+// representation to make use of IDs as well. The idea being that
+// we want to assign them IDs which can be used to relate to other
+// data. One reason that we use arena allocation for expressions
+// or binders or types is that it makes their recursive definition
+// much easier to work with, which is not necessarily the case for
+// let bindings, but it affords us the ability to query their types.
