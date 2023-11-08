@@ -1,4 +1,4 @@
-use la_arena::{Arena, Idx, RawIdx};
+use la_arena::Arena;
 use rustc_hash::FxHashMap;
 
 use crate::surface::{
