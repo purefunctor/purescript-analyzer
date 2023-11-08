@@ -22,12 +22,10 @@ use files::FileId;
 use crate::SourceDatabase;
 
 pub use export::Exports;
-pub use import::QualifiedImports;
+pub use import::{QualifiedImports, UnqualifiedImports};
 pub use module::ModuleMap;
 pub use nominal::{NominalMap, ValueGroup, ValueGroupId};
 pub use positional::PositionalMap;
-
-use self::import::UnqualifiedImports;
 
 #[salsa::query_group(ResolverStorage)]
 pub trait ResolverDatabase: SourceDatabase {
