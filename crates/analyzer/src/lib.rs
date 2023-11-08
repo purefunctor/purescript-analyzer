@@ -52,7 +52,9 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, Upcast, ScopeDatabase};
+    use crate::{
+        infer, InferDatabase, ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, Upcast,
+    };
 
     #[test]
     fn api() {
