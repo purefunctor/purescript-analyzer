@@ -7,6 +7,8 @@ use super::{
 pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
 
+    fn let_binding_arena(&self) -> &'a Arena<LetBinding>;
+
     fn binder_arena(&self) -> &'a Arena<Binder>;
 
     fn type_arena(&self) -> &'a Arena<Type>;
@@ -53,12 +55,10 @@ where
         }
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
-                match let_binding {
-                    LetBinding::Name { binding, .. } => match binding {
-                        Binding::Unconditional { where_expr } => {
-                            visitor.visit_expr(where_expr.expr_id);
-                        }
-                    },
+                match &visitor.let_binding_arena()[*let_binding] {
+                    LetBinding::Name { binding, .. } => {
+                        visitor.visit_binding(binding);
+                    }
                 }
                 visitor.visit_expr(*let_body);
             }
@@ -133,7 +133,7 @@ where
     V: Visitor<'a>,
 {
     for let_binding in where_expr.let_bindings.iter() {
-        match let_binding {
+        match &visitor.let_binding_arena()[*let_binding] {
             LetBinding::Name { binding, .. } => {
                 visitor.visit_binding(binding);
             }

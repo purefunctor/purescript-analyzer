@@ -18,6 +18,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct WithArena<T> {
     pub expr_arena: Arena<Expr>,
+    pub let_binding_arena: Arena<LetBinding>,
     pub binder_arena: Arena<Binder>,
     pub type_arena: Arena<Type>,
     pub value: T,
@@ -26,11 +27,12 @@ pub struct WithArena<T> {
 impl<T> WithArena<T> {
     pub fn new(
         expr_arena: Arena<Expr>,
+        let_binding_arena: Arena<LetBinding>,
         binder_arena: Arena<Binder>,
         type_arena: Arena<Type>,
         value: T,
     ) -> WithArena<T> {
-        WithArena { expr_arena, binder_arena, type_arena, value }
+        WithArena { expr_arena, let_binding_arena, binder_arena, type_arena, value }
     }
 }
 
@@ -60,7 +62,7 @@ pub enum Binding {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WhereExpr {
     pub expr_id: Idx<Expr>,
-    pub let_bindings: Box<[LetBinding]>,
+    pub let_bindings: Box<[LetBindingId]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -80,17 +82,19 @@ pub enum Expr {
     Application(ExprId, Box<[ExprId]>),
     Constructor(Qualified<NameRef>),
     Lambda(Box<[BinderId]>, ExprId),
-    LetIn(Box<[LetBinding]>, ExprId),
+    LetIn(Box<[LetBindingId]>, ExprId),
     Literal(Literal<ExprId>),
     Variable(Qualified<NameRef>),
 }
+
+pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LetBinding {
     Name { name: Name, binding: Binding },
 }
 
-pub type ExprId = Idx<Expr>;
+pub type LetBindingId = Idx<LetBinding>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Literal<I> {

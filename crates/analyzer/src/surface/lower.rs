@@ -13,13 +13,15 @@ use crate::{
 };
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, Literal, RecordItem,
-    SourceMap, Type, TypeId, ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
+    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetBindingId, Literal,
+    RecordItem, SourceMap, Type, TypeId, ValueAnnotation, ValueEquation, ValueGroup, WhereExpr,
+    WithArena,
 };
 
 #[derive(Default)]
 pub(crate) struct SurfaceContext {
     expr_arena: Arena<Expr>,
+    let_binding_arena: Arena<LetBinding>,
     binder_arena: Arena<Binder>,
     type_arena: Arena<Type>,
     source_map: SourceMap,
@@ -31,6 +33,13 @@ impl SurfaceContext {
         self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(ast.syntax()));
         self.source_map.cst_to_expr.insert(SyntaxNodePtr::new(ast.syntax()), expr_id);
         expr_id
+    }
+
+    fn alloc_let_binding(&mut self, lowered: LetBinding, ast: &ast::LetBinding) -> LetBindingId {
+        let let_binding_id = self.let_binding_arena.alloc(lowered);
+        self.source_map.let_binding_to_cst.insert(let_binding_id, SyntaxNodePtr::new(ast.syntax()));
+        self.source_map.cst_to_let_binding.insert(SyntaxNodePtr::new(ast.syntax()), let_binding_id);
+        let_binding_id
     }
 
     fn alloc_binder(&mut self, lowered: Binder, ast: &ast::Binder) -> BinderId {
@@ -80,6 +89,7 @@ impl SurfaceContext {
 
         let surface_group = WithArena::new(
             surface_context.expr_arena,
+            surface_context.let_binding_arena,
             surface_context.binder_arena,
             surface_context.type_arena,
             ValueGroup { name, annotation, equations },
@@ -139,14 +149,14 @@ impl SurfaceContext {
     fn lower_let_bindings(
         &mut self,
         let_bindings: &ast::OneOrMore<ast::LetBinding>,
-    ) -> Option<Box<[LetBinding]>> {
+    ) -> Option<Box<[LetBindingId]>> {
         let_bindings
             .children()
-            .map(|let_binding| match let_binding {
+            .map(|let_binding| match &let_binding {
                 ast::LetBinding::LetBindingName(let_binding_name) => {
                     let name = Name::try_from(let_binding_name.name()?).ok()?;
                     let binding = self.lower_binding(&let_binding_name.binding()?)?;
-                    Some(LetBinding::Name { name, binding })
+                    Some(self.alloc_let_binding(LetBinding::Name { name, binding }, &let_binding))
                 }
                 ast::LetBinding::LetBindingPattern(_) => None,
                 ast::LetBinding::LetBindingSignature(_) => None,

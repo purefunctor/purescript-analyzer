@@ -19,8 +19,9 @@ fn value_scope_query(db: &dyn ScopeDatabase, id: InFile<ValueGroupId>) -> Arc<Va
     let group_data = db.value_surface(id);
 
     let mut collector_context = CollectorContext::new(
-        &group_data.binder_arena,
         &group_data.expr_arena,
+        &group_data.let_binding_arena,
+        &group_data.binder_arena,
         &group_data.type_arena,
     );
 

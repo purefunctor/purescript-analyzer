@@ -14,8 +14,9 @@ use crate::{
 use super::{ScopeData, ScopeId, ScopeKind};
 
 pub(crate) struct CollectorContext<'a> {
-    binder_arena: &'a Arena<Binder>,
     expr_arena: &'a Arena<Expr>,
+    let_binding_arena: &'a Arena<LetBinding>,
+    binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
     pub(crate) scope_arena: Arena<ScopeData>,
     scope_per_expr: FxHashMap<ExprId, ScopeId>,
@@ -24,16 +25,18 @@ pub(crate) struct CollectorContext<'a> {
 
 impl<'a> CollectorContext<'a> {
     pub(crate) fn new(
-        binder_arena: &'a Arena<Binder>,
         expr_arena: &'a Arena<Expr>,
+        let_binding_arena: &'a Arena<LetBinding>,
+        binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
     ) -> CollectorContext<'a> {
         let mut scope_arena = Arena::default();
         let scope_per_expr = FxHashMap::default();
         let current_scope = scope_arena.alloc(ScopeData::new_root());
         CollectorContext {
-            binder_arena,
             expr_arena,
+            let_binding_arena,
+            binder_arena,
             type_arena,
             scope_per_expr,
             scope_arena,
@@ -50,6 +53,10 @@ impl<'a> CollectorContext<'a> {
 impl<'a> Visitor<'a> for CollectorContext<'a> {
     fn expr_arena(&self) -> &'a Arena<Expr> {
         self.expr_arena
+    }
+
+    fn let_binding_arena(&self) -> &'a Arena<LetBinding> {
+        self.let_binding_arena
     }
 
     fn binder_arena(&self) -> &'a Arena<Binder> {
@@ -87,7 +94,7 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
 
                 let mut let_bound = FxIndexSet::default();
                 for let_binding in let_bindings.iter() {
-                    match let_binding {
+                    match &self.let_binding_arena[*let_binding] {
                         LetBinding::Name { name, .. } => {
                             let_bound.insert(name.as_ref().into());
                         }
@@ -100,7 +107,7 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
                     self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
                 for let_binding in let_bindings.iter() {
-                    match let_binding {
+                    match &self.let_binding_arena[*let_binding] {
                         LetBinding::Name { binding, .. } => {
                             self.visit_binding(binding);
                         }
@@ -136,7 +143,7 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
     fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
         let mut let_bound = FxIndexSet::default();
         for let_binding in where_expr.let_bindings.iter() {
-            match let_binding {
+            match &self.let_binding_arena[*let_binding] {
                 LetBinding::Name { name, .. } => {
                     let_bound.insert(name.as_ref().into());
                 }
@@ -148,7 +155,7 @@ impl<'a> Visitor<'a> for CollectorContext<'a> {
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
         for let_binding in where_expr.let_bindings.iter() {
-            match let_binding {
+            match &self.let_binding_arena[*let_binding] {
                 LetBinding::Name { binding, .. } => {
                     self.visit_binding(binding);
                 }
