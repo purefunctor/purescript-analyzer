@@ -91,6 +91,7 @@ pub type ExprId = Idx<Expr>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LetBinding {
     Name { name: Name, binding: Binding },
+    Pattern { binder: BinderId, where_expr: WhereExpr },
 }
 
 pub type LetBindingId = Idx<LetBinding>;

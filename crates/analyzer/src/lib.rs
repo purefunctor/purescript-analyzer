@@ -53,7 +53,8 @@ mod tests {
     use salsa::Durability;
 
     use crate::{
-        infer, InferDatabase, ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, Upcast,
+        infer, InferDatabase, ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase,
+        SurfaceDatabase, Upcast,
     };
 
     #[test]
@@ -70,9 +71,9 @@ mod tests {
 module Main where
 
 x :: Int -> Int -> Int
-x a b = 0
+x = 0
   where
-  c = 0
+  [a, b] = 0
 "
                 .into(),
             ),
@@ -88,12 +89,13 @@ x a b = 0
         db.set_file_paths_with_durability(files.iter().collect(), Durability::MEDIUM);
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
-
         let nominal_map = db.nominal_map(file_id);
         let x_group_id = nominal_map.value_group_id("x").unwrap();
-        let pp = infer::PrettyPrinter::new(db.upcast());
-        println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
+        db.value_surface(x_group_id);
 
-        dbg!(db.value_scope(x_group_id));
+        // let pp = infer::PrettyPrinter::new(db.upcast());
+        // println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
+
+        // dbg!(db.value_scope(x_group_id));
     }
 }

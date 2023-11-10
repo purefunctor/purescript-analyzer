@@ -59,6 +59,10 @@ where
                     LetBinding::Name { binding, .. } => {
                         visitor.visit_binding(binding);
                     }
+                    LetBinding::Pattern { binder, where_expr } => {
+                        visitor.visit_binder(*binder);
+                        visitor.visit_where_expr(where_expr);
+                    }
                 }
                 visitor.visit_expr(*let_body);
             }
@@ -136,6 +140,10 @@ where
         match &visitor.let_binding_arena()[*let_binding] {
             LetBinding::Name { binding, .. } => {
                 visitor.visit_binding(binding);
+            }
+            LetBinding::Pattern { binder, where_expr } => {
+                visitor.visit_binder(*binder);
+                visitor.visit_where_expr(where_expr);
             }
         }
     }

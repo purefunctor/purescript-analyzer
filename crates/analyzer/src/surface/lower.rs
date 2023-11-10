@@ -158,7 +158,14 @@ impl SurfaceContext {
                     let binding = self.lower_binding(&let_binding_name.binding()?)?;
                     Some(self.alloc_let_binding(LetBinding::Name { name, binding }, &let_binding))
                 }
-                ast::LetBinding::LetBindingPattern(_) => None,
+                ast::LetBinding::LetBindingPattern(let_binding_pattern) => {
+                    let binder = self.lower_binder(&let_binding_pattern.binder()?)?;
+                    let where_expr = self.lower_where_expr(&let_binding_pattern.where_expr()?)?;
+                    Some(self.alloc_let_binding(
+                        LetBinding::Pattern { binder, where_expr },
+                        &let_binding,
+                    ))
+                }
                 ast::LetBinding::LetBindingSignature(_) => None,
             })
             .collect()

@@ -119,6 +119,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
                     .iter()
                     .map(|let_binding_id| match &self.let_binding_arena[*let_binding_id] {
                         LetBinding::Name { name, .. } => (name.as_ref().into(), *let_binding_id),
+                        LetBinding::Pattern { .. } => todo!(),
                     })
                     .collect();
 
@@ -132,6 +133,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
                         LetBinding::Name { binding, .. } => {
                             self.visit_binding(binding);
                         }
+                        LetBinding::Pattern { .. } => todo!(),
                     }
                 });
                 self.visit_expr(*let_body);
@@ -164,6 +166,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
             .iter()
             .map(|let_binding_id| match &self.let_binding_arena[*let_binding_id] {
                 LetBinding::Name { name, .. } => (name.as_ref().into(), *let_binding_id),
+                LetBinding::Pattern { .. } => todo!(),
             })
             .collect();
 
@@ -176,6 +179,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
                 LetBinding::Name { binding, .. } => {
                     self.visit_binding(binding);
                 }
+                LetBinding::Pattern { .. } => todo!(),
             }
         });
         self.visit_expr(where_expr.expr_id);

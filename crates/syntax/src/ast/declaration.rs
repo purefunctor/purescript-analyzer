@@ -1,6 +1,6 @@
 use rowan::ast::AstNode;
 
-use super::{Binder, Binding, Name, Separated, Type, ZeroOrMore};
+use super::{Binder, Binding, Name, Separated, Type, WhereExpression, ZeroOrMore};
 
 _create_ast_v!(
     Declaration,
@@ -84,6 +84,16 @@ impl LetBindingName {
 
     pub fn binding(&self) -> Option<Binding> {
         Binding::cast(self.node.last_child()?)
+    }
+}
+
+impl LetBindingPattern {
+    pub fn binder(&self) -> Option<Binder> {
+        Binder::cast(self.node.first_child()?)
+    }
+
+    pub fn where_expr(&self) -> Option<WhereExpression> {
+        WhereExpression::cast(self.node.last_child()?)
     }
 }
 
