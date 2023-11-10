@@ -35,10 +35,6 @@ pub(crate) struct CollectContext<'a> {
 }
 
 impl<'a> CollectContext<'a> {
-    fn reset_to_root(&mut self) {
-        self.current_scope = self.root_scope;
-    }
-
     fn take_per_expr(&mut self) -> FxHashMap<ExprId, ScopeId> {
         std::mem::take(&mut self.per_expr)
     }
@@ -89,7 +85,6 @@ impl<'a> CollectContext<'a> {
             .map(|(value_equation_id, value_equation_ast)| {
                 collector_context.visit_value_equation(value_equation_ast);
                 let per_expr = collector_context.take_per_expr();
-                collector_context.reset_to_root();
                 (*value_equation_id, per_expr)
             })
             .collect();
@@ -198,5 +193,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
         default_visit_value_equation(self, value_equation);
+
+        self.current_scope = scope_parent;
     }
 }
