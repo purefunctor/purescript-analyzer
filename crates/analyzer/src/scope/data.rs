@@ -1,99 +1,96 @@
+//! ADTs for scope information and name resolution.
+use std::ops;
+
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use syntax::ast;
 
-use crate::{
-    id::AstId,
-    surface::{BinderId, ExprId, LetBindingId},
-};
+use crate::surface::{BinderId, LetBindingId};
 
-/// Scope information as a linked list.
-#[derive(Debug, PartialEq, Eq)]
+/// Scope information as a linked list node.
+///
+/// We store scope information in the form of a linked list allocated through
+/// an index-based arena. Syntactic constructs such as binders or let-bindings
+/// allocate scopes regardless if they introduce names or not.
+///
+/// For example, the following declarations:
+/// ```haskell
+/// f x = unit
+/// g _ = unit
+/// ```
+///
+/// Would have the following scopes:
+/// ```text
+/// f = [ Root, Binders({ x }), LetBound({ }) ]
+/// g = [ Root, Binders({   }), LetBound({ }) ]
+/// ```
+///
+/// The only difference being that `f` introduces `x` into the scope, while
+/// `g` does not. Also note how an empty `LetBound` scope is introduced as
+/// both declarations do not bind names through `where`.
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ScopeData {
-    parent: Option<ScopeId>,
-    pub(crate) kind: ScopeKind,
+    pub parent: Option<ScopeId>,
+    pub kind: ScopeKind,
 }
 
-impl ScopeData {
-    pub(crate) fn new_root() -> ScopeData {
-        ScopeData { parent: None, kind: ScopeKind::Root }
-    }
-
-    pub(crate) fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
-        ScopeData { parent: Some(parent), kind }
-    }
+/// The kind of scope information.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum ScopeKind {
+    #[default]
+    Root,
+    /// Names introduced by [`Binders`].
+    ///
+    /// For example:
+    /// ```haskell
+    /// identity x = x
+    /// ```
+    ///
+    /// [`Binders`]: crate::surface::Binder
+    Binders(FxHashMap<SmolStr, BinderId>),
+    /// Names introduced by [`LetBindings`].
+    ///
+    /// For example:
+    /// ```haskell
+    /// nil = let x = 0 in x
+    /// zero = x where x = 0
+    /// ```
+    ///
+    /// [`LetBindings`]: crate::surface::LetBinding
+    LetBound(FxHashMap<SmolStr, LetBindingId>),
 }
 
 pub type ScopeId = Idx<ScopeData>;
 
-/// The kind of scope information.
+/// A value associated with scope data.
 #[derive(Debug, PartialEq, Eq)]
-pub enum ScopeKind {
-    Root,
-    Binders(FxHashMap<SmolStr, BinderId>),
-    LetBound(FxHashMap<SmolStr, LetBindingId>),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupScope {
+pub struct WithScope<T> {
     scope_arena: Arena<ScopeData>,
-    scope_per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, FxHashMap<ExprId, ScopeId>>,
+    value: T,
 }
 
-impl ValueGroupScope {
-    pub(crate) fn new(
-        scope_arena: Arena<ScopeData>,
-        scope_per_equation: FxHashMap<
-            AstId<ast::ValueEquationDeclaration>,
-            FxHashMap<ExprId, ScopeId>,
-        >,
-    ) -> ValueGroupScope {
-        ValueGroupScope { scope_arena, scope_per_equation }
-    }
+/// Scope information for a [`ValueGroupId`].
+///
+/// [`ValueGroupId`]: crate::resolver::ValueGroupId
+#[derive(Debug, PartialEq, Eq)]
+pub struct ValueGroupScope {}
 
-    pub fn expr_scope(
-        &self,
-        equation_id: AstId<ast::ValueEquationDeclaration>,
-        expr_id: ExprId,
-    ) -> ScopeId {
-        if let Some(scope_id) = self
-            .scope_per_equation
-            .get(&equation_id)
-            .and_then(|scope_per_expr| scope_per_expr.get(&expr_id))
-        {
-            *scope_id
-        } else {
-            panic!("Invariant violated, ExprId was not assigned a ScopeId");
-        }
+impl ScopeData {
+    pub fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
+        ScopeData { parent: Some(parent), kind }
     }
+}
 
-    pub fn scope_data(&self, scope_id: ScopeId) -> &ScopeData {
-        &self.scope_arena[scope_id]
+impl<T> WithScope<T> {
+    pub fn new(scope_arena: Arena<ScopeData>, value: T) -> WithScope<T> {
+        WithScope { scope_arena, value }
     }
+}
 
-    pub fn resolve(&self, scope_id: ScopeId, name: impl AsRef<str>) -> Option<ScopeId> {
-        let name = name.as_ref();
-        let mut current = self.scope_data(scope_id);
-        loop {
-            match &current.kind {
-                ScopeKind::Root => return None,
-                ScopeKind::Binders(binders) => {
-                    if binders.contains_key(name) {
-                        return Some(scope_id);
-                    }
-                }
-                ScopeKind::LetBound(let_bound) => {
-                    if let_bound.contains_key(name) {
-                        return Some(scope_id);
-                    }
-                }
-            }
-            if let Some(parent_scope_id) = current.parent {
-                current = self.scope_data(parent_scope_id);
-            } else {
-                return None;
-            }
-        }
+impl<T> ops::Index<ScopeId> for WithScope<T> {
+    type Output = ScopeData;
+
+    fn index(&self, index: ScopeId) -> &Self::Output {
+        &self.scope_arena[index]
     }
 }

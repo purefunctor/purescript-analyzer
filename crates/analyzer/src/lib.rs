@@ -52,9 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{
-        infer, InferDatabase, ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, Upcast,
-    };
+    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, Upcast};
 
     #[test]
     fn api() {
@@ -91,7 +89,5 @@ x a b = 0
         let x_group_id = nominal_map.value_group_id("x").unwrap();
         let pp = infer::PrettyPrinter::new(db.upcast());
         println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
-
-        dbg!(db.value_scope(x_group_id));
     }
 }
