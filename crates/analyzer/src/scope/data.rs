@@ -4,8 +4,12 @@ use std::ops;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use syntax::ast;
 
-use crate::surface::{BinderId, LetBindingId};
+use crate::{
+    id::AstId,
+    surface::{BinderId, ExprId, LetBindingId},
+};
 
 /// Scope information as a linked list node.
 ///
@@ -69,11 +73,15 @@ pub struct WithScope<T> {
     value: T,
 }
 
+type ScopePerExpr = FxHashMap<ExprId, ScopeId>;
+
 /// Scope information for a [`ValueGroupId`].
 ///
 /// [`ValueGroupId`]: crate::resolver::ValueGroupId
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupScope {}
+pub struct ValueGroupScope {
+    per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, ScopePerExpr>,
+}
 
 impl ScopeData {
     pub fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
@@ -92,5 +100,13 @@ impl<T> ops::Index<ScopeId> for WithScope<T> {
 
     fn index(&self, index: ScopeId) -> &Self::Output {
         &self.scope_arena[index]
+    }
+}
+
+impl ValueGroupScope {
+    pub(crate) fn new(
+        per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, ScopePerExpr>,
+    ) -> ValueGroupScope {
+        ValueGroupScope { per_equation }
     }
 }
