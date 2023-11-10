@@ -61,7 +61,13 @@ pub enum ScopeKind {
     /// ```
     ///
     /// [`LetBindings`]: crate::surface::LetBinding
-    LetBound(FxHashMap<SmolStr, LetBindingId>),
+    LetBound(FxHashMap<SmolStr, LetBindingId>, LetKind),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum LetKind {
+    LetIn,
+    Where,
 }
 
 pub type ScopeId = Idx<ScopeData>;

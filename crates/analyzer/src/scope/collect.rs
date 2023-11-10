@@ -10,13 +10,15 @@ use crate::{
     resolver::ValueGroupId,
     scope::ScopeKind,
     surface::{
-        visitor::{default_visit_binder, default_visit_value_equation, Visitor},
+        visitor::{
+            default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
+        },
         Binder, Expr, ExprId, LetBinding, Type,
     },
     ScopeDatabase,
 };
 
-use super::{ScopeData, ScopeId, ValueGroupScope, WithScope};
+use super::{LetKind, ScopeData, ScopeId, ValueGroupScope, WithScope};
 
 pub(crate) struct CollectContext<'a> {
     // Environment
@@ -114,7 +116,37 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
     }
 
     fn visit_expr(&mut self, expr_id: ExprId) {
-        crate::surface::visitor::default_visit_expr(self, expr_id);
+        self.per_expr.insert(expr_id, self.current_scope);
+
+        match &self.expr_arena[expr_id] {
+            Expr::LetIn(let_bindings, let_body) => {
+                let let_bound = let_bindings
+                    .iter()
+                    .map(|let_binding_id| match &self.let_binding_arena[*let_binding_id] {
+                        LetBinding::Name { name, .. } => (name.as_ref().into(), *let_binding_id),
+                    })
+                    .collect();
+
+                let scope_parent = self.current_scope;
+                let scope_kind = ScopeKind::LetBound(let_bound, LetKind::LetIn);
+                self.current_scope =
+                    self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
+
+                let_bindings.iter().for_each(|let_binding_id| {
+                    match &self.let_binding_arena[*let_binding_id] {
+                        LetBinding::Name { binding, .. } => {
+                            self.visit_binding(binding);
+                        }
+                    }
+                });
+                self.visit_expr(*let_body);
+
+                // `visit_binding` and `visit_expr` might have pushed scopes;
+                // as such, we do a rollback to prevent them from leaking.
+                self.current_scope = scope_parent;
+            }
+            _ => default_visit_expr(self, expr_id),
+        }
     }
 
     fn visit_binder(&mut self, binder_id: crate::surface::BinderId) {
@@ -131,10 +163,6 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
         }
     }
 
-    fn visit_binding(&mut self, binding: &'a crate::surface::Binding) {
-        crate::surface::visitor::default_visit_binding(self, binding);
-    }
-
     fn visit_where_expr(&mut self, where_expr: &'a crate::surface::WhereExpr) {
         let let_bound = where_expr
             .let_bindings
@@ -145,7 +173,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
             .collect();
 
         let scope_parent = self.current_scope;
-        let scope_kind = ScopeKind::LetBound(let_bound);
+        let scope_kind = ScopeKind::LetBound(let_bound, LetKind::Where);
         self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
         where_expr.let_bindings.iter().for_each(|let_binding_id| {
