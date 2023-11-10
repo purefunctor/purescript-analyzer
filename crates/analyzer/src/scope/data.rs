@@ -64,7 +64,7 @@ pub enum ScopeKind {
     LetBound(FxHashMap<SmolStr, LetBindingId>, LetKind),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LetKind {
     LetIn,
     Where,
