@@ -155,8 +155,11 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
                 }
             }
         });
-
         self.visit_expr(where_expr.expr_id);
+
+        // `visit_binding` and `visit_expr` might have pushed scopes;
+        // as such, we do a rollback to prevent them from leaking.
+        self.current_scope = scope_parent;
     }
 
     fn visit_value_equation(&mut self, value_equation: &'a crate::surface::ValueEquation) {
