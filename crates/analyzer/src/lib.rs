@@ -52,10 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{
-        infer, InferDatabase, ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase,
-        SurfaceDatabase, Upcast,
-    };
+    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, SurfaceDatabase};
 
     #[test]
     fn api() {
@@ -71,9 +68,13 @@ mod tests {
 module Main where
 
 x :: Int -> Int -> Int
-x = 0
+x _ = 't'
   where
-  [a, b] = 0
+  f _ = g unit
+  g _ = f unit
+  [a, b] = [21, 21]
+  h _ = i unit
+  i _ = h unit
 "
                 .into(),
             ),
@@ -96,6 +97,12 @@ x = 0
         // let pp = infer::PrettyPrinter::new(db.upcast());
         // println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
 
-        // dbg!(db.value_scope(x_group_id));
+        let root = db.parse_file(file_id);
+
+        dbg!(db.value_scope(x_group_id));
+        // dbg!(&db.value_surface_with_source_map(x_group_id).1.expr_to_cst.iter().next().unwrap().1.to_node(&root));
+        for (expr, cst) in db.value_surface_with_source_map(x_group_id).1.expr_to_cst.iter() {
+            println!("{} - {:#?}", expr.into_raw(), cst.to_node(&root).text());
+        }
     }
 }
