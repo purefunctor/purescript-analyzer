@@ -51,7 +51,7 @@ pub enum ScopeKind {
     /// ```
     ///
     /// [`Binders`]: crate::surface::Binder
-    Binders(FxHashMap<SmolStr, BinderId>),
+    Binders(FxHashMap<SmolStr, BinderId>, BinderKind),
     /// Names introduced by [`LetBindings`].
     ///
     /// For example:
@@ -62,6 +62,12 @@ pub enum ScopeKind {
     ///
     /// [`LetBindings`]: crate::surface::LetBinding
     LetBound(FxHashMap<SmolStr, LetBindingId>, LetKind),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BinderKind {
+    Thunk,
+    NoThunk,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
