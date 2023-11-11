@@ -53,18 +53,18 @@ pub struct ValueGroup {
     pub equations: FxHashMap<AstId<ast::ValueEquationDeclaration>, ValueEquation>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Binding {
     Unconditional { where_expr: WhereExpr },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct WhereExpr {
     pub expr_id: Idx<Expr>,
     pub let_bindings: Box<[LetBindingId]>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Binder {
     Constructor { name: Qualified<NameRef>, fields: Box<[BinderId]> },
     Literal(Literal<BinderId>),
@@ -76,7 +76,7 @@ pub enum Binder {
 
 pub type BinderId = Idx<Binder>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
     Application(ExprId, Box<[ExprId]>),
     Constructor(Qualified<NameRef>),
@@ -88,7 +88,7 @@ pub enum Expr {
 
 pub type ExprId = Idx<Expr>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum LetBinding {
     Name { name: Name, binding: Binding },
     Pattern { binder: BinderId, where_expr: WhereExpr },
@@ -96,7 +96,7 @@ pub enum LetBinding {
 
 pub type LetBindingId = Idx<LetBinding>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Literal<I> {
     Array(Box<[I]>),
     Record(Box<[RecordItem<I>]>),
@@ -107,19 +107,19 @@ pub enum Literal<I> {
     Boolean(bool),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum IntOrNumber {
     Int(usize),
     Number(SmolStr),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RecordItem<I> {
     RecordPun(SmolStr),
     RecordField(SmolStr, I),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Type {
     Arrow(Box<[TypeId]>, TypeId),
     Application(TypeId, Box<[TypeId]>),
