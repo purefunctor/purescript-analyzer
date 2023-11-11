@@ -40,40 +40,39 @@ impl<'a> CollectContext<'a> {
         std::mem::take(&mut self.per_expr)
     }
 
-    // Suggested algorithm
-    //
-    // There are two cases that we want to handle while collecting
-    // scope information with let-bound names, in particular:
-    // 1. Exclusively LetBindingName
-    // 2. Interspersed LetBindingPattern
-    //
-    // With "Exclusively LetBindingName", the idea is to allocate
-    // all names as part of a LetBound-scope which is visible to
-    // both the body, as well as the rhs of each binding. The
-    // responsibility of checking the validity of such name is
-    // done down the line instead.
-    //
-    // With "Interpersed LetBindingPattern", the scope resolution
-    // proceeds as normal until a LetBindingPattern is encountered,
-    // which acts as a breakpoint and disallows names from referencing
-    // each other.
-    //
-    // For example:
-    //
-    // f _ = g unit
-    // [a, b] = [0, 1]
-    // g _ = f unit
-    //
-    // Per @natefaubion
-    // [..], The compiler has a heuristic that if a given binding group has a pattern, it does not topsort it.
-    //
-    // LetBindingPattern effectively serves as boundaries between let-bound
-    // scopes. Note that this is fair game, as such:
-    //
-    // c = 0
-    // [a, b] = [0, 1]
-    // f _ = g [a, c]
-    // g _ = f [b, c]
+    /// Implements collection algorithm for let bindings.
+    ///
+    /// In the simple case of let bindings consisting entirely of
+    /// [`LetBinding::Name`], names are collected and pushed into
+    /// the scope first before traversing the values they're bound
+    /// to.
+    ///
+    /// On the other hand, if a [`LetBinding::Pattern`] is present
+    /// in the binding group, it effectively serves as a boundary
+    /// between let-bound names. Take for example:
+    ///
+    /// ```haskell
+    /// let
+    ///   f _ = g unit
+    ///   g _ = f unit
+    ///   [a, b] = [0, 1]
+    ///   h _ = i unit
+    ///   i _ = h unit
+    /// ```
+    ///
+    /// Their scopes would look something along the lines of:
+    ///
+    /// ```haskell
+    /// let
+    ///   f _ = g unit     -- 1. only `f` and `g` see each other
+    ///   g _ = f unit
+    ///   [a, b] = [0, 1]  -- 2. only `f` and `g` is visible here
+    ///   h _ = i unit
+    ///   i _ = h unit     -- 3. `h` and `i` see previous bindings and each other
+    /// ```
+    ///
+    /// Until the compiler performs topological sorting inclusive
+    /// of [`LetBinding::Pattern`], this is the "canon" algorithm.
     fn visit_let_bindings(
         &mut self,
         let_bindings: impl Iterator<Item = LetBindingId>,
