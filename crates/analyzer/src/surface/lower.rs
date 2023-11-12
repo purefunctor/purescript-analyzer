@@ -14,15 +14,14 @@ use crate::{
 };
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetBindingId,
-    LetNameAnnotation, LetNameGroup, LetNameGroupPtr, Literal, RecordItem, SourceMap, Type, TypeId,
-    ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
+    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetNameAnnotation,
+    LetNameGroup, LetNameGroupPtr, Literal, RecordItem, SourceMap, Type, TypeId, ValueAnnotation,
+    ValueEquation, ValueGroup, WhereExpr, WithArena,
 };
 
 #[derive(Default)]
 pub(crate) struct SurfaceContext {
     expr_arena: Arena<Expr>,
-    let_binding_arena: Arena<LetBinding>,
     let_name_group_arena: Arena<LetNameGroup>,
     binder_arena: Arena<Binder>,
     type_arena: Arena<Type>,
@@ -84,7 +83,7 @@ impl SurfaceContext {
 
         let surface_group = WithArena::new(
             surface_context.expr_arena,
-            surface_context.let_binding_arena,
+            surface_context.let_name_group_arena,
             surface_context.binder_arena,
             surface_context.type_arena,
             ValueGroup { name, annotation, equations },
@@ -144,7 +143,7 @@ impl SurfaceContext {
     fn lower_let_bindings(
         &mut self,
         let_bindings: &ast::OneOrMore<ast::LetBinding>,
-    ) -> Option<Box<[LetBindingId]>> {
+    ) -> Option<Box<[LetBinding]>> {
         enum Head {
             Annotation(LetNameAnnotation, SyntaxNodePtr),
             Equation(LetNameEquation, SyntaxNodePtr),
@@ -156,9 +155,11 @@ impl SurfaceContext {
         }
 
         let mut current_state = State::Initial;
+        let mut lowered = vec![];
 
         let allocate_let_name_group =
             |this: &mut Self,
+             lowered: &mut Vec<LetBinding>,
              name: Name,
              head: Head,
              rest: Vec<(LetNameEquation, SyntaxNodePtr)>| {
@@ -196,14 +197,27 @@ impl SurfaceContext {
                 let let_name_group_ptr = LetNameGroupPtr { annotation_ptr, equations_ptr };
 
                 this.source_map.let_name_group_to_cst.insert(let_name_group_id, let_name_group_ptr);
+
+                lowered.push(LetBinding::NameGroup { id: let_name_group_id });
             };
 
-        let push_let_name_group = |this: &mut Self, state: &mut State, name: Name, start: Head| {
+        let finish_let_name_group = |this: &mut Self,
+                                     lowered: &mut Vec<LetBinding>,
+                                     state: &mut State| {
+            if let State::LetNameGroup { name, head, rest } = mem::replace(state, State::Initial) {
+                allocate_let_name_group(this, lowered, name, head, rest);
+            }
+        };
+
+        let push_let_name_group = |this: &mut Self,
+                                   lowered: &mut Vec<LetBinding>,
+                                   state: &mut State,
+                                   name: Name,
+                                   head: Head| {
             let rest = vec![];
-            let previous_state =
-                mem::replace(state, State::LetNameGroup { name, head: start, rest });
+            let previous_state = mem::replace(state, State::LetNameGroup { name, head, rest });
             if let State::LetNameGroup { name, head, rest } = previous_state {
-                allocate_let_name_group(this, name, head, rest);
+                allocate_let_name_group(this, lowered, name, head, rest);
             }
         };
 
@@ -226,11 +240,16 @@ impl SurfaceContext {
                                 self.lower_let_binding_name(&let_binding_name)?,
                                 SyntaxNodePtr::new(let_binding_name.syntax()),
                             );
-                            push_let_name_group(self, &mut current_state, name, head);
+                            push_let_name_group(self, &mut lowered, &mut current_state, name, head);
                         }
                     }
                 }
-                ast::LetBinding::LetBindingPattern(_) => todo!(),
+                ast::LetBinding::LetBindingPattern(let_binding_pattern) => {
+                    finish_let_name_group(self, &mut lowered, &mut current_state);
+                    let binder = self.lower_binder(&let_binding_pattern.binder()?)?;
+                    let where_expr = self.lower_where_expr(&let_binding_pattern.where_expr()?)?;
+                    lowered.push(LetBinding::Pattern { binder, where_expr });
+                }
                 ast::LetBinding::LetBindingSignature(let_binding_signature) => {
                     let annotation_name = Name::try_from(let_binding_signature.name()?).ok()?;
                     match &mut current_state {
@@ -245,21 +264,16 @@ impl SurfaceContext {
                                 self.lower_let_binding_signature(&let_binding_signature)?,
                                 SyntaxNodePtr::new(let_binding_signature.syntax()),
                             );
-                            push_let_name_group(self, &mut current_state, name, head);
+                            push_let_name_group(self, &mut lowered, &mut current_state, name, head);
                         }
                     }
                 }
             }
         }
 
-        if let State::LetNameGroup { name, head, rest } = current_state {
-            allocate_let_name_group(self, name, head, rest);
-        }
+        finish_let_name_group(self, &mut lowered, &mut current_state);
 
-        dbg!(&self.source_map.let_name_group_to_cst);
-        dbg!(&self.source_map.cst_to_let_name_group);
-
-        todo!()
+        Some(Box::from(lowered))
     }
 
     fn lower_let_binding_name(

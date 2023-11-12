@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq)]
 pub struct WithArena<T> {
     pub expr_arena: Arena<Expr>,
-    pub let_binding_arena: Arena<LetBinding>,
+    pub let_name_group_arena: Arena<LetNameGroup>,
     pub binder_arena: Arena<Binder>,
     pub type_arena: Arena<Type>,
     pub value: T,
@@ -26,12 +26,12 @@ pub struct WithArena<T> {
 impl<T> WithArena<T> {
     pub fn new(
         expr_arena: Arena<Expr>,
-        let_binding_arena: Arena<LetBinding>,
+        let_name_group_arena: Arena<LetNameGroup>,
         binder_arena: Arena<Binder>,
         type_arena: Arena<Type>,
         value: T,
     ) -> WithArena<T> {
-        WithArena { expr_arena, let_binding_arena, binder_arena, type_arena, value }
+        WithArena { expr_arena, let_name_group_arena, binder_arena, type_arena, value }
     }
 }
 
@@ -61,7 +61,7 @@ pub enum Binding {
 #[derive(Debug, PartialEq, Eq)]
 pub struct WhereExpr {
     pub expr_id: Idx<Expr>,
-    pub let_bindings: Box<[LetBindingId]>,
+    pub let_bindings: Box<[LetBinding]>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -81,7 +81,7 @@ pub enum Expr {
     Application(ExprId, Box<[ExprId]>),
     Constructor(Qualified<NameRef>),
     Lambda(Box<[BinderId]>, ExprId),
-    LetIn(Box<[LetBindingId]>, ExprId),
+    LetIn(Box<[LetBinding]>, ExprId),
     Literal(Literal<ExprId>),
     Variable(Qualified<NameRef>),
 }
@@ -90,11 +90,9 @@ pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum LetBinding {
-    Name { name: Name, binding: Binding },
+    NameGroup { id: LetNameGroupId },
     Pattern { binder: BinderId, where_expr: WhereExpr },
 }
-
-pub(crate) type LetBindingId = Idx<LetBinding>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct LetNameAnnotation {
