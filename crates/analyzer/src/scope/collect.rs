@@ -83,12 +83,8 @@ impl<'a> CollectContext<'a> {
     ///
     /// Until the compiler performs topological sorting inclusive
     /// of [`LetBinding::Pattern`], this is the "canon" algorithm.
-    fn visit_let_bindings(
-        &mut self,
-        let_bindings: impl Iterator<Item = &'a LetBinding>,
-        let_kind: LetKind,
-    ) {
-        let mut let_bindings = let_bindings;
+    fn visit_let_bindings(&mut self, let_bindings: &'a [LetBinding], let_kind: LetKind) {
+        let mut let_bindings = let_bindings.iter();
         let mut current_let_bound = FxHashMap::default();
 
         let finish_current_let_bound =
@@ -229,7 +225,6 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
 
         match &self.expr_arena[expr_id] {
             Expr::LetIn(let_bindings, let_body) => {
-                let let_bindings = let_bindings.iter();
                 self.visit_let_bindings(let_bindings, LetKind::LetIn);
                 self.with_reverting_scope(|this| {
                     this.visit_expr(*let_body);
@@ -254,8 +249,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
     }
 
     fn visit_where_expr(&mut self, where_expr: &'a crate::surface::WhereExpr) {
-        let let_bindings = where_expr.let_bindings.iter();
-        self.visit_let_bindings(let_bindings, LetKind::Where);
+        self.visit_let_bindings(&where_expr.let_bindings, LetKind::Where);
         self.with_reverting_scope(|this| {
             this.visit_expr(where_expr.expr_id);
         });
