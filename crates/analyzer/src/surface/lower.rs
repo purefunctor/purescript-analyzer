@@ -149,20 +149,18 @@ impl SurfaceContext {
             Equation(LetNameEquation, SyntaxNodePtr),
         }
 
+        type Rest = Vec<(LetNameEquation, SyntaxNodePtr)>;
+
         enum State {
             Initial,
-            LetNameGroup { name: Name, head: Head, rest: Vec<(LetNameEquation, SyntaxNodePtr)> },
+            LetNameGroup { name: Name, head: Head, rest: Rest },
         }
 
         let mut current_state = State::Initial;
         let mut lowered = vec![];
 
         let allocate_let_name_group =
-            |this: &mut Self,
-             lowered: &mut Vec<LetBinding>,
-             name: Name,
-             head: Head,
-             rest: Vec<(LetNameEquation, SyntaxNodePtr)>| {
+            |this: &mut Self, lowered: &mut Vec<LetBinding>, name: Name, head: Head, rest: Rest| {
                 let mut annotation = None;
                 let mut annotation_ptr = None;
                 let mut equations = vec![];
