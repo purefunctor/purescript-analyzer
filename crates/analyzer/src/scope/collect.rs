@@ -53,9 +53,9 @@ impl<'a> CollectContext<'a> {
     /// Implements collection algorithm for let bindings.
     ///
     /// In the simple case of let bindings consisting entirely of
-    /// [`LetBinding::Name`], names are collected and pushed into
-    /// the scope first before traversing the values they're bound
-    /// to.
+    /// [`LetBinding::NameGroup`], names are collected and pushed
+    /// into the scope first before traversing the values they're
+    /// bound to.
     ///
     /// On the other hand, if a [`LetBinding::Pattern`] is present
     /// in the binding group, it effectively serves as a boundary
