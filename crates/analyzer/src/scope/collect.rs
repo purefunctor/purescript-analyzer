@@ -11,10 +11,8 @@ use crate::{
     resolver::ValueGroupId,
     scope::{BinderKind, ScopeKind},
     surface::{
-        visitor::{
-            default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
-        },
-        Binder, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type,
+        visitor::{default_visit_binder, default_visit_expr, Visitor},
+        Binder, BinderId, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type,
     },
     ScopeDatabase,
 };
@@ -38,6 +36,18 @@ pub(crate) struct CollectContext<'a> {
 impl<'a> CollectContext<'a> {
     fn take_per_expr(&mut self) -> FxHashMap<ExprId, ScopeId> {
         std::mem::take(&mut self.per_expr)
+    }
+
+    fn visit_binders(&mut self, binders: &[BinderId]) {
+        let binder_kind = if binders.is_empty() { BinderKind::NoThunk } else { BinderKind::Thunk };
+
+        let scope_parent = self.current_scope;
+        let scope_kind = ScopeKind::Binders(FxHashMap::default(), binder_kind);
+        self.current_scope = self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
+
+        for binder in binders {
+            self.visit_binder(*binder);
+        }
     }
 
     /// Implements collection algorithm for let bindings.
@@ -96,8 +106,6 @@ impl<'a> CollectContext<'a> {
                     })
                     .collect();
 
-                dbg!(&let_bound);
-
                 let scope_parent = this.current_scope;
                 let scope_kind = ScopeKind::LetBound(let_bound, let_kind);
                 this.current_scope =
@@ -105,16 +113,7 @@ impl<'a> CollectContext<'a> {
 
                 for equation in equations {
                     this.with_reverting_scope(|this| {
-                        // let scope_parent = this.current_scope;
-                        // let scope_kind =
-                        //     ScopeKind::Binders(FxHashMap::default(), BinderKind::NoThunk);
-                        // this.current_scope =
-                        //     this.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
-
-                        // for binder in equation.binders.iter() {
-                        //     this.visit_binder(*binder);
-                        // }
-
+                        this.visit_binders(&equation.binders);
                         this.visit_binding(&equation.binding);
                     });
                 }
@@ -265,15 +264,8 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
     fn visit_value_equation(&mut self, value_equation: &'a crate::surface::ValueEquation) {
         assert!(self.current_scope == self.root_scope);
         self.with_reverting_scope(|this| {
-            let binder_kind = if value_equation.binders.is_empty() {
-                BinderKind::NoThunk
-            } else {
-                BinderKind::Thunk
-            };
-            let scope_parent = this.current_scope;
-            let scope_kind = ScopeKind::Binders(FxHashMap::default(), binder_kind);
-            this.current_scope = this.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
-            default_visit_value_equation(this, value_equation)
+            this.visit_binders(&value_equation.binders);
+            this.visit_binding(&value_equation.binding);
         });
     }
 }
