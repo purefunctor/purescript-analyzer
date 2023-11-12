@@ -11,27 +11,24 @@ use crate::{
     surface::{BinderId, ExprId, LetNameGroupId},
 };
 
-/// Scope information as a linked list node.
+/// Scope information as a graph node.
 ///
-/// We store scope information in the form of a linked list allocated through
-/// an index-based arena. Syntactic constructs such as binders or let-bindings
-/// allocate scopes regardless if they introduce names or not.
+/// We store scope information in the form of a directed acyclic graph
+/// allocated through an index-based arena. Aside from names, scope nodes
+/// can also introduce information such as "thunk" contexts. For example:
 ///
-/// For example, the following declarations:
 /// ```haskell
-/// f x = unit
-/// g _ = unit
+/// f x = 0
+/// g _ = 0
+/// h = 0
 /// ```
 ///
-/// Would have the following scopes:
-/// ```text
-/// f = [ Root, Binders({ x }), LetBound({ }) ]
-/// g = [ Root, Binders({   }), LetBound({ }) ]
+/// Would yield the following scopes:
+/// ```haskell
+/// f = [ Root, Binders({ "x" }, Thunk) ]
+/// g = [ Root, Binders({     }, Thunk) ]
+/// h = [ Root, Binders({     }, NoThunk) ]
 /// ```
-///
-/// The only difference being that `f` introduces `x` into the scope, while
-/// `g` does not. Also note how an empty `LetBound` scope is introduced as
-/// both declarations do not bind names through `where`.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ScopeData {
     pub parent: Option<ScopeId>,
