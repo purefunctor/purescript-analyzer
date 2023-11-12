@@ -14,7 +14,7 @@ use crate::{
         visitor::{
             default_visit_binder, default_visit_expr, default_visit_value_equation, Visitor,
         },
-        Binder, Expr, ExprId, LetBinding, LetBindingId, Type,
+        Binder, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type,
     },
     ScopeDatabase,
 };
@@ -24,7 +24,7 @@ use super::{LetKind, ScopeData, ScopeId, ValueGroupScope, WithScope};
 pub(crate) struct CollectContext<'a> {
     // Environment
     expr_arena: &'a Arena<Expr>,
-    let_binding_arena: &'a Arena<LetBinding>,
+    let_name_group_arena: &'a Arena<LetNameGroup>,
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
     // Accumulators
@@ -75,43 +75,56 @@ impl<'a> CollectContext<'a> {
     /// of [`LetBinding::Pattern`], this is the "canon" algorithm.
     fn visit_let_bindings(
         &mut self,
-        let_bindings: impl Iterator<Item = LetBindingId>,
+        let_bindings: impl Iterator<Item = &'a LetBinding>,
         let_kind: LetKind,
     ) {
         let mut let_bindings = let_bindings;
         let mut current_let_bound = FxHashMap::default();
 
         let finish_current_let_bound =
-            |this: &mut Self, current: &mut FxHashMap<SmolStr, LetBindingId>| {
+            |this: &mut Self, current: &mut FxHashMap<SmolStr, LetNameGroupId>| {
                 if current.is_empty() {
                     return;
                 }
 
                 let let_bound = mem::take(current);
-                let to_visit: Vec<_> = let_bound
+                let equations: Vec<_> = let_bound
                     .values()
-                    .map(|let_binding_id| match &this.let_binding_arena[*let_binding_id] {
-                        LetBinding::Name { binding, .. } => binding,
-                        LetBinding::Pattern { .. } => unreachable!(),
+                    .flat_map(|let_name_group_id| {
+                        let let_name_group = &this.let_name_group_arena[*let_name_group_id];
+                        let_name_group.equations.iter()
                     })
                     .collect();
+
+                dbg!(&let_bound);
 
                 let scope_parent = this.current_scope;
                 let scope_kind = ScopeKind::LetBound(let_bound, let_kind);
                 this.current_scope =
                     this.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
-                for binding in to_visit {
+                for equation in equations {
                     this.with_reverting_scope(|this| {
-                        this.visit_binding(binding);
-                    })
+                        // let scope_parent = this.current_scope;
+                        // let scope_kind =
+                        //     ScopeKind::Binders(FxHashMap::default(), BinderKind::NoThunk);
+                        // this.current_scope =
+                        //     this.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
+
+                        // for binder in equation.binders.iter() {
+                        //     this.visit_binder(*binder);
+                        // }
+
+                        this.visit_binding(&equation.binding);
+                    });
                 }
             };
 
-        while let Some(let_binding_id) = let_bindings.next() {
-            match &self.let_binding_arena[let_binding_id] {
-                LetBinding::Name { name, .. } => {
-                    current_let_bound.insert(SmolStr::from(name.as_ref()), let_binding_id);
+        while let Some(let_binding) = let_bindings.next() {
+            match let_binding {
+                LetBinding::NameGroup { id } => {
+                    let let_name_group = &self.let_name_group_arena[*id];
+                    current_let_bound.insert(SmolStr::from(let_name_group.name.as_ref()), *id);
                 }
                 LetBinding::Pattern { binder, where_expr } => {
                     finish_current_let_bound(self, &mut current_let_bound);
@@ -146,7 +159,7 @@ impl<'a> CollectContext<'a> {
 impl<'a> CollectContext<'a> {
     pub(crate) fn new(
         expr_arena: &'a Arena<Expr>,
-        let_binding_arena: &'a Arena<LetBinding>,
+        let_name_group_arena: &'a Arena<LetNameGroup>,
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
     ) -> Self {
@@ -158,7 +171,7 @@ impl<'a> CollectContext<'a> {
 
         Self {
             expr_arena,
-            let_binding_arena,
+            let_name_group_arena,
             binder_arena,
             type_arena,
             scope_arena,
@@ -176,7 +189,7 @@ impl<'a> CollectContext<'a> {
 
         let mut collector_context = CollectContext::new(
             &group_data.expr_arena,
-            &group_data.let_binding_arena,
+            &group_data.let_name_group_arena,
             &group_data.binder_arena,
             &group_data.type_arena,
         );
@@ -200,8 +213,8 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
         self.expr_arena
     }
 
-    fn let_binding_arena(&self) -> &'a Arena<LetBinding> {
-        self.let_binding_arena
+    fn let_name_group_arena(&self) -> &'a Arena<LetNameGroup> {
+        self.let_name_group_arena
     }
 
     fn binder_arena(&self) -> &'a Arena<Binder> {
@@ -217,7 +230,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
 
         match &self.expr_arena[expr_id] {
             Expr::LetIn(let_bindings, let_body) => {
-                let let_bindings = let_bindings.iter().copied();
+                let let_bindings = let_bindings.iter();
                 self.visit_let_bindings(let_bindings, LetKind::LetIn);
                 self.with_reverting_scope(|this| {
                     this.visit_expr(*let_body);
@@ -242,7 +255,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
     }
 
     fn visit_where_expr(&mut self, where_expr: &'a crate::surface::WhereExpr) {
-        let let_bindings = where_expr.let_bindings.iter().copied();
+        let let_bindings = where_expr.let_bindings.iter();
         self.visit_let_bindings(let_bindings, LetKind::Where);
         self.with_reverting_scope(|this| {
             this.visit_expr(where_expr.expr_id);

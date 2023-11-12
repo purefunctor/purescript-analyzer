@@ -8,7 +8,7 @@ use syntax::ast;
 
 use crate::{
     id::AstId,
-    surface::{BinderId, ExprId, LetBindingId},
+    surface::{BinderId, ExprId, LetNameGroupId},
 };
 
 /// Scope information as a linked list node.
@@ -61,7 +61,7 @@ pub enum ScopeKind {
     /// ```
     ///
     /// [`LetBindings`]: crate::surface::LetBinding
-    LetBound(FxHashMap<SmolStr, LetBindingId>, LetKind),
+    LetBound(FxHashMap<SmolStr, LetNameGroupId>, LetKind),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
