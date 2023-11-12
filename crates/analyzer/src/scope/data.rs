@@ -15,7 +15,9 @@ use crate::{
 ///
 /// We store scope information in the form of a directed acyclic graph
 /// allocated through an index-based arena. Aside from names, scope nodes
-/// can also introduce information such as "thunk" contexts. For example:
+/// can also introduce information such as "thunk" contexts.
+/// 
+/// For example, the following declarations:
 ///
 /// ```haskell
 /// f x = 0
@@ -25,7 +27,7 @@ use crate::{
 ///
 /// Would yield the following scopes:
 /// ```haskell
-/// f = [ Root, Binders({ "x" }, Thunk) ]
+/// f = [ Root, Binders({ 'x' }, Thunk) ]
 /// g = [ Root, Binders({     }, Thunk) ]
 /// h = [ Root, Binders({     }, NoThunk) ]
 /// ```
