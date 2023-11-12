@@ -16,7 +16,7 @@ use crate::{
 /// We store scope information in the form of a directed acyclic graph
 /// allocated through an index-based arena. Aside from names, scope nodes
 /// can also introduce information such as "thunk" contexts.
-/// 
+///
 /// For example, the following declarations:
 ///
 /// ```haskell
