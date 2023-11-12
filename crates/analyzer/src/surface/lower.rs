@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{mem, sync::Arc};
 
 use la_arena::Arena;
 use rowan::{ast::AstNode, NodeOrToken};
@@ -9,19 +9,21 @@ use crate::{
     id::InFile,
     names::{Name, Qualified},
     resolver::ValueGroupId,
+    surface::LetNameEquation,
     SurfaceDatabase,
 };
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetBindingId, Literal,
-    RecordItem, SourceMap, Type, TypeId, ValueAnnotation, ValueEquation, ValueGroup, WhereExpr,
-    WithArena,
+    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetBindingId,
+    LetNameAnnotation, LetNameGroup, LetNameGroupPtr, Literal, RecordItem, SourceMap, Type, TypeId,
+    ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
 };
 
 #[derive(Default)]
 pub(crate) struct SurfaceContext {
     expr_arena: Arena<Expr>,
     let_binding_arena: Arena<LetBinding>,
+    let_name_group_arena: Arena<LetNameGroup>,
     binder_arena: Arena<Binder>,
     type_arena: Arena<Type>,
     source_map: SourceMap,
@@ -33,13 +35,6 @@ impl SurfaceContext {
         self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(ast.syntax()));
         self.source_map.cst_to_expr.insert(SyntaxNodePtr::new(ast.syntax()), expr_id);
         expr_id
-    }
-
-    fn alloc_let_binding(&mut self, lowered: LetBinding, ast: &ast::LetBinding) -> LetBindingId {
-        let let_binding_id = self.let_binding_arena.alloc(lowered);
-        self.source_map.let_binding_to_cst.insert(let_binding_id, SyntaxNodePtr::new(ast.syntax()));
-        self.source_map.cst_to_let_binding.insert(SyntaxNodePtr::new(ast.syntax()), let_binding_id);
-        let_binding_id
     }
 
     fn alloc_binder(&mut self, lowered: Binder, ast: &ast::Binder) -> BinderId {
@@ -150,25 +145,142 @@ impl SurfaceContext {
         &mut self,
         let_bindings: &ast::OneOrMore<ast::LetBinding>,
     ) -> Option<Box<[LetBindingId]>> {
-        let_bindings
-            .children()
-            .map(|let_binding| match &let_binding {
+        enum Head {
+            Annotation(LetNameAnnotation, SyntaxNodePtr),
+            Equation(LetNameEquation, SyntaxNodePtr),
+        }
+
+        enum State {
+            Initial,
+            LetNameGroup { name: Name, head: Head, rest: Vec<(LetNameEquation, SyntaxNodePtr)> },
+        }
+
+        let mut current_state = State::Initial;
+
+        let allocate_let_name_group =
+            |this: &mut Self,
+             name: Name,
+             head: Head,
+             rest: Vec<(LetNameEquation, SyntaxNodePtr)>| {
+                let mut annotation = None;
+                let mut annotation_ptr = None;
+                let mut equations = vec![];
+                let mut equations_ptr = vec![];
+
+                match head {
+                    Head::Annotation(head_annotation, head_ptr) => {
+                        annotation = Some(head_annotation);
+                        annotation_ptr = Some(head_ptr);
+                    }
+                    Head::Equation(head_equation, head_ptr) => {
+                        equations.push(head_equation);
+                        equations_ptr.push(head_ptr);
+                    }
+                }
+
+                for (rest_equation, rest_ptr) in rest {
+                    equations.push(rest_equation);
+                    equations_ptr.push(rest_ptr);
+                }
+
+                let let_name_group_id =
+                    this.let_name_group_arena.alloc(LetNameGroup { name, annotation, equations });
+
+                annotation_ptr.iter().cloned().for_each(|annotation_ptr| {
+                    this.source_map.cst_to_let_name_group.insert(annotation_ptr, let_name_group_id);
+                });
+                equations_ptr.iter().cloned().for_each(|equation_ptr| {
+                    this.source_map.cst_to_let_name_group.insert(equation_ptr, let_name_group_id);
+                });
+
+                let let_name_group_ptr = LetNameGroupPtr { annotation_ptr, equations_ptr };
+
+                this.source_map.let_name_group_to_cst.insert(let_name_group_id, let_name_group_ptr);
+            };
+
+        let push_let_name_group = |this: &mut Self, state: &mut State, name: Name, start: Head| {
+            let rest = vec![];
+            let previous_state =
+                mem::replace(state, State::LetNameGroup { name, head: start, rest });
+            if let State::LetNameGroup { name, head, rest } = previous_state {
+                allocate_let_name_group(this, name, head, rest);
+            }
+        };
+
+        for let_binding in let_bindings.children() {
+            match let_binding {
                 ast::LetBinding::LetBindingName(let_binding_name) => {
-                    let name = Name::try_from(let_binding_name.name()?).ok()?;
-                    let binding = self.lower_binding(&let_binding_name.binding()?)?;
-                    Some(self.alloc_let_binding(LetBinding::Name { name, binding }, &let_binding))
+                    let equation_name = Name::try_from(let_binding_name.name()?).ok()?;
+                    match &mut current_state {
+                        State::LetNameGroup { name: current_name, rest: current_rest, .. }
+                            if equation_name == *current_name =>
+                        {
+                            current_rest.push((
+                                self.lower_let_binding_name(&let_binding_name)?,
+                                SyntaxNodePtr::new(let_binding_name.syntax()),
+                            ));
+                        }
+                        _ => {
+                            let name = equation_name;
+                            let head = Head::Equation(
+                                self.lower_let_binding_name(&let_binding_name)?,
+                                SyntaxNodePtr::new(let_binding_name.syntax()),
+                            );
+                            push_let_name_group(self, &mut current_state, name, head);
+                        }
+                    }
                 }
-                ast::LetBinding::LetBindingPattern(let_binding_pattern) => {
-                    let binder = self.lower_binder(&let_binding_pattern.binder()?)?;
-                    let where_expr = self.lower_where_expr(&let_binding_pattern.where_expr()?)?;
-                    Some(self.alloc_let_binding(
-                        LetBinding::Pattern { binder, where_expr },
-                        &let_binding,
-                    ))
+                ast::LetBinding::LetBindingPattern(_) => todo!(),
+                ast::LetBinding::LetBindingSignature(let_binding_signature) => {
+                    let annotation_name = Name::try_from(let_binding_signature.name()?).ok()?;
+                    match &mut current_state {
+                        State::LetNameGroup { name: current_name, .. }
+                            if annotation_name == *current_name =>
+                        {
+                            panic!("Invalid position for a signature!");
+                        }
+                        _ => {
+                            let name = annotation_name;
+                            let head = Head::Annotation(
+                                self.lower_let_binding_signature(&let_binding_signature)?,
+                                SyntaxNodePtr::new(let_binding_signature.syntax()),
+                            );
+                            push_let_name_group(self, &mut current_state, name, head);
+                        }
+                    }
                 }
-                ast::LetBinding::LetBindingSignature(_) => None,
-            })
-            .collect()
+            }
+        }
+
+        if let State::LetNameGroup { name, head, rest } = current_state {
+            allocate_let_name_group(self, name, head, rest);
+        }
+
+        dbg!(&self.source_map.let_name_group_to_cst);
+        dbg!(&self.source_map.cst_to_let_name_group);
+
+        todo!()
+    }
+
+    fn lower_let_binding_name(
+        &mut self,
+        let_binding_name: &ast::LetBindingName,
+    ) -> Option<LetNameEquation> {
+        let binders = let_binding_name
+            .binders()?
+            .children()
+            .map(|binder| self.lower_binder(&binder))
+            .collect::<Option<_>>()?;
+        let binding = self.lower_binding(&let_binding_name.binding()?)?;
+        Some(LetNameEquation { binders, binding })
+    }
+
+    fn lower_let_binding_signature(
+        &mut self,
+        let_binding_signature: &ast::LetBindingSignature,
+    ) -> Option<LetNameAnnotation> {
+        let ty = self.lower_type(&let_binding_signature.ty()?)?;
+        Some(LetNameAnnotation { ty })
     }
 }
 

@@ -70,11 +70,11 @@ module Main where
 x :: Int -> Int -> Int
 x _ = 't'
   where
-  f _ = g unit
-  g _ = f unit
-  [a, b] = [21, 21]
-  h _ = i unit
-  i _ = h unit
+  f :: Int -> Int
+  f _ = 0
+  
+  g :: Int -> Int
+  g _ = 1
 "
                 .into(),
             ),

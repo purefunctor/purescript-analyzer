@@ -94,7 +94,27 @@ pub enum LetBinding {
     Pattern { binder: BinderId, where_expr: WhereExpr },
 }
 
-pub type LetBindingId = Idx<LetBinding>;
+pub(crate) type LetBindingId = Idx<LetBinding>;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct LetNameAnnotation {
+    pub ty: TypeId,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct LetNameEquation {
+    pub binders: Box<[BinderId]>,
+    pub binding: Binding,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct LetNameGroup {
+    pub name: Name,
+    pub annotation: Option<LetNameAnnotation>,
+    pub equations: Vec<LetNameEquation>,
+}
+
+pub type LetNameGroupId = Idx<LetNameGroup>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Literal<I> {
