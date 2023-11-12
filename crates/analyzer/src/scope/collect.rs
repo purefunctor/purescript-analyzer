@@ -12,7 +12,7 @@ use crate::{
     scope::{BinderKind, ScopeKind},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, Visitor},
-        Binder, BinderId, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type,
+        Binder, BinderId, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type, WhereExpr, ValueEquation,
     },
     ScopeDatabase,
 };
@@ -234,7 +234,7 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
         }
     }
 
-    fn visit_binder(&mut self, binder_id: crate::surface::BinderId) {
+    fn visit_binder(&mut self, binder_id: BinderId) {
         match &self.binder_arena[binder_id] {
             Binder::Variable(variable) => match &mut self.scope_arena[self.current_scope].kind {
                 ScopeKind::Binders(binders, _) => {
@@ -248,14 +248,14 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
         }
     }
 
-    fn visit_where_expr(&mut self, where_expr: &'a crate::surface::WhereExpr) {
+    fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
         self.visit_let_bindings(&where_expr.let_bindings, LetKind::Where);
         self.with_reverting_scope(|this| {
             this.visit_expr(where_expr.expr_id);
         });
     }
 
-    fn visit_value_equation(&mut self, value_equation: &'a crate::surface::ValueEquation) {
+    fn visit_value_equation(&mut self, value_equation: &'a ValueEquation) {
         assert!(self.current_scope == self.root_scope);
         self.with_reverting_scope(|this| {
             this.visit_binders(&value_equation.binders);
