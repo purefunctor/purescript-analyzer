@@ -29,7 +29,7 @@ use crate::{
 /// ```haskell
 /// f = [ Root, Binders({ 'x' }, Thunk) ]
 /// g = [ Root, Binders({     }, Thunk) ]
-/// h = [ Root, Binders({     }, NoThunk) ]
+/// h = [ Root, Binders({   }, NoThunk) ]
 /// ```
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ScopeData {
