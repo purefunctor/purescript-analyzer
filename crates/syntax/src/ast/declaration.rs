@@ -101,4 +101,8 @@ impl LetBindingSignature {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
     }
+
+    pub fn ty(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
 }
