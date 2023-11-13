@@ -12,7 +12,8 @@ use crate::{
     scope::{BinderKind, ScopeKind},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, Visitor},
-        Binder, BinderId, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type, WhereExpr, ValueEquation,
+        Binder, BinderId, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type,
+        ValueEquation, WhereExpr,
     },
     ScopeDatabase,
 };
@@ -31,6 +32,119 @@ pub(crate) struct CollectContext<'a> {
     // State
     current_scope: ScopeId,
     root_scope: ScopeId,
+}
+
+impl<'a> CollectContext<'a> {
+    pub(crate) fn new(
+        expr_arena: &'a Arena<Expr>,
+        let_name_group_arena: &'a Arena<LetNameGroup>,
+        binder_arena: &'a Arena<Binder>,
+        type_arena: &'a Arena<Type>,
+    ) -> Self {
+        let mut scope_arena = Arena::default();
+        let per_expr = FxHashMap::default();
+
+        let current_scope = scope_arena.alloc(ScopeData::default());
+        let root_scope = current_scope;
+
+        Self {
+            expr_arena,
+            let_name_group_arena,
+            binder_arena,
+            type_arena,
+            scope_arena,
+            per_expr,
+            current_scope,
+            root_scope,
+        }
+    }
+
+    pub(crate) fn value_scope_query(
+        db: &dyn ScopeDatabase,
+        id: InFile<ValueGroupId>,
+    ) -> Arc<WithScope<ValueGroupScope>> {
+        let group_data = db.value_surface(id);
+
+        let mut collector_context = CollectContext::new(
+            &group_data.expr_arena,
+            &group_data.let_name_group_arena,
+            &group_data.binder_arena,
+            &group_data.type_arena,
+        );
+
+        let per_equation = group_data
+            .value
+            .equations
+            .iter()
+            .map(|(value_equation_id, value_equation_ast)| {
+                collector_context.visit_value_equation(value_equation_ast);
+                (*value_equation_id, collector_context.take_per_expr())
+            })
+            .collect();
+
+        Arc::new(WithScope::new(collector_context.scope_arena, ValueGroupScope::new(per_equation)))
+    }
+}
+
+impl<'a> Visitor<'a> for CollectContext<'a> {
+    fn expr_arena(&self) -> &'a Arena<Expr> {
+        self.expr_arena
+    }
+
+    fn let_name_group_arena(&self) -> &'a Arena<LetNameGroup> {
+        self.let_name_group_arena
+    }
+
+    fn binder_arena(&self) -> &'a Arena<Binder> {
+        self.binder_arena
+    }
+
+    fn type_arena(&self) -> &'a Arena<Type> {
+        self.type_arena
+    }
+
+    fn visit_expr(&mut self, expr_id: ExprId) {
+        self.per_expr.insert(expr_id, self.current_scope);
+
+        match &self.expr_arena[expr_id] {
+            Expr::LetIn(let_bindings, let_body) => {
+                self.visit_let_bindings(let_bindings, LetKind::LetIn);
+                self.with_reverting_scope(|this| {
+                    this.visit_expr(*let_body);
+                });
+            }
+            _ => default_visit_expr(self, expr_id),
+        }
+    }
+
+    fn visit_binder(&mut self, binder_id: BinderId) {
+        match &self.binder_arena[binder_id] {
+            Binder::Variable(variable) => match &mut self.scope_arena[self.current_scope].kind {
+                ScopeKind::Binders(binders, _) => {
+                    binders.insert(variable.as_ref().into(), binder_id);
+                }
+                _ => unreachable!("Invalid traversal state!"),
+            },
+            _ => {
+                default_visit_binder(self, binder_id);
+            }
+        }
+    }
+
+    fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
+        self.visit_let_bindings(&where_expr.let_bindings, LetKind::Where);
+        self.with_reverting_scope(|this| {
+            this.visit_expr(where_expr.expr_id);
+        });
+    }
+
+    fn visit_value_equation(&mut self, value_equation: &'a ValueEquation) {
+        assert!(self.current_scope == self.root_scope);
+        self.with_reverting_scope(|this| {
+            this.visit_binders(&value_equation.binders);
+            this.visit_binding(&value_equation.binding);
+        });
+    }
 }
 
 impl<'a> CollectContext<'a> {
@@ -148,118 +262,5 @@ impl<'a> CollectContext<'a> {
         let result = f(self);
         self.current_scope = previous;
         result
-    }
-}
-
-impl<'a> CollectContext<'a> {
-    pub(crate) fn new(
-        expr_arena: &'a Arena<Expr>,
-        let_name_group_arena: &'a Arena<LetNameGroup>,
-        binder_arena: &'a Arena<Binder>,
-        type_arena: &'a Arena<Type>,
-    ) -> Self {
-        let mut scope_arena = Arena::default();
-        let per_expr = FxHashMap::default();
-
-        let current_scope = scope_arena.alloc(ScopeData::default());
-        let root_scope = current_scope;
-
-        Self {
-            expr_arena,
-            let_name_group_arena,
-            binder_arena,
-            type_arena,
-            scope_arena,
-            per_expr,
-            current_scope,
-            root_scope,
-        }
-    }
-
-    pub(crate) fn value_scope_query(
-        db: &dyn ScopeDatabase,
-        id: InFile<ValueGroupId>,
-    ) -> Arc<WithScope<ValueGroupScope>> {
-        let group_data = db.value_surface(id);
-
-        let mut collector_context = CollectContext::new(
-            &group_data.expr_arena,
-            &group_data.let_name_group_arena,
-            &group_data.binder_arena,
-            &group_data.type_arena,
-        );
-
-        let per_equation = group_data
-            .value
-            .equations
-            .iter()
-            .map(|(value_equation_id, value_equation_ast)| {
-                collector_context.visit_value_equation(value_equation_ast);
-                (*value_equation_id, collector_context.take_per_expr())
-            })
-            .collect();
-
-        Arc::new(WithScope::new(collector_context.scope_arena, ValueGroupScope::new(per_equation)))
-    }
-}
-
-impl<'a> Visitor<'a> for CollectContext<'a> {
-    fn expr_arena(&self) -> &'a Arena<Expr> {
-        self.expr_arena
-    }
-
-    fn let_name_group_arena(&self) -> &'a Arena<LetNameGroup> {
-        self.let_name_group_arena
-    }
-
-    fn binder_arena(&self) -> &'a Arena<Binder> {
-        self.binder_arena
-    }
-
-    fn type_arena(&self) -> &'a Arena<Type> {
-        self.type_arena
-    }
-
-    fn visit_expr(&mut self, expr_id: ExprId) {
-        self.per_expr.insert(expr_id, self.current_scope);
-
-        match &self.expr_arena[expr_id] {
-            Expr::LetIn(let_bindings, let_body) => {
-                self.visit_let_bindings(let_bindings, LetKind::LetIn);
-                self.with_reverting_scope(|this| {
-                    this.visit_expr(*let_body);
-                });
-            }
-            _ => default_visit_expr(self, expr_id),
-        }
-    }
-
-    fn visit_binder(&mut self, binder_id: BinderId) {
-        match &self.binder_arena[binder_id] {
-            Binder::Variable(variable) => match &mut self.scope_arena[self.current_scope].kind {
-                ScopeKind::Binders(binders, _) => {
-                    binders.insert(variable.as_ref().into(), binder_id);
-                }
-                _ => unreachable!("Invalid traversal state!"),
-            },
-            _ => {
-                default_visit_binder(self, binder_id);
-            }
-        }
-    }
-
-    fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
-        self.visit_let_bindings(&where_expr.let_bindings, LetKind::Where);
-        self.with_reverting_scope(|this| {
-            this.visit_expr(where_expr.expr_id);
-        });
-    }
-
-    fn visit_value_equation(&mut self, value_equation: &'a ValueEquation) {
-        assert!(self.current_scope == self.root_scope);
-        self.with_reverting_scope(|this| {
-            this.visit_binders(&value_equation.binders);
-            this.visit_binding(&value_equation.binding);
-        });
     }
 }
