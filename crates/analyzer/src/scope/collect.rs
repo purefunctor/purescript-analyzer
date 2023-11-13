@@ -84,6 +84,10 @@ impl<'a> CollectContext<'a> {
 
         Arc::new(WithScope::new(collector_context.scope_arena, ValueGroupScope::new(per_equation)))
     }
+
+    fn take_per_expr(&mut self) -> FxHashMap<ExprId, ScopeId> {
+        mem::take(&mut self.per_expr)
+    }
 }
 
 impl<'a> Visitor<'a> for CollectContext<'a> {
@@ -148,10 +152,6 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
 }
 
 impl<'a> CollectContext<'a> {
-    fn take_per_expr(&mut self) -> FxHashMap<ExprId, ScopeId> {
-        std::mem::take(&mut self.per_expr)
-    }
-
     fn visit_binders(&mut self, binders: &[BinderId]) {
         let binder_kind = if binders.is_empty() { BinderKind::NoThunk } else { BinderKind::Thunk };
 
