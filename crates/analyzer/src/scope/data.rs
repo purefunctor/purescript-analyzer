@@ -1,5 +1,5 @@
 //! ADTs for scope information and name resolution.
-use std::ops;
+use std::{iter, ops};
 
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
@@ -7,7 +7,8 @@ use smol_str::SmolStr;
 use syntax::ast;
 
 use crate::{
-    id::AstId,
+    id::{AstId, InFile},
+    resolver::ValueGroupId,
     surface::{BinderId, ExprId, LetNameGroupId},
 };
 
@@ -63,12 +64,14 @@ pub enum ScopeKind {
     LetBound(FxHashMap<SmolStr, LetNameGroupId>, LetKind),
 }
 
+/// The kind of a binder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinderKind {
     Thunk,
     NoThunk,
 }
 
+/// The kind of a let binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LetKind {
     LetIn,
@@ -92,6 +95,25 @@ type ScopePerExpr = FxHashMap<ExprId, ScopeId>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupScope {
     per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, ScopePerExpr>,
+}
+
+/// The result of name resultion.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ResolutionKind {
+    Binder(BinderId),
+    LetName(LetNameGroupId),
+    Global(InFile<ValueGroupId>),
+}
+
+type ResolutionPerExpr = FxHashMap<ExprId, ResolutionKind>;
+
+/// Name resolution information for a [`ValueGroupId`].
+#[derive(Debug, PartialEq, Eq)]
+pub struct ValueGroupResolutions {
+    /// A mapping from [`Expr::Variable`] IDs to their resolutions.
+    ///
+    /// [`Expr::Variable`]: crate::surface::Expr::Variable
+    resolutions: FxHashMap<AstId<ast::ValueEquationDeclaration>, ResolutionPerExpr>,
 }
 
 impl ScopeData {
@@ -119,5 +141,56 @@ impl ValueGroupScope {
         per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, ScopePerExpr>,
     ) -> ValueGroupScope {
         ValueGroupScope { per_equation }
+    }
+}
+
+impl WithScope<ValueGroupScope> {
+    pub(crate) fn expr_scope(
+        &self,
+        equation_id: AstId<ast::ValueEquationDeclaration>,
+        expr_id: ExprId,
+    ) -> ScopeId {
+        let per_expr = self.value.per_equation.get(&equation_id).unwrap_or_else(|| {
+            unreachable!("invariant violated: equation should have been assigned a per_expr.")
+        });
+        let scope_id = per_expr.get(&expr_id).unwrap_or_else(|| {
+            unreachable!("invariant violated: expression should have been assigned a scope.")
+        });
+        *scope_id
+    }
+
+    pub(crate) fn resolve_name(
+        &self,
+        equation_id: AstId<ast::ValueEquationDeclaration>,
+        expr_id: ExprId,
+        name: impl AsRef<str>,
+    ) -> ResolutionKind {
+        let name = name.as_ref();
+        let scope_id = self.expr_scope(equation_id, expr_id);
+
+        let local_resolution =
+            self.ancestors(scope_id).find_map(|scope_data| match &scope_data.kind {
+                ScopeKind::Root => None,
+                ScopeKind::Binders(binders, _) => Some(ResolutionKind::Binder(*binders.get(name)?)),
+                ScopeKind::LetBound(let_bound, _) => {
+                    Some(ResolutionKind::LetName(*let_bound.get(name)?))
+                }
+            });
+
+        local_resolution.unwrap()
+    }
+}
+
+impl ValueGroupResolutions {
+    pub(crate) fn new(
+        resolutions: FxHashMap<AstId<ast::ValueEquationDeclaration>, ResolutionPerExpr>,
+    ) -> ValueGroupResolutions {
+        ValueGroupResolutions { resolutions }
+    }
+}
+
+impl<T> WithScope<T> {
+    fn ancestors(&self, scope_id: ScopeId) -> impl Iterator<Item = &ScopeData> {
+        iter::successors(Some(scope_id), |&i| self[i].parent).map(|i| &self[i])
     }
 }
