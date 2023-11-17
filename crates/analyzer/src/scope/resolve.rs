@@ -16,7 +16,7 @@ use crate::{
     ScopeDatabase,
 };
 
-use super::{ResolutionKind, ValueGroupResolutions, ValueGroupScope, WithScope};
+use super::{ResolutionKind, ScopeKind, ValueGroupResolutions, ValueGroupScope, WithScope};
 
 pub(crate) struct ResolveContext<'a> {
     // Environment
@@ -84,6 +84,24 @@ impl<'a> ResolveContext<'a> {
     fn take_per_expr(&mut self) -> FxHashMap<ExprId, ResolutionKind> {
         mem::take(&mut self.per_expr)
     }
+
+    fn resolve_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
+        let name = name.as_ref();
+        let equation_id = self.on_equation_id.unwrap_or_else(|| {
+            unreachable!("invariant violated: caller did not set on_equation_id");
+        });
+        let expr_scope_id = self.value_scope.expr_scope(equation_id, expr_id);
+        let local_resolution = self.value_scope.ancestors(expr_scope_id).find_map(|scope_data| {
+            match &scope_data.kind {
+                ScopeKind::Root => None,
+                ScopeKind::Binders(names, _) => Some(ResolutionKind::Binder(*names.get(name)?)),
+                ScopeKind::LetBound(names, _) => Some(ResolutionKind::LetName(*names.get(name)?)),
+            }
+        });
+        if let Some(local_resolution) = local_resolution {
+            self.per_expr.insert(expr_id, local_resolution);
+        }
+    }
 }
 
 impl<'a> Visitor<'a> for ResolveContext<'a> {
@@ -104,15 +122,9 @@ impl<'a> Visitor<'a> for ResolveContext<'a> {
     }
 
     fn visit_expr(&mut self, expr_id: ExprId) {
-        let equation_id = self.on_equation_id.unwrap_or_else(|| {
-            unreachable!("invariant violated: caller did not set on_equation_id");
-        });
-
         match &self.expr_arena[expr_id] {
             Expr::Variable(variable) => {
-                let resolution_kind =
-                    self.value_scope.resolve_name(equation_id, expr_id, &variable.value);
-                self.per_expr.insert(expr_id, resolution_kind);
+                self.resolve_expr(expr_id, &variable.value);
             }
             _ => default_visit_expr(self, expr_id),
         }

@@ -158,27 +158,6 @@ impl WithScope<ValueGroupScope> {
         });
         *scope_id
     }
-
-    pub(crate) fn resolve_name(
-        &self,
-        equation_id: AstId<ast::ValueEquationDeclaration>,
-        expr_id: ExprId,
-        name: impl AsRef<str>,
-    ) -> ResolutionKind {
-        let name = name.as_ref();
-        let scope_id = self.expr_scope(equation_id, expr_id);
-
-        let local_resolution =
-            self.ancestors(scope_id).find_map(|scope_data| match &scope_data.kind {
-                ScopeKind::Root => None,
-                ScopeKind::Binders(binders, _) => Some(ResolutionKind::Binder(*binders.get(name)?)),
-                ScopeKind::LetBound(let_bound, _) => {
-                    Some(ResolutionKind::LetName(*let_bound.get(name)?))
-                }
-            });
-
-        local_resolution.unwrap()
-    }
 }
 
 impl ValueGroupResolutions {
@@ -190,7 +169,7 @@ impl ValueGroupResolutions {
 }
 
 impl<T> WithScope<T> {
-    fn ancestors(&self, scope_id: ScopeId) -> impl Iterator<Item = &ScopeData> {
+    pub(crate) fn ancestors(&self, scope_id: ScopeId) -> impl Iterator<Item = &ScopeData> {
         iter::successors(Some(scope_id), |&i| self[i].parent).map(|i| &self[i])
     }
 }
