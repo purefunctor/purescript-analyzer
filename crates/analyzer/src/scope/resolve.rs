@@ -158,6 +158,7 @@ impl<'a> ResolveContext<'a> {
 
         let all_thunk = kosaraju_scc(&graph)
             .into_iter()
+            .filter(|components| components.len() > 1)
             .flat_map(|components| {
                 components.into_iter().flat_map(|component| graph.edges(component))
             })
