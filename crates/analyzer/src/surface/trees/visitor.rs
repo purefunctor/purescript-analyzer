@@ -1,14 +1,14 @@
 use la_arena::Arena;
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, LetBinding, LetNameGroup, Literal, Type,
-    ValueEquation, WhereExpr,
+    Binder, BinderId, Binding, Expr, ExprId, LetBinding, LetName, Literal, Type, ValueEquation,
+    WhereExpr,
 };
 
 pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
 
-    fn let_name_group_arena(&self) -> &'a Arena<LetNameGroup>;
+    fn let_name_arena(&self) -> &'a Arena<LetName>;
 
     fn binder_arena(&self) -> &'a Arena<Binder>;
 
@@ -57,9 +57,9 @@ where
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
                 match let_binding {
-                    LetBinding::NameGroup { id } => {
-                        let let_name_group = &visitor.let_name_group_arena()[*id];
-                        let_name_group.equations.iter().for_each(|equation| {
+                    LetBinding::Name { id } => {
+                        let let_name = &visitor.let_name_arena()[*id];
+                        let_name.equations.iter().for_each(|equation| {
                             equation.binders.iter().for_each(|binder| {
                                 visitor.visit_binder(*binder);
                             });
@@ -145,9 +145,9 @@ where
 {
     for let_binding in where_expr.let_bindings.iter() {
         match let_binding {
-            LetBinding::NameGroup { id } => {
-                let let_name_group = &visitor.let_name_group_arena()[*id];
-                let_name_group.equations.iter().for_each(|equation| {
+            LetBinding::Name { id } => {
+                let let_name = &visitor.let_name_arena()[*id];
+                let_name.equations.iter().for_each(|equation| {
                     equation.binders.iter().for_each(|binder| {
                         visitor.visit_binder(*binder);
                     });

@@ -12,7 +12,7 @@ use crate::{
     resolver::ValueGroupId,
     surface::{
         visitor::{default_visit_expr, Visitor},
-        Binder, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type, WhereExpr,
+        Binder, Expr, ExprId, LetBinding, LetName, LetNameId, Type, WhereExpr,
     },
     ScopeDatabase,
 };
@@ -24,7 +24,7 @@ use super::{
 pub(crate) struct ResolveContext<'a> {
     // Environment
     expr_arena: &'a Arena<Expr>,
-    let_name_group_arena: &'a Arena<LetNameGroup>,
+    let_name_arena: &'a Arena<LetName>,
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
     value_scope: &'a WithScope<ValueGroupScope>,
@@ -32,29 +32,29 @@ pub(crate) struct ResolveContext<'a> {
     per_expr: FxHashMap<ExprId, ResolutionKind>,
     // State
     on_equation_id: Option<AstId<ast::ValueEquationDeclaration>>,
-    on_let_name_group: Option<(LetNameGroupId, Vec<(LetNameGroupId, BinderKind)>)>,
+    on_let_name: Option<(LetNameId, Vec<(LetNameId, BinderKind)>)>,
 }
 
 impl<'a> ResolveContext<'a> {
     pub(crate) fn new(
         expr_arena: &'a Arena<Expr>,
-        let_name_group_arena: &'a Arena<LetNameGroup>,
+        let_name_arena: &'a Arena<LetName>,
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
         value_scope: &'a WithScope<ValueGroupScope>,
     ) -> ResolveContext<'a> {
         let per_expr = FxHashMap::default();
         let on_equation_id = None;
-        let on_let_name_group = None;
+        let on_let_name = None;
         ResolveContext {
             expr_arena,
-            let_name_group_arena,
+            let_name_arena,
             binder_arena,
             type_arena,
             value_scope,
             per_expr,
             on_equation_id,
-            on_let_name_group,
+            on_let_name,
         }
     }
 
@@ -67,7 +67,7 @@ impl<'a> ResolveContext<'a> {
 
         let mut resolve_context = ResolveContext::new(
             &value_surface.expr_arena,
-            &value_surface.let_name_group_arena,
+            &value_surface.let_name_arena,
             &value_surface.binder_arena,
             &value_surface.type_arena,
             &value_scope,
@@ -114,7 +114,7 @@ impl<'a> ResolveContext<'a> {
 
         if let Some(local_resolution) = local_resolution {
             if let ResolutionKind::LetName(dependency) = local_resolution {
-                if let Some((_, dependencies)) = &mut self.on_let_name_group {
+                if let Some((_, dependencies)) = &mut self.on_let_name {
                     dependencies.push((dependency, binder_kind));
                 }
             }
@@ -127,12 +127,11 @@ impl<'a> ResolveContext<'a> {
 
         for let_binding in let_bindings.iter() {
             match let_binding {
-                LetBinding::NameGroup { id } => {
-                    let previous_state =
-                        mem::replace(&mut self.on_let_name_group, Some((*id, vec![])));
+                LetBinding::Name { id } => {
+                    let previous_state = mem::replace(&mut self.on_let_name, Some((*id, vec![])));
 
-                    let let_name_group = &self.let_name_group_arena[*id];
-                    let_name_group.equations.iter().for_each(|equation| {
+                    let let_name = &self.let_name_arena[*id];
+                    let_name.equations.iter().for_each(|equation| {
                         equation.binders.iter().for_each(|binder| {
                             self.visit_binder(*binder);
                         });
@@ -140,7 +139,7 @@ impl<'a> ResolveContext<'a> {
                     });
 
                     if let Some((dependent, dependencies)) =
-                        mem::replace(&mut self.on_let_name_group, previous_state)
+                        mem::replace(&mut self.on_let_name, previous_state)
                     {
                         dependencies.into_iter().for_each(|(dependency, binder_kind)| {
                             graph.add_edge(dependent, dependency, binder_kind);
@@ -175,8 +174,8 @@ impl<'a> Visitor<'a> for ResolveContext<'a> {
         self.expr_arena
     }
 
-    fn let_name_group_arena(&self) -> &'a Arena<LetNameGroup> {
-        self.let_name_group_arena
+    fn let_name_arena(&self) -> &'a Arena<LetName> {
+        self.let_name_arena
     }
 
     fn binder_arena(&self) -> &'a Arena<Binder> {

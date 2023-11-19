@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq)]
 pub struct WithArena<T> {
     pub expr_arena: Arena<Expr>,
-    pub let_name_group_arena: Arena<LetNameGroup>,
+    pub let_name_arena: Arena<LetName>,
     pub binder_arena: Arena<Binder>,
     pub type_arena: Arena<Type>,
     pub value: T,
@@ -26,12 +26,12 @@ pub struct WithArena<T> {
 impl<T> WithArena<T> {
     pub fn new(
         expr_arena: Arena<Expr>,
-        let_name_group_arena: Arena<LetNameGroup>,
+        let_name_arena: Arena<LetName>,
         binder_arena: Arena<Binder>,
         type_arena: Arena<Type>,
         value: T,
     ) -> WithArena<T> {
-        WithArena { expr_arena, let_name_group_arena, binder_arena, type_arena, value }
+        WithArena { expr_arena, let_name_arena, binder_arena, type_arena, value }
     }
 }
 
@@ -90,7 +90,7 @@ pub type ExprId = Idx<Expr>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum LetBinding {
-    NameGroup { id: LetNameGroupId },
+    Name { id: LetNameId },
     Pattern { binder: BinderId, where_expr: WhereExpr },
 }
 
@@ -106,13 +106,13 @@ pub struct LetNameEquation {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct LetNameGroup {
+pub struct LetName {
     pub name: Name,
     pub annotation: Option<LetNameAnnotation>,
     pub equations: Vec<LetNameEquation>,
 }
 
-pub type LetNameGroupId = Idx<LetNameGroup>;
+pub type LetNameId = Idx<LetName>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Literal<I> {

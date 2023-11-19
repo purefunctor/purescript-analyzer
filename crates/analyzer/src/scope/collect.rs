@@ -12,8 +12,8 @@ use crate::{
     scope::{BinderKind, ScopeKind},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, Visitor},
-        Binder, BinderId, Expr, ExprId, LetBinding, LetNameGroup, LetNameGroupId, Type,
-        ValueEquation, WhereExpr,
+        Binder, BinderId, Expr, ExprId, LetBinding, LetName, LetNameId, Type, ValueEquation,
+        WhereExpr,
     },
     ScopeDatabase,
 };
@@ -23,7 +23,7 @@ use super::{LetKind, ScopeData, ScopeId, ValueGroupScope, WithScope};
 pub(crate) struct CollectContext<'a> {
     // Environment
     expr_arena: &'a Arena<Expr>,
-    let_name_group_arena: &'a Arena<LetNameGroup>,
+    let_name_arena: &'a Arena<LetName>,
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
     // Accumulators
@@ -37,7 +37,7 @@ pub(crate) struct CollectContext<'a> {
 impl<'a> CollectContext<'a> {
     pub(crate) fn new(
         expr_arena: &'a Arena<Expr>,
-        let_name_group_arena: &'a Arena<LetNameGroup>,
+        let_name_arena: &'a Arena<LetName>,
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
     ) -> Self {
@@ -49,7 +49,7 @@ impl<'a> CollectContext<'a> {
 
         Self {
             expr_arena,
-            let_name_group_arena,
+            let_name_arena,
             binder_arena,
             type_arena,
             scope_arena,
@@ -67,7 +67,7 @@ impl<'a> CollectContext<'a> {
 
         let mut collector_context = CollectContext::new(
             &group_data.expr_arena,
-            &group_data.let_name_group_arena,
+            &group_data.let_name_arena,
             &group_data.binder_arena,
             &group_data.type_arena,
         );
@@ -95,8 +95,8 @@ impl<'a> Visitor<'a> for CollectContext<'a> {
         self.expr_arena
     }
 
-    fn let_name_group_arena(&self) -> &'a Arena<LetNameGroup> {
-        self.let_name_group_arena
+    fn let_name_arena(&self) -> &'a Arena<LetName> {
+        self.let_name_arena
     }
 
     fn binder_arena(&self) -> &'a Arena<Binder> {
@@ -167,9 +167,9 @@ impl<'a> CollectContext<'a> {
     /// Implements collection algorithm for let bindings.
     ///
     /// In the simple case of let bindings consisting entirely of
-    /// [`LetBinding::NameGroup`], names are collected and pushed
-    /// into the scope first before traversing the values they're
-    /// bound to.
+    /// [`LetBinding::Name`], names are collected and pushed onto
+    /// the scope first before traversing the values they're bound
+    /// to.
     ///
     /// On the other hand, if a [`LetBinding::Pattern`] is present
     /// in the binding group, it effectively serves as a boundary
@@ -202,7 +202,7 @@ impl<'a> CollectContext<'a> {
         let mut current_let_bound = FxHashMap::default();
 
         let finish_current_let_bound =
-            |this: &mut Self, current: &mut FxHashMap<SmolStr, LetNameGroupId>| {
+            |this: &mut Self, current: &mut FxHashMap<SmolStr, LetNameId>| {
                 if current.is_empty() {
                     return;
                 }
@@ -210,9 +210,9 @@ impl<'a> CollectContext<'a> {
                 let let_bound = mem::take(current);
                 let equations: Vec<_> = let_bound
                     .values()
-                    .flat_map(|let_name_group_id| {
-                        let let_name_group = &this.let_name_group_arena[*let_name_group_id];
-                        let_name_group.equations.iter()
+                    .flat_map(|let_name_id| {
+                        let let_name = &this.let_name_arena[*let_name_id];
+                        let_name.equations.iter()
                     })
                     .collect();
 
@@ -231,9 +231,9 @@ impl<'a> CollectContext<'a> {
 
         while let Some(let_binding) = let_bindings.next() {
             match let_binding {
-                LetBinding::NameGroup { id } => {
-                    let let_name_group = &self.let_name_group_arena[*id];
-                    current_let_bound.insert(SmolStr::from(let_name_group.name.as_ref()), *id);
+                LetBinding::Name { id } => {
+                    let let_name = &self.let_name_arena[*id];
+                    current_let_bound.insert(SmolStr::from(let_name.name.as_ref()), *id);
                 }
                 LetBinding::Pattern { binder, where_expr } => {
                     finish_current_let_bound(self, &mut current_let_bound);

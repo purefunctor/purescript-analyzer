@@ -9,7 +9,7 @@ use syntax::ast;
 use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
-    surface::{BinderId, ExprId, LetNameGroupId},
+    surface::{BinderId, ExprId, LetNameId},
 };
 
 /// Scope information as a graph node.
@@ -61,7 +61,7 @@ pub enum ScopeKind {
     /// ```
     ///
     /// [`LetBindings`]: crate::surface::LetBinding
-    LetBound(FxHashMap<SmolStr, LetNameGroupId>, LetKind),
+    LetBound(FxHashMap<SmolStr, LetNameId>, LetKind),
 }
 
 /// The kind of a binder.
@@ -101,7 +101,7 @@ pub struct ValueGroupScope {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResolutionKind {
     Binder(BinderId),
-    LetName(LetNameGroupId),
+    LetName(LetNameId),
     Global(InFile<ValueGroupId>),
 }
 

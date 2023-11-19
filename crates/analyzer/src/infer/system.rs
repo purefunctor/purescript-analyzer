@@ -30,7 +30,7 @@ pub(crate) struct InferContext<'a> {
     // Accumulators
     of_expr: FxHashMap<surface::ExprId, TypeId>,
     of_binder: FxHashMap<surface::BinderId, TypeId>,
-    of_let_name_group: FxHashMap<surface::LetNameGroupId, TypeId>,
+    of_let_name: FxHashMap<surface::LetNameId, TypeId>,
     // State
     infer_state: InferState,
     provenance: Provenance,
@@ -49,7 +49,7 @@ impl<'a> InferContext<'a> {
         let infer_state = InferState::default();
         let of_expr = FxHashMap::default();
         let of_binder = FxHashMap::default();
-        let of_let_name_group = FxHashMap::default();
+        let of_let_name = FxHashMap::default();
         let on_equation_id = None;
         InferContext {
             db,
@@ -59,7 +59,7 @@ impl<'a> InferContext<'a> {
             resolutions,
             of_expr,
             of_binder,
-            of_let_name_group,
+            of_let_name,
             infer_state,
             provenance,
             on_equation_id,
@@ -102,7 +102,7 @@ impl<'a> InferContext<'a> {
 
         dbg!(infer_context.of_expr);
         dbg!(infer_context.of_binder);
-        dbg!(infer_context.of_let_name_group);
+        dbg!(infer_context.of_let_name);
 
         expected_ty
     }
@@ -175,7 +175,7 @@ impl<'a> InferContext<'a> {
         if let Some(resolution) = &self.resolutions.get(equation_id, expr_id) {
             let variable_ty = match resolution {
                 ResolutionKind::Binder(i) => self.of_binder.get(i).copied(),
-                ResolutionKind::LetName(i) => self.of_let_name_group.get(i).copied(),
+                ResolutionKind::LetName(i) => self.of_let_name.get(i).copied(),
                 ResolutionKind::Global(i) => Some(self.db.intern_type(Type::Reference(*i))),
             };
             variable_ty.unwrap_or(self.db.intern_type(Type::NotImplemented))
