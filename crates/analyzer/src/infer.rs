@@ -4,13 +4,13 @@ mod lower;
 mod system;
 mod trees;
 
-use crate::{id::InFile, resolver::ValueGroupId, SurfaceDatabase};
+use crate::{id::InFile, resolver::ValueGroupId, ScopeDatabase};
 
 use system::InferContext;
 pub use trees::*;
 
 #[salsa::query_group(InferStorage)]
-pub trait InferDatabase: SurfaceDatabase {
+pub trait InferDatabase: ScopeDatabase {
     #[salsa::interned]
     fn intern_type(&self, t: Type) -> TypeId;
 

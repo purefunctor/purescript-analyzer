@@ -1,11 +1,12 @@
 //! Implements the PureScript type system.
-use files::FileId;
 use la_arena::Arena;
+use rustc_hash::FxHashMap;
+use syntax::ast;
 
 use crate::{
-    id::InFile,
-    names::{NameRef, Qualified},
+    id::{AstId, InFile},
     resolver::ValueGroupId,
+    scope::{ResolutionKind, ValueGroupResolutions},
     surface, InferDatabase,
 };
 
@@ -20,40 +21,61 @@ struct InferState {
 }
 
 pub(crate) struct InferContext<'a> {
+    // Environment
     db: &'a dyn InferDatabase,
-    // FIXME: This is used for calling into the nominal
-    // map. Ideally, we should be passing a high-level
-    // abstraction that deals with name resolution.
-    file_id: FileId,
     expr_arena: &'a Arena<surface::Expr>,
     binder_arena: &'a Arena<surface::Binder>,
     type_arena: &'a Arena<surface::Type>,
+    resolutions: &'a ValueGroupResolutions,
+    // Accumulators
+    of_expr: FxHashMap<surface::ExprId, TypeId>,
+    of_binder: FxHashMap<surface::BinderId, TypeId>,
+    of_let_name_group: FxHashMap<surface::LetNameGroupId, TypeId>,
+    // State
     infer_state: InferState,
     provenance: Provenance,
+    on_equation_id: Option<AstId<ast::ValueEquationDeclaration>>,
 }
 
 impl<'a> InferContext<'a> {
     fn new(
         db: &'a dyn InferDatabase,
-        file_id: FileId,
         expr_arena: &'a Arena<surface::Expr>,
         binder_arena: &'a Arena<surface::Binder>,
         type_arena: &'a Arena<surface::Type>,
+        resolutions: &'a ValueGroupResolutions,
         provenance: Provenance,
     ) -> InferContext<'a> {
         let infer_state = InferState::default();
-        InferContext { db, file_id, expr_arena, binder_arena, type_arena, infer_state, provenance }
+        let of_expr = FxHashMap::default();
+        let of_binder = FxHashMap::default();
+        let of_let_name_group = FxHashMap::default();
+        let on_equation_id = None;
+        InferContext {
+            db,
+            expr_arena,
+            binder_arena,
+            type_arena,
+            resolutions,
+            of_expr,
+            of_binder,
+            of_let_name_group,
+            infer_state,
+            provenance,
+            on_equation_id,
+        }
     }
 
     pub(crate) fn infer_value_query(db: &'a dyn InferDatabase, id: InFile<ValueGroupId>) -> TypeId {
         let group_data = db.value_surface(id);
         let provenance = Provenance::ValueGroup(id);
+        let resolutions = db.value_resolved(id);
         let mut infer_context = InferContext::new(
             db,
-            id.file_id,
             &group_data.expr_arena,
             &group_data.binder_arena,
             &group_data.type_arena,
+            &resolutions,
             provenance,
         );
 
@@ -63,17 +85,24 @@ impl<'a> InferContext<'a> {
             .as_ref()
             .map(|annotation| infer_context.infer_value_annotation(annotation));
 
-        let mut equations = group_data.value.equations.values();
+        let mut equations = group_data.value.equations.iter();
 
         let expected_ty = if let Some(annotation_ty) = annotation_ty {
             annotation_ty
-        } else if let Some(equation) = equations.next() {
-            infer_context.infer_value_equation(equation)
+        } else if let Some((equation_id, equation_ast)) = equations.next() {
+            infer_context.on_equation_id = Some(*equation_id);
+            infer_context.infer_value_equation(equation_ast)
         } else {
-            unreachable!("Empty value group!");
+            unreachable!("invariant violated: no annotation and empty equations")
         };
 
-        equations.for_each(|equation| infer_context.check_value_equation(equation, expected_ty));
+        equations.for_each(|(_, equation_ast)| {
+            infer_context.check_value_equation(equation_ast, expected_ty)
+        });
+
+        dbg!(infer_context.of_expr);
+        dbg!(infer_context.of_binder);
+        dbg!(infer_context.of_let_name_group);
 
         expected_ty
     }
@@ -112,14 +141,16 @@ impl<'a> InferContext<'a> {
     }
 
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
-        match &self.expr_arena[expr_id] {
+        let expr_ty = match &self.expr_arena[expr_id] {
             surface::Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Literal(literal) => self.infer_expr_literal(literal),
-            surface::Expr::Variable(variable) => self.infer_expr_variable(variable),
-        }
+            surface::Expr::Variable(_) => self.infer_expr_variable(expr_id),
+        };
+        self.of_expr.insert(expr_id, expr_ty);
+        expr_ty
     }
 
     fn infer_expr_literal(&self, literal: &surface::Literal<surface::ExprId>) -> TypeId {
@@ -136,24 +167,34 @@ impl<'a> InferContext<'a> {
         }
     }
 
-    fn infer_expr_variable(&self, variable: &Qualified<NameRef>) -> TypeId {
-        let nominal_map = self.db.nominal_map(self.file_id);
-        if let Some(group_id) = nominal_map.value_group_id(&variable.value) {
-            self.db.intern_type(Type::Reference(group_id))
+    fn infer_expr_variable(&self, expr_id: surface::ExprId) -> TypeId {
+        let equation_id = self
+            .on_equation_id
+            .unwrap_or_else(|| unreachable!("invariant violated: caller must set this"));
+
+        if let Some(resolution) = &self.resolutions.get(equation_id, expr_id) {
+            let variable_ty = match resolution {
+                ResolutionKind::Binder(i) => self.of_binder.get(i).copied(),
+                ResolutionKind::LetName(i) => self.of_let_name_group.get(i).copied(),
+                ResolutionKind::Global(i) => Some(self.db.intern_type(Type::Reference(*i))),
+            };
+            variable_ty.unwrap_or(self.db.intern_type(Type::NotImplemented))
         } else {
-            panic!("Could not resolve variable.");
+            self.db.intern_type(Type::NotImplemented)
         }
     }
 
     fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
-        match &self.binder_arena[binder_id] {
+        let binder_ty = match &self.binder_arena[binder_id] {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Literal(literal) => self.infer_binder_literal(literal),
             surface::Binder::Negative(negative) => self.infer_binder_negative(negative),
             surface::Binder::Parenthesized(binder_id) => self.infer_binder(*binder_id),
             surface::Binder::Variable(_) => self.infer_binder_variable(),
             surface::Binder::Wildcard => self.infer_binder_wildcard(),
-        }
+        };
+        self.of_binder.insert(binder_id, binder_ty);
+        binder_ty
     }
 
     fn infer_binder_literal(&mut self, literal: &surface::Literal<surface::BinderId>) -> TypeId {
@@ -213,7 +254,7 @@ impl<'a> InferContext<'a> {
         self.check_binding(&equation.binding, binding_expected_ty);
     }
 
-    fn check_binding(&mut self, binding: &surface::Binding, expected_ty: TypeId) {}
+    fn check_binding(&mut self, _: &surface::Binding, _: TypeId) {}
 
     fn check_binder(&mut self, binder_id: surface::BinderId, expected_ty: TypeId) {
         let binder_ty = self.infer_binder(binder_id);
