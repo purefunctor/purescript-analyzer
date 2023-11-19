@@ -98,7 +98,7 @@ pub struct ValueGroupScope {
 }
 
 /// The result of name resultion.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResolutionKind {
     Binder(BinderId),
     LetName(LetNameGroupId),
@@ -165,6 +165,14 @@ impl ValueGroupResolutions {
         resolutions: FxHashMap<AstId<ast::ValueEquationDeclaration>, ResolutionPerExpr>,
     ) -> ValueGroupResolutions {
         ValueGroupResolutions { resolutions }
+    }
+
+    pub fn get(
+        &self,
+        equation_id: AstId<ast::ValueEquationDeclaration>,
+        expr_id: ExprId,
+    ) -> Option<ResolutionKind> {
+        Some(*self.resolutions.get(&equation_id)?.get(&expr_id)?)
     }
 }
 
