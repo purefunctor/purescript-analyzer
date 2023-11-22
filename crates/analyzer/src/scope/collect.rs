@@ -198,7 +198,7 @@ impl<'a> CollectContext<'a> {
     /// Until the compiler performs topological sorting inclusive
     /// of [`LetBinding::Pattern`], this is the "canon" algorithm.
     fn visit_let_bindings(&mut self, let_bindings: &'a [LetBinding], let_kind: LetKind) {
-        let mut let_bindings = let_bindings.iter();
+        let let_bindings = let_bindings.iter();
         let mut current_let_bound = FxHashMap::default();
 
         let finish_current_let_bound =
@@ -229,7 +229,7 @@ impl<'a> CollectContext<'a> {
                 }
             };
 
-        while let Some(let_binding) = let_bindings.next() {
+        for let_binding in let_bindings {
             match let_binding {
                 LetBinding::Name { id } => {
                     let let_name = &self.let_name_arena[*id];
