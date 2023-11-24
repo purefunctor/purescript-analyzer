@@ -52,7 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, SurfaceDatabase};
+    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, SurfaceDatabase, InferDatabase, infer};
 
     #[test]
     fn api() {
@@ -67,14 +67,7 @@ mod tests {
                 "
 module Main where
 
-x :: Int -> Int -> Int
-x _ = 't'
-  where
-  f _ = 0
-  g _ = 1
-  [a, b] = [2, 3]
-  h _ = 4
-  i _ = 5
+const a b = a
 "
                 .into(),
             ),
@@ -91,18 +84,9 @@ x _ = 't'
 
         let file_id = files.file_id("./Main.purs".into()).unwrap();
         let nominal_map = db.nominal_map(file_id);
-        let x_group_id = nominal_map.value_group_id("x").unwrap();
-        db.value_surface(x_group_id);
+        let const_group_id = nominal_map.value_group_id("const").unwrap();
 
-        // let pp = infer::PrettyPrinter::new(db.upcast());
-        // println!("\nx :: {}\n", pp.ty(db.infer_value(x_group_id)).pretty(80));
-
-        let root = db.parse_file(file_id);
-
-        dbg!(db.value_scope(x_group_id));
-        // dbg!(&db.value_surface_with_source_map(x_group_id).1.expr_to_cst.iter().next().unwrap().1.to_node(&root));
-        for (expr, cst) in db.value_surface_with_source_map(x_group_id).1.expr_to_cst.iter() {
-            println!("{} - {:#?}", expr.into_raw(), cst.to_node(&root).text());
-        }
+        let pp = infer::PrettyPrinter::new(&db);
+        println!("\nconst :: {}\n", pp.ty(db.infer_value(const_group_id)).pretty(80));
     }
 }
