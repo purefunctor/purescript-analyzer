@@ -52,7 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase, SurfaceDatabase, InferDatabase, infer};
+    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -67,6 +67,7 @@ mod tests {
                 "
 module Main where
 
+const :: Int -> Int -> Int
 const a b = a
 "
                 .into(),
