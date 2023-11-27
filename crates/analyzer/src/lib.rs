@@ -67,7 +67,6 @@ mod tests {
                 "
 module Main where
 
-const :: Int -> Int -> Int
 const a b = a
 "
                 .into(),
@@ -88,6 +87,7 @@ const a b = a
         let const_group_id = nominal_map.value_group_id("const").unwrap();
 
         let pp = infer::PrettyPrinter::new(&db);
-        println!("\nconst :: {}\n", pp.ty(db.infer_value(const_group_id)).pretty(80));
+        let (ty, _) = db.infer_value(const_group_id);
+        println!("\nconst :: {}\n", pp.ty(ty).pretty(80));
     }
 }

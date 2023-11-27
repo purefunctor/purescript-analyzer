@@ -1,3 +1,5 @@
+use std::{result, sync::Arc};
+
 use files::FileId;
 use itertools::Itertools;
 use la_arena::Arena;
@@ -7,11 +9,13 @@ use syntax::ast;
 use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
-    scope::ValueGroupResolutions,
+    scope::{ResolutionKind, ValueGroupResolutions},
     surface, InferDatabase,
 };
 
-use super::{constraint::Constraint, lower::LowerContext, Type, TypeId};
+use super::{
+    constraint::Constraint, lower::LowerContext, Primitive, Provenance, Type, TypeId, Unification,
+};
 
 // TYPES //
 
@@ -135,6 +139,18 @@ impl Context<'_, ValueGroupCtx<'_>> {
 }
 
 impl Context<'_, ValueEquationCtx<'_, '_>> {
+    fn fresh_unification(&mut self) -> TypeId {
+        let index = self.inner.parent.fresh_index as u32;
+        self.inner.parent.fresh_index += 1;
+        self.db.intern_type(Type::Unification(Unification {
+            index,
+            provenance: Provenance::ValueGroup(InFile {
+                file_id: self.inner.parent.file_id,
+                value: self.inner.parent.id,
+            }),
+        }))
+    }
+
     fn infer(&mut self, equation: &surface::ValueEquation) -> TypeId {
         let binders_ty =
             equation.binders.iter().map(|binder_id| self.infer_binder(*binder_id)).collect_vec();
@@ -149,9 +165,9 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Literal(_) => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Negative(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Binder::Parenthesized(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Binder::Variable(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Binder::Wildcard => self.db.intern_type(Type::NotImplemented),
+            surface::Binder::Parenthesized(p) => self.infer_binder(*p),
+            surface::Binder::Variable(_) => self.fresh_unification(),
+            surface::Binder::Wildcard => self.fresh_unification(),
         };
         self.inner.parent.of_binder.insert(binder_id, binder_ty);
         binder_ty
@@ -173,11 +189,38 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
-            surface::Expr::Literal(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Expr::Variable(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Expr::Literal(literal) => self.infer_expr_literal(literal),
+            surface::Expr::Variable(_) => self.infer_expr_variable(expr_id),
         };
         self.inner.parent.of_expr.insert(expr_id, expr_ty);
         expr_ty
+    }
+
+    fn infer_expr_literal(&mut self, literal: &surface::Literal<surface::ExprId>) -> TypeId {
+        match literal {
+            surface::Literal::Array(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Literal::Record(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Literal::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
+            surface::Literal::Number(_) => self.db.intern_type(Type::Primitive(Primitive::Number)),
+            surface::Literal::String(_) => self.db.intern_type(Type::Primitive(Primitive::String)),
+            surface::Literal::Char(_) => self.db.intern_type(Type::Primitive(Primitive::Char)),
+            surface::Literal::Boolean(_) => {
+                self.db.intern_type(Type::Primitive(Primitive::Boolean))
+            }
+        }
+    }
+
+    fn infer_expr_variable(&mut self, expr_id: surface::ExprId) -> TypeId {
+        self.inner
+            .parent
+            .resolutions
+            .get(self.inner.id, expr_id)
+            .and_then(|resolution| match resolution {
+                ResolutionKind::Binder(b) => self.inner.parent.of_binder.get(&b).copied(),
+                ResolutionKind::LetName(l) => self.inner.parent.of_let_name.get(&l).copied(),
+                ResolutionKind::Global(g) => Some(self.db.intern_type(Type::Reference(g))),
+            })
+            .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
     }
 
     fn check(&mut self, _: &surface::ValueEquation, _: TypeId) {}
@@ -185,9 +228,16 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
 
 // QUERIES //
 
-pub(crate) fn infer_value_query(db: &dyn InferDatabase, id: InFile<ValueGroupId>) -> TypeId {
+pub(crate) fn infer_value_query(
+    db: &dyn InferDatabase,
+    id: InFile<ValueGroupId>,
+) -> (TypeId, Arc<Vec<Constraint>>) {
     let group_data = db.value_surface(id);
     let resolutions = db.value_resolved(id);
     let mut context = Context::new(db, ValueGroupCtx::new(id, &group_data, &resolutions));
-    context.infer_value(&group_data.value)
+
+    let value_ty = context.infer_value(&group_data.value);
+    let constraints = context.inner.constraints;
+
+    (value_ty, Arc::new(constraints))
 }
