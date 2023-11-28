@@ -2,6 +2,7 @@
 
 use std::{mem, sync::Arc};
 
+use itertools::Itertools;
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -12,8 +13,7 @@ use crate::{
     scope::{BinderKind, ScopeKind},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, Visitor},
-        Binder, BinderId, Expr, ExprId, LetBinding, LetName, LetNameId, Type, ValueEquation,
-        WhereExpr,
+        Binder, BinderId, Expr, ExprId, LetBinding, LetName, Type, ValueEquation, WhereExpr,
     },
     ScopeDatabase,
 };
@@ -198,63 +198,68 @@ impl<'a> CollectContext<'a> {
     /// Until the compiler performs topological sorting inclusive
     /// of [`LetBinding::Pattern`], this is the "canon" algorithm.
     fn visit_let_bindings(&mut self, let_bindings: &'a [LetBinding], let_kind: LetKind) {
-        let let_bindings = let_bindings.iter();
-        let mut current_let_bound = FxHashMap::default();
+        #[derive(Debug, PartialEq, Eq)]
+        enum GroupKind {
+            Name,
+            Pattern,
+        }
 
-        let finish_current_let_bound =
-            |this: &mut Self, current: &mut FxHashMap<SmolStr, LetNameId>| {
-                if current.is_empty() {
-                    return;
-                }
+        let groups = let_bindings.iter().group_by(|let_binding| match let_binding {
+            LetBinding::Name { .. } => GroupKind::Name,
+            LetBinding::Pattern { .. } => GroupKind::Pattern,
+        });
 
-                let let_bound = mem::take(current);
-                let equations: Vec<_> = let_bound
-                    .values()
-                    .flat_map(|let_name_id| {
-                        let let_name = &this.let_name_arena[*let_name_id];
-                        let_name.equations.iter()
-                    })
-                    .collect();
+        for (key, group) in groups.into_iter() {
+            match key {
+                GroupKind::Name => {
+                    let mut let_bound = FxHashMap::default();
+                    let mut equations = vec![];
 
-                let scope_parent = this.current_scope;
-                let scope_kind = ScopeKind::LetBound(let_bound, let_kind);
-                this.current_scope =
-                    this.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
-
-                for equation in equations {
-                    this.with_reverting_scope(|this| {
-                        this.visit_binders(&equation.binders);
-                        this.visit_binding(&equation.binding);
-                    });
-                }
-            };
-
-        for let_binding in let_bindings {
-            match let_binding {
-                LetBinding::Name { id } => {
-                    let let_name = &self.let_name_arena[*id];
-                    current_let_bound.insert(SmolStr::from(let_name.name.as_ref()), *id);
-                }
-                LetBinding::Pattern { binder, where_expr } => {
-                    finish_current_let_bound(self, &mut current_let_bound);
+                    for let_binding in group {
+                        if let LetBinding::Name { id } = let_binding {
+                            let let_name = &self.let_name_arena[*id];
+                            let_bound.insert(SmolStr::from(let_name.name.as_ref()), *id);
+                            equations.extend(&let_name.equations);
+                        } else {
+                            unreachable!("Impossible.");
+                        }
+                    }
 
                     let scope_parent = self.current_scope;
-                    let scope_kind = ScopeKind::Binders(FxHashMap::default(), BinderKind::NoThunk);
+                    let scope_kind = ScopeKind::LetBound(let_bound, let_kind);
                     self.current_scope =
                         self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
-                    self.with_reverting_scope(|this| {
-                        this.visit_binder(*binder);
-                    });
+                    for equation in equations {
+                        self.with_reverting_scope(|this| {
+                            this.visit_binders(&equation.binders);
+                            this.visit_binding(&equation.binding);
+                        });
+                    }
+                }
+                GroupKind::Pattern => {
+                    for let_binding in group {
+                        if let LetBinding::Pattern { binder, where_expr } = let_binding {
+                            let scope_parent = self.current_scope;
+                            let scope_kind =
+                                ScopeKind::Binders(FxHashMap::default(), BinderKind::NoThunk);
+                            self.current_scope =
+                                self.scope_arena.alloc(ScopeData::new(scope_parent, scope_kind));
 
-                    self.with_reverting_scope(|this| {
-                        this.visit_where_expr(where_expr);
-                    });
+                            self.with_reverting_scope(|this| {
+                                this.visit_binder(*binder);
+                            });
+
+                            self.with_reverting_scope(|this| {
+                                this.visit_where_expr(where_expr);
+                            });
+                        } else {
+                            unreachable!("Impossible.");
+                        }
+                    }
                 }
             }
         }
-
-        finish_current_let_bound(self, &mut current_let_bound);
     }
 
     fn with_reverting_scope<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
