@@ -1,6 +1,6 @@
 //! Implements the scope collection algorithm.
 
-use std::{mem, sync::Arc};
+use std::sync::Arc;
 
 use itertools::Itertools;
 use la_arena::Arena;
@@ -72,21 +72,14 @@ impl<'a> CollectContext<'a> {
             &group_data.type_arena,
         );
 
-        let per_equation = group_data
-            .value
-            .equations
-            .iter()
-            .map(|(value_equation_id, value_equation_ast)| {
-                collector_context.visit_value_equation(value_equation_ast);
-                (*value_equation_id, collector_context.take_per_expr())
-            })
-            .collect();
+        group_data.value.equations.iter().for_each(|(_, value_equation)| {
+            collector_context.visit_value_equation(value_equation);
+        });
 
-        Arc::new(WithScope::new(collector_context.scope_arena, ValueGroupScope::new(per_equation)))
-    }
-
-    fn take_per_expr(&mut self) -> FxHashMap<ExprId, ScopeId> {
-        mem::take(&mut self.per_expr)
+        Arc::new(WithScope::new(
+            collector_context.scope_arena,
+            ValueGroupScope::new(collector_context.per_expr),
+        ))
     }
 }
 

@@ -5,10 +5,9 @@ use std::{mem, sync::Arc};
 use la_arena::Arena;
 use petgraph::graphmap::DiGraphMap;
 use rustc_hash::FxHashMap;
-use syntax::ast;
 
 use crate::{
-    id::{AstId, InFile},
+    id::InFile,
     resolver::ValueGroupId,
     surface::{
         visitor::{default_visit_expr, Visitor},
@@ -32,7 +31,6 @@ pub(crate) struct ResolveContext<'a> {
     per_expr: FxHashMap<ExprId, ResolutionKind>,
     let_name_graph: DiGraphMap<LetNameId, BinderKind>,
     // State
-    on_equation_id: Option<AstId<ast::ValueEquationDeclaration>>,
     on_let_name_id: Option<LetNameId>,
 }
 
@@ -46,7 +44,6 @@ impl<'a> ResolveContext<'a> {
     ) -> ResolveContext<'a> {
         let per_expr = FxHashMap::default();
         let let_name_graph = DiGraphMap::default();
-        let on_equation_id = None;
         let on_let_name_id = None;
         ResolveContext {
             expr_arena,
@@ -56,7 +53,6 @@ impl<'a> ResolveContext<'a> {
             value_scope,
             per_expr,
             let_name_graph,
-            on_equation_id,
             on_let_name_id,
         }
     }
@@ -76,30 +72,16 @@ impl<'a> ResolveContext<'a> {
             &value_scope,
         );
 
-        let per_equation = value_surface
-            .value
-            .equations
-            .iter()
-            .map(|(value_equation_id, value_equation_ast)| {
-                resolve_context.on_equation_id = Some(*value_equation_id);
-                resolve_context.visit_value_equation(value_equation_ast);
-                (*value_equation_id, resolve_context.take_per_expr())
-            })
-            .collect();
+        value_surface.value.equations.iter().for_each(|(_, value_equation)| {
+            resolve_context.visit_value_equation(value_equation);
+        });
 
-        Arc::new(ValueGroupResolutions::new(per_equation))
-    }
-
-    fn take_per_expr(&mut self) -> FxHashMap<ExprId, ResolutionKind> {
-        mem::take(&mut self.per_expr)
+        Arc::new(ValueGroupResolutions::new(resolve_context.per_expr))
     }
 
     fn resolve_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
         let name = name.as_ref();
-        let equation_id = self.on_equation_id.unwrap_or_else(|| {
-            unreachable!("invariant violated: caller did not set on_equation_id");
-        });
-        let expr_scope_id = self.value_scope.expr_scope(equation_id, expr_id);
+        let expr_scope_id = self.value_scope.expr_scope(expr_id);
 
         let mut binder_kind = BinderKind::NoThunk;
         let local_resolution = self.value_scope.ancestors(expr_scope_id).find_map(|scope_data| {

@@ -1,4 +1,4 @@
-use std::{result, sync::Arc};
+use std::sync::Arc;
 
 use files::FileId;
 use itertools::Itertools;
@@ -214,7 +214,7 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
         self.inner
             .parent
             .resolutions
-            .get(self.inner.id, expr_id)
+            .get(expr_id)
             .and_then(|resolution| match resolution {
                 ResolutionKind::Binder(b) => self.inner.parent.of_binder.get(&b).copied(),
                 ResolutionKind::LetName(l) => self.inner.parent.of_let_name.get(&l).copied(),

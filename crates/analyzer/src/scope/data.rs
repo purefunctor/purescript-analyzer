@@ -4,10 +4,9 @@ use std::{iter, ops};
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use syntax::ast;
 
 use crate::{
-    id::{AstId, InFile},
+    id::InFile,
     resolver::ValueGroupId,
     surface::{BinderId, ExprId, LetNameId},
 };
@@ -87,14 +86,12 @@ pub struct WithScope<T> {
     value: T,
 }
 
-type ScopePerExpr = FxHashMap<ExprId, ScopeId>;
-
 /// Scope information for a [`ValueGroupId`].
 ///
 /// [`ValueGroupId`]: crate::resolver::ValueGroupId
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupScope {
-    per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, ScopePerExpr>,
+    per_expr: FxHashMap<ExprId, ScopeId>,
 }
 
 /// The result of name resultion.
@@ -105,15 +102,13 @@ pub enum ResolutionKind {
     Global(InFile<ValueGroupId>),
 }
 
-type ResolutionPerExpr = FxHashMap<ExprId, ResolutionKind>;
-
 /// Name resolution information for a [`ValueGroupId`].
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupResolutions {
     /// A mapping from [`Expr::Variable`] IDs to their resolutions.
     ///
     /// [`Expr::Variable`]: crate::surface::Expr::Variable
-    resolutions: FxHashMap<AstId<ast::ValueEquationDeclaration>, ResolutionPerExpr>,
+    resolutions: FxHashMap<ExprId, ResolutionKind>,
 }
 
 impl ScopeData {
@@ -137,23 +132,14 @@ impl<T> ops::Index<ScopeId> for WithScope<T> {
 }
 
 impl ValueGroupScope {
-    pub(crate) fn new(
-        per_equation: FxHashMap<AstId<ast::ValueEquationDeclaration>, ScopePerExpr>,
-    ) -> ValueGroupScope {
-        ValueGroupScope { per_equation }
+    pub(crate) fn new(per_expr: FxHashMap<ExprId, ScopeId>) -> ValueGroupScope {
+        ValueGroupScope { per_expr }
     }
 }
 
 impl WithScope<ValueGroupScope> {
-    pub(crate) fn expr_scope(
-        &self,
-        equation_id: AstId<ast::ValueEquationDeclaration>,
-        expr_id: ExprId,
-    ) -> ScopeId {
-        let per_expr = self.value.per_equation.get(&equation_id).unwrap_or_else(|| {
-            unreachable!("invariant violated: equation should have been assigned a per_expr.")
-        });
-        let scope_id = per_expr.get(&expr_id).unwrap_or_else(|| {
+    pub(crate) fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
+        let scope_id = self.value.per_expr.get(&expr_id).unwrap_or_else(|| {
             unreachable!("invariant violated: expression should have been assigned a scope.")
         });
         *scope_id
@@ -161,18 +147,12 @@ impl WithScope<ValueGroupScope> {
 }
 
 impl ValueGroupResolutions {
-    pub(crate) fn new(
-        resolutions: FxHashMap<AstId<ast::ValueEquationDeclaration>, ResolutionPerExpr>,
-    ) -> ValueGroupResolutions {
+    pub(crate) fn new(resolutions: FxHashMap<ExprId, ResolutionKind>) -> ValueGroupResolutions {
         ValueGroupResolutions { resolutions }
     }
 
-    pub fn get(
-        &self,
-        equation_id: AstId<ast::ValueEquationDeclaration>,
-        expr_id: ExprId,
-    ) -> Option<ResolutionKind> {
-        Some(*self.resolutions.get(&equation_id)?.get(&expr_id)?)
+    pub fn get(&self, expr_id: ExprId) -> Option<ResolutionKind> {
+        self.resolutions.get(&expr_id).copied()
     }
 }
 
