@@ -3,7 +3,7 @@
 use std::{mem, sync::Arc};
 
 use la_arena::Arena;
-use petgraph::{algo::kosaraju_scc, graphmap::DiGraphMap};
+use petgraph::graphmap::DiGraphMap;
 use rustc_hash::FxHashMap;
 use syntax::ast;
 
@@ -30,9 +30,10 @@ pub(crate) struct ResolveContext<'a> {
     value_scope: &'a WithScope<ValueGroupScope>,
     // Accumulators
     per_expr: FxHashMap<ExprId, ResolutionKind>,
+    let_name_graph: DiGraphMap<LetNameId, BinderKind>,
     // State
     on_equation_id: Option<AstId<ast::ValueEquationDeclaration>>,
-    on_let_name: Option<(LetNameId, Vec<(LetNameId, BinderKind)>)>,
+    on_let_name_id: Option<LetNameId>,
 }
 
 impl<'a> ResolveContext<'a> {
@@ -44,8 +45,9 @@ impl<'a> ResolveContext<'a> {
         value_scope: &'a WithScope<ValueGroupScope>,
     ) -> ResolveContext<'a> {
         let per_expr = FxHashMap::default();
+        let let_name_graph = DiGraphMap::default();
         let on_equation_id = None;
-        let on_let_name = None;
+        let on_let_name_id = None;
         ResolveContext {
             expr_arena,
             let_name_arena,
@@ -53,8 +55,9 @@ impl<'a> ResolveContext<'a> {
             type_arena,
             value_scope,
             per_expr,
+            let_name_graph,
             on_equation_id,
-            on_let_name,
+            on_let_name_id,
         }
     }
 
@@ -112,23 +115,20 @@ impl<'a> ResolveContext<'a> {
             }
         });
 
-        if let Some(local_resolution) = local_resolution {
-            if let ResolutionKind::LetName(dependency) = local_resolution {
-                if let Some((_, dependencies)) = &mut self.on_let_name {
-                    dependencies.push((dependency, binder_kind));
-                }
-            }
+        if let Some(local_resolution @ ResolutionKind::LetName(dependency)) = local_resolution {
+            let dependent = self.on_let_name_id.unwrap_or_else(|| unreachable!("Impossible."));
+            self.let_name_graph.add_edge(dependent, dependency, binder_kind);
             self.per_expr.insert(expr_id, local_resolution);
         }
     }
 
     fn visit_let_bindings(&mut self, let_bindings: &'a [LetBinding]) {
-        let mut graph = DiGraphMap::new();
-
         for let_binding in let_bindings.iter() {
             match let_binding {
                 LetBinding::Name { id } => {
-                    let previous_state = mem::replace(&mut self.on_let_name, Some((*id, vec![])));
+                    self.let_name_graph.add_node(*id);
+
+                    let previous_let_name_id = mem::replace(&mut self.on_let_name_id, Some(*id));
 
                     let let_name = &self.let_name_arena[*id];
                     let_name.equations.iter().for_each(|equation| {
@@ -138,33 +138,13 @@ impl<'a> ResolveContext<'a> {
                         self.visit_binding(&equation.binding);
                     });
 
-                    if let Some((dependent, dependencies)) =
-                        mem::replace(&mut self.on_let_name, previous_state)
-                    {
-                        dependencies.into_iter().for_each(|(dependency, binder_kind)| {
-                            graph.add_edge(dependent, dependency, binder_kind);
-                        });
-                    } else {
-                        unreachable!("invariant violated: this should not be none, at all.");
-                    }
+                    self.on_let_name_id = previous_let_name_id;
                 }
                 LetBinding::Pattern { binder, where_expr } => {
                     self.visit_binder(*binder);
                     self.visit_where_expr(where_expr);
                 }
             }
-        }
-
-        let all_thunk = kosaraju_scc(&graph)
-            .into_iter()
-            .filter(|components| components.len() > 1)
-            .flat_map(|components| {
-                components.into_iter().flat_map(|component| graph.edges(component))
-            })
-            .all(|(_, _, binder_kind)| matches!(binder_kind, BinderKind::Thunk));
-
-        if graph.node_count() != 0 {
-            dbg!(all_thunk, graph);
         }
     }
 }
