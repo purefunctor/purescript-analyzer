@@ -41,11 +41,6 @@ struct ValueGroupCtx<'ctx> {
     of_binder: FxHashMap<surface::BinderId, TypeId>,
 }
 
-struct ValueEquationCtx<'parent, 'ctx> {
-    parent: &'parent mut ValueGroupCtx<'ctx>,
-    id: AstId<ast::ValueEquationDeclaration>,
-}
-
 // CONSTRUCTORS //
 
 impl<'db, T> Context<'db, T> {
@@ -83,15 +78,6 @@ impl<'ctx> ValueGroupCtx<'ctx> {
     }
 }
 
-impl<'parent, 'ctx> ValueEquationCtx<'parent, 'ctx> {
-    fn new(
-        parent: &'parent mut ValueGroupCtx<'ctx>,
-        id: AstId<ast::ValueEquationDeclaration>,
-    ) -> ValueEquationCtx<'parent, 'ctx> {
-        ValueEquationCtx { parent, id }
-    }
-}
-
 // RULES //
 
 impl Context<'_, ValueGroupCtx<'_>> {
@@ -122,36 +108,9 @@ impl Context<'_, ValueGroupCtx<'_>> {
 
     fn infer_equation(
         &mut self,
-        id: AstId<ast::ValueEquationDeclaration>,
+        _: AstId<ast::ValueEquationDeclaration>,
         equation: &surface::ValueEquation,
     ) -> TypeId {
-        Context::new(self.db, ValueEquationCtx::new(&mut self.inner, id)).infer(equation)
-    }
-
-    fn check_equation(
-        &mut self,
-        id: AstId<ast::ValueEquationDeclaration>,
-        equation: &surface::ValueEquation,
-        expected: TypeId,
-    ) {
-        Context::new(self.db, ValueEquationCtx::new(&mut self.inner, id)).check(equation, expected)
-    }
-}
-
-impl Context<'_, ValueEquationCtx<'_, '_>> {
-    fn fresh_unification(&mut self) -> TypeId {
-        let index = self.inner.parent.fresh_index as u32;
-        self.inner.parent.fresh_index += 1;
-        self.db.intern_type(Type::Unification(Unification {
-            index,
-            provenance: Provenance::ValueGroup(InFile {
-                file_id: self.inner.parent.file_id,
-                value: self.inner.parent.id,
-            }),
-        }))
-    }
-
-    fn infer(&mut self, equation: &surface::ValueEquation) -> TypeId {
         let binders_ty =
             equation.binders.iter().map(|binder_id| self.infer_binder(*binder_id)).collect_vec();
         let binding_ty = self.infer_binding(&equation.binding);
@@ -160,8 +119,30 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
         })
     }
 
+    fn check_equation(
+        &mut self,
+        _: AstId<ast::ValueEquationDeclaration>,
+        _: &surface::ValueEquation,
+        _: TypeId,
+    ) {
+    }
+}
+
+impl Context<'_, ValueGroupCtx<'_>> {
+    fn fresh_unification(&mut self) -> TypeId {
+        let index = self.inner.fresh_index as u32;
+        self.inner.fresh_index += 1;
+        self.db.intern_type(Type::Unification(Unification {
+            index,
+            provenance: Provenance::ValueGroup(InFile {
+                file_id: self.inner.file_id,
+                value: self.inner.id,
+            }),
+        }))
+    }
+
     fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
-        let binder_ty = match &self.inner.parent.binder_arena[binder_id] {
+        let binder_ty = match &self.inner.binder_arena[binder_id] {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Literal(_) => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Negative(_) => self.db.intern_type(Type::NotImplemented),
@@ -169,7 +150,7 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
             surface::Binder::Variable(_) => self.fresh_unification(),
             surface::Binder::Wildcard => self.fresh_unification(),
         };
-        self.inner.parent.of_binder.insert(binder_id, binder_ty);
+        self.inner.of_binder.insert(binder_id, binder_ty);
         binder_ty
     }
 
@@ -184,7 +165,7 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
     }
 
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
-        let expr_ty = match &self.inner.parent.expr_arena[expr_id] {
+        let expr_ty = match &self.inner.expr_arena[expr_id] {
             surface::Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
@@ -192,7 +173,7 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
             surface::Expr::Literal(literal) => self.infer_expr_literal(literal),
             surface::Expr::Variable(_) => self.infer_expr_variable(expr_id),
         };
-        self.inner.parent.of_expr.insert(expr_id, expr_ty);
+        self.inner.of_expr.insert(expr_id, expr_ty);
         expr_ty
     }
 
@@ -212,18 +193,15 @@ impl Context<'_, ValueEquationCtx<'_, '_>> {
 
     fn infer_expr_variable(&mut self, expr_id: surface::ExprId) -> TypeId {
         self.inner
-            .parent
             .resolutions
             .get(expr_id)
             .and_then(|resolution| match resolution {
-                ResolutionKind::Binder(b) => self.inner.parent.of_binder.get(&b).copied(),
-                ResolutionKind::LetName(l) => self.inner.parent.of_let_name.get(&l).copied(),
+                ResolutionKind::Binder(b) => self.inner.of_binder.get(&b).copied(),
+                ResolutionKind::LetName(l) => self.inner.of_let_name.get(&l).copied(),
                 ResolutionKind::Global(g) => Some(self.db.intern_type(Type::Reference(g))),
             })
             .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
     }
-
-    fn check(&mut self, _: &surface::ValueEquation, _: TypeId) {}
 }
 
 // QUERIES //
