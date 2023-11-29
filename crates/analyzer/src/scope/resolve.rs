@@ -97,9 +97,11 @@ impl<'a> ResolveContext<'a> {
             }
         });
 
-        if let Some(local_resolution @ ResolutionKind::LetName(dependency)) = local_resolution {
-            let dependent = self.on_let_name_id.unwrap_or_else(|| unreachable!("Impossible."));
-            self.let_name_graph.add_edge(dependent, dependency, binder_kind);
+        if let Some(local_resolution) = local_resolution {
+            if let ResolutionKind::LetName(dependency) = local_resolution {
+                let dependent = self.on_let_name_id.unwrap_or_else(|| unreachable!("Impossible."));
+                self.let_name_graph.add_edge(dependent, dependency, binder_kind);
+            }
             self.per_expr.insert(expr_id, local_resolution);
         }
     }
