@@ -37,6 +37,12 @@ pub struct ScopeData {
     pub kind: ScopeKind,
 }
 
+impl ScopeData {
+    pub fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
+        ScopeData { parent: Some(parent), kind }
+    }
+}
+
 /// The kind of scope information.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum ScopeKind {
@@ -86,12 +92,45 @@ pub struct WithScope<T> {
     value: T,
 }
 
+impl<T> WithScope<T> {
+    pub fn new(scope_arena: Arena<ScopeData>, value: T) -> WithScope<T> {
+        WithScope { scope_arena, value }
+    }
+
+    pub(crate) fn ancestors(&self, scope_id: ScopeId) -> impl Iterator<Item = &ScopeData> {
+        iter::successors(Some(scope_id), |&i| self[i].parent).map(|i| &self[i])
+    }
+}
+
+impl<T> ops::Index<ScopeId> for WithScope<T> {
+    type Output = ScopeData;
+
+    fn index(&self, index: ScopeId) -> &Self::Output {
+        &self.scope_arena[index]
+    }
+}
+
 /// Scope information for a [`ValueGroupId`].
 ///
 /// [`ValueGroupId`]: crate::resolver::ValueGroupId
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupScope {
     per_expr: FxHashMap<ExprId, ScopeId>,
+}
+
+impl ValueGroupScope {
+    pub(crate) fn new(per_expr: FxHashMap<ExprId, ScopeId>) -> ValueGroupScope {
+        ValueGroupScope { per_expr }
+    }
+}
+
+impl WithScope<ValueGroupScope> {
+    pub(crate) fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
+        let scope_id = self.value.per_expr.get(&expr_id).unwrap_or_else(|| {
+            unreachable!("invariant violated: expression should have been assigned a scope.")
+        });
+        *scope_id
+    }
 }
 
 /// The result of name resolution.
@@ -118,6 +157,16 @@ pub struct ValueGroupResolutions {
     resolutions: FxHashMap<ExprId, Resolution>,
 }
 
+impl ValueGroupResolutions {
+    pub(crate) fn new(resolutions: FxHashMap<ExprId, Resolution>) -> ValueGroupResolutions {
+        ValueGroupResolutions { resolutions }
+    }
+
+    pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
+        self.resolutions.get(&expr_id).copied()
+    }
+}
+
 /// Information about recursive let bindings.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupRecursiveLets {
@@ -131,51 +180,6 @@ pub struct ValueGroupRecursiveLets {
     group_indices: FxHashMap<LetNameId, usize>,
 }
 
-impl ScopeData {
-    pub fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
-        ScopeData { parent: Some(parent), kind }
-    }
-}
-
-impl<T> WithScope<T> {
-    pub fn new(scope_arena: Arena<ScopeData>, value: T) -> WithScope<T> {
-        WithScope { scope_arena, value }
-    }
-}
-
-impl<T> ops::Index<ScopeId> for WithScope<T> {
-    type Output = ScopeData;
-
-    fn index(&self, index: ScopeId) -> &Self::Output {
-        &self.scope_arena[index]
-    }
-}
-
-impl ValueGroupScope {
-    pub(crate) fn new(per_expr: FxHashMap<ExprId, ScopeId>) -> ValueGroupScope {
-        ValueGroupScope { per_expr }
-    }
-}
-
-impl WithScope<ValueGroupScope> {
-    pub(crate) fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
-        let scope_id = self.value.per_expr.get(&expr_id).unwrap_or_else(|| {
-            unreachable!("invariant violated: expression should have been assigned a scope.")
-        });
-        *scope_id
-    }
-}
-
-impl ValueGroupResolutions {
-    pub(crate) fn new(resolutions: FxHashMap<ExprId, Resolution>) -> ValueGroupResolutions {
-        ValueGroupResolutions { resolutions }
-    }
-
-    pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
-        self.resolutions.get(&expr_id).copied()
-    }
-}
-
 impl ValueGroupRecursiveLets {
     pub(crate) fn new(
         normal: FxHashSet<LetNameId>,
@@ -184,11 +188,5 @@ impl ValueGroupRecursiveLets {
         group_indices: FxHashMap<LetNameId, usize>,
     ) -> ValueGroupRecursiveLets {
         ValueGroupRecursiveLets { normal, recursive, mutual_groups, group_indices }
-    }
-}
-
-impl<T> WithScope<T> {
-    pub(crate) fn ancestors(&self, scope_id: ScopeId) -> impl Iterator<Item = &ScopeData> {
-        iter::successors(Some(scope_id), |&i| self[i].parent).map(|i| &self[i])
     }
 }
