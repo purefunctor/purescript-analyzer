@@ -2,7 +2,7 @@
 use std::{iter, ops};
 
 use la_arena::{Arena, Idx};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use smol_str::SmolStr;
 
 use crate::{
@@ -94,7 +94,14 @@ pub struct ValueGroupScope {
     per_expr: FxHashMap<ExprId, ScopeId>,
 }
 
-/// The result of name resultion.
+/// The result of name resolution.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Resolution {
+    pub thunked: bool,
+    pub kind: ResolutionKind,
+}
+
+/// The kind that a name resolves to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResolutionKind {
     Binder(BinderId),
@@ -108,7 +115,20 @@ pub struct ValueGroupResolutions {
     /// A mapping from [`Expr::Variable`] IDs to their resolutions.
     ///
     /// [`Expr::Variable`]: crate::surface::Expr::Variable
-    resolutions: FxHashMap<ExprId, ResolutionKind>,
+    resolutions: FxHashMap<ExprId, Resolution>,
+}
+
+/// Information about recursive let bindings.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ValueGroupRecursiveLets {
+    /// Non-recursive let bindings.
+    normal: FxHashSet<LetNameId>,
+    /// Self-recursive let bindings.
+    recursive: FxHashSet<LetNameId>,
+    /// Groups of mutually recursive bindings.
+    mutual_groups: Vec<Vec<LetNameId>>,
+    /// Identifies which group a let binding belongs to.
+    group_indices: FxHashMap<LetNameId, usize>,
 }
 
 impl ScopeData {
@@ -147,12 +167,23 @@ impl WithScope<ValueGroupScope> {
 }
 
 impl ValueGroupResolutions {
-    pub(crate) fn new(resolutions: FxHashMap<ExprId, ResolutionKind>) -> ValueGroupResolutions {
+    pub(crate) fn new(resolutions: FxHashMap<ExprId, Resolution>) -> ValueGroupResolutions {
         ValueGroupResolutions { resolutions }
     }
 
-    pub fn get(&self, expr_id: ExprId) -> Option<ResolutionKind> {
+    pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
         self.resolutions.get(&expr_id).copied()
+    }
+}
+
+impl ValueGroupRecursiveLets {
+    pub(crate) fn new(
+        normal: FxHashSet<LetNameId>,
+        recursive: FxHashSet<LetNameId>,
+        mutual_groups: Vec<Vec<LetNameId>>,
+        group_indices: FxHashMap<LetNameId, usize>,
+    ) -> ValueGroupRecursiveLets {
+        ValueGroupRecursiveLets { normal, recursive, mutual_groups, group_indices }
     }
 }
 

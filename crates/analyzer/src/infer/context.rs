@@ -195,7 +195,7 @@ impl Context<'_, ValueGroupCtx<'_>> {
         self.inner
             .resolutions
             .get(expr_id)
-            .and_then(|resolution| match resolution {
+            .and_then(|resolution| match resolution.kind {
                 ResolutionKind::Binder(b) => self.inner.of_binder.get(&b).copied(),
                 ResolutionKind::LetName(l) => self.inner.of_let_name.get(&l).copied(),
                 ResolutionKind::Global(g) => Some(self.db.intern_type(Type::Reference(g))),
