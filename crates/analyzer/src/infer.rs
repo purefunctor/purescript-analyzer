@@ -4,6 +4,9 @@ mod context;
 mod lower;
 mod trees;
 
+#[cfg(test)]
+mod tests;
+
 use std::sync::Arc;
 
 use crate::{id::InFile, resolver::ValueGroupId, ScopeDatabase};

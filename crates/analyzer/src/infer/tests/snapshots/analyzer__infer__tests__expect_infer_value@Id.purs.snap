@@ -1,0 +1,8 @@
+---
+source: crates/analyzer/src/infer/tests.rs
+input_file: crates/analyzer/src/infer/tests/inputs/passing/values/Id.purs
+---
+id :: ?0 -> ?0
+id1 :: ?0 -> ?0
+id2 :: ?0 -> ?0
+

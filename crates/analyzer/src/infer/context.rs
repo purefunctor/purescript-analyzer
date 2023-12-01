@@ -216,6 +216,7 @@ impl Context<'_, ValueGroupCtx<'_>> {
     }
 
     fn infer_where_expr(&mut self, where_expr: &surface::WhereExpr) -> TypeId {
+        self.infer_let_bindings(&where_expr.let_bindings);
         self.infer_expr(where_expr.expr_id)
     }
 
