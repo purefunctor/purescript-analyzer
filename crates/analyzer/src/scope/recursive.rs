@@ -143,7 +143,7 @@ impl<'a> Visitor<'a> for RecursiveLetsContext<'a> {
     fn visit_expr(&mut self, expr_id: ExprId) {
         match &self.expr_arena[expr_id] {
             Expr::LetIn(let_bindings, let_body) => {
-                self.visit_let_bindings(&let_bindings);
+                self.visit_let_bindings(let_bindings);
                 self.visit_expr(*let_body);
             }
             Expr::Variable(_) => {
