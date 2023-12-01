@@ -29,7 +29,7 @@ use crate::{id::AstId, ResolverDatabase};
 /// In this query structure, the answer would be yes. `Infer` would be
 /// invalidated as often as `PositionalMap`.
 ///
-/// ```ignore
+/// ```text
 /// Infer <- PositionalMap
 /// ```
 ///
@@ -38,7 +38,7 @@ use crate::{id::AstId, ResolverDatabase};
 /// dependents would not need to be invalidated. Take for example the
 /// following query structure:
 ///
-/// ```ignore
+/// ```text
 /// Infer <- Lower <- PositionalMap
 /// ```
 ///
