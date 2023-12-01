@@ -52,7 +52,7 @@ mod tests {
     use files::{ChangedFile, Files};
     use salsa::Durability;
 
-    use crate::{ResolverDatabase, RootDatabase, ScopeDatabase, SourceDatabase};
+    use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
 
     #[test]
     fn api() {
@@ -67,12 +67,7 @@ mod tests {
                 "
 module Main where
 
-const a b = a
-  where
-  i = 0
-  h _ = h 0
-  f _ = g 0
-  g _ = f 0
+const = let a = 0 in a
 "
                 .into(),
             ),
@@ -91,12 +86,12 @@ const a b = a
         let nominal_map = db.nominal_map(file_id);
         let const_group_id = nominal_map.value_group_id("const").unwrap();
 
-        db.value_recursive_lets(const_group_id);
+        // db.value_recursive_lets(const_group_id);
 
         // dbg!(db.value_resolved(const_group_id));
 
-        // let pp = infer::PrettyPrinter::new(&db);
-        // let (ty, _) = db.infer_value(const_group_id);
-        // println!("\nconst :: {}\n", pp.ty(ty).pretty(80));
+        let pp = infer::PrettyPrinter::new(&db);
+        let (ty, _) = db.infer_value(const_group_id);
+        println!("\nconst :: {}\n", pp.ty(ty).pretty(80));
     }
 }

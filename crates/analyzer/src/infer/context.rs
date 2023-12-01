@@ -9,7 +9,7 @@ use syntax::ast;
 use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
-    scope::{ResolutionKind, ValueGroupResolutions},
+    scope::{ResolutionKind, ValueGroupRecursiveLets, ValueGroupResolutions},
     surface, InferDatabase,
 };
 
@@ -33,6 +33,7 @@ struct ValueGroupCtx<'ctx> {
     file_id: FileId,
     id: ValueGroupId,
     resolutions: &'ctx ValueGroupResolutions,
+    recursive_lets: &'ctx ValueGroupRecursiveLets,
 
     fresh_index: usize,
     constraints: Vec<Constraint>,
@@ -54,6 +55,7 @@ impl<'ctx> ValueGroupCtx<'ctx> {
         id: InFile<ValueGroupId>,
         group_data: &'ctx surface::WithArena<surface::ValueGroup>,
         resolutions: &'ctx ValueGroupResolutions,
+        recursive_lets: &'ctx ValueGroupRecursiveLets,
     ) -> ValueGroupCtx<'ctx> {
         let fresh_index = 0;
         let constraints = vec![];
@@ -69,6 +71,7 @@ impl<'ctx> ValueGroupCtx<'ctx> {
             file_id: id.file_id,
             id: id.value,
             resolutions,
+            recursive_lets,
             fresh_index,
             constraints,
             of_expr,
@@ -79,6 +82,63 @@ impl<'ctx> ValueGroupCtx<'ctx> {
 }
 
 // RULES //
+
+impl Context<'_, ValueGroupCtx<'_>> {
+    fn infer_binders_binding(
+        &mut self,
+        binders: &[surface::BinderId],
+        binding: &surface::Binding,
+    ) -> TypeId {
+        let binders_ty =
+            binders.iter().map(|binder_id| self.infer_binder(*binder_id)).collect_vec();
+        let binding_ty = self.infer_binding(binding);
+        binders_ty.into_iter().rev().fold(binding_ty, |result_ty, binder_ty| {
+            self.db.intern_type(Type::Function(binder_ty, result_ty))
+        })
+    }
+
+    fn infer_let_bindings(&mut self, let_bindings: &[surface::LetBinding]) {
+        for let_binding in let_bindings.iter() {
+            match let_binding {
+                surface::LetBinding::Name { id } => {
+                    if self.inner.recursive_lets.is_normal(*id) {
+                        let let_name = &self.inner.let_name_arena[*id];
+
+                        let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
+                            LowerContext::new(self.db, self.inner.type_arena)
+                                .lower_type(annotation.ty)
+                        });
+
+                        let mut equations = let_name.equations.iter();
+
+                        let expected_ty = if let Some(annotation_ty) = annotation_ty {
+                            annotation_ty
+                        } else if let Some(equation) = equations.next() {
+                            self.infer_binders_binding(&equation.binders, &equation.binding)
+                        } else {
+                            unreachable!("invariant violated: let group is empty");
+                        };
+
+                        for _ in equations {
+                            unimplemented!(
+                                "Implement once checking and exhaustiveness is available."
+                            );
+                        }
+
+                        self.inner.of_let_name.insert(*id, expected_ty);
+                    } else if self.inner.recursive_lets.is_recursive(*id) {
+                        unimplemented!("Implement recursive type checking.");
+                    } else {
+                        unimplemented!("Implement mutually recursive type checking.");
+                    }
+                }
+                surface::LetBinding::Pattern { .. } => {
+                    unimplemented!("I don't know how to check patterns yet.")
+                }
+            }
+        }
+    }
+}
 
 impl Context<'_, ValueGroupCtx<'_>> {
     fn infer_value(&mut self, group: &surface::ValueGroup) -> TypeId {
@@ -111,12 +171,7 @@ impl Context<'_, ValueGroupCtx<'_>> {
         _: AstId<ast::ValueEquationDeclaration>,
         equation: &surface::ValueEquation,
     ) -> TypeId {
-        let binders_ty =
-            equation.binders.iter().map(|binder_id| self.infer_binder(*binder_id)).collect_vec();
-        let binding_ty = self.infer_binding(&equation.binding);
-        binders_ty.into_iter().rev().fold(binding_ty, |result_ty, binder_ty| {
-            self.db.intern_type(Type::Function(binder_ty, result_ty))
-        })
+        self.infer_binders_binding(&equation.binders, &equation.binding)
     }
 
     fn check_equation(
@@ -169,7 +224,10 @@ impl Context<'_, ValueGroupCtx<'_>> {
             surface::Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
-            surface::Expr::LetIn(_, _) => self.db.intern_type(Type::NotImplemented),
+            surface::Expr::LetIn(let_bindings, let_body) => {
+                self.infer_let_bindings(let_bindings);
+                self.infer_expr(*let_body)
+            }
             surface::Expr::Literal(literal) => self.infer_expr_literal(literal),
             surface::Expr::Variable(_) => self.infer_expr_variable(expr_id),
         };
@@ -212,7 +270,9 @@ pub(crate) fn infer_value_query(
 ) -> (TypeId, Arc<Vec<Constraint>>) {
     let group_data = db.value_surface(id);
     let resolutions = db.value_resolved(id);
-    let mut context = Context::new(db, ValueGroupCtx::new(id, &group_data, &resolutions));
+    let recursive_lets = db.value_recursive_lets(id);
+    let mut context =
+        Context::new(db, ValueGroupCtx::new(id, &group_data, &resolutions, &recursive_lets));
 
     let value_ty = context.infer_value(&group_data.value);
     let constraints = context.inner.constraints;

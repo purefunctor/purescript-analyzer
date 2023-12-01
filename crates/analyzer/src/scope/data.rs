@@ -189,4 +189,18 @@ impl ValueGroupRecursiveLets {
     ) -> ValueGroupRecursiveLets {
         ValueGroupRecursiveLets { normal, recursive, mutual_groups, group_indices }
     }
+
+    pub fn is_normal(&self, id: LetNameId) -> bool {
+        self.normal.contains(&id)
+    }
+
+    pub fn is_recursive(&self, id: LetNameId) -> bool {
+        self.recursive.contains(&id)
+    }
+
+    pub fn mutual_group(&self, id: LetNameId) -> Option<&[LetNameId]> {
+        let index = *self.group_indices.get(&id)?;
+        assert!(index < self.mutual_groups.len());
+        Some(&self.mutual_groups[index])
+    }
 }
