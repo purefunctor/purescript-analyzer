@@ -7,7 +7,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     id::InFile,
-    resolver::ValueGroupId,
+    resolver::{NominalMap, ValueGroupId},
     scope::{BinderKind, ResolutionKind, ScopeKind},
     surface::{
         visitor::{default_visit_expr, Visitor},
@@ -24,6 +24,7 @@ pub(crate) struct ResolveContext<'a> {
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
     value_scope: &'a WithScope<ValueGroupScope>,
+    nominal_map: &'a NominalMap,
     per_expr: FxHashMap<ExprId, Resolution>,
 }
 
@@ -34,6 +35,7 @@ impl<'a> ResolveContext<'a> {
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
         value_scope: &'a WithScope<ValueGroupScope>,
+        nominal_map: &'a NominalMap,
     ) -> ResolveContext<'a> {
         let per_expr = FxHashMap::default();
         ResolveContext {
@@ -42,6 +44,7 @@ impl<'a> ResolveContext<'a> {
             binder_arena,
             type_arena,
             value_scope,
+            nominal_map,
             per_expr,
         }
     }
@@ -52,6 +55,7 @@ impl<'a> ResolveContext<'a> {
     ) -> Arc<ValueGroupResolutions> {
         let value_surface = db.value_surface(id);
         let value_scope = db.value_scope(id);
+        let nominal_map = db.nominal_map(id.file_id);
 
         let mut resolve_context = ResolveContext::new(
             &value_surface.expr_arena,
@@ -59,6 +63,7 @@ impl<'a> ResolveContext<'a> {
             &value_surface.binder_arena,
             &value_surface.type_arena,
             &value_scope,
+            &nominal_map,
         );
 
         value_surface.value.equations.iter().for_each(|(_, value_equation)| {
@@ -88,6 +93,11 @@ impl<'a> ResolveContext<'a> {
                     }
                 }
             });
+
+        let kind = kind.or_else(|| {
+            let id = self.nominal_map.value_group_id(name)?;
+            Some(ResolutionKind::Global(id))
+        });
 
         if let Some(kind) = kind {
             self.per_expr.insert(expr_id, Resolution { thunked, kind });

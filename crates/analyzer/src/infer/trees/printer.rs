@@ -75,9 +75,7 @@ impl<'a> PrettyPrinter<'a> {
     }
 
     fn ty_reference(&self, reference: InFile<ValueGroupId>) -> DocBuilder<BoxAllocator> {
-        self.allocator
-            .text(":")
-            .append(self.allocator.text(format!("{}", reference.value.into_raw())))
+        self.allocator.text(format!("#{:?}::{:?}", reference.file_id, reference.value))
     }
 
     fn ty_unification(&self, unification: Unification) -> DocBuilder<BoxAllocator> {
