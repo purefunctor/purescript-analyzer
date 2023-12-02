@@ -1,6 +1,5 @@
 ---
 source: crates/analyzer/src/infer/tests.rs
-assertion_line: 54
 input_file: crates/analyzer/src/infer/tests/inputs/passing/values/Mutual.purs
 ---
 f :: #FileId(0)::Idx::<ValueGroup>(1)
