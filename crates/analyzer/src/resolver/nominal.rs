@@ -35,13 +35,20 @@ pub type ValueGroupId = Idx<ValueGroup>;
 /// (for "equational-style" declarations) or type annotations.
 ///
 /// [`Exports`]: crate::resolver::Exports
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NominalMap {
+    file_id: FileId,
     value_groups: Arena<ValueGroup>,
-    values: FxHashMap<SmolStr, InFile<ValueGroupId>>,
+    values: FxHashMap<SmolStr, ValueGroupId>,
 }
 
 impl NominalMap {
+    fn new(file_id: FileId) -> NominalMap {
+        let value_groups = Arena::default();
+        let values = FxHashMap::default();
+        NominalMap { file_id, value_groups, values }
+    }
+
     pub(crate) fn nominal_map_query(db: &dyn ResolverDatabase, file_id: FileId) -> Arc<NominalMap> {
         let mut collector = Collector::new(db, file_id);
 
@@ -58,11 +65,20 @@ impl NominalMap {
     }
 
     pub fn value_group_id(&self, name: impl AsRef<str>) -> Option<InFile<ValueGroupId>> {
-        self.values.get(name.as_ref()).copied()
+        self.values
+            .get(name.as_ref())
+            .copied()
+            .map(|id| InFile { file_id: self.file_id, value: id })
     }
 
     pub fn value_group_data(&self, id: InFile<ValueGroupId>) -> &ValueGroup {
         &self.value_groups[id.value]
+    }
+
+    pub fn value_groups(&self) -> impl Iterator<Item = (InFile<ValueGroupId>, &ValueGroup)> {
+        self.value_groups
+            .iter()
+            .map(|(id, data)| (InFile { file_id: self.file_id, value: id }, data))
     }
 }
 
@@ -84,7 +100,7 @@ enum CollectorState {
 
 impl<'a> Collector<'a> {
     fn new(db: &'a dyn ResolverDatabase, file_id: FileId) -> Collector<'a> {
-        let inner = NominalMap::default();
+        let inner = NominalMap::new(file_id);
         let state = CollectorState::default();
         Collector { db, file_id, inner, state }
     }
@@ -94,7 +110,7 @@ impl<'a> Collector<'a> {
             CollectorState::ValueGroup(value_group) => {
                 let name = value_group.name.clone();
                 let index = self.inner.value_groups.alloc(value_group);
-                self.inner.values.insert(name, InFile { file_id: self.file_id, value: index });
+                self.inner.values.insert(name, index);
             }
             CollectorState::Initial => (),
         }
@@ -155,7 +171,7 @@ impl<'a> Collector<'a> {
         if let CollectorState::ValueGroup(past_value_group) = past_state {
             let past_name = past_value_group.name.clone();
             let index = self.inner.value_groups.alloc(past_value_group);
-            self.inner.values.insert(past_name, InFile { file_id: self.file_id, value: index });
+            self.inner.values.insert(past_name, index);
         }
     }
 }
