@@ -267,10 +267,10 @@ impl Context<'_, ValueGroupCtx<'_>> {
                             self.inner.constraints.extend_from_slice(c);
                             Some(t)
                         }
-                        InferResult::Recursive => { 
+                        InferResult::Recursive => {
                             self.inner.constraints.push(Constraint::CompleteFirst(g));
                             Some(self.db.intern_type(Type::Reference(g)))
-                        },
+                        }
                     }
                 }
             })
