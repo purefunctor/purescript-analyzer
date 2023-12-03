@@ -14,7 +14,8 @@ use crate::{
 };
 
 use super::{
-    constraint::Constraint, lower::LowerContext, Primitive, Provenance, Type, TypeId, Unification,
+    constraint::Constraint, lower::LowerContext, InferResult, Primitive, Provenance, Type, TypeId,
+    Unification,
 };
 
 // TYPES //
@@ -257,7 +258,21 @@ impl Context<'_, ValueGroupCtx<'_>> {
             .and_then(|resolution| match resolution.kind {
                 ResolutionKind::Binder(b) => self.inner.of_binder.get(&b).copied(),
                 ResolutionKind::LetName(l) => self.inner.of_let_name.get(&l).copied(),
-                ResolutionKind::Global(g) => Some(self.db.intern_type(Type::Reference(g))),
+                ResolutionKind::Global(g) => {
+                    let infer_result = self.db.infer_value(g);
+
+                    match *infer_result {
+                        InferResult::Complete(t) => Some(t),
+                        InferResult::Incomplete(t, ref c) => {
+                            self.inner.constraints.extend_from_slice(c);
+                            Some(t)
+                        }
+                        InferResult::Recursive => { 
+                            self.inner.constraints.push(Constraint::CompleteFirst(g));
+                            Some(self.db.intern_type(Type::Reference(g)))
+                        },
+                    }
+                }
             })
             .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
     }
@@ -268,7 +283,7 @@ impl Context<'_, ValueGroupCtx<'_>> {
 pub(crate) fn infer_value_query(
     db: &dyn InferDatabase,
     id: InFile<ValueGroupId>,
-) -> (TypeId, Arc<Vec<Constraint>>) {
+) -> Arc<InferResult> {
     let group_data = db.value_surface(id);
     let resolutions = db.value_resolved(id);
     let recursive_lets = db.value_recursive_lets(id);
@@ -278,5 +293,17 @@ pub(crate) fn infer_value_query(
     let value_ty = context.infer_value(&group_data.value);
     let constraints = context.inner.constraints;
 
-    (value_ty, Arc::new(constraints))
+    if constraints.is_empty() {
+        Arc::new(InferResult::Complete(value_ty))
+    } else {
+        Arc::new(InferResult::Incomplete(value_ty, constraints))
+    }
+}
+
+pub(crate) fn infer_value_query_recover(
+    _: &dyn InferDatabase,
+    _: &[String],
+    _: &InFile<ValueGroupId>,
+) -> Arc<InferResult> {
+    Arc::new(InferResult::Recursive)
 }

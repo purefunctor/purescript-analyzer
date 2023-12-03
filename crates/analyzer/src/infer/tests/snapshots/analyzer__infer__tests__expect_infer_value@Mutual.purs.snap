@@ -2,6 +2,7 @@
 source: crates/analyzer/src/infer/tests.rs
 input_file: crates/analyzer/src/infer/tests/inputs/passing/values/Mutual.purs
 ---
-f :: #FileId(0)::Idx::<ValueGroup>(1)
-g :: #FileId(0)::Idx::<ValueGroup>(0)
+recursive(f)
+recursive(g)
+incomplete(h) :: #FileId(0)::Idx::<ValueGroup>(0)
 

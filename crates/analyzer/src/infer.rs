@@ -15,11 +15,19 @@ pub use trees::*;
 
 use self::constraint::Constraint;
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum InferResult {
+    Complete(TypeId),
+    Incomplete(TypeId, Vec<Constraint>),
+    Recursive,
+}
+
 #[salsa::query_group(InferStorage)]
 pub trait InferDatabase: ScopeDatabase {
     #[salsa::interned]
     fn intern_type(&self, t: Type) -> TypeId;
 
     #[salsa::invoke(context::infer_value_query)]
-    fn infer_value(&self, id: InFile<ValueGroupId>) -> (TypeId, Arc<Vec<Constraint>>);
+    #[salsa::cycle(context::infer_value_query_recover)]
+    fn infer_value(&self, id: InFile<ValueGroupId>) -> Arc<InferResult>;
 }

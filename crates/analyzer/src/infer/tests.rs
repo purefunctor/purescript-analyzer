@@ -4,7 +4,10 @@ use files::{ChangedFile, Files};
 use insta::glob;
 use salsa::Durability;
 
-use crate::{infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase};
+use crate::{
+    infer::{self, InferResult},
+    InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
+};
 
 fn expect_infer_value(source: &str) {
     let mut db = RootDatabase::default();
@@ -26,8 +29,18 @@ fn expect_infer_value(source: &str) {
     let mut results = String::new();
     for (value_group_id, value_group_data) in nominal_map.value_groups() {
         let name = value_group_data.name.as_ref();
-        let (ty, _) = db.infer_value(value_group_id);
-        writeln!(&mut results, "{} :: {}", name, pp.ty(ty).pretty(80)).unwrap();
+        let infer_result = db.infer_value(value_group_id);
+        match *infer_result {
+            InferResult::Complete(t) => {
+                writeln!(&mut results, "complete({}) :: {}", name, pp.ty(t).pretty(80)).unwrap();
+            }
+            InferResult::Incomplete(t, _) => {
+                writeln!(&mut results, "incomplete({}) :: {}", name, pp.ty(t).pretty(80)).unwrap();
+            }
+            InferResult::Recursive => {
+                writeln!(&mut results, "recursive({})", name).unwrap();
+            }
+        }
     }
 
     insta::assert_snapshot!(results);
