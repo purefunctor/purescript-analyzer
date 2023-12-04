@@ -117,6 +117,7 @@ impl<'a> BindingGroupsContext<'a> {
             let value_surface = db.value_surface(id);
             let value_resolutions = db.value_resolved(id);
             let value_group_id = id.value;
+            value_graph.add_node(value_group_id);
 
             let mut context = BindingGroupsContext::new(
                 &value_surface.expr_arena,
