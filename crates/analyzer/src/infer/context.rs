@@ -9,7 +9,7 @@ use syntax::ast;
 use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
-    scope::{ResolutionKind, ValueGroupRecursiveLets, ValueGroupResolutions},
+    scope::{LetBindingGroups, ResolutionKind, ValueGroupResolutions},
     surface, InferDatabase,
 };
 
@@ -34,7 +34,7 @@ struct ValueGroupCtx<'ctx> {
     file_id: FileId,
     id: ValueGroupId,
     resolutions: &'ctx ValueGroupResolutions,
-    recursive_lets: &'ctx ValueGroupRecursiveLets,
+    let_binding_groups: &'ctx LetBindingGroups,
 
     fresh_index: usize,
     constraints: Vec<Constraint>,
@@ -56,7 +56,7 @@ impl<'ctx> ValueGroupCtx<'ctx> {
         id: InFile<ValueGroupId>,
         group_data: &'ctx surface::WithArena<surface::ValueGroup>,
         resolutions: &'ctx ValueGroupResolutions,
-        recursive_lets: &'ctx ValueGroupRecursiveLets,
+        let_binding_groups: &'ctx LetBindingGroups,
     ) -> ValueGroupCtx<'ctx> {
         let fresh_index = 0;
         let constraints = vec![];
@@ -72,7 +72,7 @@ impl<'ctx> ValueGroupCtx<'ctx> {
             file_id: id.file_id,
             id: id.value,
             resolutions,
-            recursive_lets,
+            let_binding_groups,
             fresh_index,
             constraints,
             of_expr,
@@ -102,7 +102,7 @@ impl Context<'_, ValueGroupCtx<'_>> {
         for let_binding in let_bindings.iter() {
             match let_binding {
                 surface::LetBinding::Name { id } => {
-                    if self.inner.recursive_lets.is_normal(*id) {
+                    if self.inner.let_binding_groups.is_normal(*id) {
                         let let_name = &self.inner.let_name_arena[*id];
 
                         let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
@@ -127,7 +127,7 @@ impl Context<'_, ValueGroupCtx<'_>> {
                         }
 
                         self.inner.of_let_name.insert(*id, expected_ty);
-                    } else if self.inner.recursive_lets.is_recursive(*id) {
+                    } else if self.inner.let_binding_groups.is_recursive(*id) {
                         unimplemented!("Implement recursive type checking.");
                     } else {
                         unimplemented!("Implement mutually recursive type checking.");
@@ -286,9 +286,10 @@ pub(crate) fn infer_value_query(
 ) -> Arc<InferResult> {
     let group_data = db.value_surface(id);
     let resolutions = db.value_resolved(id);
-    let recursive_lets = db.value_recursive_lets(id);
+    let let_binding_groups = db.let_binding_groups(id);
+
     let mut context =
-        Context::new(db, ValueGroupCtx::new(id, &group_data, &resolutions, &recursive_lets));
+        Context::new(db, ValueGroupCtx::new(id, &group_data, &resolutions, &let_binding_groups));
 
     let value_ty = context.infer_value(&group_data.value);
     let constraints = context.inner.constraints;

@@ -10,7 +10,7 @@ use std::sync::Arc;
 use collect::CollectContext;
 pub use data::*;
 use files::FileId;
-use recursive::{BindingGroupsContext, RecursiveLetsContext};
+use recursive::{BindingGroupsContext, LetBindingGroupsContext};
 use resolve::ResolveContext;
 
 #[salsa::query_group(ScopeStorage)]
@@ -21,9 +21,9 @@ pub trait ScopeDatabase: SurfaceDatabase {
     #[salsa::invoke(ResolveContext::value_resolve_query)]
     fn value_resolved(&self, id: InFile<ValueGroupId>) -> Arc<ValueGroupResolutions>;
 
-    #[salsa::invoke(RecursiveLetsContext::value_recursive_lets_query)]
-    fn value_recursive_lets(&self, id: InFile<ValueGroupId>) -> Arc<ValueGroupRecursiveLets>;
-
     #[salsa::invoke(BindingGroupsContext::binding_groups_query)]
     fn binding_groups(&self, file_id: FileId) -> Arc<BindingGroups>;
+
+    #[salsa::invoke(LetBindingGroupsContext::let_binding_groups_qiery)]
+    fn let_binding_groups(&self, id: InFile<ValueGroupId>) -> Arc<LetBindingGroups>;
 }

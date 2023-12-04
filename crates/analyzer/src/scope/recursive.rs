@@ -21,11 +21,10 @@ use crate::{
 };
 
 use super::{
-    BindingGroups, ResolutionKind, ValueBindingGroup, ValueGroupRecursiveLets,
-    ValueGroupResolutions,
+    BindingGroups, LetBindingGroups, ResolutionKind, ValueBindingGroup, ValueGroupResolutions,
 };
 
-pub(crate) struct RecursiveLetsContext<'a> {
+pub(crate) struct LetBindingGroupsContext<'a> {
     expr_arena: &'a Arena<Expr>,
     let_name_arena: &'a Arena<LetName>,
     binder_arena: &'a Arena<Binder>,
@@ -35,17 +34,17 @@ pub(crate) struct RecursiveLetsContext<'a> {
     on_let_name_id: Option<LetNameId>,
 }
 
-impl<'a> RecursiveLetsContext<'a> {
+impl<'a> LetBindingGroupsContext<'a> {
     pub(crate) fn new(
         expr_arena: &'a Arena<Expr>,
         let_name_arena: &'a Arena<LetName>,
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
         resolutions: &'a ValueGroupResolutions,
-    ) -> RecursiveLetsContext<'a> {
+    ) -> LetBindingGroupsContext<'a> {
         let let_name_graph = DiGraphMap::default();
         let on_let_name_id = None;
-        RecursiveLetsContext {
+        LetBindingGroupsContext {
             expr_arena,
             let_name_arena,
             binder_arena,
@@ -56,14 +55,14 @@ impl<'a> RecursiveLetsContext<'a> {
         }
     }
 
-    pub(crate) fn value_recursive_lets_query(
+    pub(crate) fn let_binding_groups_qiery(
         db: &dyn ScopeDatabase,
         id: InFile<ValueGroupId>,
-    ) -> Arc<ValueGroupRecursiveLets> {
+    ) -> Arc<LetBindingGroups> {
         let value_surface = db.value_surface(id);
         let value_resolutions = db.value_resolved(id);
 
-        let mut recursive_let_context = RecursiveLetsContext::new(
+        let mut context = LetBindingGroupsContext::new(
             &value_surface.expr_arena,
             &value_surface.let_name_arena,
             &value_surface.binder_arena,
@@ -72,10 +71,10 @@ impl<'a> RecursiveLetsContext<'a> {
         );
 
         value_surface.value.equations.iter().for_each(|(_, value_equation)| {
-            recursive_let_context.visit_value_equation(value_equation);
+            context.visit_value_equation(value_equation);
         });
 
-        let graph = recursive_let_context.let_name_graph;
+        let graph = context.let_name_graph;
 
         let mut normal = FxHashSet::default();
         let mut recursive = FxHashSet::default();
@@ -100,7 +99,7 @@ impl<'a> RecursiveLetsContext<'a> {
             }
         });
 
-        Arc::new(ValueGroupRecursiveLets::new(normal, recursive, mutual_groups, group_indices))
+        Arc::new(LetBindingGroups::new(normal, recursive, mutual_groups, group_indices))
     }
 
     fn visit_let_bindings(&mut self, let_bindings: &'a [LetBinding]) {
@@ -130,7 +129,7 @@ impl<'a> RecursiveLetsContext<'a> {
     }
 }
 
-impl<'a> Visitor<'a> for RecursiveLetsContext<'a> {
+impl<'a> Visitor<'a> for LetBindingGroupsContext<'a> {
     fn expr_arena(&self) -> &'a Arena<Expr> {
         self.expr_arena
     }

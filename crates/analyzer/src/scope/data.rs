@@ -169,7 +169,7 @@ impl ValueGroupResolutions {
 
 /// Information about recursive let bindings.
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupRecursiveLets {
+pub struct LetBindingGroups {
     /// Non-recursive let bindings.
     normal: FxHashSet<LetNameId>,
     /// Self-recursive let bindings.
@@ -180,14 +180,14 @@ pub struct ValueGroupRecursiveLets {
     group_indices: FxHashMap<LetNameId, usize>,
 }
 
-impl ValueGroupRecursiveLets {
+impl LetBindingGroups {
     pub(crate) fn new(
         normal: FxHashSet<LetNameId>,
         recursive: FxHashSet<LetNameId>,
         mutual_groups: Vec<Vec<LetNameId>>,
         group_indices: FxHashMap<LetNameId, usize>,
-    ) -> ValueGroupRecursiveLets {
-        ValueGroupRecursiveLets { normal, recursive, mutual_groups, group_indices }
+    ) -> LetBindingGroups {
+        LetBindingGroups { normal, recursive, mutual_groups, group_indices }
     }
 
     pub fn is_normal(&self, id: LetNameId) -> bool {
