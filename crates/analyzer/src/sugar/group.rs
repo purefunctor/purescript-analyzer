@@ -1,6 +1,6 @@
 //! Information about binding groups.
 
-use std::{mem, sync::Arc};
+use std::{mem, ops, sync::Arc};
 
 use files::FileId;
 use la_arena::{Arena, Idx};
@@ -35,19 +35,20 @@ pub type BindingGroupId = Idx<BindingGroup>;
 /// The binding groups at the module-level.
 #[derive(Debug, PartialEq, Eq)]
 pub struct BindingGroups {
+    file_id: FileId,
     inner: Arena<BindingGroup>,
 }
 
 impl BindingGroups {
-    pub(crate) fn new(inner: Arena<BindingGroup>) -> BindingGroups {
-        BindingGroups { inner }
+    pub(crate) fn new(file_id: FileId, inner: Arena<BindingGroup>) -> BindingGroups {
+        BindingGroups { file_id, inner }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (BindingGroupId, &BindingGroup)> {
-        self.inner.iter()
+    pub fn iter(&self) -> impl Iterator<Item = (InFile<BindingGroupId>, &BindingGroup)> {
+        self.inner.iter().map(|(id, data)| (InFile { file_id: self.file_id, value: id }, data))
     }
 
-    pub fn binding_group_id(&self, id: ValueGroupId) -> BindingGroupId {
+    pub fn binding_group_id(&self, id: ValueGroupId) -> InFile<BindingGroupId> {
         // FIXME: O(n) -> O(1)
         self.iter()
             .find_map(|(value_binding_group_id, value_binding_group)| match value_binding_group {
@@ -71,6 +72,14 @@ impl BindingGroups {
 
     pub fn binding_group_data(&self, id: BindingGroupId) -> &BindingGroup {
         &self.inner[id]
+    }
+}
+
+impl ops::Index<BindingGroupId> for BindingGroups {
+    type Output = BindingGroup;
+
+    fn index(&self, index: BindingGroupId) -> &Self::Output {
+        &self.inner[index]
     }
 }
 
@@ -154,7 +163,7 @@ impl<'a> BindingGroupsContext<'a> {
             }
         }
 
-        Arc::new(BindingGroups::new(inner))
+        Arc::new(BindingGroups::new(file_id, inner))
     }
 }
 
