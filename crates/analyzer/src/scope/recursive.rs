@@ -2,8 +2,12 @@
 
 use std::{mem, sync::Arc};
 
+use files::FileId;
 use la_arena::Arena;
-use petgraph::{algo::tarjan_scc, graphmap::DiGraphMap};
+use petgraph::{
+    algo::{kosaraju_scc, tarjan_scc},
+    graphmap::DiGraphMap,
+};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
@@ -16,7 +20,10 @@ use crate::{
     ScopeDatabase,
 };
 
-use super::{ResolutionKind, ValueGroupRecursiveLets, ValueGroupResolutions};
+use super::{
+    BindingGroups, ResolutionKind, ValueBindingGroup, ValueGroupRecursiveLets,
+    ValueGroupResolutions,
+};
 
 pub(crate) struct RecursiveLetsContext<'a> {
     expr_arena: &'a Arena<Expr>,
@@ -162,5 +169,123 @@ impl<'a> Visitor<'a> for RecursiveLetsContext<'a> {
     fn visit_where_expr(&mut self, where_expr: &'a WhereExpr) {
         self.visit_let_bindings(&where_expr.let_bindings);
         self.visit_expr(where_expr.expr_id);
+    }
+}
+
+pub(crate) struct BindingGroupsContext<'a> {
+    expr_arena: &'a Arena<Expr>,
+    let_name_arena: &'a Arena<LetName>,
+    binder_arena: &'a Arena<Binder>,
+    type_arena: &'a Arena<Type>,
+    resolutions: &'a ValueGroupResolutions,
+    value_graph: &'a mut DiGraphMap<ValueGroupId, bool>,
+    value_group_id: ValueGroupId,
+}
+
+impl<'a> BindingGroupsContext<'a> {
+    pub(crate) fn new(
+        expr_arena: &'a Arena<Expr>,
+        let_name_arena: &'a Arena<LetName>,
+        binder_arena: &'a Arena<Binder>,
+        type_arena: &'a Arena<Type>,
+        resolutions: &'a ValueGroupResolutions,
+        value_graph: &'a mut DiGraphMap<ValueGroupId, bool>,
+        value_group_id: ValueGroupId,
+    ) -> BindingGroupsContext<'a> {
+        BindingGroupsContext {
+            expr_arena,
+            let_name_arena,
+            binder_arena,
+            type_arena,
+            resolutions,
+            value_graph,
+            value_group_id,
+        }
+    }
+
+    pub(crate) fn binding_groups_query(
+        db: &dyn ScopeDatabase,
+        file_id: FileId,
+    ) -> Arc<BindingGroups> {
+        let nominal_map = db.nominal_map(file_id);
+
+        let mut value_graph = DiGraphMap::default();
+
+        for (id, _) in nominal_map.value_groups() {
+            let value_surface = db.value_surface(id);
+            let value_resolutions = db.value_resolved(id);
+            let value_group_id = id.value;
+
+            let mut context = BindingGroupsContext::new(
+                &value_surface.expr_arena,
+                &value_surface.let_name_arena,
+                &value_surface.binder_arena,
+                &value_surface.type_arena,
+                &value_resolutions,
+                &mut value_graph,
+                value_group_id,
+            );
+
+            value_surface.value.equations.iter().for_each(|(_, value_equation)| {
+                context.visit_value_equation(value_equation);
+            });
+        }
+
+        let components = kosaraju_scc(&value_graph);
+        let mut inner = Arena::with_capacity(components.len());
+
+        for component in components {
+            match &component[..] {
+                [id] => {
+                    let is_recursive =
+                        value_graph.edge_weight(*id, *id).is_some_and(|thunked| *thunked);
+                    if is_recursive {
+                        inner.alloc(ValueBindingGroup::Recursive(*id));
+                    } else {
+                        inner.alloc(ValueBindingGroup::Singular(*id));
+                    }
+                }
+                _ => {
+                    inner.alloc(ValueBindingGroup::MutuallyRecursive(component));
+                }
+            }
+        }
+
+        Arc::new(BindingGroups::new(inner))
+    }
+}
+
+impl<'a> Visitor<'a> for BindingGroupsContext<'a> {
+    fn expr_arena(&self) -> &'a Arena<Expr> {
+        self.expr_arena
+    }
+
+    fn let_name_arena(&self) -> &'a Arena<LetName> {
+        self.let_name_arena
+    }
+
+    fn binder_arena(&self) -> &'a Arena<Binder> {
+        self.binder_arena
+    }
+
+    fn type_arena(&self) -> &'a Arena<Type> {
+        self.type_arena
+    }
+
+    fn visit_expr(&mut self, expr_id: ExprId) {
+        match &self.expr_arena[expr_id] {
+            Expr::Variable(_) => {
+                if let Some(resolution) = self.resolutions.get(expr_id) {
+                    if let ResolutionKind::Global(dependency) = resolution.kind {
+                        self.value_graph.add_edge(
+                            self.value_group_id,
+                            dependency.value,
+                            resolution.thunked,
+                        );
+                    }
+                }
+            }
+            _ => default_visit_expr(self, expr_id),
+        }
     }
 }

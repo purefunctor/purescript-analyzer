@@ -204,3 +204,59 @@ impl ValueGroupRecursiveLets {
         Some(&self.mutual_groups[index])
     }
 }
+
+/// The kind of module-level binding groups.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ValueBindingGroup {
+    /// A non-recursive, singular [`ValueGroupId`].
+    Singular(ValueGroupId),
+    /// A self-recursive, singular [`ValueGroupId`].
+    Recursive(ValueGroupId),
+    /// A mutually-recursive collection of [`ValueGroupId`]s.
+    MutuallyRecursive(Vec<ValueGroupId>),
+}
+
+pub type ValueBindingGroupId = Idx<ValueBindingGroup>;
+
+/// Collects binding groups within a module.
+#[derive(Debug, PartialEq, Eq)]
+pub struct BindingGroups {
+    inner: Arena<ValueBindingGroup>,
+}
+
+impl BindingGroups {
+    pub(crate) fn new(inner: Arena<ValueBindingGroup>) -> BindingGroups {
+        BindingGroups { inner }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ValueBindingGroupId, &ValueBindingGroup)> {
+        self.inner.iter()
+    }
+
+    pub fn binding_group_id(&self, id: ValueGroupId) -> ValueBindingGroupId {
+        // FIXME: O(n) -> O(1)
+        self.iter()
+            .find_map(|(value_binding_group_id, value_binding_group)| match value_binding_group {
+                ValueBindingGroup::Singular(current_id)
+                | ValueBindingGroup::Recursive(current_id) => {
+                    if id == *current_id {
+                        Some(value_binding_group_id)
+                    } else {
+                        None
+                    }
+                }
+                ValueBindingGroup::MutuallyRecursive(current_group) => {
+                    if current_group.contains(&id) {
+                        Some(value_binding_group_id)
+                    } else {
+                        None
+                    }
+                }
+            })
+            .unwrap()
+    }
+
+    pub fn binding_group_data(&self, id: ValueBindingGroupId) -> &ValueBindingGroup {
+        &self.inner[id]
+    }
+}
