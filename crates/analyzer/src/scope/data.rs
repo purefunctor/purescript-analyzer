@@ -2,7 +2,7 @@
 use std::{iter, ops};
 
 use la_arena::{Arena, Idx};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::{
@@ -164,99 +164,5 @@ impl ValueGroupResolutions {
 
     pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
         self.resolutions.get(&expr_id).copied()
-    }
-}
-
-/// Information about recursive let bindings.
-#[derive(Debug, PartialEq, Eq)]
-pub struct LetBindingGroups {
-    /// Non-recursive let bindings.
-    normal: FxHashSet<LetNameId>,
-    /// Self-recursive let bindings.
-    recursive: FxHashSet<LetNameId>,
-    /// Groups of mutually recursive bindings.
-    mutual_groups: Vec<Vec<LetNameId>>,
-    /// Identifies which group a let binding belongs to.
-    group_indices: FxHashMap<LetNameId, usize>,
-}
-
-impl LetBindingGroups {
-    pub(crate) fn new(
-        normal: FxHashSet<LetNameId>,
-        recursive: FxHashSet<LetNameId>,
-        mutual_groups: Vec<Vec<LetNameId>>,
-        group_indices: FxHashMap<LetNameId, usize>,
-    ) -> LetBindingGroups {
-        LetBindingGroups { normal, recursive, mutual_groups, group_indices }
-    }
-
-    pub fn is_normal(&self, id: LetNameId) -> bool {
-        self.normal.contains(&id)
-    }
-
-    pub fn is_recursive(&self, id: LetNameId) -> bool {
-        self.recursive.contains(&id)
-    }
-
-    pub fn mutual_group(&self, id: LetNameId) -> Option<&[LetNameId]> {
-        let index = *self.group_indices.get(&id)?;
-        assert!(index < self.mutual_groups.len());
-        Some(&self.mutual_groups[index])
-    }
-}
-
-/// The kind of module-level binding groups.
-#[derive(Debug, PartialEq, Eq)]
-pub enum ValueBindingGroup {
-    /// A non-recursive, singular [`ValueGroupId`].
-    Singular(ValueGroupId),
-    /// A self-recursive, singular [`ValueGroupId`].
-    Recursive(ValueGroupId),
-    /// A mutually-recursive collection of [`ValueGroupId`]s.
-    MutuallyRecursive(Vec<ValueGroupId>),
-}
-
-pub type ValueBindingGroupId = Idx<ValueBindingGroup>;
-
-/// Collects binding groups within a module.
-#[derive(Debug, PartialEq, Eq)]
-pub struct BindingGroups {
-    inner: Arena<ValueBindingGroup>,
-}
-
-impl BindingGroups {
-    pub(crate) fn new(inner: Arena<ValueBindingGroup>) -> BindingGroups {
-        BindingGroups { inner }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (ValueBindingGroupId, &ValueBindingGroup)> {
-        self.inner.iter()
-    }
-
-    pub fn binding_group_id(&self, id: ValueGroupId) -> ValueBindingGroupId {
-        // FIXME: O(n) -> O(1)
-        self.iter()
-            .find_map(|(value_binding_group_id, value_binding_group)| match value_binding_group {
-                ValueBindingGroup::Singular(current_id)
-                | ValueBindingGroup::Recursive(current_id) => {
-                    if id == *current_id {
-                        Some(value_binding_group_id)
-                    } else {
-                        None
-                    }
-                }
-                ValueBindingGroup::MutuallyRecursive(current_group) => {
-                    if current_group.contains(&id) {
-                        Some(value_binding_group_id)
-                    } else {
-                        None
-                    }
-                }
-            })
-            .unwrap()
-    }
-
-    pub fn binding_group_data(&self, id: ValueBindingGroupId) -> &ValueBindingGroup {
-        &self.inner[id]
     }
 }

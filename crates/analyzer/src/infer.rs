@@ -9,7 +9,7 @@ mod tests;
 
 use std::sync::Arc;
 
-use crate::{id::InFile, resolver::ValueGroupId, ScopeDatabase};
+use crate::{id::InFile, resolver::ValueGroupId, sugar::SugarDatabase, ScopeDatabase};
 
 pub use trees::*;
 
@@ -23,7 +23,7 @@ pub enum InferResult {
 }
 
 #[salsa::query_group(InferStorage)]
-pub trait InferDatabase: ScopeDatabase {
+pub trait InferDatabase: ScopeDatabase + SugarDatabase {
     #[salsa::interned]
     fn intern_type(&self, t: Type) -> TypeId;
 

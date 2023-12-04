@@ -9,7 +9,8 @@ use syntax::ast;
 use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
-    scope::{LetBindingGroups, ResolutionKind, ValueGroupResolutions},
+    scope::{ResolutionKind, ValueGroupResolutions},
+    sugar::LetBindingGroups,
     surface, InferDatabase,
 };
 

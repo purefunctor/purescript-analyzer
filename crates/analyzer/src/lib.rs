@@ -6,12 +6,14 @@ pub mod names;
 pub mod resolver;
 pub mod scope;
 pub mod source;
+pub mod sugar;
 pub mod surface;
 
 pub use infer::InferDatabase;
 pub use resolver::ResolverDatabase;
 pub use scope::ScopeDatabase;
 pub use source::SourceDatabase;
+pub use sugar::SugarDatabase;
 pub use surface::SurfaceDatabase;
 
 /// The analyzer's core database.
@@ -21,6 +23,7 @@ pub use surface::SurfaceDatabase;
     resolver::ResolverStorage,
     scope::ScopeStorage,
     source::SourceStorage,
+    sugar::SugarStorage,
     surface::SurfaceStorage
 )]
 pub struct RootDatabase {
