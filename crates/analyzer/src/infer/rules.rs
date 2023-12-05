@@ -292,14 +292,37 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
         let binder_ty = match &self.value_arenas.binder_arena[binder_id] {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
-            surface::Binder::Literal(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Binder::Negative(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Binder::Literal(l) => self.infer_binder_literal(l),
+            surface::Binder::Negative(n) => self.infer_binder_negative(n),
             surface::Binder::Parenthesized(p) => self.infer_binder(*p),
             surface::Binder::Variable(_) => self.fresh_unification(),
             surface::Binder::Wildcard => self.fresh_unification(),
         };
         self.of_binder.insert(binder_id, binder_ty);
         binder_ty
+    }
+
+    fn infer_binder_literal(&mut self, literal: &surface::Literal<surface::BinderId>) -> TypeId {
+        match literal {
+            surface::Literal::Array(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Literal::Record(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Literal::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
+            surface::Literal::Number(_) => self.db.intern_type(Type::Primitive(Primitive::Number)),
+            surface::Literal::String(_) => self.db.intern_type(Type::Primitive(Primitive::String)),
+            surface::Literal::Char(_) => self.db.intern_type(Type::Primitive(Primitive::Char)),
+            surface::Literal::Boolean(_) => {
+                self.db.intern_type(Type::Primitive(Primitive::Boolean))
+            }
+        }
+    }
+
+    fn infer_binder_negative(&mut self, negative: &surface::IntOrNumber) -> TypeId {
+        match negative {
+            surface::IntOrNumber::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
+            surface::IntOrNumber::Number(_) => {
+                self.db.intern_type(Type::Primitive(Primitive::Number))
+            }
+        }
     }
 
     fn infer_binding(&mut self, binding: &surface::Binding) -> TypeId {
