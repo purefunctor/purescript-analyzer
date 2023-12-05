@@ -188,10 +188,10 @@ impl<'a> Visitor<'a> for BindingGroupsContext<'a> {
         match &self.expr_arena[expr_id] {
             Expr::Variable(_) => {
                 if let Some(resolution) = self.resolutions.get(expr_id) {
-                    if let ResolutionKind::Global(dependency) = resolution.kind {
+                    if let ResolutionKind::Local(dependency) = resolution.kind {
                         self.value_graph.add_edge(
                             self.value_group_id,
-                            dependency.value,
+                            dependency,
                             resolution.thunked,
                         );
                     }

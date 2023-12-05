@@ -96,7 +96,7 @@ impl<'a> ResolveContext<'a> {
 
         let kind = kind.or_else(|| {
             let id = self.nominal_map.value_group_id(name)?;
-            Some(ResolutionKind::Global(id))
+            Some(ResolutionKind::Local(id.value))
         });
 
         if let Some(kind) = kind {

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{iter, sync::Arc};
 
 use itertools::Itertools;
 use la_arena::Arena;
@@ -9,7 +9,7 @@ use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
     scope::{ResolutionKind, ValueGroupResolutions},
-    sugar::{BindingGroup, BindingGroupId},
+    sugar::{BindingGroup, BindingGroupId, BindingGroups},
     surface, InferDatabase,
 };
 
@@ -34,15 +34,20 @@ struct InferBindingGroupContext<'env, 'state> {
     of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
 }
 
-struct InferValueGroupContext<'env, 'state> {
-    db: &'env dyn InferDatabase,
-
+struct ValueGroupArenas<'env> {
     expr_arena: &'env Arena<surface::Expr>,
     let_name_arena: &'env Arena<surface::LetName>,
     binder_arena: &'env Arena<surface::Binder>,
     type_arena: &'env Arena<surface::Type>,
+}
+
+struct InferValueGroupContext<'env, 'state> {
+    db: &'env dyn InferDatabase,
 
     id: InFile<ValueGroupId>,
+    arenas: ValueGroupArenas<'env>,
+    binding_groups: &'env BindingGroups,
+    of_sibling: &'env FxHashMap<ValueGroupId, TypeId>,
     resolutions: &'env ValueGroupResolutions,
 
     infer_state: &'state mut InferState,
@@ -68,10 +73,9 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn new(
         db: &'env dyn InferDatabase,
         id: InFile<ValueGroupId>,
-        expr_arena: &'env Arena<surface::Expr>,
-        let_name_arena: &'env Arena<surface::LetName>,
-        binder_arena: &'env Arena<surface::Binder>,
-        type_arena: &'env Arena<surface::Type>,
+        arenas: ValueGroupArenas<'env>,
+        binding_groups: &'env BindingGroups,
+        of_sibling: &'env FxHashMap<ValueGroupId, TypeId>,
         resolutions: &'env ValueGroupResolutions,
         infer_state: &'state mut InferState,
     ) -> InferValueGroupContext<'env, 'state> {
@@ -82,11 +86,12 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
         InferValueGroupContext {
             db,
             id,
-            expr_arena,
-            let_name_arena,
-            binder_arena,
-            type_arena,
+
+            arenas,
+            binding_groups,
+            of_sibling,
             resolutions,
+
             of_expr,
             of_let_name,
             of_binder,
@@ -97,37 +102,70 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
 
 // RULES //
 
+impl InferState {
+    fn fresh_unification(&mut self, db: &dyn InferDatabase, id: InFile<ValueGroupId>) -> TypeId {
+        let index = self.fresh_index as u32;
+        self.fresh_index += 1;
+        db.intern_type(Type::Unification(Unification {
+            index,
+            provenance: Provenance::ValueGroup(id),
+        }))
+    }
+}
+
 impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
     fn infer(&mut self, binding_group: &BindingGroup) {
         match &binding_group {
             BindingGroup::Singular(s) => {
                 let id = InFile { file_id: self.id.file_id, value: *s };
-                self.infer_value_group(id);
+                let of_group = FxHashMap::default();
+                self.infer_value_group(id, &of_group);
             }
             BindingGroup::Recursive(r) => {
                 let id = InFile { file_id: self.id.file_id, value: *r };
-                self.infer_value_group(id);
+                let of_r = self.infer_state.fresh_unification(self.db, id);
+                let of_group = iter::once((*r, of_r)).collect();
+                self.infer_value_group(id, &of_group);
             }
             BindingGroup::MutuallyRecursive(m) => {
+                let of_group = m
+                    .iter()
+                    .map(|m| {
+                        let id = InFile { file_id: self.id.file_id, value: *m };
+                        let of_m = self.infer_state.fresh_unification(self.db, id);
+                        (*m, of_m)
+                    })
+                    .collect();
                 m.iter().for_each(|m| {
                     let id = InFile { file_id: self.id.file_id, value: *m };
-                    self.infer_value_group(id);
+                    self.infer_value_group(id, &of_group);
                 });
             }
         }
     }
 
-    fn infer_value_group(&mut self, id: InFile<ValueGroupId>) {
+    fn infer_value_group(
+        &mut self,
+        id: InFile<ValueGroupId>,
+        of_group: &FxHashMap<ValueGroupId, TypeId>,
+    ) {
         let value_surface = self.db.value_surface(id);
         let value_resolutions = self.db.value_resolved(id);
+        let binding_groups = self.db.binding_groups(id.file_id);
+
+        let value_arenas = ValueGroupArenas {
+            expr_arena: &value_surface.expr_arena,
+            let_name_arena: &value_surface.let_name_arena,
+            binder_arena: &value_surface.binder_arena,
+            type_arena: &value_surface.type_arena,
+        };
 
         let mut context = InferValueGroupContext::new(
             self.db,
             id,
-            &value_surface.expr_arena,
-            &value_surface.let_name_arena,
-            &value_surface.binder_arena,
-            &value_surface.type_arena,
+            value_arenas,
+            &binding_groups,
+            of_group,
             &value_resolutions,
             self.infer_state,
         );
@@ -166,7 +204,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_annotation(&mut self, annotation: &surface::ValueAnnotation) -> TypeId {
-        LowerContext::new(self.db, self.type_arena).lower_type(annotation.ty)
+        LowerContext::new(self.db, self.arenas.type_arena).lower_type(annotation.ty)
     }
 
     fn infer_equation(
@@ -206,10 +244,11 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                 surface::LetBinding::Name { id } => {
                     let let_binding_groups = self.db.let_binding_groups(self.id);
                     if let_binding_groups.is_normal(*id) {
-                        let let_name = &self.let_name_arena[*id];
+                        let let_name = &self.arenas.let_name_arena[*id];
 
                         let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
-                            LowerContext::new(self.db, self.type_arena).lower_type(annotation.ty)
+                            LowerContext::new(self.db, self.arenas.type_arena)
+                                .lower_type(annotation.ty)
                         });
 
                         let mut equations = let_name.equations.iter();
@@ -245,16 +284,11 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
 
 impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn fresh_unification(&mut self) -> TypeId {
-        let index = self.infer_state.fresh_index as u32;
-        self.infer_state.fresh_index += 1;
-        self.db.intern_type(Type::Unification(Unification {
-            index,
-            provenance: Provenance::ValueGroup(self.id),
-        }))
+        self.infer_state.fresh_unification(self.db, self.id)
     }
 
     fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
-        let binder_ty = match &self.binder_arena[binder_id] {
+        let binder_ty = match &self.arenas.binder_arena[binder_id] {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Literal(_) => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Negative(_) => self.db.intern_type(Type::NotImplemented),
@@ -278,7 +312,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
-        let expr_ty = match &self.expr_arena[expr_id] {
+        let expr_ty = match &self.arenas.expr_arena[expr_id] {
             surface::Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
@@ -313,34 +347,13 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
             .and_then(|resolution| match resolution.kind {
                 ResolutionKind::Binder(b) => self.of_binder.get(&b).copied(),
                 ResolutionKind::LetName(l) => self.of_let_name.get(&l).copied(),
-                ResolutionKind::Global(reference) => {
-                    let current = self.id;
-
-                    // If we're in a local resolution...
-                    if current.file_id == reference.file_id {
-                        let binding_groups = self.db.binding_groups(current.file_id);
-                        let current_binding_group = binding_groups.binding_group_id(current.value);
-                        let reference_binding_group =
-                            binding_groups.binding_group_id(reference.value);
-                        if current_binding_group == reference_binding_group {
-                            // Ideally, this unification variable should remain
-                            // the same for all uses of `g`. We should probably
-                            // float binding_groups up so we don't call into the
-                            // db multiple times.
-                            Some(self.fresh_unification())
-                        } else {
-                            let infer_binding_group =
-                                self.db.infer_binding_group(reference_binding_group);
-                            Some(
-                                infer_binding_group
-                                    .of_value_group
-                                    .get(&reference.value)
-                                    .unwrap()
-                                    .ty,
-                            )
-                        }
+                ResolutionKind::Local(l) => {
+                    if let Some(t) = self.of_sibling.get(&l) {
+                        Some(*t)
                     } else {
-                        None
+                        let binding_group = self.binding_groups.binding_group_id(l);
+                        let inference_of_local = self.db.infer_binding_group(binding_group);
+                        Some(inference_of_local.of_value_group.get(&l).unwrap().ty)
                     }
                 }
             })

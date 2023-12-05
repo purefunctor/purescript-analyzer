@@ -6,7 +6,6 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::{
-    id::InFile,
     resolver::ValueGroupId,
     surface::{BinderId, ExprId, LetNameId},
 };
@@ -145,7 +144,7 @@ pub struct Resolution {
 pub enum ResolutionKind {
     Binder(BinderId),
     LetName(LetNameId),
-    Global(InFile<ValueGroupId>),
+    Local(ValueGroupId),
 }
 
 /// Name resolution information for a [`ValueGroupId`].
