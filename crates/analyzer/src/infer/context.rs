@@ -119,17 +119,17 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
         match &binding_group {
             BindingGroup::Singular(s) => {
                 let id = InFile { file_id: self.id.file_id, value: *s };
-                let of_group = FxHashMap::default();
-                self.infer_value_group(id, &of_group);
+                let of_sibling = FxHashMap::default();
+                self.infer_value_group(id, &of_sibling);
             }
             BindingGroup::Recursive(r) => {
                 let id = InFile { file_id: self.id.file_id, value: *r };
                 let of_r = self.infer_state.fresh_unification(self.db, id);
-                let of_group = iter::once((*r, of_r)).collect();
-                self.infer_value_group(id, &of_group);
+                let of_sibling = iter::once((*r, of_r)).collect();
+                self.infer_value_group(id, &of_sibling);
             }
             BindingGroup::MutuallyRecursive(m) => {
-                let of_group = m
+                let of_sibling = m
                     .iter()
                     .map(|m| {
                         let id = InFile { file_id: self.id.file_id, value: *m };
@@ -139,7 +139,7 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
                     .collect();
                 m.iter().for_each(|m| {
                     let id = InFile { file_id: self.id.file_id, value: *m };
-                    self.infer_value_group(id, &of_group);
+                    self.infer_value_group(id, &of_sibling);
                 });
             }
         }
