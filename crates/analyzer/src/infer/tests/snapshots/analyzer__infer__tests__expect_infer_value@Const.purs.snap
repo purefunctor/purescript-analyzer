@@ -2,7 +2,7 @@
 source: crates/analyzer/src/infer/tests.rs
 input_file: crates/analyzer/src/infer/tests/inputs/passing/values/Const.purs
 ---
-complete(const) :: ?0 -> ?1 -> ?0
-complete(const1) :: ?0 -> ?1 -> ?0
-complete(const2) :: ?0 -> ?1 -> ?0
+const2 :: ?0 -> ?1 -> ?0
+const1 :: ?0 -> ?1 -> ?0
+const :: ?0 -> ?1 -> ?0
 

@@ -10,9 +10,12 @@
 //! [`surface`]: crate::surface
 mod printer;
 
-use crate::{id::InFile, resolver::ValueGroupId};
+use crate::{id::InFile, resolver::ValueGroupId, surface};
 
 pub use printer::PrettyPrinter;
+use rustc_hash::FxHashMap;
+
+use super::constraint::Constraint;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(salsa::InternId);
@@ -55,4 +58,40 @@ pub struct Unification {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Provenance {
     ValueGroup(InFile<ValueGroupId>),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct InferBindingGroup {
+    // FIXME: this is temporary for the current implementation...
+    pub of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
+    constraints: Vec<Constraint>,
+}
+
+impl InferBindingGroup {
+    pub fn new(
+        of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
+        constraints: Vec<Constraint>,
+    ) -> InferBindingGroup {
+        InferBindingGroup { of_value_group, constraints }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct InferValueGroup {
+    // FIXME: again, this is temporary
+    pub ty: TypeId,
+    of_expr: FxHashMap<surface::ExprId, TypeId>,
+    of_let_name: FxHashMap<surface::LetNameId, TypeId>,
+    of_binder: FxHashMap<surface::BinderId, TypeId>,
+}
+
+impl InferValueGroup {
+    pub fn new(
+        ty: TypeId,
+        of_expr: FxHashMap<surface::ExprId, TypeId>,
+        of_let_name: FxHashMap<surface::LetNameId, TypeId>,
+        of_binder: FxHashMap<surface::BinderId, TypeId>,
+    ) -> InferValueGroup {
+        InferValueGroup { ty, of_expr, of_let_name, of_binder }
+    }
 }

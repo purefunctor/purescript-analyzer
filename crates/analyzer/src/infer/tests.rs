@@ -5,8 +5,7 @@ use insta::glob;
 use salsa::Durability;
 
 use crate::{
-    infer::{self, InferResult},
-    InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase,
+    id::InFile, infer, InferDatabase, ResolverDatabase, RootDatabase, SourceDatabase, SugarDatabase,
 };
 
 fn expect_infer_value(source: &str) {
@@ -27,19 +26,17 @@ fn expect_infer_value(source: &str) {
     let pp = infer::PrettyPrinter::new(&db);
 
     let mut results = String::new();
-    for (value_group_id, value_group_data) in nominal_map.value_groups() {
-        let name = value_group_data.name.as_ref();
-        let infer_result = db.infer_value(value_group_id);
-        match *infer_result {
-            InferResult::Complete(t) => {
-                writeln!(&mut results, "complete({}) :: {}", name, pp.ty(t).pretty(80)).unwrap();
-            }
-            InferResult::Incomplete(t, _) => {
-                writeln!(&mut results, "incomplete({}) :: {}", name, pp.ty(t).pretty(80)).unwrap();
-            }
-            InferResult::Recursive => {
-                writeln!(&mut results, "recursive({})", name).unwrap();
-            }
+    let binding_groups = db.binding_groups(file_id);
+    for (binding_group_id, _) in binding_groups.iter() {
+        for (value_group_id, infer_value_group) in
+            db.infer_binding_group(binding_group_id).of_value_group.iter()
+        {
+            let name = nominal_map
+                .value_group_data(InFile { file_id, value: *value_group_id })
+                .name
+                .as_ref();
+            writeln!(&mut results, "{} :: {}", name, pp.ty(infer_value_group.ty).pretty(80))
+                .unwrap();
         }
     }
 
