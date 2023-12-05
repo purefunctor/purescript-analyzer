@@ -9,7 +9,7 @@ use crate::{
     id::{AstId, InFile},
     resolver::ValueGroupId,
     scope::{ResolutionKind, ValueGroupResolutions},
-    sugar::{BindingGroup, BindingGroupId, BindingGroups},
+    sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
     surface, InferDatabase,
 };
 
@@ -28,8 +28,8 @@ struct InferState {
 
 struct InferBindingGroupContext<'env, 'state> {
     db: &'env dyn InferDatabase,
-
     id: InFile<BindingGroupId>,
+
     infer_state: &'state mut InferState,
     of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
 }
@@ -41,14 +41,19 @@ struct ValueGroupArenas<'env> {
     type_arena: &'env Arena<surface::Type>,
 }
 
-struct InferValueGroupContext<'env, 'state> {
-    db: &'env dyn InferDatabase,
-
-    id: InFile<ValueGroupId>,
-    arenas: ValueGroupArenas<'env>,
+struct ValueGroupEnv<'env> {
     binding_groups: &'env BindingGroups,
+    let_binding_groups: &'env LetBindingGroups,
     of_sibling: &'env FxHashMap<ValueGroupId, TypeId>,
     resolutions: &'env ValueGroupResolutions,
+}
+
+struct InferValueGroupContext<'env, 'state> {
+    db: &'env dyn InferDatabase,
+    id: InFile<ValueGroupId>,
+
+    value_arenas: ValueGroupArenas<'env>,
+    value_env: ValueGroupEnv<'env>,
 
     infer_state: &'state mut InferState,
     of_expr: FxHashMap<surface::ExprId, TypeId>,
@@ -73,10 +78,8 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn new(
         db: &'env dyn InferDatabase,
         id: InFile<ValueGroupId>,
-        arenas: ValueGroupArenas<'env>,
-        binding_groups: &'env BindingGroups,
-        of_sibling: &'env FxHashMap<ValueGroupId, TypeId>,
-        resolutions: &'env ValueGroupResolutions,
+        value_arenas: ValueGroupArenas<'env>,
+        value_env: ValueGroupEnv<'env>,
         infer_state: &'state mut InferState,
     ) -> InferValueGroupContext<'env, 'state> {
         let of_expr = FxHashMap::default();
@@ -87,15 +90,13 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
             db,
             id,
 
-            arenas,
-            binding_groups,
-            of_sibling,
-            resolutions,
+            value_arenas,
+            value_env,
 
+            infer_state,
             of_expr,
             of_let_name,
             of_binder,
-            infer_state,
         }
     }
 }
@@ -147,11 +148,12 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
     fn infer_value_group(
         &mut self,
         id: InFile<ValueGroupId>,
-        of_group: &FxHashMap<ValueGroupId, TypeId>,
+        of_sibling: &FxHashMap<ValueGroupId, TypeId>,
     ) {
         let value_surface = self.db.value_surface(id);
         let value_resolutions = self.db.value_resolved(id);
         let binding_groups = self.db.binding_groups(id.file_id);
+        let let_binding_groups = self.db.let_binding_groups(id);
 
         let value_arenas = ValueGroupArenas {
             expr_arena: &value_surface.expr_arena,
@@ -160,15 +162,15 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
             type_arena: &value_surface.type_arena,
         };
 
-        let mut context = InferValueGroupContext::new(
-            self.db,
-            id,
-            value_arenas,
-            &binding_groups,
-            of_group,
-            &value_resolutions,
-            self.infer_state,
-        );
+        let value_env = ValueGroupEnv {
+            binding_groups: &binding_groups,
+            let_binding_groups: &let_binding_groups,
+            of_sibling,
+            resolutions: &value_resolutions,
+        };
+
+        let mut context =
+            InferValueGroupContext::new(self.db, id, value_arenas, value_env, self.infer_state);
 
         let value_group_ty = context.infer(&value_surface.value);
         let infer_value_group = InferValueGroup::new(
@@ -204,7 +206,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_annotation(&mut self, annotation: &surface::ValueAnnotation) -> TypeId {
-        LowerContext::new(self.db, self.arenas.type_arena).lower_type(annotation.ty)
+        LowerContext::new(self.db, self.value_arenas.type_arena).lower_type(annotation.ty)
     }
 
     fn infer_equation(
@@ -242,12 +244,12 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
         for let_binding in let_bindings.iter() {
             match let_binding {
                 surface::LetBinding::Name { id } => {
-                    let let_binding_groups = self.db.let_binding_groups(self.id);
+                    let let_binding_groups = self.value_env.let_binding_groups;
                     if let_binding_groups.is_normal(*id) {
-                        let let_name = &self.arenas.let_name_arena[*id];
+                        let let_name = &self.value_arenas.let_name_arena[*id];
 
                         let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
-                            LowerContext::new(self.db, self.arenas.type_arena)
+                            LowerContext::new(self.db, self.value_arenas.type_arena)
                                 .lower_type(annotation.ty)
                         });
 
@@ -288,7 +290,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
-        let binder_ty = match &self.arenas.binder_arena[binder_id] {
+        let binder_ty = match &self.value_arenas.binder_arena[binder_id] {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Literal(_) => self.db.intern_type(Type::NotImplemented),
             surface::Binder::Negative(_) => self.db.intern_type(Type::NotImplemented),
@@ -312,7 +314,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
-        let expr_ty = match &self.arenas.expr_arena[expr_id] {
+        let expr_ty = match &self.value_arenas.expr_arena[expr_id] {
             surface::Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
@@ -342,18 +344,19 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_expr_variable(&mut self, expr_id: surface::ExprId) -> TypeId {
-        self.resolutions
+        self.value_env
+            .resolutions
             .get(expr_id)
             .and_then(|resolution| match resolution.kind {
                 ResolutionKind::Binder(b) => self.of_binder.get(&b).copied(),
                 ResolutionKind::LetName(l) => self.of_let_name.get(&l).copied(),
                 ResolutionKind::Local(l) => {
-                    if let Some(t) = self.of_sibling.get(&l) {
+                    if let Some(t) = self.value_env.of_sibling.get(&l) {
                         Some(*t)
                     } else {
-                        let binding_group = self.binding_groups.binding_group_id(l);
-                        let inference_of_local = self.db.infer_binding_group(binding_group);
-                        Some(inference_of_local.of_value_group.get(&l).unwrap().ty)
+                        let binding_group = self.value_env.binding_groups.binding_group_id(l);
+                        let type_of_local = self.db.infer_binding_group(binding_group);
+                        Some(type_of_local.of_value_group(l).as_type())
                     }
                 }
             })

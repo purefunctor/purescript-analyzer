@@ -62,36 +62,46 @@ pub enum Provenance {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InferBindingGroup {
-    // FIXME: this is temporary for the current implementation...
-    pub of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
+    of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
     constraints: Vec<Constraint>,
 }
 
 impl InferBindingGroup {
-    pub fn new(
+    pub(crate) fn new(
         of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
         constraints: Vec<Constraint>,
     ) -> InferBindingGroup {
         InferBindingGroup { of_value_group, constraints }
     }
+
+    pub fn of_value_group(&self, id: ValueGroupId) -> &InferValueGroup {
+        self.of_value_group.get(&id).unwrap()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ValueGroupId, &InferValueGroup)> {
+        self.of_value_group.iter().map(|(id, infer)| (*id, infer))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InferValueGroup {
-    // FIXME: again, this is temporary
-    pub ty: TypeId,
+    ty: TypeId,
     of_expr: FxHashMap<surface::ExprId, TypeId>,
     of_let_name: FxHashMap<surface::LetNameId, TypeId>,
     of_binder: FxHashMap<surface::BinderId, TypeId>,
 }
 
 impl InferValueGroup {
-    pub fn new(
+    pub(crate) fn new(
         ty: TypeId,
         of_expr: FxHashMap<surface::ExprId, TypeId>,
         of_let_name: FxHashMap<surface::LetNameId, TypeId>,
         of_binder: FxHashMap<surface::BinderId, TypeId>,
     ) -> InferValueGroup {
         InferValueGroup { ty, of_expr, of_let_name, of_binder }
+    }
+
+    pub fn as_type(&self) -> TypeId {
+        self.ty
     }
 }
