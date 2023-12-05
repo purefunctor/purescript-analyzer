@@ -7,6 +7,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
+    infer,
     resolver::ValueGroupId,
     scope::{ResolutionKind, ValueGroupResolutions},
     sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
@@ -338,7 +339,26 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
 
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
         let expr_ty = match &self.value_arenas.expr_arena[expr_id] {
-            surface::Expr::Application(_, _) => self.db.intern_type(Type::NotImplemented),
+            surface::Expr::Application(function, arguments) => {
+                let function_ty = self.infer_expr(*function);
+                let arguments_ty =
+                    arguments.iter().map(|argument| self.infer_expr(*argument)).collect_vec();
+
+                let result_ty = self.fresh_unification();
+                let auxiliary_ty =
+                    arguments_ty.into_iter().rev().fold(result_ty, |result_ty, argument_ty| {
+                        self.db.intern_type(Type::Function(argument_ty, result_ty))
+                    });
+
+                let pp = infer::PrettyPrinter::new(self.db);
+                eprintln!(
+                    "\nunify({}, {})\n",
+                    pp.ty(function_ty).pretty(80),
+                    pp.ty(auxiliary_ty).pretty(80)
+                );
+
+                result_ty
+            }
             surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::LetIn(let_bindings, let_body) => {
