@@ -1,13 +1,18 @@
 use la_arena::Arena;
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, LetBinding, Literal, ValueDeclarationData, WhereExpr,
+    Binder, BinderId, Binding, Expr, ExprId, LetBinding, LetName, Literal, Type, ValueEquation,
+    WhereExpr,
 };
 
 pub trait Visitor<'a>: Sized {
     fn expr_arena(&self) -> &'a Arena<Expr>;
 
+    fn let_name_arena(&self) -> &'a Arena<LetName>;
+
     fn binder_arena(&self) -> &'a Arena<Binder>;
+
+    fn type_arena(&self) -> &'a Arena<Type>;
 
     fn visit_expr(&mut self, expr_id: ExprId) {
         default_visit_expr(self, expr_id);
@@ -25,8 +30,8 @@ pub trait Visitor<'a>: Sized {
         default_visit_where_expr(self, where_expr);
     }
 
-    fn visit_value_declaration(&mut self, value_declaration: &'a ValueDeclarationData) {
-        default_visit_value_declaration(self, value_declaration);
+    fn visit_value_equation(&mut self, value_equation: &'a ValueEquation) {
+        default_visit_value_equation(self, value_equation);
     }
 }
 
@@ -42,14 +47,29 @@ where
                 visitor.visit_expr(*argument);
             }
         }
+        Expr::Constructor(_) => (),
+        Expr::Lambda(binders, body) => {
+            for binder in binders.iter() {
+                visitor.visit_binder(*binder);
+            }
+            visitor.visit_expr(*body);
+        }
         Expr::LetIn(let_bindings, let_body) => {
             for let_binding in let_bindings.iter() {
                 match let_binding {
-                    LetBinding::Name { binding, .. } => match binding {
-                        Binding::Unconditional { where_expr } => {
-                            visitor.visit_expr(where_expr.expr_id);
-                        }
-                    },
+                    LetBinding::Name { id } => {
+                        let let_name = &visitor.let_name_arena()[*id];
+                        let_name.equations.iter().for_each(|equation| {
+                            equation.binders.iter().for_each(|binder| {
+                                visitor.visit_binder(*binder);
+                            });
+                            visitor.visit_binding(&equation.binding);
+                        });
+                    }
+                    LetBinding::Pattern { binder, where_expr } => {
+                        visitor.visit_binder(*binder);
+                        visitor.visit_where_expr(where_expr);
+                    }
                 }
                 visitor.visit_expr(*let_body);
             }
@@ -125,22 +145,30 @@ where
 {
     for let_binding in where_expr.let_bindings.iter() {
         match let_binding {
-            LetBinding::Name { binding, .. } => {
-                visitor.visit_binding(binding);
+            LetBinding::Name { id } => {
+                let let_name = &visitor.let_name_arena()[*id];
+                let_name.equations.iter().for_each(|equation| {
+                    equation.binders.iter().for_each(|binder| {
+                        visitor.visit_binder(*binder);
+                    });
+                    visitor.visit_binding(&equation.binding);
+                });
+            }
+            LetBinding::Pattern { binder, where_expr } => {
+                visitor.visit_binder(*binder);
+                visitor.visit_where_expr(where_expr);
             }
         }
     }
     visitor.visit_expr(where_expr.expr_id);
 }
 
-pub fn default_visit_value_declaration<'a, V>(
-    visitor: &mut V,
-    value_declaration: &'a ValueDeclarationData,
-) where
+pub fn default_visit_value_equation<'a, V>(visitor: &mut V, value_equation: &'a ValueEquation)
+where
     V: Visitor<'a>,
 {
-    for binder_id in value_declaration.binders.iter() {
+    for binder_id in value_equation.binders.iter() {
         visitor.visit_binder(*binder_id);
     }
-    visitor.visit_binding(&value_declaration.binding);
+    visitor.visit_binding(&value_equation.binding);
 }

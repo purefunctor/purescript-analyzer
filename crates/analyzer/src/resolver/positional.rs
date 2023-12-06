@@ -29,7 +29,7 @@ use crate::{id::AstId, ResolverDatabase};
 /// In this query structure, the answer would be yes. `Infer` would be
 /// invalidated as often as `PositionalMap`.
 ///
-/// ```ignore
+/// ```text
 /// Infer <- PositionalMap
 /// ```
 ///
@@ -38,7 +38,7 @@ use crate::{id::AstId, ResolverDatabase};
 /// dependents would not need to be invalidated. Take for example the
 /// following query structure:
 ///
-/// ```ignore
+/// ```text
 /// Infer <- Lower <- PositionalMap
 /// ```
 ///
@@ -64,14 +64,25 @@ impl PositionalMap {
             .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
         if let Some(declarations) = declarations {
             for declaration in declarations {
-                match declaration {
-                    ast::Declaration::AnnotationDeclaration(annotation) => {
-                        positional_map.alloc(annotation.syntax());
+                match &declaration {
+                    ast::Declaration::DataDeclaration(data) => {
+                        positional_map.alloc(data.syntax());
+                        if let Some(constructors) = data.constructors() {
+                            for constructor in constructors.children() {
+                                positional_map.alloc(constructor.syntax());
+                            }
+                        }
                     }
-                    ast::Declaration::ValueDeclaration(value) => {
+                    ast::Declaration::ForeignDataDeclaration(data) => {
+                        positional_map.alloc(data.syntax());
+                    }
+                    ast::Declaration::ValueEquationDeclaration(value) => {
                         positional_map.alloc(value.syntax());
                     }
-                }
+                    ast::Declaration::ValueAnnotationDeclaration(annotation) => {
+                        positional_map.alloc(annotation.syntax());
+                    }
+                };
             }
         }
 

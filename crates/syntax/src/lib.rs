@@ -115,6 +115,7 @@ pub enum SyntaxKind {
     OperatorNameExpression,
     VariableExpression,
 
+    LambdaExpression,
     LiteralExpression,
     ParenthesizedExpression,
     RecordAccessExpression,
@@ -166,10 +167,11 @@ pub enum SyntaxKind {
     VariableBinder,
     WildcardBinder,
 
-    ValueDeclaration,
-    AnnotationDeclaration,
+    ValueEquationDeclaration,
+    ValueAnnotationDeclaration,
 
     DataDeclaration,
+    DataConstructor,
     DataKw,
 
     NewtypeDeclaration,

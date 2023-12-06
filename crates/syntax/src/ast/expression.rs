@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::{PureScript, SyntaxToken};
 
-use super::{LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
+use super::{Binder, LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
 
 _create_ast_v!(
     Expression,
@@ -14,6 +14,7 @@ _create_ast_v!(
     ExpressionInfixChain(ExpressionInfixChain),
     ExpressionOperatorChain(ExpressionOperatorChain),
     IfThenElseExpression(IfThenElseExpression),
+    LambdaExpression(LambdaExpression),
     LetInExpression(LetInExpression),
     LiteralExpression(LiteralExpression),
     OperatorNameExpression(OperatorNameExpression),
@@ -38,6 +39,12 @@ impl ApplicationExpression {
     }
 }
 
+impl ConstructorExpression {
+    pub fn qualified_name(&self) -> Option<QualifiedName> {
+        QualifiedName::cast(self.node.first_child()?)
+    }
+}
+
 impl TermArgument {
     pub fn expression(&self) -> Option<Expression> {
         Expression::cast(self.node.first_child()?)
@@ -51,6 +58,16 @@ impl TypeArgument {
 
     pub fn ty(&self) -> Option<Type> {
         Type::cast(self.node.first_child()?)
+    }
+}
+
+impl LambdaExpression {
+    pub fn binders(&self) -> Option<OneOrMore<Binder>> {
+        OneOrMore::cast(self.node.first_child()?)
+    }
+
+    pub fn body(&self) -> Option<Expression> {
+        Expression::cast(self.node.last_child()?)
     }
 }
 

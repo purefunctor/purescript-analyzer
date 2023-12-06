@@ -1,16 +1,18 @@
 //! IDs used as query keys.
 
-use std::marker::PhantomData;
+use std::{hash::Hash, marker::PhantomData};
 
 use files::FileId;
 use la_arena::Idx;
 use rowan::ast::AstNode;
 use syntax::{PureScript, SyntaxNodePtr};
 
+use crate::SurfaceDatabase;
+
 /// See documentation for [`PositionalMap`].
 ///
 /// [`PositionalMap`]: crate::resolver::PositionalMap
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 pub struct AstId<N: AstNode<Language = PureScript>> {
     pub(crate) raw: Idx<SyntaxNodePtr>,
     _marker: PhantomData<fn() -> N>,
@@ -24,6 +26,32 @@ impl<N: AstNode<Language = PureScript>> Clone for AstId<N> {
 
 impl<N: AstNode<Language = PureScript>> Copy for AstId<N> {}
 
+impl<N: AstNode<Language = PureScript>> PartialEq for AstId<N> {
+    fn eq(&self, other: &Self) -> bool {
+        self.raw == other.raw
+    }
+}
+
+impl<N: AstNode<Language = PureScript>> Eq for AstId<N> {}
+
+impl<N: AstNode<Language = PureScript>> PartialOrd for AstId<N> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<N: AstNode<Language = PureScript>> Ord for AstId<N> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.raw.cmp(&other.raw)
+    }
+}
+
+impl<N: AstNode<Language = PureScript>> Hash for AstId<N> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.raw.hash(state);
+    }
+}
+
 impl<N: AstNode<Language = PureScript>> AstId<N> {
     pub(crate) fn new(raw: Idx<SyntaxNodePtr>) -> AstId<N> {
         AstId { raw, _marker: PhantomData }
@@ -34,8 +62,19 @@ impl<N: AstNode<Language = PureScript>> AstId<N> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InFile<T> {
     pub(crate) file_id: FileId,
     pub(crate) value: T,
+}
+
+impl<T> InFile<AstId<T>>
+where
+    T: AstNode<Language = PureScript>,
+{
+    pub fn to_ast(self, db: &dyn SurfaceDatabase) -> T {
+        let root = db.parse_file(self.file_id);
+        let ptr = db.positional_map(self.file_id).ast_ptr(self.value);
+        ptr.to_node(&root)
+    }
 }

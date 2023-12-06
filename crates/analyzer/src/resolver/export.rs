@@ -7,11 +7,9 @@ use rowan::ast::AstNode;
 use rustc_hash::FxHashSet;
 use syntax::ast;
 
-use crate::{
-    id::{AstId, InFile},
-    names::NameRef,
-    ResolverDatabase,
-};
+use crate::{id::InFile, names::NameRef, ResolverDatabase};
+
+use super::nominal::ValueGroupId;
 
 /// A file's export list.
 #[derive(Debug, PartialEq, Eq)]
@@ -59,9 +57,9 @@ impl Exports {
         &self,
         db: &dyn ResolverDatabase,
         name: &NameRef,
-    ) -> Option<Arc<[InFile<AstId<ast::ValueDeclaration>>]>> {
+    ) -> Option<InFile<ValueGroupId>> {
         if self.items.as_ref()?.values.contains(name) {
-            db.nominal_map(self.file_id).get_value(name)
+            db.nominal_map(self.file_id).value_group_id(name)
         } else {
             None
         }

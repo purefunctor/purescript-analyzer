@@ -1,85 +1,167 @@
+//! ADTs for scope information and name resolution.
+use std::{iter, ops};
+
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
-use crate::{lower::ExprId, FxIndexSet};
+use crate::{
+    resolver::ValueGroupId,
+    surface::{BinderId, ExprId, LetNameId},
+};
 
-/// Scope information as a linked list.
-#[derive(Debug, PartialEq, Eq)]
+/// Scope information as a graph node.
+///
+/// We store scope information in the form of a directed acyclic graph
+/// allocated through an index-based arena. Aside from names, scope nodes
+/// can also introduce information such as "thunk" contexts.
+///
+/// For example, the following declarations:
+///
+/// ```haskell
+/// f x = 0
+/// g _ = 0
+/// h = 0
+/// ```
+///
+/// Would yield the following scopes:
+/// ```haskell
+/// f = [ Root, Binders({ 'x' }, Thunk) ]
+/// g = [ Root, Binders({     }, Thunk) ]
+/// h = [ Root, Binders({   }, NoThunk) ]
+/// ```
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ScopeData {
-    parent: Option<ScopeId>,
-    pub(crate) kind: ScopeKind,
+    pub parent: Option<ScopeId>,
+    pub kind: ScopeKind,
 }
 
 impl ScopeData {
-    pub(crate) fn new_root() -> ScopeData {
-        ScopeData { parent: None, kind: ScopeKind::Root }
-    }
-
-    pub(crate) fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
+    pub fn new(parent: ScopeId, kind: ScopeKind) -> ScopeData {
         ScopeData { parent: Some(parent), kind }
     }
 }
 
+/// The kind of scope information.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum ScopeKind {
+    #[default]
+    Root,
+    /// Names introduced by [`Binders`].
+    ///
+    /// For example:
+    /// ```haskell
+    /// identity x = x
+    /// ```
+    ///
+    /// [`Binders`]: crate::surface::Binder
+    Binders(FxHashMap<SmolStr, BinderId>, BinderKind),
+    /// Names introduced by [`LetBindings`].
+    ///
+    /// For example:
+    /// ```haskell
+    /// nil = let x = 0 in x
+    /// zero = x where x = 0
+    /// ```
+    ///
+    /// [`LetBindings`]: crate::surface::LetBinding
+    LetBound(FxHashMap<SmolStr, LetNameId>, LetKind),
+}
+
+/// The kind of a binder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BinderKind {
+    Thunk,
+    NoThunk,
+}
+
+/// The kind of a let binding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LetKind {
+    LetIn,
+    Where,
+}
+
 pub type ScopeId = Idx<ScopeData>;
 
-/// The kind of scope information.
+/// A value associated with scope data.
 #[derive(Debug, PartialEq, Eq)]
-pub enum ScopeKind {
-    Root,
-    Binders(FxIndexSet<SmolStr>),
-    LetBound(FxIndexSet<SmolStr>),
-}
-
-/// Scope information within a value declaration.
-#[derive(Debug, PartialEq, Eq)]
-pub struct ValueDeclarationScope {
+pub struct WithScope<T> {
     scope_arena: Arena<ScopeData>,
-    scope_per_expr: FxHashMap<ExprId, ScopeId>,
+    value: T,
 }
 
-impl ValueDeclarationScope {
-    pub(crate) fn new(
-        scope_arena: Arena<ScopeData>,
-        scope_per_expr: FxHashMap<ExprId, ScopeId>,
-    ) -> ValueDeclarationScope {
-        ValueDeclarationScope { scope_arena, scope_per_expr }
+impl<T> WithScope<T> {
+    pub fn new(scope_arena: Arena<ScopeData>, value: T) -> WithScope<T> {
+        WithScope { scope_arena, value }
     }
 
-    pub fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
-        if let Some(scope_id) = self.scope_per_expr.get(&expr_id) {
-            *scope_id
-        } else {
-            panic!("Invariant violated, ExprId was not assigned a ScopeId");
-        }
+    pub(crate) fn ancestors(&self, scope_id: ScopeId) -> impl Iterator<Item = &ScopeData> {
+        iter::successors(Some(scope_id), |&i| self[i].parent).map(|i| &self[i])
+    }
+}
+
+impl<T> ops::Index<ScopeId> for WithScope<T> {
+    type Output = ScopeData;
+
+    fn index(&self, index: ScopeId) -> &Self::Output {
+        &self.scope_arena[index]
+    }
+}
+
+/// Scope information for a [`ValueGroupId`].
+///
+/// [`ValueGroupId`]: crate::resolver::ValueGroupId
+#[derive(Debug, PartialEq, Eq)]
+pub struct ValueGroupScope {
+    per_expr: FxHashMap<ExprId, ScopeId>,
+}
+
+impl ValueGroupScope {
+    pub(crate) fn new(per_expr: FxHashMap<ExprId, ScopeId>) -> ValueGroupScope {
+        ValueGroupScope { per_expr }
+    }
+}
+
+impl WithScope<ValueGroupScope> {
+    pub(crate) fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
+        let scope_id = self.value.per_expr.get(&expr_id).unwrap_or_else(|| {
+            unreachable!("invariant violated: expression should have been assigned a scope.")
+        });
+        *scope_id
+    }
+}
+
+/// The result of name resolution.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Resolution {
+    pub thunked: bool,
+    pub kind: ResolutionKind,
+}
+
+/// The kind that a name resolves to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResolutionKind {
+    Binder(BinderId),
+    LetName(LetNameId),
+    Local(ValueGroupId),
+}
+
+/// Name resolution information for a [`ValueGroupId`].
+#[derive(Debug, PartialEq, Eq)]
+pub struct ValueGroupResolutions {
+    /// A mapping from [`Expr::Variable`] IDs to their resolutions.
+    ///
+    /// [`Expr::Variable`]: crate::surface::Expr::Variable
+    resolutions: FxHashMap<ExprId, Resolution>,
+}
+
+impl ValueGroupResolutions {
+    pub(crate) fn new(resolutions: FxHashMap<ExprId, Resolution>) -> ValueGroupResolutions {
+        ValueGroupResolutions { resolutions }
     }
 
-    pub fn scope_data(&self, scope_id: ScopeId) -> &ScopeData {
-        &self.scope_arena[scope_id]
-    }
-
-    pub fn resolve(&self, scope_id: ScopeId, name: impl AsRef<str>) -> Option<ScopeId> {
-        let name = name.as_ref();
-        let mut current = self.scope_data(scope_id);
-        loop {
-            match &current.kind {
-                ScopeKind::Root => return None,
-                ScopeKind::Binders(binders) => {
-                    if binders.contains(name) {
-                        return Some(scope_id);
-                    }
-                }
-                ScopeKind::LetBound(let_bound) => {
-                    if let_bound.contains(name) {
-                        return Some(scope_id);
-                    }
-                }
-            }
-            if let Some(parent_scope_id) = current.parent {
-                current = self.scope_data(parent_scope_id);
-            } else {
-                return None;
-            }
-        }
+    pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
+        self.resolutions.get(&expr_id).copied()
     }
 }

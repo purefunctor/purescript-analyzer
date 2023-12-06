@@ -10,6 +10,12 @@ pub struct ModuleName {
     segments: SmallVec<[SmolStr; 3]>,
 }
 
+impl ModuleName {
+    pub fn iter(&self) -> impl Iterator<Item = &SmolStr> {
+        self.segments.iter()
+    }
+}
+
 impl TryFrom<ast::ModuleName> for ModuleName {
     type Error = &'static str;
 

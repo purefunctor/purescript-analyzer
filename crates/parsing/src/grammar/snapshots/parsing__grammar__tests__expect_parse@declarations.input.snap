@@ -25,7 +25,7 @@ Start { kind: Module }
   Finish
   Start { kind: ModuleBody }
     Start { kind: ZeroOrMore }
-      Start { kind: AnnotationDeclaration }
+      Start { kind: ValueAnnotationDeclaration }
         Start { kind: Name }
           Token { kind: Lower }
         Finish
@@ -39,7 +39,7 @@ Start { kind: Module }
         Finish
       Finish
       Token { kind: LayoutSep }
-      Start { kind: ValueDeclaration }
+      Start { kind: ValueEquationDeclaration }
         Start { kind: Name }
           Token { kind: Lower }
         Finish

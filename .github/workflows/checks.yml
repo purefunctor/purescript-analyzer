@@ -26,6 +26,8 @@ jobs:
 
       - name: Cache build artifacts
         uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v0-rinku"
 
       - name: Install cargo-nextest
         run: cargo install cargo-nextest
