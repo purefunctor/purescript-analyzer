@@ -27,6 +27,11 @@ struct InferState {
     constraints: Vec<Constraint>,
 }
 
+struct UnifyContext<'env, 'state> {
+    db: &'env dyn InferDatabase,
+    infer_state: &'state mut InferState,
+}
+
 struct InferBindingGroupContext<'env, 'state> {
     db: &'env dyn InferDatabase,
     id: InFile<BindingGroupId>,
@@ -63,6 +68,15 @@ struct InferValueGroupContext<'env, 'state> {
 }
 
 // CONSTRUCTORS //
+
+impl<'env, 'state> UnifyContext<'env, 'state> {
+    fn new(
+        db: &'env dyn InferDatabase,
+        infer_state: &'state mut InferState,
+    ) -> UnifyContext<'env, 'state> {
+        UnifyContext { db, infer_state }
+    }
+}
 
 impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
     fn new(
@@ -112,6 +126,37 @@ impl InferState {
             index,
             provenance: Provenance::ValueGroup(id),
         }))
+    }
+}
+
+impl<'env, 'state> UnifyContext<'env, 'state> {
+    fn unify(&mut self, x_id: TypeId, y_id: TypeId) {
+        let pp = infer::PrettyPrinter::new(self.db);
+        eprintln!("unify({}, {})", pp.ty(x_id).pretty(80), pp.ty(y_id).pretty(80));
+
+        let x_ty = self.db.lookup_intern_type(x_id);
+        let y_ty = self.db.lookup_intern_type(y_id);
+
+        match (x_ty, y_ty) {
+            (Type::Function(x_function, x_result), Type::Function(y_function, y_result)) => {
+                self.unify(x_function, y_function);
+                self.unify(x_result, y_result);
+            }
+            (Type::Unification(x_u), Type::Unification(y_u)) => {
+                if x_u != y_u {
+                    self.infer_state.constraints.push(Constraint::UnifyDeep(x_u, y_u))
+                }
+            }
+            (Type::Unification(x_u), _) => {
+                self.infer_state.constraints.push(Constraint::UnifySolve(x_u, y_id));
+            }
+            (_, Type::Unification(y_u)) => {
+                self.infer_state.constraints.push(Constraint::UnifySolve(y_u, x_id));
+            }
+            (_, _) => {
+                unimplemented!("Oh No!");
+            }
+        }
     }
 }
 
@@ -350,12 +395,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                         self.db.intern_type(Type::Function(argument_ty, result_ty))
                     });
 
-                let pp = infer::PrettyPrinter::new(self.db);
-                eprintln!(
-                    "\nunify({}, {})\n",
-                    pp.ty(function_ty).pretty(80),
-                    pp.ty(auxiliary_ty).pretty(80)
-                );
+                UnifyContext::new(self.db, self.infer_state).unify(function_ty, auxiliary_ty);
 
                 result_ty
             }
