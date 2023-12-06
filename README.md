@@ -1,98 +1,25 @@
 # purescript-analyzer
 
-## Goals
-
-* Provide an independent frontend for providing information for IDE tooling, separate from the compiler.
-
-* Implement a rich editing experience for PureScript through incrementality and resiliency.
-
-* Efficient memory usage (at least lower than the current IDE tooling).
+purescript-analyzer is a compiler frontend for the PureScript programming language, which aims to extract information pertinent to IDE tooling.
 
 ## Features
 
-* Refactorings
+The project is still in a pre-alpha state, and IDE integration has not been implemented yet.
 
-* Auto-completion of syntactic structures
+## Design
 
-* Information for local bindings
+The following section details the internal design of the purescript-analyzer.
 
-* Semantic highlighting (?)
+### Incremental Computation
 
+purescript-analyzer's internal mechanics is inspired by rust-analyzer's design of using query-based incremental compilation using the [`salsa`](https://github.com/salsa-rs/salsa) framework. The analyzer is designed to accomodate for the volatile nature of information in editors. For instance, changes in source files are significantly more frequent, as in text is being added and deleted all of the time as a program is being built. In IDEs, it's expected for the availability of information to match this frequency. For instance, the IDE should be able to infer the type of a local binding as it's being typed, or it should be able to update completion candidates as names are added.
 
-## Architecture
+The rate of change in editors may be too fast for compilers that make use of multiple passes, in that for each change in the source file, the compiler would have to throw away all information that it has built for a previous version of the source file being edited. A query-based framework for a compiler allows information to be cached at multiple levels, like parsing, desugaring, or type checking. If an edit is not significant enough to change the semantic information contained within a source file, then the compiler would not have to recompute said information. For example, adding a documentation string may cause the compiler to recompute documentation information for a module, but it would not cause the entire module to be type checked again.
 
-* Christoph: level of incrementality - at the module level
+### Error Resilience
 
-  how much information to recompute on every keystroke e.g.
+The analyzer is designed to be resilient to errors such as those introduced by invalid syntax, type errors, etc. to extract as much semantic information from the source file that's currently being edited. This allows the analyzer to gather and provide information like for instance, completion candidates or type-on-hover.
 
-  type at point, documentation strings, sum type variants
-  imported names, new declarations (global and local)
+## Contributing
 
-* Resilience: 
-
-  Information is added even on erroneous syntax trees
-  or stuff that just partially compiles.
-
-
-## Code Related
-
-* CST - implemented through `rowan`, which is then lowered to a representation
-  that can be "analyzed"
-
-* Streams of tokens are parsed into a structured tree w/ respect to the indentation rules
-
-* Lexer - port over stack machine lexer from the compiler to simplify parsing for indentation rules
-
-* Name resolution step (should happen on the AST before type checking)
-
-```hs
-import X (x)
-
-v = x
-
-z = let y = 0 in y
-```
-
-```hs
-v = X.x
-
-z = let y = 0 in y@ss
-```
-
-* Type check the "surface" language rather than desugar the surface to a "core" language and then type check. The problem w/ desugaring is that position information _can_ be discarded one way or another.
-
-```hs
-main = do
-  foo <- may error here
-  bar <- despite error being here
-  baz
-```
-
-or some other example.
-
-* Type system (constraint-based/bidirectional)--bidirectional type checking can be a bit more local(?)
-
-* Figure out how to store/load information after type checking based on the current context
-
-```hs
-main =
-  let
-    x = 0
-    y = 1
-  in
-    x  -- cursor here
-```
-
-Can be type-directed search then return the current environment.
-
-* Boundaries between declarations
-
-```hs
-x =
-y = 0
-
-x = {};
-y = {0};
-```
-
-* Parser resilience (stuff like mismatched parentheses, indentation in do blocks)
+If you'd like to contribute to the project, the [issues](https://github.com/purefunctor/purescript-analyzer/issues) tab can help guide you towards stuff that needs to be implemented or fixed.
