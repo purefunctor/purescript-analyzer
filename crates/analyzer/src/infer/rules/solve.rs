@@ -13,8 +13,8 @@ pub(super) struct SolveContext<'env, 'state> {
     db: &'env dyn InferDatabase,
     infer_state: &'state mut InferState,
 
-    unification_solved: FxHashMap<Unification, TypeId>,
-    unification_deferred: Vec<(Unification, Unification)>,
+    pub(super) unification_solved: FxHashMap<Unification, TypeId>,
+    pub(super) unification_deferred: Vec<(Unification, Unification)>,
 }
 
 impl<'env, 'state> SolveContext<'env, 'state> {

@@ -1,5 +1,6 @@
 //! Implements the type inference routines for PureScript.
 mod solve;
+mod substitute;
 mod unify;
 mod value;
 

@@ -19,7 +19,7 @@ use crate::{
     surface, InferDatabase,
 };
 
-use super::{solve::SolveContext, unify::UnifyContext, InferState};
+use super::{solve::SolveContext, substitute::ApplySubstitution, unify::UnifyContext, InferState};
 
 struct ValueGroupArenas<'env> {
     expr_arena: &'env Arena<surface::Expr>,
@@ -405,5 +405,12 @@ pub(crate) fn infer_binding_group_query(
     let mut solver = SolveContext::new(db, context.infer_state);
     solver.solve();
 
-    Arc::new(BindingGroupTypes::new(context.of_value_group, infer_state.constraints))
+    let of_value_group = context.of_value_group;
+    let substitutions = solver.unification_solved;
+    let constraints = infer_state.constraints;
+
+    let mut binding_group_types = BindingGroupTypes::new(of_value_group, constraints);
+    binding_group_types.apply_substitution(db, &substitutions);
+
+    Arc::new(binding_group_types)
 }
