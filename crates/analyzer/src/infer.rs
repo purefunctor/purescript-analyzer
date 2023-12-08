@@ -15,6 +15,7 @@ use crate::{
     ScopeDatabase,
 };
 
+pub use rules::{BindingGroupTypes, ValueGroupTypes};
 pub use trees::*;
 
 #[salsa::query_group(InferStorage)]
@@ -23,5 +24,5 @@ pub trait InferDatabase: ScopeDatabase + SugarDatabase {
     fn intern_type(&self, t: Type) -> TypeId;
 
     #[salsa::invoke(rules::infer_binding_group_query)]
-    fn infer_binding_group(&self, id: InFile<BindingGroupId>) -> Arc<InferBindingGroup>;
+    fn infer_binding_group(&self, id: InFile<BindingGroupId>) -> Arc<BindingGroupTypes>;
 }

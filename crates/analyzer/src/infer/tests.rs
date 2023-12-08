@@ -28,12 +28,12 @@ fn expect_infer_value(source: &str) {
     let mut results = String::new();
     let binding_groups = db.binding_groups(file_id);
     for (binding_group_id, _) in binding_groups.iter() {
-        for (value_group_id, infer_value_group) in db.infer_binding_group(binding_group_id).iter() {
+        for (value_group_id, value_group_ty) in db.infer_binding_group(binding_group_id).iter() {
             let name = nominal_map
                 .value_group_data(InFile { file_id, value: value_group_id })
                 .name
                 .as_ref();
-            writeln!(&mut results, "{} :: {}", name, pp.ty(infer_value_group.as_type()).pretty(80))
+            writeln!(&mut results, "{} :: {}", name, pp.ty(value_group_ty.as_type()).pretty(80))
                 .unwrap();
         }
     }

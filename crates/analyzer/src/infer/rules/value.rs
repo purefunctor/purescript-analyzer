@@ -10,8 +10,8 @@ use syntax::ast;
 use crate::{
     id::{AstId, InFile},
     infer::{
-        lower::LowerContext, InferBindingGroup, InferValueGroup, Primitive, Provenance, Type,
-        TypeId, Unification,
+        lower::LowerContext, BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification,
+        ValueGroupTypes,
     },
     resolver::ValueGroupId,
     scope::{ResolutionKind, ValueGroupResolutions},
@@ -40,7 +40,7 @@ struct InferBindingGroupContext<'env, 'state> {
     id: InFile<BindingGroupId>,
 
     infer_state: &'state mut InferState,
-    of_value_group: FxHashMap<ValueGroupId, InferValueGroup>,
+    of_value_group: FxHashMap<ValueGroupId, ValueGroupTypes>,
 }
 
 struct InferValueGroupContext<'env, 'state> {
@@ -164,7 +164,7 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
             InferValueGroupContext::new(self.db, id, value_arenas, value_env, self.infer_state);
 
         let value_group_ty = context.infer(&value_surface.value);
-        let infer_value_group = InferValueGroup::new(
+        let infer_value_group = ValueGroupTypes::new(
             value_group_ty,
             context.of_expr,
             context.of_let_name,
@@ -383,8 +383,8 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                         Some(*t)
                     } else {
                         let binding_group = self.value_env.binding_groups.binding_group_id(l);
-                        let type_of_local = self.db.infer_binding_group(binding_group);
-                        Some(type_of_local.of_value_group(l).as_type())
+                        let binding_group_ty = self.db.infer_binding_group(binding_group);
+                        Some(binding_group_ty.get(l).of_value_group)
                     }
                 }
             })
@@ -395,7 +395,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
 pub(crate) fn infer_binding_group_query(
     db: &dyn InferDatabase,
     id: InFile<BindingGroupId>,
-) -> Arc<InferBindingGroup> {
+) -> Arc<BindingGroupTypes> {
     let mut infer_state = InferState::default();
     let mut context = InferBindingGroupContext::new(db, id, &mut infer_state);
 
@@ -405,5 +405,5 @@ pub(crate) fn infer_binding_group_query(
     let mut solver = SolveContext::new(db, context.infer_state);
     solver.solve();
 
-    Arc::new(InferBindingGroup::new(context.of_value_group, infer_state.constraints))
+    Arc::new(BindingGroupTypes::new(context.of_value_group, infer_state.constraints))
 }
