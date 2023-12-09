@@ -33,10 +33,10 @@ fn substitute(
 
 /// A trait for applying substitutions on containers of types.
 pub(super) trait ApplySubstitution {
-    fn apply_substitution<'db, 's>(
+    fn apply_substitution(
         &mut self,
-        db: &'db dyn InferDatabase,
-        substitutions: &'s FxHashMap<Unification, TypeId>,
+        db: &dyn InferDatabase,
+        substitutions: &FxHashMap<Unification, TypeId>,
     );
 }
 
