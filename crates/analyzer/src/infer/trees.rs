@@ -32,7 +32,6 @@ pub enum Type {
     Application(TypeId, TypeId),
     Function(TypeId, TypeId),
     Primitive(Primitive),
-    Reference(InFile<ValueGroupId>),
     Unification(Unification),
     NotImplemented,
 }

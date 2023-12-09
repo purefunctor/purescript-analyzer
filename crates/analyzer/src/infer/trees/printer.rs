@@ -1,6 +1,6 @@
 use pretty::{BoxAllocator, DocAllocator, DocBuilder};
 
-use crate::{id::InFile, resolver::ValueGroupId, InferDatabase};
+use crate::InferDatabase;
 
 use super::{Primitive, Type, TypeId, Unification};
 
@@ -21,7 +21,6 @@ impl<'a> PrettyPrinter<'a> {
             }
             Type::Function(argument_ty, result_ty) => self.ty_function(argument_ty, result_ty),
             Type::Primitive(primitive) => self.ty_primitive(primitive),
-            Type::Reference(reference) => self.ty_reference(reference),
             Type::Unification(unification) => self.ty_unification(unification),
             Type::NotImplemented => self.ty_not_implemented(),
         }
@@ -72,10 +71,6 @@ impl<'a> PrettyPrinter<'a> {
             Primitive::String => self.allocator.text("String"),
             Primitive::Boolean => self.allocator.text("Boolean"),
         }
-    }
-
-    fn ty_reference(&self, reference: InFile<ValueGroupId>) -> DocBuilder<BoxAllocator> {
-        self.allocator.text(format!("#{:?}::{:?}", reference.file_id, reference.value))
     }
 
     fn ty_unification(&self, unification: Unification) -> DocBuilder<BoxAllocator> {

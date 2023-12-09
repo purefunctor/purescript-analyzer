@@ -26,7 +26,6 @@ fn substitute(
             db.intern_type(Type::Function(a_id, r_id))
         }
         Type::Primitive(_) => t_id,
-        Type::Reference(_) => t_id,
         Type::Unification(u) => *substitutions.get(&u).unwrap_or(&t_id),
         Type::NotImplemented => t_id,
     }
