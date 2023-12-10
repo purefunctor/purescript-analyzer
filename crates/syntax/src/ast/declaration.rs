@@ -1,6 +1,8 @@
 use rowan::ast::AstNode;
 
-use super::{Binder, Binding, Name, Separated, Type, WhereExpression, ZeroOrMore};
+use super::{
+    Binder, Binding, Name, Separated, Type, TypeVariableBinding, WhereExpression, ZeroOrMore,
+};
 
 _create_ast_v!(
     Declaration,
@@ -22,6 +24,10 @@ _create_ast_v!(
 impl DataDeclaration {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
+    }
+
+    pub fn variables(&self) -> Option<ZeroOrMore<TypeVariableBinding>> {
+        ZeroOrMore::cast(self.node.children().nth(1)?)
     }
 
     pub fn constructors(&self) -> Option<Separated<DataConstructor>> {

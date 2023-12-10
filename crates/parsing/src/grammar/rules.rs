@@ -635,19 +635,16 @@ fn type_forall(parser: &mut Parser) {
 
 fn type_variable_binding_plain(parser: &mut Parser) {
     type_variable_binding(parser, |parser| {
-        let mut prefixed = parser.start();
         if parser.current().is_lower() {
             name(parser, SyntaxKind::Lower);
         } else {
             parser.error_recover("expected type variable");
         }
-        prefixed.end(parser, SyntaxKind::Prefixed);
     });
 }
 
 fn type_variable_binding_with_visibility(parser: &mut Parser) {
     type_variable_binding(parser, |parser| {
-        let mut prefixed = parser.start();
         if parser.at(SyntaxKind::At) {
             parser.consume();
         }
@@ -657,8 +654,6 @@ fn type_variable_binding_with_visibility(parser: &mut Parser) {
         } else {
             parser.error_recover("expected type variable");
         }
-
-        prefixed.end(parser, SyntaxKind::Prefixed);
     });
 }
 
@@ -674,10 +669,11 @@ fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)
         kinded.end(parser, SyntaxKind::Labeled);
         parser.expect(SyntaxKind::RightParenthesis);
         wrapped.end(parser, SyntaxKind::Wrapped);
+        marker.end(parser, SyntaxKind::TypeVariableKinded);
     } else {
         binding_name(parser);
+        marker.end(parser, SyntaxKind::TypeVariableName);
     }
-    marker.end(parser, SyntaxKind::TypeVariableBinding);
 }
 
 fn at_type_variable_binding_start(parser: &Parser) -> bool {

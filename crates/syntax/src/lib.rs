@@ -137,7 +137,8 @@ pub enum SyntaxKind {
     RecordField,
 
     ForallType,
-    TypeVariableBinding,
+    TypeVariableKinded,
+    TypeVariableName,
 
     ArrowType,
     ConstrainedType,
