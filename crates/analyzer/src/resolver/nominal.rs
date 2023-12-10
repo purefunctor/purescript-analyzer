@@ -41,15 +41,23 @@ pub type ValueGroupId = Idx<ValueGroup>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct NominalMap {
     file_id: FileId,
+
+    name_to_data: FxHashMap<SmolStr, AstId<ast::DataDeclaration>>,
+    name_to_constructor: FxHashMap<SmolStr, AstId<ast::DataConstructor>>,
+
     value_groups: Arena<ValueGroup>,
     name_to_value: FxHashMap<SmolStr, ValueGroupId>,
 }
 
 impl NominalMap {
     fn new(file_id: FileId) -> NominalMap {
+        let name_to_data = FxHashMap::default();
+        let name_to_constructor = FxHashMap::default();
+
         let value_groups = Arena::default();
         let name_to_value = FxHashMap::default();
-        NominalMap { file_id, value_groups, name_to_value }
+
+        NominalMap { file_id, name_to_data, name_to_constructor, value_groups, name_to_value }
     }
 
     pub(crate) fn nominal_map_query(db: &dyn ResolverDatabase, file_id: FileId) -> Arc<NominalMap> {
@@ -65,6 +73,14 @@ impl NominalMap {
         }
 
         Arc::new(nominal_map)
+    }
+
+    pub fn data_id(&self, name: impl AsRef<str>) -> Option<AstId<ast::DataDeclaration>> {
+        self.name_to_data.get(name.as_ref()).copied()
+    }
+
+    pub fn constructor_id(&self, name: impl AsRef<str>) -> Option<AstId<ast::DataConstructor>> {
+        self.name_to_constructor.get(name.as_ref()).copied()
     }
 
     pub fn value_group_id(&self, name: impl AsRef<str>) -> Option<InFile<ValueGroupId>> {
@@ -87,7 +103,7 @@ impl NominalMap {
 
 #[derive(Debug, PartialEq, Eq)]
 enum DeclarationKey {
-    Data(Option<SmolStr>),
+    Data,
     Value(Option<SmolStr>),
 }
 
@@ -103,9 +119,7 @@ fn collect(
     }
 
     let groups = declarations.group_by(|declaration| match declaration {
-        ast::Declaration::DataDeclaration(data) => {
-            DeclarationKey::Data(data.name().and_then(|name| name.as_str()))
-        }
+        ast::Declaration::DataDeclaration(_) => DeclarationKey::Data,
         ast::Declaration::ForeignDataDeclaration(_) => todo!("Unimplemented!"),
         ast::Declaration::ValueAnnotationDeclaration(value) => {
             DeclarationKey::Value(value.name().and_then(|name| name.as_str()))
@@ -115,40 +129,77 @@ fn collect(
         }
     });
 
-    for (key, mut group) in groups.into_iter() {
+    for (key, group) in groups.into_iter() {
         match key {
-            DeclarationKey::Data(_) => (),
-            DeclarationKey::Value(v) => {
-                let name = v?;
-                let mut annotation = None;
-                let mut equations = FxHashSet::default();
-
-                match group.next()? {
-                    ast::Declaration::ValueAnnotationDeclaration(a) => {
-                        annotation = Some(positional_map.ast_id(&a));
-                    }
-                    ast::Declaration::ValueEquationDeclaration(e) => {
-                        equations.insert(positional_map.ast_id(&e));
-                    }
-                    _ => unreachable!("Impossible."),
-                }
-
-                equations.extend(group.filter_map(|declaration| {
-                    if let ast::Declaration::ValueEquationDeclaration(e) = declaration {
-                        Some(positional_map.ast_id(&e))
-                    } else {
-                        None
-                    }
-                }));
-
-                let value_name = name.clone();
-                let value_index =
-                    nominal_map.value_groups.alloc(ValueGroup { name, annotation, equations });
-
-                nominal_map.name_to_value.insert(value_name, value_index);
+            DeclarationKey::Data => {
+                collect_data(nominal_map, positional_map, group)?;
+            }
+            DeclarationKey::Value(name) => {
+                collect_value(nominal_map, positional_map, name, group)?;
             }
         }
     }
+
+    Some(())
+}
+
+fn collect_data(
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    group: impl Iterator<Item = ast::Declaration>,
+) -> Option<()> {
+    let declarations = group.map(|declaration| match declaration {
+        ast::Declaration::DataDeclaration(d) => d,
+        _ => unreachable!("Impossible."),
+    });
+
+    for data in declarations {
+        let name = data.name()?.as_str()?;
+        nominal_map.name_to_data.insert(name, positional_map.ast_id(&data));
+
+        for constructor in data.constructors()?.children() {
+            let name = constructor.name()?.as_str()?;
+            nominal_map.name_to_constructor.insert(name, positional_map.ast_id(&constructor));
+        }
+    }
+
+    Some(())
+}
+
+fn collect_value(
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    name: Option<SmolStr>,
+    group: impl Iterator<Item = ast::Declaration>,
+) -> Option<()> {
+    let name = name?;
+    let mut group = group;
+
+    let mut annotation = None;
+    let mut equations = FxHashSet::default();
+
+    match group.next()? {
+        ast::Declaration::ValueAnnotationDeclaration(a) => {
+            annotation = Some(positional_map.ast_id(&a));
+        }
+        ast::Declaration::ValueEquationDeclaration(e) => {
+            equations.insert(positional_map.ast_id(&e));
+        }
+        _ => unreachable!("Impossible."),
+    }
+
+    equations.extend(group.filter_map(|declaration| {
+        if let ast::Declaration::ValueEquationDeclaration(e) = declaration {
+            Some(positional_map.ast_id(&e))
+        } else {
+            None
+        }
+    }));
+
+    let value_name = name.clone();
+    let value_index = nominal_map.value_groups.alloc(ValueGroup { name, annotation, equations });
+
+    nominal_map.name_to_value.insert(value_name, value_index);
 
     Some(())
 }
