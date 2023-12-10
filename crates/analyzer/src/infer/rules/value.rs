@@ -9,17 +9,17 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    infer::{
-        lower::LowerContext, BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification,
-        ValueGroupTypes,
-    },
+    infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification, ValueGroupTypes},
     resolver::ValueGroupId,
     scope::{ResolutionKind, ValueGroupResolutions},
     sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
     surface, InferDatabase,
 };
 
-use super::{solve::SolveContext, substitute::ApplySubstitution, unify::UnifyContext, InferState};
+use super::{
+    lower::lower_type, solve::SolveContext, substitute::ApplySubstitution, unify::UnifyContext,
+    InferState,
+};
 
 struct ValueGroupArenas<'env> {
     expr_arena: &'env Arena<surface::Expr>,
@@ -197,7 +197,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_annotation(&mut self, annotation: &surface::ValueAnnotation) -> TypeId {
-        LowerContext::new(self.db, self.value_arenas.type_arena).lower_type(annotation.ty)
+        lower_type(self.db, self.value_arenas.type_arena, annotation.ty)
     }
 
     fn infer_equation(
@@ -240,8 +240,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                         let let_name = &self.value_arenas.let_name_arena[*id];
 
                         let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
-                            LowerContext::new(self.db, self.value_arenas.type_arena)
-                                .lower_type(annotation.ty)
+                            lower_type(self.db, self.value_arenas.type_arena, annotation.ty)
                         });
 
                         let mut equations = let_name.equations.iter();

@@ -1,6 +1,5 @@
 //! Database for type inference.
 mod constraint;
-mod lower;
 mod rules;
 mod trees;
 
