@@ -94,15 +94,22 @@ impl NominalMap {
         Arc::new(nominal_map)
     }
 
-    pub fn data_id(&self, name: impl AsRef<str>) -> Option<DataGroupId> {
-        self.name_to_data.get(name.as_ref()).copied()
+    pub fn data_id(&self, name: impl AsRef<str>) -> Option<InFile<DataGroupId>> {
+        self.name_to_data
+            .get(name.as_ref())
+            .copied()
+            .map(|id| InFile { file_id: self.file_id, value: id })
     }
 
     pub fn constructor_id(
         &self,
         name: impl AsRef<str>,
-    ) -> Option<(DataGroupId, AstId<ast::DataConstructor>)> {
-        self.name_to_constructor.get(name.as_ref()).copied()
+    ) -> Option<(InFile<DataGroupId>, InFile<AstId<ast::DataConstructor>>)> {
+        self.name_to_constructor.get(name.as_ref()).copied().map(|(group_id, constructor_id)| {
+            let group_id = InFile { file_id: self.file_id, value: group_id };
+            let constructor_id = InFile { file_id: self.file_id, value: constructor_id };
+            (group_id, constructor_id)
+        })
     }
 
     pub fn data_group_data(&self, id: InFile<DataGroupId>) -> &DataGroup {
