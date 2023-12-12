@@ -6,6 +6,7 @@ use super::{
 
 _create_ast_v!(
     Declaration,
+    DataAnnotation(DataAnnotation),
     DataDeclaration(DataDeclaration),
     ForeignDataDeclaration(ForeignDataDeclaration),
     ValueAnnotationDeclaration(ValueAnnotationDeclaration),
