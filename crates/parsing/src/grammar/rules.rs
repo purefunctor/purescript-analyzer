@@ -1542,12 +1542,12 @@ fn data_declaration(parser: &mut Parser) {
                 false
             }
         });
-    
+
         if parser.at(SyntaxKind::Equal) {
             parser.expect(SyntaxKind::Equal);
             separated(parser, SyntaxKind::Pipe, data_constructor);
         }
-    
+
         marker.end(parser, SyntaxKind::DataDeclaration);
     }
 }
