@@ -171,6 +171,7 @@ pub enum SyntaxKind {
     ValueEquationDeclaration,
     ValueAnnotationDeclaration,
 
+    DataAnnotation,
     DataDeclaration,
     DataConstructor,
     DataKw,

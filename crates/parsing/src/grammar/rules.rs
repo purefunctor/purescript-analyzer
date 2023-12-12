@@ -1528,21 +1528,28 @@ fn data_declaration(parser: &mut Parser) {
     } else {
         parser.error_recover("expected an Upper");
     }
-    zero_or_more(parser, |parser| {
-        if at_type_variable_binding_start(parser) {
-            type_variable_binding_plain(parser);
-            true
-        } else {
-            false
+
+    if parser.at(SyntaxKind::Colon2) {
+        parser.expect(SyntaxKind::Colon2);
+        type_0(parser);
+        marker.end(parser, SyntaxKind::DataAnnotation);
+    } else {
+        zero_or_more(parser, |parser| {
+            if at_type_variable_binding_start(parser) {
+                type_variable_binding_plain(parser);
+                true
+            } else {
+                false
+            }
+        });
+    
+        if parser.at(SyntaxKind::Equal) {
+            parser.expect(SyntaxKind::Equal);
+            separated(parser, SyntaxKind::Pipe, data_constructor);
         }
-    });
-
-    if parser.at(SyntaxKind::Equal) {
-        parser.expect(SyntaxKind::Equal);
-        separated(parser, SyntaxKind::Pipe, data_constructor);
+    
+        marker.end(parser, SyntaxKind::DataDeclaration);
     }
-
-    marker.end(parser, SyntaxKind::DataDeclaration);
 }
 
 // 'upper' type_atom
