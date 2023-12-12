@@ -18,6 +18,16 @@ use crate::{
 use super::PositionalMap;
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct DataGroup {
+    pub name: SmolStr,
+    pub annotation: Option<AstId<ast::DataAnnotation>>,
+    pub declaration: AstId<ast::DataDeclaration>,
+    pub constructors: FxHashMap<SmolStr, AstId<ast::DataConstructor>>,
+}
+
+pub type DataGroupId = Idx<DataGroup>;
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
     pub name: SmolStr,
     pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
@@ -42,8 +52,9 @@ pub type ValueGroupId = Idx<ValueGroup>;
 pub struct NominalMap {
     file_id: FileId,
 
-    name_to_data: FxHashMap<SmolStr, AstId<ast::DataDeclaration>>,
-    name_to_constructor: FxHashMap<SmolStr, AstId<ast::DataConstructor>>,
+    data_groups: Arena<DataGroup>,
+    name_to_data: FxHashMap<SmolStr, DataGroupId>,
+    name_to_constructor: FxHashMap<SmolStr, (DataGroupId, AstId<ast::DataConstructor>)>,
 
     value_groups: Arena<ValueGroup>,
     name_to_value: FxHashMap<SmolStr, ValueGroupId>,
@@ -51,13 +62,21 @@ pub struct NominalMap {
 
 impl NominalMap {
     fn new(file_id: FileId) -> NominalMap {
+        let data_groups = Arena::default();
         let name_to_data = FxHashMap::default();
         let name_to_constructor = FxHashMap::default();
 
         let value_groups = Arena::default();
         let name_to_value = FxHashMap::default();
 
-        NominalMap { file_id, name_to_data, name_to_constructor, value_groups, name_to_value }
+        NominalMap {
+            file_id,
+            data_groups,
+            name_to_data,
+            name_to_constructor,
+            value_groups,
+            name_to_value,
+        }
     }
 
     pub(crate) fn nominal_map_query(db: &dyn ResolverDatabase, file_id: FileId) -> Arc<NominalMap> {
@@ -75,12 +94,19 @@ impl NominalMap {
         Arc::new(nominal_map)
     }
 
-    pub fn data_id(&self, name: impl AsRef<str>) -> Option<AstId<ast::DataDeclaration>> {
+    pub fn data_id(&self, name: impl AsRef<str>) -> Option<DataGroupId> {
         self.name_to_data.get(name.as_ref()).copied()
     }
 
-    pub fn constructor_id(&self, name: impl AsRef<str>) -> Option<AstId<ast::DataConstructor>> {
+    pub fn constructor_id(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<(DataGroupId, AstId<ast::DataConstructor>)> {
         self.name_to_constructor.get(name.as_ref()).copied()
+    }
+
+    pub fn data_group_data(&self, id: InFile<DataGroupId>) -> &DataGroup {
+        &self.data_groups[id.value]
     }
 
     pub fn value_group_id(&self, name: impl AsRef<str>) -> Option<InFile<ValueGroupId>> {
@@ -103,7 +129,7 @@ impl NominalMap {
 
 #[derive(Debug, PartialEq, Eq)]
 enum DeclarationKey {
-    Data,
+    Data(Option<SmolStr>),
     Value(Option<SmolStr>),
 }
 
@@ -119,7 +145,12 @@ fn collect(
     }
 
     let groups = declarations.group_by(|declaration| match declaration {
-        ast::Declaration::DataDeclaration(_) => DeclarationKey::Data,
+        ast::Declaration::DataAnnotation(data) => {
+            DeclarationKey::Data(data.name().and_then(|name| name.as_str()))
+        }
+        ast::Declaration::DataDeclaration(data) => {
+            DeclarationKey::Data(data.name().and_then(|name| name.as_str()))
+        }
         ast::Declaration::ForeignDataDeclaration(_) => todo!("Unimplemented!"),
         ast::Declaration::ValueAnnotationDeclaration(value) => {
             DeclarationKey::Value(value.name().and_then(|name| name.as_str()))
@@ -131,8 +162,8 @@ fn collect(
 
     for (key, group) in groups.into_iter() {
         match key {
-            DeclarationKey::Data => {
-                collect_data(nominal_map, positional_map, group)?;
+            DeclarationKey::Data(name) => {
+                collect_data(nominal_map, positional_map, name, group)?;
             }
             DeclarationKey::Value(name) => {
                 collect_value(nominal_map, positional_map, name, group)?;
@@ -146,21 +177,47 @@ fn collect(
 fn collect_data(
     nominal_map: &mut NominalMap,
     positional_map: &PositionalMap,
+    name: Option<SmolStr>,
     group: impl Iterator<Item = ast::Declaration>,
 ) -> Option<()> {
-    let declarations = group.map(|declaration| match declaration {
-        ast::Declaration::DataDeclaration(d) => d,
-        _ => unreachable!("Impossible."),
-    });
+    let name = name?;
+    let mut group = group;
 
-    for data in declarations {
-        let name = data.name()?.as_str()?;
-        nominal_map.name_to_data.insert(name, positional_map.ast_id(&data));
+    let mut annotation = None;
 
-        for constructor in data.constructors()?.children() {
-            let name = constructor.name()?.as_str()?;
-            nominal_map.name_to_constructor.insert(name, positional_map.ast_id(&constructor));
+    let mut declaration = group.next()?;
+    if let ast::Declaration::DataAnnotation(a) = &declaration {
+        annotation = Some(positional_map.ast_id(a));
+        declaration = group.next()?;
+    }
+
+    if let ast::Declaration::DataDeclaration(d) = &declaration {
+        let declaration = positional_map.ast_id(d);
+        let mut constructors = FxHashMap::default();
+
+        for constructor_ast in d.constructors()?.children() {
+            let constructor_name = constructor_ast.name()?.as_str()?;
+            constructors.insert(constructor_name, positional_map.ast_id(&constructor_ast));
         }
+
+        let data_name = name.clone();
+        let data_group_id = nominal_map.data_groups.alloc(DataGroup {
+            name,
+            annotation,
+            declaration,
+            constructors,
+        });
+
+        let data_group = &nominal_map.data_groups[data_group_id];
+
+        nominal_map.name_to_data.insert(data_name, data_group_id);
+        for (constructor_name, constructor_id) in data_group.constructors.iter() {
+            nominal_map
+                .name_to_constructor
+                .insert(constructor_name.clone(), (data_group_id, *constructor_id));
+        }
+    } else {
+        unreachable!("Impossible.");
     }
 
     Some(())

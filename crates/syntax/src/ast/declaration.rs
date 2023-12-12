@@ -22,6 +22,12 @@ _create_ast_v!(
     LetBindingSignature(LetBindingSignature)
 );
 
+impl DataAnnotation {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+}
+
 impl DataDeclaration {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
