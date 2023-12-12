@@ -10,7 +10,7 @@ use syntax::{
 };
 
 use crate::{
-    id::InFile,
+    id::{AstId, InFile},
     names::{Name, Qualified},
     resolver::ValueGroupId,
     surface::{LetNameEquation, LetNamePtr},
@@ -18,9 +18,9 @@ use crate::{
 };
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetName, LetNameAnnotation,
-    Literal, RecordItem, SourceMap, Type, TypeId, ValueAnnotation, ValueEquation, ValueGroup,
-    WhereExpr, WithArena,
+    Binder, BinderId, Binding, DataConstructor, DataGroup, Expr, ExprId, IntOrNumber, LetBinding,
+    LetName, LetNameAnnotation, Literal, RecordItem, SourceMap, Type, TypeId, TypeVariable,
+    ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
 };
 
 #[derive(Default)]
@@ -506,4 +506,46 @@ impl SurfaceContext {
             },
         }
     }
+}
+
+pub(crate) fn data_surface_query(
+    db: &dyn SurfaceDatabase,
+    id: InFile<AstId<ast::DataDeclaration>>,
+) -> (Arc<Arena<Type>>, Arc<DataGroup>) {
+    let data_declaration: ast::DataDeclaration = id.to_ast(db);
+
+    let mut surface_context = SurfaceContext::default();
+
+    let constructors = data_declaration
+        .constructors()
+        .unwrap()
+        .children()
+        .map(|constructor| {
+            let name = constructor.name().unwrap().as_str().unwrap();
+            let fields = constructor
+                .fields()
+                .unwrap()
+                .children()
+                .map(|field| surface_context.lower_type(&field).unwrap())
+                .collect_vec();
+            DataConstructor { name, fields }
+        })
+        .collect_vec();
+
+    let variables = data_declaration
+        .variables()
+        .unwrap()
+        .children()
+        .map(|type_variable_binding| match type_variable_binding {
+            ast::TypeVariableBinding::TypeVariableKinded(k) => TypeVariable::Kinded(
+                k.name().unwrap().as_str().unwrap(),
+                surface_context.lower_type(&k.kind().unwrap()).unwrap(),
+            ),
+            ast::TypeVariableBinding::TypeVariableName(n) => {
+                TypeVariable::Name(n.name().unwrap().as_str().unwrap())
+            }
+        })
+        .collect_vec();
+
+    (Arc::new(surface_context.type_arena), Arc::new(DataGroup { constructors, variables }))
 }

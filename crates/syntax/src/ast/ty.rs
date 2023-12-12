@@ -37,6 +37,10 @@ impl TypeVariableKinded {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?.first_child()?.first_child()?)
     }
+
+    pub fn kind(&self) -> Option<Type> {
+        Type::cast(self.node.first_child()?.first_child()?.last_child()?)
+    }
 }
 
 impl TypeVariableName {

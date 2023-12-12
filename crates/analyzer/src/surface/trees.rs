@@ -36,6 +36,24 @@ impl<T> WithArena<T> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub enum TypeVariable {
+    Kinded(SmolStr, TypeId),
+    Name(SmolStr),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataConstructor {
+    pub name: SmolStr,
+    pub fields: Vec<TypeId>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataGroup {
+    pub constructors: Vec<DataConstructor>,
+    pub variables: Vec<TypeVariable>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValueAnnotation {
     pub ty: TypeId,
 }
