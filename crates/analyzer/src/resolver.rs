@@ -24,7 +24,7 @@ use crate::SourceDatabase;
 pub use export::Exports;
 pub use import::{QualifiedImports, UnqualifiedImports};
 pub use module::ModuleMap;
-pub use nominal::{NominalMap, ValueGroup, ValueGroupId};
+pub use nominal::{DataGroup, DataGroupId, NominalMap, ValueGroup, ValueGroupId};
 pub use positional::PositionalMap;
 
 #[salsa::query_group(ResolverStorage)]
