@@ -52,7 +52,7 @@ impl SurfaceContext {
     pub(crate) fn data_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<DataGroupId>,
-    ) -> (Arc<Arena<Type>>, Arc<DataGroup>) {
+    ) -> Arc<WithArena<DataGroup>> {
         let nominal_map = db.nominal_map(id.file_id);
         let group_data = nominal_map.data_group_data(id);
         let mut surface_context = SurfaceContext::default();
@@ -85,7 +85,13 @@ impl SurfaceContext {
         let declaration = DataDeclaration { constructors, variables };
         let data_group = DataGroup { name, annotation, declaration };
 
-        (Arc::new(surface_context.type_arena), Arc::new(data_group))
+        Arc::new(WithArena::new(
+            surface_context.expr_arena,
+            surface_context.let_name_arena,
+            surface_context.binder_arena,
+            surface_context.type_arena,
+            data_group,
+        ))
     }
 
     pub(crate) fn value_surface_query(
