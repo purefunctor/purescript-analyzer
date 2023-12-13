@@ -4,10 +4,7 @@ use itertools::Itertools;
 use la_arena::Arena;
 use rowan::{ast::AstNode, NodeOrToken};
 use smol_str::SmolStr;
-use syntax::{
-    ast::{self},
-    PureScript, SyntaxKind, SyntaxNodePtr,
-};
+use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 
 use crate::{
     id::InFile,
@@ -17,11 +14,7 @@ use crate::{
     SurfaceDatabase,
 };
 
-use super::{
-    Binder, BinderId, Binding, DataAnnotation, DataConstructor, DataDeclaration, DataGroup, Expr,
-    ExprId, IntOrNumber, LetBinding, LetName, LetNameAnnotation, Literal, RecordItem, SourceMap,
-    Type, TypeId, TypeVariable, ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
-};
+use super::{trees::*, SourceMap};
 
 #[derive(Default)]
 pub(crate) struct SurfaceContext {
@@ -56,6 +49,45 @@ impl SurfaceContext {
 }
 
 impl SurfaceContext {
+    pub(crate) fn data_surface_query(
+        db: &dyn SurfaceDatabase,
+        id: InFile<DataGroupId>,
+    ) -> (Arc<Arena<Type>>, Arc<DataGroup>) {
+        let nominal_map = db.nominal_map(id.file_id);
+        let group_data = nominal_map.data_group_data(id);
+        let mut surface_context = SurfaceContext::default();
+
+        let name = group_data.name.clone();
+        let annotation = group_data.annotation.and_then(|annotation| {
+            let annotation = annotation.in_file(id.file_id).to_ast(db);
+            surface_context.lower_data_annotation(&annotation)
+        });
+
+        let constructors = group_data
+            .constructors
+            .values()
+            .map(|constructor_id| {
+                let constructor = constructor_id.in_file(id.file_id).to_ast(db);
+                (*constructor_id, surface_context.lower_data_constructor(&constructor).unwrap())
+            })
+            .collect();
+
+        let declaration = group_data.declaration.in_file(id.file_id).to_ast(db);
+        let variables = declaration
+            .variables()
+            .unwrap()
+            .children()
+            .map(|type_variable_binding| {
+                surface_context.lower_type_variable_binding(&type_variable_binding).unwrap()
+            })
+            .collect();
+
+        let declaration = DataDeclaration { constructors, variables };
+        let data_group = DataGroup { name, annotation, declaration };
+
+        (Arc::new(surface_context.type_arena), Arc::new(data_group))
+    }
+
     pub(crate) fn value_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
@@ -508,59 +540,39 @@ impl SurfaceContext {
     }
 }
 
-pub(crate) fn data_surface_query(
-    db: &dyn SurfaceDatabase,
-    id: InFile<DataGroupId>,
-) -> (Arc<Arena<Type>>, Arc<DataGroup>) {
-    let nominal_map = db.nominal_map(id.file_id);
-    let data_group = nominal_map.data_group_data(id);
-    let mut surface_context = SurfaceContext::default();
-
-    let name = data_group.name.clone();
-
-    let annotation = data_group.annotation.and_then(|annotation| {
-        let annotation = annotation.in_file(id.file_id).to_ast(db);
-        let ty = surface_context.lower_type(&annotation.kind()?)?;
-        Some(DataAnnotation { ty })
-    });
-
-    let constructors = data_group
-        .constructors
-        .iter()
-        .map(|(name, constructor_id)| {
-            let constructor = constructor_id.in_file(id.file_id).to_ast(db);
-            let name = name.clone();
-            let fields = constructor
-                .fields()
-                .unwrap()
-                .children()
-                .map(|field| surface_context.lower_type(&field).unwrap())
-                .collect();
-            (*constructor_id, DataConstructor { name, fields })
-        })
-        .collect();
-
-    let variables = data_group
-        .declaration
-        .in_file(id.file_id)
-        .to_ast(db)
-        .variables()
-        .unwrap()
-        .children()
-        .map(|type_variable_binding| match type_variable_binding {
-            ast::TypeVariableBinding::TypeVariableKinded(k) => TypeVariable::Kinded(
-                k.name().unwrap().as_str().unwrap(),
-                surface_context.lower_type(&k.kind().unwrap()).unwrap(),
-            ),
-            ast::TypeVariableBinding::TypeVariableName(n) => {
-                TypeVariable::Name(n.name().unwrap().as_str().unwrap())
+impl SurfaceContext {
+    fn lower_type_variable_binding(
+        &mut self,
+        type_variable_binding: &ast::TypeVariableBinding,
+    ) -> Option<TypeVariable> {
+        match type_variable_binding {
+            ast::TypeVariableBinding::TypeVariableKinded(k) => {
+                Some(TypeVariable::Kinded(k.name()?.as_str()?, self.lower_type(&k.kind()?)?))
             }
-        })
-        .collect_vec();
+            ast::TypeVariableBinding::TypeVariableName(n) => {
+                Some(TypeVariable::Name(n.name()?.as_str()?))
+            }
+        }
+    }
 
-    let declaration = DataDeclaration { constructors, variables };
+    fn lower_data_annotation(
+        &mut self,
+        annotation: &ast::DataAnnotation,
+    ) -> Option<DataAnnotation> {
+        let ty = self.lower_type(&annotation.kind()?)?;
+        Some(DataAnnotation { ty })
+    }
 
-    let data_group = DataGroup { name, annotation, declaration };
-
-    (Arc::new(surface_context.type_arena), Arc::new(data_group))
+    fn lower_data_constructor(
+        &mut self,
+        constructor: &ast::DataConstructor,
+    ) -> Option<DataConstructor> {
+        let name = constructor.name()?.as_str()?;
+        let fields = constructor
+            .fields()?
+            .children()
+            .map(|field| self.lower_type(&field))
+            .collect::<Option<_>>()?;
+        Some(DataConstructor { name, fields })
+    }
 }

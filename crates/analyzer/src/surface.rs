@@ -19,7 +19,7 @@ use crate::{
 
 #[salsa::query_group(SurfaceStorage)]
 pub trait SurfaceDatabase: SourceDatabase + ResolverDatabase {
-    #[salsa::invoke(lower::data_surface_query)]
+    #[salsa::invoke(SurfaceContext::data_surface_query)]
     fn data_surface(&self, id: InFile<DataGroupId>) -> (Arc<Arena<Type>>, Arc<DataGroup>);
 
     #[salsa::invoke(SurfaceContext::value_surface_query)]
