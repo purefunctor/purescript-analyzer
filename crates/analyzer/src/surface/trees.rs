@@ -42,6 +42,23 @@ pub enum TypeVariable {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct DataAnnotation {
+    pub ty: TypeId,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataDeclaration {
+    pub constructors: FxHashMap<AstId<ast::DataConstructor>, DataConstructor>,
+    pub variables: Vec<TypeVariable>,
+}
+
+impl DataDeclaration {
+    pub fn get_constructor(&self, id: AstId<ast::DataConstructor>) -> &DataConstructor {
+        self.constructors.get(&id).unwrap()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct DataConstructor {
     pub name: SmolStr,
     pub fields: Vec<TypeId>,
@@ -49,8 +66,9 @@ pub struct DataConstructor {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DataGroup {
-    pub constructors: Vec<DataConstructor>,
-    pub variables: Vec<TypeVariable>,
+    pub name: SmolStr,
+    pub annotation: Option<DataAnnotation>,
+    pub declaration: DataDeclaration,
 }
 
 #[derive(Debug, PartialEq, Eq)]

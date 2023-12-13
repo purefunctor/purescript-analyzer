@@ -10,17 +10,17 @@ use syntax::{
 };
 
 use crate::{
-    id::{AstId, InFile},
+    id::InFile,
     names::{Name, Qualified},
-    resolver::ValueGroupId,
+    resolver::{nominal::DataGroupId, ValueGroupId},
     surface::{LetNameEquation, LetNamePtr},
     SurfaceDatabase,
 };
 
 use super::{
-    Binder, BinderId, Binding, DataConstructor, DataGroup, Expr, ExprId, IntOrNumber, LetBinding,
-    LetName, LetNameAnnotation, Literal, RecordItem, SourceMap, Type, TypeId, TypeVariable,
-    ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
+    Binder, BinderId, Binding, DataAnnotation, DataConstructor, DataDeclaration, DataGroup, Expr,
+    ExprId, IntOrNumber, LetBinding, LetName, LetNameAnnotation, Literal, RecordItem, SourceMap,
+    Type, TypeId, TypeVariable, ValueAnnotation, ValueEquation, ValueGroup, WhereExpr, WithArena,
 };
 
 #[derive(Default)]
@@ -510,29 +510,40 @@ impl SurfaceContext {
 
 pub(crate) fn data_surface_query(
     db: &dyn SurfaceDatabase,
-    id: InFile<AstId<ast::DataDeclaration>>,
+    id: InFile<DataGroupId>,
 ) -> (Arc<Arena<Type>>, Arc<DataGroup>) {
-    let data_declaration: ast::DataDeclaration = id.to_ast(db);
-
+    let nominal_map = db.nominal_map(id.file_id);
+    let data_group = nominal_map.data_group_data(id);
     let mut surface_context = SurfaceContext::default();
 
-    let constructors = data_declaration
-        .constructors()
-        .unwrap()
-        .children()
-        .map(|constructor| {
-            let name = constructor.name().unwrap().as_str().unwrap();
+    let name = data_group.name.clone();
+
+    let annotation = data_group.annotation.and_then(|annotation| {
+        let annotation = annotation.in_file(id.file_id).to_ast(db);
+        let ty = surface_context.lower_type(&annotation.kind()?)?;
+        Some(DataAnnotation { ty })
+    });
+
+    let constructors = data_group
+        .constructors
+        .iter()
+        .map(|(name, constructor_id)| {
+            let constructor = constructor_id.in_file(id.file_id).to_ast(db);
+            let name = name.clone();
             let fields = constructor
                 .fields()
                 .unwrap()
                 .children()
                 .map(|field| surface_context.lower_type(&field).unwrap())
-                .collect_vec();
-            DataConstructor { name, fields }
+                .collect();
+            (*constructor_id, DataConstructor { name, fields })
         })
-        .collect_vec();
+        .collect();
 
-    let variables = data_declaration
+    let variables = data_group
+        .declaration
+        .in_file(id.file_id)
+        .to_ast(db)
         .variables()
         .unwrap()
         .children()
@@ -547,5 +558,9 @@ pub(crate) fn data_surface_query(
         })
         .collect_vec();
 
-    (Arc::new(surface_context.type_arena), Arc::new(DataGroup { constructors, variables }))
+    let declaration = DataDeclaration { constructors, variables };
+
+    let data_group = DataGroup { name, annotation, declaration };
+
+    (Arc::new(surface_context.type_arena), Arc::new(data_group))
 }

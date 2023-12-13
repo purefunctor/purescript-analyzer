@@ -26,6 +26,10 @@ impl DataAnnotation {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
     }
+
+    pub fn kind(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
 }
 
 impl DataDeclaration {
