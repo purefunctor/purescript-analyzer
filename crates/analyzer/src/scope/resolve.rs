@@ -8,15 +8,18 @@ use rustc_hash::FxHashMap;
 use crate::{
     id::InFile,
     resolver::{NominalMap, ValueGroupId},
-    scope::{BinderKind, ResolutionKind, ScopeKind},
+    scope::{BinderKind, ScopeKind, VariableResolution},
     surface::{
-        visitor::{default_visit_expr, Visitor},
-        Binder, Expr, ExprId, LetName, Type,
+        visitor::{default_visit_binder, default_visit_expr, Visitor},
+        Binder, BinderId, Expr, ExprId, LetName, Type,
     },
     ScopeDatabase,
 };
 
-use super::{Resolution, ValueGroupResolutions, ValueGroupScope, WithScope};
+use super::{
+    ConstructorResolution, ValueGroupResolutions, ValueGroupScope, VariableResolutionKind,
+    WithScope,
+};
 
 pub(crate) struct ResolveContext<'a> {
     expr_arena: &'a Arena<Expr>,
@@ -25,7 +28,9 @@ pub(crate) struct ResolveContext<'a> {
     type_arena: &'a Arena<Type>,
     value_scope: &'a WithScope<ValueGroupScope>,
     nominal_map: &'a NominalMap,
-    per_expr: FxHashMap<ExprId, Resolution>,
+    per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
+    per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+    per_variable: FxHashMap<ExprId, VariableResolution>,
 }
 
 impl<'a> ResolveContext<'a> {
@@ -37,7 +42,9 @@ impl<'a> ResolveContext<'a> {
         value_scope: &'a WithScope<ValueGroupScope>,
         nominal_map: &'a NominalMap,
     ) -> ResolveContext<'a> {
-        let per_expr = FxHashMap::default();
+        let per_constructor_expr = FxHashMap::default();
+        let per_constructor_binder = FxHashMap::default();
+        let per_variable = FxHashMap::default();
         ResolveContext {
             expr_arena,
             let_name_arena,
@@ -45,7 +52,9 @@ impl<'a> ResolveContext<'a> {
             type_arena,
             value_scope,
             nominal_map,
-            per_expr,
+            per_constructor_expr,
+            per_constructor_binder,
+            per_variable,
         }
     }
 
@@ -70,10 +79,40 @@ impl<'a> ResolveContext<'a> {
             resolve_context.visit_value_equation(value_equation);
         });
 
-        Arc::new(ValueGroupResolutions::new(resolve_context.per_expr))
+        Arc::new(ValueGroupResolutions::new(
+            resolve_context.per_constructor_expr,
+            resolve_context.per_constructor_binder,
+            resolve_context.per_variable,
+        ))
     }
 
-    fn resolve_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
+    fn resolve_constructor_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
+        let name = name.as_ref();
+        self.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
+            self.per_constructor_expr.insert(
+                expr_id,
+                ConstructorResolution {
+                    data_id: data_id.value,
+                    constructor_id: constructor_id.value,
+                },
+            )
+        });
+    }
+
+    fn resolve_constructor_binder(&mut self, binder_id: BinderId, name: impl AsRef<str>) {
+        let name = name.as_ref();
+        self.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
+            self.per_constructor_binder.insert(
+                binder_id,
+                ConstructorResolution {
+                    data_id: data_id.value,
+                    constructor_id: constructor_id.value,
+                },
+            )
+        });
+    }
+
+    fn resolve_variable_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
         let name = name.as_ref();
         let expr_scope_id = self.value_scope.expr_scope(expr_id);
 
@@ -86,21 +125,21 @@ impl<'a> ResolveContext<'a> {
                         if let BinderKind::Thunk = kind {
                             thunked = true;
                         }
-                        Some(ResolutionKind::Binder(*names.get(name)?))
+                        Some(VariableResolutionKind::Binder(*names.get(name)?))
                     }
                     ScopeKind::LetBound(names, _) => {
-                        Some(ResolutionKind::LetName(*names.get(name)?))
+                        Some(VariableResolutionKind::LetName(*names.get(name)?))
                     }
                 }
             });
 
         let kind = kind.or_else(|| {
             let id = self.nominal_map.value_group_id(name)?;
-            Some(ResolutionKind::Local(id.value))
+            Some(VariableResolutionKind::Local(id.value))
         });
 
         if let Some(kind) = kind {
-            self.per_expr.insert(expr_id, Resolution { thunked, kind });
+            self.per_variable.insert(expr_id, VariableResolution { thunked, kind });
         }
     }
 }
@@ -124,10 +163,25 @@ impl<'a> Visitor<'a> for ResolveContext<'a> {
 
     fn visit_expr(&mut self, expr_id: ExprId) {
         match &self.expr_arena[expr_id] {
+            Expr::Constructor(constructor) => {
+                self.resolve_constructor_expr(expr_id, &constructor.value);
+            }
             Expr::Variable(variable) => {
-                self.resolve_expr(expr_id, &variable.value);
+                self.resolve_variable_expr(expr_id, &variable.value);
             }
             _ => default_visit_expr(self, expr_id),
+        }
+    }
+
+    fn visit_binder(&mut self, binder_id: BinderId) {
+        match &self.binder_arena[binder_id] {
+            Binder::Constructor { name, fields } => {
+                self.resolve_constructor_binder(binder_id, &name.value);
+                for field in fields.iter() {
+                    default_visit_binder(self, *field);
+                }
+            }
+            _ => default_visit_binder(self, binder_id),
         }
     }
 }

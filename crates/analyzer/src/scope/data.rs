@@ -4,9 +4,11 @@ use std::{iter, ops};
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use syntax::ast;
 
 use crate::{
-    resolver::ValueGroupId,
+    id::AstId,
+    resolver::{DataGroupId, ValueGroupId},
     surface::{BinderId, ExprId, LetNameId},
 };
 
@@ -132,16 +134,20 @@ impl WithScope<ValueGroupScope> {
     }
 }
 
-/// The result of name resolution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Resolution {
-    pub thunked: bool,
-    pub kind: ResolutionKind,
+pub struct ConstructorResolution {
+    pub data_id: DataGroupId,
+    pub constructor_id: AstId<ast::DataConstructor>,
 }
 
-/// The kind that a name resolves to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResolutionKind {
+pub struct VariableResolution {
+    pub thunked: bool,
+    pub kind: VariableResolutionKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VariableResolutionKind {
     Binder(BinderId),
     LetName(LetNameId),
     Local(ValueGroupId),
@@ -150,18 +156,38 @@ pub enum ResolutionKind {
 /// Name resolution information for a [`ValueGroupId`].
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroupResolutions {
+    /// A mapping from [`Expr::Constructor`] IDs to their resolutions.
+    ///
+    /// [`Expr::Constructor`]: crate::surface::Expr::Constructor
+    per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
+    /// A mapping from [`Binder::Constructor`] IDs to their resolutions.
+    ///
+    /// [`Binder::Constructor`]: crate::surface::Binder::Constructor
+    per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
     /// A mapping from [`Expr::Variable`] IDs to their resolutions.
     ///
     /// [`Expr::Variable`]: crate::surface::Expr::Variable
-    resolutions: FxHashMap<ExprId, Resolution>,
+    per_variable: FxHashMap<ExprId, VariableResolution>,
 }
 
 impl ValueGroupResolutions {
-    pub(crate) fn new(resolutions: FxHashMap<ExprId, Resolution>) -> ValueGroupResolutions {
-        ValueGroupResolutions { resolutions }
+    pub(crate) fn new(
+        per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
+        per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+        per_variable: FxHashMap<ExprId, VariableResolution>,
+    ) -> ValueGroupResolutions {
+        ValueGroupResolutions { per_constructor_expr, per_constructor_binder, per_variable }
     }
 
-    pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
-        self.resolutions.get(&expr_id).copied()
+    pub fn get_constructor_expr(&self, expr_id: ExprId) -> Option<ConstructorResolution> {
+        self.per_constructor_expr.get(&expr_id).copied()
+    }
+
+    pub fn get_constructor_binder(&self, binder_id: BinderId) -> Option<ConstructorResolution> {
+        self.per_constructor_binder.get(&binder_id).copied()
+    }
+
+    pub fn get_variable(&self, expr_id: ExprId) -> Option<VariableResolution> {
+        self.per_variable.get(&expr_id).copied()
     }
 }

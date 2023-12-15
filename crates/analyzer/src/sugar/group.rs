@@ -10,7 +10,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::{
     id::InFile,
     resolver::ValueGroupId,
-    scope::{ResolutionKind, ValueGroupResolutions},
+    scope::{ValueGroupResolutions, VariableResolutionKind},
     surface::{
         visitor::{default_visit_expr, Visitor},
         Binder, Expr, ExprId, LetBinding, LetName, LetNameId, Type, WhereExpr,
@@ -187,8 +187,8 @@ impl<'a> Visitor<'a> for BindingGroupsContext<'a> {
     fn visit_expr(&mut self, expr_id: ExprId) {
         match &self.expr_arena[expr_id] {
             Expr::Variable(_) => {
-                if let Some(resolution) = self.resolutions.get(expr_id) {
-                    if let ResolutionKind::Local(dependency) = resolution.kind {
+                if let Some(resolution) = self.resolutions.get_variable(expr_id) {
+                    if let VariableResolutionKind::Local(dependency) = resolution.kind {
                         self.value_graph.add_edge(
                             self.value_group_id,
                             dependency,
@@ -370,8 +370,8 @@ impl<'a> Visitor<'a> for LetBindingGroupsContext<'a> {
             }
             Expr::Variable(_) => {
                 if let Some(dependent) = self.on_let_name_id {
-                    if let Some(resolution) = self.resolutions.get(expr_id) {
-                        if let ResolutionKind::LetName(dependency) = resolution.kind {
+                    if let Some(resolution) = self.resolutions.get_variable(expr_id) {
+                        if let VariableResolutionKind::LetName(dependency) = resolution.kind {
                             self.let_name_graph.add_edge(dependent, dependency, resolution.thunked);
                         }
                     }

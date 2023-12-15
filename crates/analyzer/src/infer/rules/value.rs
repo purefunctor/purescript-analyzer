@@ -11,7 +11,7 @@ use crate::{
     id::{AstId, InFile},
     infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification, ValueGroupTypes},
     resolver::ValueGroupId,
-    scope::{ResolutionKind, ValueGroupResolutions},
+    scope::{ValueGroupResolutions, VariableResolutionKind},
     sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
     surface, InferDatabase,
 };
@@ -373,11 +373,11 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn infer_expr_variable(&mut self, expr_id: surface::ExprId) -> TypeId {
         self.value_env
             .resolutions
-            .get(expr_id)
+            .get_variable(expr_id)
             .and_then(|resolution| match resolution.kind {
-                ResolutionKind::Binder(b) => self.of_binder.get(&b).copied(),
-                ResolutionKind::LetName(l) => self.of_let_name.get(&l).copied(),
-                ResolutionKind::Local(l) => {
+                VariableResolutionKind::Binder(b) => self.of_binder.get(&b).copied(),
+                VariableResolutionKind::LetName(l) => self.of_let_name.get(&l).copied(),
+                VariableResolutionKind::Local(l) => {
                     if let Some(t) = self.value_env.of_sibling.get(&l) {
                         Some(*t)
                     } else {
