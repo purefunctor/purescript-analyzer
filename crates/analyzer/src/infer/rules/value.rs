@@ -197,7 +197,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 
     fn infer_annotation(&mut self, annotation: &surface::ValueAnnotation) -> TypeId {
-        lower_type(self.db, self.value_arenas.type_arena, annotation.ty)
+        lower_type(self.db, self.value_arenas.type_arena, self.value_env.resolutions, annotation.ty)
     }
 
     fn infer_equation(
@@ -240,7 +240,12 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                         let let_name = &self.value_arenas.let_name_arena[*id];
 
                         let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
-                            lower_type(self.db, self.value_arenas.type_arena, annotation.ty)
+                            lower_type(
+                                self.db,
+                                self.value_arenas.type_arena,
+                                self.value_env.resolutions,
+                                annotation.ty,
+                            )
                         });
 
                         let mut equations = let_name.equations.iter();
