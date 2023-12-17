@@ -15,6 +15,6 @@ pub trait ScopeDatabase: SurfaceDatabase {
     #[salsa::invoke(CollectContext::value_scope_query)]
     fn value_scope(&self, id: InFile<ValueGroupId>) -> Arc<WithScope<ValueGroupScope>>;
 
-    #[salsa::invoke(ResolveContext::value_resolve_query)]
-    fn value_resolved(&self, id: InFile<ValueGroupId>) -> Arc<ValueGroupResolutions>;
+    #[salsa::invoke(ResolveContext::value_resolutions_query)]
+    fn value_resolutions(&self, id: InFile<ValueGroupId>) -> Arc<Resolutions>;
 }

@@ -160,7 +160,7 @@ pub enum VariableResolutionKind {
 
 /// Name resolution information for a [`ValueGroupId`].
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupResolutions {
+pub struct Resolutions {
     /// A mapping from [`Expr::Constructor`] IDs to their resolutions.
     ///
     /// [`Expr::Constructor`]: crate::surface::Expr::Constructor
@@ -179,19 +179,14 @@ pub struct ValueGroupResolutions {
     per_variable: FxHashMap<ExprId, VariableResolution>,
 }
 
-impl ValueGroupResolutions {
+impl Resolutions {
     pub(crate) fn new(
         per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
         per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
         per_type_type: FxHashMap<TypeId, TypeResolution>,
         per_variable: FxHashMap<ExprId, VariableResolution>,
-    ) -> ValueGroupResolutions {
-        ValueGroupResolutions {
-            per_constructor_expr,
-            per_constructor_binder,
-            per_type_type,
-            per_variable,
-        }
+    ) -> Resolutions {
+        Resolutions { per_constructor_expr, per_constructor_binder, per_type_type, per_variable }
     }
 
     pub fn get_constructor_expr(&self, expr_id: ExprId) -> Option<ConstructorResolution> {

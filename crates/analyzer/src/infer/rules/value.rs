@@ -11,7 +11,7 @@ use crate::{
     id::{AstId, InFile},
     infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification, ValueGroupTypes},
     resolver::ValueGroupId,
-    scope::{ValueGroupResolutions, VariableResolutionKind},
+    scope::{Resolutions, VariableResolutionKind},
     sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
     surface, InferDatabase,
 };
@@ -32,7 +32,7 @@ struct ValueGroupEnv<'env> {
     binding_groups: &'env BindingGroups,
     let_binding_groups: &'env LetBindingGroups,
     of_sibling: &'env FxHashMap<ValueGroupId, TypeId>,
-    resolutions: &'env ValueGroupResolutions,
+    resolutions: &'env Resolutions,
 }
 
 struct InferBindingGroupContext<'env, 'state> {
@@ -142,7 +142,7 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
         of_sibling: &FxHashMap<ValueGroupId, TypeId>,
     ) {
         let value_surface = self.db.value_surface(id);
-        let value_resolutions = self.db.value_resolved(id);
+        let value_resolutions = self.db.value_resolutions(id);
         let binding_groups = self.db.binding_groups(id.file_id);
         let let_binding_groups = self.db.let_binding_groups(id);
 

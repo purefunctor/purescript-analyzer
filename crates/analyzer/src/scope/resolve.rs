@@ -17,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    ConstructorResolution, TypeResolution, ValueGroupResolutions, ValueGroupScope,
-    VariableResolutionKind, WithScope,
+    ConstructorResolution, Resolutions, TypeResolution, ValueGroupScope, VariableResolutionKind,
+    WithScope,
 };
 
 pub(crate) struct ResolveContext<'a> {
@@ -61,10 +61,10 @@ impl<'a> ResolveContext<'a> {
         }
     }
 
-    pub(crate) fn value_resolve_query(
+    pub(crate) fn value_resolutions_query(
         db: &dyn ScopeDatabase,
         id: InFile<ValueGroupId>,
-    ) -> Arc<ValueGroupResolutions> {
+    ) -> Arc<Resolutions> {
         let value_surface = db.value_surface(id);
         let value_scope = db.value_scope(id);
         let nominal_map = db.nominal_map(id.file_id);
@@ -82,7 +82,7 @@ impl<'a> ResolveContext<'a> {
             resolve_context.visit_value_equation(value_equation);
         });
 
-        Arc::new(ValueGroupResolutions::new(
+        Arc::new(Resolutions::new(
             resolve_context.per_constructor_expr,
             resolve_context.per_constructor_binder,
             resolve_context.per_type_type,
