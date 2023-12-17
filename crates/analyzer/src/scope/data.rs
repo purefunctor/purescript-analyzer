@@ -87,7 +87,7 @@ pub enum LetKind {
 pub type ScopeId = Idx<ScopeData>;
 
 /// A value associated with scope data.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct WithScope<T> {
     scope_arena: Arena<ScopeData>,
     value: T,
@@ -114,7 +114,7 @@ impl<T> ops::Index<ScopeId> for WithScope<T> {
 /// Scope information for a [`ValueGroupId`].
 ///
 /// [`ValueGroupId`]: crate::resolver::ValueGroupId
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ValueGroupScope {
     per_expr: FxHashMap<ExprId, ScopeId>,
 }
