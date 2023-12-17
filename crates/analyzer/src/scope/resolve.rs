@@ -7,7 +7,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     id::InFile,
-    resolver::{NominalMap, ValueGroupId},
+    resolver::{DataGroupId, NominalMap, ValueGroupId},
     scope::{BinderKind, ScopeKind, VariableResolution},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, default_visit_type, Visitor},
@@ -59,6 +59,37 @@ impl<'a> ResolveContext<'a> {
             per_type_type,
             per_variable,
         }
+    }
+
+    pub(crate) fn data_resolutions_query(
+        db: &dyn ScopeDatabase,
+        id: InFile<DataGroupId>,
+    ) -> Arc<Resolutions> {
+        let data_surface = db.data_surface(id);
+        let value_scope = Default::default();
+        let nominal_map = db.nominal_map(id.file_id);
+
+        let mut resolve_context = ResolveContext::new(
+            &data_surface.expr_arena,
+            &data_surface.let_name_arena,
+            &data_surface.binder_arena,
+            &data_surface.type_arena,
+            &value_scope,
+            &nominal_map,
+        );
+
+        data_surface.value.declaration.constructors.iter().for_each(|(_, constructor)| {
+            constructor.fields.iter().for_each(|field| {
+                resolve_context.visit_type(*field);
+            });
+        });
+
+        Arc::new(Resolutions::new(
+            resolve_context.per_constructor_expr,
+            resolve_context.per_constructor_binder,
+            resolve_context.per_type_type,
+            resolve_context.per_variable,
+        ))
     }
 
     pub(crate) fn value_resolutions_query(
