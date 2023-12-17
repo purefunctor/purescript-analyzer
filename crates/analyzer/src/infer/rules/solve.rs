@@ -7,7 +7,7 @@ use crate::{
     InferDatabase,
 };
 
-use super::{unify::UnifyContext, InferState};
+use super::{unify::unify_types, InferState};
 
 pub(super) struct SolveContext<'env, 'state> {
     db: &'env dyn InferDatabase,
@@ -37,7 +37,7 @@ impl<'env, 'state> SolveContext<'env, 'state> {
                     let y_s = self.unification_solved.get(&y_u).copied();
                     match (x_s, y_s) {
                         (Some(x_t), Some(y_t)) => {
-                            UnifyContext::new(self.db, self.infer_state).unify(x_t, y_t)
+                            unify_types(self.db, self.infer_state, x_t, y_t);
                         }
                         (Some(x_t), None) => {
                             self.unification_solved.insert(y_u, x_t);

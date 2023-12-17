@@ -7,22 +7,13 @@ use crate::{
 
 use super::InferState;
 
-pub(super) struct UnifyContext<'env, 'state> {
+struct UnifyContext<'env, 'state> {
     db: &'env dyn InferDatabase,
     infer_state: &'state mut InferState,
 }
 
 impl<'env, 'state> UnifyContext<'env, 'state> {
-    pub(super) fn new(
-        db: &'env dyn InferDatabase,
-        infer_state: &'state mut InferState,
-    ) -> UnifyContext<'env, 'state> {
-        UnifyContext { db, infer_state }
-    }
-}
-
-impl<'env, 'state> UnifyContext<'env, 'state> {
-    pub(super) fn unify(&mut self, x_id: TypeId, y_id: TypeId) {
+    fn unify(&mut self, x_id: TypeId, y_id: TypeId) {
         let pp = PrettyPrinter::new(self.db);
         eprintln!("unify({}, {})", pp.ty(x_id).pretty(80), pp.ty(y_id).pretty(80));
 
@@ -50,4 +41,13 @@ impl<'env, 'state> UnifyContext<'env, 'state> {
             }
         }
     }
+}
+
+pub(super) fn unify_types(
+    db: &dyn InferDatabase,
+    infer_state: &mut InferState,
+    x_id: TypeId,
+    y_id: TypeId,
+) {
+    UnifyContext { db, infer_state }.unify(x_id, y_id)
 }

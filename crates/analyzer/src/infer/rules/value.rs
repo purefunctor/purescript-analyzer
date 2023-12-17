@@ -17,7 +17,7 @@ use crate::{
 };
 
 use super::{
-    lower::lower_type, solve::SolveContext, substitute::ApplySubstitution, unify::UnifyContext,
+    lower::lower_type, solve::SolveContext, substitute::ApplySubstitution, unify::unify_types,
     InferState,
 };
 
@@ -344,7 +344,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                         self.db.intern_type(Type::Function(argument_ty, result_ty))
                     });
 
-                UnifyContext::new(self.db, self.infer_state).unify(function_ty, auxiliary_ty);
+                unify_types(self.db, self.infer_state, function_ty, auxiliary_ty);
 
                 result_ty
             }
