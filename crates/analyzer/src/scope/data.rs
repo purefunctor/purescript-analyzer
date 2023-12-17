@@ -9,7 +9,7 @@ use syntax::ast;
 use crate::{
     id::AstId,
     resolver::{DataGroupId, ValueGroupId},
-    surface::{BinderId, ExprId, LetNameId},
+    surface::{BinderId, ExprId, LetNameId, TypeId},
 };
 
 /// Scope information as a graph node.
@@ -141,6 +141,11 @@ pub struct ConstructorResolution {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TypeResolution {
+    Data(DataGroupId),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VariableResolution {
     pub thunked: bool,
     pub kind: VariableResolutionKind,
@@ -164,6 +169,10 @@ pub struct ValueGroupResolutions {
     ///
     /// [`Binder::Constructor`]: crate::surface::Binder::Constructor
     per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+    /// A mapping from [`Type::Constructor`] IDs to their resolutions.
+    ///
+    /// [`Type::Constructor`]: crate::surface::Type::Constructor
+    per_type_type: FxHashMap<TypeId, TypeResolution>,
     /// A mapping from [`Expr::Variable`] IDs to their resolutions.
     ///
     /// [`Expr::Variable`]: crate::surface::Expr::Variable
@@ -174,9 +183,15 @@ impl ValueGroupResolutions {
     pub(crate) fn new(
         per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
         per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+        per_type_type: FxHashMap<TypeId, TypeResolution>,
         per_variable: FxHashMap<ExprId, VariableResolution>,
     ) -> ValueGroupResolutions {
-        ValueGroupResolutions { per_constructor_expr, per_constructor_binder, per_variable }
+        ValueGroupResolutions {
+            per_constructor_expr,
+            per_constructor_binder,
+            per_type_type,
+            per_variable,
+        }
     }
 
     pub fn get_constructor_expr(&self, expr_id: ExprId) -> Option<ConstructorResolution> {
@@ -185,6 +200,10 @@ impl ValueGroupResolutions {
 
     pub fn get_constructor_binder(&self, binder_id: BinderId) -> Option<ConstructorResolution> {
         self.per_constructor_binder.get(&binder_id).copied()
+    }
+
+    pub fn get_type_type(&self, type_id: TypeId) -> Option<TypeResolution> {
+        self.per_type_type.get(&type_id).copied()
     }
 
     pub fn get_variable(&self, expr_id: ExprId) -> Option<VariableResolution> {

@@ -10,15 +10,15 @@ use crate::{
     resolver::{NominalMap, ValueGroupId},
     scope::{BinderKind, ScopeKind, VariableResolution},
     surface::{
-        visitor::{default_visit_binder, default_visit_expr, Visitor},
-        Binder, BinderId, Expr, ExprId, LetName, Type,
+        visitor::{default_visit_binder, default_visit_expr, default_visit_type, Visitor},
+        Binder, BinderId, Expr, ExprId, LetName, Type, TypeId,
     },
     ScopeDatabase,
 };
 
 use super::{
-    ConstructorResolution, ValueGroupResolutions, ValueGroupScope, VariableResolutionKind,
-    WithScope,
+    ConstructorResolution, TypeResolution, ValueGroupResolutions, ValueGroupScope,
+    VariableResolutionKind, WithScope,
 };
 
 pub(crate) struct ResolveContext<'a> {
@@ -30,6 +30,7 @@ pub(crate) struct ResolveContext<'a> {
     nominal_map: &'a NominalMap,
     per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
     per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+    per_type_type: FxHashMap<TypeId, TypeResolution>,
     per_variable: FxHashMap<ExprId, VariableResolution>,
 }
 
@@ -44,6 +45,7 @@ impl<'a> ResolveContext<'a> {
     ) -> ResolveContext<'a> {
         let per_constructor_expr = FxHashMap::default();
         let per_constructor_binder = FxHashMap::default();
+        let per_type_type = FxHashMap::default();
         let per_variable = FxHashMap::default();
         ResolveContext {
             expr_arena,
@@ -54,6 +56,7 @@ impl<'a> ResolveContext<'a> {
             nominal_map,
             per_constructor_expr,
             per_constructor_binder,
+            per_type_type,
             per_variable,
         }
     }
@@ -82,6 +85,7 @@ impl<'a> ResolveContext<'a> {
         Arc::new(ValueGroupResolutions::new(
             resolve_context.per_constructor_expr,
             resolve_context.per_constructor_binder,
+            resolve_context.per_type_type,
             resolve_context.per_variable,
         ))
     }
@@ -110,6 +114,13 @@ impl<'a> ResolveContext<'a> {
                 },
             )
         });
+    }
+
+    fn resolve_constructor_type(&mut self, type_id: TypeId, name: impl AsRef<str>) {
+        let name = name.as_ref();
+        self.nominal_map
+            .data_id(name)
+            .map(|data_id| self.per_type_type.insert(type_id, TypeResolution::Data(data_id.value)));
     }
 
     fn resolve_variable_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
@@ -182,6 +193,15 @@ impl<'a> Visitor<'a> for ResolveContext<'a> {
                 }
             }
             _ => default_visit_binder(self, binder_id),
+        }
+    }
+
+    fn visit_type(&mut self, type_id: TypeId) {
+        match &self.type_arena[type_id] {
+            Type::Constructor(constructor) => {
+                self.resolve_constructor_type(type_id, &constructor.value);
+            }
+            _ => default_visit_type(self, type_id),
         }
     }
 }
