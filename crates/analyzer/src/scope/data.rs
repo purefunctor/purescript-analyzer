@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 use syntax::ast;
 
 use crate::{
-    id::AstId,
+    id::{AstId, InFile},
     resolver::{DataGroupId, ValueGroupId},
     surface::{BinderId, ExprId, LetNameId, TypeId},
 };
@@ -142,7 +142,7 @@ pub struct ConstructorResolution {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TypeResolution {
-    Data(DataGroupId),
+    Data(InFile<DataGroupId>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

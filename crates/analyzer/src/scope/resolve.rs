@@ -151,7 +151,7 @@ impl<'a> ResolveContext<'a> {
         let name = name.as_ref();
         self.nominal_map
             .data_id(name)
-            .map(|data_id| self.per_type_type.insert(type_id, TypeResolution::Data(data_id.value)));
+            .map(|data_id| self.per_type_type.insert(type_id, TypeResolution::Data(data_id)));
     }
 
     fn resolve_variable_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
