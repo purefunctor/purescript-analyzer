@@ -31,17 +31,10 @@ impl<'a> PrettyPrinter<'a> {
         constructor_ty: TypeId,
         argument_ty: TypeId,
     ) -> DocBuilder<BoxAllocator> {
-        let constructor_is_application =
-            matches!(self.db.lookup_intern_type(constructor_ty), Type::Application(_, _));
-
         let argument_is_application =
             matches!(self.db.lookup_intern_type(argument_ty), Type::Application(_, _));
 
-        let constructor = if constructor_is_application {
-            self.ty(constructor_ty).parens()
-        } else {
-            self.ty(constructor_ty)
-        };
+        let constructor = self.ty(constructor_ty);
         let argument = if argument_is_application {
             self.ty(argument_ty).parens()
         } else {
