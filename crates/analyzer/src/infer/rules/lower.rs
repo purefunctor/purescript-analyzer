@@ -4,10 +4,11 @@
 //! [`infer::Type`]: crate::infer::Type
 
 use la_arena::Arena;
+use smol_str::SmolStr;
 
 use crate::{
     infer::{Primitive, Type, TypeId},
-    scope::Resolutions,
+    scope::{Resolutions, TypeResolution},
     surface, InferDatabase,
 };
 
@@ -42,14 +43,21 @@ impl<'env> LowerContext<'env> {
                         "Char" => self.db.intern_type(Type::Primitive(Primitive::Char)),
                         "String" => self.db.intern_type(Type::Primitive(Primitive::String)),
                         "Boolean" => self.db.intern_type(Type::Primitive(Primitive::Boolean)),
-                        _ => self.db.intern_type(Type::NotImplemented),
+                        _ => self.db.intern_type(self.resolutions.get_type_type(type_id).map_or(
+                            Type::NotImplemented,
+                            |type_resolution| match type_resolution {
+                                TypeResolution::Data(data_id) => Type::Constructor(data_id),
+                            },
+                        )),
                     }
                 } else {
-                    todo!("Implement name resolution during lowering.")
+                    todo!("Implement name resolution for prefixed names.");
                 }
             }
             surface::Type::Parenthesized(parenthesized) => self.lower_type(*parenthesized),
-            surface::Type::Variable(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Type::Variable(variable) => {
+                self.db.intern_type(Type::Variable(SmolStr::from(variable.as_ref())))
+            }
         }
     }
 }

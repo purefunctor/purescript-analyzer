@@ -20,6 +20,11 @@ fn substitute(
             let x_id = substitute(db, substitutions, x_id);
             db.intern_type(Type::Application(f_id, x_id))
         }
+        Type::Constructor(_) => t_id,
+        Type::Forall(n, t_id) => {
+            let t_id = substitute(db, substitutions, t_id);
+            db.intern_type(Type::Forall(n, t_id))
+        }
         Type::Function(a_id, r_id) => {
             let a_id = substitute(db, substitutions, a_id);
             let r_id = substitute(db, substitutions, r_id);
@@ -27,6 +32,7 @@ fn substitute(
         }
         Type::Primitive(_) => t_id,
         Type::Unification(u) => *substitutions.get(&u).unwrap_or(&t_id),
+        Type::Variable(_) => t_id,
         Type::NotImplemented => t_id,
     }
 }

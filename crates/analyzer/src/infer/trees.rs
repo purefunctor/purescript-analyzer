@@ -10,7 +10,12 @@
 //! [`surface`]: crate::surface
 mod printer;
 
-use crate::{id::InFile, resolver::ValueGroupId};
+use smol_str::SmolStr;
+
+use crate::{
+    id::InFile,
+    resolver::{DataGroupId, ValueGroupId},
+};
 
 pub use printer::PrettyPrinter;
 
@@ -30,9 +35,12 @@ impl salsa::InternKey for TypeId {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
+    Constructor(InFile<DataGroupId>),
+    Forall(SmolStr, TypeId),
     Function(TypeId, TypeId),
     Primitive(Primitive),
     Unification(Unification),
+    Variable(SmolStr),
     NotImplemented,
 }
 

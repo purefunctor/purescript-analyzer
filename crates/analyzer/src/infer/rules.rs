@@ -1,4 +1,5 @@
 //! Implements the type inference routines for PureScript.
+mod data;
 mod lower;
 mod solve;
 mod substitute;
@@ -6,11 +7,13 @@ mod unify;
 mod value;
 
 use rustc_hash::FxHashMap;
+use syntax::ast;
 
-use crate::{resolver::ValueGroupId, surface};
+use crate::{id::AstId, resolver::ValueGroupId, surface};
 
 use super::{constraint::Constraint, TypeId};
 
+pub(crate) use data::infer_data_group_query;
 pub(crate) use value::infer_binding_group_query;
 
 #[derive(Debug, Default)]
@@ -43,6 +46,21 @@ impl BindingGroupTypes {
 
     pub fn constraints(&self) -> &[Constraint] {
         &self.constraints
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataGroupTypes {
+    of_constructor: FxHashMap<AstId<ast::DataConstructor>, TypeId>,
+}
+
+impl DataGroupTypes {
+    fn new(of_constructor: FxHashMap<AstId<ast::DataConstructor>, TypeId>) -> DataGroupTypes {
+        DataGroupTypes { of_constructor }
+    }
+
+    pub fn get_constructor(&self, constructor_id: AstId<ast::DataConstructor>) -> TypeId {
+        *self.of_constructor.get(&constructor_id).unwrap()
     }
 }
 

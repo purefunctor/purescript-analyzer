@@ -1,6 +1,7 @@
 use pretty::{BoxAllocator, DocAllocator, DocBuilder};
+use smol_str::SmolStr;
 
-use crate::InferDatabase;
+use crate::{id::InFile, resolver::DataGroupId, InferDatabase};
 
 use super::{Primitive, Type, TypeId, Unification};
 
@@ -19,9 +20,12 @@ impl<'a> PrettyPrinter<'a> {
             Type::Application(constructor_ty, argument_ty) => {
                 self.ty_application(constructor_ty, argument_ty)
             }
+            Type::Constructor(constructor) => self.ty_constructor(constructor),
+            Type::Forall(name, ty) => self.ty_forall(name, ty),
             Type::Function(argument_ty, result_ty) => self.ty_function(argument_ty, result_ty),
             Type::Primitive(primitive) => self.ty_primitive(primitive),
             Type::Unification(unification) => self.ty_unification(unification),
+            Type::Variable(variable) => self.ty_variable(variable),
             Type::NotImplemented => self.ty_not_implemented(),
         }
     }
@@ -42,6 +46,29 @@ impl<'a> PrettyPrinter<'a> {
         };
 
         constructor.append(self.allocator.space()).append(argument)
+    }
+
+    fn ty_constructor(&self, constructor: InFile<DataGroupId>) -> DocBuilder<BoxAllocator> {
+        let nominal_map = self.db.nominal_map(constructor.file_id);
+        let name = nominal_map.data_group_data(constructor).name.to_string();
+        self.allocator.text(name)
+    }
+
+    fn ty_forall(&self, name: SmolStr, ty: TypeId) -> DocBuilder<BoxAllocator> {
+        let mut names = vec![name];
+        let mut current = ty;
+
+        while let Type::Forall(name, ty) = self.db.lookup_intern_type(current) {
+            names.push(name);
+            current = ty;
+        }
+
+        let names = self
+            .allocator
+            .intersperse(names.iter().map(|name| name.to_string()), self.allocator.text(" "));
+        let ty = self.ty(current);
+
+        self.allocator.text("forall ").append(names).append(self.allocator.text(". ")).append(ty)
     }
 
     fn ty_function(&self, argument_ty: TypeId, result_ty: TypeId) -> DocBuilder<BoxAllocator> {
@@ -68,6 +95,10 @@ impl<'a> PrettyPrinter<'a> {
 
     fn ty_unification(&self, unification: Unification) -> DocBuilder<BoxAllocator> {
         self.allocator.text("?").append(self.allocator.text(format!("{}", unification.index)))
+    }
+
+    fn ty_variable(&self, variable: SmolStr) -> DocBuilder<BoxAllocator> {
+        self.allocator.text(variable.to_string())
     }
 
     fn ty_not_implemented(&self) -> DocBuilder<BoxAllocator> {
