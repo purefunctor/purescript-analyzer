@@ -10,7 +10,7 @@
 //! [`surface`]: crate::surface
 mod printer;
 
-use smol_str::SmolStr;
+use std::sync::Arc;
 
 use crate::{
     id::InFile,
@@ -36,11 +36,11 @@ impl salsa::InternKey for TypeId {
 pub enum Type {
     Application(TypeId, TypeId),
     Constructor(InFile<DataGroupId>),
-    Forall(SmolStr, TypeId),
+    Forall(Arc<str>, TypeId),
     Function(TypeId, TypeId),
     Primitive(Primitive),
     Unification(Unification),
-    Variable(SmolStr),
+    Variable(Arc<str>),
     NotImplemented,
 }
 

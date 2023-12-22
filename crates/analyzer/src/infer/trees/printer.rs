@@ -1,5 +1,4 @@
 use pretty::{BoxAllocator, DocAllocator, DocBuilder};
-use smol_str::SmolStr;
 
 use crate::{id::InFile, resolver::DataGroupId, InferDatabase};
 
@@ -54,18 +53,16 @@ impl<'a> PrettyPrinter<'a> {
         self.allocator.text(name)
     }
 
-    fn ty_forall(&self, name: SmolStr, ty: TypeId) -> DocBuilder<BoxAllocator> {
-        let mut names = vec![name];
+    fn ty_forall(&self, name: impl AsRef<str>, ty: TypeId) -> DocBuilder<BoxAllocator> {
+        let mut names = vec![String::from(name.as_ref())];
         let mut current = ty;
 
         while let Type::Forall(name, ty) = self.db.lookup_intern_type(current) {
-            names.push(name);
+            names.push(String::from(name.as_ref()));
             current = ty;
         }
 
-        let names = self
-            .allocator
-            .intersperse(names.iter().map(|name| name.to_string()), self.allocator.text(" "));
+        let names = self.allocator.intersperse(names, self.allocator.text(" "));
         let ty = self.ty(current);
 
         self.allocator.text("forall ").append(names).append(self.allocator.text(". ")).append(ty)
@@ -97,8 +94,8 @@ impl<'a> PrettyPrinter<'a> {
         self.allocator.text("?").append(self.allocator.text(format!("{}", unification.index)))
     }
 
-    fn ty_variable(&self, variable: SmolStr) -> DocBuilder<BoxAllocator> {
-        self.allocator.text(variable.to_string())
+    fn ty_variable(&self, variable: impl AsRef<str>) -> DocBuilder<BoxAllocator> {
+        self.allocator.text(variable.as_ref().to_string())
     }
 
     fn ty_not_implemented(&self) -> DocBuilder<BoxAllocator> {

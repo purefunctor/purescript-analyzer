@@ -4,7 +4,6 @@
 //! [`infer::Type`]: crate::infer::Type
 
 use la_arena::Arena;
-use smol_str::SmolStr;
 
 use crate::{
     infer::{Primitive, Type, TypeId},
@@ -56,7 +55,7 @@ impl<'env> LowerContext<'env> {
             }
             surface::Type::Parenthesized(parenthesized) => self.lower_type(*parenthesized),
             surface::Type::Variable(variable) => {
-                self.db.intern_type(Type::Variable(SmolStr::from(variable.as_ref())))
+                self.db.intern_type(Type::Variable(self.db.interner().intern(variable)))
             }
         }
     }

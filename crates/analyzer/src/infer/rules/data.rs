@@ -42,10 +42,10 @@ impl<'env> InferDataGroupContext<'env> {
             |function_ty, argument_ty_var| {
                 let argument_ty = match argument_ty_var {
                     surface::TypeVariable::Kinded(name, _) => {
-                        self.db.intern_type(Type::Variable(name.clone()))
+                        self.db.intern_type(Type::Variable(self.db.interner().intern(name)))
                     }
                     surface::TypeVariable::Name(name) => {
-                        self.db.intern_type(Type::Variable(name.clone()))
+                        self.db.intern_type(Type::Variable(self.db.interner().intern(name)))
                     }
                 };
                 self.db.intern_type(Type::Application(function_ty, argument_ty))
@@ -64,8 +64,8 @@ impl<'env> InferDataGroupContext<'env> {
 
             let constructor_ty = variables.iter().rev().fold(constructor_ty, |ty, ty_variable| {
                 let name = match ty_variable {
-                    surface::TypeVariable::Kinded(name, _) => name.clone(),
-                    surface::TypeVariable::Name(name) => name.clone(),
+                    surface::TypeVariable::Kinded(name, _) => self.db.interner().intern(name),
+                    surface::TypeVariable::Name(name) => self.db.interner().intern(name),
                 };
                 self.db.intern_type(Type::Forall(name, ty))
             });
