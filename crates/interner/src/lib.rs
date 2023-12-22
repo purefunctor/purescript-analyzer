@@ -7,7 +7,7 @@ use std::{
     sync::{Arc, Mutex, Weak},
 };
 
-use intmap::IntMap;
+use hashbrown::{hash_table::Entry, HashTable};
 use rustc_hash::FxHasher;
 
 /// An internally-mutable string interner.
@@ -15,11 +15,11 @@ use rustc_hash::FxHasher;
 /// This struct is meant to be used in conjunction with [`Arc`] or the
 /// [`lazy_static`] crate.
 ///
-/// Internally, this maps the hash of a string to a [`Weak`] reference of an
-/// [`Arc`]-allocated string. If an entry does not exist for a given string,
-/// an allocation is made. If an entry does exist for a given string, it tries
-/// to upgrade the associated [`Weak`] pointer; otherwise, it allocates a new
-/// [`Arc`] and replaces the stale pointer.
+/// Internally, this is implemented as a specialized [`HashTable`] which
+/// associates the hash of the string with a [`Weak`] pointer that can be
+/// upgraded if the [`Arc`] allocation for said string still exists. The
+/// implementation also uses the hash as the "key" for the table, which
+/// makes it similar to a [`BTreeMap`]-based representation.
 ///
 /// ```rust
 /// # use std::sync::Arc;
@@ -32,17 +32,15 @@ use rustc_hash::FxHasher;
 /// assert!(Arc::ptr_eq(&name_0, &name_1));
 /// ```
 ///
+/// [`BTreeMap`]: std::collections::BTreeMap
 /// [`lazy_static`]: https://crates.io/crates/lazy_static
 #[derive(Debug, Default)]
 pub struct Interner {
-    inner: Mutex<IntMap<Weak<str>>>,
+    inner: Mutex<HashTable<(u64, Weak<str>)>>,
+    hasher: BuildHasherDefault<FxHasher>,
 }
 
 impl Interner {
-    fn hash_one(value: &str) -> u64 {
-        BuildHasherDefault::<FxHasher>::default().hash_one(value)
-    }
-
     /// Interns a string.
     ///
     /// If an entry does not exist for the given string, this allocates a fresh
@@ -53,20 +51,21 @@ impl Interner {
         let mut inner = self.inner.lock().unwrap();
 
         let value = value.as_ref();
-        let key = Interner::hash_one(value);
+        let hash = self.hasher.hash_one(value);
 
-        match inner.entry(key) {
-            intmap::Entry::Occupied(mut o) => {
-                // Replace stale pointers with fresh ones.
-                o.get().upgrade().unwrap_or_else(|| {
+        match inner.entry(hash, |(inner, _)| hash == *inner, |(inner, _)| *inner) {
+            Entry::Occupied(mut o) => {
+                let (_, weak) = o.get();
+                weak.upgrade().unwrap_or_else(|| {
                     let strong = Arc::from(value);
-                    o.insert(Arc::downgrade(&strong));
+                    let (_, ref mut weak) = o.get_mut();
+                    *weak = Arc::downgrade(&strong);
                     strong
                 })
             }
-            intmap::Entry::Vacant(v) => {
+            Entry::Vacant(v) => {
                 let strong = Arc::from(value);
-                v.insert(Arc::downgrade(&strong));
+                v.insert((hash, Arc::downgrade(&strong)));
                 strong
             }
         }
@@ -79,7 +78,7 @@ impl Interner {
     /// drops to zero.
     pub fn prune(&self) {
         let mut inner = self.inner.lock().unwrap();
-        inner.retain(|_, value| value.strong_count() > 0);
+        inner.retain(|(_, weak)| weak.strong_count() > 0)
     }
 }
 
