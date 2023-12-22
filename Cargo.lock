@@ -36,6 +36,7 @@ dependencies = [
  "files",
  "indexmap 2.0.2",
  "insta",
+ "interner",
  "itertools",
  "la-arena",
  "parsing",
