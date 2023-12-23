@@ -334,7 +334,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
         let expr_ty = match &self.value_arenas.expr_arena[expr_id] {
             surface::Expr::Application(function, arguments) => {
-                self.infer_expr_application(*function, &arguments)
+                self.infer_expr_application(*function, arguments)
             }
             surface::Expr::Constructor(_) => self.infer_expr_constructor(expr_id),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
