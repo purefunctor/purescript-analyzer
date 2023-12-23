@@ -334,31 +334,38 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
         let expr_ty = match &self.value_arenas.expr_arena[expr_id] {
             surface::Expr::Application(function, arguments) => {
-                let function_ty = self.infer_expr(*function);
-                let arguments_ty =
-                    arguments.iter().map(|argument| self.infer_expr(*argument)).collect_vec();
-
-                let result_ty = self.fresh_unification();
-                let auxiliary_ty =
-                    arguments_ty.into_iter().rev().fold(result_ty, |result_ty, argument_ty| {
-                        self.db.intern_type(Type::Function(argument_ty, result_ty))
-                    });
-
-                unify_types(self.db, self.infer_state, function_ty, auxiliary_ty);
-
-                result_ty
+                self.infer_expr_application(*function, &arguments)
             }
             surface::Expr::Constructor(_) => self.infer_expr_constructor(expr_id),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::LetIn(let_bindings, let_body) => {
-                self.infer_let_bindings(let_bindings);
-                self.infer_expr(*let_body)
+                self.infer_expr_let_in(let_bindings, *let_body)
             }
             surface::Expr::Literal(literal) => self.infer_expr_literal(literal),
             surface::Expr::Variable(_) => self.infer_expr_variable(expr_id),
         };
         self.of_expr.insert(expr_id, expr_ty);
         expr_ty
+    }
+
+    fn infer_expr_application(
+        &mut self,
+        function: surface::ExprId,
+        arguments: &[surface::ExprId],
+    ) -> TypeId {
+        let function_ty = self.infer_expr(function);
+        let arguments_ty =
+            arguments.iter().map(|argument| self.infer_expr(*argument)).collect_vec();
+
+        let result_ty = self.fresh_unification();
+        let auxiliary_ty =
+            arguments_ty.into_iter().rev().fold(result_ty, |result_ty, argument_ty| {
+                self.db.intern_type(Type::Function(argument_ty, result_ty))
+            });
+
+        unify_types(self.db, self.infer_state, function_ty, auxiliary_ty);
+
+        result_ty
     }
 
     fn infer_expr_constructor(&mut self, expr_id: surface::ExprId) -> TypeId {
@@ -370,6 +377,15 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                 data_types.get_constructor(constructor_id)
             })
             .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
+    }
+
+    fn infer_expr_let_in(
+        &mut self,
+        let_bindings: &[surface::LetBinding],
+        let_body: surface::ExprId,
+    ) -> TypeId {
+        self.infer_let_bindings(let_bindings);
+        self.infer_expr(let_body)
     }
 
     fn infer_expr_literal(&mut self, literal: &surface::Literal<surface::ExprId>) -> TypeId {
