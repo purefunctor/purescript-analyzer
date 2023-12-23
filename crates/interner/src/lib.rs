@@ -3,12 +3,12 @@
 //! [`Arc`]: std::sync::Arc
 
 use std::{
+    collections::hash_map::Entry,
     hash::{BuildHasher, BuildHasherDefault},
     sync::{Arc, Mutex, Weak},
 };
 
-use hashbrown::{hash_table::Entry, HashTable};
-use rustc_hash::FxHasher;
+use rustc_hash::{FxHashMap, FxHasher};
 
 /// An internally-mutable string interner.
 ///
@@ -36,7 +36,7 @@ use rustc_hash::FxHasher;
 /// [`lazy_static`]: https://crates.io/crates/lazy_static
 #[derive(Debug, Default)]
 pub struct Interner {
-    inner: Mutex<HashTable<(u64, Weak<str>)>>,
+    inner: Mutex<FxHashMap<u64, Weak<str>>>,
     hasher: BuildHasherDefault<FxHasher>,
 }
 
@@ -53,19 +53,15 @@ impl Interner {
         let value = value.as_ref();
         let hash = self.hasher.hash_one(value);
 
-        match inner.entry(hash, |(inner, _)| hash == *inner, |(inner, _)| *inner) {
-            Entry::Occupied(mut o) => {
-                let (_, weak) = o.get();
-                weak.upgrade().unwrap_or_else(|| {
-                    let strong = Arc::from(value);
-                    let (_, ref mut weak) = o.get_mut();
-                    *weak = Arc::downgrade(&strong);
-                    strong
-                })
-            }
+        match inner.entry(hash) {
+            Entry::Occupied(mut o) => o.get().upgrade().unwrap_or_else(|| {
+                let strong = Arc::from(value);
+                o.insert(Arc::downgrade(&strong));
+                strong
+            }),
             Entry::Vacant(v) => {
                 let strong = Arc::from(value);
-                v.insert((hash, Arc::downgrade(&strong)));
+                v.insert(Arc::downgrade(&strong));
                 strong
             }
         }
@@ -78,7 +74,7 @@ impl Interner {
     /// drops to zero.
     pub fn prune(&self) {
         let mut inner = self.inner.lock().unwrap();
-        inner.retain(|(_, weak)| weak.strong_count() > 0)
+        inner.retain(|_, weak| weak.strong_count() > 0)
     }
 }
 
