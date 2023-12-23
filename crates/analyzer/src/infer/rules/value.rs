@@ -11,7 +11,7 @@ use crate::{
     id::{AstId, InFile},
     infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification, ValueGroupTypes},
     resolver::ValueGroupId,
-    scope::{Resolutions, VariableResolutionKind},
+    scope::{ConstructorResolution, Resolutions, VariableResolutionKind},
     sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
     surface, InferDatabase,
 };
@@ -348,7 +348,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
 
                 result_ty
             }
-            surface::Expr::Constructor(_) => self.db.intern_type(Type::NotImplemented),
+            surface::Expr::Constructor(_) => self.infer_expr_constructor(expr_id),
             surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
             surface::Expr::LetIn(let_bindings, let_body) => {
                 self.infer_let_bindings(let_bindings);
@@ -359,6 +359,17 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
         };
         self.of_expr.insert(expr_id, expr_ty);
         expr_ty
+    }
+
+    fn infer_expr_constructor(&mut self, expr_id: surface::ExprId) -> TypeId {
+        self.value_env
+            .resolutions
+            .get_constructor_expr(expr_id)
+            .map(|ConstructorResolution { data_id, constructor_id }| {
+                let data_types = self.db.infer_data_group(data_id);
+                data_types.get_constructor(constructor_id)
+            })
+            .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
     }
 
     fn infer_expr_literal(&mut self, literal: &surface::Literal<surface::ExprId>) -> TypeId {
