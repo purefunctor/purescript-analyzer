@@ -126,10 +126,7 @@ impl<'a> ResolveContext<'a> {
         self.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
             self.per_constructor_expr.insert(
                 expr_id,
-                ConstructorResolution {
-                    data_id: data_id.value,
-                    constructor_id: constructor_id.value,
-                },
+                ConstructorResolution { data_id, constructor_id: constructor_id.value },
             )
         });
     }
@@ -139,10 +136,7 @@ impl<'a> ResolveContext<'a> {
         self.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
             self.per_constructor_binder.insert(
                 binder_id,
-                ConstructorResolution {
-                    data_id: data_id.value,
-                    constructor_id: constructor_id.value,
-                },
+                ConstructorResolution { data_id, constructor_id: constructor_id.value },
             )
         });
     }

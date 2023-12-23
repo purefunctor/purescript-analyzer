@@ -136,7 +136,7 @@ impl WithScope<ValueGroupScope> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ConstructorResolution {
-    pub data_id: DataGroupId,
+    pub data_id: InFile<DataGroupId>,
     pub constructor_id: AstId<ast::DataConstructor>,
 }
 
