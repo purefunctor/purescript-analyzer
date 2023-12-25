@@ -1,6 +1,8 @@
 //! Implements the type inference routines for PureScript.
 mod data;
+mod instantiate;
 mod lower;
+mod replace;
 mod solve;
 mod substitute;
 mod unify;
@@ -9,9 +11,9 @@ mod value;
 use rustc_hash::FxHashMap;
 use syntax::ast;
 
-use crate::{id::AstId, resolver::ValueGroupId, surface};
+use crate::{id::AstId, resolver::ValueGroupId, surface, InferDatabase};
 
-use super::{constraint::Constraint, TypeId};
+use super::{constraint::Constraint, Provenance, Type, TypeId, Unification};
 
 pub(crate) use data::infer_data_group_query;
 pub(crate) use value::infer_binding_group_query;
@@ -20,6 +22,14 @@ pub(crate) use value::infer_binding_group_query;
 struct InferState {
     fresh_index: usize,
     constraints: Vec<Constraint>,
+}
+
+impl InferState {
+    fn fresh_unification(&mut self, db: &dyn InferDatabase, provenance: Provenance) -> TypeId {
+        let index = self.fresh_index as u32;
+        self.fresh_index += 1;
+        db.intern_type(Type::Unification(Unification { index, provenance }))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

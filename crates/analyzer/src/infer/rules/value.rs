@@ -9,7 +9,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, Unification, ValueGroupTypes},
+    infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, ValueGroupTypes},
     resolver::ValueGroupId,
     scope::{ConstructorResolution, Resolutions, VariableResolutionKind},
     sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
@@ -17,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    lower::lower_type, solve::SolveContext, substitute::ApplySubstitution, unify::unify_types,
-    InferState,
+    instantiate::instantiate_type, lower::lower_type, solve::SolveContext,
+    substitute::ApplySubstitution, unify::unify_types, InferState,
 };
 
 struct ValueGroupArenas<'env> {
@@ -94,18 +94,11 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
     }
 }
 
-impl InferState {
-    fn fresh_unification(&mut self, db: &dyn InferDatabase, id: InFile<ValueGroupId>) -> TypeId {
-        let index = self.fresh_index as u32;
-        self.fresh_index += 1;
-        db.intern_type(Type::Unification(Unification {
-            index,
-            provenance: Provenance::ValueGroup(id),
-        }))
-    }
-}
-
 impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
+    fn fresh_unification(&mut self, id: InFile<ValueGroupId>) -> TypeId {
+        self.infer_state.fresh_unification(self.db, Provenance::ValueGroup(id))
+    }
+
     fn infer(&mut self, binding_group: &BindingGroup) {
         match &binding_group {
             BindingGroup::Singular(s) => {
@@ -115,7 +108,7 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
             }
             BindingGroup::Recursive(r) => {
                 let id = InFile { file_id: self.id.file_id, value: *r };
-                let of_r = self.infer_state.fresh_unification(self.db, id);
+                let of_r = self.fresh_unification(id);
                 let of_sibling = iter::once((*r, of_r)).collect();
                 self.infer_value_group(id, &of_sibling);
             }
@@ -124,7 +117,7 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
                     .iter()
                     .map(|m| {
                         let id = InFile { file_id: self.id.file_id, value: *m };
-                        let of_m = self.infer_state.fresh_unification(self.db, id);
+                        let of_m = self.fresh_unification(id);
                         (*m, of_m)
                     })
                     .collect();
@@ -171,6 +164,20 @@ impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
             context.of_binder,
         );
         self.of_value_group.insert(id.value, infer_value_group);
+    }
+}
+
+impl<'env, 'state> InferValueGroupContext<'env, 'state> {
+    fn fresh_unification(&mut self) -> TypeId {
+        self.infer_state.fresh_unification(self.db, Provenance::ValueGroup(self.id))
+    }
+
+    fn instantiate_type(&mut self, type_id: TypeId) -> TypeId {
+        instantiate_type(self.db, self.infer_state, Provenance::ValueGroup(self.id), type_id)
+    }
+
+    fn unify_types(&mut self, x_id: TypeId, y_id: TypeId) {
+        unify_types(self.db, self.infer_state, x_id, y_id)
     }
 }
 
@@ -280,10 +287,6 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
 }
 
 impl<'env, 'state> InferValueGroupContext<'env, 'state> {
-    fn fresh_unification(&mut self) -> TypeId {
-        self.infer_state.fresh_unification(self.db, self.id)
-    }
-
     fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
         let binder_ty = match &self.value_arenas.binder_arena[binder_id] {
             surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
@@ -354,8 +357,15 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
         arguments: &[surface::ExprId],
     ) -> TypeId {
         let function_ty = self.infer_expr(function);
-        let arguments_ty =
-            arguments.iter().map(|argument| self.infer_expr(*argument)).collect_vec();
+        let function_ty = self.instantiate_type(function_ty);
+
+        let arguments_ty = arguments
+            .iter()
+            .map(|argument| {
+                let argument_ty = self.infer_expr(*argument);
+                self.instantiate_type(argument_ty)
+            })
+            .collect_vec();
 
         let result_ty = self.fresh_unification();
         let auxiliary_ty =
@@ -363,7 +373,7 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                 self.db.intern_type(Type::Function(argument_ty, result_ty))
             });
 
-        unify_types(self.db, self.infer_state, function_ty, auxiliary_ty);
+        self.unify_types(function_ty, auxiliary_ty);
 
         result_ty
     }
