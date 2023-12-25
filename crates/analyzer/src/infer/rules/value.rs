@@ -437,8 +437,11 @@ pub(crate) fn infer_binding_group_query(
     solver.solve();
 
     let of_value_group = context.of_value_group;
-    let substitutions = solver.unification_solved;
+    let unification_solved = solver.unification_solved;
     let constraints = infer_state.constraints;
+
+    let mut substitutions = unification_solved.clone();
+    substitutions.apply_substitution(db, &unification_solved);
 
     let mut binding_group_types = BindingGroupTypes::new(of_value_group, constraints);
     binding_group_types.apply_substitution(db, &substitutions);

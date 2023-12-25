@@ -9,31 +9,31 @@ use crate::{
 use super::{BindingGroupTypes, ValueGroupTypes};
 
 /// The core recursive logic that actually performs substitution.
-fn substitute(
+fn substitute_core(
     db: &dyn InferDatabase,
     substitutions: &FxHashMap<Unification, TypeId>,
-    t_id: TypeId,
+    type_id: TypeId,
 ) -> TypeId {
-    match db.lookup_intern_type(t_id) {
-        Type::Application(f_id, x_id) => {
-            let f_id = substitute(db, substitutions, f_id);
-            let x_id = substitute(db, substitutions, x_id);
-            db.intern_type(Type::Application(f_id, x_id))
+    match db.lookup_intern_type(type_id) {
+        Type::Application(f, x) => {
+            let f = substitute_core(db, substitutions, f);
+            let x = substitute_core(db, substitutions, x);
+            db.intern_type(Type::Application(f, x))
         }
-        Type::Constructor(_) => t_id,
-        Type::Forall(n, t_id) => {
-            let t_id = substitute(db, substitutions, t_id);
-            db.intern_type(Type::Forall(n, t_id))
+        Type::Constructor(_) => type_id,
+        Type::Forall(v, b) => {
+            let b = substitute_core(db, substitutions, b);
+            db.intern_type(Type::Forall(v, b))
         }
-        Type::Function(a_id, r_id) => {
-            let a_id = substitute(db, substitutions, a_id);
-            let r_id = substitute(db, substitutions, r_id);
-            db.intern_type(Type::Function(a_id, r_id))
+        Type::Function(a, r) => {
+            let a = substitute_core(db, substitutions, a);
+            let r = substitute_core(db, substitutions, r);
+            db.intern_type(Type::Function(a, r))
         }
-        Type::Primitive(_) => t_id,
-        Type::Unification(u) => *substitutions.get(&u).unwrap_or(&t_id),
-        Type::Variable(_) => t_id,
-        Type::NotImplemented => t_id,
+        Type::Primitive(_) => type_id,
+        Type::Unification(u) => *substitutions.get(&u).unwrap_or(&type_id),
+        Type::Variable(_) => type_id,
+        Type::NotImplemented => type_id,
     }
 }
 
@@ -44,6 +44,17 @@ pub(super) trait ApplySubstitution {
         db: &dyn InferDatabase,
         substitutions: &FxHashMap<Unification, TypeId>,
     );
+}
+
+impl ApplySubstitution for FxHashMap<Unification, TypeId> {
+    fn apply_substitution(
+        &mut self,
+        db: &dyn InferDatabase,
+        substitutions: &FxHashMap<Unification, TypeId>,
+    ) {
+        self.values_mut()
+            .for_each(|type_id| *type_id = substitute_core(db, substitutions, *type_id));
+    }
 }
 
 impl ApplySubstitution for BindingGroupTypes {
@@ -64,9 +75,15 @@ impl ApplySubstitution for ValueGroupTypes {
         db: &dyn InferDatabase,
         substitutions: &FxHashMap<Unification, TypeId>,
     ) {
-        self.of_value_group = substitute(db, substitutions, self.of_value_group);
-        self.of_expr.values_mut().for_each(|t_id| *t_id = substitute(db, substitutions, *t_id));
-        self.of_let_name.values_mut().for_each(|t_id| *t_id = substitute(db, substitutions, *t_id));
-        self.of_binder.values_mut().for_each(|t_id| *t_id = substitute(db, substitutions, *t_id));
+        self.of_value_group = substitute_core(db, substitutions, self.of_value_group);
+        self.of_expr
+            .values_mut()
+            .for_each(|t_id| *t_id = substitute_core(db, substitutions, *t_id));
+        self.of_let_name
+            .values_mut()
+            .for_each(|t_id| *t_id = substitute_core(db, substitutions, *t_id));
+        self.of_binder
+            .values_mut()
+            .for_each(|t_id| *t_id = substitute_core(db, substitutions, *t_id));
     }
 }
