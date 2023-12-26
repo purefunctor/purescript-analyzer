@@ -116,6 +116,12 @@ impl NominalMap {
         &self.data_groups[id.value]
     }
 
+    pub fn data_groups(&self) -> impl Iterator<Item = (InFile<DataGroupId>, &DataGroup)> {
+        self.data_groups
+            .iter()
+            .map(|(id, data)| (InFile { file_id: self.file_id, value: id }, data))
+    }
+
     pub fn value_group_id(&self, name: impl AsRef<str>) -> Option<InFile<ValueGroupId>> {
         self.name_to_value
             .get(name.as_ref())
