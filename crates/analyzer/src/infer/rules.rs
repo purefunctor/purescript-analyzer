@@ -72,6 +72,10 @@ impl DataGroupTypes {
     pub fn get_constructor(&self, constructor_id: AstId<ast::DataConstructor>) -> TypeId {
         *self.of_constructor.get(&constructor_id).unwrap()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (AstId<ast::DataConstructor>, TypeId)> + '_ {
+        self.of_constructor.iter().map(|(constructor_id, type_id)| (*constructor_id, *type_id))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
