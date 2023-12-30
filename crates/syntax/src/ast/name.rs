@@ -1,6 +1,8 @@
 use rowan::ast::{support, AstChildren, AstNode};
 use smol_str::SmolStr;
 
+use crate::SyntaxToken;
+
 _create_ast!(ModuleName, Name, NameRef, QualifiedName, QualifiedPrefix);
 
 impl ModuleName {
@@ -10,12 +12,20 @@ impl ModuleName {
 }
 
 impl Name {
+    pub fn token(&self) -> Option<SyntaxToken> {
+        self.node.first_token()
+    }
+
     pub fn as_str(&self) -> Option<SmolStr> {
         Some(self.node.first_token()?.text().into())
     }
 }
 
 impl NameRef {
+    pub fn token(&self) -> Option<SyntaxToken> {
+        self.node.first_token()
+    }
+
     pub fn as_str(&self) -> Option<SmolStr> {
         Some(self.node.first_token()?.text().into())
     }

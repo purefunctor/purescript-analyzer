@@ -8,7 +8,7 @@ use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 
 use crate::{
     id::InFile,
-    names::{Name, Qualified},
+    names::{InDb, Name, NameRef, Qualified},
     resolver::{nominal::DataGroupId, ValueGroupId},
     surface::{LetNameEquation, LetNamePtr},
     SurfaceDatabase,
@@ -16,8 +16,8 @@ use crate::{
 
 use super::{trees::*, SourceMap};
 
-#[derive(Default)]
-pub(crate) struct SurfaceContext {
+pub(crate) struct SurfaceContext<'db> {
+    db: &'db dyn SurfaceDatabase,
     expr_arena: Arena<Expr>,
     let_name_arena: Arena<LetName>,
     binder_arena: Arena<Binder>,
@@ -25,7 +25,16 @@ pub(crate) struct SurfaceContext {
     source_map: SourceMap,
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
+    fn new(db: &'db dyn SurfaceDatabase) -> SurfaceContext<'db> {
+        let expr_arena = Arena::default();
+        let let_name_arena = Arena::default();
+        let binder_arena = Arena::default();
+        let type_arena = Arena::default();
+        let source_map = SourceMap::default();
+        SurfaceContext { db, expr_arena, let_name_arena, binder_arena, type_arena, source_map }
+    }
+
     fn alloc_expr(&mut self, lowered: Expr, ast: &ast::Expression) -> ExprId {
         let expr_id = self.expr_arena.alloc(lowered);
         self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(ast.syntax()));
@@ -48,14 +57,14 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     pub(crate) fn data_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<DataGroupId>,
     ) -> Arc<WithArena<DataGroup>> {
         let nominal_map = db.nominal_map(id.file_id);
         let group_data = nominal_map.data_group_data(id);
-        let mut surface_context = SurfaceContext::default();
+        let mut surface_context = SurfaceContext::new(db);
 
         let name = group_data.name.clone();
         let annotation = group_data.annotation.and_then(|annotation| {
@@ -107,7 +116,7 @@ impl SurfaceContext {
     ) -> (Arc<WithArena<ValueGroup>>, Arc<SourceMap>) {
         let nominal_map = db.nominal_map(id.file_id);
         let group_data = nominal_map.value_group_data(id);
-        let mut surface_context = SurfaceContext::default();
+        let mut surface_context = SurfaceContext::new(db);
 
         let name = group_data.name.clone();
         let annotation = group_data.annotation.and_then(|annotation| {
@@ -136,7 +145,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_value_annotation(
         &mut self,
         ast: &ast::ValueAnnotationDeclaration,
@@ -159,7 +168,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {
         match binding {
             ast::Binding::UnconditionalBinding(unconditional) => {
@@ -193,12 +202,10 @@ impl SurfaceContext {
         }
 
         let let_groups = let_bindings.children().group_by(|let_binding| match let_binding {
-            ast::LetBinding::LetBindingName(n) => {
-                Some(GroupKey::Name(Name::try_from(n.name()?).ok()?))
-            }
+            ast::LetBinding::LetBindingName(n) => Some(GroupKey::Name(n.name()?.in_db(self.db)?)),
             ast::LetBinding::LetBindingPattern(_) => Some(GroupKey::Pattern),
             ast::LetBinding::LetBindingSignature(s) => {
-                Some(GroupKey::Name(Name::try_from(s.name()?).ok()?))
+                Some(GroupKey::Name(s.name()?.in_db(self.db)?))
             }
         });
 
@@ -284,13 +291,13 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     // FIXME: use unknown if we can't convert
     fn lower_binder(&mut self, binder: &ast::Binder) -> Option<BinderId> {
         let lowered = {
             match binder {
                 ast::Binder::ConstructorBinder(constructor) => {
-                    let name = Qualified::try_from(constructor.qualified_name()?).ok()?;
+                    let name = Qualified::in_db(self.db, constructor.qualified_name()?)?;
                     let fields = constructor
                         .fields()
                         .map(|fields| {
@@ -309,7 +316,7 @@ impl SurfaceContext {
                 }
                 ast::Binder::TypedBinder(_) => None,
                 ast::Binder::VariableBinder(variable) => {
-                    Some(Binder::Variable(Name::try_from(variable.name()?).ok()?))
+                    Some(Binder::Variable(variable.name()?.in_db(self.db)?))
                 }
                 ast::Binder::WildcardBinder(_) => Some(Binder::Wildcard),
             }
@@ -346,7 +353,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
         let lowered = match expression {
             ast::Expression::ApplicationExpression(application) => {
@@ -381,7 +388,7 @@ impl SurfaceContext {
 
     fn lower_expr_constructor(&mut self, constructor: &ast::ConstructorExpression) -> Option<Expr> {
         let qualified = constructor.qualified_name()?;
-        let name_ref = qualified.try_into().ok()?;
+        let name_ref = Qualified::<NameRef>::in_db(self.db, qualified)?;
         Some(Expr::Constructor(name_ref))
     }
 
@@ -402,8 +409,7 @@ impl SurfaceContext {
     }
 
     fn lower_expr_variable(&mut self, variable: &ast::VariableExpression) -> Option<Expr> {
-        let qualified = variable.qualified_name()?;
-        let name_ref = qualified.try_into().ok()?;
+        let name_ref = variable.qualified_name()?.in_db(self.db)?;
         Some(Expr::Variable(name_ref))
     }
 
@@ -421,7 +427,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_type(&mut self, t: &ast::Type) -> Option<TypeId> {
         let lowered = match t {
             ast::Type::ArrowType(arrow) => self.lower_type_arrow(arrow),
@@ -467,18 +473,17 @@ impl SurfaceContext {
     }
 
     fn lower_type_constructor(&mut self, constructor: &ast::ConstructorType) -> Option<Type> {
-        let qualified = constructor.qualified_name()?;
-        let name_ref = qualified.try_into().ok()?;
+        let name_ref = constructor.qualified_name()?.in_db(self.db)?;
         Some(Type::Constructor(name_ref))
     }
 
     fn lower_type_variable(&self, variable: &ast::VariableType) -> Option<Type> {
-        let name_ref = variable.name_ref()?.try_into().ok()?;
+        let name_ref = variable.name_ref()?.in_db(self.db)?;
         Some(Type::Variable(name_ref))
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_literal<A, I>(
         &mut self,
         literal: &syntax::SyntaxElement,
@@ -546,7 +551,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_type_variable_binding(
         &mut self,
         type_variable_binding: &ast::TypeVariableBinding,

@@ -93,7 +93,7 @@ impl<'a> PrettyPrinter<'a> {
 
     pub fn module_name<'b>(&'b self, module_name: &'b ModuleName) -> DocBuilder<'b, BoxAllocator> {
         self.allocator.intersperse(
-            module_name.iter().map(|segment| self.allocator.text(segment.as_str())),
+            module_name.iter().map(|segment| self.allocator.text(segment)),
             self.allocator.text("."),
         )
     }

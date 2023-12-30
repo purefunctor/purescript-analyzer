@@ -1,101 +1,119 @@
 //! Names in PureScript.
 
+use std::sync::Arc;
+
+use rowan::ast::AstNode;
 use smallvec::SmallVec;
-use smol_str::SmolStr;
 use syntax::ast;
 
-/// e.g. `Main`, `Data.Maybe`
+use crate::SurfaceDatabase;
+
+/// A trait for constructing interned names from the [`ast`].
+pub(crate) trait InDb<Target>: Sized
+where
+    Self: AstNode,
+{
+    fn in_db(self, db: &dyn SurfaceDatabase) -> Option<Target>;
+}
+
+/// Names separated by a period.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleName {
-    segments: SmallVec<[SmolStr; 3]>,
+    segments: SmallVec<[Arc<str>; 3]>,
 }
 
 impl ModuleName {
-    pub fn iter(&self) -> impl Iterator<Item = &SmolStr> {
-        self.segments.iter()
+    pub fn iter(&self) -> impl Iterator<Item = &str> {
+        self.segments.iter().map(|name| &**name)
     }
 }
 
-impl TryFrom<ast::ModuleName> for ModuleName {
-    type Error = &'static str;
-
-    fn try_from(value: ast::ModuleName) -> Result<Self, Self::Error> {
-        let segments = value
+impl InDb<ModuleName> for ast::ModuleName {
+    fn in_db(self, db: &dyn SurfaceDatabase) -> Option<ModuleName> {
+        let segments = self
             .children()
-            .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
-            .collect::<Result<_, _>>()?;
-        Ok(ModuleName { segments })
+            .map(|name| {
+                if let Some(token) = name.token() {
+                    db.interner().intern(token.text())
+                } else {
+                    db.interner().intern("?InvalidToken")
+                }
+            })
+            .collect();
+        Some(ModuleName { segments })
     }
 }
 
-impl TryFrom<ast::QualifiedPrefix> for ModuleName {
-    type Error = &'static str;
-
-    fn try_from(value: ast::QualifiedPrefix) -> Result<Self, Self::Error> {
-        let segments = value
+impl InDb<ModuleName> for ast::QualifiedPrefix {
+    fn in_db(self, db: &dyn SurfaceDatabase) -> Option<ModuleName> {
+        let segments = self
             .children()
-            .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
-            .collect::<Result<_, _>>()?;
-        Ok(ModuleName { segments })
+            .map(|name| {
+                if let Some(token) = name.token() {
+                    db.interner().intern(token.text())
+                } else {
+                    db.interner().intern("?InvalidToken")
+                }
+            })
+            .collect();
+        Some(ModuleName { segments })
     }
 }
 
-/// e.g. `a = 0`
+/// Names appearing as bindings.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Name {
-    name: SmolStr,
+pub struct Name(Arc<str>);
+
+impl InDb<Name> for ast::Name {
+    fn in_db(self, db: &dyn SurfaceDatabase) -> Option<Name> {
+        Some(Name(db.interner().intern(self.token()?.text())))
+    }
 }
 
 impl AsRef<str> for Name {
     fn as_ref(&self) -> &str {
-        &self.name
+        &self.0
     }
 }
 
-impl TryFrom<ast::Name> for Name {
-    type Error = &'static str;
-
-    fn try_from(value: ast::Name) -> Result<Self, Self::Error> {
-        let name = value.as_str().ok_or("Cannot convert Name")?;
-        Ok(Name { name })
-    }
-}
-
-/// e.g. `Just`, `fromMaybe`
+/// Names appearing as usages.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct NameRef {
-    name_ref: SmolStr,
+pub struct NameRef(Arc<str>);
+
+impl InDb<NameRef> for ast::NameRef {
+    fn in_db(self, db: &dyn SurfaceDatabase) -> Option<NameRef> {
+        Some(NameRef(db.interner().intern(self.token()?.text())))
+    }
 }
 
 impl AsRef<str> for NameRef {
     fn as_ref(&self) -> &str {
-        &self.name_ref
+        &self.0
     }
 }
 
-impl TryFrom<ast::NameRef> for NameRef {
-    type Error = &'static str;
-
-    fn try_from(value: ast::NameRef) -> Result<Self, Self::Error> {
-        let name_ref = value.as_str().ok_or("Cannot convert NameRef")?;
-        Ok(NameRef { name_ref })
-    }
-}
-
-/// e.g. `M.Just`, `M.fromMaybe`
+/// Values optionally qualified by a [`ModuleName`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Qualified<N> {
     pub(crate) prefix: Option<ModuleName>,
     pub(crate) value: N,
 }
 
-impl TryFrom<ast::QualifiedName> for Qualified<NameRef> {
-    type Error = &'static str;
+impl Qualified<NameRef> {
+    pub(crate) fn in_db(
+        db: &dyn SurfaceDatabase,
+        qualified_name: ast::QualifiedName,
+    ) -> Option<Qualified<NameRef>> {
+        let prefix = qualified_name.prefix().and_then(|prefix| prefix.in_db(db));
+        let value = qualified_name.name_ref()?.in_db(db)?;
+        Some(Qualified { prefix, value })
+    }
+}
 
-    fn try_from(value: ast::QualifiedName) -> Result<Self, Self::Error> {
-        let prefix = value.prefix().map(ModuleName::try_from).transpose()?;
-        let value =
-            value.name_ref().ok_or("QualifiedName has no NameRef").and_then(NameRef::try_from)?;
-        Ok(Qualified { prefix, value })
+impl InDb<Qualified<NameRef>> for ast::QualifiedName {
+    fn in_db(self, db: &dyn SurfaceDatabase) -> Option<Qualified<NameRef>> {
+        let prefix = self.prefix().and_then(|prefix| prefix.in_db(db));
+        let value = self.name_ref()?.in_db(db)?;
+        Some(Qualified { prefix, value })
     }
 }
