@@ -11,7 +11,7 @@
 
 // pub mod export;
 // pub mod import;
-// pub mod module;
+pub mod module;
 pub mod nominal;
 pub mod positional;
 
@@ -23,14 +23,14 @@ use crate::SourceDatabase;
 
 // pub use export::Exports;
 // pub use import::{QualifiedImports, UnqualifiedImports};
-// pub use module::ModuleMap;
+pub use module::ModuleMap;
 pub use nominal::{DataGroup, DataGroupId, NominalMap, ValueGroup, ValueGroupId};
 pub use positional::PositionalMap;
 
 #[salsa::query_group(ResolverStorage)]
 pub trait ResolverDatabase: SourceDatabase {
-    // #[salsa::invoke(ModuleMap::module_map_query)]
-    // fn module_map(&self) -> Arc<ModuleMap>;
+    #[salsa::invoke(ModuleMap::module_map_query)]
+    fn module_map(&self) -> Arc<ModuleMap>;
 
     #[salsa::invoke(NominalMap::nominal_map_query)]
     fn nominal_map(&self, file_id: FileId) -> Arc<NominalMap>;
