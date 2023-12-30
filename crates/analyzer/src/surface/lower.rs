@@ -8,7 +8,7 @@ use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 
 use crate::{
     id::InFile,
-    names::{InDb, Name, NameRef, Qualified},
+    names::{InDb, Name},
     resolver::{nominal::DataGroupId, ValueGroupId},
     surface::{LetNameEquation, LetNamePtr},
     SurfaceDatabase,
@@ -297,7 +297,7 @@ impl<'db> SurfaceContext<'db> {
         let lowered = {
             match binder {
                 ast::Binder::ConstructorBinder(constructor) => {
-                    let name = Qualified::in_db(self.db, constructor.qualified_name()?)?;
+                    let name = constructor.qualified_name()?.in_db(self.db)?;
                     let fields = constructor
                         .fields()
                         .map(|fields| {
@@ -387,8 +387,7 @@ impl<'db> SurfaceContext<'db> {
     }
 
     fn lower_expr_constructor(&mut self, constructor: &ast::ConstructorExpression) -> Option<Expr> {
-        let qualified = constructor.qualified_name()?;
-        let name_ref = Qualified::<NameRef>::in_db(self.db, qualified)?;
+        let name_ref = constructor.qualified_name()?.in_db(self.db)?;
         Some(Expr::Constructor(name_ref))
     }
 
