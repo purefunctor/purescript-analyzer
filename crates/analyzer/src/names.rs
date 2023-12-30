@@ -3,7 +3,6 @@
 use std::sync::Arc;
 
 use rowan::ast::AstNode;
-use smallvec::SmallVec;
 use syntax::ast;
 
 use crate::SourceDatabase;
@@ -18,45 +17,47 @@ where
 
 /// Names separated by a period.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ModuleName {
-    segments: SmallVec<[Arc<str>; 3]>,
-}
+pub struct ModuleName(Arc<str>);
 
 impl ModuleName {
     pub fn iter(&self) -> impl Iterator<Item = &str> {
-        self.segments.iter().map(|name| &**name)
+        self.0.split(".")
     }
 }
 
 impl InDb<ModuleName> for ast::ModuleName {
     fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<ModuleName> {
-        let segments = self
-            .children()
-            .map(|name| {
-                if let Some(token) = name.token() {
-                    db.interner().intern(token.text())
-                } else {
-                    db.interner().intern("?InvalidToken")
-                }
-            })
-            .collect();
-        Some(ModuleName { segments })
+        let mut buffer = String::default();
+        let mut children = self.children().peekable();
+        while let Some(name_ref) = children.next() {
+            if let Some(token) = name_ref.token() {
+                buffer.push_str(token.text())
+            } else {
+                buffer.push_str("?InvalidToken")
+            }
+            if children.peek().is_some() {
+                buffer.push('.');
+            }
+        }
+        Some(ModuleName(db.interner().intern(buffer)))
     }
 }
 
 impl InDb<ModuleName> for ast::QualifiedPrefix {
     fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<ModuleName> {
-        let segments = self
-            .children()
-            .map(|name| {
-                if let Some(token) = name.token() {
-                    db.interner().intern(token.text())
-                } else {
-                    db.interner().intern("?InvalidToken")
-                }
-            })
-            .collect();
-        Some(ModuleName { segments })
+        let mut buffer = String::default();
+        let mut children = self.children().peekable();
+        while let Some(name_ref) = children.next() {
+            if let Some(token) = name_ref.token() {
+                buffer.push_str(token.text())
+            } else {
+                buffer.push_str("?InvalidToken")
+            }
+            if children.peek().is_some() {
+                buffer.push('.');
+            }
+        }
+        Some(ModuleName(db.interner().intern(buffer)))
     }
 }
 
