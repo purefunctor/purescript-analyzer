@@ -1,4 +1,8 @@
 //! Names in PureScript.
+//!
+//! Internally, types in this module are represented by an [`Arc<str>`] and constructed through
+//! the interning mechanism [`interner::Interner`]; this makes them cheap to clone and relatively
+//! easy to clean up as they're discarded.
 
 use std::sync::Arc;
 
