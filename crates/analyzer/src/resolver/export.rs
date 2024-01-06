@@ -1,67 +1,68 @@
-//! See documentation for [`Exports`].
-
 use std::sync::Arc;
 
 use files::FileId;
 use rowan::ast::AstNode;
-use rustc_hash::FxHashSet;
 use syntax::ast;
 
-use crate::{id::InFile, names::NameRef, ResolverDatabase};
+use crate::{
+    names::{InDb, NameRef},
+    ResolverDatabase,
+};
 
-use super::nominal::ValueGroupId;
-
-/// A file's export list.
 #[derive(Debug, PartialEq, Eq)]
-pub struct Exports {
-    file_id: FileId,
-    items: Option<ExportItems>,
+pub enum ExportItem {
+    ExportValue(NameRef),
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
-struct ExportItems {
-    values: FxHashSet<NameRef>,
+#[derive(Debug, PartialEq, Eq)]
+pub struct ModuleExports {
+    items: Vec<ExportItem>,
+    explicit: bool,
 }
 
-impl ExportItems {
-    fn collect_export_item(&mut self, export_item: &ast::ExportItem) -> Option<()> {
-        match export_item {
-            ast::ExportItem::ExportValue(value) => {
-                let name_ref = NameRef::try_from(value.name_ref()?).ok()?;
-                self.values.insert(name_ref);
-            }
-        }
-        Some(())
+impl ModuleExports {
+    pub fn is_value_exported(&self, v: impl AsRef<str>) -> bool {
+        self.items.iter().any(|export_item| match export_item {
+            ExportItem::ExportValue(i) => i.as_ref() == v.as_ref(),
+        })
     }
 }
 
-impl Exports {
-    pub(crate) fn exports_query(db: &dyn ResolverDatabase, file_id: FileId) -> Arc<Exports> {
+impl ModuleExports {
+    pub(crate) fn module_exports_query(
+        db: &dyn ResolverDatabase,
+        file_id: FileId,
+    ) -> Arc<ModuleExports> {
+        let items;
+        let explicit;
+
         let node = db.parse_file(file_id);
-        let export_items = ast::Source::<ast::Module>::cast(node).and_then(|source| {
+        let nominal_map = db.nominal_map(file_id);
+        let export_list = ast::Source::<ast::Module>::cast(node).and_then(|source| {
             Some(source.child()?.header()?.export_list()?.child()?.child()?.children())
         });
 
-        let items = export_items.map(|export_items| {
-            let mut items = ExportItems::default();
-            for export_item in export_items {
-                items.collect_export_item(&export_item);
-            }
-            items
-        });
-
-        Arc::new(Exports { file_id, items })
-    }
-
-    pub fn lookup_value(
-        &self,
-        db: &dyn ResolverDatabase,
-        name: &NameRef,
-    ) -> Option<InFile<ValueGroupId>> {
-        if self.items.as_ref()?.values.contains(name) {
-            db.nominal_map(self.file_id).value_group_id(name)
+        if let Some(export_list) = export_list {
+            items = export_list
+                .filter_map(|export_item| match export_item {
+                    ast::ExportItem::ExportValue(v) => {
+                        Some(ExportItem::ExportValue(v.name_ref()?.in_db(db)?))
+                    }
+                })
+                .collect();
+            explicit = true
         } else {
-            None
+            items = nominal_map
+                .value_groups()
+                .map(|(_, value_group)| {
+                    // FIXME: use interned names for ValueGroup
+                    let name = NameRef::from_raw(db.interner().intern(&value_group.name));
+                    ExportItem::ExportValue(name)
+                })
+                .collect();
+            explicit = false;
         }
+
+        Arc::new(ModuleExports { items, explicit })
     }
 }

@@ -428,6 +428,11 @@ impl<'env, 'state> InferValueGroupContext<'env, 'state> {
                         Some(binding_group_ty.get(l).of_value_group)
                     }
                 }
+                VariableResolutionKind::Imported(i) => {
+                    let binding_group = self.db.binding_groups(i.file_id).binding_group_id(i.value);
+                    let binding_group_ty = self.db.infer_binding_group(binding_group);
+                    Some(binding_group_ty.get(i.value).of_value_group)
+                }
             })
             .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
     }

@@ -156,6 +156,7 @@ pub enum VariableResolutionKind {
     Binder(BinderId),
     LetName(LetNameId),
     Local(ValueGroupId),
+    Imported(InFile<ValueGroupId>),
 }
 
 /// Name resolution information for a [`ValueGroupId`].

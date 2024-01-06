@@ -94,3 +94,43 @@ fn test_infer_data() {
         });
     })
 }
+
+#[test]
+fn api_test() {
+    let (mut db, mut files, file_id) = default_db("module B () where b = 0");
+
+    files.set_file_contents(
+        "./A.purs".into(),
+        Some(
+            "module A where
+import B as B
+a = B.b"
+                .into(),
+        ),
+    );
+    for ChangedFile { file_id, .. } in files.take_changes() {
+        let contents = files.file_contents(file_id);
+        db.set_file_contents(file_id, Arc::from(std::str::from_utf8(contents).unwrap()));
+    }
+    db.set_file_paths_with_durability(files.iter().collect(), Durability::HIGH);
+
+    let pp = infer::PrettyPrinter::new(&db);
+
+    dbg!(db.module_exports(file_id));
+
+    let a_file_id = files.file_id("./A.purs".into()).unwrap();
+    // dbg!(db.parse_file(a_file_id));
+    // dbg!(db.module_imports(a_file_id));
+
+    let nominal_map = db.nominal_map(a_file_id);
+    let binding_groups = db.binding_groups(a_file_id);
+    for (binding_group_id, _) in binding_groups.iter() {
+        for (value_group_id, value_group_ty) in db.infer_binding_group(binding_group_id).iter() {
+            let name = nominal_map
+                .value_group_data(InFile { file_id, value: value_group_id })
+                .name
+                .as_ref();
+            println!("{} :: {}", name, pp.ty(value_group_ty.as_type()).pretty(80));
+        }
+    }
+}

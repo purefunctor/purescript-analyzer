@@ -1,137 +1,164 @@
-//! See documentation for [`QualifiedImports`] and [`UnqualifiedImports`].
 use std::sync::Arc;
 
 use files::FileId;
-use la_arena::{Arena, Idx};
+use la_arena::Arena;
 use rowan::ast::AstNode;
-use rustc_hash::FxHashMap;
 use syntax::ast;
 
-use crate::{id::InFile, names::ModuleName, ResolverDatabase};
+use crate::{
+    names::{InDb, ModuleName, NameRef},
+    ResolverDatabase,
+};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ImportDeclaration {
-    // FIXME: migrate to ModuleId
-    pub(crate) file_id: FileId,
+use super::ModuleMap;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ImportItem {
+    ImportValue(NameRef),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ImportId {
-    inner: Idx<ImportDeclaration>,
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportList {
+    items: Vec<ImportItem>,
+    hiding: bool,
 }
 
-impl ImportId {
-    pub(crate) fn new(inner: Idx<ImportDeclaration>) -> ImportId {
-        ImportId { inner }
+#[derive(Debug, PartialEq, Eq)]
+pub struct QualifiedImport {
+    module_name: ModuleName,
+    pub file_id: FileId,
+    qualified_as: ModuleName,
+    import_list: Option<ImportList>,
+}
+
+impl QualifiedImport {
+    pub fn is_value_imported(&self, v: impl AsRef<str>) -> bool {
+        match &self.import_list {
+            Some(import_list) => {
+                let is_member = import_list.items.iter().any(|import_item| match import_item {
+                    ImportItem::ImportValue(i) => v.as_ref() == i.as_ref(),
+                });
+                if import_list.hiding {
+                    !is_member
+                } else {
+                    is_member
+                }
+            }
+            None => true,
+        }
     }
-
-    pub fn in_file(self, file_id: FileId) -> InFile<ImportId> {
-        InFile { file_id, value: self }
-    }
 }
 
-/// A file's qualified imports.
+#[derive(Debug, PartialEq, Eq)]
+pub struct UnqualifiedImport {
+    module_name: ModuleName,
+    file_id: FileId,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum ImportDeclaration {
+    Qualified(QualifiedImport),
+    Unqualified(UnqualifiedImport),
+}
+
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct QualifiedImports {
+pub struct ModuleImports {
     inner: Arena<ImportDeclaration>,
-    name_to_id: FxHashMap<ModuleName, ImportId>,
 }
 
-impl QualifiedImports {
-    pub(crate) fn qualified_imports_query(
+impl ModuleImports {
+    pub(crate) fn module_imports_query(
         db: &dyn ResolverDatabase,
         file_id: FileId,
-    ) -> Arc<QualifiedImports> {
-        let mut qualified_imports = QualifiedImports::default();
+    ) -> Arc<ModuleImports> {
+        let module_map = db.module_map();
+        let mut module_imports = ModuleImports::default();
 
         let node = db.parse_file(file_id);
         let import_declarations = ast::Source::<ast::Module>::cast(node)
             .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
         if let Some(import_declarations) = import_declarations {
             for import_declaration in import_declarations {
-                qualified_imports.collect_import(db, import_declaration);
+                module_imports.collect_import(db, &module_map, import_declaration);
             }
         }
 
-        Arc::new(qualified_imports)
+        Arc::new(module_imports)
     }
 
     fn collect_import(
         &mut self,
         db: &dyn ResolverDatabase,
+        module_map: &ModuleMap,
         import_declaration: ast::ImportDeclaration,
     ) -> Option<()> {
-        let imported_module_name = ModuleName::try_from(import_declaration.module_name()?).ok()?;
-        let qualified_as_module_name =
-            ModuleName::try_from(import_declaration.import_qualified()?.module_name()?).ok()?;
+        let module_name = import_declaration.module_name()?.in_db(db)?;
+        let file_id = module_map.file_id(&module_name);
+        let qualified_as = import_declaration
+            .import_qualified()
+            .and_then(|qualified| qualified.module_name()?.in_db(db));
 
-        let module_id = db.module_map().module_id(&imported_module_name)?;
-        let file_id = db.module_map().file_id(module_id)?;
+        let import_declaration = if let Some(qualified_as) = qualified_as {
+            let import_list = self.collect_import_list(db, import_declaration);
+            ImportDeclaration::Qualified(QualifiedImport {
+                module_name,
+                file_id,
+                qualified_as,
+                import_list,
+            })
+        } else {
+            ImportDeclaration::Unqualified(UnqualifiedImport { module_name, file_id })
+        };
 
-        let import_declaration = ImportDeclaration { file_id };
-        let import_id = ImportId::new(self.inner.alloc(import_declaration));
-
-        self.name_to_id.insert(qualified_as_module_name, import_id);
+        self.inner.alloc(import_declaration);
 
         Some(())
     }
 
-    pub fn import_declaration(&self, import_id: ImportId) -> ImportDeclaration {
-        self.inner[import_id.inner]
-    }
-
-    pub fn import_id(&self, module_name: &ModuleName) -> Option<ImportId> {
-        self.name_to_id.get(module_name).copied()
-    }
-}
-
-/// A file's unqualified imports.
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct UnqualifiedImports {
-    inner: Arena<ImportDeclaration>,
-}
-
-impl UnqualifiedImports {
-    pub(crate) fn unqualified_imports_query(
-        db: &dyn ResolverDatabase,
-        file_id: FileId,
-    ) -> Arc<UnqualifiedImports> {
-        let mut unqualified_imports = UnqualifiedImports::default();
-
-        let node = db.parse_file(file_id);
-        let import_declarations = ast::Source::<ast::Module>::cast(node)
-            .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
-        if let Some(import_declarations) = import_declarations {
-            for import_declaration in import_declarations {
-                unqualified_imports.collect_import(db, import_declaration);
-            }
-        }
-
-        Arc::new(unqualified_imports)
-    }
-
-    fn collect_import(
-        &mut self,
+    fn collect_import_list(
+        &self,
         db: &dyn ResolverDatabase,
         import_declaration: ast::ImportDeclaration,
-    ) -> Option<()> {
-        if import_declaration.import_qualified().is_some() {
-            return None;
-        }
+    ) -> Option<ImportList> {
+        let import_list = import_declaration.import_list()?;
 
-        let imported_module_name = ModuleName::try_from(import_declaration.module_name()?).ok()?;
-        let imported_module_id = db.module_map().module_id(&imported_module_name)?;
-        let imported_file_id = db.module_map().file_id(imported_module_id)?;
+        let hiding = import_list.hiding_token().is_some();
+        let items = import_list
+            .import_items()?
+            .children()
+            .map(|import_item| {
+                Some(match import_item {
+                    ast::ImportItem::ImportClass(_) => todo!(),
+                    ast::ImportItem::ImportOp(_) => todo!(),
+                    ast::ImportItem::ImportType(_) => todo!(),
+                    ast::ImportItem::ImportTypeOp(_) => todo!(),
+                    ast::ImportItem::ImportValue(i) => {
+                        ImportItem::ImportValue(i.name_ref()?.in_db(db)?)
+                    }
+                })
+            })
+            .collect::<Option<_>>()?;
 
-        let import_declaration = ImportDeclaration { file_id: imported_file_id };
-        self.inner.alloc(import_declaration);
-
-        None
+        Some(ImportList { items, hiding })
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (ImportId, ImportDeclaration)> + '_ {
-        self.inner
-            .iter()
-            .map(|(import_id, import_declaration)| (ImportId::new(import_id), *import_declaration))
+    pub fn unqualified_imports(&self) -> impl Iterator<Item = &UnqualifiedImport> {
+        self.inner.iter().filter_map(|(_, import)| match import {
+            ImportDeclaration::Qualified(_) => None,
+            ImportDeclaration::Unqualified(i) => Some(i),
+        })
+    }
+
+    pub fn find_qualified(&self, prefix: &ModuleName) -> Option<&QualifiedImport> {
+        self.inner.iter().find_map(|(_, import)| match import {
+            ImportDeclaration::Qualified(q) => {
+                if &q.qualified_as == prefix {
+                    Some(q)
+                } else {
+                    None
+                }
+            }
+            ImportDeclaration::Unqualified(_) => None,
+        })
     }
 }

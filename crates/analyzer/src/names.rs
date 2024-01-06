@@ -85,6 +85,12 @@ impl AsRef<str> for Name {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NameRef(Arc<str>);
 
+impl NameRef {
+    pub(crate) fn from_raw(raw: Arc<str>) -> NameRef {
+        NameRef(raw)
+    }
+}
+
 impl InDb<NameRef> for ast::NameRef {
     fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<NameRef> {
         Some(NameRef(db.interner().intern(self.token()?.text())))

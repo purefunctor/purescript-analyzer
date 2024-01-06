@@ -34,7 +34,7 @@ impl ModuleMap {
         Arc::new(module_map)
     }
 
-    pub fn file_id(&self, module_name: ModuleName) -> FileId {
+    pub fn file_id(&self, module_name: &ModuleName) -> FileId {
         *self.name_to_file.get(&module_name).unwrap()
     }
 
