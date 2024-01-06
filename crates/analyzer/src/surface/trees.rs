@@ -2,6 +2,7 @@
 mod printer;
 pub mod visitor;
 
+use files::FileId;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -11,8 +12,97 @@ pub use printer::PrettyPrinter;
 
 use crate::{
     id::AstId,
-    names::{Name, NameRef, Qualified},
+    names::{ModuleName, Name, NameRef, Qualified},
 };
+
+/// Exports in a module.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ModuleExports {
+    pub items: Vec<ExportItem>,
+    /// Is the export list defined in source?
+    pub explicit: bool,
+}
+
+impl ModuleExports {
+    pub fn is_value_exported(&self, v: impl AsRef<str>) -> bool {
+        self.items.iter().any(|export_item| match export_item {
+            ExportItem::ExportValue(i) => i.as_ref() == v.as_ref(),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ExportItem {
+    ExportValue(NameRef),
+}
+
+/// Imports in a module.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ModuleImports {
+    pub(super) inner: Vec<ImportDeclaration>,
+}
+
+impl ModuleImports {
+    pub fn find_qualified(&self, prefix: &ModuleName) -> Option<&ImportDeclaration> {
+        self.inner.iter().find(|import_declaration| {
+            if let Some(qualified_as) = &import_declaration.qualified_as {
+                qualified_as == prefix
+            } else {
+                false
+            }
+        })
+    }
+}
+
+/// An import in a module.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportDeclaration {
+    /// The name of the imported module.
+    pub module_name: ModuleName,
+    /// The associated [`FileId`], obtained from the [`ModuleMap`].
+    ///
+    /// [`ModuleMap`]: crate::resolver::ModuleMap
+    pub file_id: FileId,
+    /// The qualified name of the import.
+    ///
+    /// If [`None`], then this import is unqualified.
+    pub qualified_as: Option<ModuleName>,
+    /// The list of imported items.
+    ///
+    /// If [`None], then this import is open.
+    pub import_list: Option<ImportList>,
+}
+
+impl ImportDeclaration {
+    pub fn is_value_imported(&self, v: impl AsRef<str>) -> bool {
+        if let Some(import_list) = &self.import_list {
+            let is_member = import_list.items.iter().any(|import_item| match import_item {
+                ImportItem::ImportValue(i) => v.as_ref() == i.as_ref(),
+            });
+            if import_list.hiding {
+                !is_member
+            } else {
+                is_member
+            }
+        } else {
+            true
+        }
+    }
+}
+
+/// A list of imported items.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportList {
+    pub items: Vec<ImportItem>,
+    /// Are these items `hidden`?
+    pub hiding: bool,
+}
+
+/// The kind of the imported item.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ImportItem {
+    ImportValue(NameRef),
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct WithArena<T> {

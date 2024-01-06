@@ -8,11 +8,11 @@ use rustc_hash::FxHashMap;
 use crate::{
     id::InFile,
     names::Qualified,
-    resolver::{DataGroupId, ModuleImports, NominalMap, ValueGroupId},
+    resolver::{DataGroupId, NominalMap, ValueGroupId},
     scope::{BinderKind, ScopeKind, VariableResolution},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, default_visit_type, Visitor},
-        Binder, BinderId, Expr, ExprId, LetName, Type, TypeId,
+        Binder, BinderId, Expr, ExprId, LetName, ModuleImports, Type, TypeId,
     },
     ScopeDatabase,
 };

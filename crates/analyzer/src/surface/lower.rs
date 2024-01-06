@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use files::FileId;
 use itertools::Itertools;
 use la_arena::Arena;
 use rowan::{ast::AstNode, NodeOrToken};
@@ -8,8 +9,8 @@ use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 
 use crate::{
     id::InFile,
-    names::{InDb, Name},
-    resolver::{nominal::DataGroupId, ValueGroupId},
+    names::{InDb, Name, NameRef},
+    resolver::{nominal::DataGroupId, ModuleMap, ValueGroupId},
     surface::{LetNameEquation, LetNamePtr},
     SurfaceDatabase,
 };
@@ -584,5 +585,113 @@ impl<'db> SurfaceContext<'db> {
             .map(|field| self.lower_type(&field))
             .collect::<Option<_>>()?;
         Some(DataConstructor { name, fields })
+    }
+}
+
+impl ModuleImports {
+    pub(crate) fn module_imports_query(
+        db: &dyn SurfaceDatabase,
+        file_id: FileId,
+    ) -> Arc<ModuleImports> {
+        let module_map = db.module_map();
+        let mut module_imports = ModuleImports::default();
+
+        let node = db.parse_file(file_id);
+        let import_declarations = ast::Source::<ast::Module>::cast(node)
+            .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
+        if let Some(import_declarations) = import_declarations {
+            for import_declaration in import_declarations {
+                module_imports.collect_import(db, &module_map, import_declaration);
+            }
+        }
+
+        Arc::new(module_imports)
+    }
+
+    fn collect_import(
+        &mut self,
+        db: &dyn SurfaceDatabase,
+        module_map: &ModuleMap,
+        import_declaration: ast::ImportDeclaration,
+    ) -> Option<()> {
+        let module_name = import_declaration.module_name()?.in_db(db)?;
+        let file_id = module_map.file_id(&module_name);
+        let qualified_as = import_declaration
+            .import_qualified()
+            .and_then(|qualified| qualified.module_name()?.in_db(db));
+
+        let import_list = self.collect_import_list(db, import_declaration);
+        let import_declaration =
+            ImportDeclaration { module_name, file_id, qualified_as, import_list };
+
+        self.inner.push(import_declaration);
+
+        Some(())
+    }
+
+    fn collect_import_list(
+        &self,
+        db: &dyn SurfaceDatabase,
+        import_declaration: ast::ImportDeclaration,
+    ) -> Option<ImportList> {
+        let import_list = import_declaration.import_list()?;
+
+        let hiding = import_list.hiding_token().is_some();
+        let items = import_list
+            .import_items()?
+            .children()
+            .map(|import_item| {
+                Some(match import_item {
+                    ast::ImportItem::ImportClass(_) => todo!(),
+                    ast::ImportItem::ImportOp(_) => todo!(),
+                    ast::ImportItem::ImportType(_) => todo!(),
+                    ast::ImportItem::ImportTypeOp(_) => todo!(),
+                    ast::ImportItem::ImportValue(i) => {
+                        ImportItem::ImportValue(i.name_ref()?.in_db(db)?)
+                    }
+                })
+            })
+            .collect::<Option<_>>()?;
+
+        Some(ImportList { items, hiding })
+    }
+}
+
+impl ModuleExports {
+    pub(crate) fn module_exports_query(
+        db: &dyn SurfaceDatabase,
+        file_id: FileId,
+    ) -> Arc<ModuleExports> {
+        let items;
+        let explicit;
+
+        let node = db.parse_file(file_id);
+        let nominal_map = db.nominal_map(file_id);
+        let export_list = ast::Source::<ast::Module>::cast(node).and_then(|source| {
+            Some(source.child()?.header()?.export_list()?.child()?.child()?.children())
+        });
+
+        if let Some(export_list) = export_list {
+            items = export_list
+                .filter_map(|export_item| match export_item {
+                    ast::ExportItem::ExportValue(v) => {
+                        Some(ExportItem::ExportValue(v.name_ref()?.in_db(db)?))
+                    }
+                })
+                .collect();
+            explicit = true
+        } else {
+            items = nominal_map
+                .value_groups()
+                .map(|(_, value_group)| {
+                    // FIXME: use interned names for ValueGroup
+                    let name = NameRef::from_raw(db.interner().intern(&value_group.name));
+                    ExportItem::ExportValue(name)
+                })
+                .collect();
+            explicit = false;
+        }
+
+        Arc::new(ModuleExports { items, explicit })
     }
 }

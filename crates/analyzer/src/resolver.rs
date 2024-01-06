@@ -9,8 +9,6 @@
 //! [`AstId`]: crate::id::AstId
 //! [`ModuleName`]: crate::names::ModuleName
 
-pub mod export;
-pub mod import;
 pub mod module;
 pub mod nominal;
 pub mod positional;
@@ -21,8 +19,6 @@ use files::FileId;
 
 use crate::SourceDatabase;
 
-pub use export::ModuleExports;
-pub use import::ModuleImports;
 pub use module::ModuleMap;
 pub use nominal::{DataGroup, DataGroupId, NominalMap, ValueGroup, ValueGroupId};
 pub use positional::PositionalMap;
@@ -37,19 +33,4 @@ pub trait ResolverDatabase: SourceDatabase {
 
     #[salsa::invoke(PositionalMap::positional_map_query)]
     fn positional_map(&self, file_id: FileId) -> Arc<PositionalMap>;
-
-    #[salsa::invoke(ModuleExports::module_exports_query)]
-    fn module_exports(&self, file_id: FileId) -> Arc<ModuleExports>;
-
-    #[salsa::invoke(ModuleImports::module_imports_query)]
-    fn module_imports(&self, file_id: FileId) -> Arc<ModuleImports>;
-
-    // #[salsa::invoke(QualifiedImports::qualified_imports_query)]
-    // fn qualified_imports(&self, file_id: FileId) -> Arc<QualifiedImports>;
-
-    // #[salsa::invoke(UnqualifiedImports::unqualified_imports_query)]
-    // fn unqualified_imports(&self, file_id: FileId) -> Arc<UnqualifiedImports>;
-
-    // #[salsa::invoke(Exports::exports_query)]
-    // fn exports(&self, file_id: FileId) -> Arc<Exports>;
 }

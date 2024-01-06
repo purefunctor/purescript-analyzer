@@ -97,7 +97,7 @@ fn test_infer_data() {
 
 #[test]
 fn api_test() {
-    let (mut db, mut files, file_id) = default_db("module B () where b = 0");
+    let (mut db, mut files, file_id) = default_db("module B (b) where b = 0");
 
     files.set_file_contents(
         "./A.purs".into(),
