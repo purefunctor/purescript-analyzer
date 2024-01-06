@@ -415,5 +415,5 @@ fn is_lower_start(c: char) -> bool {
 }
 
 fn is_hex_digit(c: char) -> bool {
-    matches!(c, 'a'..='f' | 'A'..='F' | '0'..='9')
+    c.is_ascii_hexdigit()
 }

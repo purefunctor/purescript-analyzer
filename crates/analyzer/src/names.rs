@@ -25,7 +25,7 @@ pub struct ModuleName(Arc<str>);
 
 impl ModuleName {
     pub fn iter(&self) -> impl Iterator<Item = &str> {
-        self.0.split(".")
+        self.0.split('.')
     }
 }
 

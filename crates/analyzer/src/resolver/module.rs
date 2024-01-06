@@ -35,7 +35,7 @@ impl ModuleMap {
     }
 
     pub fn file_id(&self, module_name: &ModuleName) -> FileId {
-        *self.name_to_file.get(&module_name).unwrap()
+        *self.name_to_file.get(module_name).unwrap()
     }
 
     pub fn module_name(&self, file_id: FileId) -> ModuleName {
