@@ -67,7 +67,7 @@ impl<'db> SurfaceContext<'db> {
         let group_data = nominal_map.data_group_data(id);
         let mut surface_context = SurfaceContext::new(db);
 
-        let name = group_data.name.clone();
+        let name = Name::clone(&group_data.name);
         let annotation = group_data.annotation.and_then(|annotation| {
             let annotation = annotation.in_file(id.file_id).to_ast(db);
             surface_context.lower_data_annotation(&annotation)
@@ -119,7 +119,7 @@ impl<'db> SurfaceContext<'db> {
         let group_data = nominal_map.value_group_data(id);
         let mut surface_context = SurfaceContext::new(db);
 
-        let name = group_data.name.clone();
+        let name = Name::clone(&group_data.name);
         let annotation = group_data.annotation.and_then(|annotation| {
             let annotation = annotation.in_file(id.file_id).to_ast(db);
             surface_context.lower_value_annotation(&annotation)
@@ -578,7 +578,7 @@ impl<'db> SurfaceContext<'db> {
         &mut self,
         constructor: &ast::DataConstructor,
     ) -> Option<DataConstructor> {
-        let name = constructor.name()?.as_str()?;
+        let name = constructor.name()?.in_db(self.db)?;
         let fields = constructor
             .fields()?
             .children()
@@ -684,9 +684,7 @@ impl ModuleExports {
             items = nominal_map
                 .value_groups()
                 .map(|(_, value_group)| {
-                    // FIXME: use interned names for ValueGroup
-                    let name = NameRef::from_raw(db.interner().intern(&value_group.name));
-                    ExportItem::ExportValue(name)
+                    ExportItem::ExportValue(NameRef::from(Name::clone(&value_group.name)))
                 })
                 .collect();
             explicit = false;

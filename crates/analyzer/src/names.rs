@@ -4,7 +4,7 @@
 //! the interning mechanism [`interner::Interner`]; this makes them cheap to clone and relatively
 //! easy to clean up as they're discarded.
 
-use std::sync::Arc;
+use std::{fmt::Display, ops::Deref, sync::Arc};
 
 use rowan::ast::AstNode;
 use syntax::ast;
@@ -81,15 +81,29 @@ impl AsRef<str> for Name {
     }
 }
 
+impl Deref for Name {
+    type Target = Arc<str>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<NameRef> for Name {
+    fn from(value: NameRef) -> Name {
+        Name(value.0)
+    }
+}
+
+impl Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.as_ref().fmt(f)
+    }
+}
+
 /// Names appearing as usages.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NameRef(Arc<str>);
-
-impl NameRef {
-    pub(crate) fn from_raw(raw: Arc<str>) -> NameRef {
-        NameRef(raw)
-    }
-}
 
 impl InDb<NameRef> for ast::NameRef {
     fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<NameRef> {
@@ -100,6 +114,26 @@ impl InDb<NameRef> for ast::NameRef {
 impl AsRef<str> for NameRef {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl Deref for NameRef {
+    type Target = Arc<str>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<Name> for NameRef {
+    fn from(value: Name) -> NameRef {
+        NameRef(value.0)
+    }
+}
+
+impl Display for NameRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.as_ref().fmt(f)
     }
 }
 

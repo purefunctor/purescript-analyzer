@@ -150,13 +150,13 @@ impl DataDeclaration {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DataConstructor {
-    pub name: SmolStr,
+    pub name: Name,
     pub fields: Vec<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DataGroup {
-    pub name: SmolStr,
+    pub name: Name,
     pub annotation: Option<DataAnnotation>,
     pub declaration: DataDeclaration,
 }
@@ -174,7 +174,7 @@ pub struct ValueEquation {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
-    pub name: SmolStr,
+    pub name: Name,
     pub annotation: Option<ValueAnnotation>,
     pub equations: FxHashMap<AstId<ast::ValueEquationDeclaration>, ValueEquation>,
 }
