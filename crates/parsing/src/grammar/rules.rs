@@ -1303,6 +1303,38 @@ fn export_list(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::ExportList);
 }
 
+fn data_members(parser: &mut Parser) {
+    if parser.at(SyntaxKind::LeftParenthesis) {
+        let mut data = parser.start();
+        let mut wrapped = parser.start();
+        parser.consume();
+        let kind = match parser.current() {
+            SyntaxKind::RightParenthesis => {
+                parser.consume();
+                SyntaxKind::DataEnumerated
+            }
+            SyntaxKind::Period2 => {
+                parser.consume();
+                parser.expect(SyntaxKind::RightParenthesis);
+                SyntaxKind::DataAll
+            }
+            _ => {
+                separated(parser, SyntaxKind::Comma, |parser| {
+                    if parser.at(SyntaxKind::Upper) {
+                        name_ref(parser, SyntaxKind::Upper);
+                    } else {
+                        parser.error("expected a constructor");
+                    }
+                });
+                parser.expect(SyntaxKind::RightParenthesis);
+                SyntaxKind::DataEnumerated
+            }
+        };
+        data.end(parser, kind);
+        wrapped.end(parser, SyntaxKind::Wrapped)
+    }
+}
+
 fn export_item(parser: &mut Parser) {
     let mut marker = parser.start();
     match parser.current() {
@@ -1331,6 +1363,7 @@ fn export_item(parser: &mut Parser) {
         }
         SyntaxKind::Upper => {
             name_ref(parser, SyntaxKind::Upper);
+            data_members(parser);
             marker.end(parser, SyntaxKind::ExportType);
         }
         _ => {
@@ -1406,35 +1439,7 @@ fn import_item(parser: &mut Parser) {
         }
         SyntaxKind::Upper => {
             name_ref(parser, SyntaxKind::Upper);
-            if parser.at(SyntaxKind::LeftParenthesis) {
-                let mut data = parser.start();
-                let mut wrapped = parser.start();
-                parser.consume();
-                let kind = match parser.current() {
-                    SyntaxKind::RightParenthesis => {
-                        parser.consume();
-                        SyntaxKind::DataEnumerated
-                    }
-                    SyntaxKind::Period2 => {
-                        parser.consume();
-                        parser.expect(SyntaxKind::RightParenthesis);
-                        SyntaxKind::DataAll
-                    }
-                    _ => {
-                        separated(parser, SyntaxKind::Comma, |parser| {
-                            if parser.at(SyntaxKind::Upper) {
-                                name_ref(parser, SyntaxKind::Upper);
-                            } else {
-                                parser.error("expected a constructor");
-                            }
-                        });
-                        parser.expect(SyntaxKind::RightParenthesis);
-                        SyntaxKind::DataEnumerated
-                    }
-                };
-                data.end(parser, kind);
-                wrapped.end(parser, SyntaxKind::Wrapped)
-            }
+            data_members(parser);
             marker.end(parser, SyntaxKind::ImportType);
         }
         SyntaxKind::TypeKw => {
