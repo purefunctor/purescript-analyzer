@@ -97,14 +97,21 @@ fn test_infer_data() {
 
 #[test]
 fn api_test() {
-    let (mut db, mut files, file_id) = default_db("module B (b) where b = 0");
+    let (mut db, mut files, file_id) = default_db(
+        "module B (List(..)) where
+data List a = Cons a (List a) | Nil
+",
+    );
 
     files.set_file_contents(
         "./A.purs".into(),
         Some(
             "module A where
-import B as B
-a = B.b"
+import B (List(..)) as B
+
+data X = X
+
+a = X"
                 .into(),
         ),
     );
@@ -115,8 +122,6 @@ a = B.b"
     db.set_file_paths_with_durability(files.iter().collect(), Durability::HIGH);
 
     let pp = infer::PrettyPrinter::new(&db);
-
-    dbg!(db.module_exports(file_id));
 
     let a_file_id = files.file_id("./A.purs".into()).unwrap();
     // dbg!(db.parse_file(a_file_id));

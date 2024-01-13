@@ -24,15 +24,56 @@ pub struct ModuleExports {
 }
 
 impl ModuleExports {
-    pub fn is_value_exported(&self, v: impl AsRef<str>) -> bool {
-        self.items.iter().any(|export_item| match export_item {
-            ExportItem::ExportValue(i) => i.as_ref() == v.as_ref(),
+    #[inline]
+    fn is_exported(&self, predicate: impl Fn(&ExportItem) -> bool) -> bool {
+        self.items.iter().any(predicate)
+    }
+
+    pub fn is_constructor_exported(
+        &self,
+        type_name: impl AsRef<str>,
+        constructor_name: impl AsRef<str> + Copy,
+    ) -> bool {
+        self.is_exported(|export_item| match export_item {
+            ExportItem::ExportType(i, m) => {
+                let is_type = type_name.as_ref() == i.as_ref();
+                let is_member =
+                    m.as_ref().is_some_and(|data_members| data_members.is_member(constructor_name));
+                is_type && is_member
+            }
+            _ => false,
         })
+    }
+
+    pub fn is_value_exported(&self, name: impl AsRef<str>) -> bool {
+        self.is_exported(|export_item| match export_item {
+            ExportItem::ExportValue(i) => name.as_ref() == i.as_ref(),
+            _ => false,
+        })
+    }
+}
+
+/// A list of data constructors.
+#[derive(Debug, PartialEq, Eq)]
+pub enum DataMembers {
+    DataAll,
+    DataEnumerated(Vec<NameRef>),
+}
+
+impl DataMembers {
+    pub fn is_member(&self, constructor_name: impl AsRef<str>) -> bool {
+        match self {
+            DataMembers::DataAll => true,
+            DataMembers::DataEnumerated(constructors) => constructors
+                .iter()
+                .any(|constructor| constructor_name.as_ref() == constructor.as_ref()),
+        }
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExportItem {
+    ExportType(NameRef, Option<DataMembers>),
     ExportValue(NameRef),
 }
 
@@ -74,19 +115,41 @@ pub struct ImportDeclaration {
 }
 
 impl ImportDeclaration {
-    pub fn is_value_imported(&self, v: impl AsRef<str>) -> bool {
+    #[inline]
+    fn is_imported(&self, predicate: impl Fn(&ImportItem) -> bool) -> bool {
         if let Some(import_list) = &self.import_list {
-            let is_member = import_list.items.iter().any(|import_item| match import_item {
-                ImportItem::ImportValue(i) => v.as_ref() == i.as_ref(),
-            });
+            let is_member = import_list.items.iter().any(predicate);
             if import_list.hiding {
                 !is_member
             } else {
                 is_member
             }
         } else {
-            true
+            false
         }
+    }
+
+    pub fn is_constructor_imported(
+        &self,
+        type_name: impl AsRef<str>,
+        constructor_name: impl AsRef<str> + Copy,
+    ) -> bool {
+        self.is_imported(|import_item| match import_item {
+            ImportItem::ImportType(i, m) => {
+                let is_type = type_name.as_ref() == i.as_ref();
+                let is_member =
+                    m.as_ref().is_some_and(|data_members| data_members.is_member(constructor_name));
+                is_type && is_member
+            }
+            _ => false,
+        })
+    }
+
+    pub fn is_value_imported(&self, v: impl AsRef<str>) -> bool {
+        self.is_imported(|import_item| match import_item {
+            ImportItem::ImportValue(i) => v.as_ref() == i.as_ref(),
+            _ => false,
+        })
     }
 }
 
@@ -101,6 +164,7 @@ pub struct ImportList {
 /// The kind of the imported item.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ImportItem {
+    ImportType(NameRef, Option<DataMembers>),
     ImportValue(NameRef),
 }
 

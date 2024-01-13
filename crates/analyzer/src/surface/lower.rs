@@ -588,6 +588,18 @@ impl<'db> SurfaceContext<'db> {
     }
 }
 
+fn collect_data_members(
+    db: &dyn SurfaceDatabase,
+    data_members: Option<ast::DataMembers>,
+) -> Option<DataMembers> {
+    data_members.and_then(|data_members| match data_members {
+        ast::DataMembers::DataAll(_) => Some(DataMembers::DataAll),
+        ast::DataMembers::DataEnumerated(e) => Some(DataMembers::DataEnumerated(
+            e.constructors()?.children().filter_map(|name_ref| name_ref.in_db(db)).collect(),
+        )),
+    })
+}
+
 impl ModuleImports {
     pub(crate) fn module_imports_query(
         db: &dyn SurfaceDatabase,
@@ -640,18 +652,19 @@ impl ModuleImports {
         let items = import_list
             .import_items()?
             .children()
-            .map(|import_item| {
-                Some(match import_item {
-                    ast::ImportItem::ImportClass(_) => todo!(),
-                    ast::ImportItem::ImportOp(_) => todo!(),
-                    ast::ImportItem::ImportType(_) => todo!(),
-                    ast::ImportItem::ImportTypeOp(_) => todo!(),
-                    ast::ImportItem::ImportValue(i) => {
-                        ImportItem::ImportValue(i.name_ref()?.in_db(db)?)
-                    }
-                })
+            .filter_map(|import_item| match import_item {
+                ast::ImportItem::ImportClass(_) => None,
+                ast::ImportItem::ImportOp(_) => None,
+                ast::ImportItem::ImportType(t) => {
+                    let data_members = collect_data_members(db, t.data_members());
+                    Some(ImportItem::ImportType(t.name_ref()?.in_db(db)?, data_members))
+                }
+                ast::ImportItem::ImportTypeOp(_) => None,
+                ast::ImportItem::ImportValue(v) => {
+                    Some(ImportItem::ImportValue(v.name_ref()?.in_db(db)?))
+                }
             })
-            .collect::<Option<_>>()?;
+            .collect();
 
         Some(ImportList { items, hiding })
     }
@@ -674,6 +687,10 @@ impl ModuleExports {
         if let Some(export_list) = export_list {
             items = export_list
                 .filter_map(|export_item| match export_item {
+                    ast::ExportItem::ExportType(t) => {
+                        let data_members = collect_data_members(db, t.data_members());
+                        Some(ExportItem::ExportType(t.name_ref()?.in_db(db)?, data_members))
+                    }
                     ast::ExportItem::ExportValue(v) => {
                         Some(ExportItem::ExportValue(v.name_ref()?.in_db(db)?))
                     }

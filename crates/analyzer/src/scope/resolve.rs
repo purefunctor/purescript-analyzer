@@ -7,7 +7,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     id::InFile,
-    names::Qualified,
+    names::{NameRef, Qualified},
     resolver::{DataGroupId, NominalMap, ValueGroupId},
     scope::{BinderKind, ScopeKind, VariableResolution},
     surface::{
@@ -140,14 +140,40 @@ impl<'a> ResolveContext<'a> {
         ))
     }
 
-    fn resolve_constructor_expr(&mut self, expr_id: ExprId, name: impl AsRef<str>) {
-        let name = name.as_ref();
-        self.resolve_env.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
-            self.per_constructor_expr.insert(
-                expr_id,
-                ConstructorResolution { data_id, constructor_id: constructor_id.value },
-            )
-        });
+    fn resolve_constructor_expr(&mut self, expr_id: ExprId, name: &Qualified<NameRef>) {
+        if let Some(prefix) = &name.prefix {
+            if let Some(qualified_import) = self.resolve_env.module_imports.find_qualified(prefix) {
+                let file_id = qualified_import.file_id;
+                let nominal_map = self.db.nominal_map(file_id);
+
+                if let Some((data_id, constructor_id)) = nominal_map.constructor_id(&name.value) {
+                    let data_name = &nominal_map.data_group_data(data_id).name;
+
+                    if !qualified_import.is_constructor_imported(data_name, &name.value) {
+                        unimplemented!("Not imported!");
+                    }
+
+                    let export_items = self.db.module_exports(file_id);
+                    if !export_items.is_constructor_exported(data_name, &name.value) {
+                        unimplemented!("Not exported!");
+                    }
+
+                    let constructor_id = constructor_id.value;
+                    self.per_constructor_expr
+                        .insert(expr_id, ConstructorResolution { data_id, constructor_id });
+                } else {
+                    unimplemented!("Not defined!");
+                }
+            }
+        } else {
+            let name = name.value.as_ref();
+            self.resolve_env.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
+                self.per_constructor_expr.insert(
+                    expr_id,
+                    ConstructorResolution { data_id, constructor_id: constructor_id.value },
+                )
+            });
+        }
     }
 
     fn resolve_constructor_binder(&mut self, binder_id: BinderId, name: impl AsRef<str>) {
@@ -249,7 +275,7 @@ impl<'a> Visitor<'a> for ResolveContext<'a> {
     fn visit_expr(&mut self, expr_id: ExprId) {
         match &self.resolve_arenas.expr_arena[expr_id] {
             Expr::Constructor(constructor) => {
-                self.resolve_constructor_expr(expr_id, &constructor.value);
+                self.resolve_constructor_expr(expr_id, constructor);
             }
             Expr::Variable(variable) => {
                 self.resolve_variable_expr(expr_id, variable);
