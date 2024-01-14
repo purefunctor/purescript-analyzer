@@ -33,6 +33,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "analyzer-module"
+version = "0.1.0"
+dependencies = [
+ "files",
+ "parsing",
+ "salsa",
+ "syntax",
+]
+
+[[package]]
 name = "arrayvec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
