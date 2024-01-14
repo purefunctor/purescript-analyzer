@@ -1,4 +1,4 @@
-//! Queries pertaining to a module's contents.
+//! Queries pertaining to a useful mappings.
 
 pub mod module;
 pub mod nominal;

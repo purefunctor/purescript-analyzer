@@ -1,3 +1,5 @@
+//! Queries pertaining to interning and similar utilities.
+
 use std::sync::Arc;
 
 use interner::Interner;
