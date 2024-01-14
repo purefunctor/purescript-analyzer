@@ -1,101 +1,153 @@
 //! Names in PureScript.
+//!
+//! Internally, types in this module are represented by an [`Arc<str>`] and constructed through
+//! the interning mechanism [`interner::Interner`]; this makes them cheap to clone and relatively
+//! easy to clean up as they're discarded.
 
-use smallvec::SmallVec;
-use smol_str::SmolStr;
+use std::{fmt::Display, ops::Deref, sync::Arc};
+
+use rowan::ast::AstNode;
 use syntax::ast;
 
-/// e.g. `Main`, `Data.Maybe`
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ModuleName {
-    segments: SmallVec<[SmolStr; 3]>,
+use crate::SourceDatabase;
+
+/// A trait for constructing interned names from the [`ast`].
+pub(crate) trait InDb<Target>: Sized
+where
+    Self: AstNode,
+{
+    fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<Target>;
 }
+
+/// Names separated by a period.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleName(Arc<str>);
 
 impl ModuleName {
-    pub fn iter(&self) -> impl Iterator<Item = &SmolStr> {
-        self.segments.iter()
+    pub fn iter(&self) -> impl Iterator<Item = &str> {
+        self.0.split('.')
     }
 }
 
-impl TryFrom<ast::ModuleName> for ModuleName {
-    type Error = &'static str;
-
-    fn try_from(value: ast::ModuleName) -> Result<Self, Self::Error> {
-        let segments = value
-            .children()
-            .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
-            .collect::<Result<_, _>>()?;
-        Ok(ModuleName { segments })
+impl InDb<ModuleName> for ast::ModuleName {
+    fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<ModuleName> {
+        let mut buffer = String::default();
+        let mut children = self.children().peekable();
+        while let Some(name_ref) = children.next() {
+            if let Some(token) = name_ref.token() {
+                buffer.push_str(token.text())
+            } else {
+                buffer.push_str("?InvalidToken")
+            }
+            if children.peek().is_some() {
+                buffer.push('.');
+            }
+        }
+        Some(ModuleName(db.interner().intern(buffer)))
     }
 }
 
-impl TryFrom<ast::QualifiedPrefix> for ModuleName {
-    type Error = &'static str;
-
-    fn try_from(value: ast::QualifiedPrefix) -> Result<Self, Self::Error> {
-        let segments = value
-            .children()
-            .map(|name| name.as_str().ok_or("Cannot convert ModuleName segment."))
-            .collect::<Result<_, _>>()?;
-        Ok(ModuleName { segments })
+impl InDb<ModuleName> for ast::QualifiedPrefix {
+    fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<ModuleName> {
+        let mut buffer = String::default();
+        let mut children = self.children().peekable();
+        while let Some(name_ref) = children.next() {
+            if let Some(token) = name_ref.token() {
+                buffer.push_str(token.text())
+            } else {
+                buffer.push_str("?InvalidToken")
+            }
+            if children.peek().is_some() {
+                buffer.push('.');
+            }
+        }
+        Some(ModuleName(db.interner().intern(buffer)))
     }
 }
 
-/// e.g. `a = 0`
+/// Names appearing as bindings.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Name {
-    name: SmolStr,
+pub struct Name(Arc<str>);
+
+impl InDb<Name> for ast::Name {
+    fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<Name> {
+        Some(Name(db.interner().intern(self.token()?.text())))
+    }
 }
 
 impl AsRef<str> for Name {
     fn as_ref(&self) -> &str {
-        &self.name
+        &self.0
     }
 }
 
-impl TryFrom<ast::Name> for Name {
-    type Error = &'static str;
+impl Deref for Name {
+    type Target = Arc<str>;
 
-    fn try_from(value: ast::Name) -> Result<Self, Self::Error> {
-        let name = value.as_str().ok_or("Cannot convert Name")?;
-        Ok(Name { name })
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-/// e.g. `Just`, `fromMaybe`
+impl From<NameRef> for Name {
+    fn from(value: NameRef) -> Name {
+        Name(value.0)
+    }
+}
+
+impl Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.as_ref().fmt(f)
+    }
+}
+
+/// Names appearing as usages.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct NameRef {
-    name_ref: SmolStr,
+pub struct NameRef(Arc<str>);
+
+impl InDb<NameRef> for ast::NameRef {
+    fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<NameRef> {
+        Some(NameRef(db.interner().intern(self.token()?.text())))
+    }
 }
 
 impl AsRef<str> for NameRef {
     fn as_ref(&self) -> &str {
-        &self.name_ref
+        &self.0
     }
 }
 
-impl TryFrom<ast::NameRef> for NameRef {
-    type Error = &'static str;
+impl Deref for NameRef {
+    type Target = Arc<str>;
 
-    fn try_from(value: ast::NameRef) -> Result<Self, Self::Error> {
-        let name_ref = value.as_str().ok_or("Cannot convert NameRef")?;
-        Ok(NameRef { name_ref })
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-/// e.g. `M.Just`, `M.fromMaybe`
+impl From<Name> for NameRef {
+    fn from(value: Name) -> NameRef {
+        NameRef(value.0)
+    }
+}
+
+impl Display for NameRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.as_ref().fmt(f)
+    }
+}
+
+/// Values optionally qualified by a [`ModuleName`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Qualified<N> {
     pub(crate) prefix: Option<ModuleName>,
     pub(crate) value: N,
 }
 
-impl TryFrom<ast::QualifiedName> for Qualified<NameRef> {
-    type Error = &'static str;
-
-    fn try_from(value: ast::QualifiedName) -> Result<Self, Self::Error> {
-        let prefix = value.prefix().map(ModuleName::try_from).transpose()?;
-        let value =
-            value.name_ref().ok_or("QualifiedName has no NameRef").and_then(NameRef::try_from)?;
-        Ok(Qualified { prefix, value })
+impl InDb<Qualified<NameRef>> for ast::QualifiedName {
+    fn in_db(self, db: &(impl SourceDatabase + ?Sized)) -> Option<Qualified<NameRef>> {
+        let prefix = self.prefix().and_then(|prefix| prefix.in_db(db));
+        let value = self.name_ref()?.in_db(db)?;
+        Some(Qualified { prefix, value })
     }
 }

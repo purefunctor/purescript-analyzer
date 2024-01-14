@@ -3,20 +3,33 @@
 use std::sync::Arc;
 
 use files::FileId;
+use itertools::Itertools;
 use la_arena::{Arena, Idx};
-use rowan::ast::AstNode;
+use rowan::ast::{AstChildren, AstNode};
 use rustc_hash::{FxHashMap, FxHashSet};
-use smol_str::SmolStr;
 use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
+    names::{InDb, Name},
     ResolverDatabase,
 };
 
+use super::PositionalMap;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataGroup {
+    pub name: Name,
+    pub annotation: Option<AstId<ast::DataAnnotation>>,
+    pub declaration: AstId<ast::DataDeclaration>,
+    pub constructors: FxHashMap<Name, AstId<ast::DataConstructor>>,
+}
+
+pub type DataGroupId = Idx<DataGroup>;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
-    pub name: SmolStr,
+    pub name: Name,
     pub annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
     pub equations: FxHashSet<AstId<ast::ValueEquationDeclaration>>,
 }
@@ -38,34 +51,79 @@ pub type ValueGroupId = Idx<ValueGroup>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct NominalMap {
     file_id: FileId,
+
+    data_groups: Arena<DataGroup>,
+    name_to_data: FxHashMap<Arc<str>, DataGroupId>,
+    name_to_constructor: FxHashMap<Arc<str>, (DataGroupId, AstId<ast::DataConstructor>)>,
+
     value_groups: Arena<ValueGroup>,
-    values: FxHashMap<SmolStr, ValueGroupId>,
+    name_to_value: FxHashMap<Arc<str>, ValueGroupId>,
 }
 
 impl NominalMap {
     fn new(file_id: FileId) -> NominalMap {
+        let data_groups = Arena::default();
+        let name_to_data = FxHashMap::default();
+        let name_to_constructor = FxHashMap::default();
+
         let value_groups = Arena::default();
-        let values = FxHashMap::default();
-        NominalMap { file_id, value_groups, values }
+        let name_to_value = FxHashMap::default();
+
+        NominalMap {
+            file_id,
+            data_groups,
+            name_to_data,
+            name_to_constructor,
+            value_groups,
+            name_to_value,
+        }
     }
 
     pub(crate) fn nominal_map_query(db: &dyn ResolverDatabase, file_id: FileId) -> Arc<NominalMap> {
-        let mut collector = Collector::new(db, file_id);
+        let mut nominal_map = NominalMap::new(file_id);
 
         let node = db.parse_file(file_id);
         let declarations = ast::Source::<ast::Module>::cast(node)
             .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
+
         if let Some(declarations) = declarations {
-            for declaration in declarations {
-                collector.collect_declaration(&declaration);
-            }
+            let positional_map = db.positional_map(file_id);
+            collect(db, &mut nominal_map, &positional_map, declarations);
         }
 
-        Arc::new(collector.into_inner())
+        Arc::new(nominal_map)
+    }
+
+    pub fn data_id(&self, name: impl AsRef<str>) -> Option<InFile<DataGroupId>> {
+        self.name_to_data
+            .get(name.as_ref())
+            .copied()
+            .map(|id| InFile { file_id: self.file_id, value: id })
+    }
+
+    pub fn constructor_id(
+        &self,
+        name: impl AsRef<str>,
+    ) -> Option<(InFile<DataGroupId>, InFile<AstId<ast::DataConstructor>>)> {
+        self.name_to_constructor.get(name.as_ref()).copied().map(|(group_id, constructor_id)| {
+            let group_id = InFile { file_id: self.file_id, value: group_id };
+            let constructor_id = InFile { file_id: self.file_id, value: constructor_id };
+            (group_id, constructor_id)
+        })
+    }
+
+    pub fn data_group_data(&self, id: InFile<DataGroupId>) -> &DataGroup {
+        &self.data_groups[id.value]
+    }
+
+    pub fn data_groups(&self) -> impl Iterator<Item = (InFile<DataGroupId>, &DataGroup)> {
+        self.data_groups
+            .iter()
+            .map(|(id, data)| (InFile { file_id: self.file_id, value: id }, data))
     }
 
     pub fn value_group_id(&self, name: impl AsRef<str>) -> Option<InFile<ValueGroupId>> {
-        self.values
+        self.name_to_value
             .get(name.as_ref())
             .copied()
             .map(|id| InFile { file_id: self.file_id, value: id })
@@ -82,96 +140,138 @@ impl NominalMap {
     }
 }
 
-/// A state machine for collecting [`NominalMap`] entries.
-struct Collector<'a> {
-    db: &'a dyn ResolverDatabase,
-    file_id: FileId,
-    inner: NominalMap,
-    state: CollectorState,
+#[derive(Debug, PartialEq, Eq)]
+enum DeclarationKey {
+    Data(Option<Name>),
+    Value(Option<Name>),
 }
 
-/// The current state for the [`Collector`].
-#[derive(Default, Debug)]
-enum CollectorState {
-    #[default]
-    Initial,
-    ValueGroup(ValueGroup),
+fn collect(
+    db: &dyn ResolverDatabase,
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    declarations: AstChildren<ast::Declaration>,
+) -> Option<()> {
+    let mut declarations = declarations.peekable();
+
+    if declarations.peek().is_none() {
+        return Some(());
+    }
+
+    let groups = declarations.group_by(|declaration| match declaration {
+        ast::Declaration::DataAnnotation(data) => {
+            DeclarationKey::Data(data.name().and_then(|name| name.in_db(db)))
+        }
+        ast::Declaration::DataDeclaration(data) => {
+            DeclarationKey::Data(data.name().and_then(|name| name.in_db(db)))
+        }
+        ast::Declaration::ForeignDataDeclaration(_) => todo!("Unimplemented!"),
+        ast::Declaration::ValueAnnotationDeclaration(value) => {
+            DeclarationKey::Value(value.name().and_then(|name| name.in_db(db)))
+        }
+        ast::Declaration::ValueEquationDeclaration(value) => {
+            DeclarationKey::Value(value.name().and_then(|name| name.in_db(db)))
+        }
+    });
+
+    for (key, group) in groups.into_iter() {
+        match key {
+            DeclarationKey::Data(name) => {
+                collect_data(db, nominal_map, positional_map, name, group)?;
+            }
+            DeclarationKey::Value(name) => {
+                collect_value(nominal_map, positional_map, name, group)?;
+            }
+        }
+    }
+
+    Some(())
 }
 
-impl<'a> Collector<'a> {
-    fn new(db: &'a dyn ResolverDatabase, file_id: FileId) -> Collector<'a> {
-        let inner = NominalMap::new(file_id);
-        let state = CollectorState::default();
-        Collector { db, file_id, inner, state }
+fn collect_data(
+    db: &dyn ResolverDatabase,
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    name: Option<Name>,
+    group: impl Iterator<Item = ast::Declaration>,
+) -> Option<()> {
+    let name = name?;
+    let mut group = group;
+
+    let mut annotation = None;
+
+    let mut declaration = group.next()?;
+    if let ast::Declaration::DataAnnotation(a) = &declaration {
+        annotation = Some(positional_map.ast_id(a));
+        declaration = group.next()?;
     }
 
-    fn into_inner(mut self) -> NominalMap {
-        match self.state {
-            CollectorState::ValueGroup(value_group) => {
-                let name = value_group.name.clone();
-                let index = self.inner.value_groups.alloc(value_group);
-                self.inner.values.insert(name, index);
-            }
-            CollectorState::Initial => (),
+    if let ast::Declaration::DataDeclaration(d) = &declaration {
+        let declaration = positional_map.ast_id(d);
+        let mut constructors = FxHashMap::default();
+
+        for constructor_ast in d.constructors()?.children() {
+            let constructor_name = constructor_ast.name()?.in_db(db)?;
+            constructors.insert(constructor_name, positional_map.ast_id(&constructor_ast));
         }
-        self.inner
+
+        let data_name = Arc::clone(&name);
+        let data_group_id = nominal_map.data_groups.alloc(DataGroup {
+            name,
+            annotation,
+            declaration,
+            constructors,
+        });
+
+        let data_group = &nominal_map.data_groups[data_group_id];
+
+        nominal_map.name_to_data.insert(data_name, data_group_id);
+        for (constructor_name, constructor_id) in data_group.constructors.iter() {
+            nominal_map
+                .name_to_constructor
+                .insert(Arc::clone(constructor_name), (data_group_id, *constructor_id));
+        }
+    } else {
+        unreachable!("Impossible.");
     }
 
-    fn collect_declaration(&mut self, declaration: &ast::Declaration) -> Option<()> {
-        match declaration {
-            ast::Declaration::DataDeclaration(_) => todo!(),
-            ast::Declaration::ForeignDataDeclaration(_) => todo!(),
-            ast::Declaration::ValueAnnotationDeclaration(annotation) => {
-                let name = annotation.name()?.as_str()?;
-                match &self.state {
-                    CollectorState::ValueGroup(current_group) if name == current_group.name => {
-                        panic!("Invalid position for a value annotation!");
-                    }
-                    _ => {
-                        let annotation =
-                            Some(self.db.positional_map(self.file_id).ast_id(annotation));
-                        let initial_value = None;
-                        self.allocate_value_group(name, annotation, initial_value)
-                    }
-                }
-            }
-            ast::Declaration::ValueEquationDeclaration(value) => {
-                let name = value.name()?.as_str()?;
-                match &mut self.state {
-                    CollectorState::ValueGroup(current_group) if name == current_group.name => {
-                        current_group
-                            .equations
-                            .insert(self.db.positional_map(self.file_id).ast_id(value));
-                    }
-                    _ => {
-                        let annotation = None;
-                        let initial_value =
-                            Some(self.db.positional_map(self.file_id).ast_id(value));
-                        self.allocate_value_group(name, annotation, initial_value);
-                    }
-                }
-            }
+    Some(())
+}
+
+fn collect_value(
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    name: Option<Name>,
+    group: impl Iterator<Item = ast::Declaration>,
+) -> Option<()> {
+    let name = name?;
+    let mut group = group;
+
+    let mut annotation = None;
+    let mut equations = FxHashSet::default();
+
+    match group.next()? {
+        ast::Declaration::ValueAnnotationDeclaration(a) => {
+            annotation = Some(positional_map.ast_id(&a));
         }
-        Some(())
+        ast::Declaration::ValueEquationDeclaration(e) => {
+            equations.insert(positional_map.ast_id(&e));
+        }
+        _ => unreachable!("Impossible."),
     }
 
-    fn allocate_value_group(
-        &mut self,
-        name: SmolStr,
-        annotation: Option<AstId<ast::ValueAnnotationDeclaration>>,
-        initial_value: Option<AstId<ast::ValueEquationDeclaration>>,
-    ) {
-        let mut equations = FxHashSet::default();
-        if let Some(initial_value) = initial_value {
-            equations.insert(initial_value);
+    equations.extend(group.filter_map(|declaration| {
+        if let ast::Declaration::ValueEquationDeclaration(e) = declaration {
+            Some(positional_map.ast_id(&e))
+        } else {
+            None
         }
-        let present_value_group = ValueGroup { name, annotation, equations };
-        let past_state =
-            std::mem::replace(&mut self.state, CollectorState::ValueGroup(present_value_group));
-        if let CollectorState::ValueGroup(past_value_group) = past_state {
-            let past_name = past_value_group.name.clone();
-            let index = self.inner.value_groups.alloc(past_value_group);
-            self.inner.values.insert(past_name, index);
-        }
-    }
+    }));
+
+    let value_name = Arc::clone(&name);
+    let value_index = nominal_map.value_groups.alloc(ValueGroup { name, annotation, equations });
+
+    nominal_map.name_to_value.insert(value_name, value_index);
+
+    Some(())
 }

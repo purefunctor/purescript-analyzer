@@ -1,8 +1,8 @@
 use la_arena::Arena;
 
 use super::{
-    Binder, BinderId, Binding, Expr, ExprId, LetBinding, LetName, Literal, Type, ValueEquation,
-    WhereExpr,
+    Binder, BinderId, Binding, Expr, ExprId, LetBinding, LetName, Literal, Type, TypeId,
+    ValueEquation, WhereExpr,
 };
 
 pub trait Visitor<'a>: Sized {
@@ -20,6 +20,10 @@ pub trait Visitor<'a>: Sized {
 
     fn visit_binder(&mut self, binder_id: BinderId) {
         default_visit_binder(self, binder_id);
+    }
+
+    fn visit_type(&mut self, type_id: TypeId) {
+        default_visit_type(self, type_id);
     }
 
     fn visit_binding(&mut self, binding: &'a Binding) {
@@ -125,6 +129,30 @@ where
         }
         Binder::Variable(_) => (),
         Binder::Wildcard => (),
+    }
+}
+
+pub fn default_visit_type<'a, V>(visitor: &mut V, type_id: TypeId)
+where
+    V: Visitor<'a>,
+{
+    let type_arena = visitor.type_arena();
+    match &type_arena[type_id] {
+        Type::Arrow(arguments, result) => {
+            for argument in arguments.iter() {
+                visitor.visit_type(*argument);
+            }
+            visitor.visit_type(*result);
+        }
+        Type::Application(function, arguments) => {
+            visitor.visit_type(*function);
+            for argument in arguments.iter() {
+                visitor.visit_type(*argument);
+            }
+        }
+        Type::Constructor(_) => (),
+        Type::Parenthesized(parenthesized) => visitor.visit_type(*parenthesized),
+        Type::Variable(_) => (),
     }
 }
 

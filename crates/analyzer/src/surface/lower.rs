@@ -1,30 +1,24 @@
 use std::sync::Arc;
 
+use files::FileId;
 use itertools::Itertools;
 use la_arena::Arena;
 use rowan::{ast::AstNode, NodeOrToken};
 use smol_str::SmolStr;
-use syntax::{
-    ast::{self},
-    PureScript, SyntaxKind, SyntaxNodePtr,
-};
+use syntax::{ast, PureScript, SyntaxKind, SyntaxNodePtr};
 
 use crate::{
     id::InFile,
-    names::{Name, Qualified},
-    resolver::ValueGroupId,
+    names::{InDb, Name, NameRef},
+    resolver::{nominal::DataGroupId, ModuleMap, ValueGroupId},
     surface::{LetNameEquation, LetNamePtr},
     SurfaceDatabase,
 };
 
-use super::{
-    Binder, BinderId, Binding, Expr, ExprId, IntOrNumber, LetBinding, LetName, LetNameAnnotation,
-    Literal, RecordItem, SourceMap, Type, TypeId, ValueAnnotation, ValueEquation, ValueGroup,
-    WhereExpr, WithArena,
-};
+use super::{trees::*, SourceMap};
 
-#[derive(Default)]
-pub(crate) struct SurfaceContext {
+pub(crate) struct SurfaceContext<'db> {
+    db: &'db dyn SurfaceDatabase,
     expr_arena: Arena<Expr>,
     let_name_arena: Arena<LetName>,
     binder_arena: Arena<Binder>,
@@ -32,7 +26,16 @@ pub(crate) struct SurfaceContext {
     source_map: SourceMap,
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
+    fn new(db: &'db dyn SurfaceDatabase) -> SurfaceContext<'db> {
+        let expr_arena = Arena::default();
+        let let_name_arena = Arena::default();
+        let binder_arena = Arena::default();
+        let type_arena = Arena::default();
+        let source_map = SourceMap::default();
+        SurfaceContext { db, expr_arena, let_name_arena, binder_arena, type_arena, source_map }
+    }
+
     fn alloc_expr(&mut self, lowered: Expr, ast: &ast::Expression) -> ExprId {
         let expr_id = self.expr_arena.alloc(lowered);
         self.source_map.expr_to_cst.insert(expr_id, SyntaxNodePtr::new(ast.syntax()));
@@ -55,7 +58,52 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
+    pub(crate) fn data_surface_query(
+        db: &dyn SurfaceDatabase,
+        id: InFile<DataGroupId>,
+    ) -> Arc<WithArena<DataGroup>> {
+        let nominal_map = db.nominal_map(id.file_id);
+        let group_data = nominal_map.data_group_data(id);
+        let mut surface_context = SurfaceContext::new(db);
+
+        let name = Name::clone(&group_data.name);
+        let annotation = group_data.annotation.and_then(|annotation| {
+            let annotation = annotation.in_file(id.file_id).to_ast(db);
+            surface_context.lower_data_annotation(&annotation)
+        });
+
+        let constructors = group_data
+            .constructors
+            .values()
+            .map(|constructor_id| {
+                let constructor = constructor_id.in_file(id.file_id).to_ast(db);
+                (*constructor_id, surface_context.lower_data_constructor(&constructor).unwrap())
+            })
+            .collect();
+
+        let declaration = group_data.declaration.in_file(id.file_id).to_ast(db);
+        let variables = declaration
+            .variables()
+            .unwrap()
+            .children()
+            .map(|type_variable_binding| {
+                surface_context.lower_type_variable_binding(&type_variable_binding).unwrap()
+            })
+            .collect();
+
+        let declaration = DataDeclaration { constructors, variables };
+        let data_group = DataGroup { name, annotation, declaration };
+
+        Arc::new(WithArena::new(
+            surface_context.expr_arena,
+            surface_context.let_name_arena,
+            surface_context.binder_arena,
+            surface_context.type_arena,
+            data_group,
+        ))
+    }
+
     pub(crate) fn value_surface_query(
         db: &dyn SurfaceDatabase,
         id: InFile<ValueGroupId>,
@@ -69,9 +117,9 @@ impl SurfaceContext {
     ) -> (Arc<WithArena<ValueGroup>>, Arc<SourceMap>) {
         let nominal_map = db.nominal_map(id.file_id);
         let group_data = nominal_map.value_group_data(id);
-        let mut surface_context = SurfaceContext::default();
+        let mut surface_context = SurfaceContext::new(db);
 
-        let name = group_data.name.clone();
+        let name = Name::clone(&group_data.name);
         let annotation = group_data.annotation.and_then(|annotation| {
             let annotation = annotation.in_file(id.file_id).to_ast(db);
             surface_context.lower_value_annotation(&annotation)
@@ -98,7 +146,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_value_annotation(
         &mut self,
         ast: &ast::ValueAnnotationDeclaration,
@@ -121,7 +169,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_binding(&mut self, binding: &ast::Binding) -> Option<Binding> {
         match binding {
             ast::Binding::UnconditionalBinding(unconditional) => {
@@ -155,12 +203,10 @@ impl SurfaceContext {
         }
 
         let let_groups = let_bindings.children().group_by(|let_binding| match let_binding {
-            ast::LetBinding::LetBindingName(n) => {
-                Some(GroupKey::Name(Name::try_from(n.name()?).ok()?))
-            }
+            ast::LetBinding::LetBindingName(n) => Some(GroupKey::Name(n.name()?.in_db(self.db)?)),
             ast::LetBinding::LetBindingPattern(_) => Some(GroupKey::Pattern),
             ast::LetBinding::LetBindingSignature(s) => {
-                Some(GroupKey::Name(Name::try_from(s.name()?).ok()?))
+                Some(GroupKey::Name(s.name()?.in_db(self.db)?))
             }
         });
 
@@ -246,13 +292,13 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     // FIXME: use unknown if we can't convert
     fn lower_binder(&mut self, binder: &ast::Binder) -> Option<BinderId> {
         let lowered = {
             match binder {
                 ast::Binder::ConstructorBinder(constructor) => {
-                    let name = Qualified::try_from(constructor.qualified_name()?).ok()?;
+                    let name = constructor.qualified_name()?.in_db(self.db)?;
                     let fields = constructor
                         .fields()
                         .map(|fields| {
@@ -271,7 +317,7 @@ impl SurfaceContext {
                 }
                 ast::Binder::TypedBinder(_) => None,
                 ast::Binder::VariableBinder(variable) => {
-                    Some(Binder::Variable(Name::try_from(variable.name()?).ok()?))
+                    Some(Binder::Variable(variable.name()?.in_db(self.db)?))
                 }
                 ast::Binder::WildcardBinder(_) => Some(Binder::Wildcard),
             }
@@ -308,7 +354,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_expr(&mut self, expression: &ast::Expression) -> Option<ExprId> {
         let lowered = match expression {
             ast::Expression::ApplicationExpression(application) => {
@@ -342,8 +388,7 @@ impl SurfaceContext {
     }
 
     fn lower_expr_constructor(&mut self, constructor: &ast::ConstructorExpression) -> Option<Expr> {
-        let qualified = constructor.qualified_name()?;
-        let name_ref = qualified.try_into().ok()?;
+        let name_ref = constructor.qualified_name()?.in_db(self.db)?;
         Some(Expr::Constructor(name_ref))
     }
 
@@ -364,8 +409,7 @@ impl SurfaceContext {
     }
 
     fn lower_expr_variable(&mut self, variable: &ast::VariableExpression) -> Option<Expr> {
-        let qualified = variable.qualified_name()?;
-        let name_ref = qualified.try_into().ok()?;
+        let name_ref = variable.qualified_name()?.in_db(self.db)?;
         Some(Expr::Variable(name_ref))
     }
 
@@ -383,7 +427,7 @@ impl SurfaceContext {
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_type(&mut self, t: &ast::Type) -> Option<TypeId> {
         let lowered = match t {
             ast::Type::ArrowType(arrow) => self.lower_type_arrow(arrow),
@@ -429,18 +473,17 @@ impl SurfaceContext {
     }
 
     fn lower_type_constructor(&mut self, constructor: &ast::ConstructorType) -> Option<Type> {
-        let qualified = constructor.qualified_name()?;
-        let name_ref = qualified.try_into().ok()?;
+        let name_ref = constructor.qualified_name()?.in_db(self.db)?;
         Some(Type::Constructor(name_ref))
     }
 
     fn lower_type_variable(&self, variable: &ast::VariableType) -> Option<Type> {
-        let name_ref = variable.name_ref()?.try_into().ok()?;
+        let name_ref = variable.name_ref()?.in_db(self.db)?;
         Some(Type::Variable(name_ref))
     }
 }
 
-impl SurfaceContext {
+impl<'db> SurfaceContext<'db> {
     fn lower_literal<A, I>(
         &mut self,
         literal: &syntax::SyntaxElement,
@@ -505,5 +548,165 @@ impl SurfaceContext {
                 _ => None,
             },
         }
+    }
+}
+
+impl<'db> SurfaceContext<'db> {
+    fn lower_type_variable_binding(
+        &mut self,
+        type_variable_binding: &ast::TypeVariableBinding,
+    ) -> Option<TypeVariable> {
+        match type_variable_binding {
+            ast::TypeVariableBinding::TypeVariableKinded(k) => {
+                Some(TypeVariable::Kinded(k.name()?.as_str()?, self.lower_type(&k.kind()?)?))
+            }
+            ast::TypeVariableBinding::TypeVariableName(n) => {
+                Some(TypeVariable::Name(n.name()?.as_str()?))
+            }
+        }
+    }
+
+    fn lower_data_annotation(
+        &mut self,
+        annotation: &ast::DataAnnotation,
+    ) -> Option<DataAnnotation> {
+        let ty = self.lower_type(&annotation.kind()?)?;
+        Some(DataAnnotation { ty })
+    }
+
+    fn lower_data_constructor(
+        &mut self,
+        constructor: &ast::DataConstructor,
+    ) -> Option<DataConstructor> {
+        let name = constructor.name()?.in_db(self.db)?;
+        let fields = constructor
+            .fields()?
+            .children()
+            .map(|field| self.lower_type(&field))
+            .collect::<Option<_>>()?;
+        Some(DataConstructor { name, fields })
+    }
+}
+
+fn collect_data_members(
+    db: &dyn SurfaceDatabase,
+    data_members: Option<ast::DataMembers>,
+) -> Option<DataMembers> {
+    data_members.and_then(|data_members| match data_members {
+        ast::DataMembers::DataAll(_) => Some(DataMembers::DataAll),
+        ast::DataMembers::DataEnumerated(e) => Some(DataMembers::DataEnumerated(
+            e.constructors()?.children().filter_map(|name_ref| name_ref.in_db(db)).collect(),
+        )),
+    })
+}
+
+impl ModuleImports {
+    pub(crate) fn module_imports_query(
+        db: &dyn SurfaceDatabase,
+        file_id: FileId,
+    ) -> Arc<ModuleImports> {
+        let module_map = db.module_map();
+        let mut module_imports = ModuleImports::default();
+
+        let node = db.parse_file(file_id);
+        let import_declarations = ast::Source::<ast::Module>::cast(node)
+            .and_then(|source| Some(source.child()?.imports()?.imports()?.children()));
+        if let Some(import_declarations) = import_declarations {
+            for import_declaration in import_declarations {
+                module_imports.collect_import(db, &module_map, import_declaration);
+            }
+        }
+
+        Arc::new(module_imports)
+    }
+
+    fn collect_import(
+        &mut self,
+        db: &dyn SurfaceDatabase,
+        module_map: &ModuleMap,
+        import_declaration: ast::ImportDeclaration,
+    ) -> Option<()> {
+        let module_name = import_declaration.module_name()?.in_db(db)?;
+        let file_id = module_map.file_id(&module_name);
+        let qualified_as = import_declaration
+            .import_qualified()
+            .and_then(|qualified| qualified.module_name()?.in_db(db));
+
+        let import_list = self.collect_import_list(db, import_declaration);
+        let import_declaration =
+            ImportDeclaration { module_name, file_id, qualified_as, import_list };
+
+        self.inner.push(import_declaration);
+
+        Some(())
+    }
+
+    fn collect_import_list(
+        &self,
+        db: &dyn SurfaceDatabase,
+        import_declaration: ast::ImportDeclaration,
+    ) -> Option<ImportList> {
+        let import_list = import_declaration.import_list()?;
+
+        let hiding = import_list.hiding_token().is_some();
+        let items = import_list
+            .import_items()?
+            .children()
+            .filter_map(|import_item| match import_item {
+                ast::ImportItem::ImportClass(_) => None,
+                ast::ImportItem::ImportOp(_) => None,
+                ast::ImportItem::ImportType(t) => {
+                    let data_members = collect_data_members(db, t.data_members());
+                    Some(ImportItem::ImportType(t.name_ref()?.in_db(db)?, data_members))
+                }
+                ast::ImportItem::ImportTypeOp(_) => None,
+                ast::ImportItem::ImportValue(v) => {
+                    Some(ImportItem::ImportValue(v.name_ref()?.in_db(db)?))
+                }
+            })
+            .collect();
+
+        Some(ImportList { items, hiding })
+    }
+}
+
+impl ModuleExports {
+    pub(crate) fn module_exports_query(
+        db: &dyn SurfaceDatabase,
+        file_id: FileId,
+    ) -> Arc<ModuleExports> {
+        let items;
+        let explicit;
+
+        let node = db.parse_file(file_id);
+        let nominal_map = db.nominal_map(file_id);
+        let export_list = ast::Source::<ast::Module>::cast(node).and_then(|source| {
+            Some(source.child()?.header()?.export_list()?.child()?.child()?.children())
+        });
+
+        if let Some(export_list) = export_list {
+            items = export_list
+                .filter_map(|export_item| match export_item {
+                    ast::ExportItem::ExportType(t) => {
+                        let data_members = collect_data_members(db, t.data_members());
+                        Some(ExportItem::ExportType(t.name_ref()?.in_db(db)?, data_members))
+                    }
+                    ast::ExportItem::ExportValue(v) => {
+                        Some(ExportItem::ExportValue(v.name_ref()?.in_db(db)?))
+                    }
+                })
+                .collect();
+            explicit = true
+        } else {
+            items = nominal_map
+                .value_groups()
+                .map(|(_, value_group)| {
+                    ExportItem::ExportValue(NameRef::from(Name::clone(&value_group.name)))
+                })
+                .collect();
+            explicit = false;
+        }
+
+        Arc::new(ModuleExports { items, explicit })
     }
 }

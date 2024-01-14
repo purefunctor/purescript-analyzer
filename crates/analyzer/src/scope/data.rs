@@ -4,10 +4,12 @@ use std::{iter, ops};
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use syntax::ast;
 
 use crate::{
-    resolver::ValueGroupId,
-    surface::{BinderId, ExprId, LetNameId},
+    id::{AstId, InFile},
+    resolver::{DataGroupId, ValueGroupId},
+    surface::{BinderId, ExprId, LetNameId, TypeId},
 };
 
 /// Scope information as a graph node.
@@ -85,7 +87,7 @@ pub enum LetKind {
 pub type ScopeId = Idx<ScopeData>;
 
 /// A value associated with scope data.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct WithScope<T> {
     scope_arena: Arena<ScopeData>,
     value: T,
@@ -112,7 +114,7 @@ impl<T> ops::Index<ScopeId> for WithScope<T> {
 /// Scope information for a [`ValueGroupId`].
 ///
 /// [`ValueGroupId`]: crate::resolver::ValueGroupId
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ValueGroupScope {
     per_expr: FxHashMap<ExprId, ScopeId>,
 }
@@ -132,36 +134,75 @@ impl WithScope<ValueGroupScope> {
     }
 }
 
-/// The result of name resolution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Resolution {
-    pub thunked: bool,
-    pub kind: ResolutionKind,
+pub struct ConstructorResolution {
+    pub data_id: InFile<DataGroupId>,
+    pub constructor_id: AstId<ast::DataConstructor>,
 }
 
-/// The kind that a name resolves to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResolutionKind {
+pub enum TypeResolution {
+    Data(InFile<DataGroupId>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VariableResolution {
+    pub thunked: bool,
+    pub kind: VariableResolutionKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VariableResolutionKind {
     Binder(BinderId),
     LetName(LetNameId),
     Local(ValueGroupId),
+    Imported(InFile<ValueGroupId>),
 }
 
 /// Name resolution information for a [`ValueGroupId`].
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupResolutions {
+pub struct Resolutions {
+    /// A mapping from [`Expr::Constructor`] IDs to their resolutions.
+    ///
+    /// [`Expr::Constructor`]: crate::surface::Expr::Constructor
+    per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
+    /// A mapping from [`Binder::Constructor`] IDs to their resolutions.
+    ///
+    /// [`Binder::Constructor`]: crate::surface::Binder::Constructor
+    per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+    /// A mapping from [`Type::Constructor`] IDs to their resolutions.
+    ///
+    /// [`Type::Constructor`]: crate::surface::Type::Constructor
+    per_type_type: FxHashMap<TypeId, TypeResolution>,
     /// A mapping from [`Expr::Variable`] IDs to their resolutions.
     ///
     /// [`Expr::Variable`]: crate::surface::Expr::Variable
-    resolutions: FxHashMap<ExprId, Resolution>,
+    per_variable: FxHashMap<ExprId, VariableResolution>,
 }
 
-impl ValueGroupResolutions {
-    pub(crate) fn new(resolutions: FxHashMap<ExprId, Resolution>) -> ValueGroupResolutions {
-        ValueGroupResolutions { resolutions }
+impl Resolutions {
+    pub(crate) fn new(
+        per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
+        per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+        per_type_type: FxHashMap<TypeId, TypeResolution>,
+        per_variable: FxHashMap<ExprId, VariableResolution>,
+    ) -> Resolutions {
+        Resolutions { per_constructor_expr, per_constructor_binder, per_type_type, per_variable }
     }
 
-    pub fn get(&self, expr_id: ExprId) -> Option<Resolution> {
-        self.resolutions.get(&expr_id).copied()
+    pub fn get_constructor_expr(&self, expr_id: ExprId) -> Option<ConstructorResolution> {
+        self.per_constructor_expr.get(&expr_id).copied()
+    }
+
+    pub fn get_constructor_binder(&self, binder_id: BinderId) -> Option<ConstructorResolution> {
+        self.per_constructor_binder.get(&binder_id).copied()
+    }
+
+    pub fn get_type_type(&self, type_id: TypeId) -> Option<TypeResolution> {
+        self.per_type_type.get(&type_id).copied()
+    }
+
+    pub fn get_variable(&self, expr_id: ExprId) -> Option<VariableResolution> {
+        self.per_variable.get(&expr_id).copied()
     }
 }

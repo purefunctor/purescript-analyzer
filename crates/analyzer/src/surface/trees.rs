@@ -2,6 +2,7 @@
 mod printer;
 pub mod visitor;
 
+use files::FileId;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -11,8 +12,165 @@ pub use printer::PrettyPrinter;
 
 use crate::{
     id::AstId,
-    names::{Name, NameRef, Qualified},
+    names::{ModuleName, Name, NameRef, Qualified},
 };
+
+/// Exports in a module.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ModuleExports {
+    pub items: Vec<ExportItem>,
+    /// Is the export list defined in source?
+    pub explicit: bool,
+}
+
+impl ModuleExports {
+    #[inline]
+    fn is_exported(&self, predicate: impl Fn(&ExportItem) -> bool) -> bool {
+        self.items.iter().any(predicate)
+    }
+
+    pub fn is_constructor_exported(
+        &self,
+        type_name: impl AsRef<str>,
+        constructor_name: impl AsRef<str> + Copy,
+    ) -> bool {
+        self.is_exported(|export_item| match export_item {
+            ExportItem::ExportType(i, m) => {
+                let is_type = type_name.as_ref() == i.as_ref();
+                let is_member =
+                    m.as_ref().is_some_and(|data_members| data_members.is_member(constructor_name));
+                is_type && is_member
+            }
+            _ => false,
+        })
+    }
+
+    pub fn is_value_exported(&self, name: impl AsRef<str>) -> bool {
+        self.is_exported(|export_item| match export_item {
+            ExportItem::ExportValue(i) => name.as_ref() == i.as_ref(),
+            _ => false,
+        })
+    }
+}
+
+/// A list of data constructors.
+#[derive(Debug, PartialEq, Eq)]
+pub enum DataMembers {
+    DataAll,
+    DataEnumerated(Vec<NameRef>),
+}
+
+impl DataMembers {
+    pub fn is_member(&self, constructor_name: impl AsRef<str>) -> bool {
+        match self {
+            DataMembers::DataAll => true,
+            DataMembers::DataEnumerated(constructors) => constructors
+                .iter()
+                .any(|constructor| constructor_name.as_ref() == constructor.as_ref()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ExportItem {
+    ExportType(NameRef, Option<DataMembers>),
+    ExportValue(NameRef),
+}
+
+/// Imports in a module.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ModuleImports {
+    pub(super) inner: Vec<ImportDeclaration>,
+}
+
+impl ModuleImports {
+    pub fn iter(&self) -> impl Iterator<Item = &ImportDeclaration> {
+        self.inner.iter()
+    }
+
+    pub fn find_qualified(&self, prefix: &ModuleName) -> Option<&ImportDeclaration> {
+        self.inner.iter().find(|import_declaration| {
+            if let Some(qualified_as) = &import_declaration.qualified_as {
+                qualified_as == prefix
+            } else {
+                false
+            }
+        })
+    }
+}
+
+/// An import in a module.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportDeclaration {
+    /// The name of the imported module.
+    pub module_name: ModuleName,
+    /// The associated [`FileId`], obtained from the [`ModuleMap`].
+    ///
+    /// [`ModuleMap`]: crate::resolver::ModuleMap
+    pub file_id: FileId,
+    /// The qualified name of the import.
+    ///
+    /// If [`None`], then this import is unqualified.
+    pub qualified_as: Option<ModuleName>,
+    /// The list of imported items.
+    ///
+    /// If [`None], then this import is open.
+    pub import_list: Option<ImportList>,
+}
+
+impl ImportDeclaration {
+    #[inline]
+    fn is_imported(&self, predicate: impl Fn(&ImportItem) -> bool) -> bool {
+        if let Some(import_list) = &self.import_list {
+            let is_member = import_list.items.iter().any(predicate);
+            if import_list.hiding {
+                !is_member
+            } else {
+                is_member
+            }
+        } else {
+            false
+        }
+    }
+
+    pub fn is_constructor_imported(
+        &self,
+        type_name: impl AsRef<str>,
+        constructor_name: impl AsRef<str> + Copy,
+    ) -> bool {
+        self.is_imported(|import_item| match import_item {
+            ImportItem::ImportType(i, m) => {
+                let is_type = type_name.as_ref() == i.as_ref();
+                let is_member =
+                    m.as_ref().is_some_and(|data_members| data_members.is_member(constructor_name));
+                is_type && is_member
+            }
+            _ => false,
+        })
+    }
+
+    pub fn is_value_imported(&self, v: impl AsRef<str>) -> bool {
+        self.is_imported(|import_item| match import_item {
+            ImportItem::ImportValue(i) => v.as_ref() == i.as_ref(),
+            _ => false,
+        })
+    }
+}
+
+/// A list of imported items.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportList {
+    pub items: Vec<ImportItem>,
+    /// Are these items `hidden`?
+    pub hiding: bool,
+}
+
+/// The kind of the imported item.
+#[derive(Debug, PartialEq, Eq)]
+pub enum ImportItem {
+    ImportType(NameRef, Option<DataMembers>),
+    ImportValue(NameRef),
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct WithArena<T> {
@@ -36,6 +194,42 @@ impl<T> WithArena<T> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub enum TypeVariable {
+    Kinded(SmolStr, TypeId),
+    Name(SmolStr),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataAnnotation {
+    pub ty: TypeId,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataDeclaration {
+    pub constructors: FxHashMap<AstId<ast::DataConstructor>, DataConstructor>,
+    pub variables: Vec<TypeVariable>,
+}
+
+impl DataDeclaration {
+    pub fn get_constructor(&self, id: AstId<ast::DataConstructor>) -> &DataConstructor {
+        self.constructors.get(&id).unwrap()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataConstructor {
+    pub name: Name,
+    pub fields: Vec<TypeId>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct DataGroup {
+    pub name: Name,
+    pub annotation: Option<DataAnnotation>,
+    pub declaration: DataDeclaration,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValueAnnotation {
     pub ty: TypeId,
 }
@@ -48,7 +242,7 @@ pub struct ValueEquation {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
-    pub name: SmolStr,
+    pub name: Name,
     pub annotation: Option<ValueAnnotation>,
     pub equations: FxHashMap<AstId<ast::ValueEquationDeclaration>, ValueEquation>,
 }

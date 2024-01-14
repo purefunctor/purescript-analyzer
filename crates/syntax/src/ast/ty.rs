@@ -2,7 +2,15 @@
 
 use rowan::ast::AstNode;
 
-use super::{NameRef, OneOrMore, QualifiedName};
+use crate::SyntaxToken;
+
+use super::{Name, NameRef, OneOrMore, QualifiedName};
+
+_create_ast_v!(
+    TypeVariableBinding,
+    TypeVariableKinded(TypeVariableKinded),
+    TypeVariableName(TypeVariableName)
+);
 
 _create_ast_v!(
     Type,
@@ -20,6 +28,30 @@ _create_ast_v!(
     VariableType(VariableType),
     WildcardType(WildcardType)
 );
+
+impl TypeVariableKinded {
+    pub fn at_prefix(&self) -> Option<SyntaxToken> {
+        self.node.first_token()
+    }
+
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?.first_child()?.first_child()?)
+    }
+
+    pub fn kind(&self) -> Option<Type> {
+        Type::cast(self.node.first_child()?.first_child()?.last_child()?)
+    }
+}
+
+impl TypeVariableName {
+    pub fn at_prefix(&self) -> Option<SyntaxToken> {
+        self.node.first_token()
+    }
+
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+}
 
 impl ArrowType {
     pub fn argument(&self) -> Option<Type> {

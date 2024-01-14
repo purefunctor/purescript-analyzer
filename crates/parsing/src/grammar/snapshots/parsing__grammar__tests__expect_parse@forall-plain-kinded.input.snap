@@ -8,14 +8,12 @@ Input: forall (a :: Type). Type
 Start { kind: ForallType }
   Token { kind: ForallKw }
   Start { kind: OneOrMore }
-    Start { kind: TypeVariableBinding }
+    Start { kind: TypeVariableKinded }
       Start { kind: Wrapped }
         Token { kind: LeftParenthesis }
         Start { kind: Labeled }
-          Start { kind: Prefixed }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
+          Start { kind: Name }
+            Token { kind: Lower }
           Finish
           Token { kind: Colon2 }
           Start { kind: ConstructorType }

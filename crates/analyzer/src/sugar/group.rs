@@ -10,7 +10,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::{
     id::InFile,
     resolver::ValueGroupId,
-    scope::{ResolutionKind, ValueGroupResolutions},
+    scope::{Resolutions, VariableResolutionKind},
     surface::{
         visitor::{default_visit_expr, Visitor},
         Binder, Expr, ExprId, LetBinding, LetName, LetNameId, Type, WhereExpr,
@@ -88,7 +88,7 @@ pub(crate) struct BindingGroupsContext<'a> {
     let_name_arena: &'a Arena<LetName>,
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
-    resolutions: &'a ValueGroupResolutions,
+    resolutions: &'a Resolutions,
     value_graph: &'a mut DiGraphMap<ValueGroupId, bool>,
     value_group_id: ValueGroupId,
 }
@@ -99,7 +99,7 @@ impl<'a> BindingGroupsContext<'a> {
         let_name_arena: &'a Arena<LetName>,
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
-        resolutions: &'a ValueGroupResolutions,
+        resolutions: &'a Resolutions,
         value_graph: &'a mut DiGraphMap<ValueGroupId, bool>,
         value_group_id: ValueGroupId,
     ) -> BindingGroupsContext<'a> {
@@ -124,7 +124,7 @@ impl<'a> BindingGroupsContext<'a> {
 
         for (id, _) in nominal_map.value_groups() {
             let value_surface = db.value_surface(id);
-            let value_resolutions = db.value_resolved(id);
+            let value_resolutions = db.value_resolutions(id);
             let value_group_id = id.value;
             value_graph.add_node(value_group_id);
 
@@ -187,8 +187,8 @@ impl<'a> Visitor<'a> for BindingGroupsContext<'a> {
     fn visit_expr(&mut self, expr_id: ExprId) {
         match &self.expr_arena[expr_id] {
             Expr::Variable(_) => {
-                if let Some(resolution) = self.resolutions.get(expr_id) {
-                    if let ResolutionKind::Local(dependency) = resolution.kind {
+                if let Some(resolution) = self.resolutions.get_variable(expr_id) {
+                    if let VariableResolutionKind::Local(dependency) = resolution.kind {
                         self.value_graph.add_edge(
                             self.value_group_id,
                             dependency,
@@ -245,7 +245,7 @@ pub(crate) struct LetBindingGroupsContext<'a> {
     let_name_arena: &'a Arena<LetName>,
     binder_arena: &'a Arena<Binder>,
     type_arena: &'a Arena<Type>,
-    resolutions: &'a ValueGroupResolutions,
+    resolutions: &'a Resolutions,
     let_name_graph: DiGraphMap<LetNameId, bool>,
     on_let_name_id: Option<LetNameId>,
 }
@@ -256,7 +256,7 @@ impl<'a> LetBindingGroupsContext<'a> {
         let_name_arena: &'a Arena<LetName>,
         binder_arena: &'a Arena<Binder>,
         type_arena: &'a Arena<Type>,
-        resolutions: &'a ValueGroupResolutions,
+        resolutions: &'a Resolutions,
     ) -> LetBindingGroupsContext<'a> {
         let let_name_graph = DiGraphMap::default();
         let on_let_name_id = None;
@@ -276,7 +276,7 @@ impl<'a> LetBindingGroupsContext<'a> {
         id: InFile<ValueGroupId>,
     ) -> Arc<LetBindingGroups> {
         let value_surface = db.value_surface(id);
-        let value_resolutions = db.value_resolved(id);
+        let value_resolutions = db.value_resolutions(id);
 
         let mut context = LetBindingGroupsContext::new(
             &value_surface.expr_arena,
@@ -370,8 +370,8 @@ impl<'a> Visitor<'a> for LetBindingGroupsContext<'a> {
             }
             Expr::Variable(_) => {
                 if let Some(dependent) = self.on_let_name_id {
-                    if let Some(resolution) = self.resolutions.get(expr_id) {
-                        if let ResolutionKind::LetName(dependency) = resolution.kind {
+                    if let Some(resolution) = self.resolutions.get_variable(expr_id) {
+                        if let VariableResolutionKind::LetName(dependency) = resolution.kind {
                             self.let_name_graph.add_edge(dependent, dependency, resolution.thunked);
                         }
                     }

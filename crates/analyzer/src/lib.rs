@@ -17,7 +17,6 @@ pub use sugar::SugarDatabase;
 pub use surface::SurfaceDatabase;
 
 /// The analyzer's core database.
-#[derive(Default)]
 #[salsa::database(
     infer::InferStorage,
     resolver::ResolverStorage,
@@ -31,6 +30,14 @@ pub struct RootDatabase {
 }
 
 impl salsa::Database for RootDatabase {}
+
+impl Default for RootDatabase {
+    fn default() -> RootDatabase {
+        let mut db = RootDatabase { storage: Default::default() };
+        db.set_interner(Default::default());
+        db
+    }
+}
 
 pub trait Upcast<T: ?Sized> {
     fn upcast(&self) -> &T;

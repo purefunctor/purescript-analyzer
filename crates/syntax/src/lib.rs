@@ -137,7 +137,8 @@ pub enum SyntaxKind {
     RecordField,
 
     ForallType,
-    TypeVariableBinding,
+    TypeVariableKinded,
+    TypeVariableName,
 
     ArrowType,
     ConstrainedType,
@@ -170,6 +171,7 @@ pub enum SyntaxKind {
     ValueEquationDeclaration,
     ValueAnnotationDeclaration,
 
+    DataAnnotation,
     DataDeclaration,
     DataConstructor,
     DataKw,
