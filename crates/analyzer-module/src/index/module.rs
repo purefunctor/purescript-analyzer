@@ -17,12 +17,12 @@ pub struct ModuleMap {
 }
 
 impl ModuleMap {
-    pub fn file_id(&self, module_name: impl Borrow<str>) -> FileId {
-        *self.name_to_file.get(module_name.borrow()).unwrap()
+    pub fn file_id(&self, module_name: impl Borrow<str>) -> Option<FileId> {
+        self.name_to_file.get(module_name.borrow()).copied()
     }
 
-    pub fn module_name(&self, file_id: FileId) -> Arc<str> {
-        Arc::clone(self.file_to_name.get(&file_id).unwrap())
+    pub fn module_name(&self, file_id: FileId) -> Option<Arc<str>> {
+        self.file_to_name.get(&file_id).cloned()
     }
 }
 
