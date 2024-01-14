@@ -7,6 +7,11 @@ edition = "2021"
 
 [dependencies]
 files = { version = "0.1.0", path = "../files" }
+interner = { version = "0.1.0", path = "../interner" }
+itertools = "0.12.0"
+la-arena = "0.3.1"
 parsing = { version = "0.1.0", path = "../parsing" }
+rowan = "0.15.15"
+rustc-hash = "1.1.0"
 salsa = "0.17.0-pre.2"
 syntax = { version = "0.1.0", path = "../syntax" }
