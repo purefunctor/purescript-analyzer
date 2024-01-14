@@ -4,12 +4,19 @@ pub mod id;
 pub mod index;
 pub mod interner;
 pub mod source;
+pub mod surface;
 
 pub use index::IndexDatabase;
 pub use interner::InternerDatabase;
 pub use source::SourceDatabase;
+pub use surface::SurfaceDatabase;
 
-#[salsa::database(index::IndexStorage, interner::InternerStorage, source::SourceStorage)]
+#[salsa::database(
+    index::IndexStorage,
+    interner::InternerStorage,
+    source::SourceStorage,
+    surface::SurfaceStorage
+)]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
