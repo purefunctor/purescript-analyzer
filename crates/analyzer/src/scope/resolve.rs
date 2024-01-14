@@ -1,5 +1,6 @@
 //! Implements the name resolution algorithm.
 
+use files::FileId;
 use la_arena::Arena;
 use std::sync::Arc;
 
@@ -12,7 +13,7 @@ use crate::{
     scope::{BinderKind, ScopeKind, VariableResolution},
     surface::{
         visitor::{default_visit_binder, default_visit_expr, default_visit_type, Visitor},
-        Binder, BinderId, Expr, ExprId, LetName, ModuleImports, Type, TypeId,
+        Binder, BinderId, Expr, ExprId, LetName, ModuleExports, ModuleImports, Type, TypeId,
     },
     ScopeDatabase,
 };
@@ -21,6 +22,24 @@ use super::{
     ConstructorResolution, Resolutions, TypeResolution, ValueGroupScope, VariableResolutionKind,
     WithScope,
 };
+
+fn collect_imported_env(
+    db: &dyn ScopeDatabase,
+    module_imports: &ModuleImports,
+) -> FxHashMap<FileId, (Arc<NominalMap>, Arc<ModuleExports>)> {
+    module_imports
+        .iter()
+        .map(|import_declaration| {
+            (
+                import_declaration.file_id,
+                (
+                    db.nominal_map(import_declaration.file_id),
+                    db.module_exports(import_declaration.file_id),
+                ),
+            )
+        })
+        .collect()
+}
 
 struct ResolveArenas<'a> {
     expr_arena: &'a Arena<Expr>,
@@ -33,10 +52,10 @@ struct ResolveEnv<'a> {
     value_scope: &'a WithScope<ValueGroupScope>,
     nominal_map: &'a NominalMap,
     module_imports: &'a ModuleImports,
+    imported_env: &'a FxHashMap<FileId, (Arc<NominalMap>, Arc<ModuleExports>)>,
 }
 
 pub(crate) struct ResolveContext<'a> {
-    db: &'a dyn ScopeDatabase,
     resolve_arenas: ResolveArenas<'a>,
     resolve_env: ResolveEnv<'a>,
     per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
@@ -46,17 +65,12 @@ pub(crate) struct ResolveContext<'a> {
 }
 
 impl<'a> ResolveContext<'a> {
-    fn new(
-        db: &'a dyn ScopeDatabase,
-        resolve_arenas: ResolveArenas<'a>,
-        resolve_env: ResolveEnv<'a>,
-    ) -> ResolveContext<'a> {
+    fn new(resolve_arenas: ResolveArenas<'a>, resolve_env: ResolveEnv<'a>) -> ResolveContext<'a> {
         let per_constructor_expr = FxHashMap::default();
         let per_constructor_binder = FxHashMap::default();
         let per_type_type = FxHashMap::default();
         let per_variable = FxHashMap::default();
         ResolveContext {
-            db,
             resolve_arenas,
             resolve_env,
             per_constructor_expr,
@@ -74,6 +88,7 @@ impl<'a> ResolveContext<'a> {
         let value_scope = Default::default();
         let nominal_map = db.nominal_map(id.file_id);
         let module_imports = db.module_imports(id.file_id);
+        let imported_env = collect_imported_env(db, &module_imports);
 
         let resolve_arenas = ResolveArenas {
             expr_arena: &data_surface.expr_arena,
@@ -86,9 +101,10 @@ impl<'a> ResolveContext<'a> {
             value_scope: &value_scope,
             nominal_map: &nominal_map,
             module_imports: &module_imports,
+            imported_env: &imported_env,
         };
 
-        let mut resolve_context = ResolveContext::new(db, resolve_arenas, resolve_env);
+        let mut resolve_context = ResolveContext::new(resolve_arenas, resolve_env);
 
         data_surface.value.declaration.constructors.iter().for_each(|(_, constructor)| {
             constructor.fields.iter().for_each(|field| {
@@ -112,6 +128,7 @@ impl<'a> ResolveContext<'a> {
         let value_scope = db.value_scope(id);
         let nominal_map = db.nominal_map(id.file_id);
         let module_imports = db.module_imports(id.file_id);
+        let imported_env = collect_imported_env(db, &module_imports);
 
         let resolve_arenas = ResolveArenas {
             expr_arena: &value_surface.expr_arena,
@@ -124,9 +141,10 @@ impl<'a> ResolveContext<'a> {
             value_scope: &value_scope,
             nominal_map: &nominal_map,
             module_imports: &module_imports,
+            imported_env: &imported_env,
         };
 
-        let mut resolve_context = ResolveContext::new(db, resolve_arenas, resolve_env);
+        let mut resolve_context = ResolveContext::new(resolve_arenas, resolve_env);
 
         value_surface.value.equations.iter().for_each(|(_, value_equation)| {
             resolve_context.visit_value_equation(value_equation);
@@ -144,7 +162,10 @@ impl<'a> ResolveContext<'a> {
         if let Some(prefix) = &name.prefix {
             if let Some(qualified_import) = self.resolve_env.module_imports.find_qualified(prefix) {
                 let file_id = qualified_import.file_id;
-                let nominal_map = self.db.nominal_map(file_id);
+                let (nominal_map, export_items) =
+                    self.resolve_env.imported_env.get(&file_id).unwrap_or_else(|| {
+                        unreachable!("impossible: missing imported_env entry");
+                    });
 
                 if let Some((data_id, constructor_id)) = nominal_map.constructor_id(&name.value) {
                     let data_name = &nominal_map.data_group_data(data_id).name;
@@ -153,7 +174,6 @@ impl<'a> ResolveContext<'a> {
                         unimplemented!("Not imported!");
                     }
 
-                    let export_items = self.db.module_exports(file_id);
                     if !export_items.is_constructor_exported(data_name, &name.value) {
                         unimplemented!("Not exported!");
                     }
@@ -199,17 +219,19 @@ impl<'a> ResolveContext<'a> {
             // FIXME: validate exports for the module being imported, somewhere, somehow.
             if let Some(qualified_import) = self.resolve_env.module_imports.find_qualified(prefix) {
                 let file_id = qualified_import.file_id;
+                let (nominal_map, export_items) =
+                    self.resolve_env.imported_env.get(&file_id).unwrap_or_else(|| {
+                        unreachable!("impossible: missing imported_env entry");
+                    });
 
                 if !qualified_import.is_value_imported(&name.value) {
                     unimplemented!("Is not imported!");
                 }
 
-                let export_items = self.db.module_exports(file_id);
                 if !export_items.is_value_exported(&name.value) {
                     unimplemented!("Is not exported!");
                 }
 
-                let nominal_map = self.db.nominal_map(file_id);
                 if let Some(value_group_id) = nominal_map.value_group_id(&name.value) {
                     self.per_variable.insert(
                         expr_id,

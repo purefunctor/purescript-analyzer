@@ -84,6 +84,10 @@ pub struct ModuleImports {
 }
 
 impl ModuleImports {
+    pub fn iter(&self) -> impl Iterator<Item = &ImportDeclaration> {
+        self.inner.iter()
+    }
+
     pub fn find_qualified(&self, prefix: &ModuleName) -> Option<&ImportDeclaration> {
         self.inner.iter().find(|import_declaration| {
             if let Some(qualified_as) = &import_declaration.qualified_as {
