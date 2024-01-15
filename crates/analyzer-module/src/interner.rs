@@ -42,6 +42,9 @@ impl InDb for ast::ModuleName {
     {
         let mut buffer = String::default();
         let mut children = self.children().peekable();
+        if children.peek().is_none() {
+            return None;
+        }
         while let Some(name_ref) = children.next() {
             if let Some(token) = name_ref.token() {
                 buffer.push_str(token.text())
@@ -63,6 +66,9 @@ impl InDb for ast::QualifiedPrefix {
     {
         let mut buffer = String::default();
         let mut children = self.children().peekable();
+        if children.peek().is_none() {
+            return None;
+        }
         while let Some(name_ref) = children.next() {
             if let Some(token) = name_ref.token() {
                 buffer.push_str(token.text())
