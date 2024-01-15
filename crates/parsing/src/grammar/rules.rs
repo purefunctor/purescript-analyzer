@@ -1010,7 +1010,7 @@ fn pat_negative(parser: &mut Parser) {
             literal.end(parser, SyntaxKind::LiteralBinder);
         }
         _ => {
-            parser.error("expected LiteralInteger or LiteralNumber");
+            parser.error_recover("expected LiteralInteger or LiteralNumber");
             literal.cancel(parser)
         }
     }
@@ -1323,7 +1323,7 @@ fn data_members(parser: &mut Parser) {
                     if parser.at(SyntaxKind::Upper) {
                         name_ref(parser, SyntaxKind::Upper);
                     } else {
-                        parser.error("expected a constructor");
+                        parser.error_recover("expected an Upper");
                     }
                 });
                 parser.expect(SyntaxKind::RightParenthesis);
@@ -1367,7 +1367,7 @@ fn export_item(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::ExportType);
         }
         _ => {
-            parser.error("expected an export item");
+            parser.error_recover("expected an export item");
             marker.cancel(parser);
         }
     }
@@ -1457,8 +1457,8 @@ fn import_item(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::ImportValue);
         }
         _ => {
+            parser.error_recover("expected an import item");
             marker.cancel(parser);
-            parser.error("expected an import item");
         }
     }
 }
