@@ -51,10 +51,7 @@ fn lower_qualified_name(
     db: &dyn SurfaceDatabase,
     qualified: ast::QualifiedName,
 ) -> Qualified<Name> {
-    let prefix = qualified
-        .prefix()
-        .and_then(|prefix| prefix.in_db(db))
-        .map(|prefix| ModuleName::from_raw(prefix));
+    let prefix = qualified.prefix().and_then(|prefix| prefix.in_db(db)).map(ModuleName::from_raw);
     let value = Name::from_raw(
         qualified
             .name_ref()
@@ -109,7 +106,7 @@ fn lower_export_list(
 
             let items = export_items
                 .map(|export_items| lower_export_items(db, export_items))
-                .unwrap_or_else(|| vec![]);
+                .unwrap_or_default();
             let explicit = true;
 
             ExportList { items, explicit }
@@ -209,7 +206,7 @@ fn lower_import_list(db: &dyn SurfaceDatabase, import_list: ast::ImportList) -> 
                 })
                 .collect()
         })
-        .unwrap_or_else(|| vec![]);
+        .unwrap_or_default();
     ImportList { items, hiding }
 }
 
@@ -225,7 +222,7 @@ fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) 
                         .filter_map(|name| Some(Name::from_raw(name.in_db(db)?)))
                         .collect()
                 })
-                .unwrap_or_else(|| vec![]);
+                .unwrap_or_default();
             DataMembers::DataEnumerated(names)
         }
     }
@@ -235,7 +232,7 @@ fn lower_module_body(ctx: &mut Ctx, db: &dyn SurfaceDatabase, body: ast::ModuleB
     let declarations = body
         .declarations()
         .map(|declarations| lower_declarations(ctx, db, declarations.children()))
-        .unwrap_or_else(|| vec![]);
+        .unwrap_or_default();
     ModuleBody { declarations }
 }
 
@@ -273,7 +270,7 @@ fn lower_data_group(
     let variables = equation
         .variables()
         .map(|variables| lower_type_variable_binding(ctx, db, variables.children()))
-        .unwrap_or_else(|| vec![]);
+        .unwrap_or_default();
 
     let constructors = data_group
         .constructors
@@ -309,7 +306,7 @@ fn lower_data_constructor(
     let fields = constructor
         .fields()
         .map(|fields| fields.children().map(|field| lower_type(ctx, db, &field)).collect())
-        .unwrap_or_else(|| vec![]);
+        .unwrap_or_default();
     DataConstructor { name, fields }
 }
 
@@ -331,7 +328,7 @@ fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: &ast::Type) -> TypeId
         ast::Type::VariableType(variable) => lower_type_variable(db, variable),
         ast::Type::WildcardType(_) => Type::NotImplemented,
     };
-    ctx.alloc_type(lowered, Some(&ty))
+    ctx.alloc_type(lowered, Some(ty))
 }
 
 fn lower_type_application(
@@ -344,7 +341,7 @@ fn lower_type_application(
     let spine = application
         .spine()
         .map(|spine| spine.children().map(|argument| lower_type(ctx, db, &argument)).collect())
-        .unwrap_or_else(|| vec![]);
+        .unwrap_or_default();
 
     Type::Application(head, spine)
 }

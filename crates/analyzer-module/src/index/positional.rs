@@ -33,7 +33,7 @@ impl PositionalMap {
     }
 
     pub fn ast_ptr<N: AstNode<Language = PureScript>>(&self, id: AstId<N>) -> AstPtr<N> {
-        self.inner[id.raw].clone().cast().unwrap()
+        self.inner[id.raw].cast().unwrap()
     }
 
     fn alloc(&mut self, node: &SyntaxNode) -> Idx<SyntaxNodePtr> {
