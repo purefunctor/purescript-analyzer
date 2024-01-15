@@ -230,6 +230,7 @@ pub enum Expr {
     LetIn(Vec<LetBinding>, ExprId),
     Literal(Literal<ExprId>),
     Variable(Qualified<Name>),
+    NotImplemented,
 }
 
 pub type ExprId = Idx<Expr>;
@@ -243,16 +244,11 @@ pub enum LetBinding {
 #[derive(Debug, PartialEq, Eq)]
 pub struct LetName {
     pub name: Name,
-    pub annotation: Option<LetNameAnnotation>,
+    pub annotation: Option<TypeId>,
     pub equations: Vec<LetNameEquation>,
 }
 
 pub type LetNameId = Idx<LetName>;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct LetNameAnnotation {
-    pub ty: TypeId,
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct LetNameEquation {
@@ -270,6 +266,7 @@ pub enum Binder {
     Parenthesized(BinderId),
     Variable(Name),
     Wildcard,
+    NotImplemented,
 }
 
 pub type BinderId = Idx<Binder>;
