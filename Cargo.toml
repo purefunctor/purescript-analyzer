@@ -3,8 +3,7 @@ members = [
     "crates/*",
 ]
 exclude = [
-    "crates/demo",
-    "crates/demo-bin",
+    "crates/analyzer",
 ]
 resolver = "1"
 
