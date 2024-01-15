@@ -93,13 +93,12 @@ pub struct Module {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleHeader {
     pub name: ModuleName,
-    pub export_list: ExportList,
+    pub export_list: Option<ExportList>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ExportList {
-    pub items: Vec<ExportItem>,
-    pub explicit: bool,
+pub enum ExportList {
+    ExportEnumerated(Vec<ExportItem>),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -216,8 +215,8 @@ pub enum IntOrNumber {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RecordItem<I> {
-    RecordPun(Arc<str>),
-    RecordField(Arc<str>, I),
+    RecordPun(Name),
+    RecordField(Name, I),
 }
 
 // ===== SECTION: Expr ====== //

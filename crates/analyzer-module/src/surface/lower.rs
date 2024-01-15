@@ -79,133 +79,122 @@ impl Ctx {
     }
 }
 
+fn lower_name(db: &dyn SurfaceDatabase, name: Option<ast::Name>) -> Name {
+    Name::from_raw(
+        name.and_then(|name| name.in_db(db)).unwrap_or_else(|| db.interner().intern("$Invalid")),
+    )
+}
+
+fn lower_name_ref(db: &dyn SurfaceDatabase, name_ref: Option<ast::NameRef>) -> Name {
+    Name::from_raw(
+        name_ref
+            .and_then(|name_ref| name_ref.in_db(db))
+            .unwrap_or_else(|| db.interner().intern("$Invalid")),
+    )
+}
+
+fn lower_module_name(db: &dyn SurfaceDatabase, module_name: Option<ast::ModuleName>) -> ModuleName {
+    ModuleName::from_raw(
+        module_name
+            .and_then(|module_name| module_name.in_db(db))
+            .unwrap_or_else(|| db.interner().intern("$Invalid")),
+    )
+}
+
+fn lower_qualified_prefix(db: &dyn SurfaceDatabase, prefix: ast::QualifiedPrefix) -> ModuleName {
+    ModuleName::from_raw(prefix.in_db(db).unwrap_or_else(|| db.interner().intern("$Invalid")))
+}
+
 fn lower_qualified_name(
     db: &dyn SurfaceDatabase,
-    qualified: ast::QualifiedName,
+    qualified: Option<ast::QualifiedName>,
 ) -> Qualified<Name> {
-    let prefix = qualified.prefix().and_then(|prefix| prefix.in_db(db)).map(ModuleName::from_raw);
-    let value = Name::from_raw(
-        qualified
-            .name_ref()
-            .and_then(|name| name.in_db(db))
-            .unwrap_or_else(|| db.interner().intern("$Invalid$")),
-    );
-    Qualified { prefix, value }
+    qualified
+        .map(|qualified| {
+            let prefix = qualified.prefix().map(|prefix| lower_qualified_prefix(db, prefix));
+            let value = lower_name_ref(db, qualified.name_ref());
+            Qualified { prefix, value }
+        })
+        .unwrap_or_else(|| {
+            let prefix = None;
+            let value = lower_name_ref(db, None);
+            Qualified { prefix, value }
+        })
 }
 
 fn lower_module(ctx: &mut Ctx, db: &dyn SurfaceDatabase, module: ast::Module) -> Module {
-    let header = module.header().map(|header| lower_header(ctx, db, header)).unwrap_or_else(|| {
-        let name = ModuleName::from_raw(db.interner().intern("$Invalid$"));
-        let export_list = ExportList { items: vec![], explicit: false };
-        ModuleHeader { name, export_list }
-    });
-    let imports = module.imports().map(|imports| lower_imports(db, imports)).unwrap_or_else(|| {
-        let declarations = vec![];
-        ModuleImports { declarations }
-    });
-    let body = module.body().map(|body| lower_module_body(ctx, db, body)).unwrap_or_else(|| {
-        let declarations = vec![];
-        ModuleBody { declarations }
-    });
+    let header = lower_header(db, module.header());
+    let imports = lower_imports(db, module.imports());
+    let body = lower_module_body(ctx, db, module.body());
     Module { header, imports, body }
 }
 
-fn lower_header(
-    ctx: &mut Ctx,
-    db: &dyn SurfaceDatabase,
-    header: ast::ModuleHeader,
-) -> ModuleHeader {
-    let name = ModuleName::from_raw(
-        header
-            .name()
-            .and_then(|name| name.in_db(db))
-            .unwrap_or_else(|| db.interner().intern("$Invalid$")),
-    );
-    let export_list = lower_export_list(ctx, db, header.export_list());
-
-    ModuleHeader { name, export_list }
+fn lower_header(db: &dyn SurfaceDatabase, header: Option<ast::ModuleHeader>) -> ModuleHeader {
+    header
+        .map(|header| {
+            let name = lower_module_name(db, header.name());
+            let export_list =
+                header.export_list().map(|export_list| lower_export_list(db, export_list));
+            ModuleHeader { name, export_list }
+        })
+        .unwrap_or_else(|| {
+            let name = lower_module_name(db, None);
+            let export_list = None;
+            ModuleHeader { name, export_list }
+        })
 }
 
-fn lower_export_list(
-    ctx: &mut Ctx,
-    db: &dyn SurfaceDatabase,
-    export_list: Option<ast::ExportList>,
-) -> ExportList {
-    match export_list {
-        Some(export_list) => {
-            let export_items =
-                export_list.child().and_then(|export_list| Some(export_list.child()?.children()));
+fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> ExportList {
+    let items = export_list
+        .export_items()
+        .map(|export_items| {
+            export_items.children().map(|export_item| lower_export_item(db, export_item)).collect()
+        })
+        .unwrap_or_default();
 
-            let items = export_items
-                .map(|export_items| lower_export_items(db, export_items))
-                .unwrap_or_default();
-            let explicit = true;
+    ExportList::ExportEnumerated(items)
+}
 
-            ExportList { items, explicit }
+fn lower_export_item(db: &dyn SurfaceDatabase, export_item: ast::ExportItem) -> ExportItem {
+    match export_item {
+        ast::ExportItem::ExportType(t) => {
+            let name = lower_name_ref(db, t.name_ref());
+            let data_members =
+                t.data_members().map(|data_members| lower_data_members(db, data_members));
+            ExportItem::ExportType(name, data_members)
         }
-        None => {
-            let items = ctx
-                .nominal_map
-                .iter_value_group()
-                .map(|(_, value_group)| {
-                    let name = Name::from_raw(Arc::clone(&value_group.name));
-                    ExportItem::ExportValue(name)
-                })
-                .collect();
-            let explicit = false;
-
-            ExportList { items, explicit }
+        ast::ExportItem::ExportValue(v) => {
+            let name = lower_name_ref(db, v.name_ref());
+            ExportItem::ExportValue(name)
         }
     }
 }
 
-fn lower_export_items(
-    db: &dyn SurfaceDatabase,
-    export_items: AstChildren<ast::ExportItem>,
-) -> Vec<ExportItem> {
-    export_items
-        .filter_map(|export_item| match export_item {
-            ast::ExportItem::ExportType(t) => {
-                let name = Name::from_raw(t.name_ref()?.in_db(db)?);
-                let data_members =
-                    t.data_members().map(|data_members| lower_data_members(db, data_members));
-                Some(ExportItem::ExportType(name, data_members))
-            }
-            ast::ExportItem::ExportValue(v) => {
-                let name = Name::from_raw(v.name_ref()?.in_db(db)?);
-                Some(ExportItem::ExportValue(name))
-            }
-        })
-        .collect()
-}
-
-fn lower_imports(db: &dyn SurfaceDatabase, imports: ast::ModuleImports) -> ModuleImports {
-    let declarations = imports
-        .imports()
-        .map(|imports| {
-            imports
+fn lower_imports(db: &dyn SurfaceDatabase, imports: Option<ast::ModuleImports>) -> ModuleImports {
+    imports
+        .and_then(|imports| {
+            let declarations = imports
+                .imports()?
                 .children()
                 .map(|import_declaration| lower_import_declaration(db, import_declaration))
-                .collect()
+                .collect();
+            Some(ModuleImports { declarations })
         })
-        .unwrap_or_default();
-    ModuleImports { declarations }
+        .unwrap_or_else(|| {
+            let declarations = vec![];
+            ModuleImports { declarations }
+        })
 }
 
 fn lower_import_declaration(
     db: &dyn SurfaceDatabase,
     import_declaration: ast::ImportDeclaration,
 ) -> ImportDeclaration {
-    let name = ModuleName::from_raw(
-        import_declaration
-            .module_name()
-            .and_then(|module_name| module_name.in_db(db))
-            .unwrap_or_else(|| db.interner().intern("$Invalid$")),
-    );
+    let name = lower_module_name(db, import_declaration.module_name());
 
     let qualified_as = import_declaration
         .import_qualified()
-        .and_then(|qualified| Some(ModuleName::from_raw(qualified.module_name()?.in_db(db)?)));
+        .map(|import_qualified| lower_module_name(db, import_qualified.module_name()));
 
     let import_list =
         import_declaration.import_list().map(|import_list| lower_import_list(db, import_list));
@@ -248,26 +237,30 @@ fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) 
         ast::DataMembers::DataEnumerated(e) => {
             let names = e
                 .constructors()
-                .map(|names| {
-                    names
-                        .children()
-                        .filter_map(|name| Some(Name::from_raw(name.in_db(db)?)))
-                        .collect()
-                })
+                .map(|names| names.children().map(|name| lower_name_ref(db, Some(name))).collect())
                 .unwrap_or_default();
             DataMembers::DataEnumerated(names)
         }
     }
 }
 
-fn lower_module_body(ctx: &mut Ctx, db: &dyn SurfaceDatabase, body: ast::ModuleBody) -> ModuleBody {
-    let declarations = body
-        .declarations()
-        .map(|declarations| lower_declarations(ctx, db, declarations.children()))
-        .unwrap_or_default();
-    ModuleBody { declarations }
+fn lower_module_body(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    body: Option<ast::ModuleBody>,
+) -> ModuleBody {
+    body.and_then(|body| {
+        let declarations = lower_declarations(ctx, db, body.declarations()?.children());
+        Some(ModuleBody { declarations })
+    })
+    .unwrap_or_else(|| {
+        let declarations = vec![];
+        ModuleBody { declarations }
+    })
 }
 
+// For declarations that exist in groups, we prefer using the nominal map
+// representations during lowering rather than accessing the AST directly.
 fn lower_declarations(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
@@ -277,9 +270,6 @@ fn lower_declarations(
 
     let mut all = vec![];
 
-    // For declarations that exist in groups, we prefer using the nominal map
-    // representations during lowering rather than accessing the AST directly
-    // simply to avoid redundant work.
     all.extend(nominal_map.iter_data_group().map(|(_, data_group)| {
         Declaration::DataDeclaration(lower_data_group(ctx, db, data_group))
     }));
@@ -335,12 +325,7 @@ fn lower_data_constructor(
     db: &dyn SurfaceDatabase,
     constructor: ast::DataConstructor,
 ) -> DataConstructor {
-    let name = Name::from_raw(
-        constructor
-            .name()
-            .and_then(|name| name.in_db(db))
-            .unwrap_or_else(|| db.interner().intern("$Invalid$")),
-    );
+    let name = lower_name(db, constructor.name());
     let fields = constructor
         .fields()
         .map(|fields| fields.children().map(|field| lower_type(ctx, db, &field)).collect())
@@ -583,18 +568,12 @@ where
                         contents
                             .map(|item| match item {
                                 ast::RecordItem::RecordField(field) => {
-                                    let name = field
-                                        .name()
-                                        .and_then(|name| name.in_db(db))
-                                        .unwrap_or_else(|| db.interner().intern("$Invalid$"));
+                                    let name = lower_name(db, field.name());
                                     let value = lower_inner(ctx, db, field.value().as_ref());
                                     RecordItem::RecordField(name, value)
                                 }
                                 ast::RecordItem::RecordPun(pun) => {
-                                    let name = pun
-                                        .name()
-                                        .and_then(|name| name.in_db(db))
-                                        .unwrap_or_else(|| db.interner().intern("$Invalid$"));
+                                    let name = lower_name(db, pun.name());
                                     RecordItem::RecordPun(name)
                                 }
                             })
@@ -675,14 +654,7 @@ fn lower_binder_constructor(
     db: &dyn SurfaceDatabase,
     constructor: &ast::ConstructorBinder,
 ) -> Binder {
-    let name = constructor
-        .qualified_name()
-        .map(|qualified| lower_qualified_name(db, qualified))
-        .unwrap_or_else(|| {
-            let prefix = None;
-            let value = Name::from_raw(db.interner().intern("$Invalid$"));
-            Qualified { prefix, value }
-        });
+    let name = lower_qualified_name(db, constructor.qualified_name());
     let fields = constructor
         .fields()
         .map(|fields| fields.children().map(|field| lower_binder(ctx, db, &field)).collect())
@@ -722,12 +694,8 @@ fn lower_binder_parenthesized(
 }
 
 fn lower_binder_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableBinder) -> Binder {
-    let name = Name::from_raw(
-        variable
-            .name()
-            .and_then(|name| name.in_db(db))
-            .unwrap_or_else(|| db.interner().intern("$Invalid$")),
-    );
+    let name = lower_name(db, variable.name());
+
     Binder::Variable(name)
 }
 
@@ -791,14 +759,7 @@ fn lower_type_arrow(ctx: &mut Ctx, db: &dyn SurfaceDatabase, arrow: &ast::ArrowT
 }
 
 fn lower_type_constructor(db: &dyn SurfaceDatabase, constructor: &ast::ConstructorType) -> Type {
-    let name = constructor
-        .qualified_name()
-        .map(|qualified| lower_qualified_name(db, qualified))
-        .unwrap_or_else(|| {
-            let prefix = None;
-            let value = Name::from_raw(db.interner().intern("$Invalid$"));
-            Qualified { prefix, value }
-        });
+    let name = lower_qualified_name(db, constructor.qualified_name());
 
     Type::Constructor(name)
 }
@@ -814,12 +775,8 @@ fn lower_type_parenthesized(
 }
 
 fn lower_type_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableType) -> Type {
-    let name = Name::from_raw(
-        variable
-            .name_ref()
-            .and_then(|name| name.in_db(db))
-            .unwrap_or_else(|| db.interner().intern("$Invalid$")),
-    );
+    let name = lower_name_ref(db, variable.name_ref());
+
     Type::Variable(name)
 }
 

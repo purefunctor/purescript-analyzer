@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::{SyntaxKind, SyntaxToken};
 
-use super::{Declaration, ModuleName, NameRef, Separated, Wrapped, ZeroOrMore};
+use super::{Declaration, ModuleName, NameRef, Separated, ZeroOrMore};
 
 _create_ast!(
     Module,
@@ -53,8 +53,8 @@ impl ModuleHeader {
 }
 
 impl ExportList {
-    pub fn child(&self) -> Option<Wrapped<Separated<ExportItem>>> {
-        Wrapped::cast(self.node.first_child()?)
+    pub fn export_items(&self) -> Option<Separated<ExportItem>> {
+        Separated::cast(self.node.first_child()?.first_child()?)
     }
 }
 
