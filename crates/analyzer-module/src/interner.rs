@@ -12,13 +12,13 @@ pub trait InternerDatabase {
 }
 
 pub trait InDb: Sized {
-    fn in_db<Db>(self, db: &Db) -> Option<Arc<str>>
+    fn in_db<Db>(&self, db: &Db) -> Option<Arc<str>>
     where
         Db: InternerDatabase + ?Sized;
 }
 
 impl InDb for ast::Name {
-    fn in_db<Db>(self, db: &Db) -> Option<Arc<str>>
+    fn in_db<Db>(&self, db: &Db) -> Option<Arc<str>>
     where
         Db: InternerDatabase + ?Sized,
     {
@@ -27,7 +27,7 @@ impl InDb for ast::Name {
 }
 
 impl InDb for ast::NameRef {
-    fn in_db<Db>(self, db: &Db) -> Option<Arc<str>>
+    fn in_db<Db>(&self, db: &Db) -> Option<Arc<str>>
     where
         Db: InternerDatabase + ?Sized,
     {
@@ -36,7 +36,7 @@ impl InDb for ast::NameRef {
 }
 
 impl InDb for ast::ModuleName {
-    fn in_db<Db>(self, db: &Db) -> Option<Arc<str>>
+    fn in_db<Db>(&self, db: &Db) -> Option<Arc<str>>
     where
         Db: InternerDatabase + ?Sized,
     {
@@ -57,7 +57,7 @@ impl InDb for ast::ModuleName {
 }
 
 impl InDb for ast::QualifiedPrefix {
-    fn in_db<Db>(self, db: &Db) -> Option<Arc<str>>
+    fn in_db<Db>(&self, db: &Db) -> Option<Arc<str>>
     where
         Db: InternerDatabase + ?Sized,
     {
