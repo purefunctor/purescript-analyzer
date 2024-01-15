@@ -72,7 +72,10 @@ impl<T> InFile<AstId<T>>
 where
     T: AstNode<Language = PureScript>,
 {
-    pub fn to_ast(self, db: &dyn IndexDatabase) -> T {
+    pub fn to_ast<Db>(self, db: &Db) -> T
+    where
+        Db: IndexDatabase + ?Sized,
+    {
         let root = db.parse_file(self.file_id);
         let ptr = db.positional_map(self.file_id).ast_ptr(self.value);
         ptr.to_node(&root)

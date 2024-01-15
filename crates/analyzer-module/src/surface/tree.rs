@@ -7,8 +7,9 @@
 use std::{borrow::Borrow, ops::Index, sync::Arc};
 
 use la_arena::{Arena, Idx};
+use paste::paste;
 use rustc_hash::FxHashMap;
-use syntax::ast;
+use syntax::{ast, SyntaxNodePtr};
 
 use crate::id::AstId;
 
@@ -282,6 +283,7 @@ pub enum Type {
     Constructor(Qualified<Name>),
     Parenthesized(TypeId),
     Variable(Name),
+    NotImplemented,
 }
 
 pub type TypeId = Idx<Type>;
@@ -294,42 +296,56 @@ pub enum TypeVariable {
 
 // ===== SECTION: SurfaceArena ====== //
 
+macro_rules! _surface_arena {
+    ($($name:ident: $tree:ident),*) => {
+        #[derive(Debug, Default, PartialEq, Eq)]
+        pub struct SurfaceArena {
+            $(
+                $name: Arena<$tree>,
+            )*
+        }
+
+        paste! {
+            impl SurfaceArena {
+                $(
+                    pub fn [<alloc_ $name>](&mut self, $name: $tree) -> [<$tree Id>] {
+                        self.$name.alloc($name)
+                    }
+                )*
+            }
+
+            $(
+                impl Index<[<$tree Id>]> for SurfaceArena {
+                    type Output = $tree;
+
+                    fn index(&self, index: [<$tree Id>]) -> &$tree {
+                        &self.$name[index]
+                    }
+                }
+            )*
+        }
+    };
+}
+
+_surface_arena!(expr: Expr, let_name: LetName, binder: Binder, ty: Type);
+
+// ===== SECTION: SourceMap ====== //
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct LetNamePtr {
+    pub annotation_ptr: Option<SyntaxNodePtr>,
+    pub equations_ptr: Vec<SyntaxNodePtr>,
+}
+
+/// A mapping from surface IDs to CST pointers.
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct SurfaceArena {
-    expr: Arena<Expr>,
-    let_name: Arena<LetName>,
-    binder: Arena<Binder>,
-    ty: Arena<Type>,
-}
-
-impl Index<ExprId> for SurfaceArena {
-    type Output = Expr;
-
-    fn index(&self, index: ExprId) -> &Self::Output {
-        &self.expr[index]
-    }
-}
-
-impl Index<LetNameId> for SurfaceArena {
-    type Output = LetName;
-
-    fn index(&self, index: LetNameId) -> &Self::Output {
-        &self.let_name[index]
-    }
-}
-
-impl Index<BinderId> for SurfaceArena {
-    type Output = Binder;
-
-    fn index(&self, index: BinderId) -> &Self::Output {
-        &self.binder[index]
-    }
-}
-
-impl Index<TypeId> for SurfaceArena {
-    type Output = Type;
-
-    fn index(&self, index: TypeId) -> &Self::Output {
-        &self.ty[index]
-    }
+pub struct SourceMap {
+    pub(crate) expr_to_cst: FxHashMap<ExprId, SyntaxNodePtr>,
+    pub(crate) cst_to_expr: FxHashMap<SyntaxNodePtr, ExprId>,
+    pub(crate) let_name_to_cst: FxHashMap<LetNameId, LetNamePtr>,
+    pub(crate) cst_to_let_name: FxHashMap<SyntaxNodePtr, LetNameId>,
+    pub(crate) binder_to_cst: FxHashMap<BinderId, SyntaxNodePtr>,
+    pub(crate) cst_to_binder: FxHashMap<SyntaxNodePtr, BinderId>,
+    pub(crate) type_to_cst: FxHashMap<TypeId, SyntaxNodePtr>,
+    pub(crate) cst_to_type: FxHashMap<SyntaxNodePtr, TypeId>,
 }

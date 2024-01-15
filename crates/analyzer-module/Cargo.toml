@@ -11,6 +11,7 @@ interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.12.0"
 la-arena = "0.3.1"
 parsing = { version = "0.1.0", path = "../parsing" }
+paste = "1.0.14"
 rowan = "0.15.15"
 rustc-hash = "1.1.0"
 salsa = "0.17.0-pre.2"

@@ -55,3 +55,24 @@ impl InDb for ast::ModuleName {
         Some(db.interner().intern(buffer))
     }
 }
+
+impl InDb for ast::QualifiedPrefix {
+    fn in_db<Db>(self, db: &Db) -> Option<Arc<str>>
+    where
+        Db: InternerDatabase + ?Sized,
+    {
+        let mut buffer = String::default();
+        let mut children = self.children().peekable();
+        while let Some(name_ref) = children.next() {
+            if let Some(token) = name_ref.token() {
+                buffer.push_str(token.text())
+            } else {
+                buffer.push_str("?InvalidToken")
+            }
+            if children.peek().is_some() {
+                buffer.push('.');
+            }
+        }
+        Some(db.interner().intern(buffer))
+    }
+}
