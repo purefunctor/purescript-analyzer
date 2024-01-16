@@ -385,10 +385,10 @@ fn lower_binding(
     binding: Option<ast::Binding>,
 ) -> Binding {
     binding
-        .and_then(|binding| match binding {
+        .map(|binding| match binding {
             ast::Binding::UnconditionalBinding(unconditional) => {
                 let where_expr = lower_where_expr(ctx, db, unconditional.where_expression());
-                Some(Binding::Unconditional { where_expr })
+                Binding::Unconditional { where_expr }
             }
             ast::Binding::GuardedBinding(_) => todo!("FIXME: fix support for guarded binding."),
         })
@@ -404,7 +404,7 @@ fn lower_where_expr(
     where_expr: Option<ast::WhereExpression>,
 ) -> WhereExpr {
     where_expr
-        .and_then(|where_expr| {
+        .map(|where_expr| {
             let let_bindings = where_expr
                 .let_bindings()
                 .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
@@ -413,7 +413,7 @@ fn lower_where_expr(
                 .expression()
                 .map(|expression| lower_expr(ctx, db, &expression))
                 .unwrap_or_else(|| ctx.nil_expr());
-            Some(WhereExpr { let_bindings, expr_id })
+            WhereExpr { let_bindings, expr_id }
         })
         .unwrap_or_else(|| {
             let let_bindings = vec![];
@@ -616,7 +616,7 @@ where
 
 // ===== Section: Expr ===== //
 
-fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: &ast::Expression) -> ExprId {
+fn lower_expr(ctx: &mut Ctx, _db: &dyn SurfaceDatabase, expr: &ast::Expression) -> ExprId {
     let lowered = match expr {
         ast::Expression::AdoExpression(_) => Expr::NotImplemented,
         ast::Expression::ApplicationExpression(_) => Expr::NotImplemented,
