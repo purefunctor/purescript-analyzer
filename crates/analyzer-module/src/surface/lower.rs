@@ -375,40 +375,51 @@ fn lower_value_equation(
         .binders()
         .map(|binders| binders.children().map(|binder| lower_binder(ctx, db, &binder)).collect())
         .unwrap_or_default();
-    let binding = equation
-        .binding()
-        .map(|binding| lower_binding(ctx, db, binding))
-        .unwrap_or_else(|| todo!("FIXME: support nil binding"));
+    let binding = lower_binding(ctx, db, equation.binding());
     ValueEquation { binders, binding }
 }
 
-fn lower_binding(ctx: &mut Ctx, db: &dyn SurfaceDatabase, binding: ast::Binding) -> Binding {
-    match binding {
-        ast::Binding::UnconditionalBinding(unconditional) => {
-            let where_expr = unconditional
-                .where_expression()
-                .map(|where_expr| lower_where_expr(ctx, db, where_expr))
-                .unwrap_or_else(|| todo!("FIXME: support nil where_expr"));
+fn lower_binding(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    binding: Option<ast::Binding>,
+) -> Binding {
+    binding
+        .and_then(|binding| match binding {
+            ast::Binding::UnconditionalBinding(unconditional) => {
+                let where_expr = lower_where_expr(ctx, db, unconditional.where_expression());
+                Some(Binding::Unconditional { where_expr })
+            }
+            ast::Binding::GuardedBinding(_) => todo!("FIXME: fix support for guarded binding."),
+        })
+        .unwrap_or_else(|| {
+            let where_expr = lower_where_expr(ctx, db, None);
             Binding::Unconditional { where_expr }
-        }
-        ast::Binding::GuardedBinding(_) => todo!("FIXME: lowering for guarded binding"),
-    }
+        })
 }
 
 fn lower_where_expr(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
-    where_expr: ast::WhereExpression,
+    where_expr: Option<ast::WhereExpression>,
 ) -> WhereExpr {
-    let let_bindings = where_expr
-        .let_bindings()
-        .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
-        .unwrap_or_default();
-    let expr_id = where_expr
-        .expression()
-        .map(|expression| lower_expr(ctx, db, &expression))
-        .unwrap_or_else(|| ctx.nil_expr());
-    WhereExpr { expr_id, let_bindings }
+    where_expr
+        .and_then(|where_expr| {
+            let let_bindings = where_expr
+                .let_bindings()
+                .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
+                .unwrap_or_default();
+            let expr_id = where_expr
+                .expression()
+                .map(|expression| lower_expr(ctx, db, &expression))
+                .unwrap_or_else(|| ctx.nil_expr());
+            Some(WhereExpr { let_bindings, expr_id })
+        })
+        .unwrap_or_else(|| {
+            let let_bindings = vec![];
+            let expr_id = ctx.nil_expr();
+            WhereExpr { expr_id, let_bindings }
+        })
 }
 
 // ===== Section: LetBinding ===== //
@@ -487,10 +498,7 @@ fn lower_let_bindings(
                         .binder()
                         .map(|binder| lower_binder(ctx, db, &binder))
                         .unwrap_or_else(|| ctx.nil_binder());
-                    let where_expr = pattern
-                        .where_expr()
-                        .map(|where_expr| lower_where_expr(ctx, db, where_expr))
-                        .unwrap_or_else(|| todo!("FIXME: support nil where_expr"));
+                    let where_expr = lower_where_expr(ctx, db, pattern.where_expr());
                     Some(LetBinding::Pattern { binder, where_expr })
                 } else {
                     unreachable!("invariant violated: impossible");
@@ -511,10 +519,7 @@ fn lower_let_binding_name(
         .binders()
         .map(|binders| binders.children().map(|binder| lower_binder(ctx, db, &binder)).collect())
         .unwrap_or_default();
-    let binding = let_binding_name
-        .binding()
-        .map(|binding| lower_binding(ctx, db, binding))
-        .unwrap_or_else(|| todo!("FIXME: support nil binding"));
+    let binding = lower_binding(ctx, db, let_binding_name.binding());
     LetNameEquation { binders, binding }
 }
 
