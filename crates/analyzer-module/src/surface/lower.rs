@@ -46,10 +46,6 @@ impl Ctx {
         expr_id
     }
 
-    fn nil_expr(&mut self) -> ExprId {
-        self.alloc_expr(Expr::NotImplemented, None)
-    }
-
     fn alloc_binder(&mut self, lowered: Binder, ast: Option<&ast::Binder>) -> BinderId {
         let binder_id = self.arena.alloc_binder(lowered);
         if let Some(ast) = ast {
@@ -60,10 +56,6 @@ impl Ctx {
         binder_id
     }
 
-    fn nil_binder(&mut self) -> BinderId {
-        self.alloc_binder(Binder::NotImplemented, None)
-    }
-
     fn alloc_type(&mut self, lowered: Type, ast: Option<&ast::Type>) -> TypeId {
         let type_id = self.arena.alloc_ty(lowered);
         if let Some(ast) = ast {
@@ -72,10 +64,6 @@ impl Ctx {
             self.source_map.cst_to_type.insert(type_ptr, type_id);
         }
         type_id
-    }
-
-    fn nil_type(&mut self) -> TypeId {
-        self.alloc_type(Type::NotImplemented, None)
     }
 }
 
@@ -317,7 +305,7 @@ fn lower_data_annotation(
     db: &dyn SurfaceDatabase,
     annotation: ast::DataAnnotation,
 ) -> TypeId {
-    annotation.kind().map(|kind| lower_type(ctx, db, &kind)).unwrap_or_else(|| ctx.nil_type())
+    lower_type(ctx, db, annotation.kind())
 }
 
 fn lower_data_constructor(
@@ -328,7 +316,7 @@ fn lower_data_constructor(
     let name = lower_name(db, constructor.name());
     let fields = constructor
         .fields()
-        .map(|fields| fields.children().map(|field| lower_type(ctx, db, &field)).collect())
+        .map(|fields| fields.children().map(|field| lower_type(ctx, db, Some(field))).collect())
         .unwrap_or_default();
     DataConstructor { name, fields }
 }
@@ -363,7 +351,7 @@ fn lower_value_annotation(
     db: &dyn SurfaceDatabase,
     annotation: ast::ValueAnnotationDeclaration,
 ) -> TypeId {
-    annotation.ty().map(|ty| lower_type(ctx, db, &ty)).unwrap_or_else(|| ctx.nil_type())
+    lower_type(ctx, db, annotation.ty())
 }
 
 fn lower_value_equation(
@@ -373,7 +361,9 @@ fn lower_value_equation(
 ) -> ValueEquation {
     let binders = equation
         .binders()
-        .map(|binders| binders.children().map(|binder| lower_binder(ctx, db, &binder)).collect())
+        .map(|binders| {
+            binders.children().map(|binder| lower_binder(ctx, db, Some(binder))).collect()
+        })
         .unwrap_or_default();
     let binding = lower_binding(ctx, db, equation.binding());
     ValueEquation { binders, binding }
@@ -409,15 +399,12 @@ fn lower_where_expr(
                 .let_bindings()
                 .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
                 .unwrap_or_default();
-            let expr_id = where_expr
-                .expression()
-                .map(|expression| lower_expr(ctx, db, &expression))
-                .unwrap_or_else(|| ctx.nil_expr());
+            let expr_id = lower_expr(ctx, db, where_expr.expression());
             WhereExpr { let_bindings, expr_id }
         })
         .unwrap_or_else(|| {
             let let_bindings = vec![];
-            let expr_id = ctx.nil_expr();
+            let expr_id = lower_expr(ctx, db, None);
             WhereExpr { expr_id, let_bindings }
         })
 }
@@ -494,10 +481,7 @@ fn lower_let_bindings(
             }
             GroupKey::Pattern => {
                 if let ast::LetBinding::LetBindingPattern(pattern) = group.next()? {
-                    let binder = pattern
-                        .binder()
-                        .map(|binder| lower_binder(ctx, db, &binder))
-                        .unwrap_or_else(|| ctx.nil_binder());
+                    let binder = lower_binder(ctx, db, pattern.binder());
                     let where_expr = lower_where_expr(ctx, db, pattern.where_expr());
                     Some(LetBinding::Pattern { binder, where_expr })
                 } else {
@@ -517,7 +501,9 @@ fn lower_let_binding_name(
 ) -> LetNameEquation {
     let binders = let_binding_name
         .binders()
-        .map(|binders| binders.children().map(|binder| lower_binder(ctx, db, &binder)).collect())
+        .map(|binders| {
+            binders.children().map(|binder| lower_binder(ctx, db, Some(binder))).collect()
+        })
         .unwrap_or_default();
     let binding = lower_binding(ctx, db, let_binding_name.binding());
     LetNameEquation { binders, binding }
@@ -528,7 +514,7 @@ fn lower_let_binding_signature(
     db: &dyn SurfaceDatabase,
     let_binding_signature: &ast::LetBindingSignature,
 ) -> TypeId {
-    let_binding_signature.ty().map(|ty| lower_type(ctx, db, &ty)).unwrap_or_else(|| ctx.nil_type())
+    lower_type(ctx, db, let_binding_signature.ty())
 }
 
 // ===== Section: Literal ===== //
@@ -537,7 +523,7 @@ fn lower_literal<T, I>(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
     literal: syntax::SyntaxElement,
-    lower_inner: impl Fn(&mut Ctx, &dyn SurfaceDatabase, Option<&T>) -> I,
+    lower_inner: impl Fn(&mut Ctx, &dyn SurfaceDatabase, Option<T>) -> I,
 ) -> Literal<I>
 where
     T: AstNode<Language = PureScript>,
@@ -554,7 +540,7 @@ where
 
                 let contents = contents
                     .map(|contents| {
-                        contents.map(|inner| lower_inner(ctx, db, Some(&inner))).collect()
+                        contents.map(|inner| lower_inner(ctx, db, Some(inner))).collect()
                     })
                     .unwrap_or_default();
 
@@ -574,7 +560,7 @@ where
                             .map(|item| match item {
                                 ast::RecordItem::RecordField(field) => {
                                     let name = lower_name(db, field.name());
-                                    let value = lower_inner(ctx, db, field.value().as_ref());
+                                    let value = lower_inner(ctx, db, field.value());
                                     RecordItem::RecordField(name, value)
                                 }
                                 ast::RecordItem::RecordPun(pun) => {
@@ -616,42 +602,50 @@ where
 
 // ===== Section: Expr ===== //
 
-fn lower_expr(ctx: &mut Ctx, _db: &dyn SurfaceDatabase, expr: &ast::Expression) -> ExprId {
-    let lowered = match expr {
-        ast::Expression::AdoExpression(_) => Expr::NotImplemented,
-        ast::Expression::ApplicationExpression(_) => Expr::NotImplemented,
-        ast::Expression::CaseExpression(_) => Expr::NotImplemented,
-        ast::Expression::ConstructorExpression(_) => Expr::NotImplemented,
-        ast::Expression::DoExpression(_) => Expr::NotImplemented,
-        ast::Expression::ExpressionInfixChain(_) => Expr::NotImplemented,
-        ast::Expression::ExpressionOperatorChain(_) => Expr::NotImplemented,
-        ast::Expression::IfThenElseExpression(_) => Expr::NotImplemented,
-        ast::Expression::LambdaExpression(_) => Expr::NotImplemented,
-        ast::Expression::LetInExpression(_) => Expr::NotImplemented,
-        ast::Expression::LiteralExpression(_) => Expr::NotImplemented,
-        ast::Expression::OperatorNameExpression(_) => Expr::NotImplemented,
-        ast::Expression::ParenthesizedExpression(_) => Expr::NotImplemented,
-        ast::Expression::RecordAccessExpression(_) => Expr::NotImplemented,
-        ast::Expression::RecordUpdateExpression(_) => Expr::NotImplemented,
-        ast::Expression::TypedExpression(_) => Expr::NotImplemented,
-        ast::Expression::VariableExpression(_) => Expr::NotImplemented,
-    };
-    ctx.alloc_expr(lowered, Some(expr))
+fn lower_expr(ctx: &mut Ctx, _db: &dyn SurfaceDatabase, expr: Option<ast::Expression>) -> ExprId {
+    if let Some(expr) = expr {
+        let lowered = match &expr {
+            ast::Expression::AdoExpression(_) => Expr::NotImplemented,
+            ast::Expression::ApplicationExpression(_) => Expr::NotImplemented,
+            ast::Expression::CaseExpression(_) => Expr::NotImplemented,
+            ast::Expression::ConstructorExpression(_) => Expr::NotImplemented,
+            ast::Expression::DoExpression(_) => Expr::NotImplemented,
+            ast::Expression::ExpressionInfixChain(_) => Expr::NotImplemented,
+            ast::Expression::ExpressionOperatorChain(_) => Expr::NotImplemented,
+            ast::Expression::IfThenElseExpression(_) => Expr::NotImplemented,
+            ast::Expression::LambdaExpression(_) => Expr::NotImplemented,
+            ast::Expression::LetInExpression(_) => Expr::NotImplemented,
+            ast::Expression::LiteralExpression(_) => Expr::NotImplemented,
+            ast::Expression::OperatorNameExpression(_) => Expr::NotImplemented,
+            ast::Expression::ParenthesizedExpression(_) => Expr::NotImplemented,
+            ast::Expression::RecordAccessExpression(_) => Expr::NotImplemented,
+            ast::Expression::RecordUpdateExpression(_) => Expr::NotImplemented,
+            ast::Expression::TypedExpression(_) => Expr::NotImplemented,
+            ast::Expression::VariableExpression(_) => Expr::NotImplemented,
+        };
+        ctx.alloc_expr(lowered, Some(&expr))
+    } else {
+        ctx.alloc_expr(Expr::NotImplemented, None)
+    }
 }
 
 // ===== Section: Binder ===== //
 
-fn lower_binder(ctx: &mut Ctx, db: &dyn SurfaceDatabase, binder: &ast::Binder) -> BinderId {
-    let lowered = match binder {
-        ast::Binder::ConstructorBinder(c) => lower_binder_constructor(ctx, db, c),
-        ast::Binder::LiteralBinder(l) => lower_binder_literal(ctx, db, l),
-        ast::Binder::NegativeBinder(_) => Binder::NotImplemented,
-        ast::Binder::ParenthesizedBinder(p) => lower_binder_parenthesized(ctx, db, p),
-        ast::Binder::TypedBinder(_) => Binder::NotImplemented,
-        ast::Binder::VariableBinder(v) => lower_binder_variable(db, v),
-        ast::Binder::WildcardBinder(_) => Binder::Wildcard,
-    };
-    ctx.alloc_binder(lowered, Some(binder))
+fn lower_binder(ctx: &mut Ctx, db: &dyn SurfaceDatabase, binder: Option<ast::Binder>) -> BinderId {
+    if let Some(binder) = &binder {
+        let lowered = match binder {
+            ast::Binder::ConstructorBinder(c) => lower_binder_constructor(ctx, db, c),
+            ast::Binder::LiteralBinder(l) => lower_binder_literal(ctx, db, l),
+            ast::Binder::NegativeBinder(_) => Binder::NotImplemented,
+            ast::Binder::ParenthesizedBinder(p) => lower_binder_parenthesized(ctx, db, p),
+            ast::Binder::TypedBinder(_) => Binder::NotImplemented,
+            ast::Binder::VariableBinder(v) => lower_binder_variable(db, v),
+            ast::Binder::WildcardBinder(_) => Binder::Wildcard,
+        };
+        ctx.alloc_binder(lowered, Some(binder))
+    } else {
+        ctx.alloc_binder(Binder::NotImplemented, None)
+    }
 }
 
 fn lower_binder_constructor(
@@ -662,7 +656,7 @@ fn lower_binder_constructor(
     let name = lower_qualified_name(db, constructor.qualified_name());
     let fields = constructor
         .fields()
-        .map(|fields| fields.children().map(|field| lower_binder(ctx, db, &field)).collect())
+        .map(|fields| fields.children().map(|field| lower_binder(ctx, db, Some(field))).collect())
         .unwrap_or_default();
     Binder::Constructor { name, fields }
 }
@@ -675,13 +669,7 @@ fn lower_binder_literal(
     literal
         .syntax()
         .first_child_or_token()
-        .map(|literal| {
-            Binder::Literal(lower_literal(ctx, db, literal, |ctx, db, binder| {
-                binder
-                    .map(|binder| lower_binder(ctx, db, binder))
-                    .unwrap_or_else(|| ctx.nil_binder())
-            }))
-        })
+        .map(|literal| Binder::Literal(lower_literal(ctx, db, literal, lower_binder)))
         .unwrap_or_else(|| Binder::NotImplemented)
 }
 
@@ -690,12 +678,7 @@ fn lower_binder_parenthesized(
     db: &dyn SurfaceDatabase,
     parenthesized: &ast::ParenthesizedBinder,
 ) -> Binder {
-    Binder::Parenthesized(
-        parenthesized
-            .binder()
-            .map(|binder| lower_binder(ctx, db, &binder))
-            .unwrap_or_else(|| ctx.nil_binder()),
-    )
+    Binder::Parenthesized(lower_binder(ctx, db, parenthesized.binder()))
 }
 
 fn lower_binder_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableBinder) -> Binder {
@@ -706,23 +689,27 @@ fn lower_binder_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableBinde
 
 // ===== Section: Type ===== //
 
-fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: &ast::Type) -> TypeId {
-    let lowered = match ty {
-        ast::Type::ApplicationType(a) => lower_type_application(ctx, db, a),
-        ast::Type::ArrowType(a) => lower_type_arrow(ctx, db, a),
-        ast::Type::ConstructorType(c) => lower_type_constructor(db, c),
-        ast::Type::IntegerType(_) => Type::NotImplemented,
-        ast::Type::KindedType(_) => Type::NotImplemented,
-        ast::Type::OperatorNameType(_) => Type::NotImplemented,
-        ast::Type::ParenthesizedType(p) => lower_type_parenthesized(ctx, db, p),
-        ast::Type::RecordType(_) => Type::NotImplemented,
-        ast::Type::RowType(_) => Type::NotImplemented,
-        ast::Type::StringType(_) => Type::NotImplemented,
-        ast::Type::TypeOperatorChain(_) => Type::NotImplemented,
-        ast::Type::VariableType(v) => lower_type_variable(db, v),
-        ast::Type::WildcardType(_) => Type::NotImplemented,
-    };
-    ctx.alloc_type(lowered, Some(ty))
+fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) -> TypeId {
+    if let Some(ty) = ty {
+        let lowered = match &ty {
+            ast::Type::ApplicationType(a) => lower_type_application(ctx, db, a),
+            ast::Type::ArrowType(a) => lower_type_arrow(ctx, db, a),
+            ast::Type::ConstructorType(c) => lower_type_constructor(db, c),
+            ast::Type::IntegerType(_) => Type::NotImplemented,
+            ast::Type::KindedType(_) => Type::NotImplemented,
+            ast::Type::OperatorNameType(_) => Type::NotImplemented,
+            ast::Type::ParenthesizedType(p) => lower_type_parenthesized(ctx, db, p),
+            ast::Type::RecordType(_) => Type::NotImplemented,
+            ast::Type::RowType(_) => Type::NotImplemented,
+            ast::Type::StringType(_) => Type::NotImplemented,
+            ast::Type::TypeOperatorChain(_) => Type::NotImplemented,
+            ast::Type::VariableType(v) => lower_type_variable(db, v),
+            ast::Type::WildcardType(_) => Type::NotImplemented,
+        };
+        ctx.alloc_type(lowered, Some(&ty))
+    } else {
+        ctx.alloc_type(Type::NotImplemented, None)
+    }
 }
 
 fn lower_type_application(
@@ -730,35 +717,25 @@ fn lower_type_application(
     db: &dyn SurfaceDatabase,
     application: &ast::ApplicationType,
 ) -> Type {
-    let head =
-        application.head().map(|head| lower_type(ctx, db, &head)).unwrap_or_else(|| ctx.nil_type());
+    let head = lower_type(ctx, db, application.head());
     let spine = application
         .spine()
-        .map(|spine| spine.children().map(|argument| lower_type(ctx, db, &argument)).collect())
+        .map(|spine| spine.children().map(|argument| lower_type(ctx, db, Some(argument))).collect())
         .unwrap_or_default();
 
     Type::Application(head, spine)
 }
 
 fn lower_type_arrow(ctx: &mut Ctx, db: &dyn SurfaceDatabase, arrow: &ast::ArrowType) -> Type {
-    let mut arguments = vec![arrow
-        .argument()
-        .map(|argument| lower_type(ctx, db, &argument))
-        .unwrap_or_else(|| ctx.nil_type())];
+    let mut arguments = vec![lower_type(ctx, db, arrow.argument())];
     let mut result = arrow.result();
 
     while let Some(ast::Type::ArrowType(arrow)) = &result {
-        arguments.push(
-            arrow
-                .argument()
-                .map(|argument| lower_type(ctx, db, &argument))
-                .unwrap_or_else(|| ctx.nil_type()),
-        );
+        arguments.push(lower_type(ctx, db, arrow.argument()));
         result = arrow.result();
     }
 
-    let result =
-        result.map(|result| lower_type(ctx, db, &result)).unwrap_or_else(|| ctx.nil_type());
+    let result = lower_type(ctx, db, result);
 
     Type::Arrow(arguments, result)
 }
@@ -774,9 +751,7 @@ fn lower_type_parenthesized(
     db: &dyn SurfaceDatabase,
     parenthesized: &ast::ParenthesizedType,
 ) -> Type {
-    Type::Parenthesized(
-        parenthesized.ty().map(|ty| lower_type(ctx, db, &ty)).unwrap_or_else(|| ctx.nil_type()),
-    )
+    Type::Parenthesized(lower_type(ctx, db, parenthesized.ty()))
 }
 
 fn lower_type_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableType) -> Type {
@@ -794,7 +769,7 @@ fn lower_type_variable_binding(
         .filter_map(|variable| match variable {
             ast::TypeVariableBinding::TypeVariableKinded(k) => {
                 let name = Name::from_raw(k.name()?.in_db(db)?);
-                let kind = lower_type(ctx, db, &k.kind()?);
+                let kind = lower_type(ctx, db, k.kind());
                 Some(TypeVariable::Kinded(name, kind))
             }
             ast::TypeVariableBinding::TypeVariableName(n) => {
