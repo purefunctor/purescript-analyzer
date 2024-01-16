@@ -97,17 +97,15 @@ fn lower_qualified_name(
     db: &dyn SurfaceDatabase,
     qualified: Option<ast::QualifiedName>,
 ) -> Qualified<Name> {
-    qualified
-        .map(|qualified| {
-            let prefix = qualified.prefix().map(|prefix| lower_qualified_prefix(db, prefix));
-            let value = lower_name_ref(db, qualified.name_ref());
-            Qualified { prefix, value }
-        })
-        .unwrap_or_else(|| {
-            let prefix = None;
-            let value = lower_name_ref(db, None);
-            Qualified { prefix, value }
-        })
+    if let Some(qualified) = qualified {
+        let prefix = qualified.prefix().map(|prefix| lower_qualified_prefix(db, prefix));
+        let value = lower_name_ref(db, qualified.name_ref());
+        Qualified { prefix, value }
+    } else {
+        let prefix = None;
+        let value = lower_name_ref(db, None);
+        Qualified { prefix, value }
+    }
 }
 
 fn lower_module(ctx: &mut Ctx, db: &dyn SurfaceDatabase, module: ast::Module) -> Module {
@@ -118,18 +116,16 @@ fn lower_module(ctx: &mut Ctx, db: &dyn SurfaceDatabase, module: ast::Module) ->
 }
 
 fn lower_header(db: &dyn SurfaceDatabase, header: Option<ast::ModuleHeader>) -> ModuleHeader {
-    header
-        .map(|header| {
-            let name = lower_module_name(db, header.name());
-            let export_list =
-                header.export_list().map(|export_list| lower_export_list(db, export_list));
-            ModuleHeader { name, export_list }
-        })
-        .unwrap_or_else(|| {
-            let name = lower_module_name(db, None);
-            let export_list = None;
-            ModuleHeader { name, export_list }
-        })
+    if let Some(header) = header {
+        let name = lower_module_name(db, header.name());
+        let export_list =
+            header.export_list().map(|export_list| lower_export_list(db, export_list));
+        ModuleHeader { name, export_list }
+    } else {
+        let name = lower_module_name(db, None);
+        let export_list = None;
+        ModuleHeader { name, export_list }
+    }
 }
 
 fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> ExportList {
@@ -374,18 +370,18 @@ fn lower_binding(
     db: &dyn SurfaceDatabase,
     binding: Option<ast::Binding>,
 ) -> Binding {
-    binding
-        .map(|binding| match binding {
+    if let Some(binding) = binding {
+        match binding {
             ast::Binding::UnconditionalBinding(unconditional) => {
                 let where_expr = lower_where_expr(ctx, db, unconditional.where_expression());
                 Binding::Unconditional { where_expr }
             }
             ast::Binding::GuardedBinding(_) => todo!("FIXME: fix support for guarded binding."),
-        })
-        .unwrap_or_else(|| {
-            let where_expr = lower_where_expr(ctx, db, None);
-            Binding::Unconditional { where_expr }
-        })
+        }
+    } else {
+        let where_expr = lower_where_expr(ctx, db, None);
+        Binding::Unconditional { where_expr }
+    }
 }
 
 fn lower_where_expr(
@@ -393,20 +389,18 @@ fn lower_where_expr(
     db: &dyn SurfaceDatabase,
     where_expr: Option<ast::WhereExpression>,
 ) -> WhereExpr {
-    where_expr
-        .map(|where_expr| {
-            let let_bindings = where_expr
-                .let_bindings()
-                .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
-                .unwrap_or_default();
-            let expr_id = lower_expr(ctx, db, where_expr.expression());
-            WhereExpr { let_bindings, expr_id }
-        })
-        .unwrap_or_else(|| {
-            let let_bindings = vec![];
-            let expr_id = lower_expr(ctx, db, None);
-            WhereExpr { expr_id, let_bindings }
-        })
+    if let Some(where_expr) = where_expr {
+        let let_bindings = where_expr
+            .let_bindings()
+            .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
+            .unwrap_or_default();
+        let expr_id = lower_expr(ctx, db, where_expr.expression());
+        WhereExpr { let_bindings, expr_id }
+    } else {
+        let let_bindings = vec![];
+        let expr_id = lower_expr(ctx, db, None);
+        WhereExpr { expr_id, let_bindings }
+    }
 }
 
 // ===== Section: LetBinding ===== //
@@ -666,11 +660,11 @@ fn lower_binder_literal(
     db: &dyn SurfaceDatabase,
     literal: &ast::LiteralBinder,
 ) -> Binder {
-    literal
-        .syntax()
-        .first_child_or_token()
-        .map(|literal| Binder::Literal(lower_literal(ctx, db, literal, lower_binder)))
-        .unwrap_or_else(|| Binder::NotImplemented)
+    if let Some(literal) = literal.syntax().first_child_or_token() {
+        Binder::Literal(lower_literal(ctx, db, literal, lower_binder))
+    } else {
+        Binder::NotImplemented
+    }
 }
 
 fn lower_binder_parenthesized(
