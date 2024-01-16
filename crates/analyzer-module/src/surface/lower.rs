@@ -191,28 +191,28 @@ fn lower_import_list(db: &dyn SurfaceDatabase, import_list: ast::ImportList) -> 
     let items = import_list
         .import_items()
         .map(|import_items| {
-            import_items
-                .children()
-                .filter_map(|import_item| match import_item {
-                    ast::ImportItem::ImportClass(_) => None,
-                    ast::ImportItem::ImportOp(_) => None,
-                    ast::ImportItem::ImportType(t) => {
-                        let name = Name::from_raw(t.name_ref()?.in_db(db)?);
-                        let data_members = t
-                            .data_members()
-                            .map(|data_members| lower_data_members(db, data_members));
-                        Some(ImportItem::ImportType(name, data_members))
-                    }
-                    ast::ImportItem::ImportTypeOp(_) => None,
-                    ast::ImportItem::ImportValue(v) => {
-                        let name = Name::from_raw(v.name_ref()?.in_db(db)?);
-                        Some(ImportItem::ImportValue(name))
-                    }
-                })
-                .collect()
+            import_items.children().map(|import_item| lower_import_item(db, import_item)).collect()
         })
         .unwrap_or_default();
     ImportList { items, hiding }
+}
+
+fn lower_import_item(db: &dyn SurfaceDatabase, import_item: ast::ImportItem) -> ImportItem {
+    match import_item {
+        ast::ImportItem::ImportClass(_) => todo!("ImportClass"),
+        ast::ImportItem::ImportOp(_) => todo!("ImportOp"),
+        ast::ImportItem::ImportType(t) => {
+            let name = lower_name_ref(db, t.name_ref());
+            let data_members =
+                t.data_members().map(|data_members| lower_data_members(db, data_members));
+            ImportItem::ImportType(name, data_members)
+        }
+        ast::ImportItem::ImportTypeOp(_) => todo!("ImportTypeOp"),
+        ast::ImportItem::ImportValue(v) => {
+            let name = lower_name_ref(db, v.name_ref());
+            ImportItem::ImportValue(name)
+        }
+    }
 }
 
 fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) -> DataMembers {
