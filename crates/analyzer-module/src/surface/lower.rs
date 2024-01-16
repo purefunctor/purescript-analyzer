@@ -596,31 +596,105 @@ where
 
 // ===== Section: Expr ===== //
 
-fn lower_expr(ctx: &mut Ctx, _db: &dyn SurfaceDatabase, expr: Option<ast::Expression>) -> ExprId {
+fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Expression>) -> ExprId {
     if let Some(expr) = expr {
         let lowered = match &expr {
             ast::Expression::AdoExpression(_) => Expr::NotImplemented,
-            ast::Expression::ApplicationExpression(_) => Expr::NotImplemented,
+            ast::Expression::ApplicationExpression(a) => lower_expr_application(ctx, db, a),
             ast::Expression::CaseExpression(_) => Expr::NotImplemented,
-            ast::Expression::ConstructorExpression(_) => Expr::NotImplemented,
+            ast::Expression::ConstructorExpression(c) => lower_expr_constructor(db, c),
             ast::Expression::DoExpression(_) => Expr::NotImplemented,
             ast::Expression::ExpressionInfixChain(_) => Expr::NotImplemented,
             ast::Expression::ExpressionOperatorChain(_) => Expr::NotImplemented,
             ast::Expression::IfThenElseExpression(_) => Expr::NotImplemented,
-            ast::Expression::LambdaExpression(_) => Expr::NotImplemented,
-            ast::Expression::LetInExpression(_) => Expr::NotImplemented,
-            ast::Expression::LiteralExpression(_) => Expr::NotImplemented,
+            ast::Expression::LambdaExpression(l) => lower_expr_lambda(ctx, db, l),
+            ast::Expression::LetInExpression(l) => lower_expr_let_in(ctx, db, l),
+            ast::Expression::LiteralExpression(l) => lower_expr_literal(ctx, db, l),
             ast::Expression::OperatorNameExpression(_) => Expr::NotImplemented,
             ast::Expression::ParenthesizedExpression(_) => Expr::NotImplemented,
             ast::Expression::RecordAccessExpression(_) => Expr::NotImplemented,
             ast::Expression::RecordUpdateExpression(_) => Expr::NotImplemented,
             ast::Expression::TypedExpression(_) => Expr::NotImplemented,
-            ast::Expression::VariableExpression(_) => Expr::NotImplemented,
+            ast::Expression::VariableExpression(v) => lower_expr_variable(db, v),
         };
         ctx.alloc_expr(lowered, Some(&expr))
     } else {
         ctx.alloc_expr(Expr::NotImplemented, None)
     }
+}
+
+fn lower_expr_application(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    application: &ast::ApplicationExpression,
+) -> Expr {
+    let function = lower_expr(ctx, db, application.head());
+    let arguments = application
+        .spine()
+        .map(|spine| {
+            spine
+                .children()
+                .map(|argument| match argument {
+                    ast::Argument::TermArgument(t) => lower_expr(ctx, db, t.expression()),
+                    ast::Argument::TypeArgument(_) => todo!("TypeArgument"),
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    Expr::Application(function, arguments)
+}
+
+fn lower_expr_constructor(
+    db: &dyn SurfaceDatabase,
+    constructor: &ast::ConstructorExpression,
+) -> Expr {
+    let name = lower_qualified_name(db, constructor.qualified_name());
+    Expr::Constructor(name)
+}
+
+fn lower_expr_lambda(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    lambda: &ast::LambdaExpression,
+) -> Expr {
+    let binders = lambda
+        .binders()
+        .map(|binders| {
+            binders.children().map(|binder| lower_binder(ctx, db, Some(binder))).collect()
+        })
+        .unwrap_or_default();
+    let body = lower_expr(ctx, db, lambda.body());
+    Expr::Lambda(binders, body)
+}
+
+fn lower_expr_let_in(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    let_in: &ast::LetInExpression,
+) -> Expr {
+    let let_bindings = let_in
+        .let_bindings()
+        .map(|let_bindings| lower_let_bindings(ctx, db, &let_bindings))
+        .unwrap_or_default();
+    let body = lower_expr(ctx, db, let_in.body());
+    Expr::LetIn(let_bindings, body)
+}
+
+fn lower_expr_literal(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    literal: &ast::LiteralExpression,
+) -> Expr {
+    if let Some(literal) = literal.syntax().first_child_or_token() {
+        Expr::Literal(lower_literal(ctx, db, literal, lower_expr))
+    } else {
+        Expr::NotImplemented
+    }
+}
+
+fn lower_expr_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableExpression) -> Expr {
+    let name = lower_qualified_name(db, variable.qualified_name());
+    Expr::Variable(name)
 }
 
 // ===== Section: Binder ===== //
