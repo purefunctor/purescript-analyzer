@@ -11,11 +11,14 @@ use paste::paste;
 use rustc_hash::FxHashMap;
 use syntax::{ast, SyntaxNodePtr};
 
-use crate::id::AstId;
+use crate::{
+    id::AstId,
+    index::nominal::{DataGroupId, ValueGroupId},
+};
 
 // ===== SECTION: Names ====== //
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleName(Arc<str>);
 
 impl ModuleName {
@@ -46,7 +49,7 @@ impl Borrow<str> for &ModuleName {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Name(Arc<str>);
 
 impl Name {
@@ -97,8 +100,8 @@ pub struct ModuleHeader {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum ExportList {
-    ExportEnumerated(Vec<ExportItem>),
+pub struct ExportList {
+    pub items: Vec<ExportItem>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -144,6 +147,8 @@ pub enum DataMembers {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleBody {
     pub declarations: Vec<Declaration>,
+    pub data_declarations: FxHashMap<DataGroupId, usize>,
+    pub value_declarations: FxHashMap<ValueGroupId, usize>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -156,6 +161,7 @@ pub enum Declaration {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DataDeclaration {
+    pub id: DataGroupId,
     pub name: Name,
     pub annotation: Option<TypeId>,
     pub variables: Vec<TypeVariable>,
@@ -172,6 +178,7 @@ pub struct DataConstructor {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueDeclaration {
+    pub id: ValueGroupId,
     pub name: Name,
     pub annotation: Option<TypeId>,
     pub equations: Vec<ValueEquation>,

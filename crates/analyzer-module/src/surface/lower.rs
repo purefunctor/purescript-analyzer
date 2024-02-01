@@ -8,12 +8,13 @@ use rowan::{
     ast::{AstChildren, AstNode, SyntaxNodePtr},
     NodeOrToken,
 };
+use rustc_hash::FxHashMap;
 use syntax::{ast, PureScript, SyntaxKind, SyntaxNode};
 
 use crate::{
     id::AstId,
     index::{
-        nominal::{DataGroup, ValueGroup},
+        nominal::{DataGroup, DataGroupId, ValueGroup, ValueGroupId},
         NominalMap, PositionalMap,
     },
     interner::InDb,
@@ -135,8 +136,7 @@ fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> 
             export_items.children().map(|export_item| lower_export_item(db, export_item)).collect()
         })
         .unwrap_or_default();
-
-    ExportList::ExportEnumerated(items)
+    ExportList { items }
 }
 
 fn lower_export_item(db: &dyn SurfaceDatabase, export_item: ast::ExportItem) -> ExportItem {
@@ -234,12 +234,15 @@ fn lower_module_body(
     body: Option<ast::ModuleBody>,
 ) -> ModuleBody {
     body.and_then(|body| {
-        let declarations = lower_declarations(ctx, db, body.declarations()?.children());
-        Some(ModuleBody { declarations })
+        let (declarations, data_declarations, value_declarations) =
+            lower_declarations(ctx, db, body.declarations()?.children());
+        Some(ModuleBody { declarations, data_declarations, value_declarations })
     })
     .unwrap_or_else(|| {
         let declarations = vec![];
-        ModuleBody { declarations }
+        let data_declarations = FxHashMap::default();
+        let value_declarations = FxHashMap::default();
+        ModuleBody { declarations, data_declarations, value_declarations }
     })
 }
 
@@ -249,20 +252,24 @@ fn lower_declarations(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
     _: AstChildren<ast::Declaration>,
-) -> Vec<Declaration> {
+) -> (Vec<Declaration>, FxHashMap<DataGroupId, usize>, FxHashMap<ValueGroupId, usize>) {
     let nominal_map = Arc::clone(&ctx.nominal_map);
 
     let mut all = vec![];
+    let mut data_declarations = FxHashMap::default();
+    let mut value_declarations = FxHashMap::default();
 
-    all.extend(nominal_map.iter_data_group().map(|(_, data_group)| {
-        Declaration::DataDeclaration(lower_data_group(ctx, db, data_group))
+    all.extend(nominal_map.iter_data_group().enumerate().map(|(index, (id, data_group))| {
+        data_declarations.insert(id.value, index);
+        Declaration::DataDeclaration(lower_data_group(ctx, db, id.value, data_group))
     }));
 
-    all.extend(nominal_map.iter_value_group().map(|(_, value_group)| {
-        Declaration::ValueDeclaration(lower_value_group(ctx, db, value_group))
+    all.extend(nominal_map.iter_value_group().enumerate().map(|(index, (id, value_group))| {
+        value_declarations.insert(id.value, index);
+        Declaration::ValueDeclaration(lower_value_group(ctx, db, id.value, value_group))
     }));
 
-    all
+    (all, data_declarations, value_declarations)
 }
 
 // ===== Section: DataGroup ===== //
@@ -270,6 +277,7 @@ fn lower_declarations(
 fn lower_data_group(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
+    id: DataGroupId,
     data_group: &DataGroup,
 ) -> DataDeclaration {
     let name = Name::from_raw(Arc::clone(&data_group.name));
@@ -293,7 +301,7 @@ fn lower_data_group(
         })
         .collect();
 
-    DataDeclaration { name, annotation, variables, constructors }
+    DataDeclaration { id, name, annotation, variables, constructors }
 }
 
 fn lower_data_annotation(
@@ -322,6 +330,7 @@ fn lower_data_constructor(
 fn lower_value_group(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
+    id: ValueGroupId,
     value_group: &ValueGroup,
 ) -> ValueDeclaration {
     let name = Name::from_raw(Arc::clone(&value_group.name));
@@ -339,7 +348,7 @@ fn lower_value_group(
         })
         .collect();
 
-    ValueDeclaration { name, annotation, equations }
+    ValueDeclaration { id, name, annotation, equations }
 }
 
 fn lower_value_annotation(

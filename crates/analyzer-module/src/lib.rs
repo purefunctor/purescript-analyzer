@@ -3,17 +3,20 @@
 pub mod id;
 pub mod index;
 pub mod interner;
+pub mod scope;
 pub mod source;
 pub mod surface;
 
 pub use index::IndexDatabase;
 pub use interner::InternerDatabase;
+pub use scope::ScopeDatabase;
 pub use source::SourceDatabase;
 pub use surface::SurfaceDatabase;
 
 #[salsa::database(
     index::IndexStorage,
     interner::InternerStorage,
+    scope::ScopeStorage,
     source::SourceStorage,
     surface::SurfaceStorage
 )]
