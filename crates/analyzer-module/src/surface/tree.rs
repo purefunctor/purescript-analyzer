@@ -151,6 +151,26 @@ pub struct ModuleBody {
     pub value_declarations: FxHashMap<ValueGroupId, usize>,
 }
 
+impl ModuleBody {
+    pub fn data_declaration(&self, data_id: DataGroupId) -> Option<&DataDeclaration> {
+        self.data_declarations.get(&data_id).map(|index| {
+            let declaration = &self.declarations[*index];
+            if let Declaration::DataDeclaration(data_declaration) = declaration {
+                data_declaration
+            } else {
+                unreachable!("impossible: index does not point to a data declaration");
+            }
+        })
+    }
+
+    pub fn iter_data_declarations(&self) -> impl Iterator<Item = &DataDeclaration> {
+        self.declarations.iter().filter_map(|declaration| match declaration {
+            Declaration::DataDeclaration(data_declaration) => Some(data_declaration),
+            Declaration::ValueDeclaration(_) => None,
+        })
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Declaration {
     DataDeclaration(DataDeclaration),
