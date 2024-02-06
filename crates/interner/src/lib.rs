@@ -14,7 +14,7 @@ use rustc_hash::{FxHashMap, FxHasher};
 ///
 /// This struct is meant to be used in conjunction with [`Arc`] or the
 /// [`lazy_static`] crate.
-/// 
+///
 /// Internally, this is implemented as a [`HashMap`] which associates
 /// the hash of the string with a [`Weak`] pointer that can be upgraded
 /// if the [`Arc`] allocation for said string still exists.
