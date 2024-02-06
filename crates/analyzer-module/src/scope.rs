@@ -1,3 +1,5 @@
+//! Queries pertaining to name resolution.
+
 mod collect;
 mod resolve;
 

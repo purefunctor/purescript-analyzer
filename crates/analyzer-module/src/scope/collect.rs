@@ -180,7 +180,7 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
         }
         Expr::LetIn(let_bindings, let_body) => {
             ctx.with_reverting_scope(|ctx| {
-                collect_let_bindings(ctx, &let_bindings);
+                collect_let_bindings(ctx, let_bindings);
                 collect_expr(ctx, *let_body);
             });
         }

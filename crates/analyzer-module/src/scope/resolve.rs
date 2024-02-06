@@ -192,9 +192,9 @@ fn resolve_variable(
 // region: Traversals
 
 fn resolve_data_declaration(ctx: &mut Ctx, data_declaration: &DataDeclaration) {
-    data_declaration.annotation.map(|annotation| {
+    if let Some(annotation) = data_declaration.annotation {
         resolve_type(ctx, annotation);
-    });
+    }
     data_declaration.constructors.iter().for_each(|(_, constructor)| {
         constructor.fields.iter().for_each(|field| {
             resolve_type(ctx, *field);
@@ -203,9 +203,9 @@ fn resolve_data_declaration(ctx: &mut Ctx, data_declaration: &DataDeclaration) {
 }
 
 fn resolve_value_declaration(ctx: &mut Ctx, value_declaration: &ValueDeclaration) {
-    value_declaration.annotation.map(|annotation| {
+    if let Some(annotation) = value_declaration.annotation {
         resolve_type(ctx, annotation);
-    });
+    }
     value_declaration.equations.iter().for_each(|value_equation| {
         resolve_value_equation(ctx, value_equation);
     });
@@ -234,7 +234,9 @@ fn resolve_let_bindings(ctx: &mut Ctx, let_bindings: &[LetBinding]) {
         match let_binding {
             LetBinding::Name { id } => {
                 let let_name = &ctx.arena[*id];
-                let_name.annotation.map(|annotation| resolve_type(ctx, annotation));
+                if let Some(annotation) = let_name.annotation {
+                    resolve_type(ctx, annotation);
+                }
                 resolve_let_name_equations(ctx, &let_name.equations);
             }
             LetBinding::Pattern { binder, where_expr } => {
