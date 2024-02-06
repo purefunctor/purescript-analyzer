@@ -66,13 +66,13 @@ pub struct ConstructorResolution {
     constructor_id: AstId<ast::DataConstructor>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TypeConstructorResolution {
-    file_id: FileId,
-    kind: TypeConstructorKind,
+    pub file_id: FileId,
+    pub kind: TypeConstructorKind,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TypeConstructorKind {
     Data(DataGroupId),
 }
@@ -87,10 +87,10 @@ pub enum VariableResolution {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ResolveInfo {
-    per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
-    per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
-    per_type_type: FxHashMap<TypeId, TypeConstructorResolution>,
-    per_variable_expr: FxHashMap<ExprId, VariableResolution>,
+    pub per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
+    pub per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
+    pub per_type_type: FxHashMap<TypeId, TypeConstructorResolution>,
+    pub per_variable_expr: FxHashMap<ExprId, VariableResolution>,
 }
 
 #[salsa::query_group(ScopeStorage)]
