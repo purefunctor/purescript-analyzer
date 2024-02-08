@@ -8,12 +8,13 @@ use files::FileId;
 use rustc_hash::FxHashMap;
 use syntax::ast;
 
-use crate::{id::AstId, ScopeDatabase};
+use crate::{id::AstId, surface::BinderId, ScopeDatabase};
 
 pub use tree::*;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct InferenceResult {
+    pub of_binder: FxHashMap<BinderId, CoreTypeId>,
     pub of_constructor: FxHashMap<AstId<ast::DataConstructor>, CoreTypeId>,
 }
 
