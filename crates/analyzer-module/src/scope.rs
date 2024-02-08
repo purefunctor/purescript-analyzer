@@ -61,9 +61,9 @@ impl ScopeInfo {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstructorResolution {
-    file_id: FileId,
-    data_id: DataGroupId,
-    constructor_id: AstId<ast::DataConstructor>,
+    pub file_id: FileId,
+    pub data_id: DataGroupId,
+    pub constructor_id: AstId<ast::DataConstructor>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
