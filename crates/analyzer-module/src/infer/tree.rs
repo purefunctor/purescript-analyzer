@@ -4,7 +4,7 @@
 //! [`salsa`]'s interning mechanism rather than an [`Arena`] that gets passed
 //! around. The primary reason for this difference is the fact that type
 //! inference operates at a more global context. An [`Arena`] is impractical
-//! as it would mean that types cannot be shared across units of compilation 
+//! as it would mean that types cannot be shared across units of compilation
 //! i.e. files
 //!
 //! [`Arena`]: la_arena::Arena
@@ -33,24 +33,25 @@ pub enum CoreType {
     Constructor(InFile<DataGroupId>),
     Forall(Name, CoreTypeId),
     Function(CoreTypeId, CoreTypeId),
+    Primitive(Name),
     Unification(InFile<u32>),
     Variable(Name),
     NotImplemented,
 }
 
-pub fn pretty_print(db: &impl InferenceDatabase, t: CoreTypeId) -> String {
+pub fn pretty_print<Db>(db: &Db, t: CoreTypeId) -> String
+where
+    Db: InferenceDatabase + ?Sized,
+{
     let allocator = pretty::Arena::<()>::default();
     let t = pretty_print_core(db, &allocator, t);
     format!("{}", t.pretty(100))
 }
 
-fn pretty_print_core<'a, A>(
-    db: &impl InferenceDatabase,
-    allocator: &'a A,
-    t: CoreTypeId,
-) -> DocBuilder<'a, A, ()>
+fn pretty_print_core<'a, A, Db>(db: &Db, allocator: &'a A, t: CoreTypeId) -> DocBuilder<'a, A, ()>
 where
     A: DocAllocator<'a, ()>,
+    Db: InferenceDatabase + ?Sized,
 {
     match db.lookup_intern_type(t) {
         CoreType::Application(function, argument) => {
@@ -79,7 +80,8 @@ where
             let result = pretty_print_core(db, allocator, result);
             argument.append(" -> ").append(result)
         }
-        CoreType::Unification(_) => allocator.text("?"),
+        CoreType::Primitive(name) => allocator.text(name.as_ref().to_string()),
+        CoreType::Unification(id) => allocator.text("?").append(id.value.to_string()),
         CoreType::Variable(name) => allocator.text(name.as_ref().to_string()),
         CoreType::NotImplemented => allocator.text("?"),
     }
