@@ -163,10 +163,34 @@ impl ModuleBody {
         })
     }
 
+    pub fn value_declaration(&self, value_id: ValueGroupId) -> Option<&ValueDeclaration> {
+        self.value_declarations.get(&value_id).map(|index| {
+            let declaration = &self.declarations[*index];
+            if let Declaration::ValueDeclaration(value_declaration) = declaration {
+                value_declaration
+            } else {
+                unreachable!("impossible: index does not point to a value declaration");
+            }
+        })
+    }
+
     pub fn iter_data_declarations(&self) -> impl Iterator<Item = &DataDeclaration> {
-        self.declarations.iter().filter_map(|declaration| match declaration {
-            Declaration::DataDeclaration(data_declaration) => Some(data_declaration),
-            Declaration::ValueDeclaration(_) => None,
+        self.declarations.iter().filter_map(|declaration| {
+            if let Declaration::DataDeclaration(data_declaration) = declaration {
+                Some(data_declaration)
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn iter_value_declarations(&self) -> impl Iterator<Item = &ValueDeclaration> {
+        self.declarations.iter().filter_map(|declaration| {
+            if let Declaration::ValueDeclaration(value_declaration) = declaration {
+                Some(value_declaration)
+            } else {
+                None
+            }
         })
     }
 }
