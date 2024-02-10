@@ -259,13 +259,16 @@ fn lower_declarations(
     let mut data_declarations = FxHashMap::default();
     let mut value_declarations = FxHashMap::default();
 
-    all.extend(nominal_map.iter_data_group().enumerate().map(|(index, (id, data_group))| {
+    let mut index = 0;
+    all.extend(nominal_map.iter_data_group().map(|(id, data_group)| {
         data_declarations.insert(id.value, index);
+        index += 1;
         Declaration::DataDeclaration(lower_data_group(ctx, db, id.value, data_group))
     }));
 
-    all.extend(nominal_map.iter_value_group().enumerate().map(|(index, (id, value_group))| {
+    all.extend(nominal_map.iter_value_group().map(|(id, value_group)| {
         value_declarations.insert(id.value, index);
+        index += 1;
         Declaration::ValueDeclaration(lower_value_group(ctx, db, id.value, value_group))
     }));
 
