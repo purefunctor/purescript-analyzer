@@ -2,12 +2,14 @@
 
 mod lower;
 pub mod tree;
+pub mod visit;
 
 use std::sync::Arc;
 
 use files::FileId;
 
 pub use tree::*;
+pub use visit::*;
 
 use crate::{IndexDatabase, InternerDatabase, SourceDatabase};
 
