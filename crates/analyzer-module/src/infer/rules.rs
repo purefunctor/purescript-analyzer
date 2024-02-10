@@ -1,67 +1,24 @@
 //! Implements inference rules.
 
+mod recursive;
+
 use std::sync::Arc;
 
 use files::FileId;
-use petgraph::{algo::kosaraju_scc, graphmap::DiGraphMap};
+
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::{
+pub(self) use crate::{
     id::InFile,
-    index::nominal::DataGroupId,
     infer::pretty_print,
     scope::{ResolveInfo, TypeConstructorKind},
     surface::tree::*,
     InferenceDatabase,
 };
 
-use super::{CoreType, CoreTypeId, InferenceResult};
+use self::recursive::{recursive_data_groups, recursive_value_groups};
 
-// region: Recursive Binding Groups
-
-#[derive(Debug)]
-struct RecursiveGroupBuilder<'a> {
-    resolve_info: &'a ResolveInfo,
-    type_graph: DiGraphMap<TypeConstructorKind, ()>,
-}
-
-impl<'a> RecursiveGroupBuilder<'a> {
-    fn new(resolve_info: &'a ResolveInfo) -> RecursiveGroupBuilder<'a> {
-        let type_graph = DiGraphMap::default();
-        RecursiveGroupBuilder { resolve_info, type_graph }
-    }
-
-    fn analyze_type(&mut self, data_id: DataGroupId, arena: &SurfaceArena, type_id: TypeId) {
-        match &arena[type_id] {
-            Type::Arrow(arguments, result) => {
-                for argument in arguments {
-                    self.analyze_type(data_id, arena, *argument);
-                }
-                self.analyze_type(data_id, arena, *result);
-            }
-            Type::Application(function, arguments) => {
-                self.analyze_type(data_id, arena, *function);
-                for argument in arguments {
-                    self.analyze_type(data_id, arena, *argument);
-                }
-            }
-            Type::Constructor(_) => {
-                if let Some(type_constructor) = self.resolve_info.per_type_type.get(&type_id) {
-                    let dependent = TypeConstructorKind::Data(data_id);
-                    let dependency = type_constructor.kind;
-                    self.type_graph.add_edge(dependent, dependency, ());
-                }
-            }
-            Type::Parenthesized(parenthesized) => {
-                self.analyze_type(data_id, arena, *parenthesized);
-            }
-            Type::Variable(_) => (),
-            Type::NotImplemented => (),
-        }
-    }
-}
-
-// endregion
+pub(self) use super::{CoreType, CoreTypeId, InferenceResult};
 
 // region: Type Inference Rules
 
@@ -357,45 +314,29 @@ pub(super) fn file_infer_query(
     let (surface, arena) = db.file_surface(file_id);
     let resolve = db.file_resolve(file_id);
 
-    let mut builder = RecursiveGroupBuilder::new(&resolve);
-    surface.body.iter_data_declarations().for_each(|data_declaration| {
-        builder.type_graph.add_node(TypeConstructorKind::Data(data_declaration.id));
-        data_declaration.constructors.values().for_each(|data_constructor| {
-            data_constructor.fields.iter().for_each(|field| {
-                builder.analyze_type(data_declaration.id, &arena, *field);
-            });
-        });
-    });
-
     let mut ctx = InferContext::new(file_id, &arena, &resolve);
 
-    for components in kosaraju_scc(&builder.type_graph) {
-        for TypeConstructorKind::Data(data_group_id) in components {
-            let index = surface.body.data_declarations.get(&data_group_id).unwrap_or_else(|| {
-                unreachable!("impossible: data_group_id comes from iter_data_declarations");
-            });
-            let Declaration::DataDeclaration(data_declaration) = &surface.body.declarations[*index]
-            else {
-                unreachable!("impossible: an invalid index was set to data_declarations");
+    let recursive_data =
+        recursive_data_groups(&arena, &resolve, surface.body.iter_data_declarations());
+    for recursive_group in recursive_data {
+        for data_group_id in recursive_group {
+            let Some(data_declaration) = surface.body.data_declaration(data_group_id) else {
+                unreachable!("impossible: unknown data_group_id");
             };
             infer_data_declaration(&mut ctx, db, file_id, data_declaration);
         }
     }
 
-    surface
-        .body
-        .declarations
-        .iter()
-        .filter_map(|declaration| {
-            if let Declaration::ValueDeclaration(value_declaration) = declaration {
-                Some(value_declaration)
-            } else {
-                None
-            }
-        })
-        .for_each(|value_declaration| {
-            infer_value_declaration(&mut ctx, db, &value_declaration);
-        });
+    let recursive_value =
+        recursive_value_groups(&arena, &resolve, surface.body.iter_value_declarations());
+    for recursive_group in recursive_value {
+        for value_group_id in recursive_group {
+            let Some(value_declaration) = surface.body.value_declaration(value_group_id) else {
+                unreachable!("impossible: unknown value_group_id");
+            };
+            infer_value_declaration(&mut ctx, db, value_declaration);
+        }
+    }
 
     Arc::new(ctx.result)
 }
