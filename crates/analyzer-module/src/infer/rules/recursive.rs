@@ -19,6 +19,7 @@ struct AnalyzeRecursiveGroupCtx<'ast, 'env> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum NodeKind {
     DataGroupId(DataGroupId),
+    LetNameId(LetNameId),
     ValueGroupId(ValueGroupId),
 }
 
@@ -49,11 +50,19 @@ impl<'ast> Visitor<'ast> for AnalyzeRecursiveGroupCtx<'ast, '_> {
         };
         match &self.arena[expr_id] {
             Expr::Variable(_) => {
-                if let Some(VariableResolution::Local(value_id)) =
-                    self.resolve.per_variable_expr.get(&expr_id)
-                {
-                    let dependency = NodeKind::ValueGroupId(*value_id);
-                    self.graph.add_edge(dependent, dependency, ());
+                if let Some(resolution) = self.resolve.per_variable_expr.get(&expr_id) {
+                    match resolution {
+                        VariableResolution::Binder(_) => (),
+                        VariableResolution::Imported(_) => (),
+                        VariableResolution::LetName(let_id) => {
+                            let dependency = NodeKind::LetNameId(*let_id);
+                            self.graph.add_edge(dependent, dependency, ());
+                        }
+                        VariableResolution::Local(value_id) => {
+                            let dependency = NodeKind::ValueGroupId(*value_id);
+                            self.graph.add_edge(dependent, dependency, ());
+                        }
+                    }
                 }
             }
             _ => default_visit_expr(self, expr_id),
@@ -97,15 +106,16 @@ pub(super) fn recursive_data_groups<'ast, 'env>(
         .map(|components| {
             components
                 .into_iter()
-                .map(|node_kind| {
+                .filter_map(|node_kind| {
                     if let NodeKind::DataGroupId(data_group_id) = node_kind {
-                        data_group_id
+                        Some(data_group_id)
                     } else {
-                        unreachable!("impossible: invalid node_kind!")
+                        None
                     }
                 })
                 .collect_vec()
         })
+        .filter(|components| !components.is_empty())
         .collect_vec()
 }
 
@@ -132,14 +142,51 @@ pub(super) fn recursive_value_groups<'ast, 'env>(
         .map(|components| {
             components
                 .into_iter()
-                .map(|node_kind| {
+                .filter_map(|node_kind| {
                     if let NodeKind::ValueGroupId(value_group_id) = node_kind {
-                        value_group_id
+                        Some(value_group_id)
                     } else {
-                        unreachable!("impossible: invalid node_kind!")
+                        None
                     }
                 })
                 .collect_vec()
         })
+        .filter(|components| !components.is_empty())
+        .collect_vec()
+}
+
+pub(super) fn recursive_let_names<'ast, 'env>(
+    arena: &'ast SurfaceArena,
+    resolve: &'env ResolveInfo,
+    let_names: impl Iterator<Item = &'ast LetNameId>,
+) -> Vec<Vec<LetNameId>> {
+    let mut ctx = AnalyzeRecursiveGroupCtx::new(arena, resolve);
+    for let_name in let_names {
+        ctx.with_dependent(NodeKind::LetNameId(*let_name));
+        let let_name = &arena[*let_name];
+        for equation in &let_name.equations {
+            match &equation.binding {
+                Binding::Unconditional { where_expr } => {
+                    ctx.visit_let_bindings(&where_expr.let_bindings);
+                    ctx.visit_expr(where_expr.expr_id);
+                }
+            }
+        }
+    }
+    kosaraju_scc(&ctx.graph)
+        .into_iter()
+        .map(|components| {
+            components
+                .into_iter()
+                .filter_map(|node_kind| {
+                    if let NodeKind::LetNameId(let_name_id) = node_kind {
+                        Some(let_name_id)
+                    } else {
+                        None
+                    }
+                })
+                .collect_vec()
+        })
+        .filter(|components| !components.is_empty())
         .collect_vec()
 }
