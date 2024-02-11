@@ -8,12 +8,13 @@ mod value;
 use std::sync::Arc;
 
 use files::FileId;
+use itertools::Itertools;
 
 use crate::{id::InFile, scope::ResolveInfo, surface::tree::*, InferenceDatabase};
 
 use super::{CoreType, CoreTypeId, InferenceResult};
 
-use recursive::{recursive_data_groups, recursive_value_groups};
+use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
 #[derive(Default)]
 struct InferenceState {
@@ -63,15 +64,19 @@ pub(super) fn file_infer_query(
         }
     }
 
-    let recursive_value =
+    let value_components =
         recursive_value_groups(&arena, &resolve, surface.body.iter_value_declarations());
-    for recursive_group in recursive_value {
-        for value_group_id in recursive_group {
-            let Some(value_declaration) = surface.body.value_declaration(value_group_id) else {
-                unreachable!("impossible: unknown value_group_id");
-            };
-            ctx.infer_value_declaration(db, value_declaration);
-        }
+    for value_component in value_components {
+        let value_declarations = value_component
+            .into_iter()
+            .map(|value_group_id| {
+                let Some(value_declaration) = surface.body.value_declaration(value_group_id) else {
+                    unreachable!("impossible: unknown value_group_id");
+                };
+                (value_group_id, value_declaration)
+            })
+            .collect_vec();
+        ctx.infer_value_scc(db, &value_declarations);
     }
 
     Arc::new(ctx.result)
