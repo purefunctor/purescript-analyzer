@@ -39,10 +39,13 @@ impl InferContext<'_> {
             fresh_ty
         };
         for equation in &value_declaration.equations {
-            for binder in &equation.binders {
-                self.infer_binder(db, *binder);
-            }
-            let equation_ty = self.infer_binding(db, &equation.binding);
+            let binders_ty =
+                equation.binders.iter().map(|binder| self.infer_binder(db, *binder)).collect_vec();
+            let binding_ty = self.infer_binding(db, &equation.binding);
+            let equation_ty =
+                binders_ty.into_iter().rev().fold(binding_ty, |body_ty, binder_ty| {
+                    db.intern_type(CoreType::Function(binder_ty, body_ty))
+                });
             self.unify_types(db, value_ty, equation_ty);
         }
     }
@@ -195,7 +198,23 @@ impl InferContext<'_> {
 
     fn infer_expr(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId) -> CoreTypeId {
         let expr_ty = match &self.arena[expr_id] {
-            Expr::Application(_, _) => db.intern_type(CoreType::NotImplemented),
+            Expr::Application(function, arguments) => {
+                let function_ty = self.infer_expr(db, *function);
+                let function_ty = self.instantiate_type(db, function_ty);
+
+                let arguments_ty =
+                    arguments.iter().map(|argument| self.infer_expr(db, *argument)).collect_vec();
+
+                let result_ty = self.fresh_unification(db);
+                let auxiliary_ty =
+                    arguments_ty.into_iter().rev().fold(result_ty, |result_ty, argument_ty| {
+                        db.intern_type(CoreType::Function(argument_ty, result_ty))
+                    });
+
+                self.unify_types(db, function_ty, auxiliary_ty);
+
+                result_ty
+            }
             Expr::Constructor(_) => {
                 if let Some(constructor) = self.resolve.per_constructor_expr.get(&expr_id) {
                     if let Some(constructor_ty) =
@@ -209,8 +228,18 @@ impl InferContext<'_> {
                     db.intern_type(CoreType::NotImplemented)
                 }
             }
-            Expr::Lambda(_, _) => db.intern_type(CoreType::NotImplemented),
-            Expr::LetIn(_, _) => db.intern_type(CoreType::NotImplemented),
+            Expr::Lambda(binders, body) => {
+                let binders_ty =
+                    binders.iter().map(|binder| self.infer_binder(db, *binder)).collect_vec();
+                let body_ty = self.infer_expr(db, *body);
+                binders_ty.into_iter().rev().fold(body_ty, |body_ty, binder_ty| {
+                    db.intern_type(CoreType::Function(binder_ty, body_ty))
+                })
+            }
+            Expr::LetIn(bindings, body) => {
+                self.infer_let_bindings(db, &bindings);
+                self.infer_expr(db, *body)
+            }
             Expr::Literal(literal) => match literal {
                 Literal::Array(_) => db.intern_type(CoreType::NotImplemented),
                 Literal::Record(_) => db.intern_type(CoreType::NotImplemented),
