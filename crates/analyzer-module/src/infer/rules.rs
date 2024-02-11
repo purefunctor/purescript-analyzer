@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use files::FileId;
 use itertools::Itertools;
+use rustc_hash::FxHashMap;
 
 use crate::{id::InFile, scope::ResolveInfo, surface::tree::*, InferenceDatabase};
 
@@ -25,15 +26,21 @@ struct InferContext<'a> {
     file_id: FileId,
     arena: &'a SurfaceArena,
     resolve: &'a ResolveInfo,
+    imported: &'a FxHashMap<FileId, Arc<InferenceResult>>,
     state: InferenceState,
     result: InferenceResult,
 }
 
 impl<'a> InferContext<'a> {
-    fn new(file_id: FileId, arena: &'a SurfaceArena, resolve: &'a ResolveInfo) -> InferContext<'a> {
+    fn new(
+        file_id: FileId,
+        arena: &'a SurfaceArena,
+        resolve: &'a ResolveInfo,
+        imported: &'a FxHashMap<FileId, Arc<InferenceResult>>,
+    ) -> InferContext<'a> {
         let state = InferenceState::default();
         let result = InferenceResult::default();
-        InferContext { file_id, arena, resolve, state, result }
+        InferContext { file_id, arena, resolve, state, result, imported }
     }
 
     fn fresh_unification(&mut self, db: &dyn InferenceDatabase) -> CoreTypeId {
@@ -51,7 +58,10 @@ pub(super) fn file_infer_query(
     let (surface, arena) = db.file_surface(file_id);
     let resolve = db.file_resolve(file_id);
 
-    let mut ctx = InferContext::new(file_id, &arena, &resolve);
+    let imported: FxHashMap<_, _> =
+        resolve.imports.iter().map(|&file_id| (file_id, db.file_infer(file_id))).collect();
+
+    let mut ctx = InferContext::new(file_id, &arena, &resolve, &imported);
 
     let recursive_data =
         recursive_data_groups(&arena, &resolve, surface.body.iter_data_declarations());

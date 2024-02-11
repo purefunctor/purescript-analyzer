@@ -1,7 +1,8 @@
 use itertools::Itertools;
 
 use crate::{
-    index::nominal::ValueGroupId, scope::VariableResolution, surface::tree::*, InferenceDatabase,
+    id::InFile, index::nominal::ValueGroupId, scope::VariableResolution, surface::tree::*,
+    InferenceDatabase,
 };
 
 use super::{recursive_let_names, CoreType, CoreTypeId, InferContext};
@@ -240,7 +241,13 @@ impl InferContext<'_> {
                         VariableResolution::Binder(binder_id) => {
                             self.result.of_binder.get(binder_id).copied()
                         }
-                        VariableResolution::Imported(_) => todo!("Imported Resolution!"),
+                        VariableResolution::Imported(InFile { file_id, value }) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.of_value_group.get(value).copied()
+                            } else {
+                                None
+                            }
+                        }
                         VariableResolution::LetName(let_id) => {
                             self.result.of_let_name.get(let_id).copied()
                         }

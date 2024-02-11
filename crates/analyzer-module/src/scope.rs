@@ -85,12 +85,29 @@ pub enum VariableResolution {
     Local(ValueGroupId),
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ResolveInfo {
+    pub imports: Vec<FileId>,
     pub per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
     pub per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
     pub per_type_type: FxHashMap<TypeId, TypeConstructorResolution>,
     pub per_variable_expr: FxHashMap<ExprId, VariableResolution>,
+}
+
+impl ResolveInfo {
+    pub fn new(imports: Vec<FileId>) -> ResolveInfo {
+        let per_constructor_binder = FxHashMap::default();
+        let per_constructor_expr = FxHashMap::default();
+        let per_type_type = FxHashMap::default();
+        let per_variable_expr = FxHashMap::default();
+        ResolveInfo {
+            imports,
+            per_constructor_binder,
+            per_constructor_expr,
+            per_type_type,
+            per_variable_expr,
+        }
+    }
 }
 
 #[salsa::query_group(ScopeStorage)]

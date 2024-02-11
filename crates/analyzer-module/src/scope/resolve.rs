@@ -35,7 +35,8 @@ impl<'a> Ctx<'a> {
         local: &'a UsableItems,
         scope_info: &'a ScopeInfo,
     ) -> Ctx<'a> {
-        let resolve_info = ResolveInfo::default();
+        let resolve_info =
+            ResolveInfo::new(imports.values().map(|(file_id, _)| *file_id).collect());
         Ctx { file_id, arena, imports, local, scope_info, resolve_info }
     }
 }
