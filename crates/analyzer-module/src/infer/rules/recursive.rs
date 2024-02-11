@@ -18,9 +18,9 @@ struct AnalyzeRecursiveGroupCtx<'ast, 'env> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum NodeKind {
-    DataGroupId(DataGroupId),
-    LetNameId(LetNameId),
-    ValueGroupId(ValueGroupId),
+    DataGroup(DataGroupId),
+    LetName(LetNameId),
+    ValueGroup(ValueGroupId),
 }
 
 impl<'ast, 'env> AnalyzeRecursiveGroupCtx<'ast, 'env> {
@@ -55,11 +55,11 @@ impl<'ast> Visitor<'ast> for AnalyzeRecursiveGroupCtx<'ast, '_> {
                         VariableResolution::Binder(_) => (),
                         VariableResolution::Imported(_) => (),
                         VariableResolution::LetName(let_id) => {
-                            let dependency = NodeKind::LetNameId(*let_id);
+                            let dependency = NodeKind::LetName(*let_id);
                             self.graph.add_edge(dependent, dependency, ());
                         }
                         VariableResolution::Local(value_id) => {
-                            let dependency = NodeKind::ValueGroupId(*value_id);
+                            let dependency = NodeKind::ValueGroup(*value_id);
                             self.graph.add_edge(dependent, dependency, ());
                         }
                     }
@@ -77,7 +77,7 @@ impl<'ast> Visitor<'ast> for AnalyzeRecursiveGroupCtx<'ast, '_> {
             Type::Constructor(_) => {
                 if let Some(type_constructor) = self.resolve.per_type_type.get(&type_id) {
                     let dependency = match type_constructor.kind {
-                        TypeConstructorKind::Data(data_id) => NodeKind::DataGroupId(data_id),
+                        TypeConstructorKind::Data(data_id) => NodeKind::DataGroup(data_id),
                     };
                     self.graph.add_edge(dependent, dependency, ());
                 }
@@ -94,7 +94,7 @@ pub(super) fn recursive_data_groups<'ast, 'env>(
 ) -> Vec<Vec<DataGroupId>> {
     let mut ctx = AnalyzeRecursiveGroupCtx::new(arena, resolve);
     for data_declaration in data_declarations {
-        ctx.with_dependent(NodeKind::DataGroupId(data_declaration.id));
+        ctx.with_dependent(NodeKind::DataGroup(data_declaration.id));
         for data_constructor in data_declaration.constructors.values() {
             for field in &data_constructor.fields {
                 ctx.visit_type(*field);
@@ -107,7 +107,7 @@ pub(super) fn recursive_data_groups<'ast, 'env>(
             components
                 .into_iter()
                 .filter_map(|node_kind| {
-                    if let NodeKind::DataGroupId(data_group_id) = node_kind {
+                    if let NodeKind::DataGroup(data_group_id) = node_kind {
                         Some(data_group_id)
                     } else {
                         None
@@ -126,7 +126,7 @@ pub(super) fn recursive_value_groups<'ast, 'env>(
 ) -> Vec<Vec<ValueGroupId>> {
     let mut ctx = AnalyzeRecursiveGroupCtx::new(arena, resolve);
     for value_declaration in value_declarations {
-        ctx.with_dependent(NodeKind::ValueGroupId(value_declaration.id));
+        ctx.with_dependent(NodeKind::ValueGroup(value_declaration.id));
         // TODO: Should this be a visitor method instead?
         for equation in &value_declaration.equations {
             match &equation.binding {
@@ -143,7 +143,7 @@ pub(super) fn recursive_value_groups<'ast, 'env>(
             components
                 .into_iter()
                 .filter_map(|node_kind| {
-                    if let NodeKind::ValueGroupId(value_group_id) = node_kind {
+                    if let NodeKind::ValueGroup(value_group_id) = node_kind {
                         Some(value_group_id)
                     } else {
                         None
@@ -162,7 +162,7 @@ pub(super) fn recursive_let_names<'ast, 'env>(
 ) -> Vec<Vec<LetNameId>> {
     let mut ctx = AnalyzeRecursiveGroupCtx::new(arena, resolve);
     for let_name in let_names {
-        ctx.with_dependent(NodeKind::LetNameId(*let_name));
+        ctx.with_dependent(NodeKind::LetName(*let_name));
         let let_name = &arena[*let_name];
         for equation in &let_name.equations {
             match &equation.binding {
@@ -179,7 +179,7 @@ pub(super) fn recursive_let_names<'ast, 'env>(
             components
                 .into_iter()
                 .filter_map(|node_kind| {
-                    if let NodeKind::LetNameId(let_name_id) = node_kind {
+                    if let NodeKind::LetName(let_name_id) = node_kind {
                         Some(let_name_id)
                     } else {
                         None

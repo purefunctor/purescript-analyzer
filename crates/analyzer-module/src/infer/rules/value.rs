@@ -18,7 +18,7 @@ impl InferContext<'_> {
             self.result.of_value_group.insert(*value_group_id, fresh_ty);
         }
         for (value_group_id, value_declaration) in value_declarations {
-            self.infer_value_declaration(db, *value_group_id, &value_declaration);
+            self.infer_value_declaration(db, *value_group_id, value_declaration);
         }
     }
 
