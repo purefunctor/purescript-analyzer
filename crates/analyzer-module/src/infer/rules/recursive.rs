@@ -86,7 +86,7 @@ pub(super) fn recursive_data_groups<'ast, 'env>(
     let mut ctx = AnalyzeRecursiveGroupCtx::new(arena, resolve);
     for data_declaration in data_declarations {
         ctx.with_dependent(NodeKind::DataGroupId(data_declaration.id));
-        for (_, data_constructor) in &data_declaration.constructors {
+        for data_constructor in data_declaration.constructors.values() {
             for field in &data_constructor.fields {
                 ctx.visit_type(*field);
             }
