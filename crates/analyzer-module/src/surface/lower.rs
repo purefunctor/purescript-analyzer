@@ -5,7 +5,7 @@ use std::sync::Arc;
 use files::FileId;
 use itertools::Itertools;
 use rowan::{
-    ast::{AstChildren, AstNode, SyntaxNodePtr},
+    ast::{AstChildren, AstNode, AstPtr, SyntaxNodePtr},
     NodeOrToken,
 };
 use rustc_hash::FxHashMap;
@@ -425,7 +425,7 @@ fn lower_let_bindings(
     #[derive(Debug, PartialEq, Eq)]
     enum GroupKey {
         Name(Name),
-        Pattern,
+        Pattern(AstPtr<ast::LetBindingPattern>),
     }
 
     let let_groups = let_bindings.children().group_by(|let_binding| match let_binding {
@@ -433,7 +433,7 @@ fn lower_let_bindings(
             let name = Name::from_raw(n.name()?.in_db(db)?);
             Some(GroupKey::Name(name))
         }
-        ast::LetBinding::LetBindingPattern(_) => Some(GroupKey::Pattern),
+        ast::LetBinding::LetBindingPattern(p) => Some(GroupKey::Pattern(AstPtr::new(p))),
         ast::LetBinding::LetBindingSignature(s) => {
             let name = Name::from_raw(s.name()?.in_db(db)?);
             Some(GroupKey::Name(name))
@@ -485,7 +485,7 @@ fn lower_let_bindings(
 
                 Some(LetBinding::Name { id })
             }
-            GroupKey::Pattern => {
+            GroupKey::Pattern(_) => {
                 if let ast::LetBinding::LetBindingPattern(pattern) = group.next()? {
                     let binder = lower_binder(ctx, db, pattern.binder());
                     let where_expr = lower_where_expr(ctx, db, pattern.where_expr());
