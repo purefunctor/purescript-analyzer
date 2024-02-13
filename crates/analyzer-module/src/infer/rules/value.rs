@@ -453,7 +453,7 @@ impl InferContext<'_> {
             }
             Expr::Lambda(_, _) => todo!("check_expr(Lambda)"),
             Expr::LetIn(bindings, body) => {
-                self.infer_let_bindings(db, &bindings);
+                self.infer_let_bindings(db, bindings);
                 self.check_expr(db, *body, expected_ty);
             }
             Expr::Literal(literal) => match literal {
