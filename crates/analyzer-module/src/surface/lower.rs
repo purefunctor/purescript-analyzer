@@ -716,7 +716,7 @@ fn lower_binder(ctx: &mut Ctx, db: &dyn SurfaceDatabase, binder: Option<ast::Bin
         let lowered = match binder {
             ast::Binder::ConstructorBinder(c) => lower_binder_constructor(ctx, db, c),
             ast::Binder::LiteralBinder(l) => lower_binder_literal(ctx, db, l),
-            ast::Binder::NegativeBinder(_) => Binder::NotImplemented,
+            ast::Binder::NegativeBinder(n) => lower_binder_negative(db, n),
             ast::Binder::ParenthesizedBinder(p) => lower_binder_parenthesized(ctx, db, p),
             ast::Binder::TypedBinder(_) => Binder::NotImplemented,
             ast::Binder::VariableBinder(v) => lower_binder_variable(db, v),
@@ -748,6 +748,24 @@ fn lower_binder_literal(
 ) -> Binder {
     if let Some(literal) = literal.syntax().first_child_or_token() {
         Binder::Literal(lower_literal(ctx, db, literal, lower_binder))
+    } else {
+        Binder::NotImplemented
+    }
+}
+
+fn lower_binder_negative(db: &dyn SurfaceDatabase, n: &ast::NegativeBinder) -> Binder {
+    if let Some(token) = n.literal().and_then(|literal| literal.syntax().first_token()) {
+        match token.kind() {
+            SyntaxKind::LiteralInteger => {
+                let value = token.text().parse().ok().unwrap();
+                Binder::Negative(IntOrNumber::Int(value))
+            }
+            SyntaxKind::LiteralNumber => {
+                let value = db.interner().intern(token.text());
+                Binder::Negative(IntOrNumber::Number(value))
+            }
+            _ => Binder::NotImplemented,
+        }
     } else {
         Binder::NotImplemented
     }
