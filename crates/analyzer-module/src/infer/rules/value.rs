@@ -1,8 +1,8 @@
 use itertools::Itertools;
 
 use crate::{
-    id::InFile, index::nominal::ValueGroupId, scope::VariableResolution,
-    surface::tree::*, InferenceDatabase,
+    id::InFile, index::nominal::ValueGroupId, scope::VariableResolution, surface::tree::*,
+    InferenceDatabase,
 };
 
 use super::{recursive_let_names, CoreType, CoreTypeId, InferContext};
