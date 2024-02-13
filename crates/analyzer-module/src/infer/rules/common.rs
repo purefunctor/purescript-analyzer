@@ -1,8 +1,7 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
-    id::InFile, infer::pretty_print, scope::TypeConstructorKind, surface::tree::*,
-    InferenceDatabase,
+    id::InFile, infer::Constraint, scope::TypeConstructorKind, surface::tree::*, InferenceDatabase,
 };
 
 use super::{CoreType, CoreTypeId, InferContext};
@@ -24,7 +23,12 @@ impl InferContext<'_> {
                     db.intern_type(CoreType::Application(function, argument))
                 })
             }
-            Type::Constructor(_) => {
+            Type::Constructor(name) => {
+                // FIXME: actually resolve primitives
+                if matches!(name.value.as_ref(), "Int" | "Number") {
+                    return db.intern_type(CoreType::Primitive(Name::clone(&name.value)));
+                }
+
                 let resolution = self.resolve.per_type_type.get(&type_id);
                 db.intern_type(resolution.map_or(CoreType::NotImplemented, |resolution| {
                     let file_id = resolution.file_id;
@@ -48,18 +52,92 @@ impl InferContext<'_> {
         &mut self,
         db: &dyn InferenceDatabase,
         type_id: CoreTypeId,
-    ) -> Vec<CoreTypeId> {
+    ) -> (Vec<CoreTypeId>, CoreTypeId) {
         let mut arguments = vec![];
         let mut current = type_id;
         while let CoreType::Function(argument, result) = db.lookup_intern_type(current) {
             arguments.push(argument);
             current = result;
         }
-        arguments
+        (arguments, current)
     }
 
-    pub(super) fn unify_types(&mut self, db: &dyn InferenceDatabase, x: CoreTypeId, y: CoreTypeId) {
-        println!("{} ~ {}", pretty_print(db, x), pretty_print(db, y));
+    pub(super) fn subsume_types(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        x_id: CoreTypeId,
+        y_id: CoreTypeId,
+    ) {
+        let x_ty = db.lookup_intern_type(x_id);
+        let y_ty = db.lookup_intern_type(y_id);
+
+        match (x_ty, y_ty) {
+            (CoreType::Forall(name, inner_ty), _) => {
+                let fresh_ty = self.fresh_unification(db);
+
+                let mut replacements = FxHashMap::default();
+                replacements.insert(name, fresh_ty);
+
+                let inner_ty = replace_type(db, &replacements, inner_ty);
+                self.subsume_types(db, inner_ty, y_id);
+            }
+            (_, CoreType::Forall(_, _)) => {
+                todo!("Skolemize");
+            }
+            (
+                CoreType::Function(argument_x_ty, result_x_ty),
+                CoreType::Function(argument_y_ty, result_y_ty),
+            ) => {
+                self.subsume_types(db, argument_y_ty, argument_x_ty);
+                self.subsume_types(db, result_x_ty, result_y_ty);
+            }
+            _ => {
+                self.unify_types(db, x_id, y_id);
+            }
+        }
+    }
+
+    pub(super) fn unify_types(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        x_id: CoreTypeId,
+        y_id: CoreTypeId,
+    ) {
+        let x_ty = db.lookup_intern_type(x_id);
+        let y_ty = db.lookup_intern_type(y_id);
+
+        match (x_ty, y_ty) {
+            (
+                CoreType::Application(x_function, x_argument),
+                CoreType::Application(y_function, y_argument),
+            ) => {
+                self.unify_types(db, x_function, y_function);
+                self.unify_types(db, x_argument, y_argument);
+            }
+            (
+                CoreType::Function(x_argument, x_result),
+                CoreType::Function(y_argument, y_result),
+            ) => {
+                self.unify_types(db, x_argument, y_argument);
+                self.unify_types(db, x_result, y_result);
+            }
+            (CoreType::Unification(x_u), CoreType::Unification(y_u)) => {
+                if x_u != y_u {
+                    self.result.constraints.push(Constraint::UnifyDeep(x_u, y_u));
+                }
+            }
+            (CoreType::Unification(x_u), _) => {
+                self.result.constraints.push(Constraint::UnifySolve(x_u, y_id));
+            }
+            (_, CoreType::Unification(y_u)) => {
+                self.result.constraints.push(Constraint::UnifySolve(y_u, x_id));
+            }
+            (CoreType::Constructor(x_c), CoreType::Constructor(y_c)) => if x_c != y_c {},
+            (CoreType::Primitive(x_p), CoreType::Primitive(y_p)) => if x_p != y_p {},
+            (x_ty, y_ty) => {
+                unimplemented!("Oh No! {:?} ~ {:?}", x_ty, y_ty);
+            }
+        }
     }
 
     pub(super) fn instantiate_type(

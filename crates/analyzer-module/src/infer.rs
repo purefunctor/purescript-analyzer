@@ -9,7 +9,7 @@ use rustc_hash::FxHashMap;
 use syntax::ast;
 
 use crate::{
-    id::AstId,
+    id::{AstId, InFile},
     index::nominal::ValueGroupId,
     surface::{BinderId, ExprId, LetNameId},
     ScopeDatabase,
@@ -17,8 +17,15 @@ use crate::{
 
 pub use tree::*;
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum Constraint {
+    UnifyDeep(InFile<u32>, InFile<u32>),
+    UnifySolve(InFile<u32>, CoreTypeId),
+}
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct InferenceResult {
+    pub constraints: Vec<Constraint>,
     pub of_binder: FxHashMap<BinderId, CoreTypeId>,
     pub of_constructor: FxHashMap<AstId<ast::DataConstructor>, CoreTypeId>,
     pub of_expr: FxHashMap<ExprId, CoreTypeId>,

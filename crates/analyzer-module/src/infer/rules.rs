@@ -3,6 +3,7 @@
 mod common;
 mod data;
 mod recursive;
+mod solve;
 mod value;
 
 use std::sync::Arc;
@@ -11,7 +12,9 @@ use files::FileId;
 use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
-use crate::{id::InFile, scope::ResolveInfo, surface::tree::*, InferenceDatabase};
+use crate::{
+    id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
+};
 
 use super::{CoreType, CoreTypeId, InferenceResult};
 
@@ -51,6 +54,24 @@ impl<'a> InferContext<'a> {
     }
 }
 
+#[derive(Default)]
+struct SolveState {
+    unification_solved: FxHashMap<InFile<u32>, CoreTypeId>,
+    unification_deferred: Vec<(InFile<u32>, InFile<u32>)>,
+}
+
+struct SolveContext<'i, 'a> {
+    infer: &'i mut InferContext<'a>,
+    state: SolveState,
+}
+
+impl<'i, 'a> SolveContext<'i, 'a> {
+    fn new(infer: &'i mut InferContext<'a>) -> SolveContext<'i, 'a> {
+        let state = SolveState::default();
+        SolveContext { infer, state }
+    }
+}
+
 pub(super) fn file_infer_query(
     db: &dyn InferenceDatabase,
     file_id: FileId,
@@ -61,7 +82,7 @@ pub(super) fn file_infer_query(
     let imported: FxHashMap<_, _> =
         resolve.imports.iter().map(|&file_id| (file_id, db.file_infer(file_id))).collect();
 
-    let mut ctx = InferContext::new(file_id, &arena, &resolve, &imported);
+    let mut infer_ctx = InferContext::new(file_id, &arena, &resolve, &imported);
 
     let recursive_data =
         recursive_data_groups(&arena, &resolve, surface.body.iter_data_declarations());
@@ -70,9 +91,11 @@ pub(super) fn file_infer_query(
             let Some(data_declaration) = surface.body.data_declaration(data_group_id) else {
                 unreachable!("impossible: unknown data_group_id");
             };
-            ctx.infer_data_declaration(db, data_declaration);
+            infer_ctx.infer_data_declaration(db, data_declaration);
         }
     }
+
+    let mut solve_ctx = SolveContext::new(&mut infer_ctx);
 
     let value_components =
         recursive_value_groups(&arena, &resolve, surface.body.iter_value_declarations());
@@ -86,8 +109,14 @@ pub(super) fn file_infer_query(
                 (value_group_id, value_declaration)
             })
             .collect_vec();
-        ctx.infer_value_scc(db, &value_declarations);
+        solve_ctx.infer.infer_value_scc(db, &value_declarations);
+    }
+    solve_ctx.solve(db);
+
+    eprintln!("Solutions:");
+    for (u, t) in solve_ctx.state.unification_solved {
+        eprintln!("{} ~ {}", u.value, pretty_print(db, t));
     }
 
-    Arc::new(ctx.result)
+    Arc::new(infer_ctx.result)
 }
