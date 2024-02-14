@@ -894,6 +894,14 @@ pub(super) fn file_surface_query(
     db: &dyn SurfaceDatabase,
     file_id: FileId,
 ) -> (Arc<Module>, Arc<SurfaceArena>) {
+    let (surface, arena, _) = db.file_surface_map(file_id);
+    (surface, arena)
+}
+
+pub(super) fn file_surface_map_query(
+    db: &dyn SurfaceDatabase,
+    file_id: FileId,
+) -> (Arc<Module>, Arc<SurfaceArena>, Arc<SourceMap>) {
     let node = db.parse_file(file_id);
 
     ast::Source::<ast::Module>::cast(node)
@@ -906,7 +914,7 @@ pub(super) fn file_surface_query(
                 positional_map: db.positional_map(file_id),
             };
             let module = lower_module(&mut ctx, db, source.child()?);
-            Some((Arc::new(module), Arc::new(ctx.arena)))
+            Some((Arc::new(module), Arc::new(ctx.arena), Arc::new(ctx.source_map)))
         })
         .unwrap_or_else(|| {
             unreachable!("impossible: empty source files have a traversable CST");

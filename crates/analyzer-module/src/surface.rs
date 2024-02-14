@@ -17,4 +17,8 @@ use crate::{IndexDatabase, InternerDatabase, SourceDatabase};
 pub trait SurfaceDatabase: IndexDatabase + InternerDatabase + SourceDatabase {
     #[salsa::invoke(lower::file_surface_query)]
     fn file_surface(&self, file_id: FileId) -> (Arc<Module>, Arc<SurfaceArena>);
+
+    #[salsa::invoke(lower::file_surface_map_query)]
+    fn file_surface_map(&self, file_id: FileId)
+        -> (Arc<Module>, Arc<SurfaceArena>, Arc<SourceMap>);
 }
