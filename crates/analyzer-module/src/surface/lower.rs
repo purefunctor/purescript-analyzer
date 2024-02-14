@@ -5,11 +5,11 @@ use std::sync::Arc;
 use files::FileId;
 use itertools::Itertools;
 use rowan::{
-    ast::{AstChildren, AstNode, AstPtr, SyntaxNodePtr},
+    ast::{AstChildren, AstNode, AstPtr},
     NodeOrToken,
 };
 use rustc_hash::FxHashMap;
-use syntax::{ast, PureScript, SyntaxKind, SyntaxNode};
+use syntax::{ast, PureScript, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::{
     id::AstId,
@@ -45,6 +45,23 @@ impl Ctx {
             self.source_map.cst_to_expr.insert(expr_ptr, expr_id);
         }
         expr_id
+    }
+
+    fn alloc_let_name(
+        &mut self,
+        lowered: LetName,
+        annotation_ptr: Option<SyntaxNodePtr>,
+        equations_ptr: Vec<SyntaxNodePtr>,
+    ) -> LetNameId {
+        let id = self.arena.alloc_let_name(lowered);
+        if let Some(annotation_ptr) = annotation_ptr {
+            self.source_map.cst_to_let_name.insert(annotation_ptr, id);
+        }
+        for equation_ptr in &equations_ptr {
+            self.source_map.cst_to_let_name.insert(*equation_ptr, id);
+        }
+        self.source_map.let_name_to_cst.insert(id, LetNamePtr { annotation_ptr, equations_ptr });
+        id
     }
 
     fn alloc_binder(&mut self, lowered: Binder, ast: Option<&ast::Binder>) -> BinderId {
@@ -472,16 +489,11 @@ fn lower_let_bindings(
                     }
                 }));
 
-                let id = ctx.arena.alloc_let_name(LetName { name, annotation, equations });
-                annotation_ptr.iter().cloned().for_each(|annotation_ptr| {
-                    ctx.source_map.cst_to_let_name.insert(annotation_ptr, id);
-                });
-                equations_ptr.iter().cloned().for_each(|equation_ptr| {
-                    ctx.source_map.cst_to_let_name.insert(equation_ptr, id);
-                });
-                ctx.source_map
-                    .let_name_to_cst
-                    .insert(id, LetNamePtr { annotation_ptr, equations_ptr });
+                let id = ctx.alloc_let_name(
+                    LetName { name, annotation, equations },
+                    annotation_ptr,
+                    equations_ptr,
+                );
 
                 Some(LetBinding::Name { id })
             }
