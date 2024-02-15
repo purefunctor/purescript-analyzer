@@ -167,10 +167,20 @@ impl InferContext<'_> {
             (_, CoreType::Unification(y_u)) => {
                 self.add_constraint(Constraint::UnifySolve(hints, y_u, x_id));
             }
-            (CoreType::Constructor(x_c), CoreType::Constructor(y_c)) => if x_c != y_c {},
+            (CoreType::Constructor(x_c), CoreType::Constructor(y_c)) => {
+                if x_c != y_c {
+                    self.add_error(InferError {
+                        hints,
+                        kind: InferErrorKind::CannotUnify(x_id, y_id),
+                    })
+                }
+            }
             (CoreType::Primitive(x_p), CoreType::Primitive(y_p)) => {
                 if x_p != y_p {
-                    dbg!(InferError { hints, kind: InferErrorKind::CannotUnify(x_id, y_id) });
+                    self.add_error(InferError {
+                        hints,
+                        kind: InferErrorKind::CannotUnify(x_id, y_id),
+                    });
                 }
             }
             (x_ty, y_ty) => {

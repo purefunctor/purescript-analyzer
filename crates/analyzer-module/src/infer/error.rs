@@ -14,14 +14,14 @@ pub enum Hint {
 }
 
 /// The kind of the inference error.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum InferErrorKind {
     CannotUnify(CoreTypeId, CoreTypeId),
     OccursCheck(InFile<u32>, CoreTypeId),
 }
 
 /// An error encountered during inference.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct InferError {
     pub hints: Arc<[Hint]>,
     pub kind: InferErrorKind,

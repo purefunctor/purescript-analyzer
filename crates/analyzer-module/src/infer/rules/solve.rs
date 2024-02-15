@@ -34,7 +34,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
         y_t: CoreTypeId,
     ) {
         if occurs_check(db, x_u, y_t) {
-            dbg!(InferError { hints, kind: InferErrorKind::OccursCheck(x_u, y_t) });
+            self.infer.add_error(InferError { hints, kind: InferErrorKind::OccursCheck(x_u, y_t) });
             return;
         }
         if let Some(x_t) = self.state.unification_solved.get(&x_u) {

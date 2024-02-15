@@ -16,7 +16,7 @@ use crate::{
     id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
 };
 
-use super::{Constraint, CoreType, CoreTypeId, Hint, InferMap};
+use super::{Constraint, CoreType, CoreTypeId, Hint, InferError, InferMap};
 
 use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
@@ -25,6 +25,7 @@ struct InferState {
     count: u32,
     hints: Vec<Hint>,
     constraints: Vec<Constraint>,
+    errors: Vec<InferError>,
     infer_map: InferMap,
 }
 
@@ -61,6 +62,10 @@ impl<'a> InferContext<'a> {
 
     fn add_constraint(&mut self, constraint: Constraint) {
         self.state.constraints.push(constraint)
+    }
+
+    fn add_error(&mut self, error: InferError) {
+        self.state.errors.push(error)
     }
 }
 
