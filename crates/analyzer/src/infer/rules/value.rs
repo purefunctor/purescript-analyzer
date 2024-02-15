@@ -1,465 +1,524 @@
-//! Implements inference for value declarations.
-
-use std::{iter, sync::Arc};
-
 use itertools::Itertools;
-use la_arena::Arena;
-use rustc_hash::FxHashMap;
-use syntax::ast;
 
 use crate::{
-    id::{AstId, InFile},
-    infer::{BindingGroupTypes, Primitive, Provenance, Type, TypeId, ValueGroupTypes},
-    resolver::ValueGroupId,
-    scope::{ConstructorResolution, Resolutions, VariableResolutionKind},
-    sugar::{BindingGroup, BindingGroupId, BindingGroups, LetBindingGroups},
-    surface, InferDatabase,
+    id::InFile, index::nominal::ValueGroupId, infer::Hint, scope::VariableResolution,
+    surface::tree::*, InferenceDatabase,
 };
 
-use super::{
-    instantiate::instantiate_type, lower::lower_type, solve::SolveContext,
-    substitute::ApplySubstitution, unify::unify_types, InferState,
-};
+use super::{recursive_let_names, CoreType, CoreTypeId, InferContext};
 
-struct ValueGroupArenas<'env> {
-    expr_arena: &'env Arena<surface::Expr>,
-    let_name_arena: &'env Arena<surface::LetName>,
-    binder_arena: &'env Arena<surface::Binder>,
-    type_arena: &'env Arena<surface::Type>,
-}
-
-struct ValueGroupEnv<'env> {
-    binding_groups: &'env BindingGroups,
-    let_binding_groups: &'env LetBindingGroups,
-    of_sibling: &'env FxHashMap<ValueGroupId, TypeId>,
-    resolutions: &'env Resolutions,
-}
-
-struct InferBindingGroupContext<'env, 'state> {
-    db: &'env dyn InferDatabase,
-    id: InFile<BindingGroupId>,
-
-    infer_state: &'state mut InferState,
-    of_value_group: FxHashMap<ValueGroupId, ValueGroupTypes>,
-}
-
-struct InferValueGroupContext<'env, 'state> {
-    db: &'env dyn InferDatabase,
-    id: InFile<ValueGroupId>,
-
-    value_arenas: ValueGroupArenas<'env>,
-    value_env: ValueGroupEnv<'env>,
-
-    infer_state: &'state mut InferState,
-    of_expr: FxHashMap<surface::ExprId, TypeId>,
-    of_let_name: FxHashMap<surface::LetNameId, TypeId>,
-    of_binder: FxHashMap<surface::BinderId, TypeId>,
-}
-
-impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
-    fn new(
-        db: &'env dyn InferDatabase,
-        id: InFile<BindingGroupId>,
-        infer_state: &'state mut InferState,
-    ) -> InferBindingGroupContext<'env, 'state> {
-        let of_value_group = FxHashMap::default();
-        InferBindingGroupContext { db, id, infer_state, of_value_group }
-    }
-}
-
-impl<'env, 'state> InferValueGroupContext<'env, 'state> {
-    fn new(
-        db: &'env dyn InferDatabase,
-        id: InFile<ValueGroupId>,
-        value_arenas: ValueGroupArenas<'env>,
-        value_env: ValueGroupEnv<'env>,
-        infer_state: &'state mut InferState,
-    ) -> InferValueGroupContext<'env, 'state> {
-        let of_expr = FxHashMap::default();
-        let of_let_name = FxHashMap::default();
-        let of_binder = FxHashMap::default();
-
-        InferValueGroupContext {
-            db,
-            id,
-
-            value_arenas,
-            value_env,
-
-            infer_state,
-            of_expr,
-            of_let_name,
-            of_binder,
-        }
-    }
-}
-
-impl<'env, 'state> InferBindingGroupContext<'env, 'state> {
-    fn fresh_unification(&mut self, id: InFile<ValueGroupId>) -> TypeId {
-        self.infer_state.fresh_unification(self.db, Provenance::ValueGroup(id))
-    }
-
-    fn infer(&mut self, binding_group: &BindingGroup) {
-        match &binding_group {
-            BindingGroup::Singular(s) => {
-                let id = InFile { file_id: self.id.file_id, value: *s };
-                let of_sibling = FxHashMap::default();
-                self.infer_value_group(id, &of_sibling);
-            }
-            BindingGroup::Recursive(r) => {
-                let id = InFile { file_id: self.id.file_id, value: *r };
-                let of_r = self.fresh_unification(id);
-                let of_sibling = iter::once((*r, of_r)).collect();
-                self.infer_value_group(id, &of_sibling);
-            }
-            BindingGroup::MutuallyRecursive(m) => {
-                let of_sibling = m
-                    .iter()
-                    .map(|m| {
-                        let id = InFile { file_id: self.id.file_id, value: *m };
-                        let of_m = self.fresh_unification(id);
-                        (*m, of_m)
-                    })
-                    .collect();
-                m.iter().for_each(|m| {
-                    let id = InFile { file_id: self.id.file_id, value: *m };
-                    self.infer_value_group(id, &of_sibling);
-                });
-            }
-        }
-    }
-
-    fn infer_value_group(
+impl InferContext<'_> {
+    pub(super) fn infer_value_scc(
         &mut self,
-        id: InFile<ValueGroupId>,
-        of_sibling: &FxHashMap<ValueGroupId, TypeId>,
+        db: &dyn InferenceDatabase,
+        value_declarations: &[(ValueGroupId, &ValueDeclaration)],
     ) {
-        let value_surface = self.db.value_surface(id);
-        let value_resolutions = self.db.value_resolutions(id);
-        let binding_groups = self.db.binding_groups(id.file_id);
-        let let_binding_groups = self.db.let_binding_groups(id);
+        for (value_group_id, value_declaration) in value_declarations {
+            let value_ty = if let Some(value_annotation) = value_declaration.annotation {
+                self.lower_type(db, value_annotation)
+            } else {
+                self.fresh_unification(db)
+            };
+            self.state.map.of_value_group.insert(*value_group_id, value_ty);
+        }
 
-        let value_arenas = ValueGroupArenas {
-            expr_arena: &value_surface.expr_arena,
-            let_name_arena: &value_surface.let_name_arena,
-            binder_arena: &value_surface.binder_arena,
-            type_arena: &value_surface.type_arena,
-        };
-
-        let value_env = ValueGroupEnv {
-            binding_groups: &binding_groups,
-            let_binding_groups: &let_binding_groups,
-            of_sibling,
-            resolutions: &value_resolutions,
-        };
-
-        let mut context =
-            InferValueGroupContext::new(self.db, id, value_arenas, value_env, self.infer_state);
-
-        let value_group_ty = context.infer(&value_surface.value);
-        let infer_value_group = ValueGroupTypes::new(
-            value_group_ty,
-            context.of_expr,
-            context.of_let_name,
-            context.of_binder,
-        );
-        self.of_value_group.insert(id.value, infer_value_group);
-    }
-}
-
-impl<'env, 'state> InferValueGroupContext<'env, 'state> {
-    fn fresh_unification(&mut self) -> TypeId {
-        self.infer_state.fresh_unification(self.db, Provenance::ValueGroup(self.id))
+        for (value_group_id, value_declaration) in value_declarations {
+            self.infer_value_declaration(db, *value_group_id, value_declaration);
+        }
     }
 
-    fn instantiate_type(&mut self, type_id: TypeId) -> TypeId {
-        instantiate_type(self.db, self.infer_state, Provenance::ValueGroup(self.id), type_id)
-    }
-
-    fn unify_types(&mut self, x_id: TypeId, y_id: TypeId) {
-        unify_types(self.db, self.infer_state, x_id, y_id)
-    }
-}
-
-impl<'env, 'state> InferValueGroupContext<'env, 'state> {
-    fn infer(&mut self, group: &surface::ValueGroup) -> TypeId {
-        let annotation_ty =
-            group.annotation.as_ref().map(|annotation| self.infer_annotation(annotation));
-
-        let mut equations = group.equations.iter();
-
-        let expected_ty = if let Some(annotation_ty) = annotation_ty {
-            annotation_ty
-        } else if let Some((id, equation)) = equations.next() {
-            self.infer_equation(*id, equation)
-        } else {
-            unreachable!("invariant violated: group is empty");
-        };
-
-        equations.for_each(|(id, equation)| {
-            self.check_equation(*id, equation, expected_ty);
-        });
-
-        expected_ty
-    }
-
-    fn infer_annotation(&mut self, annotation: &surface::ValueAnnotation) -> TypeId {
-        lower_type(self.db, self.value_arenas.type_arena, self.value_env.resolutions, annotation.ty)
-    }
-
-    fn infer_equation(
+    fn infer_value_declaration(
         &mut self,
-        _: AstId<ast::ValueEquationDeclaration>,
-        equation: &surface::ValueEquation,
-    ) -> TypeId {
-        self.infer_binders_binding(&equation.binders, &equation.binding)
+        db: &dyn InferenceDatabase,
+        value_group_id: ValueGroupId,
+        value_declaration: &ValueDeclaration,
+    ) {
+        self.add_hint(Hint::ValueGroup(value_group_id));
+        let Some(value_ty) = self.state.map.of_value_group.get(&value_group_id).copied() else {
+            unreachable!("impossible: caller must insert a type!");
+        };
+
+        let checking = value_declaration.annotation.is_some();
+
+        if checking {
+            let value_ty = self.instantiate_type(db, value_ty);
+            for equation in &value_declaration.equations {
+                self.check_equation(db, equation, value_ty);
+            }
+        } else {
+            for equation in &value_declaration.equations {
+                self.infer_equation(db, equation, value_ty);
+            }
+        }
+        self.pop_hint();
     }
 
     fn check_equation(
         &mut self,
-        _: AstId<ast::ValueEquationDeclaration>,
-        _: &surface::ValueEquation,
-        _: TypeId,
+        db: &dyn InferenceDatabase,
+        equation: &ValueEquation,
+        value_ty: CoreTypeId,
     ) {
+        let (arguments_ty, result_ty) = self.peel_arguments(db, value_ty);
+        for (binder_id, argument_ty) in equation.binders.iter().zip(arguments_ty) {
+            self.check_binder(db, *binder_id, argument_ty)
+        }
+        self.check_binding(db, &equation.binding, result_ty);
     }
-}
 
-impl<'env, 'state> InferValueGroupContext<'env, 'state> {
-    fn infer_binders_binding(
+    fn infer_equation(
         &mut self,
-        binders: &[surface::BinderId],
-        binding: &surface::Binding,
-    ) -> TypeId {
+        db: &dyn InferenceDatabase,
+        equation: &ValueEquation,
+        value_ty: CoreTypeId,
+    ) {
         let binders_ty =
-            binders.iter().map(|binder_id| self.infer_binder(*binder_id)).collect_vec();
-        let binding_ty = self.infer_binding(binding);
-        binders_ty.into_iter().rev().fold(binding_ty, |result_ty, binder_ty| {
-            self.db.intern_type(Type::Function(binder_ty, result_ty))
-        })
+            equation.binders.iter().map(|binder| self.infer_binder(db, *binder)).collect_vec();
+        let binding_ty = self.infer_binding(db, &equation.binding);
+        let equation_ty = binders_ty.into_iter().rev().fold(binding_ty, |binding_ty, binder_ty| {
+            db.intern_type(CoreType::Function(binder_ty, binding_ty))
+        });
+        self.unify_types(db, value_ty, equation_ty);
     }
 
-    fn infer_let_bindings(&mut self, let_bindings: &[surface::LetBinding]) {
-        for let_binding in let_bindings.iter() {
-            match let_binding {
-                surface::LetBinding::Name { id } => {
-                    let let_binding_groups = self.value_env.let_binding_groups;
-                    if let_binding_groups.is_normal(*id) {
-                        let let_name = &self.value_arenas.let_name_arena[*id];
+    fn infer_binder(&mut self, db: &dyn InferenceDatabase, binder_id: BinderId) -> CoreTypeId {
+        let binder_ty = match &self.arena[binder_id] {
+            Binder::Constructor { fields, .. } => {
+                if let Some(constructor_resolution) =
+                    self.resolve.per_constructor_binder.get(&binder_id)
+                {
+                    if let Some(constructor_ty) =
+                        self.state.map.of_constructor.get(&constructor_resolution.constructor_id)
+                    {
+                        let constructor_ty = self.instantiate_type(db, *constructor_ty);
+                        let (arguments_ty, _) = self.peel_arguments(db, constructor_ty);
 
-                        let annotation_ty = let_name.annotation.as_ref().map(|annotation| {
-                            lower_type(
-                                self.db,
-                                self.value_arenas.type_arena,
-                                self.value_env.resolutions,
-                                annotation.ty,
-                            )
-                        });
-
-                        let mut equations = let_name.equations.iter();
-
-                        let expected_ty = if let Some(annotation_ty) = annotation_ty {
-                            annotation_ty
-                        } else if let Some(equation) = equations.next() {
-                            self.infer_binders_binding(&equation.binders, &equation.binding)
-                        } else {
-                            unreachable!("invariant violated: let group is empty");
-                        };
-
-                        for _ in equations {
-                            unimplemented!(
-                                "Implement once checking and exhaustiveness is available."
-                            );
+                        for (field, argument_ty) in fields.iter().zip(arguments_ty) {
+                            let field_ty = self.infer_binder(db, *field);
+                            self.unify_types(db, field_ty, argument_ty);
                         }
 
-                        self.of_let_name.insert(*id, expected_ty);
-                    } else if let_binding_groups.is_recursive(*id) {
-                        unimplemented!("Implement recursive type checking.");
+                        constructor_ty
                     } else {
-                        unimplemented!("Implement mutually recursive type checking.");
+                        db.intern_type(CoreType::NotImplemented)
                     }
-                }
-                surface::LetBinding::Pattern { .. } => {
-                    unimplemented!("I don't know how to check patterns yet.")
+                } else {
+                    db.intern_type(CoreType::NotImplemented)
                 }
             }
-        }
-    }
-}
-
-impl<'env, 'state> InferValueGroupContext<'env, 'state> {
-    fn infer_binder(&mut self, binder_id: surface::BinderId) -> TypeId {
-        let binder_ty = match &self.value_arenas.binder_arena[binder_id] {
-            surface::Binder::Constructor { .. } => self.db.intern_type(Type::NotImplemented),
-            surface::Binder::Literal(l) => self.infer_binder_literal(l),
-            surface::Binder::Negative(n) => self.infer_binder_negative(n),
-            surface::Binder::Parenthesized(p) => self.infer_binder(*p),
-            surface::Binder::Variable(_) => self.fresh_unification(),
-            surface::Binder::Wildcard => self.fresh_unification(),
+            Binder::Literal(literal) => match literal {
+                Literal::Array(_) => db.intern_type(CoreType::NotImplemented),
+                Literal::Record(_) => db.intern_type(CoreType::NotImplemented),
+                Literal::Int(_) => {
+                    let name = db.interner().intern("Int");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::Number(_) => {
+                    let name = db.interner().intern("Number");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::String(_) => {
+                    let name = db.interner().intern("String");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::Char(_) => {
+                    let name = db.interner().intern("Char");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::Boolean(_) => {
+                    let name = db.interner().intern("Boolean");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+            },
+            Binder::Negative(negative) => {
+                let name = match negative {
+                    IntOrNumber::Int(_) => db.interner().intern("Int"),
+                    IntOrNumber::Number(_) => db.interner().intern("Number"),
+                };
+                db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+            }
+            Binder::Parenthesized(parenthesized) => self.infer_binder(db, *parenthesized),
+            Binder::Variable(_) => self.fresh_unification(db),
+            Binder::Wildcard => self.fresh_unification(db),
+            Binder::NotImplemented => db.intern_type(CoreType::NotImplemented),
         };
-        self.of_binder.insert(binder_id, binder_ty);
+        self.state.map.of_binder.insert(binder_id, binder_ty);
         binder_ty
     }
 
-    fn infer_binder_literal(&mut self, literal: &surface::Literal<surface::BinderId>) -> TypeId {
-        match literal {
-            surface::Literal::Array(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Literal::Record(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Literal::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
-            surface::Literal::Number(_) => self.db.intern_type(Type::Primitive(Primitive::Number)),
-            surface::Literal::String(_) => self.db.intern_type(Type::Primitive(Primitive::String)),
-            surface::Literal::Char(_) => self.db.intern_type(Type::Primitive(Primitive::Char)),
-            surface::Literal::Boolean(_) => {
-                self.db.intern_type(Type::Primitive(Primitive::Boolean))
-            }
-        }
-    }
-
-    fn infer_binder_negative(&mut self, negative: &surface::IntOrNumber) -> TypeId {
-        match negative {
-            surface::IntOrNumber::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
-            surface::IntOrNumber::Number(_) => {
-                self.db.intern_type(Type::Primitive(Primitive::Number))
-            }
-        }
-    }
-
-    fn infer_binding(&mut self, binding: &surface::Binding) -> TypeId {
+    fn infer_binding(&mut self, db: &dyn InferenceDatabase, binding: &Binding) -> CoreTypeId {
         match binding {
-            surface::Binding::Unconditional { where_expr } => self.infer_where_expr(where_expr),
+            Binding::Unconditional { where_expr } => {
+                self.infer_let_bindings(db, &where_expr.let_bindings);
+                self.infer_expr(db, where_expr.expr_id)
+            }
         }
     }
 
-    fn infer_where_expr(&mut self, where_expr: &surface::WhereExpr) -> TypeId {
-        self.infer_let_bindings(&where_expr.let_bindings);
-        self.infer_expr(where_expr.expr_id)
+    fn infer_let_bindings(&mut self, db: &dyn InferenceDatabase, let_bindings: &[LetBinding]) {
+        // The compiler delimits let-names by let-patterns, as such, we
+        // perform this grouping operation before we can analyze which
+        // groups of let-names are mutually recursive. In the future,
+        // let bindings _may_ be topologically sorted instead.
+
+        #[derive(Debug, PartialEq, Eq)]
+        enum GroupKey {
+            Name,
+            Pattern(BinderId),
+        }
+
+        let groups = let_bindings.iter().group_by(|let_binding| match let_binding {
+            LetBinding::Name { .. } => GroupKey::Name,
+            LetBinding::Pattern { binder, .. } => GroupKey::Pattern(*binder),
+        });
+
+        for (key, mut group) in groups.into_iter() {
+            match key {
+                GroupKey::Name => {
+                    let let_names = group.map(|let_binding| {
+                        if let LetBinding::Name { id } = let_binding {
+                            id
+                        } else {
+                            unreachable!("impossible:");
+                        }
+                    });
+                    let let_name_components =
+                        recursive_let_names(self.arena, self.resolve, let_names);
+                    for let_name_component in let_name_components {
+                        for let_name_id in &let_name_component {
+                            let fresh_ty = self.fresh_unification(db);
+                            self.state.map.of_let_name.insert(*let_name_id, fresh_ty);
+                        }
+                        for let_name_id in let_name_component {
+                            self.infer_let_name(db, let_name_id);
+                        }
+                    }
+                }
+                GroupKey::Pattern(_) => {
+                    let Some(LetBinding::Pattern { binder, where_expr }) = group.next() else {
+                        unreachable!("impossible:");
+                    };
+                    self.infer_binder(db, *binder);
+                    self.infer_let_bindings(db, &where_expr.let_bindings);
+                    self.infer_expr(db, where_expr.expr_id);
+                }
+            }
+        }
     }
 
-    fn infer_expr(&mut self, expr_id: surface::ExprId) -> TypeId {
-        let expr_ty = match &self.value_arenas.expr_arena[expr_id] {
-            surface::Expr::Application(function, arguments) => {
-                self.infer_expr_application(*function, arguments)
-            }
-            surface::Expr::Constructor(_) => self.infer_expr_constructor(expr_id),
-            surface::Expr::Lambda(_, _) => self.db.intern_type(Type::NotImplemented),
-            surface::Expr::LetIn(let_bindings, let_body) => {
-                self.infer_expr_let_in(let_bindings, *let_body)
-            }
-            surface::Expr::Literal(literal) => self.infer_expr_literal(literal),
-            surface::Expr::Variable(_) => self.infer_expr_variable(expr_id),
+    fn infer_let_name(&mut self, db: &dyn InferenceDatabase, let_name_id: LetNameId) {
+        let Some(fresh_ty) = self.state.map.of_let_name.get(&let_name_id).copied() else {
+            unreachable!("impossible:");
         };
-        self.of_expr.insert(expr_id, expr_ty);
+        let let_name = &self.arena[let_name_id];
+        let let_name_ty = if let Some(annotation) = let_name.annotation {
+            let annotation_ty = self.lower_type(db, annotation);
+            self.unify_types(db, fresh_ty, annotation_ty);
+            annotation_ty
+        } else {
+            fresh_ty
+        };
+        for equation in &let_name.equations {
+            for binder in &equation.binders {
+                self.infer_binder(db, *binder);
+            }
+            let equation_ty = self.infer_binding(db, &equation.binding);
+            self.unify_types(db, let_name_ty, equation_ty);
+        }
+    }
+
+    fn infer_expr(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId) -> CoreTypeId {
+        self.add_hint(Hint::Expression(expr_id));
+        let expr_ty = self.infer_expr_core(db, expr_id);
+        self.pop_hint();
         expr_ty
     }
 
-    fn infer_expr_application(
+    fn infer_expr_core(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId) -> CoreTypeId {
+        let expr_ty = match &self.arena[expr_id] {
+            Expr::Application(function, arguments) => {
+                let function_ty = self.infer_expr_core(db, *function);
+                let function_ty = self.instantiate_type(db, function_ty);
+
+                let arguments_ty = arguments
+                    .iter()
+                    .map(|argument| self.infer_expr_core(db, *argument))
+                    .collect_vec();
+
+                let result_ty = self.fresh_unification(db);
+                let auxiliary_ty =
+                    arguments_ty.into_iter().rev().fold(result_ty, |result_ty, argument_ty| {
+                        db.intern_type(CoreType::Function(argument_ty, result_ty))
+                    });
+
+                self.unify_types(db, function_ty, auxiliary_ty);
+
+                result_ty
+            }
+            Expr::Constructor(_) => {
+                if let Some(constructor) = self.resolve.per_constructor_expr.get(&expr_id) {
+                    if let Some(constructor_ty) =
+                        self.state.map.of_constructor.get(&constructor.constructor_id)
+                    {
+                        *constructor_ty
+                    } else {
+                        db.intern_type(CoreType::NotImplemented)
+                    }
+                } else {
+                    db.intern_type(CoreType::NotImplemented)
+                }
+            }
+            Expr::Lambda(binders, body) => {
+                let binders_ty =
+                    binders.iter().map(|binder| self.infer_binder(db, *binder)).collect_vec();
+                let body_ty = self.infer_expr_core(db, *body);
+                binders_ty.into_iter().rev().fold(body_ty, |body_ty, binder_ty| {
+                    db.intern_type(CoreType::Function(binder_ty, body_ty))
+                })
+            }
+            Expr::LetIn(bindings, body) => {
+                self.infer_let_bindings(db, bindings);
+                self.infer_expr_core(db, *body)
+            }
+            Expr::Literal(literal) => match literal {
+                Literal::Array(_) => db.intern_type(CoreType::NotImplemented),
+                Literal::Record(_) => db.intern_type(CoreType::NotImplemented),
+                Literal::Int(_) => {
+                    let name = db.interner().intern("Int");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::Number(_) => {
+                    let name = db.interner().intern("Number");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::String(_) => {
+                    let name = db.interner().intern("String");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::Char(_) => {
+                    let name = db.interner().intern("Char");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+                Literal::Boolean(_) => {
+                    let name = db.interner().intern("Boolean");
+                    db.intern_type(CoreType::Primitive(Name::from_raw(name)))
+                }
+            },
+            Expr::Variable(_) => {
+                if let Some(variable) = self.resolve.per_variable_expr.get(&expr_id) {
+                    let resolved_ty = match variable {
+                        VariableResolution::Binder(binder_id) => {
+                            self.state.map.of_binder.get(binder_id).copied()
+                        }
+                        VariableResolution::Imported(InFile { file_id, value }) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.map.of_value_group.get(value).copied()
+                            } else {
+                                None
+                            }
+                        }
+                        VariableResolution::LetName(let_id) => {
+                            self.state.map.of_let_name.get(let_id).copied()
+                        }
+                        VariableResolution::Local(value_id) => {
+                            self.state.map.of_value_group.get(value_id).copied()
+                        }
+                    };
+                    resolved_ty.unwrap_or_else(|| db.intern_type(CoreType::NotImplemented))
+                } else {
+                    db.intern_type(CoreType::NotImplemented)
+                }
+            }
+            Expr::NotImplemented => db.intern_type(CoreType::NotImplemented),
+        };
+        self.state.map.of_expr.insert(expr_id, expr_ty);
+        expr_ty
+    }
+}
+
+impl InferContext<'_> {
+    fn check_binder(
         &mut self,
-        function: surface::ExprId,
-        arguments: &[surface::ExprId],
-    ) -> TypeId {
-        let function_ty = self.infer_expr(function);
-        let function_ty = self.instantiate_type(function_ty);
+        db: &dyn InferenceDatabase,
+        binder_id: BinderId,
+        expected_ty: CoreTypeId,
+    ) {
+        let assign_expected = |this: &mut Self| {
+            this.state.map.of_binder.insert(binder_id, expected_ty);
+        };
 
-        let arguments_ty = arguments
-            .iter()
-            .map(|argument| {
-                let argument_ty = self.infer_expr(*argument);
-                self.instantiate_type(argument_ty)
-            })
-            .collect_vec();
+        let assign_error = |this: &mut Self| {
+            this.state.map.of_binder.insert(binder_id, db.intern_type(CoreType::NotImplemented));
+        };
 
-        let result_ty = self.fresh_unification();
-        let auxiliary_ty =
-            arguments_ty.into_iter().rev().fold(result_ty, |result_ty, argument_ty| {
-                self.db.intern_type(Type::Function(argument_ty, result_ty))
-            });
+        let check_literal = |this: &mut Self, name: &str| {
+            let name = Name::from_raw(db.interner().intern(name));
+            if let CoreType::Primitive(primitive) = db.lookup_intern_type(expected_ty) {
+                if primitive == name {
+                    assign_expected(this);
+                } else {
+                    assign_error(this);
+                }
+            }
+        };
 
-        self.unify_types(function_ty, auxiliary_ty);
+        match &self.arena[binder_id] {
+            Binder::Constructor { fields, .. } => {
+                if let Some(constructor) = self.resolve.per_constructor_binder.get(&binder_id) {
+                    if let CoreType::Constructor(expected_data_id) =
+                        db.lookup_intern_type(expected_ty)
+                    {
+                        if constructor.file_id != expected_data_id.file_id
+                            || constructor.data_id != expected_data_id.value
+                        {
+                            return assign_error(self);
+                        }
+                    }
 
-        result_ty
+                    if let Some(constructor_ty) =
+                        self.state.map.of_constructor.get(&constructor.constructor_id)
+                    {
+                        let constructor_ty = self.instantiate_type(db, *constructor_ty);
+                        let (arguments_ty, result_ty) = self.peel_arguments(db, constructor_ty);
+
+                        for (field, argument_ty) in fields.iter().zip(arguments_ty) {
+                            self.check_binder(db, *field, argument_ty);
+                        }
+
+                        self.unify_types(db, result_ty, expected_ty);
+                        self.state.map.of_binder.insert(binder_id, result_ty);
+                    } else {
+                        assign_error(self);
+                    }
+                } else {
+                    assign_error(self);
+                }
+            }
+            Binder::Literal(literal) => match literal {
+                Literal::Array(_) => todo!("check_binder(Array)"),
+                Literal::Record(_) => todo!("check_binder(Record)"),
+                Literal::Int(_) => check_literal(self, "Int"),
+                Literal::Number(_) => check_literal(self, "Number"),
+                Literal::String(_) => check_literal(self, "String"),
+                Literal::Char(_) => check_literal(self, "Char"),
+                Literal::Boolean(_) => check_literal(self, "Boolean"),
+            },
+            Binder::Negative(negative) => match negative {
+                IntOrNumber::Int(_) => check_literal(self, "Int"),
+                IntOrNumber::Number(_) => check_literal(self, "Number"),
+            },
+            Binder::Parenthesized(parenthesized) => {
+                self.check_binder(db, *parenthesized, expected_ty);
+            }
+            Binder::Variable(_) => assign_expected(self),
+            Binder::Wildcard => assign_expected(self),
+            Binder::NotImplemented => assign_expected(self),
+        }
     }
 
-    fn infer_expr_constructor(&mut self, expr_id: surface::ExprId) -> TypeId {
-        self.value_env
-            .resolutions
-            .get_constructor_expr(expr_id)
-            .map(|ConstructorResolution { data_id, constructor_id }| {
-                let data_types = self.db.infer_data_group(data_id);
-                data_types.get_constructor(constructor_id)
-            })
-            .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
-    }
-
-    fn infer_expr_let_in(
+    fn check_binding(
         &mut self,
-        let_bindings: &[surface::LetBinding],
-        let_body: surface::ExprId,
-    ) -> TypeId {
-        self.infer_let_bindings(let_bindings);
-        self.infer_expr(let_body)
-    }
-
-    fn infer_expr_literal(&mut self, literal: &surface::Literal<surface::ExprId>) -> TypeId {
-        match literal {
-            surface::Literal::Array(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Literal::Record(_) => self.db.intern_type(Type::NotImplemented),
-            surface::Literal::Int(_) => self.db.intern_type(Type::Primitive(Primitive::Int)),
-            surface::Literal::Number(_) => self.db.intern_type(Type::Primitive(Primitive::Number)),
-            surface::Literal::String(_) => self.db.intern_type(Type::Primitive(Primitive::String)),
-            surface::Literal::Char(_) => self.db.intern_type(Type::Primitive(Primitive::Char)),
-            surface::Literal::Boolean(_) => {
-                self.db.intern_type(Type::Primitive(Primitive::Boolean))
+        db: &dyn InferenceDatabase,
+        binding: &Binding,
+        expected_ty: CoreTypeId,
+    ) {
+        match binding {
+            Binding::Unconditional { where_expr } => {
+                self.infer_let_bindings(db, &where_expr.let_bindings);
+                self.check_expr(db, where_expr.expr_id, expected_ty);
             }
         }
     }
 
-    fn infer_expr_variable(&mut self, expr_id: surface::ExprId) -> TypeId {
-        self.value_env
-            .resolutions
-            .get_variable(expr_id)
-            .and_then(|resolution| match resolution.kind {
-                VariableResolutionKind::Binder(b) => self.of_binder.get(&b).copied(),
-                VariableResolutionKind::LetName(l) => self.of_let_name.get(&l).copied(),
-                VariableResolutionKind::Local(l) => {
-                    if let Some(t) = self.value_env.of_sibling.get(&l) {
-                        Some(*t)
-                    } else {
-                        let binding_group = self.value_env.binding_groups.binding_group_id(l);
-                        let binding_group_ty = self.db.infer_binding_group(binding_group);
-                        Some(binding_group_ty.get(l).of_value_group)
-                    }
-                }
-                VariableResolutionKind::Imported(i) => {
-                    let binding_group = self.db.binding_groups(i.file_id).binding_group_id(i.value);
-                    let binding_group_ty = self.db.infer_binding_group(binding_group);
-                    Some(binding_group_ty.get(i.value).of_value_group)
-                }
-            })
-            .unwrap_or_else(|| self.db.intern_type(Type::NotImplemented))
+    fn check_expr(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId, expected_ty: CoreTypeId) {
+        self.add_hint(Hint::Expression(expr_id));
+        self.check_expr_core(db, expr_id, expected_ty);
+        self.pop_hint();
     }
-}
 
-pub(crate) fn infer_binding_group_query(
-    db: &dyn InferDatabase,
-    id: InFile<BindingGroupId>,
-) -> Arc<BindingGroupTypes> {
-    let mut infer_state = InferState::default();
-    let mut context = InferBindingGroupContext::new(db, id, &mut infer_state);
+    fn check_expr_core(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        expr_id: ExprId,
+        expected_ty: CoreTypeId,
+    ) {
+        let assign_error = |this: &mut Self| {
+            this.state.map.of_expr.insert(expr_id, db.intern_type(CoreType::NotImplemented));
+        };
 
-    let binding_groups = db.binding_groups(id.file_id);
-    context.infer(&binding_groups[id.value]);
+        let check_literal = |this: &mut Self, name: &str| {
+            let name = Name::from_raw(db.interner().intern(name));
+            if let CoreType::Primitive(primitive) = db.lookup_intern_type(expected_ty) {
+                if primitive == name {
+                    this.state.map.of_expr.insert(expr_id, expected_ty);
+                } else {
+                    assign_error(this);
+                }
+            }
+        };
 
-    let mut solver = SolveContext::new(db, context.infer_state);
-    solver.solve();
-
-    let of_value_group = context.of_value_group;
-    let unification_solved = solver.unification_solved;
-    let constraints = infer_state.constraints;
-
-    let mut substitutions = unification_solved.clone();
-    substitutions.apply_substitution(db, &unification_solved);
-
-    let mut binding_group_types = BindingGroupTypes::new(of_value_group, constraints);
-    binding_group_types.apply_substitution(db, &substitutions);
-
-    Arc::new(binding_group_types)
+        match &self.arena[expr_id] {
+            Expr::Application(_, _) => todo!("check_expr(Application)"),
+            Expr::Constructor(_) => {
+                if let Some(constructor) = self.resolve.per_constructor_expr.get(&expr_id) {
+                    if let Some(constructor_ty) =
+                        self.state.map.of_constructor.get(&constructor.constructor_id).copied()
+                    {
+                        self.subsume_types(db, constructor_ty, expected_ty);
+                        self.state.map.of_expr.insert(expr_id, expected_ty);
+                    } else {
+                        assign_error(self);
+                    }
+                } else {
+                    assign_error(self);
+                }
+            }
+            Expr::Lambda(_, _) => todo!("check_expr(Lambda)"),
+            Expr::LetIn(bindings, body) => {
+                self.infer_let_bindings(db, bindings);
+                self.check_expr_core(db, *body, expected_ty);
+            }
+            Expr::Literal(literal) => match literal {
+                Literal::Array(_) => todo!("check_expr(Array)"),
+                Literal::Record(_) => todo!("check_expr(Record"),
+                Literal::Int(_) => check_literal(self, "Int"),
+                Literal::Number(_) => check_literal(self, "Number"),
+                Literal::String(_) => check_literal(self, "String"),
+                Literal::Char(_) => check_literal(self, "Char"),
+                Literal::Boolean(_) => check_literal(self, "Boolean"),
+            },
+            Expr::Variable(_) => {
+                if let Some(variable) = self.resolve.per_variable_expr.get(&expr_id) {
+                    let variable_ty = match variable {
+                        VariableResolution::Binder(binder_id) => {
+                            self.state.map.of_binder.get(binder_id)
+                        }
+                        VariableResolution::Imported(InFile { file_id, value }) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.map.of_value_group.get(value)
+                            } else {
+                                None
+                            }
+                        }
+                        VariableResolution::LetName(let_id) => {
+                            self.state.map.of_let_name.get(let_id)
+                        }
+                        VariableResolution::Local(local_id) => {
+                            self.state.map.of_value_group.get(local_id)
+                        }
+                    };
+                    let variable_ty = variable_ty
+                        .copied()
+                        .unwrap_or_else(|| db.intern_type(CoreType::NotImplemented));
+                    self.subsume_types(db, variable_ty, expected_ty);
+                    self.state.map.of_expr.insert(expr_id, expected_ty);
+                } else {
+                    assign_error(self);
+                }
+            }
+            Expr::NotImplemented => {
+                self.state.map.of_expr.insert(expr_id, expected_ty);
+            }
+        }
+    }
 }

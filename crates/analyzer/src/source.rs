@@ -1,17 +1,13 @@
-//! Database for source file information.
+//! Queries pertaining to source files.
 
 use std::{path::PathBuf, sync::Arc};
 
 use files::FileId;
-use interner::Interner;
 use parsing::error::ParseError;
 use syntax::SyntaxNode;
 
 #[salsa::query_group(SourceStorage)]
 pub trait SourceDatabase {
-    #[salsa::input]
-    fn interner(&self) -> Arc<Interner>;
-
     #[salsa::input]
     fn file_contents(&self, file_id: FileId) -> Arc<str>;
 

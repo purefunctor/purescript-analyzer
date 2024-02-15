@@ -1,329 +1,587 @@
-//! Implements the name resolution algorithm.
-
-use files::FileId;
-use la_arena::Arena;
 use std::sync::Arc;
 
-use rustc_hash::FxHashMap;
+use files::FileId;
+use rustc_hash::{FxHashMap, FxHashSet};
+use syntax::ast;
 
 use crate::{
-    id::InFile,
-    names::{NameRef, Qualified},
-    resolver::{DataGroupId, NominalMap, ValueGroupId},
-    scope::{BinderKind, ScopeKind, VariableResolution},
-    surface::{
-        visitor::{default_visit_binder, default_visit_expr, default_visit_type, Visitor},
-        Binder, BinderId, Expr, ExprId, LetName, ModuleExports, ModuleImports, Type, TypeId,
-    },
+    id::{AstId, InFile},
+    index::nominal::{DataGroupId, ValueGroupId},
+    surface::tree::*,
     ScopeDatabase,
 };
 
 use super::{
-    ConstructorResolution, Resolutions, TypeResolution, ValueGroupScope, VariableResolutionKind,
-    WithScope,
+    ConstructorResolution, ResolveInfo, ScopeInfo, ScopeKind, TypeConstructorKind,
+    TypeConstructorResolution, VariableResolution,
 };
 
-fn collect_imported_env(
-    db: &dyn ScopeDatabase,
-    module_imports: &ModuleImports,
-) -> FxHashMap<FileId, (Arc<NominalMap>, Arc<ModuleExports>)> {
-    module_imports
-        .iter()
-        .map(|import_declaration| {
-            (
-                import_declaration.file_id,
-                (
-                    db.nominal_map(import_declaration.file_id),
-                    db.module_exports(import_declaration.file_id),
-                ),
-            )
+struct Ctx<'a> {
+    file_id: FileId,
+
+    arena: &'a SurfaceArena,
+    imports: &'a Imports,
+    local: &'a UsableItems,
+
+    scope_info: &'a ScopeInfo,
+    resolve_info: ResolveInfo,
+}
+
+impl<'a> Ctx<'a> {
+    fn new(
+        file_id: FileId,
+        arena: &'a SurfaceArena,
+        imports: &'a Imports,
+        local: &'a UsableItems,
+        scope_info: &'a ScopeInfo,
+    ) -> Ctx<'a> {
+        let resolve_info =
+            ResolveInfo::new(imports.values().map(|(file_id, _)| *file_id).collect());
+        Ctx { file_id, arena, imports, local, scope_info, resolve_info }
+    }
+}
+
+type Imports = FxHashMap<ModuleName, (FileId, UsableItems)>;
+
+#[derive(Debug, Default)]
+struct UsableItems {
+    data: FxHashMap<Name, DataGroupId>,
+    constructor: FxHashMap<Name, (DataGroupId, AstId<ast::DataConstructor>)>,
+    value: FxHashMap<Name, ValueGroupId>,
+}
+
+impl UsableItems {
+    fn find_data(&self, name: &Name) -> Option<DataGroupId> {
+        self.data.iter().find_map(|(type_constructor_name, type_constructor_id)| {
+            if name == type_constructor_name {
+                Some(*type_constructor_id)
+            } else {
+                None
+            }
         })
-        .collect()
+    }
+
+    fn find_constructor(&self, name: &Name) -> Option<(DataGroupId, AstId<ast::DataConstructor>)> {
+        self.constructor.iter().find_map(|(constructor_name, data_constructor_id)| {
+            if name == constructor_name {
+                Some(*data_constructor_id)
+            } else {
+                None
+            }
+        })
+    }
+
+    fn find_value(&self, name: &Name) -> Option<ValueGroupId> {
+        self.value.iter().find_map(
+            |(value_name, value_id)| {
+                if name == value_name {
+                    Some(*value_id)
+                } else {
+                    None
+                }
+            },
+        )
+    }
 }
 
-struct ResolveArenas<'a> {
-    expr_arena: &'a Arena<Expr>,
-    let_name_arena: &'a Arena<LetName>,
-    binder_arena: &'a Arena<Binder>,
-    type_arena: &'a Arena<Type>,
+// region: Common
+
+fn resolve_constructor(ctx: &Ctx, name: &Qualified<Name>) -> Option<ConstructorResolution> {
+    if let Some(prefix) = &name.prefix {
+        let name = &name.value;
+        let (file_id, usable_items) = ctx.imports.get(prefix)?;
+        usable_items.constructor.get(name).map(|(data_id, constructor_id)| ConstructorResolution {
+            file_id: *file_id,
+            data_id: *data_id,
+            constructor_id: *constructor_id,
+        })
+    } else {
+        let name = &name.value;
+
+        let local_resolution = ctx.local.find_constructor(name).map(|(data_id, constructor_id)| {
+            let file_id = ctx.file_id;
+            ConstructorResolution { file_id, data_id, constructor_id }
+        });
+
+        local_resolution.or_else(|| {
+            ctx.imports.values().find_map(|(file_id, usable_items)| {
+                let file_id = *file_id;
+                let (data_id, constructor_id) = usable_items.find_constructor(name)?;
+                Some(ConstructorResolution { file_id, data_id, constructor_id })
+            })
+        })
+    }
 }
 
-struct ResolveEnv<'a> {
-    value_scope: &'a WithScope<ValueGroupScope>,
-    nominal_map: &'a NominalMap,
-    module_imports: &'a ModuleImports,
-    imported_env: &'a FxHashMap<FileId, (Arc<NominalMap>, Arc<ModuleExports>)>,
+fn resolve_type_constructor(
+    ctx: &mut Ctx,
+    name: &Qualified<Name>,
+) -> Option<TypeConstructorResolution> {
+    if let Some(prefix) = &name.prefix {
+        let name = &name.value;
+        let (file_id, usable_items) = ctx.imports.get(prefix)?;
+        usable_items.data.get(name).map(|&data_id| {
+            let file_id = *file_id;
+            let kind = TypeConstructorKind::Data(data_id);
+            TypeConstructorResolution { file_id, kind }
+        })
+    } else {
+        let name = &name.value;
+
+        let local_resolution = ctx.local.find_data(name).map(|data_id| {
+            let file_id = ctx.file_id;
+            let kind = TypeConstructorKind::Data(data_id);
+            TypeConstructorResolution { file_id, kind }
+        });
+
+        local_resolution.or_else(|| {
+            ctx.imports.values().find_map(|(file_id, usable_items)| {
+                let file_id = *file_id;
+                let data_id = usable_items.find_data(name)?;
+                let kind = TypeConstructorKind::Data(data_id);
+                Some(TypeConstructorResolution { file_id, kind })
+            })
+        })
+    }
 }
 
-pub(crate) struct ResolveContext<'a> {
-    resolve_arenas: ResolveArenas<'a>,
-    resolve_env: ResolveEnv<'a>,
-    per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
-    per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
-    per_type_type: FxHashMap<TypeId, TypeResolution>,
-    per_variable: FxHashMap<ExprId, VariableResolution>,
+fn resolve_variable(
+    ctx: &mut Ctx,
+    expr_id: ExprId,
+    name: &Qualified<Name>,
+) -> Option<VariableResolution> {
+    if let Some(prefix) = &name.prefix {
+        let name = &name.value;
+        let (file_id, usable_items) = ctx.imports.get(prefix)?;
+        usable_items.value.get(name).map(|value_id| {
+            VariableResolution::Imported(InFile { file_id: *file_id, value: *value_id })
+        })
+    } else {
+        let name = &name.value;
+        let scope_id = ctx.scope_info.expr_scope(expr_id);
+
+        let scope_resolution =
+            ctx.scope_info.ancestors(scope_id).find_map(|scope_data| match &scope_data.kind {
+                ScopeKind::Root => None,
+                ScopeKind::Binders(names) => {
+                    if let Some(names) = names {
+                        Some(VariableResolution::Binder(*names.get(name)?))
+                    } else {
+                        None
+                    }
+                }
+                ScopeKind::LetBound(names) => Some(VariableResolution::LetName(*names.get(name)?)),
+            });
+
+        let local_resolution = scope_resolution.or_else(|| {
+            let value_id = ctx.local.find_value(name)?;
+            Some(VariableResolution::Local(value_id))
+        });
+
+        local_resolution.or_else(|| {
+            ctx.imports.values().find_map(|(file_id, usable_items)| {
+                let file_id = *file_id;
+                let value = usable_items.find_value(name)?;
+                Some(VariableResolution::Imported(InFile { file_id, value }))
+            })
+        })
+    }
 }
 
-impl<'a> ResolveContext<'a> {
-    fn new(resolve_arenas: ResolveArenas<'a>, resolve_env: ResolveEnv<'a>) -> ResolveContext<'a> {
-        let per_constructor_expr = FxHashMap::default();
-        let per_constructor_binder = FxHashMap::default();
-        let per_type_type = FxHashMap::default();
-        let per_variable = FxHashMap::default();
-        ResolveContext {
-            resolve_arenas,
-            resolve_env,
-            per_constructor_expr,
-            per_constructor_binder,
-            per_type_type,
-            per_variable,
+// endregion
+
+// region: Traversals
+
+fn resolve_data_declaration(ctx: &mut Ctx, data_declaration: &DataDeclaration) {
+    if let Some(annotation) = data_declaration.annotation {
+        resolve_type(ctx, annotation);
+    }
+    data_declaration.constructors.iter().for_each(|(_, constructor)| {
+        constructor.fields.iter().for_each(|field| {
+            resolve_type(ctx, *field);
+        })
+    });
+}
+
+fn resolve_value_declaration(ctx: &mut Ctx, value_declaration: &ValueDeclaration) {
+    if let Some(annotation) = value_declaration.annotation {
+        resolve_type(ctx, annotation);
+    }
+    value_declaration.equations.iter().for_each(|value_equation| {
+        resolve_value_equation(ctx, value_equation);
+    });
+}
+
+fn resolve_value_equation(ctx: &mut Ctx, value_equation: &ValueEquation) {
+    value_equation.binders.iter().for_each(|binder| {
+        resolve_binder(ctx, *binder);
+    });
+    resolve_binding(ctx, &value_equation.binding);
+}
+
+fn resolve_binding(ctx: &mut Ctx, binding: &Binding) {
+    match binding {
+        Binding::Unconditional { where_expr } => resolve_where_expr(ctx, where_expr),
+    }
+}
+
+fn resolve_where_expr(ctx: &mut Ctx, where_expr: &WhereExpr) {
+    resolve_let_bindings(ctx, &where_expr.let_bindings);
+    resolve_expr(ctx, where_expr.expr_id);
+}
+
+fn resolve_let_bindings(ctx: &mut Ctx, let_bindings: &[LetBinding]) {
+    for let_binding in let_bindings {
+        match let_binding {
+            LetBinding::Name { id } => {
+                let let_name = &ctx.arena[*id];
+                if let Some(annotation) = let_name.annotation {
+                    resolve_type(ctx, annotation);
+                }
+                resolve_let_name_equations(ctx, &let_name.equations);
+            }
+            LetBinding::Pattern { binder, where_expr } => {
+                resolve_binder(ctx, *binder);
+                resolve_where_expr(ctx, where_expr);
+            }
         }
     }
+}
 
-    pub(crate) fn data_resolutions_query(
-        db: &dyn ScopeDatabase,
-        id: InFile<DataGroupId>,
-    ) -> Arc<Resolutions> {
-        let data_surface = db.data_surface(id);
-        let value_scope = Default::default();
-        let nominal_map = db.nominal_map(id.file_id);
-        let module_imports = db.module_imports(id.file_id);
-        let imported_env = collect_imported_env(db, &module_imports);
-
-        let resolve_arenas = ResolveArenas {
-            expr_arena: &data_surface.expr_arena,
-            let_name_arena: &data_surface.let_name_arena,
-            binder_arena: &data_surface.binder_arena,
-            type_arena: &data_surface.type_arena,
-        };
-
-        let resolve_env = ResolveEnv {
-            value_scope: &value_scope,
-            nominal_map: &nominal_map,
-            module_imports: &module_imports,
-            imported_env: &imported_env,
-        };
-
-        let mut resolve_context = ResolveContext::new(resolve_arenas, resolve_env);
-
-        data_surface.value.declaration.constructors.iter().for_each(|(_, constructor)| {
-            constructor.fields.iter().for_each(|field| {
-                resolve_context.visit_type(*field);
-            });
-        });
-
-        Arc::new(Resolutions::new(
-            resolve_context.per_constructor_expr,
-            resolve_context.per_constructor_binder,
-            resolve_context.per_type_type,
-            resolve_context.per_variable,
-        ))
+fn resolve_let_name_equations(ctx: &mut Ctx, equations: &[LetNameEquation]) {
+    for equation in equations {
+        for binder_id in &equation.binders {
+            resolve_binder(ctx, *binder_id);
+        }
+        resolve_binding(ctx, &equation.binding);
     }
+}
 
-    pub(crate) fn value_resolutions_query(
-        db: &dyn ScopeDatabase,
-        id: InFile<ValueGroupId>,
-    ) -> Arc<Resolutions> {
-        let value_surface = db.value_surface(id);
-        let value_scope = db.value_scope(id);
-        let nominal_map = db.nominal_map(id.file_id);
-        let module_imports = db.module_imports(id.file_id);
-        let imported_env = collect_imported_env(db, &module_imports);
-
-        let resolve_arenas = ResolveArenas {
-            expr_arena: &value_surface.expr_arena,
-            let_name_arena: &value_surface.let_name_arena,
-            binder_arena: &value_surface.binder_arena,
-            type_arena: &value_surface.type_arena,
-        };
-
-        let resolve_env = ResolveEnv {
-            value_scope: &value_scope,
-            nominal_map: &nominal_map,
-            module_imports: &module_imports,
-            imported_env: &imported_env,
-        };
-
-        let mut resolve_context = ResolveContext::new(resolve_arenas, resolve_env);
-
-        value_surface.value.equations.iter().for_each(|(_, value_equation)| {
-            resolve_context.visit_value_equation(value_equation);
-        });
-
-        Arc::new(Resolutions::new(
-            resolve_context.per_constructor_expr,
-            resolve_context.per_constructor_binder,
-            resolve_context.per_type_type,
-            resolve_context.per_variable,
-        ))
+fn resolve_binder(ctx: &mut Ctx, binder_id: BinderId) {
+    match &ctx.arena[binder_id] {
+        Binder::Constructor { name, fields } => {
+            if let Some(constructor) = resolve_constructor(ctx, name) {
+                ctx.resolve_info.per_constructor_binder.insert(binder_id, constructor);
+            }
+            for field in fields {
+                resolve_binder(ctx, *field);
+            }
+        }
+        Binder::Literal(literal) => resolve_literal(ctx, literal, resolve_binder),
+        Binder::Negative(_) => (),
+        Binder::Parenthesized(parenthesized) => resolve_binder(ctx, *parenthesized),
+        Binder::Variable(_) => (),
+        Binder::Wildcard => (),
+        Binder::NotImplemented => (),
     }
+}
 
-    fn resolve_constructor_expr(&mut self, expr_id: ExprId, name: &Qualified<NameRef>) {
-        if let Some(prefix) = &name.prefix {
-            if let Some(qualified_import) = self.resolve_env.module_imports.find_qualified(prefix) {
-                let file_id = qualified_import.file_id;
-                let (nominal_map, export_items) =
-                    self.resolve_env.imported_env.get(&file_id).unwrap_or_else(|| {
-                        unreachable!("impossible: missing imported_env entry");
-                    });
+fn resolve_expr(ctx: &mut Ctx, expr_id: ExprId) {
+    match &ctx.arena[expr_id] {
+        Expr::Application(head, spine) => {
+            resolve_expr(ctx, *head);
+            for argument in spine {
+                resolve_expr(ctx, *argument);
+            }
+        }
+        Expr::Constructor(name) => {
+            if let Some(constructor) = resolve_constructor(ctx, name) {
+                ctx.resolve_info.per_constructor_expr.insert(expr_id, constructor);
+            }
+        }
+        Expr::Lambda(binders, body) => {
+            for binder in binders {
+                resolve_binder(ctx, *binder);
+            }
+            resolve_expr(ctx, *body)
+        }
+        Expr::LetIn(let_bindings, body) => {
+            resolve_let_bindings(ctx, let_bindings);
+            resolve_expr(ctx, *body);
+        }
+        Expr::Literal(literal) => resolve_literal(ctx, literal, resolve_expr),
+        Expr::Variable(name) => {
+            if let Some(variable) = resolve_variable(ctx, expr_id, name) {
+                ctx.resolve_info.per_variable_expr.insert(expr_id, variable);
+            }
+        }
+        Expr::NotImplemented => (),
+    }
+}
 
-                if let Some((data_id, constructor_id)) = nominal_map.constructor_id(&name.value) {
-                    let data_name = &nominal_map.data_group_data(data_id).name;
+fn resolve_type(ctx: &mut Ctx, type_id: TypeId) {
+    match &ctx.arena[type_id] {
+        Type::Arrow(arguments, result) => {
+            for argument in arguments {
+                resolve_type(ctx, *argument);
+            }
+            resolve_type(ctx, *result);
+        }
+        Type::Application(function, arguments) => {
+            resolve_type(ctx, *function);
+            for argument in arguments {
+                resolve_type(ctx, *argument);
+            }
+        }
+        Type::Constructor(name) => {
+            if let Some(type_constructor) = resolve_type_constructor(ctx, name) {
+                ctx.resolve_info.per_type_type.insert(type_id, type_constructor);
+            }
+        }
+        Type::Parenthesized(parenthesized) => resolve_type(ctx, *parenthesized),
+        Type::Variable(_) => (),
+        Type::NotImplemented => (),
+    }
+}
 
-                    if !qualified_import.is_constructor_imported(data_name, &name.value) {
-                        unimplemented!("Not imported!");
+fn resolve_literal<T>(
+    ctx: &mut Ctx,
+    literal: &Literal<T>,
+    mut resolve_inner: impl FnMut(&mut Ctx, T),
+) where
+    T: Copy,
+{
+    match literal {
+        Literal::Array(items) => {
+            for item in items {
+                resolve_inner(ctx, *item);
+            }
+        }
+        Literal::Record(items) => {
+            for item in items {
+                match item {
+                    RecordItem::RecordPun(_) => (),
+                    RecordItem::RecordField(_, item) => {
+                        resolve_inner(ctx, *item);
                     }
-
-                    if !export_items.is_constructor_exported(data_name, &name.value) {
-                        unimplemented!("Not exported!");
-                    }
-
-                    let constructor_id = constructor_id.value;
-                    self.per_constructor_expr
-                        .insert(expr_id, ConstructorResolution { data_id, constructor_id });
-                } else {
-                    unimplemented!("Not defined!");
                 }
             }
-        } else {
-            let name = name.value.as_ref();
-            self.resolve_env.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
-                self.per_constructor_expr.insert(
-                    expr_id,
-                    ConstructorResolution { data_id, constructor_id: constructor_id.value },
-                )
-            });
+        }
+        Literal::Int(_) => (),
+        Literal::Number(_) => (),
+        Literal::String(_) => (),
+        Literal::Char(_) => (),
+        Literal::Boolean(_) => (),
+    }
+}
+
+// endregion
+
+// region: Usable Items
+
+enum AllowListMembers {
+    All,
+    Enumerated(FxHashSet<Name>),
+}
+
+#[derive(Default)]
+struct ExportedItems {
+    data: FxHashMap<Name, ExportedData>,
+    value: FxHashMap<Name, ValueGroupId>,
+}
+
+struct ExportedData {
+    id: DataGroupId,
+    constructors: FxHashMap<Name, AstId<ast::DataConstructor>>,
+}
+
+fn exported_items(surface: &Module) -> ExportedItems {
+    let export_all = surface.header.export_list.is_none();
+    let mut allowlist_data = FxHashMap::default();
+    let mut allowlist_value = FxHashSet::default();
+
+    if let Some(export_list) = &surface.header.export_list {
+        for export_item in &export_list.items {
+            match export_item {
+                ExportItem::ExportType(name, members) => {
+                    let members = if let Some(members) = members {
+                        match members {
+                            DataMembers::DataAll => AllowListMembers::All,
+                            DataMembers::DataEnumerated(names) => {
+                                AllowListMembers::Enumerated(names.iter().cloned().collect())
+                            }
+                        }
+                    } else {
+                        AllowListMembers::Enumerated(FxHashSet::default())
+                    };
+                    allowlist_data.insert(Name::clone(name), members);
+                }
+                ExportItem::ExportValue(name) => {
+                    allowlist_value.insert(Name::clone(name));
+                }
+            }
         }
     }
 
-    fn resolve_constructor_binder(&mut self, binder_id: BinderId, name: impl AsRef<str>) {
-        let name = name.as_ref();
-        self.resolve_env.nominal_map.constructor_id(name).map(|(data_id, constructor_id)| {
-            self.per_constructor_binder.insert(
-                binder_id,
-                ConstructorResolution { data_id, constructor_id: constructor_id.value },
-            )
-        });
-    }
-
-    fn resolve_constructor_type(&mut self, type_id: TypeId, name: impl AsRef<str>) {
-        let name = name.as_ref();
-        self.resolve_env
-            .nominal_map
-            .data_id(name)
-            .map(|data_id| self.per_type_type.insert(type_id, TypeResolution::Data(data_id)));
-    }
-
-    fn resolve_variable_expr(&mut self, expr_id: ExprId, name: &Qualified<impl AsRef<str>>) {
-        if let Some(prefix) = &name.prefix {
-            // FIXME: validate exports for the module being imported, somewhere, somehow.
-            if let Some(qualified_import) = self.resolve_env.module_imports.find_qualified(prefix) {
-                let file_id = qualified_import.file_id;
-                let (nominal_map, export_items) =
-                    self.resolve_env.imported_env.get(&file_id).unwrap_or_else(|| {
-                        unreachable!("impossible: missing imported_env entry");
-                    });
-
-                if !qualified_import.is_value_imported(&name.value) {
-                    unimplemented!("Is not imported!");
+    let is_constructor_exported = |data_name: &Name, constructor_name: &Name| {
+        export_all
+            || allowlist_data.get(data_name).is_some_and(|member| match member {
+                AllowListMembers::All => true,
+                AllowListMembers::Enumerated(constructors) => {
+                    constructors.contains(constructor_name)
                 }
+            })
+    };
 
-                if !export_items.is_value_exported(&name.value) {
-                    unimplemented!("Is not exported!");
-                }
+    let mut exported_items = ExportedItems::default();
 
-                if let Some(value_group_id) = nominal_map.value_group_id(&name.value) {
-                    self.per_variable.insert(
-                        expr_id,
-                        VariableResolution {
-                            thunked: false,
-                            kind: VariableResolutionKind::Imported(value_group_id),
-                        },
+    for declaration in &surface.body.declarations {
+        match declaration {
+            Declaration::DataDeclaration(data_declaration) => {
+                let id = data_declaration.id;
+                let constructors = data_declaration
+                    .constructors
+                    .iter()
+                    .filter_map(|(constructor_id, constructor)| {
+                        if is_constructor_exported(&data_declaration.name, &constructor.name) {
+                            Some((Name::clone(&constructor.name), *constructor_id))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                if export_all || allowlist_data.contains_key(&data_declaration.name) {
+                    exported_items.data.insert(
+                        Name::clone(&data_declaration.name),
+                        ExportedData { id, constructors },
                     );
                 }
-            } else {
-                unimplemented!("Could not resolve...");
             }
-        } else {
-            let name = name.value.as_ref();
-            let expr_scope_id = self.resolve_env.value_scope.expr_scope(expr_id);
-
-            let mut thunked = false;
-            let kind =
-                self.resolve_env.value_scope.ancestors(expr_scope_id).find_map(|scope_data| {
-                    match &scope_data.kind {
-                        ScopeKind::Root => None,
-                        ScopeKind::Binders(names, kind) => {
-                            if let BinderKind::Thunk = kind {
-                                thunked = true;
-                            }
-                            Some(VariableResolutionKind::Binder(*names.get(name)?))
-                        }
-                        ScopeKind::LetBound(names, _) => {
-                            Some(VariableResolutionKind::LetName(*names.get(name)?))
-                        }
-                    }
-                });
-
-            let kind = kind.or_else(|| {
-                let id = self.resolve_env.nominal_map.value_group_id(name)?;
-                Some(VariableResolutionKind::Local(id.value))
-            });
-
-            if let Some(kind) = kind {
-                self.per_variable.insert(expr_id, VariableResolution { thunked, kind });
-            }
-        }
-    }
-}
-
-impl<'a> Visitor<'a> for ResolveContext<'a> {
-    fn expr_arena(&self) -> &'a Arena<Expr> {
-        self.resolve_arenas.expr_arena
-    }
-
-    fn let_name_arena(&self) -> &'a Arena<LetName> {
-        self.resolve_arenas.let_name_arena
-    }
-
-    fn binder_arena(&self) -> &'a Arena<Binder> {
-        self.resolve_arenas.binder_arena
-    }
-
-    fn type_arena(&self) -> &'a Arena<Type> {
-        self.resolve_arenas.type_arena
-    }
-
-    fn visit_expr(&mut self, expr_id: ExprId) {
-        match &self.resolve_arenas.expr_arena[expr_id] {
-            Expr::Constructor(constructor) => {
-                self.resolve_constructor_expr(expr_id, constructor);
-            }
-            Expr::Variable(variable) => {
-                self.resolve_variable_expr(expr_id, variable);
-            }
-            _ => default_visit_expr(self, expr_id),
-        }
-    }
-
-    fn visit_binder(&mut self, binder_id: BinderId) {
-        match &self.resolve_arenas.binder_arena[binder_id] {
-            Binder::Constructor { name, fields } => {
-                self.resolve_constructor_binder(binder_id, &name.value);
-                for field in fields.iter() {
-                    default_visit_binder(self, *field);
+            Declaration::ValueDeclaration(value_declaration) => {
+                if export_all || allowlist_value.contains(&value_declaration.name) {
+                    exported_items
+                        .value
+                        .insert(Name::clone(&value_declaration.name), value_declaration.id);
                 }
             }
-            _ => default_visit_binder(self, binder_id),
         }
     }
 
-    fn visit_type(&mut self, type_id: TypeId) {
-        match &self.resolve_arenas.type_arena[type_id] {
-            Type::Constructor(constructor) => {
-                self.resolve_constructor_type(type_id, &constructor.value);
+    exported_items
+}
+
+fn usable_items(surface: &Module, import: &ImportDeclaration) -> UsableItems {
+    let exported_items = exported_items(surface);
+
+    let import_all;
+    let import_hiding;
+    let mut allowlist_data = FxHashMap::default();
+    let mut allowlist_value = FxHashSet::default();
+
+    if let Some(import_list) = &import.import_list {
+        import_all = false;
+        import_hiding = import_list.hiding;
+        for item in &import_list.items {
+            match item {
+                ImportItem::ImportType(name, members) => {
+                    let members = if let Some(members) = members {
+                        match members {
+                            DataMembers::DataAll => AllowListMembers::All,
+                            DataMembers::DataEnumerated(names) => {
+                                AllowListMembers::Enumerated(names.iter().cloned().collect())
+                            }
+                        }
+                    } else {
+                        AllowListMembers::Enumerated(FxHashSet::default())
+                    };
+                    allowlist_data.insert(Name::clone(name), members);
+                }
+                ImportItem::ImportValue(name) => {
+                    allowlist_value.insert(Name::clone(name));
+                }
             }
-            _ => default_visit_type(self, type_id),
+        }
+    } else {
+        import_all = true;
+        import_hiding = false;
+    }
+
+    let is_constructor_imported = |data_name: &Name, constructor_name: &Name| {
+        import_all
+            || (import_hiding
+                ^ allowlist_data.get(data_name).is_some_and(|member| match member {
+                    AllowListMembers::All => true,
+                    AllowListMembers::Enumerated(constructors) => {
+                        constructors.contains(constructor_name)
+                    }
+                }))
+    };
+
+    let mut usable_items = UsableItems::default();
+
+    for (data_name, data) in exported_items.data {
+        if import_all || (import_hiding ^ allowlist_data.contains_key(&data_name)) {
+            usable_items.data.insert(Name::clone(&data_name), data.id);
+        }
+        for (constructor_name, id) in data.constructors {
+            if is_constructor_imported(&data_name, &constructor_name) {
+                usable_items.constructor.insert(constructor_name, (data.id, id));
+            }
         }
     }
+
+    for (name, id) in exported_items.value {
+        if import_all || (import_hiding ^ allowlist_value.contains(&name)) {
+            usable_items.value.insert(name, id);
+        }
+    }
+
+    usable_items
+}
+
+fn local_items(surface: &Module) -> UsableItems {
+    let mut usable_items = UsableItems::default();
+    surface.body.declarations.iter().for_each(|declaration| match declaration {
+        Declaration::DataDeclaration(data_declaration) => {
+            let data_name = Name::clone(&data_declaration.name);
+            let data_id = data_declaration.id;
+            usable_items.data.insert(data_name, data_id);
+
+            data_declaration.constructors.iter().for_each(|(constructor_id, data_constructor)| {
+                let constructor_name = Name::clone(&data_constructor.name);
+                usable_items.constructor.insert(constructor_name, (data_id, *constructor_id));
+            });
+        }
+        Declaration::ValueDeclaration(value_declaration) => {
+            let name = Name::clone(&value_declaration.name);
+            let id = value_declaration.id;
+            usable_items.value.insert(name, id);
+        }
+    });
+    usable_items
+}
+
+// endregion
+
+pub(super) fn file_resolve_query(db: &dyn ScopeDatabase, file_id: FileId) -> Arc<ResolveInfo> {
+    let (surface, arena) = db.file_surface(file_id);
+    let module_map = db.module_map();
+    let scope_info = db.file_scope(file_id);
+
+    let mut imports = FxHashMap::default();
+    for import in &surface.imports.declarations {
+        let Some(file_id) = module_map.file_id(&import.name) else {
+            continue;
+        };
+
+        let (imported_surface, _) = db.file_surface(file_id);
+        let usable_items = usable_items(&imported_surface, import);
+
+        let module_name = ModuleName::clone(import.qualified_as.as_ref().unwrap_or(&import.name));
+        imports.insert(module_name, (file_id, usable_items));
+    }
+
+    let local = local_items(&surface);
+
+    let mut ctx = Ctx::new(file_id, &arena, &imports, &local, &scope_info);
+    surface.body.declarations.iter().for_each(|declaration| match declaration {
+        Declaration::DataDeclaration(data_declaration) => {
+            resolve_data_declaration(&mut ctx, data_declaration);
+        }
+        Declaration::ValueDeclaration(value_declaration) => {
+            resolve_value_declaration(&mut ctx, value_declaration);
+        }
+    });
+
+    Arc::new(ctx.resolve_info)
 }

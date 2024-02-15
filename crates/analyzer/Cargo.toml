@@ -1,5 +1,5 @@
 [package]
-name = "analyzer"
+name = "analyzer-module"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,19 +7,14 @@ edition = "2021"
 
 [dependencies]
 files = { version = "0.1.0", path = "../files" }
-indexmap = "2.0.2"
 interner = { version = "0.1.0", path = "../interner" }
-itertools = "0.11.0"
+itertools = "0.12.0"
 la-arena = "0.3.1"
 parsing = { version = "0.1.0", path = "../parsing" }
+paste = "1.0.14"
 petgraph = "0.6.4"
 pretty = { version = "0.12.3", features = ["termcolor"] }
-rowan = "0.15.11"
+rowan = "0.15.15"
 rustc-hash = "1.1.0"
 salsa = "0.17.0-pre.2"
-smallvec = "1.11.0"
-smol_str = "0.2.0"
 syntax = { version = "0.1.0", path = "../syntax" }
-
-[dev-dependencies]
-insta = "1.34.0"
