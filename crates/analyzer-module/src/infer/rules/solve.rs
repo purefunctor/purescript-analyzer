@@ -2,7 +2,7 @@ use std::{mem, sync::Arc};
 
 use crate::{
     id::InFile,
-    infer::{pretty_print, Constraint, CoreType, Hint},
+    infer::{Constraint, CoreType, Hint, InferError, InferErrorKind},
     InferenceDatabase,
 };
 
@@ -34,7 +34,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
         y_t: CoreTypeId,
     ) {
         if occurs_check(db, x_u, y_t) {
-            eprintln!("Infinite type error: {} ~ {}", x_u.value, pretty_print(db, y_t));
+            dbg!(InferError { hints, kind: InferErrorKind::OccursCheck(x_u, y_t) });
             return;
         }
         if let Some(x_t) = self.state.unification_solved.get(&x_u) {

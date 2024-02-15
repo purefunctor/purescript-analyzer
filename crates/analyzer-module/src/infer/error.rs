@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::{index::nominal::ValueGroupId, surface::ExprId};
+use crate::{id::InFile, index::nominal::ValueGroupId, surface::ExprId};
 
 use super::CoreTypeId;
 
@@ -17,6 +17,7 @@ pub enum Hint {
 #[derive(Debug)]
 pub enum InferErrorKind {
     CannotUnify(CoreTypeId, CoreTypeId),
+    OccursCheck(InFile<u32>, CoreTypeId),
 }
 
 /// An error encountered during inference.
