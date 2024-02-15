@@ -47,13 +47,6 @@ impl<'a> InferContext<'a> {
         InferContext { file_id, arena, resolve, state, result, imported }
     }
 
-    fn fresh_unification(&mut self, db: &dyn InferenceDatabase) -> CoreTypeId {
-        let file_id = self.file_id;
-        let value = self.state.count;
-        self.state.count += 1;
-        db.intern_type(CoreType::Unification(InFile { file_id, value }))
-    }
-
     fn add_hint(&mut self, hint: Hint) {
         self.state.hints.push(hint);
     }

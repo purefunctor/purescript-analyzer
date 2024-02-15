@@ -13,6 +13,13 @@ use crate::{
 use super::{CoreType, CoreTypeId, InferContext};
 
 impl InferContext<'_> {
+    pub(super) fn fresh_unification(&mut self, db: &dyn InferenceDatabase) -> CoreTypeId {
+        let file_id = self.file_id;
+        let value = self.state.count;
+        self.state.count += 1;
+        db.intern_type(CoreType::Unification(InFile { file_id, value }))
+    }
+
     pub(super) fn lower_type(&mut self, db: &dyn InferenceDatabase, type_id: TypeId) -> CoreTypeId {
         match &self.arena[type_id] {
             Type::Arrow(arguments, result) => {
