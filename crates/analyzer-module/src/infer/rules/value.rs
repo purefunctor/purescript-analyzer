@@ -19,7 +19,7 @@ impl InferContext<'_> {
             } else {
                 self.fresh_unification(db)
             };
-            self.result.of_value_group.insert(*value_group_id, value_ty);
+            self.state.infer_map.of_value_group.insert(*value_group_id, value_ty);
         }
 
         for (value_group_id, value_declaration) in value_declarations {
@@ -34,7 +34,8 @@ impl InferContext<'_> {
         value_declaration: &ValueDeclaration,
     ) {
         self.add_hint(Hint::ValueGroup(value_group_id));
-        let Some(value_ty) = self.result.of_value_group.get(&value_group_id).copied() else {
+        let Some(value_ty) = self.state.infer_map.of_value_group.get(&value_group_id).copied()
+        else {
             unreachable!("impossible: caller must insert a type!");
         };
 
@@ -87,8 +88,11 @@ impl InferContext<'_> {
                 if let Some(constructor_resolution) =
                     self.resolve.per_constructor_binder.get(&binder_id)
                 {
-                    if let Some(constructor_ty) =
-                        self.result.of_constructor.get(&constructor_resolution.constructor_id)
+                    if let Some(constructor_ty) = self
+                        .state
+                        .infer_map
+                        .of_constructor
+                        .get(&constructor_resolution.constructor_id)
                     {
                         let constructor_ty = self.instantiate_type(db, *constructor_ty);
                         let (arguments_ty, _) = self.peel_arguments(db, constructor_ty);
@@ -142,7 +146,7 @@ impl InferContext<'_> {
             Binder::Wildcard => self.fresh_unification(db),
             Binder::NotImplemented => db.intern_type(CoreType::NotImplemented),
         };
-        self.result.of_binder.insert(binder_id, binder_ty);
+        self.state.infer_map.of_binder.insert(binder_id, binder_ty);
         binder_ty
     }
 
@@ -187,7 +191,7 @@ impl InferContext<'_> {
                     for let_name_component in let_name_components {
                         for let_name_id in &let_name_component {
                             let fresh_ty = self.fresh_unification(db);
-                            self.result.of_let_name.insert(*let_name_id, fresh_ty);
+                            self.state.infer_map.of_let_name.insert(*let_name_id, fresh_ty);
                         }
                         for let_name_id in let_name_component {
                             self.infer_let_name(db, let_name_id);
@@ -207,7 +211,7 @@ impl InferContext<'_> {
     }
 
     fn infer_let_name(&mut self, db: &dyn InferenceDatabase, let_name_id: LetNameId) {
-        let Some(fresh_ty) = self.result.of_let_name.get(&let_name_id).copied() else {
+        let Some(fresh_ty) = self.state.infer_map.of_let_name.get(&let_name_id).copied() else {
             unreachable!("impossible:");
         };
         let let_name = &self.arena[let_name_id];
@@ -258,7 +262,7 @@ impl InferContext<'_> {
             Expr::Constructor(_) => {
                 if let Some(constructor) = self.resolve.per_constructor_expr.get(&expr_id) {
                     if let Some(constructor_ty) =
-                        self.result.of_constructor.get(&constructor.constructor_id)
+                        self.state.infer_map.of_constructor.get(&constructor.constructor_id)
                     {
                         *constructor_ty
                     } else {
@@ -308,7 +312,7 @@ impl InferContext<'_> {
                 if let Some(variable) = self.resolve.per_variable_expr.get(&expr_id) {
                     let resolved_ty = match variable {
                         VariableResolution::Binder(binder_id) => {
-                            self.result.of_binder.get(binder_id).copied()
+                            self.state.infer_map.of_binder.get(binder_id).copied()
                         }
                         VariableResolution::Imported(InFile { file_id, value }) => {
                             if let Some(result) = self.imported.get(file_id) {
@@ -318,10 +322,10 @@ impl InferContext<'_> {
                             }
                         }
                         VariableResolution::LetName(let_id) => {
-                            self.result.of_let_name.get(let_id).copied()
+                            self.state.infer_map.of_let_name.get(let_id).copied()
                         }
                         VariableResolution::Local(value_id) => {
-                            self.result.of_value_group.get(value_id).copied()
+                            self.state.infer_map.of_value_group.get(value_id).copied()
                         }
                     };
                     resolved_ty.unwrap_or_else(|| db.intern_type(CoreType::NotImplemented))
@@ -331,7 +335,7 @@ impl InferContext<'_> {
             }
             Expr::NotImplemented => db.intern_type(CoreType::NotImplemented),
         };
-        self.result.of_expr.insert(expr_id, expr_ty);
+        self.state.infer_map.of_expr.insert(expr_id, expr_ty);
         expr_ty
     }
 }
@@ -344,11 +348,14 @@ impl InferContext<'_> {
         expected_ty: CoreTypeId,
     ) {
         let assign_expected = |this: &mut Self| {
-            this.result.of_binder.insert(binder_id, expected_ty);
+            this.state.infer_map.of_binder.insert(binder_id, expected_ty);
         };
 
         let assign_error = |this: &mut Self| {
-            this.result.of_binder.insert(binder_id, db.intern_type(CoreType::NotImplemented));
+            this.state
+                .infer_map
+                .of_binder
+                .insert(binder_id, db.intern_type(CoreType::NotImplemented));
         };
 
         let check_literal = |this: &mut Self, name: &str| {
@@ -376,7 +383,7 @@ impl InferContext<'_> {
                     }
 
                     if let Some(constructor_ty) =
-                        self.result.of_constructor.get(&constructor.constructor_id)
+                        self.state.infer_map.of_constructor.get(&constructor.constructor_id)
                     {
                         let constructor_ty = self.instantiate_type(db, *constructor_ty);
                         let (arguments_ty, result_ty) = self.peel_arguments(db, constructor_ty);
@@ -386,7 +393,7 @@ impl InferContext<'_> {
                         }
 
                         self.unify_types(db, result_ty, expected_ty);
-                        self.result.of_binder.insert(binder_id, result_ty);
+                        self.state.infer_map.of_binder.insert(binder_id, result_ty);
                     } else {
                         assign_error(self);
                     }
@@ -443,14 +450,14 @@ impl InferContext<'_> {
         expected_ty: CoreTypeId,
     ) {
         let assign_error = |this: &mut Self| {
-            this.result.of_expr.insert(expr_id, db.intern_type(CoreType::NotImplemented));
+            this.state.infer_map.of_expr.insert(expr_id, db.intern_type(CoreType::NotImplemented));
         };
 
         let check_literal = |this: &mut Self, name: &str| {
             let name = Name::from_raw(db.interner().intern(name));
             if let CoreType::Primitive(primitive) = db.lookup_intern_type(expected_ty) {
                 if primitive == name {
-                    this.result.of_expr.insert(expr_id, expected_ty);
+                    this.state.infer_map.of_expr.insert(expr_id, expected_ty);
                 } else {
                     assign_error(this);
                 }
@@ -461,11 +468,15 @@ impl InferContext<'_> {
             Expr::Application(_, _) => todo!("check_expr(Application)"),
             Expr::Constructor(_) => {
                 if let Some(constructor) = self.resolve.per_constructor_expr.get(&expr_id) {
-                    if let Some(constructor_ty) =
-                        self.result.of_constructor.get(&constructor.constructor_id).copied()
+                    if let Some(constructor_ty) = self
+                        .state
+                        .infer_map
+                        .of_constructor
+                        .get(&constructor.constructor_id)
+                        .copied()
                     {
                         self.subsume_types(db, constructor_ty, expected_ty);
-                        self.result.of_expr.insert(expr_id, expected_ty);
+                        self.state.infer_map.of_expr.insert(expr_id, expected_ty);
                     } else {
                         assign_error(self);
                     }
@@ -491,7 +502,7 @@ impl InferContext<'_> {
                 if let Some(variable) = self.resolve.per_variable_expr.get(&expr_id) {
                     let variable_ty = match variable {
                         VariableResolution::Binder(binder_id) => {
-                            self.result.of_binder.get(binder_id)
+                            self.state.infer_map.of_binder.get(binder_id)
                         }
                         VariableResolution::Imported(InFile { file_id, value }) => {
                             if let Some(result) = self.imported.get(file_id) {
@@ -500,22 +511,24 @@ impl InferContext<'_> {
                                 None
                             }
                         }
-                        VariableResolution::LetName(let_id) => self.result.of_let_name.get(let_id),
+                        VariableResolution::LetName(let_id) => {
+                            self.state.infer_map.of_let_name.get(let_id)
+                        }
                         VariableResolution::Local(local_id) => {
-                            self.result.of_value_group.get(local_id)
+                            self.state.infer_map.of_value_group.get(local_id)
                         }
                     };
                     let variable_ty = variable_ty
                         .copied()
                         .unwrap_or_else(|| db.intern_type(CoreType::NotImplemented));
                     self.subsume_types(db, variable_ty, expected_ty);
-                    self.result.of_expr.insert(expr_id, expected_ty);
+                    self.state.infer_map.of_expr.insert(expr_id, expected_ty);
                 } else {
                     assign_error(self);
                 }
             }
             Expr::NotImplemented => {
-                self.result.of_expr.insert(expr_id, expected_ty);
+                self.state.infer_map.of_expr.insert(expr_id, expected_ty);
             }
         }
     }

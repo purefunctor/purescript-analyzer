@@ -16,23 +16,24 @@ use crate::{
     id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
 };
 
-use super::{Constraint, CoreType, CoreTypeId, Hint, InferenceResult};
+use super::{Constraint, CoreType, CoreTypeId, Hint, InferMap};
 
 use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
 #[derive(Default)]
-struct InferenceState {
+struct InferState {
     count: u32,
     hints: Vec<Hint>,
+    constraints: Vec<Constraint>,
+    infer_map: InferMap,
 }
 
 struct InferContext<'a> {
     file_id: FileId,
     arena: &'a SurfaceArena,
     resolve: &'a ResolveInfo,
-    imported: &'a FxHashMap<FileId, Arc<InferenceResult>>,
-    state: InferenceState,
-    result: InferenceResult,
+    imported: &'a FxHashMap<FileId, Arc<InferMap>>,
+    state: InferState,
 }
 
 impl<'a> InferContext<'a> {
@@ -40,11 +41,10 @@ impl<'a> InferContext<'a> {
         file_id: FileId,
         arena: &'a SurfaceArena,
         resolve: &'a ResolveInfo,
-        imported: &'a FxHashMap<FileId, Arc<InferenceResult>>,
+        imported: &'a FxHashMap<FileId, Arc<InferMap>>,
     ) -> InferContext<'a> {
-        let state = InferenceState::default();
-        let result = InferenceResult::default();
-        InferContext { file_id, arena, resolve, state, result, imported }
+        let state = InferState::default();
+        InferContext { file_id, arena, resolve, state, imported }
     }
 
     fn add_hint(&mut self, hint: Hint) {
@@ -60,7 +60,7 @@ impl<'a> InferContext<'a> {
     }
 
     fn add_constraint(&mut self, constraint: Constraint) {
-        self.result.constraints.push(constraint)
+        self.state.constraints.push(constraint)
     }
 }
 
@@ -84,10 +84,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
     }
 }
 
-pub(super) fn file_infer_query(
-    db: &dyn InferenceDatabase,
-    file_id: FileId,
-) -> Arc<InferenceResult> {
+pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> Arc<InferMap> {
     let (surface, arena) = db.file_surface(file_id);
     let resolve = db.file_resolve(file_id);
 
@@ -130,5 +127,5 @@ pub(super) fn file_infer_query(
         eprintln!("{} ~ {}", u.value, pretty_print(db, t));
     }
 
-    Arc::new(infer_ctx.result)
+    Arc::new(infer_ctx.state.infer_map)
 }

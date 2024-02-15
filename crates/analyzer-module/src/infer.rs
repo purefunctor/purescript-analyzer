@@ -26,8 +26,7 @@ pub enum Constraint {
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct InferenceResult {
-    pub constraints: Vec<Constraint>,
+pub struct InferMap {
     pub of_binder: FxHashMap<BinderId, CoreTypeId>,
     pub of_constructor: FxHashMap<AstId<ast::DataConstructor>, CoreTypeId>,
     pub of_expr: FxHashMap<ExprId, CoreTypeId>,
@@ -41,5 +40,5 @@ pub trait InferenceDatabase: ScopeDatabase {
     fn intern_type(&self, t: CoreType) -> CoreTypeId;
 
     #[salsa::invoke(rules::file_infer_query)]
-    fn file_infer(&self, file_id: FileId) -> Arc<InferenceResult>;
+    fn file_infer(&self, file_id: FileId) -> Arc<InferMap>;
 }

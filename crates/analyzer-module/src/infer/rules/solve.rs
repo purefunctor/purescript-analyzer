@@ -71,7 +71,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
     }
 
     fn pass(&mut self, db: &dyn InferenceDatabase) {
-        while let Some(constraint) = self.infer.result.constraints.pop() {
+        while let Some(constraint) = self.infer.state.constraints.pop() {
             self.step(db, constraint);
         }
 
@@ -82,7 +82,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
             if x_s.is_none() && y_s.is_none() {
                 self.state.unification_deferred.push((hints, x_u, y_u));
             } else {
-                self.infer.result.constraints.push(Constraint::UnifyDeep(hints, x_u, y_u));
+                self.infer.state.constraints.push(Constraint::UnifyDeep(hints, x_u, y_u));
             }
         }
     }
@@ -90,7 +90,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
     pub(super) fn solve(&mut self, db: &dyn InferenceDatabase) {
         eprintln!("Solving:");
         let mut i = 0;
-        while i < 1000 && !self.infer.result.constraints.is_empty() {
+        while i < 1000 && !self.infer.state.constraints.is_empty() {
             self.pass(db);
             i += 1;
         }

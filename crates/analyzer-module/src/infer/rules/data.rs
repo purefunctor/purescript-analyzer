@@ -48,7 +48,7 @@ impl InferContext<'_> {
                 },
             );
 
-            self.result.of_constructor.insert(*constructor_id, qualified_ty);
+            self.state.infer_map.of_constructor.insert(*constructor_id, qualified_ty);
         });
     }
 }
