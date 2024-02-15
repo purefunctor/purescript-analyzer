@@ -16,7 +16,7 @@ use crate::{
     id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
 };
 
-use super::{Constraint, CoreType, CoreTypeId, Hint, InferError, InferMap};
+use super::{Constraint, CoreType, CoreTypeId, Hint, InferError, InferMap, InferResult};
 
 use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
@@ -26,14 +26,14 @@ struct InferState {
     hints: Vec<Hint>,
     constraints: Vec<Constraint>,
     errors: Vec<InferError>,
-    infer_map: InferMap,
+    map: InferMap,
 }
 
 struct InferContext<'a> {
     file_id: FileId,
     arena: &'a SurfaceArena,
     resolve: &'a ResolveInfo,
-    imported: &'a FxHashMap<FileId, Arc<InferMap>>,
+    imported: &'a FxHashMap<FileId, Arc<InferResult>>,
     state: InferState,
 }
 
@@ -42,7 +42,7 @@ impl<'a> InferContext<'a> {
         file_id: FileId,
         arena: &'a SurfaceArena,
         resolve: &'a ResolveInfo,
-        imported: &'a FxHashMap<FileId, Arc<InferMap>>,
+        imported: &'a FxHashMap<FileId, Arc<InferResult>>,
     ) -> InferContext<'a> {
         let state = InferState::default();
         InferContext { file_id, arena, resolve, state, imported }
@@ -89,7 +89,7 @@ impl<'i, 'a> SolveContext<'i, 'a> {
     }
 }
 
-pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> Arc<InferMap> {
+pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> Arc<InferResult> {
     let (surface, arena) = db.file_surface(file_id);
     let resolve = db.file_resolve(file_id);
 
@@ -132,5 +132,9 @@ pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> A
         eprintln!("{} ~ {}", u.value, pretty_print(db, t));
     }
 
-    Arc::new(infer_ctx.state.infer_map)
+    Arc::new(InferResult {
+        constraints: infer_ctx.state.constraints,
+        errors: infer_ctx.state.errors,
+        map: infer_ctx.state.map,
+    })
 }

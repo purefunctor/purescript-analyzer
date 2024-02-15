@@ -34,11 +34,18 @@ pub struct InferMap {
     pub of_value_group: FxHashMap<ValueGroupId, CoreTypeId>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct InferResult {
+    pub constraints: Vec<Constraint>,
+    pub errors: Vec<InferError>,
+    pub map: InferMap,
+}
+
 #[salsa::query_group(InferenceStorage)]
 pub trait InferenceDatabase: ScopeDatabase {
     #[salsa::interned]
     fn intern_type(&self, t: CoreType) -> CoreTypeId;
 
     #[salsa::invoke(rules::file_infer_query)]
-    fn file_infer(&self, file_id: FileId) -> Arc<InferMap>;
+    fn file_infer(&self, file_id: FileId) -> Arc<InferResult>;
 }
