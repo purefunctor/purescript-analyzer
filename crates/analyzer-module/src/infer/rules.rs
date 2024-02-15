@@ -67,10 +67,12 @@ impl<'a> InferContext<'a> {
     }
 }
 
+type UnificationDeferred = (Arc<[Hint]>, InFile<u32>, InFile<u32>);
+
 #[derive(Default)]
 struct SolveState {
     unification_solved: FxHashMap<InFile<u32>, CoreTypeId>,
-    unification_deferred: Vec<(Arc<[Hint]>, InFile<u32>, InFile<u32>)>,
+    unification_deferred: Vec<UnificationDeferred>,
 }
 
 struct SolveContext<'i, 'a> {

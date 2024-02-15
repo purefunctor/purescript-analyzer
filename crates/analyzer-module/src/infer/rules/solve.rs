@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{mem, sync::Arc};
 
 use crate::{
     id::InFile,
@@ -74,19 +74,17 @@ impl<'i, 'a> SolveContext<'i, 'a> {
         while let Some(constraint) = self.infer.result.constraints.pop() {
             self.step(db, constraint);
         }
-        self.state.unification_deferred.retain(|(hints, x_u, y_u)| {
-            let x_s = self.state.unification_solved.get(x_u).copied();
-            let y_s = self.state.unification_solved.get(y_u).copied();
+
+        let unification_deferred = mem::take(&mut self.state.unification_deferred);
+        for (hints, x_u, y_u) in unification_deferred {
+            let x_s = self.state.unification_solved.get(&x_u).copied();
+            let y_s = self.state.unification_solved.get(&y_u).copied();
             if x_s.is_none() && y_s.is_none() {
-                return true;
+                self.state.unification_deferred.push((hints, x_u, y_u));
+            } else {
+                self.infer.result.constraints.push(Constraint::UnifyDeep(hints, x_u, y_u));
             }
-            self.infer.result.constraints.push(Constraint::UnifyDeep(
-                Arc::clone(hints),
-                *x_u,
-                *y_u,
-            ));
-            false
-        });
+        }
     }
 
     pub(super) fn solve(&mut self, db: &dyn InferenceDatabase) {
