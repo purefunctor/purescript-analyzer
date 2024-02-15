@@ -158,14 +158,14 @@ impl InferContext<'_> {
             }
             (CoreType::Unification(x_u), CoreType::Unification(y_u)) => {
                 if x_u != y_u {
-                    self.result.constraints.push(Constraint::UnifyDeep(hints, x_u, y_u));
+                    self.add_constraint(Constraint::UnifyDeep(hints, x_u, y_u));
                 }
             }
             (CoreType::Unification(x_u), _) => {
-                self.result.constraints.push(Constraint::UnifySolve(hints, x_u, y_id));
+                self.add_constraint(Constraint::UnifySolve(hints, x_u, y_id));
             }
             (_, CoreType::Unification(y_u)) => {
-                self.result.constraints.push(Constraint::UnifySolve(hints, y_u, x_id));
+                self.add_constraint(Constraint::UnifySolve(hints, y_u, x_id));
             }
             (CoreType::Constructor(x_c), CoreType::Constructor(y_c)) => if x_c != y_c {},
             (CoreType::Primitive(x_p), CoreType::Primitive(y_p)) => {

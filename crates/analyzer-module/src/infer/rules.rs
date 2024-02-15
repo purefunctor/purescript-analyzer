@@ -16,7 +16,7 @@ use crate::{
     id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
 };
 
-use super::{CoreType, CoreTypeId, Hint, InferenceResult};
+use super::{Constraint, CoreType, CoreTypeId, Hint, InferenceResult};
 
 use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
@@ -57,6 +57,10 @@ impl<'a> InferContext<'a> {
 
     fn current_hints(&self) -> Arc<[Hint]> {
         Arc::from(self.state.hints.as_slice())
+    }
+
+    fn add_constraint(&mut self, constraint: Constraint) {
+        self.result.constraints.push(constraint)
     }
 }
 
