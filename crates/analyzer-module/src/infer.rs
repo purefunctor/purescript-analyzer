@@ -1,4 +1,5 @@
 //! Queries pertaining to type inference.
+pub mod error;
 mod rules;
 pub mod tree;
 
@@ -15,6 +16,7 @@ use crate::{
     ScopeDatabase,
 };
 
+pub use error::*;
 pub use tree::*;
 
 #[derive(Debug, PartialEq, Eq)]
