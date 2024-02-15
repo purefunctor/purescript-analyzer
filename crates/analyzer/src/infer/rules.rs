@@ -1,114 +1,140 @@
-//! Implements the type inference routines for PureScript.
+//! Implements inference rules.
+
+mod common;
 mod data;
-mod instantiate;
-mod lower;
-mod replace;
+mod recursive;
 mod solve;
-mod substitute;
-mod unify;
 mod value;
 
+use std::sync::Arc;
+
+use files::FileId;
+use itertools::Itertools;
 use rustc_hash::FxHashMap;
-use syntax::ast;
 
-use crate::{id::AstId, resolver::ValueGroupId, surface, InferDatabase};
+use crate::{
+    id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
+};
 
-use super::{constraint::Constraint, Provenance, Type, TypeId, Unification};
+use super::{Constraint, CoreType, CoreTypeId, Hint, InferError, InferMap, InferResult};
 
-pub(crate) use data::infer_data_group_query;
-pub(crate) use value::infer_binding_group_query;
+use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct InferState {
-    fresh_index: usize,
+    count: u32,
+    hints: Vec<Hint>,
     constraints: Vec<Constraint>,
+    errors: Vec<InferError>,
+    map: InferMap,
 }
 
-impl InferState {
-    fn fresh_unification(&mut self, db: &dyn InferDatabase, provenance: Provenance) -> TypeId {
-        let index = self.fresh_index as u32;
-        self.fresh_index += 1;
-        db.intern_type(Type::Unification(Unification { index, provenance }))
-    }
+struct InferContext<'a> {
+    file_id: FileId,
+    arena: &'a SurfaceArena,
+    resolve: &'a ResolveInfo,
+    imported: &'a FxHashMap<FileId, Arc<InferResult>>,
+    state: InferState,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct BindingGroupTypes {
-    of_value_group: FxHashMap<ValueGroupId, ValueGroupTypes>,
-    constraints: Vec<Constraint>,
-}
-
-impl BindingGroupTypes {
+impl<'a> InferContext<'a> {
     fn new(
-        of_value_group: FxHashMap<ValueGroupId, ValueGroupTypes>,
-        constraints: Vec<Constraint>,
-    ) -> BindingGroupTypes {
-        BindingGroupTypes { of_value_group, constraints }
+        file_id: FileId,
+        arena: &'a SurfaceArena,
+        resolve: &'a ResolveInfo,
+        imported: &'a FxHashMap<FileId, Arc<InferResult>>,
+    ) -> InferContext<'a> {
+        let state = InferState::default();
+        InferContext { file_id, arena, resolve, state, imported }
     }
 
-    pub fn get(&self, id: ValueGroupId) -> &ValueGroupTypes {
-        self.of_value_group.get(&id).unwrap()
+    fn add_hint(&mut self, hint: Hint) {
+        self.state.hints.push(hint);
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (ValueGroupId, &ValueGroupTypes)> {
-        self.of_value_group.iter().map(|(id, infer)| (*id, infer))
+    fn pop_hint(&mut self) {
+        self.state.hints.pop();
     }
 
-    pub fn constraints(&self) -> &[Constraint] {
-        &self.constraints
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct DataGroupTypes {
-    of_constructor: FxHashMap<AstId<ast::DataConstructor>, TypeId>,
-}
-
-impl DataGroupTypes {
-    fn new(of_constructor: FxHashMap<AstId<ast::DataConstructor>, TypeId>) -> DataGroupTypes {
-        DataGroupTypes { of_constructor }
+    fn current_hints(&self) -> Arc<[Hint]> {
+        Arc::from(self.state.hints.as_slice())
     }
 
-    pub fn get_constructor(&self, constructor_id: AstId<ast::DataConstructor>) -> TypeId {
-        *self.of_constructor.get(&constructor_id).unwrap()
+    fn add_constraint(&mut self, constraint: Constraint) {
+        self.state.constraints.push(constraint)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (AstId<ast::DataConstructor>, TypeId)> + '_ {
-        self.of_constructor.iter().map(|(constructor_id, type_id)| (*constructor_id, *type_id))
+    fn add_error(&mut self, error: InferError) {
+        self.state.errors.push(error)
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct ValueGroupTypes {
-    of_value_group: TypeId,
-    of_expr: FxHashMap<surface::ExprId, TypeId>,
-    of_let_name: FxHashMap<surface::LetNameId, TypeId>,
-    of_binder: FxHashMap<surface::BinderId, TypeId>,
+type UnificationDeferred = (Arc<[Hint]>, InFile<u32>, InFile<u32>);
+
+#[derive(Default)]
+struct SolveState {
+    unification_solved: FxHashMap<InFile<u32>, CoreTypeId>,
+    unification_deferred: Vec<UnificationDeferred>,
 }
 
-impl ValueGroupTypes {
-    fn new(
-        of_value_group: TypeId,
-        of_expr: FxHashMap<surface::ExprId, TypeId>,
-        of_let_name: FxHashMap<surface::LetNameId, TypeId>,
-        of_binder: FxHashMap<surface::BinderId, TypeId>,
-    ) -> ValueGroupTypes {
-        ValueGroupTypes { of_value_group, of_expr, of_let_name, of_binder }
+struct SolveContext<'i, 'a> {
+    infer: &'i mut InferContext<'a>,
+    state: SolveState,
+}
+
+impl<'i, 'a> SolveContext<'i, 'a> {
+    fn new(infer: &'i mut InferContext<'a>) -> SolveContext<'i, 'a> {
+        let state = SolveState::default();
+        SolveContext { infer, state }
+    }
+}
+
+pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> Arc<InferResult> {
+    let (surface, arena) = db.file_surface(file_id);
+    let resolve = db.file_resolve(file_id);
+
+    let imported: FxHashMap<_, _> =
+        resolve.imports.iter().map(|&file_id| (file_id, db.file_infer(file_id))).collect();
+
+    let mut infer_ctx = InferContext::new(file_id, &arena, &resolve, &imported);
+
+    let recursive_data =
+        recursive_data_groups(&arena, &resolve, surface.body.iter_data_declarations());
+    for recursive_group in recursive_data {
+        for data_group_id in recursive_group {
+            let Some(data_declaration) = surface.body.data_declaration(data_group_id) else {
+                unreachable!("impossible: unknown data_group_id");
+            };
+            infer_ctx.infer_data_declaration(db, data_declaration);
+        }
     }
 
-    pub fn as_type(&self) -> TypeId {
-        self.of_value_group
+    let mut solve_ctx = SolveContext::new(&mut infer_ctx);
+
+    let value_components =
+        recursive_value_groups(&arena, &resolve, surface.body.iter_value_declarations());
+    for value_component in value_components {
+        let value_declarations = value_component
+            .into_iter()
+            .map(|value_group_id| {
+                let Some(value_declaration) = surface.body.value_declaration(value_group_id) else {
+                    unreachable!("impossible: unknown value_group_id");
+                };
+                (value_group_id, value_declaration)
+            })
+            .collect_vec();
+        solve_ctx.infer.infer_value_scc(db, &value_declarations);
+    }
+    solve_ctx.solve(db);
+
+    eprintln!("Solutions:");
+    for (u, t) in solve_ctx.state.unification_solved {
+        eprintln!("{} ~ {}", u.value, pretty_print(db, t));
     }
 
-    pub fn get_expr(&self, expr_id: surface::ExprId) -> TypeId {
-        *self.of_expr.get(&expr_id).unwrap()
-    }
-
-    pub fn get_let_name(&self, let_name_id: surface::LetNameId) -> TypeId {
-        *self.of_let_name.get(&let_name_id).unwrap()
-    }
-
-    pub fn get_binder(&self, binder_id: surface::BinderId) -> TypeId {
-        *self.of_binder.get(&binder_id).unwrap()
-    }
+    Arc::new(InferResult {
+        constraints: infer_ctx.state.constraints,
+        errors: infer_ctx.state.errors,
+        map: infer_ctx.state.map,
+    })
 }

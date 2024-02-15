@@ -15,11 +15,9 @@ use rustc_hash::{FxHashMap, FxHasher};
 /// This struct is meant to be used in conjunction with [`Arc`] or the
 /// [`lazy_static`] crate.
 ///
-/// Internally, this is implemented as a specialized [`HashTable`] which
-/// associates the hash of the string with a [`Weak`] pointer that can be
-/// upgraded if the [`Arc`] allocation for said string still exists. The
-/// implementation also uses the hash as the "key" for the table, which
-/// makes it similar to a [`BTreeMap`]-based representation.
+/// Internally, this is implemented as a [`HashMap`] which associates
+/// the hash of the string with a [`Weak`] pointer that can be upgraded
+/// if the [`Arc`] allocation for said string still exists.
 ///
 /// ```rust
 /// # use std::sync::Arc;
@@ -32,7 +30,7 @@ use rustc_hash::{FxHashMap, FxHasher};
 /// assert!(Arc::ptr_eq(&name_0, &name_1));
 /// ```
 ///
-/// [`BTreeMap`]: std::collections::BTreeMap
+/// [`HashMap`]: std::collections::HashMap
 /// [`lazy_static`]: https://crates.io/crates/lazy_static
 #[derive(Debug, Default)]
 pub struct Interner {

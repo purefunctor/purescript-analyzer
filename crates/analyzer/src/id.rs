@@ -1,4 +1,4 @@
-//! IDs used as query keys.
+//! ID types used for query keys.
 
 use std::{hash::Hash, marker::PhantomData};
 
@@ -7,11 +7,11 @@ use la_arena::Idx;
 use rowan::ast::AstNode;
 use syntax::{PureScript, SyntaxNodePtr};
 
-use crate::SurfaceDatabase;
+use crate::IndexDatabase;
 
-/// See documentation for [`PositionalMap`].
+/// See [`PositionalMap`].
 ///
-/// [`PositionalMap`]: crate::resolver::PositionalMap
+/// [`PositionalMap`]: crate::index::PositionalMap
 #[derive(Debug)]
 pub struct AstId<N: AstNode<Language = PureScript>> {
     pub(crate) raw: Idx<SyntaxNodePtr>,
@@ -72,7 +72,10 @@ impl<T> InFile<AstId<T>>
 where
     T: AstNode<Language = PureScript>,
 {
-    pub fn to_ast(self, db: &dyn SurfaceDatabase) -> T {
+    pub fn to_ast<Db>(self, db: &Db) -> T
+    where
+        Db: IndexDatabase + ?Sized,
+    {
         let root = db.parse_file(self.file_id);
         let ptr = db.positional_map(self.file_id).ast_ptr(self.value);
         ptr.to_node(&root)
