@@ -16,13 +16,14 @@ use crate::{
     id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
 };
 
-use super::{CoreType, CoreTypeId, InferenceResult};
+use super::{CoreType, CoreTypeId, Hint, InferenceResult};
 
 use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
 
 #[derive(Default)]
 struct InferenceState {
     count: u32,
+    hints: Vec<Hint>,
 }
 
 struct InferContext<'a> {
@@ -52,12 +53,24 @@ impl<'a> InferContext<'a> {
         self.state.count += 1;
         db.intern_type(CoreType::Unification(InFile { file_id, value }))
     }
+
+    fn add_hint(&mut self, hint: Hint) {
+        self.state.hints.push(hint);
+    }
+
+    fn pop_hint(&mut self) {
+        self.state.hints.pop();
+    }
+
+    fn current_hints(&self) -> Arc<[Hint]> {
+        Arc::from(self.state.hints.as_slice())
+    }
 }
 
 #[derive(Default)]
 struct SolveState {
     unification_solved: FxHashMap<InFile<u32>, CoreTypeId>,
-    unification_deferred: Vec<(InFile<u32>, InFile<u32>)>,
+    unification_deferred: Vec<(Arc<[Hint]>, InFile<u32>, InFile<u32>)>,
 }
 
 struct SolveContext<'i, 'a> {

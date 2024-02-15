@@ -21,8 +21,8 @@ pub use tree::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Constraint {
-    UnifyDeep(InFile<u32>, InFile<u32>),
-    UnifySolve(InFile<u32>, CoreTypeId),
+    UnifyDeep(Arc<[Hint]>, InFile<u32>, InFile<u32>),
+    UnifySolve(Arc<[Hint]>, InFile<u32>, CoreTypeId),
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]

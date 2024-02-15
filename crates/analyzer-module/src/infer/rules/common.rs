@@ -1,7 +1,13 @@
+use std::sync::Arc;
+
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
-    id::InFile, infer::Constraint, scope::TypeConstructorKind, surface::tree::*, InferenceDatabase,
+    id::InFile,
+    infer::{Constraint, Hint, InferError, InferErrorKind},
+    scope::TypeConstructorKind,
+    surface::tree::*,
+    InferenceDatabase,
 };
 
 use super::{CoreType, CoreTypeId, InferContext};
@@ -68,6 +74,17 @@ impl InferContext<'_> {
         x_id: CoreTypeId,
         y_id: CoreTypeId,
     ) {
+        let hints = self.current_hints();
+        self.subsume_types_with_hints(db, hints, x_id, y_id);
+    }
+
+    pub(super) fn subsume_types_with_hints(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        hints: Arc<[Hint]>,
+        x_id: CoreTypeId,
+        y_id: CoreTypeId,
+    ) {
         let x_ty = db.lookup_intern_type(x_id);
         let y_ty = db.lookup_intern_type(y_id);
 
@@ -79,7 +96,7 @@ impl InferContext<'_> {
                 replacements.insert(name, fresh_ty);
 
                 let inner_ty = replace_type(db, &replacements, inner_ty);
-                self.subsume_types(db, inner_ty, y_id);
+                self.subsume_types_with_hints(db, hints, inner_ty, y_id);
             }
             (_, CoreType::Forall(_, _)) => {
                 todo!("Skolemize");
@@ -88,11 +105,11 @@ impl InferContext<'_> {
                 CoreType::Function(argument_x_ty, result_x_ty),
                 CoreType::Function(argument_y_ty, result_y_ty),
             ) => {
-                self.subsume_types(db, argument_y_ty, argument_x_ty);
-                self.subsume_types(db, result_x_ty, result_y_ty);
+                self.subsume_types_with_hints(db, Arc::clone(&hints), argument_y_ty, argument_x_ty);
+                self.subsume_types_with_hints(db, hints, result_x_ty, result_y_ty);
             }
             _ => {
-                self.unify_types(db, x_id, y_id);
+                self.unify_types_with_hints(db, hints, x_id, y_id);
             }
         }
     }
@@ -100,6 +117,17 @@ impl InferContext<'_> {
     pub(super) fn unify_types(
         &mut self,
         db: &dyn InferenceDatabase,
+        x_id: CoreTypeId,
+        y_id: CoreTypeId,
+    ) {
+        let hints = self.current_hints();
+        self.unify_types_with_hints(db, hints, x_id, y_id);
+    }
+
+    pub(super) fn unify_types_with_hints(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        hints: Arc<[Hint]>,
         x_id: CoreTypeId,
         y_id: CoreTypeId,
     ) {
@@ -111,29 +139,33 @@ impl InferContext<'_> {
                 CoreType::Application(x_function, x_argument),
                 CoreType::Application(y_function, y_argument),
             ) => {
-                self.unify_types(db, x_function, y_function);
-                self.unify_types(db, x_argument, y_argument);
+                self.unify_types_with_hints(db, Arc::clone(&hints), x_function, y_function);
+                self.unify_types_with_hints(db, hints, x_argument, y_argument);
             }
             (
                 CoreType::Function(x_argument, x_result),
                 CoreType::Function(y_argument, y_result),
             ) => {
-                self.unify_types(db, x_argument, y_argument);
-                self.unify_types(db, x_result, y_result);
+                self.unify_types_with_hints(db, Arc::clone(&hints), x_argument, y_argument);
+                self.unify_types_with_hints(db, hints, x_result, y_result);
             }
             (CoreType::Unification(x_u), CoreType::Unification(y_u)) => {
                 if x_u != y_u {
-                    self.result.constraints.push(Constraint::UnifyDeep(x_u, y_u));
+                    self.result.constraints.push(Constraint::UnifyDeep(hints, x_u, y_u));
                 }
             }
             (CoreType::Unification(x_u), _) => {
-                self.result.constraints.push(Constraint::UnifySolve(x_u, y_id));
+                self.result.constraints.push(Constraint::UnifySolve(hints, x_u, y_id));
             }
             (_, CoreType::Unification(y_u)) => {
-                self.result.constraints.push(Constraint::UnifySolve(y_u, x_id));
+                self.result.constraints.push(Constraint::UnifySolve(hints, y_u, x_id));
             }
             (CoreType::Constructor(x_c), CoreType::Constructor(y_c)) => if x_c != y_c {},
-            (CoreType::Primitive(x_p), CoreType::Primitive(y_p)) => if x_p != y_p {},
+            (CoreType::Primitive(x_p), CoreType::Primitive(y_p)) => {
+                if x_p != y_p {
+                    dbg!(InferError { hints, kind: InferErrorKind::CannotUnify(x_id, y_id) });
+                }
+            }
             (x_ty, y_ty) => {
                 unimplemented!("Oh No! {:?} ~ {:?}", x_ty, y_ty);
             }

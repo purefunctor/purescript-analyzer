@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use crate::{
     id::InFile,
-    infer::{pretty_print, Constraint, CoreType},
+    infer::{pretty_print, Constraint, CoreType, Hint},
     InferenceDatabase,
 };
 
@@ -24,14 +26,19 @@ fn occurs_check(db: &dyn InferenceDatabase, u: InFile<u32>, t: CoreTypeId) -> bo
 }
 
 impl<'i, 'a> SolveContext<'i, 'a> {
-    fn solve_unification(&mut self, db: &dyn InferenceDatabase, x_u: InFile<u32>, y_t: CoreTypeId) {
+    fn solve_unification(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        hints: Arc<[Hint]>,
+        x_u: InFile<u32>,
+        y_t: CoreTypeId,
+    ) {
         if occurs_check(db, x_u, y_t) {
             eprintln!("Infinite type error: {} ~ {}", x_u.value, pretty_print(db, y_t));
             return;
         }
         if let Some(x_t) = self.state.unification_solved.get(&x_u) {
-            eprintln!("{} : {} ~ {}", x_u.value, pretty_print(db, *x_t), pretty_print(db, y_t));
-            self.infer.unify_types(db, *x_t, y_t);
+            self.infer.unify_types_with_hints(db, hints, *x_t, y_t);
         } else {
             self.state.unification_solved.insert(x_u, y_t);
         }
@@ -39,26 +46,26 @@ impl<'i, 'a> SolveContext<'i, 'a> {
 
     fn step(&mut self, db: &dyn InferenceDatabase, constraint: Constraint) {
         match constraint {
-            Constraint::UnifyDeep(x_u, y_u) => {
+            Constraint::UnifyDeep(hints, x_u, y_u) => {
                 let x_s = self.state.unification_solved.get(&x_u).copied();
                 let y_s = self.state.unification_solved.get(&y_u).copied();
                 match (x_s, y_s) {
                     (Some(x_t), Some(y_t)) => {
-                        self.infer.unify_types(db, x_t, y_t);
+                        self.infer.unify_types_with_hints(db, hints, x_t, y_t);
                     }
                     (Some(x_t), None) => {
-                        self.solve_unification(db, y_u, x_t);
+                        self.solve_unification(db, hints, y_u, x_t);
                     }
                     (None, Some(y_t)) => {
-                        self.solve_unification(db, x_u, y_t);
+                        self.solve_unification(db, hints, x_u, y_t);
                     }
                     (None, None) => {
-                        self.state.unification_deferred.push((x_u, y_u));
+                        self.state.unification_deferred.push((hints, x_u, y_u));
                     }
                 }
             }
-            Constraint::UnifySolve(x_u, y_t) => {
-                self.solve_unification(db, x_u, y_t);
+            Constraint::UnifySolve(hints, x_u, y_t) => {
+                self.solve_unification(db, hints, x_u, y_t);
             }
         }
     }
@@ -67,13 +74,17 @@ impl<'i, 'a> SolveContext<'i, 'a> {
         while let Some(constraint) = self.infer.result.constraints.pop() {
             self.step(db, constraint);
         }
-        self.state.unification_deferred.retain(|(x_u, y_u)| {
+        self.state.unification_deferred.retain(|(hints, x_u, y_u)| {
             let x_s = self.state.unification_solved.get(x_u).copied();
             let y_s = self.state.unification_solved.get(y_u).copied();
             if x_s.is_none() && y_s.is_none() {
                 return true;
             }
-            self.infer.result.constraints.push(Constraint::UnifyDeep(*x_u, *y_u));
+            self.infer.result.constraints.push(Constraint::UnifyDeep(
+                Arc::clone(hints),
+                *x_u,
+                *y_u,
+            ));
             false
         });
     }

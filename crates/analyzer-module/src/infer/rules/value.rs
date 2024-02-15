@@ -1,8 +1,8 @@
 use itertools::Itertools;
 
 use crate::{
-    id::InFile, index::nominal::ValueGroupId, scope::VariableResolution, surface::tree::*,
-    InferenceDatabase,
+    id::InFile, index::nominal::ValueGroupId, infer::Hint, scope::VariableResolution,
+    surface::tree::*, InferenceDatabase,
 };
 
 use super::{recursive_let_names, CoreType, CoreTypeId, InferContext};
@@ -33,6 +33,7 @@ impl InferContext<'_> {
         value_group_id: ValueGroupId,
         value_declaration: &ValueDeclaration,
     ) {
+        self.add_hint(Hint::ValueGroup(value_group_id));
         let Some(value_ty) = self.result.of_value_group.get(&value_group_id).copied() else {
             unreachable!("impossible: caller must insert a type!");
         };
@@ -49,6 +50,7 @@ impl InferContext<'_> {
                 self.infer_equation(db, equation, value_ty);
             }
         }
+        self.pop_hint();
     }
 
     fn check_equation(
@@ -226,13 +228,22 @@ impl InferContext<'_> {
     }
 
     fn infer_expr(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId) -> CoreTypeId {
+        self.add_hint(Hint::Expression(expr_id));
+        let expr_ty = self.infer_expr_core(db, expr_id);
+        self.pop_hint();
+        expr_ty
+    }
+
+    fn infer_expr_core(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId) -> CoreTypeId {
         let expr_ty = match &self.arena[expr_id] {
             Expr::Application(function, arguments) => {
-                let function_ty = self.infer_expr(db, *function);
+                let function_ty = self.infer_expr_core(db, *function);
                 let function_ty = self.instantiate_type(db, function_ty);
 
-                let arguments_ty =
-                    arguments.iter().map(|argument| self.infer_expr(db, *argument)).collect_vec();
+                let arguments_ty = arguments
+                    .iter()
+                    .map(|argument| self.infer_expr_core(db, *argument))
+                    .collect_vec();
 
                 let result_ty = self.fresh_unification(db);
                 let auxiliary_ty =
@@ -260,14 +271,14 @@ impl InferContext<'_> {
             Expr::Lambda(binders, body) => {
                 let binders_ty =
                     binders.iter().map(|binder| self.infer_binder(db, *binder)).collect_vec();
-                let body_ty = self.infer_expr(db, *body);
+                let body_ty = self.infer_expr_core(db, *body);
                 binders_ty.into_iter().rev().fold(body_ty, |body_ty, binder_ty| {
                     db.intern_type(CoreType::Function(binder_ty, body_ty))
                 })
             }
             Expr::LetIn(bindings, body) => {
                 self.infer_let_bindings(db, bindings);
-                self.infer_expr(db, *body)
+                self.infer_expr_core(db, *body)
             }
             Expr::Literal(literal) => match literal {
                 Literal::Array(_) => db.intern_type(CoreType::NotImplemented),
@@ -420,6 +431,17 @@ impl InferContext<'_> {
     }
 
     fn check_expr(&mut self, db: &dyn InferenceDatabase, expr_id: ExprId, expected_ty: CoreTypeId) {
+        self.add_hint(Hint::Expression(expr_id));
+        self.check_expr_core(db, expr_id, expected_ty);
+        self.pop_hint();
+    }
+
+    fn check_expr_core(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        expr_id: ExprId,
+        expected_ty: CoreTypeId,
+    ) {
         let assign_error = |this: &mut Self| {
             this.result.of_expr.insert(expr_id, db.intern_type(CoreType::NotImplemented));
         };
@@ -454,7 +476,7 @@ impl InferContext<'_> {
             Expr::Lambda(_, _) => todo!("check_expr(Lambda)"),
             Expr::LetIn(bindings, body) => {
                 self.infer_let_bindings(db, bindings);
-                self.check_expr(db, *body, expected_ty);
+                self.check_expr_core(db, *body, expected_ty);
             }
             Expr::Literal(literal) => match literal {
                 Literal::Array(_) => todo!("check_expr(Array)"),
