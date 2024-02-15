@@ -49,7 +49,8 @@ mod tests {
     use salsa::Durability;
 
     use crate::{
-        infer::{pretty_print, Hint}, InferenceDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
+        infer::{pretty_print, Hint},
+        InferenceDatabase, RootDatabase, SourceDatabase, SurfaceDatabase,
     };
 
     fn default_db(source: &str) -> (RootDatabase, Files, FileId) {
