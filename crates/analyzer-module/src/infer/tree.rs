@@ -1,4 +1,4 @@
-//! ASTs for type inference
+//! ASTs for type inference.
 //!
 //! Unlike the definition from [`surface`], [`CoreType`] is interned through
 //! [`salsa`]'s interning mechanism rather than an [`Arena`] that gets passed
