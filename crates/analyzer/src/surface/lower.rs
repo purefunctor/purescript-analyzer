@@ -805,6 +805,7 @@ fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) ->
             ast::Type::ApplicationType(a) => lower_type_application(ctx, db, a),
             ast::Type::ArrowType(a) => lower_type_arrow(ctx, db, a),
             ast::Type::ConstructorType(c) => lower_type_constructor(db, c),
+            ast::Type::ForallType(f) => lower_type_forall(ctx, db, f),
             ast::Type::IntegerType(_) => Type::NotImplemented,
             ast::Type::KindedType(_) => Type::NotImplemented,
             ast::Type::OperatorNameType(_) => Type::NotImplemented,
@@ -854,6 +855,15 @@ fn lower_type_constructor(db: &dyn SurfaceDatabase, constructor: &ast::Construct
     let name = lower_qualified_name(db, constructor.qualified_name());
 
     Type::Constructor(name)
+}
+
+fn lower_type_forall(ctx: &mut Ctx, db: &dyn SurfaceDatabase, forall: &ast::ForallType) -> Type {
+    let variables = forall
+        .variables()
+        .map(|variables| lower_type_variable_binding(ctx, db, variables.children()))
+        .unwrap_or_default();
+    let inner = lower_type(ctx, db, forall.inner());
+    Type::Forall(variables, inner)
 }
 
 fn lower_type_parenthesized(
