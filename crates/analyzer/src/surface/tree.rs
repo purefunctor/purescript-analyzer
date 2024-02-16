@@ -329,7 +329,7 @@ pub enum Type {
     Application(TypeId, Vec<TypeId>),
     Constrained(TypeId, Vec<TypeId>),
     Constructor(Qualified<Name>),
-    Forall(Vec<Name>, TypeId),
+    Forall(Vec<TypeVariable>, TypeId),
     Parenthesized(TypeId),
     Variable(Name),
     NotImplemented,
