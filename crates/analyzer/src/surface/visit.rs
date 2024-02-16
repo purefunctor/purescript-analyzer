@@ -149,7 +149,15 @@ where
                 visitor.visit_type(*argument);
             }
         }
+        Type::Constrained(_, arguments) => {
+            for argument in arguments {
+                visitor.visit_type(*argument);
+            }
+        }
         Type::Constructor(_) => (),
+        Type::Forall(_, inner) => {
+            visitor.visit_type(*inner);
+        }
         Type::Parenthesized(parenthesized) => visitor.visit_type(*parenthesized),
         Type::Variable(_) => (),
         Type::NotImplemented => (),

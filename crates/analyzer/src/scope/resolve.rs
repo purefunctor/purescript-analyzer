@@ -323,10 +323,19 @@ fn resolve_type(ctx: &mut Ctx, type_id: TypeId) {
                 resolve_type(ctx, *argument);
             }
         }
+        Type::Constrained(constraint, arguments) => {
+            resolve_type(ctx, *constraint);
+            for argument in arguments {
+                resolve_type(ctx, *argument);
+            }
+        }
         Type::Constructor(name) => {
             if let Some(type_constructor) = resolve_type_constructor(ctx, name) {
                 ctx.resolve_info.per_type_type.insert(type_id, type_constructor);
             }
+        }
+        Type::Forall(_, inner) => {
+            resolve_type(ctx, *inner);
         }
         Type::Parenthesized(parenthesized) => resolve_type(ctx, *parenthesized),
         Type::Variable(_) => (),

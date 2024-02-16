@@ -327,7 +327,9 @@ pub type BinderId = Idx<Binder>;
 pub enum Type {
     Arrow(Vec<TypeId>, TypeId),
     Application(TypeId, Vec<TypeId>),
+    Constrained(TypeId, Vec<TypeId>),
     Constructor(Qualified<Name>),
+    Forall(Vec<Name>, TypeId),
     Parenthesized(TypeId),
     Variable(Name),
     NotImplemented,

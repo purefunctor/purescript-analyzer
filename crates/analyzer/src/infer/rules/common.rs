@@ -36,6 +36,9 @@ impl InferContext<'_> {
                     db.intern_type(CoreType::Application(function, argument))
                 })
             }
+            Type::Constrained(_, _) => {
+                todo!("lower_type(Constrained)");
+            }
             Type::Constructor(name) => {
                 // FIXME: actually resolve primitives
                 if matches!(name.value.as_ref(), "Int" | "Number") {
@@ -51,6 +54,9 @@ impl InferContext<'_> {
                         }
                     }
                 }))
+            }
+            Type::Forall(_, _) => {
+                todo!("lower_type(Forall)");
             }
             Type::Parenthesized(parenthesized) => self.lower_type(db, *parenthesized),
             Type::Variable(name) => {
