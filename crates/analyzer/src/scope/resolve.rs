@@ -323,11 +323,9 @@ fn resolve_type(ctx: &mut Ctx, type_id: TypeId) {
                 resolve_type(ctx, *argument);
             }
         }
-        Type::Constrained(constraint, arguments) => {
+        Type::Constrained(constraint, constrained) => {
             resolve_type(ctx, *constraint);
-            for argument in arguments {
-                resolve_type(ctx, *argument);
-            }
+            resolve_type(ctx, *constrained);
         }
         Type::Constructor(name) => {
             if let Some(type_constructor) = resolve_type_constructor(ctx, name) {

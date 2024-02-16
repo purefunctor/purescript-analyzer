@@ -16,6 +16,7 @@ _create_ast_v!(
     Type,
     ApplicationType(ApplicationType),
     ArrowType(ArrowType),
+    ConstrainedType(ConstrainedType),
     ConstructorType(ConstructorType),
     ForallType(ForallType),
     IntegerType(IntegerType),
@@ -71,6 +72,16 @@ impl ApplicationType {
 
     pub fn spine(&self) -> Option<OneOrMore<Type>> {
         OneOrMore::cast(self.node.last_child()?)
+    }
+}
+
+impl ConstrainedType {
+    pub fn constraint(&self) -> Option<Type> {
+        Type::cast(self.node.first_child()?)
+    }
+
+    pub fn constrained(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
     }
 }
 

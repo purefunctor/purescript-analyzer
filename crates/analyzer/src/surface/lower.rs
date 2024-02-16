@@ -836,6 +836,7 @@ fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) ->
         let lowered = match &ty {
             ast::Type::ApplicationType(a) => lower_type_application(ctx, db, a),
             ast::Type::ArrowType(a) => lower_type_arrow(ctx, db, a),
+            ast::Type::ConstrainedType(c) => lower_type_constrained(ctx, db, c),
             ast::Type::ConstructorType(c) => lower_type_constructor(db, c),
             ast::Type::ForallType(f) => lower_type_forall(ctx, db, f),
             ast::Type::IntegerType(_) => Type::NotImplemented,
@@ -881,6 +882,12 @@ fn lower_type_arrow(ctx: &mut Ctx, db: &dyn SurfaceDatabase, arrow: &ast::ArrowT
     let result = lower_type(ctx, db, result);
 
     Type::Arrow(arguments, result)
+}
+
+fn lower_type_constrained(ctx: &mut Ctx, db: &dyn SurfaceDatabase, constrained: &ast::ConstrainedType) -> Type {
+    let constraint = lower_type(ctx, db, constrained.constraint());
+    let constrained = lower_type(ctx, db, constrained.constrained());
+    Type::Constrained(constraint, constrained)
 }
 
 fn lower_type_constructor(db: &dyn SurfaceDatabase, constructor: &ast::ConstructorType) -> Type {

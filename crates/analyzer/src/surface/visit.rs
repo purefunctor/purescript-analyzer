@@ -149,10 +149,9 @@ where
                 visitor.visit_type(*argument);
             }
         }
-        Type::Constrained(_, arguments) => {
-            for argument in arguments {
-                visitor.visit_type(*argument);
-            }
+        Type::Constrained(constraint, constrained) => {
+            visitor.visit_type(*constraint);
+            visitor.visit_type(*constrained);
         }
         Type::Constructor(_) => (),
         Type::Forall(_, inner) => {
