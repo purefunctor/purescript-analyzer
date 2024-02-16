@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "analyzer-module"
+name = "analyzer"
 version = "0.1.0"
 dependencies = [
  "files",
