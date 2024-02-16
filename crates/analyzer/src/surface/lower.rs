@@ -23,6 +23,8 @@ use crate::{
 
 use super::tree::*;
 
+// region: Context
+
 struct Ctx {
     arena: SurfaceArena,
     source_map: SourceMap,
@@ -85,6 +87,10 @@ impl Ctx {
     }
 }
 
+// endregion
+
+// region: Names
+
 fn lower_name(db: &dyn SurfaceDatabase, name: Option<ast::Name>) -> Name {
     Name::from_raw(
         name.and_then(|name| name.in_db(db)).unwrap_or_else(|| db.interner().intern("$Invalid")),
@@ -126,12 +132,20 @@ fn lower_qualified_name(
     }
 }
 
+// endregion
+
+// region: Module
+
 fn lower_module(ctx: &mut Ctx, db: &dyn SurfaceDatabase, module: ast::Module) -> Module {
     let header = lower_header(db, module.header());
     let imports = lower_imports(db, module.imports());
     let body = lower_module_body(ctx, db, module.body());
     Module { header, imports, body }
 }
+
+// endregion
+
+// region: ModuleHeader
 
 fn lower_header(db: &dyn SurfaceDatabase, header: Option<ast::ModuleHeader>) -> ModuleHeader {
     if let Some(header) = header {
@@ -245,6 +259,10 @@ fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) 
     }
 }
 
+// endregion
+
+// region: ModuleBody
+
 fn lower_module_body(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
@@ -292,7 +310,9 @@ fn lower_declarations(
     (all, data_declarations, value_declarations)
 }
 
-// ===== Section: DataGroup ===== //
+// endregion
+
+// region: DataGroup
 
 fn lower_data_group(
     ctx: &mut Ctx,
@@ -345,7 +365,9 @@ fn lower_data_constructor(
     DataConstructor { name, fields }
 }
 
-// ===== Section: ValueGroup ===== //
+// endregion
+
+// region: ValueGroup
 
 fn lower_value_group(
     ctx: &mut Ctx,
@@ -432,7 +454,9 @@ fn lower_where_expr(
     }
 }
 
-// ===== Section: LetBinding ===== //
+// endregion
+
+// region: LetBinding
 
 fn lower_let_bindings(
     ctx: &mut Ctx,
@@ -535,7 +559,9 @@ fn lower_let_binding_signature(
     lower_type(ctx, db, let_binding_signature.ty())
 }
 
-// ===== Section: Literal ===== //
+// endregion
+
+// region: Literal
 
 fn lower_literal<T, I>(
     ctx: &mut Ctx,
@@ -618,7 +644,9 @@ where
     }
 }
 
-// ===== Section: Expr ===== //
+// endregion
+
+// region: Expr
 
 fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Expression>) -> ExprId {
     if let Some(expr) = expr {
@@ -721,7 +749,9 @@ fn lower_expr_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableExpress
     Expr::Variable(name)
 }
 
-// ===== Section: Binder ===== //
+// endregion
+
+// region: Binder
 
 fn lower_binder(ctx: &mut Ctx, db: &dyn SurfaceDatabase, binder: Option<ast::Binder>) -> BinderId {
     if let Some(binder) = &binder {
@@ -797,7 +827,9 @@ fn lower_binder_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableBinde
     Binder::Variable(name)
 }
 
-// ===== Section: Type ===== //
+// endregion
+
+// region: Type
 
 fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) -> TypeId {
     if let Some(ty) = ty {
@@ -899,6 +931,8 @@ fn lower_type_variable_binding(
         })
         .collect()
 }
+
+// endregion
 
 pub(super) fn file_surface_query(
     db: &dyn SurfaceDatabase,

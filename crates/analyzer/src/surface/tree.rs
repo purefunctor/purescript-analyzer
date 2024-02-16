@@ -16,7 +16,7 @@ use crate::{
     index::nominal::{DataGroupId, ValueGroupId},
 };
 
-// ===== SECTION: Names ====== //
+// region: Names
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleName(Arc<str>);
@@ -82,7 +82,9 @@ pub struct Qualified<T> {
     pub value: T,
 }
 
-// ===== SECTION: Module ====== //
+// endregion
+
+// region: Module
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Module {
@@ -91,7 +93,9 @@ pub struct Module {
     pub body: ModuleBody,
 }
 
-// ===== SECTION: ModuleHeader ====== //
+// endregion
+
+// region: ModuleHeader
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleHeader {
@@ -110,7 +114,9 @@ pub enum ExportItem {
     ExportValue(Name),
 }
 
-// ===== SECTION: ModuleImports ====== //
+// endregion
+
+// region: ModuleImports
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleImports {
@@ -142,7 +148,9 @@ pub enum DataMembers {
     DataEnumerated(Vec<Name>),
 }
 
-// ===== SECTION: ModuleBody ====== //
+// endregion
+
+// region: ModuleBody
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleBody {
@@ -201,7 +209,9 @@ pub enum Declaration {
     ValueDeclaration(ValueDeclaration),
 }
 
-// ===== SECTION: DataDeclaration ====== //
+// endregion
+
+// region: DataDeclaration
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DataDeclaration {
@@ -218,7 +228,9 @@ pub struct DataConstructor {
     pub fields: Vec<TypeId>,
 }
 
-// ===== SECTION: ValueDeclaration ====== //
+// endregion
+
+// region: ValueDeclaration
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueDeclaration {
@@ -245,7 +257,9 @@ pub struct WhereExpr {
     pub let_bindings: Vec<LetBinding>,
 }
 
-// ===== SECTION: Common ====== //
+// endregion
+
+// region: Literal
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Literal<I> {
@@ -270,7 +284,9 @@ pub enum RecordItem<I> {
     RecordField(Name, I),
 }
 
-// ===== SECTION: Expr ====== //
+// endregion
+
+// region: Expr
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
@@ -306,7 +322,9 @@ pub struct LetNameEquation {
     pub binding: Binding,
 }
 
-// ===== SECTION: Binder ====== //
+// endregion
+
+// region: Binder
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Binder {
@@ -321,7 +339,9 @@ pub enum Binder {
 
 pub type BinderId = Idx<Binder>;
 
-// ===== SECTION: Type ====== //
+// endregion
+
+// region: Type
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Type {
@@ -343,7 +363,9 @@ pub enum TypeVariable {
     Name(Name),
 }
 
-// ===== SECTION: SurfaceArena ====== //
+// endregion
+
+// region: SurfaceArena
 
 macro_rules! _surface_arena {
     ($($name:ident: $tree:ident),*) => {
@@ -378,7 +400,9 @@ macro_rules! _surface_arena {
 
 _surface_arena!(expr: Expr, let_name: LetName, binder: Binder, ty: Type);
 
-// ===== SECTION: SourceMap ====== //
+// endregion
+
+// region: SourceMap
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct LetNamePtr {
@@ -398,3 +422,5 @@ pub struct SourceMap {
     pub(crate) type_to_cst: FxHashMap<TypeId, SyntaxNodePtr>,
     pub(crate) cst_to_type: FxHashMap<SyntaxNodePtr, TypeId>,
 }
+
+// endregion
