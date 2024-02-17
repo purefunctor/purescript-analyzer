@@ -4,3 +4,5 @@ a :: Int
 a = 0
 
 class F :: Int -> Constraint
+class E a
+class (E a, E a)

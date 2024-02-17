@@ -185,6 +185,7 @@ pub enum SyntaxKind {
 
     ClassSignature,
     ClassDeclaration,
+    ClassConstraints,
     ClassKw,
 
     InstanceDeclaration,

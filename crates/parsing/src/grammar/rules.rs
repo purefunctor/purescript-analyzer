@@ -2,7 +2,9 @@ use syntax::SyntaxKind;
 
 use crate::parser::{NodeMarker, Parser};
 
-use super::combinators::{attempt, layout_one_or_more, one_or_more, separated, zero_or_more};
+use super::combinators::{
+    attempt, layout_one_or_more, one_or_more, separated, separated_quiet, zero_or_more,
+};
 
 // expr_1 '::' type_0 | expr_1
 pub(super) fn expr_0(parser: &mut Parser) {
@@ -1602,20 +1604,33 @@ fn foreign_import_declaration(parser: &mut Parser) {
 }
 
 //   'class' 'upper' '::' type_0
-// | 'class' 'upper'
+// | 'class'
 fn class_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::ClassKw);
-    if parser.at(SyntaxKind::Upper) {
+
+    if parser.at(SyntaxKind::Upper) && parser.nth_at(1, SyntaxKind::Colon2) {
         name(parser, SyntaxKind::Upper);
-    } else {
-        parser.error_recover("expected an Upper");
-    }
-    if parser.at(SyntaxKind::Colon2) {
         parser.expect(SyntaxKind::Colon2);
         type_0(parser);
         marker.end(parser, SyntaxKind::ClassSignature);
     } else {
-        todo!("ClassDeclaration");
+        class_constraints(parser);
+        marker.end(parser, SyntaxKind::ClassDeclaration);
+    }
+}
+
+//     type_5
+// '|' '(' type_5 (',' type_5)* ')'
+fn class_constraints(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.at(SyntaxKind::LeftParenthesis) {
+        parser.expect(SyntaxKind::LeftParenthesis);
+        separated_quiet(parser, SyntaxKind::Comma, type_5);
+        parser.expect(SyntaxKind::RightParenthesis);
+        marker.end(parser, SyntaxKind::ClassConstraints);
+    } else {
+        type_5(parser);
+        marker.end(parser, SyntaxKind::ClassConstraints);
     }
 }

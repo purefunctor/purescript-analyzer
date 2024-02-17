@@ -9,6 +9,8 @@ a :: Int
 a = 0
 
 class F :: Int -> Constraint
+class E a
+class (E a, E a)
 
 Start { kind: Module }
   Start { kind: ModuleHeader }
@@ -79,6 +81,69 @@ Start { kind: Module }
               Finish
             Finish
           Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: ClassConstraints }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: ClassConstraints }
+          Token { kind: LeftParenthesis }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
         Finish
       Finish
     Finish
