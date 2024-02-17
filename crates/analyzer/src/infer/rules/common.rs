@@ -4,7 +4,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     id::InFile,
-    infer::{Constraint, Hint, InferError, InferErrorKind},
+    infer::{Constraint, CoreTypeVariable, Hint, InferError, InferErrorKind},
     scope::TypeConstructorKind,
     surface::tree::*,
     InferenceDatabase,
@@ -41,7 +41,7 @@ impl InferContext<'_> {
             }
             Type::Constructor(name) => {
                 // FIXME: actually resolve primitives
-                if matches!(name.value.as_ref(), "Int" | "Number") {
+                if matches!(name.value.as_ref(), "Int" | "Number" | "Eq") {
                     return db.intern_type(CoreType::Primitive(Name::clone(&name.value)));
                 }
 
@@ -55,8 +55,22 @@ impl InferContext<'_> {
                     }
                 }))
             }
-            Type::Forall(_, _) => {
-                todo!("lower_type(Forall)");
+            Type::Forall(variables, inner) => {
+                let inner = self.lower_type(db, *inner);
+                variables.iter().rev().fold(inner, |inner, variable| {
+                    let variable = match variable {
+                        TypeVariable::Kinded(name, kind) => {
+                            let name = Name::clone(name);
+                            let kind = self.lower_type(db, *kind);
+                            CoreTypeVariable::Kinded(name, kind)
+                        }
+                        TypeVariable::Name(name) => {
+                            let name = Name::clone(name);
+                            CoreTypeVariable::Name(name)
+                        }
+                    };
+                    db.intern_type(CoreType::Forall(variable, inner))
+                })
             }
             Type::Parenthesized(parenthesized) => self.lower_type(db, *parenthesized),
             Type::Variable(name) => {
@@ -102,7 +116,8 @@ impl InferContext<'_> {
         let y_ty = db.lookup_intern_type(y_id);
 
         match (x_ty, y_ty) {
-            (CoreType::Forall(name, inner_ty), _) => {
+            (CoreType::Forall(variable, inner_ty), _) => {
+                let name = Name::clone(variable.name());
                 let fresh_ty = self.fresh_unification(db);
 
                 let mut replacements = FxHashMap::default();
@@ -203,13 +218,15 @@ impl InferContext<'_> {
         if let CoreType::Forall(initial_variable, initial_body) = db.lookup_intern_type(type_id) {
             let mut replacements = FxHashMap::default();
 
+            let initial_name = Name::clone(initial_variable.name());
             let initial_unification = self.fresh_unification(db);
-            replacements.insert(initial_variable, initial_unification);
+            replacements.insert(initial_name, initial_unification);
             let mut current_body = initial_body;
 
             while let CoreType::Forall(variable, body) = db.lookup_intern_type(current_body) {
+                let name = Name::clone(variable.name());
                 let unification = self.fresh_unification(db);
-                replacements.insert(variable, unification);
+                replacements.insert(name, unification);
                 current_body = body;
             }
 
@@ -239,9 +256,9 @@ fn replace_type(
             }
             CoreType::Constructor(_) => type_id,
             CoreType::Forall(variable, body) => {
-                in_scope.insert(Name::clone(&variable));
+                in_scope.insert(Name::clone(variable.name()));
                 let body = aux(db, in_scope, replacements, body);
-                in_scope.remove(&variable);
+                in_scope.remove(variable.name());
                 db.intern_type(CoreType::Forall(variable, body))
             }
             CoreType::Function(argument, result) => {

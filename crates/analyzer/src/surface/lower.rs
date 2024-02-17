@@ -884,7 +884,11 @@ fn lower_type_arrow(ctx: &mut Ctx, db: &dyn SurfaceDatabase, arrow: &ast::ArrowT
     Type::Arrow(arguments, result)
 }
 
-fn lower_type_constrained(ctx: &mut Ctx, db: &dyn SurfaceDatabase, constrained: &ast::ConstrainedType) -> Type {
+fn lower_type_constrained(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    constrained: &ast::ConstrainedType,
+) -> Type {
     let constraint = lower_type(ctx, db, constrained.constraint());
     let constrained = lower_type(ctx, db, constrained.constrained());
     Type::Constrained(constraint, constrained)

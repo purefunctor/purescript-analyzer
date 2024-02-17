@@ -31,12 +31,27 @@ impl salsa::InternKey for CoreTypeId {
 pub enum CoreType {
     Application(CoreTypeId, CoreTypeId),
     Constructor(InFile<DataGroupId>),
-    Forall(Name, CoreTypeId),
+    Forall(CoreTypeVariable, CoreTypeId),
     Function(CoreTypeId, CoreTypeId),
     Primitive(Name),
     Unification(InFile<u32>),
     Variable(Name),
     NotImplemented,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CoreTypeVariable {
+    Name(Name),
+    Kinded(Name, CoreTypeId),
+}
+
+impl CoreTypeVariable {
+    pub fn name(&self) -> &Name {
+        match self {
+            CoreTypeVariable::Name(name) => name,
+            CoreTypeVariable::Kinded(name, _) => name,
+        }
+    }
 }
 
 pub fn pretty_print<Db>(db: &Db, t: CoreTypeId) -> String
@@ -67,13 +82,16 @@ where
                 allocator.text("?")
             }
         }
-        CoreType::Forall(argument, inner) => {
-            let inner = pretty_print_core(db, allocator, inner);
-            allocator
-                .text("forall ")
-                .append(argument.as_ref().to_string())
-                .append(". ")
-                .append(inner)
+        CoreType::Forall(variable, inner) => {
+            let mut result = allocator.text("forall ").append(variable.name().as_ref().to_string());
+
+            let mut current_inner = inner;
+            while let CoreType::Forall(variable, inner) = db.lookup_intern_type(current_inner) {
+                result = result.append(" ").append(variable.name().as_ref().to_string());
+                current_inner = inner;
+            }
+
+            result.append(". ").append(pretty_print_core(db, allocator, current_inner))
         }
         CoreType::Function(argument, result) => {
             let argument = pretty_print_core(db, allocator, argument);

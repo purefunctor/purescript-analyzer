@@ -1,4 +1,4 @@
-use crate::{id::InFile, surface::tree::*, InferenceDatabase};
+use crate::{id::InFile, infer::CoreTypeVariable, surface::tree::*, InferenceDatabase};
 
 use super::{CoreType, InferContext};
 
@@ -36,15 +36,19 @@ impl InferContext<'_> {
 
             let qualified_ty = data_declaration.variables.iter().rev().fold(
                 constructor_ty,
-                |constructor_ty, variable| match variable {
-                    TypeVariable::Kinded(name, _) => {
-                        let name = Name::clone(name);
-                        db.intern_type(CoreType::Forall(name, constructor_ty))
-                    }
-                    TypeVariable::Name(name) => {
-                        let name = Name::clone(name);
-                        db.intern_type(CoreType::Forall(name, constructor_ty))
-                    }
+                |constructor_ty, variable| {
+                    let variable = match variable {
+                        TypeVariable::Kinded(name, kind) => {
+                            let name = Name::clone(name);
+                            let kind = self.lower_type(db, *kind);
+                            CoreTypeVariable::Kinded(name, kind)
+                        }
+                        TypeVariable::Name(name) => {
+                            let name = Name::clone(name);
+                            CoreTypeVariable::Name(name)
+                        }
+                    };
+                    db.intern_type(CoreType::Forall(variable, constructor_ty))
                 },
             );
 
