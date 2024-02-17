@@ -8,6 +8,8 @@ Input: module Main where
 a :: Int
 a = 0
 
+class F :: Int -> Constraint
+
 Start { kind: Module }
   Start { kind: ModuleHeader }
     Token { kind: ModuleKw }
@@ -50,6 +52,31 @@ Start { kind: Module }
           Start { kind: WhereExpression }
             Start { kind: LiteralExpression }
               Token { kind: LiteralInteger }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassSignature }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Colon2 }
+        Start { kind: ArrowType }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightArrow }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
             Finish
           Finish
         Finish

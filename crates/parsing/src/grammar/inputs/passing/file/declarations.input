@@ -2,3 +2,5 @@ module Main where
 
 a :: Int
 a = 0
+
+class F :: Int -> Constraint

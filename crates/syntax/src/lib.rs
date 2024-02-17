@@ -183,6 +183,7 @@ pub enum SyntaxKind {
     TypeDeclaration,
     TypeKw,
 
+    ClassSignature,
     ClassDeclaration,
     ClassKw,
 

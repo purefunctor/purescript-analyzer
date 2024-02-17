@@ -1477,6 +1477,9 @@ fn module_body(parser: &mut Parser) {
             SyntaxKind::ForeignKw => {
                 foreign_import_declaration(parser);
             }
+            SyntaxKind::ClassKw => {
+                class_declaration(parser);
+            }
             _ => {
                 annotation_or_value_declaration(parser);
             }
@@ -1596,4 +1599,23 @@ fn foreign_import_declaration(parser: &mut Parser) {
     type_0(parser);
 
     marker.end(parser, SyntaxKind::ForeignDataDeclaration);
+}
+
+//   'class' 'upper' '::' type_0
+// | 'class' 'upper'
+fn class_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::ClassKw);
+    if parser.at(SyntaxKind::Upper) {
+        name(parser, SyntaxKind::Upper);
+    } else {
+        parser.error_recover("expected an Upper");
+    }
+    if parser.at(SyntaxKind::Colon2) {
+        parser.expect(SyntaxKind::Colon2);
+        type_0(parser);
+        marker.end(parser, SyntaxKind::ClassSignature);
+    } else {
+        todo!("ClassDeclaration");
+    }
 }
