@@ -1,4 +1,23 @@
 //! Implements a generic parser API.
+//!
+//! The goal of the [`Parser`] is to emit a flat stream of [`Event`]s, with
+//! each kind corresponding to a specific instruction that's used to build
+//! the actual CST later on.
+//!
+//! To handle errors, the parser API uses the following constructs:
+//! * the [`Event::Error`] event;
+//! * the [`SyntaxKind::Error`] node.
+//!
+//! In particular, the [`Event::Error`] event carries an error message that
+//! a consumer of the parser API wants to report. Meanwhile the [`SyntaxKind::Error`]
+//! node corresponds to a failure that the parser is able to recover from.
+//! Recovery usually involves consuming erroneous tokens, coupled with an
+//! [`Event::Error`] event to create a diagnostic to be displayed to the user.
+//!
+//! With this in mind, the following are recommended:
+//! * [`Event::Error`] not parented under [`SyntaxKind::Error`] are treated as
+//!   fatal; failure to parse atoms should be fatal, while failures to parse
+//!   composite forms should recover as much as possible.
 
 use std::cell::Cell;
 
@@ -153,7 +172,24 @@ impl SaveMarker {
     }
 
     pub(crate) fn has_error(&self, parser: &Parser) -> bool {
-        parser.output[self.event_index..].iter().any(|event| matches!(event, Event::Error { .. }))
+        let mut level = 0u32;
+        for event in &parser.output[self.event_index..] {
+            match event {
+                Event::Start { kind: SyntaxKind::Error } => {
+                    level += 1;
+                }
+                Event::Error { .. } => {
+                    if level == 0 {
+                        return true;
+                    }
+                }
+                Event::Finish => {
+                    level = level.saturating_sub(1);
+                }
+                _ => (),
+            }
+        }
+        false
     }
 
     pub(crate) fn load(&mut self, parser: &mut Parser) {
