@@ -1603,8 +1603,6 @@ fn foreign_import_declaration(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::ForeignDataDeclaration);
 }
 
-//   'class' 'upper' '::' type_0
-// | 'class'
 fn class_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::ClassKw);
@@ -1615,22 +1613,93 @@ fn class_declaration(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::ClassSignature);
     } else {
-        class_constraints(parser);
+        attempt(parser, class_constraints);
+        if parser.at(SyntaxKind::Upper) {
+            name(parser, SyntaxKind::Upper);
+        } else {
+            parser.error_recover("expected an Upper");
+        }
+        zero_or_more(parser, |parser| {
+            if parser.current().is_end()
+                || matches!(parser.current(), SyntaxKind::Pipe | SyntaxKind::WhereKw)
+            {
+                false
+            } else {
+                type_variable_binding_plain(parser);
+                true
+            }
+        });
+        attempt(parser, class_fundeps);
+        attempt(parser, |parser| {
+            parser.expect(SyntaxKind::WhereKw);
+            layout_one_or_more(parser, |parser| {
+                let mut marker = parser.start();
+                if parser.at(SyntaxKind::Lower) {
+                    name(parser, SyntaxKind::Lower);
+                } else {
+                    parser.error_recover("expected a Lower");
+                }
+                parser.expect(SyntaxKind::Colon2);
+                type_0(parser);
+                marker.end(parser, SyntaxKind::ClassMember);
+            });
+        });
+
         marker.end(parser, SyntaxKind::ClassDeclaration);
     }
 }
 
-//     type_5
-// '|' '(' type_5 (',' type_5)* ')'
 fn class_constraints(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::LeftParenthesis) {
         parser.expect(SyntaxKind::LeftParenthesis);
         separated_quiet(parser, SyntaxKind::Comma, type_5);
         parser.expect(SyntaxKind::RightParenthesis);
-        marker.end(parser, SyntaxKind::ClassConstraints);
     } else {
         type_5(parser);
-        marker.end(parser, SyntaxKind::ClassConstraints);
+    }
+    parser.expect(SyntaxKind::LeftThickArrow);
+    marker.end(parser, SyntaxKind::ClassConstraints);
+}
+
+fn class_fundeps(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::Pipe);
+    separated(parser, SyntaxKind::Comma, fundep);
+    marker.end(parser, SyntaxKind::ClassFundeps);
+}
+
+fn fundep(parser: &mut Parser) {
+    fn lhs_is_done(current: SyntaxKind) -> bool {
+        current.is_end() || matches!(current, SyntaxKind::RightArrow)
+    }
+
+    fn rhs_is_done(current: SyntaxKind) -> bool {
+        current.is_end() || matches!(current, SyntaxKind::Comma | SyntaxKind::WhereKw)
+    }
+
+    fn type_variables(parser: &mut Parser, predicate: impl Fn(SyntaxKind) -> bool) {
+        one_or_more(parser, |parser| {
+            if predicate(parser.current()) {
+                return false;
+            }
+            if parser.at(SyntaxKind::Lower) {
+                name(parser, SyntaxKind::Lower);
+            } else {
+                parser.error_recover("expected a type variable");
+            }
+            true
+        });
+    }
+
+    let mut marker = parser.start();
+    if parser.eat(SyntaxKind::RightArrow) {
+        type_variables(parser, rhs_is_done);
+        marker.end(parser, SyntaxKind::FundepDetermined);
+    } else {
+        type_variables(parser, lhs_is_done);
+        parser.expect(SyntaxKind::RightArrow);
+        type_variables(parser, rhs_is_done);
+        marker.end(parser, SyntaxKind::FundepDetermines)
     }
 }
