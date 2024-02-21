@@ -1634,7 +1634,7 @@ fn class_declaration(parser: &mut Parser) {
             parser.expect(SyntaxKind::WhereKw);
             layout_one_or_more(parser, |parser| {
                 let mut marker = parser.start();
-                if parser.at(SyntaxKind::Lower) {
+                if parser.current().is_lower() {
                     name(parser, SyntaxKind::Lower);
                 } else {
                     parser.error_recover("expected a Lower");
@@ -1683,7 +1683,7 @@ fn fundep(parser: &mut Parser) {
             if predicate(parser.current()) {
                 return false;
             }
-            if parser.at(SyntaxKind::Lower) {
+            if parser.current().is_lower() {
                 name(parser, SyntaxKind::Lower);
             } else {
                 parser.error_recover("expected a type variable");
