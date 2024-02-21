@@ -51,6 +51,17 @@ pub(super) fn positional_map_query(db: &dyn IndexDatabase, file_id: FileId) -> A
     if let Some(declarations) = declarations {
         for declaration in declarations {
             match declaration {
+                ast::Declaration::ClassDeclaration(class) => {
+                    positional_map.alloc(class.syntax());
+                    if let Some(members) = class.members() {
+                        for member in members.children() {
+                            positional_map.alloc(member.syntax());
+                        }
+                    }
+                }
+                ast::Declaration::ClassSignature(class) => {
+                    positional_map.alloc(class.syntax());
+                }
                 ast::Declaration::DataAnnotation(data) => {
                     positional_map.alloc(data.syntax());
                 }

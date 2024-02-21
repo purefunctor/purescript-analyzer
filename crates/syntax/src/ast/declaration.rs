@@ -1,11 +1,14 @@
 use rowan::ast::AstNode;
 
 use super::{
-    Binder, Binding, Name, Separated, Type, TypeVariableBinding, WhereExpression, ZeroOrMore,
+    Binder, Binding, Name, OneOrMore, Separated, Type, TypeVariableBinding, WhereExpression,
+    ZeroOrMore,
 };
 
 _create_ast_v!(
     Declaration,
+    ClassDeclaration(ClassDeclaration),
+    ClassSignature(ClassSignature),
     DataAnnotation(DataAnnotation),
     DataDeclaration(DataDeclaration),
     ForeignDataDeclaration(ForeignDataDeclaration),
@@ -13,6 +16,7 @@ _create_ast_v!(
     ValueEquationDeclaration(ValueEquationDeclaration)
 );
 
+_create_ast!(ClassMember);
 _create_ast!(DataConstructor);
 
 _create_ast_v!(
@@ -21,6 +25,32 @@ _create_ast_v!(
     LetBindingPattern(LetBindingPattern),
     LetBindingSignature(LetBindingSignature)
 );
+
+impl ClassDeclaration {
+    pub fn name(&self) -> Option<Name> {
+        self.node.children().find_map(Name::cast)
+    }
+
+    pub fn members(&self) -> Option<OneOrMore<ClassMember>> {
+        OneOrMore::cast(self.node.last_child()?)
+    }
+}
+
+impl ClassMember {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+
+    pub fn ty(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
+}
+
+impl ClassSignature {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+}
 
 impl DataAnnotation {
     pub fn name(&self) -> Option<Name> {
