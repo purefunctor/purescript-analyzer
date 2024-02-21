@@ -1482,6 +1482,9 @@ fn module_body(parser: &mut Parser) {
             SyntaxKind::ClassKw => {
                 class_declaration(parser);
             }
+            SyntaxKind::InstanceKw => {
+                instance_chain_declaration(parser);
+            }
             _ => {
                 annotation_or_value_declaration(parser);
             }
@@ -1701,5 +1704,93 @@ fn fundep(parser: &mut Parser) {
         parser.expect(SyntaxKind::RightArrow);
         type_variables(parser, rhs_is_done);
         marker.end(parser, SyntaxKind::FundepDetermines)
+    }
+}
+
+fn instance_chain_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    instance_declaration(parser);
+    loop {
+        if parser.eat(SyntaxKind::ElseKw) {
+            instance_declaration(parser);
+        } else {
+            break;
+        }
+    }
+
+    marker.end(parser, SyntaxKind::InstanceChain);
+}
+
+fn instance_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::InstanceKw);
+    if parser.current().is_lower() {
+        name(parser, SyntaxKind::Lower);
+        parser.eat(SyntaxKind::Colon2);
+    }
+    attempt(parser, instance_assertions);
+
+    let mut qualified = parser.start();
+    qualified_prefix(parser);
+    if parser.at(SyntaxKind::Upper) {
+        name(parser, SyntaxKind::Upper)
+    } else {
+        parser.error_recover("expected an identifier");
+    }
+    qualified.end(parser, SyntaxKind::QualifiedName);
+
+    zero_or_more(parser, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::WhereKw | SyntaxKind::ElseKw) {
+            return false;
+        }
+        type_atom(parser);
+        true
+    });
+
+    attempt(parser, |parser| {
+        parser.expect(SyntaxKind::WhereKw);
+        layout_one_or_more(parser, instance_member);
+    });
+
+    marker.end(parser, SyntaxKind::InstanceDeclaration);
+}
+
+fn instance_assertions(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.at(SyntaxKind::LeftParenthesis) {
+        parser.expect(SyntaxKind::LeftParenthesis);
+        separated_quiet(parser, SyntaxKind::Comma, type_3);
+        parser.expect(SyntaxKind::RightParenthesis);
+    } else {
+        type_5(parser);
+    }
+    parser.expect(SyntaxKind::RightThickArrow);
+    marker.end(parser, SyntaxKind::InstanceAssertions);
+}
+
+fn instance_member(parser: &mut Parser) {
+    let mut marker = parser.start();
+    if parser.current().is_lower() {
+        name(parser, SyntaxKind::Lower);
+    } else {
+        parser.error_recover("expected a Lower");
+    }
+    if parser.eat(SyntaxKind::Colon2) {
+        type_0(parser);
+        marker.end(parser, SyntaxKind::InstanceMemberSignature);
+    } else {
+        zero_or_more(parser, |parser| {
+            if at_pat_start(parser) {
+                pat_atom(parser);
+                true
+            } else {
+                false
+            }
+        });
+        expr_binding(parser, SyntaxKind::Equal);
+        marker.end(parser, SyntaxKind::InstanceMemberEquation);
     }
 }

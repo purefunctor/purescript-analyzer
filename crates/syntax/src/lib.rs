@@ -192,7 +192,11 @@ pub enum SyntaxKind {
     ClassMember,
     ClassKw,
 
+    InstanceChain,
     InstanceDeclaration,
+    InstanceAssertions,
+    InstanceMemberSignature,
+    InstanceMemberEquation,
     InstanceKw,
 
     DeriveInstanceDeclaration,
