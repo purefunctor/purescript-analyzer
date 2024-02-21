@@ -7,7 +7,7 @@ Input: { "a" }
 
 Start { kind: LiteralExpression }
   Start { kind: LiteralRecord }
-    Token { kind: LeftBracket }
+    Token { kind: LeftCurly }
     Start { kind: Separated }
       Start { kind: RecordField }
         Start { kind: Name }
@@ -17,7 +17,7 @@ Start { kind: LiteralExpression }
         Error { message: "expected an expression" }
       Finish
     Finish
-    Token { kind: RightBracket }
+    Token { kind: RightCurly }
   Finish
 Finish
 

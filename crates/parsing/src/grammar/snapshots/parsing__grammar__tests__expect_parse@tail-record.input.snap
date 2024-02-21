@@ -7,7 +7,7 @@ Input: { | r }
 
 Start { kind: RecordType }
   Start { kind: Wrapped }
-    Token { kind: LeftBracket }
+    Token { kind: LeftCurly }
     Start { kind: RowInner }
       Start { kind: RowTail }
         Token { kind: Pipe }
@@ -18,7 +18,7 @@ Start { kind: RecordType }
         Finish
       Finish
     Finish
-    Token { kind: RightBracket }
+    Token { kind: RightCurly }
   Finish
 Finish
 

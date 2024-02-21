@@ -42,14 +42,14 @@ Start { kind: LiteralExpression }
       Token { kind: Comma }
       Start { kind: LiteralExpression }
         Start { kind: LiteralRecord }
-          Token { kind: LeftBracket }
-          Token { kind: RightBracket }
+          Token { kind: LeftCurly }
+          Token { kind: RightCurly }
         Finish
       Finish
       Token { kind: Comma }
       Start { kind: LiteralExpression }
         Start { kind: LiteralRecord }
-          Token { kind: LeftBracket }
+          Token { kind: LeftCurly }
           Start { kind: Separated }
             Start { kind: RecordPun }
               Start { kind: NameRef }
@@ -77,7 +77,7 @@ Start { kind: LiteralExpression }
               Finish
             Finish
           Finish
-          Token { kind: RightBracket }
+          Token { kind: RightCurly }
         Finish
       Finish
     Finish

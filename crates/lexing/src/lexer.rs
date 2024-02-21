@@ -93,8 +93,8 @@ impl<'a> Lexer<'a> {
 
             '(' => self.take_single(SyntaxKind::LeftParenthesis),
             ')' => self.take_single(SyntaxKind::RightParenthesis),
-            '{' => self.take_single(SyntaxKind::LeftBracket),
-            '}' => self.take_single(SyntaxKind::RightBracket),
+            '{' => self.take_single(SyntaxKind::LeftCurly),
+            '}' => self.take_single(SyntaxKind::RightCurly),
             '[' => self.take_single(SyntaxKind::LeftSquare),
             ']' => self.take_single(SyntaxKind::RightSquare),
 
