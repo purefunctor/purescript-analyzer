@@ -1590,10 +1590,10 @@ fn annotation_or_type_declaration(parser: &mut Parser) {
 
         if parser.at(SyntaxKind::Equal) {
             parser.expect(SyntaxKind::Equal);
-            separated(parser, SyntaxKind::Pipe, data_constructor);
+            type_0(parser);
         }
 
-        marker.end(parser, SyntaxKind::DataDeclaration);
+        marker.end(parser, SyntaxKind::TypeDeclaration);
     }
 }
 

@@ -1,7 +1,7 @@
 ---
 source: crates/parsing/src/grammar/tests.rs
 expression: result
-input_file: crates/parsing/src/grammar/inputs/passing/file/export-list.input
+input_file: crates/parsing/src/grammar/inputs/passing/file/type-declarations.input
 ---
 Input: module A where
 
