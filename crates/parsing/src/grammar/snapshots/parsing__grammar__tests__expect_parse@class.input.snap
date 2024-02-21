@@ -1,0 +1,367 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/file/class.input
+---
+Input: module Main where
+
+class F :: Int -> Constraint
+class F a
+class E a <= F a
+class (E a, E a) <= F a
+class F a where
+  f :: a -> Int
+class F a b | -> a b
+class F a b | -> a, -> b
+class F a b | a -> b
+class F a b | a -> b, b -> a
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+      Start { kind: ClassSignature }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Colon2 }
+        Start { kind: ArrowType }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightArrow }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: ClassConstraints }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: LeftThickArrow }
+        Finish
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: ClassConstraints }
+          Token { kind: LeftParenthesis }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
+          Token { kind: LeftThickArrow }
+        Finish
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: WhereKw }
+        Token { kind: LayoutStart }
+        Start { kind: OneOrMore }
+          Start { kind: ClassMember }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+            Token { kind: Colon2 }
+            Start { kind: ArrowType }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: RightArrow }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: LayoutEnd }
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ClassFundeps }
+          Token { kind: Pipe }
+          Start { kind: Separated }
+            Start { kind: FundepDetermined }
+              Token { kind: RightArrow }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ClassFundeps }
+          Token { kind: Pipe }
+          Start { kind: Separated }
+            Start { kind: FundepDetermined }
+              Token { kind: RightArrow }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: FundepDetermined }
+              Token { kind: RightArrow }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ClassFundeps }
+          Token { kind: Pipe }
+          Start { kind: Separated }
+            Start { kind: FundepDetermines }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: RightArrow }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ClassFundeps }
+          Token { kind: Pipe }
+          Start { kind: Separated }
+            Start { kind: FundepDetermines }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: RightArrow }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: FundepDetermines }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: RightArrow }
+              Start { kind: OneOrMore }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
+
