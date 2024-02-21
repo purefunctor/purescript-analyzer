@@ -181,7 +181,7 @@ pub enum SyntaxKind {
     NewtypeKw,
     ForallKw,
 
-    TypeAnnotation,
+    TypeDeclarationAnnotation,
     TypeDeclaration,
     TypeKw,
 

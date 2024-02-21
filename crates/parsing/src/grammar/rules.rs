@@ -1577,7 +1577,7 @@ fn annotation_or_type_declaration(parser: &mut Parser) {
     if parser.at(SyntaxKind::Colon2) {
         parser.consume();
         type_0(parser);
-        marker.end(parser, SyntaxKind::TypeAnnotation);
+        marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
     } else {
         zero_or_more(parser, |parser| {
             if at_type_var_binding_plain(parser) {
