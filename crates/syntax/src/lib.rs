@@ -80,6 +80,7 @@ pub enum SyntaxKind {
 
     DoExpression,
     QualifiedDo,
+    // UnqualifiedDo,
     DoKw,
 
     DoBind,
@@ -180,6 +181,7 @@ pub enum SyntaxKind {
     NewtypeKw,
     ForallKw,
 
+    TypeAnnotation,
     TypeDeclaration,
     TypeKw,
 
