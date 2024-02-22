@@ -73,6 +73,17 @@ pub(super) fn positional_map_query(db: &dyn IndexDatabase, file_id: FileId) -> A
                         }
                     }
                 }
+                ast::Declaration::InstanceChain(chain) => {
+                    positional_map.alloc(chain.syntax());
+                    for declaration in chain.declarations() {
+                        positional_map.alloc(declaration.syntax());
+                        if let Some(members) = declaration.members() {
+                            for member in members.children() {
+                                positional_map.alloc(member.syntax());
+                            }
+                        }
+                    }
+                }
                 ast::Declaration::ForeignDataDeclaration(data) => {
                     positional_map.alloc(data.syntax());
                 }

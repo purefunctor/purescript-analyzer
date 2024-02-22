@@ -188,6 +188,7 @@ fn collect(
         ast::Declaration::DataDeclaration(data) => {
             DeclarationKey::Data(data.name().and_then(|name| name.in_db(db)))
         }
+        ast::Declaration::InstanceChain(_) => todo!("Unimplemented!"),
         ast::Declaration::ForeignDataDeclaration(_) => todo!("Unimplemented!"),
         ast::Declaration::ValueAnnotationDeclaration(value) => {
             DeclarationKey::Value(value.name().and_then(|name| name.in_db(db)))

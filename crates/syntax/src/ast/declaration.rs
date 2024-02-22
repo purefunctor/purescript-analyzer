@@ -1,4 +1,4 @@
-use rowan::ast::AstNode;
+use rowan::ast::{support, AstChildren, AstNode};
 
 use super::{
     Binder, Binding, Name, OneOrMore, Separated, Type, TypeVariableBinding, WhereExpression,
@@ -12,12 +12,18 @@ _create_ast_v!(
     DataAnnotation(DataAnnotation),
     DataDeclaration(DataDeclaration),
     ForeignDataDeclaration(ForeignDataDeclaration),
+    InstanceChain(InstanceChain),
     ValueAnnotationDeclaration(ValueAnnotationDeclaration),
     ValueEquationDeclaration(ValueEquationDeclaration)
 );
 
-_create_ast!(ClassMember);
-_create_ast!(DataConstructor);
+_create_ast!(ClassMember, DataConstructor, InstanceDeclaration);
+
+_create_ast_v!(
+    InstanceMember,
+    InstanceMemberEquation(InstanceMemberEquation),
+    InstanceMemberSignature(InstanceMemberSignature)
+);
 
 _create_ast_v!(
     LetBinding,
@@ -83,6 +89,18 @@ impl DataConstructor {
 
     pub fn fields(&self) -> Option<ZeroOrMore<Type>> {
         ZeroOrMore::cast(self.node.last_child()?)
+    }
+}
+
+impl InstanceChain {
+    pub fn declarations(&self) -> AstChildren<InstanceDeclaration> {
+        support::children(&self.node)
+    }
+}
+
+impl InstanceDeclaration {
+    pub fn members(&self) -> Option<OneOrMore<InstanceMember>> {
+        OneOrMore::cast(self.node.last_child()?)
     }
 }
 
