@@ -8,13 +8,12 @@ use rowan::{
     ast::{AstChildren, AstNode, AstPtr},
     NodeOrToken,
 };
-use rustc_hash::FxHashMap;
 use syntax::{ast, PureScript, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::{
     id::AstId,
     index::{
-        nominal::{DataGroup, DataGroupId, ValueGroup, ValueGroupId},
+        nominal::{ClassGroup, ClassGroupId, DataGroup, DataGroupId, ValueGroup, ValueGroupId},
         NominalMap, PositionalMap,
     },
     interner::InDb,
@@ -268,17 +267,11 @@ fn lower_module_body(
     db: &dyn SurfaceDatabase,
     body: Option<ast::ModuleBody>,
 ) -> ModuleBody {
-    body.and_then(|body| {
-        let (declarations, data_declarations, value_declarations) =
-            lower_declarations(ctx, db, body.declarations()?.children());
-        Some(ModuleBody { declarations, data_declarations, value_declarations })
-    })
-    .unwrap_or_else(|| {
-        let declarations = vec![];
-        let data_declarations = FxHashMap::default();
-        let value_declarations = FxHashMap::default();
-        ModuleBody { declarations, data_declarations, value_declarations }
-    })
+    if let Some(declarations) = body.and_then(|body| Some(body.declarations()?.children())) {
+        lower_declarations(ctx, db, declarations)
+    } else {
+        ModuleBody::default()
+    }
 }
 
 // For declarations that exist in groups, we prefer using the nominal map
@@ -286,28 +279,31 @@ fn lower_module_body(
 fn lower_declarations(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
-    _: AstChildren<ast::Declaration>,
-) -> (Vec<Declaration>, FxHashMap<DataGroupId, usize>, FxHashMap<ValueGroupId, usize>) {
+    _declarations: AstChildren<ast::Declaration>,
+) -> ModuleBody {
     let nominal_map = Arc::clone(&ctx.nominal_map);
-
-    let mut all = vec![];
-    let mut data_declarations = FxHashMap::default();
-    let mut value_declarations = FxHashMap::default();
+    let mut module_body = ModuleBody::default();
 
     let mut index = 0;
-    all.extend(nominal_map.iter_data_group().map(|(id, data_group)| {
-        data_declarations.insert(id.value, index);
+    module_body.declarations.extend(nominal_map.iter_class_group().map(|(id, class_group)| {
+        module_body.class_declarations.insert(id.value, index);
+        index += 1;
+        Declaration::ClassDeclaration(lower_class_group(ctx, db, id.value, class_group))
+    }));
+
+    module_body.declarations.extend(nominal_map.iter_data_group().map(|(id, data_group)| {
+        module_body.data_declarations.insert(id.value, index);
         index += 1;
         Declaration::DataDeclaration(lower_data_group(ctx, db, id.value, data_group))
     }));
 
-    all.extend(nominal_map.iter_value_group().map(|(id, value_group)| {
-        value_declarations.insert(id.value, index);
+    module_body.declarations.extend(nominal_map.iter_value_group().map(|(id, value_group)| {
+        module_body.value_declarations.insert(id.value, index);
         index += 1;
         Declaration::ValueDeclaration(lower_value_group(ctx, db, id.value, value_group))
     }));
 
-    (all, data_declarations, value_declarations)
+    module_body
 }
 
 // endregion
@@ -363,6 +359,98 @@ fn lower_data_constructor(
         .map(|fields| fields.children().map(|field| lower_type(ctx, db, Some(field))).collect())
         .unwrap_or_default();
     DataConstructor { name, fields }
+}
+
+// endregion
+
+// region: ClassGroup
+
+fn lower_class_group(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    id: ClassGroupId,
+    class_group: &ClassGroup,
+) -> ClassDeclaration {
+    let name = Name::from_raw(Arc::clone(&class_group.name));
+    let signature = class_group.signature.map(|id| {
+        let signature = ctx.ast_of(id);
+        lower_class_signature(ctx, db, signature)
+    });
+
+    let declaration = ctx.ast_of(class_group.declaration);
+    let constraints = declaration
+        .constraints()
+        .map(|constraints| {
+            constraints
+                .children()
+                .map(|constraint| lower_type(ctx, db, Some(constraint)))
+                .collect_vec()
+        })
+        .unwrap_or_default();
+
+    let variables = declaration
+        .variables()
+        .map(|variables| lower_type_variable_binding(ctx, db, variables.children()))
+        .unwrap_or_default();
+
+    let fundeps = declaration
+        .fundeps()
+        .and_then(|fundeps| {
+            Some(
+                fundeps
+                    .fundeps()?
+                    .children()
+                    .filter_map(|fundep| match fundep {
+                        ast::Fundep::Determined(determined) => {
+                            let rhs = determined
+                                .rhs()?
+                                .children()
+                                .map(|name| lower_name(db, Some(name)))
+                                .collect_vec();
+                            Some(FunctionalDependency::Determined(rhs))
+                        }
+                        ast::Fundep::Determines(determines) => {
+                            let lhs = determines
+                                .lhs()?
+                                .children()
+                                .map(|name| lower_name(db, Some(name)))
+                                .collect_vec();
+                            let rhs = determines
+                                .rhs()?
+                                .children()
+                                .map(|name| lower_name(db, Some(name)))
+                                .collect_vec();
+                            Some(FunctionalDependency::Determines(lhs, rhs))
+                        }
+                    })
+                    .collect_vec(),
+            )
+        })
+        .unwrap_or_default();
+
+    let members = declaration
+        .members()
+        .map(|members| {
+            members
+                .children()
+                .map(|member| {
+                    let name = lower_name(db, member.name());
+                    let ty = lower_type(ctx, db, member.ty());
+                    ClassMember { name, ty }
+                })
+                .collect_vec()
+        })
+        .unwrap_or_default();
+
+    ClassDeclaration { id, name, signature, constraints, variables, fundeps, members }
+}
+
+fn lower_class_signature(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    signature: ast::ClassSignature,
+) -> TypeId {
+    lower_type(ctx, db, signature.kind())
 }
 
 // endregion

@@ -17,7 +17,9 @@ _create_ast_v!(
     ValueEquationDeclaration(ValueEquationDeclaration)
 );
 
-_create_ast!(ClassMember, DataConstructor, InstanceDeclaration);
+_create_ast!(ClassConstraints, ClassFundeps, ClassMember, DataConstructor, InstanceDeclaration);
+
+_create_ast_v!(Fundep, Determined(FundepDetermined), Determines(FundepDetermines));
 
 _create_ast_v!(
     InstanceMember,
@@ -33,11 +35,60 @@ _create_ast_v!(
 );
 
 impl ClassDeclaration {
+    pub fn constraints(&self) -> Option<ClassConstraints> {
+        ClassConstraints::cast(self.node.first_child()?)
+    }
+
     pub fn name(&self) -> Option<Name> {
         self.node.children().find_map(Name::cast)
     }
+    pub fn variables(&self) -> Option<ZeroOrMore<TypeVariableBinding>> {
+        self.node.children().find_map(ZeroOrMore::cast)
+    }
+
+    pub fn fundeps(&self) -> Option<ClassFundeps> {
+        self.node.children().find_map(ClassFundeps::cast)
+    }
 
     pub fn members(&self) -> Option<OneOrMore<ClassMember>> {
+        OneOrMore::cast(self.node.last_child()?)
+    }
+}
+
+impl ClassSignature {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+
+    pub fn kind(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
+}
+
+impl ClassConstraints {
+    pub fn children(&self) -> AstChildren<Type> {
+        support::children(&self.node)
+    }
+}
+
+impl ClassFundeps {
+    pub fn fundeps(&self) -> Option<Separated<Fundep>> {
+        Separated::cast(self.node.last_child()?)
+    }
+}
+
+impl FundepDetermined {
+    pub fn rhs(&self) -> Option<OneOrMore<Name>> {
+        OneOrMore::cast(self.node.last_child()?)
+    }
+}
+
+impl FundepDetermines {
+    pub fn lhs(&self) -> Option<OneOrMore<Name>> {
+        OneOrMore::cast(self.node.first_child()?)
+    }
+
+    pub fn rhs(&self) -> Option<OneOrMore<Name>> {
         OneOrMore::cast(self.node.last_child()?)
     }
 }
@@ -49,12 +100,6 @@ impl ClassMember {
 
     pub fn ty(&self) -> Option<Type> {
         Type::cast(self.node.last_child()?)
-    }
-}
-
-impl ClassSignature {
-    pub fn name(&self) -> Option<Name> {
-        Name::cast(self.node.first_child()?)
     }
 }
 

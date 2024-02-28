@@ -13,7 +13,7 @@ use syntax::{ast, SyntaxNodePtr};
 
 use crate::{
     id::AstId,
-    index::nominal::{DataGroupId, ValueGroupId},
+    index::nominal::{ClassGroupId, DataGroupId, ValueGroupId},
 };
 
 // region: Names
@@ -152,9 +152,10 @@ pub enum DataMembers {
 
 // region: ModuleBody
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ModuleBody {
     pub declarations: Vec<Declaration>,
+    pub class_declarations: FxHashMap<ClassGroupId, usize>,
     pub data_declarations: FxHashMap<DataGroupId, usize>,
     pub value_declarations: FxHashMap<ValueGroupId, usize>,
 }
@@ -205,6 +206,7 @@ impl ModuleBody {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Declaration {
+    ClassDeclaration(ClassDeclaration),
     DataDeclaration(DataDeclaration),
     ValueDeclaration(ValueDeclaration),
 }
@@ -229,6 +231,31 @@ pub struct DataConstructor {
 }
 
 // endregion
+
+// region: ClassDeclaration
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ClassDeclaration {
+    pub id: ClassGroupId,
+    pub name: Name,
+    pub signature: Option<TypeId>,
+    pub constraints: Vec<TypeId>,
+    pub variables: Vec<TypeVariable>,
+    pub fundeps: Vec<FunctionalDependency>,
+    pub members: Vec<ClassMember>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum FunctionalDependency {
+    Determined(Vec<Name>),
+    Determines(Vec<Name>, Vec<Name>),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ClassMember {
+    pub name: Name,
+    pub ty: TypeId,
+}
 
 // region: ValueDeclaration
 

@@ -434,6 +434,9 @@ fn exported_items(surface: &Module) -> ExportedItems {
 
     for declaration in &surface.body.declarations {
         match declaration {
+            Declaration::ClassDeclaration(_) => {
+                todo!("ClassDeclaration");
+            }
             Declaration::DataDeclaration(data_declaration) => {
                 let id = data_declaration.id;
                 let constructors = data_declaration
@@ -539,6 +542,9 @@ fn usable_items(surface: &Module, import: &ImportDeclaration) -> UsableItems {
 fn local_items(surface: &Module) -> UsableItems {
     let mut usable_items = UsableItems::default();
     surface.body.declarations.iter().for_each(|declaration| match declaration {
+        Declaration::ClassDeclaration(_) => {
+            todo!("ClassDeclaration");
+        }
         Declaration::DataDeclaration(data_declaration) => {
             let data_name = Name::clone(&data_declaration.name);
             let data_id = data_declaration.id;
@@ -582,6 +588,9 @@ pub(super) fn file_resolve_query(db: &dyn ScopeDatabase, file_id: FileId) -> Arc
 
     let mut ctx = Ctx::new(file_id, &arena, &imports, &local, &scope_info);
     surface.body.declarations.iter().for_each(|declaration| match declaration {
+        Declaration::ClassDeclaration(_) => {
+            todo!("ClassDeclaration");
+        }
         Declaration::DataDeclaration(data_declaration) => {
             resolve_data_declaration(&mut ctx, data_declaration);
         }

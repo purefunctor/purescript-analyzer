@@ -226,6 +226,7 @@ pub(super) fn file_scope_query(db: &dyn ScopeDatabase, file_id: FileId) -> Arc<S
 
     let mut ctx = Ctx::new(&arena);
     surface.body.declarations.iter().for_each(|declaration| match declaration {
+        Declaration::ClassDeclaration(_) => (),
         Declaration::DataDeclaration(_) => (),
         Declaration::ValueDeclaration(value_declaration) => {
             collect_value_declaration(&mut ctx, value_declaration);
