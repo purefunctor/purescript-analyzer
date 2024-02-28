@@ -47,6 +47,33 @@ pub struct DataGroup {
 
 pub type DataGroupId = Idx<DataGroup>;
 
+/// Information about instance chains.
+#[derive(Debug, PartialEq, Eq)]
+pub struct InstanceChain {
+    /// The name of the class.
+    pub class_name: Arc<str>,
+    /// The instances in a chain.
+    pub instances: Vec<InstanceDeclaration>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct InstanceDeclaration {
+    /// The ID of the instance.
+    pub id: AstId<ast::InstanceDeclaration>,
+    /// The members of the instance.
+    pub members: FxHashMap<Arc<str>, Vec<InstanceMemberGroup>>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct InstanceMemberGroup {
+    /// The signature declaration.
+    pub signature: Option<AstId<ast::InstanceMemberSignature>>,
+    /// The equation declarations.
+    pub equations: Vec<AstId<ast::InstanceMemberEquation>>,
+}
+
+pub type InstanceChainId = Idx<InstanceChain>;
+
 /// Information about value declarations.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
@@ -70,11 +97,13 @@ pub struct NominalMap {
     file_id: FileId,
     class_groups: Arena<ClassGroup>,
     data_groups: Arena<DataGroup>,
+    instance_groups: Arena<InstanceChain>,
     value_groups: Arena<ValueGroup>,
     name_to_class: FxHashMap<Arc<str>, ClassGroupId>,
     name_to_member: FxHashMap<Arc<str>, (ClassGroupId, AstId<ast::ClassMember>)>,
     name_to_data: FxHashMap<Arc<str>, DataGroupId>,
     name_to_constructor: FxHashMap<Arc<str>, (DataGroupId, AstId<ast::DataConstructor>)>,
+    name_to_instances: FxHashMap<Arc<str>, Vec<InstanceChainId>>,
     name_to_value: FxHashMap<Arc<str>, ValueGroupId>,
 }
 
@@ -82,21 +111,25 @@ impl NominalMap {
     fn new(file_id: FileId) -> NominalMap {
         let class_groups = Default::default();
         let data_groups = Default::default();
+        let instance_chains = Default::default();
         let value_groups = Default::default();
         let name_to_class = Default::default();
         let name_to_member = Default::default();
         let name_to_data = Default::default();
         let name_to_constructor = Default::default();
+        let name_to_instances = Default::default();
         let name_to_value = Default::default();
         NominalMap {
             file_id,
             class_groups,
             data_groups,
+            instance_groups: instance_chains,
             value_groups,
             name_to_class,
             name_to_member,
             name_to_data,
             name_to_constructor,
+            name_to_instances,
             name_to_value,
         }
     }
@@ -160,6 +193,7 @@ pub(super) fn nominal_map_query(db: &dyn IndexDatabase, file_id: FileId) -> Arc<
 enum DeclarationKey {
     Class(Option<Arc<str>>),
     Data(Option<Arc<str>>),
+    Instance,
     Value(Option<Arc<str>>),
 }
 
@@ -188,7 +222,7 @@ fn collect(
         ast::Declaration::DataDeclaration(data) => {
             DeclarationKey::Data(data.name().and_then(|name| name.in_db(db)))
         }
-        ast::Declaration::InstanceChain(_) => todo!("Unimplemented!"),
+        ast::Declaration::InstanceChain(_) => DeclarationKey::Instance,
         ast::Declaration::ForeignDataDeclaration(_) => todo!("Unimplemented!"),
         ast::Declaration::ValueAnnotationDeclaration(value) => {
             DeclarationKey::Value(value.name().and_then(|name| name.in_db(db)))
@@ -205,6 +239,9 @@ fn collect(
             }
             DeclarationKey::Data(name) => {
                 collect_data(db, nominal_map, positional_map, name, group)?;
+            }
+            DeclarationKey::Instance => {
+                collect_instances(db, nominal_map, positional_map, group)?;
             }
             DeclarationKey::Value(name) => {
                 collect_value(nominal_map, positional_map, name, group)?;
@@ -307,6 +344,95 @@ fn collect_data(
     }
 
     Some(())
+}
+
+fn collect_instances(
+    db: &dyn IndexDatabase,
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    group: impl Iterator<Item = ast::Declaration>,
+) -> Option<()> {
+    for declaration in group {
+        let ast::Declaration::InstanceChain(chain) = declaration else {
+            unreachable!("impossible:");
+        };
+        collect_instance_chain(db, nominal_map, positional_map, chain);
+    }
+    Some(())
+}
+
+fn collect_instance_chain(
+    db: &dyn IndexDatabase,
+    nominal_map: &mut NominalMap,
+    positional_map: &PositionalMap,
+    chain: ast::InstanceChain,
+) -> Option<()> {
+    let mut instances = chain.declarations();
+    let mut collected = vec![];
+
+    let Some(initial_instance) = instances.next() else {
+        unreachable!("impossible: should have at least one instance.");
+    };
+    let initial_name = initial_instance.class_name()?.name()?.in_db(db)?;
+    collected.push(collect_single_instance(db, positional_map, initial_instance)?);
+
+    for current_instance in instances {
+        let current_name = current_instance.class_name()?.name()?.in_db(db)?;
+        if current_name != initial_name {
+            return None;
+        }
+        collected.push(collect_single_instance(db, positional_map, current_instance)?);
+    }
+
+    let class_name = Arc::clone(&initial_name);
+    let instance_index = nominal_map
+        .instance_groups
+        .alloc(InstanceChain { class_name: initial_name, instances: collected });
+
+    nominal_map.name_to_instances.entry(class_name).or_default().push(instance_index);
+
+    Some(())
+}
+
+fn collect_single_instance(
+    db: &dyn IndexDatabase,
+    positional_map: &PositionalMap,
+    instance: ast::InstanceDeclaration,
+) -> Option<InstanceDeclaration> {
+    let id = positional_map.ast_id(&instance);
+
+    let grouped = instance.members()?.children().group_by(|member| match member {
+        ast::InstanceMember::InstanceMemberEquation(e) => e.name().and_then(|name| name.in_db(db)),
+        ast::InstanceMember::InstanceMemberSignature(s) => s.name().and_then(|name| name.in_db(db)),
+    });
+
+    let mut collected: FxHashMap<_, Vec<_>> = FxHashMap::default();
+    for (name, mut grouped_members) in grouped.into_iter() {
+        let name = name?;
+        let mut signature = None;
+        let mut equations = vec![];
+
+        match grouped_members.next()? {
+            ast::InstanceMember::InstanceMemberEquation(e) => {
+                equations.push(positional_map.ast_id(&e));
+            }
+            ast::InstanceMember::InstanceMemberSignature(s) => {
+                signature = Some(positional_map.ast_id(&s));
+            }
+        }
+
+        equations.extend(grouped_members.filter_map(|member| {
+            if let ast::InstanceMember::InstanceMemberEquation(e) = member {
+                Some(positional_map.ast_id(&e))
+            } else {
+                None
+            }
+        }));
+
+        collected.entry(name).or_default().push(InstanceMemberGroup { signature, equations });
+    }
+
+    Some(InstanceDeclaration { id, members: collected })
 }
 
 fn collect_value(

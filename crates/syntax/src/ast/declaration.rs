@@ -1,8 +1,8 @@
 use rowan::ast::{support, AstChildren, AstNode};
 
 use super::{
-    Binder, Binding, Name, OneOrMore, Separated, Type, TypeVariableBinding, WhereExpression,
-    ZeroOrMore,
+    Binder, Binding, Name, OneOrMore, QualifiedName, Separated, Type, TypeVariableBinding,
+    WhereExpression, ZeroOrMore,
 };
 
 _create_ast_v!(
@@ -99,8 +99,24 @@ impl InstanceChain {
 }
 
 impl InstanceDeclaration {
+    pub fn class_name(&self) -> Option<QualifiedName> {
+        self.node.children().find_map(QualifiedName::cast)
+    }
+
     pub fn members(&self) -> Option<OneOrMore<InstanceMember>> {
         OneOrMore::cast(self.node.last_child()?)
+    }
+}
+
+impl InstanceMemberEquation {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
+    }
+}
+
+impl InstanceMemberSignature {
+    pub fn name(&self) -> Option<Name> {
+        Name::cast(self.node.first_child()?)
     }
 }
 
