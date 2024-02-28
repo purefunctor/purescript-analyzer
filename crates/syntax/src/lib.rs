@@ -69,8 +69,8 @@ pub enum SyntaxKind {
     RightThickArrow,
     LeftParenthesis,
     RightParenthesis,
-    LeftBracket,
-    RightBracket,
+    LeftCurly,
+    RightCurly,
     LeftSquare,
     RightSquare,
 

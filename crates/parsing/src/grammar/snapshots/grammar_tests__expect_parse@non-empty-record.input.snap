@@ -7,7 +7,7 @@ Input: { a :: Hello, b :: Hello }
 
 Start { kind: RecordType }
   Start { kind: Wrapped }
-    Token { kind: LeftBracket }
+    Token { kind: LeftCurly }
     Start { kind: RowInner }
       Start { kind: Separated }
         Start { kind: RowField }
@@ -39,7 +39,7 @@ Start { kind: RecordType }
         Finish
       Finish
     Finish
-    Token { kind: RightBracket }
+    Token { kind: RightCurly }
   Finish
 Finish
 

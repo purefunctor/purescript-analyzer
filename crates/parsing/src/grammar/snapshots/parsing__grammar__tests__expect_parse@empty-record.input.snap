@@ -7,10 +7,10 @@ Input: {}
 
 Start { kind: RecordType }
   Start { kind: Wrapped }
-    Token { kind: LeftBracket }
+    Token { kind: LeftCurly }
     Start { kind: RowInner }
     Finish
-    Token { kind: RightBracket }
+    Token { kind: RightCurly }
   Finish
 Finish
 

@@ -8,7 +8,7 @@ Input: { 1: "hello" }
 Start { kind: LiteralExpression }
   Start { kind: LiteralRecord }
     Start { kind: Wrapped }
-      Token { kind: LeftBracket }
+      Token { kind: LeftCurly }
       Start { kind: Separated }
         Start { kind: RecordField }
           Start { kind: Error }
@@ -21,7 +21,7 @@ Start { kind: LiteralExpression }
           Finish
         Finish
       Finish
-      Token { kind: RightBracket }
+      Token { kind: RightCurly }
     Finish
   Finish
 Finish

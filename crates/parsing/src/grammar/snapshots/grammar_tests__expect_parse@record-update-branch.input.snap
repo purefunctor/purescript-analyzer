@@ -14,14 +14,14 @@ Start { kind: RecordUpdateExpression }
     Finish
   Finish
   Start { kind: Wrapped }
-    Token { kind: LeftBracket }
+    Token { kind: LeftCurly }
     Start { kind: Separated }
       Start { kind: RecordUpdateBranch }
         Start { kind: Name }
           Token { kind: Label }
         Finish
         Start { kind: Wrapped }
-          Token { kind: LeftBracket }
+          Token { kind: LeftCurly }
           Start { kind: Separated }
             Start { kind: RecordUpdateLeaf }
               Start { kind: Name }
@@ -33,11 +33,11 @@ Start { kind: RecordUpdateExpression }
               Finish
             Finish
           Finish
-          Token { kind: RightBracket }
+          Token { kind: RightCurly }
         Finish
       Finish
     Finish
-    Token { kind: RightBracket }
+    Token { kind: RightCurly }
   Finish
 Finish
 
