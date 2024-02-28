@@ -24,8 +24,8 @@ pub struct ClassGroup {
     pub name: Arc<str>,
     /// The signature of the declaration.
     pub signature: Option<AstId<ast::ClassSignature>>,
-    /// The head of the declaration.
-    pub head: AstId<ast::ClassDeclaration>,
+    /// The class declaration itself.
+    pub declaration: AstId<ast::ClassDeclaration>,
     /// Members inside the declaration.
     pub members: FxHashMap<Arc<str>, AstId<ast::ClassMember>>,
 }
@@ -132,6 +132,16 @@ impl NominalMap {
             name_to_instances,
             name_to_value,
         }
+    }
+
+    pub fn class_id(&self, name: impl Borrow<str>) -> Option<InFile<ClassGroupId>> {
+        self.name_to_class.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
+    }
+
+    pub fn iter_class_group(&self) -> impl Iterator<Item = (InFile<ClassGroupId>, &ClassGroup)> {
+        self.class_groups
+            .iter()
+            .map(|(id, class)| (InFile { file_id: self.file_id, value: id }, class))
     }
 
     pub fn data_id(&self, name: impl Borrow<str>) -> Option<InFile<DataGroupId>> {
@@ -271,7 +281,7 @@ fn collect_class(
     }
 
     if let ast::Declaration::ClassDeclaration(d) = &declaration {
-        let head = positional_map.ast_id(d);
+        let declaration = positional_map.ast_id(d);
         let mut members = FxHashMap::default();
 
         if let Some(class_members) = d.members() {
@@ -283,7 +293,7 @@ fn collect_class(
 
         let class_name = Arc::clone(&name);
         let class_group_id =
-            nominal_map.class_groups.alloc(ClassGroup { name, signature, head, members });
+            nominal_map.class_groups.alloc(ClassGroup { name, signature, declaration, members });
 
         let class_group = &nominal_map.class_groups[class_group_id];
 
