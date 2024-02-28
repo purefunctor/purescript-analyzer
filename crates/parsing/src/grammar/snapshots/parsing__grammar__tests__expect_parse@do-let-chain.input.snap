@@ -1,0 +1,85 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/expression/do-let-chain.input
+---
+Input: do
+  p <- f
+  let
+    a = 0
+  p <- f
+  f
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: OneOrMore }
+    Start { kind: DoBind }
+      Start { kind: VariableBinder }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoLetBinding }
+      Token { kind: LetKw }
+      Token { kind: LayoutStart }
+      Start { kind: OneOrMore }
+        Start { kind: LetBindingName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Start { kind: ZeroOrMore }
+          Finish
+          Start { kind: UnconditionalBinding }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: LiteralExpression }
+                Token { kind: LiteralInteger }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutEnd }
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoBind }
+      Start { kind: VariableBinder }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+      Finish
+      Token { kind: LeftArrow }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoDiscard }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
