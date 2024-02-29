@@ -17,7 +17,16 @@ _create_ast_v!(
     ValueEquationDeclaration(ValueEquationDeclaration)
 );
 
-_create_ast!(ClassConstraints, ClassFundeps, ClassMember, DataConstructor, InstanceDeclaration);
+_create_ast!(
+    ClassConstraints,
+    ClassVariables,
+    ClassFundeps,
+    FundepVariables,
+    ClassMembers,
+    ClassMember,
+    DataConstructor,
+    InstanceDeclaration
+);
 
 _create_ast_v!(Fundep, Determined(FundepDetermined), Determines(FundepDetermines));
 
@@ -42,16 +51,17 @@ impl ClassDeclaration {
     pub fn name(&self) -> Option<Name> {
         self.node.children().find_map(Name::cast)
     }
-    pub fn variables(&self) -> Option<ZeroOrMore<TypeVariableBinding>> {
-        self.node.children().find_map(ZeroOrMore::cast)
+
+    pub fn variables(&self) -> Option<ClassVariables> {
+        self.node.children().find_map(ClassVariables::cast)
     }
 
     pub fn fundeps(&self) -> Option<ClassFundeps> {
         self.node.children().find_map(ClassFundeps::cast)
     }
 
-    pub fn members(&self) -> Option<OneOrMore<ClassMember>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn members(&self) -> Option<ClassMembers> {
+        self.node.children().find_map(ClassMembers::cast)
     }
 }
 
@@ -71,25 +81,44 @@ impl ClassConstraints {
     }
 }
 
+impl ClassVariables {
+    pub fn children(&self) -> AstChildren<TypeVariableBinding> {
+        support::children(&self.node)
+    }
+}
+
 impl ClassFundeps {
-    pub fn fundeps(&self) -> Option<Separated<Fundep>> {
-        Separated::cast(self.node.last_child()?)
+    pub fn children(&self) -> AstChildren<Fundep> {
+        dbg!(&self.node);
+        support::children(&self.node)
     }
 }
 
 impl FundepDetermined {
-    pub fn rhs(&self) -> Option<OneOrMore<Name>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn rhs(&self) -> Option<FundepVariables> {
+        FundepVariables::cast(self.node.last_child()?)
     }
 }
 
 impl FundepDetermines {
-    pub fn lhs(&self) -> Option<OneOrMore<Name>> {
-        OneOrMore::cast(self.node.first_child()?)
+    pub fn lhs(&self) -> Option<FundepVariables> {
+        FundepVariables::cast(self.node.first_child()?)
     }
 
-    pub fn rhs(&self) -> Option<OneOrMore<Name>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn rhs(&self) -> Option<FundepVariables> {
+        FundepVariables::cast(self.node.last_child()?)
+    }
+}
+
+impl FundepVariables {
+    pub fn children(&self) -> AstChildren<Name> {
+        support::children(&self.node)
+    }
+}
+
+impl ClassMembers {
+    pub fn children(&self) -> AstChildren<ClassMember> {
+        support::children(&self.node)
     }
 }
 

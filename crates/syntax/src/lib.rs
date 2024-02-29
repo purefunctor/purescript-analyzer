@@ -186,9 +186,12 @@ pub enum SyntaxKind {
     ClassSignature,
     ClassDeclaration,
     ClassConstraints,
+    ClassVariables,
     ClassFundeps,
     FundepDetermined,
     FundepDetermines,
+    FundepVariables,
+    ClassMembers,
     ClassMember,
     ClassKw,
 

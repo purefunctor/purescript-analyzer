@@ -6,11 +6,15 @@ input_file: crates/parsing/src/grammar/inputs/passing/file/class.input
 Input: module Main where
 
 class F :: Int -> Constraint
+class F
 class F a
 class E a <= F a
 class (E a, E a) <= F a
 class F a where
   f :: a -> Int
+class F a where
+  f :: a -> Int
+  g :: Int -> a
 class F a b | -> a b
 class F a b | -> a, -> b
 class F a b | a -> b
@@ -63,7 +67,16 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -96,7 +109,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -148,7 +161,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -162,16 +175,16 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
             Finish
           Finish
         Finish
-        Token { kind: WhereKw }
-        Token { kind: LayoutStart }
-        Start { kind: OneOrMore }
+        Start { kind: ClassMembers }
+          Token { kind: WhereKw }
+          Token { kind: LayoutStart }
           Start { kind: ClassMember }
             Start { kind: Name }
               Token { kind: Lower }
@@ -193,8 +206,8 @@ Start { kind: Module }
               Finish
             Finish
           Finish
+          Token { kind: LayoutEnd }
         Finish
-        Token { kind: LayoutEnd }
       Finish
       Token { kind: LayoutSep }
       Start { kind: ClassDeclaration }
@@ -202,7 +215,69 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ClassMembers }
+          Token { kind: WhereKw }
+          Token { kind: LayoutStart }
+          Start { kind: ClassMember }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+            Token { kind: Colon2 }
+            Start { kind: ArrowType }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: RightArrow }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: LayoutSep }
+          Start { kind: ClassMember }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+            Token { kind: Colon2 }
+            Start { kind: ArrowType }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
+              Token { kind: RightArrow }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: LayoutEnd }
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ClassDeclaration }
+        Token { kind: ClassKw }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -216,16 +291,14 @@ Start { kind: Module }
         Finish
         Start { kind: ClassFundeps }
           Token { kind: Pipe }
-          Start { kind: Separated }
-            Start { kind: FundepDetermined }
-              Token { kind: RightArrow }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+          Start { kind: FundepDetermined }
+            Token { kind: RightArrow }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
             Finish
           Finish
@@ -237,7 +310,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -251,22 +324,20 @@ Start { kind: Module }
         Finish
         Start { kind: ClassFundeps }
           Token { kind: Pipe }
-          Start { kind: Separated }
-            Start { kind: FundepDetermined }
-              Token { kind: RightArrow }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+          Start { kind: FundepDetermined }
+            Token { kind: RightArrow }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
             Finish
-            Token { kind: Comma }
-            Start { kind: FundepDetermined }
-              Token { kind: RightArrow }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: FundepDetermined }
+            Token { kind: RightArrow }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
             Finish
           Finish
@@ -278,7 +349,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -292,18 +363,16 @@ Start { kind: Module }
         Finish
         Start { kind: ClassFundeps }
           Token { kind: Pipe }
-          Start { kind: Separated }
-            Start { kind: FundepDetermines }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+          Start { kind: FundepDetermines }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
-              Token { kind: RightArrow }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+            Finish
+            Token { kind: RightArrow }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
             Finish
           Finish
@@ -315,7 +384,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: ClassVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -329,32 +398,30 @@ Start { kind: Module }
         Finish
         Start { kind: ClassFundeps }
           Token { kind: Pipe }
-          Start { kind: Separated }
-            Start { kind: FundepDetermines }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-              Finish
-              Token { kind: RightArrow }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+          Start { kind: FundepDetermines }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
             Finish
-            Token { kind: Comma }
-            Start { kind: FundepDetermines }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+            Token { kind: RightArrow }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
-              Token { kind: RightArrow }
-              Start { kind: OneOrMore }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: FundepDetermines }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+            Finish
+            Token { kind: RightArrow }
+            Start { kind: FundepVariables }
+              Start { kind: Name }
+                Token { kind: Lower }
               Finish
             Finish
           Finish
