@@ -95,90 +95,84 @@ pub type ValueGroupId = Idx<ValueGroup>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct NominalMap {
     file_id: FileId,
-    class_groups: Arena<ClassGroup>,
-    data_groups: Arena<DataGroup>,
-    instance_groups: Arena<InstanceChain>,
-    value_groups: Arena<ValueGroup>,
-    name_to_class: FxHashMap<Arc<str>, ClassGroupId>,
-    name_to_member: FxHashMap<Arc<str>, (ClassGroupId, AstId<ast::ClassMember>)>,
-    name_to_data: FxHashMap<Arc<str>, DataGroupId>,
-    name_to_constructor: FxHashMap<Arc<str>, (DataGroupId, AstId<ast::DataConstructor>)>,
-    name_to_instances: FxHashMap<Arc<str>, Vec<InstanceChainId>>,
-    name_to_value: FxHashMap<Arc<str>, ValueGroupId>,
+    groups: Groups,
+    name_to: NameTo,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+struct Groups {
+    class: Arena<ClassGroup>,
+    data: Arena<DataGroup>,
+    instance: Arena<InstanceChain>,
+    value: Arena<ValueGroup>,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+struct NameTo {
+    class: FxHashMap<Arc<str>, ClassGroupId>,
+    class_member: FxHashMap<Arc<str>, (ClassGroupId, AstId<ast::ClassMember>)>,
+    data: FxHashMap<Arc<str>, DataGroupId>,
+    data_constructor: FxHashMap<Arc<str>, (DataGroupId, AstId<ast::DataConstructor>)>,
+    value: FxHashMap<Arc<str>, ValueGroupId>,
 }
 
 impl NominalMap {
     fn new(file_id: FileId) -> NominalMap {
-        let class_groups = Default::default();
-        let data_groups = Default::default();
-        let instance_chains = Default::default();
-        let value_groups = Default::default();
-        let name_to_class = Default::default();
-        let name_to_member = Default::default();
-        let name_to_data = Default::default();
-        let name_to_constructor = Default::default();
-        let name_to_instances = Default::default();
-        let name_to_value = Default::default();
-        NominalMap {
-            file_id,
-            class_groups,
-            data_groups,
-            instance_groups: instance_chains,
-            value_groups,
-            name_to_class,
-            name_to_member,
-            name_to_data,
-            name_to_constructor,
-            name_to_instances,
-            name_to_value,
-        }
+        let groups = Groups::default();
+        let name_to = NameTo::default();
+        NominalMap { file_id, groups, name_to }
     }
 
     pub fn class_id(&self, name: impl Borrow<str>) -> Option<InFile<ClassGroupId>> {
-        self.name_to_class.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
+        self.name_to.class.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
     }
 
     pub fn iter_class_group(&self) -> impl Iterator<Item = (InFile<ClassGroupId>, &ClassGroup)> {
-        self.class_groups
+        self.groups
+            .class
             .iter()
             .map(|(id, class)| (InFile { file_id: self.file_id, value: id }, class))
     }
 
     pub fn data_id(&self, name: impl Borrow<str>) -> Option<InFile<DataGroupId>> {
-        self.name_to_data.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
+        self.name_to.data.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
     }
 
     pub fn constructor_id(
         &self,
         name: impl Borrow<str>,
     ) -> Option<(InFile<DataGroupId>, InFile<AstId<ast::DataConstructor>>)> {
-        self.name_to_constructor.get(name.borrow()).copied().map(|(group_id, constructor_id)| {
-            let group_id = InFile { file_id: self.file_id, value: group_id };
-            let constructor_id = InFile { file_id: self.file_id, value: constructor_id };
-            (group_id, constructor_id)
-        })
+        self.name_to.data_constructor.get(name.borrow()).copied().map(
+            |(group_id, constructor_id)| {
+                let group_id = InFile { file_id: self.file_id, value: group_id };
+                let constructor_id = InFile { file_id: self.file_id, value: constructor_id };
+                (group_id, constructor_id)
+            },
+        )
     }
 
     pub fn data_group(&self, id: InFile<DataGroupId>) -> &DataGroup {
-        &self.data_groups[id.value]
+        &self.groups.data[id.value]
     }
 
     pub fn iter_data_group(&self) -> impl Iterator<Item = (InFile<DataGroupId>, &DataGroup)> {
-        self.data_groups
+        self.groups
+            .data
             .iter()
             .map(|(id, data)| (InFile { file_id: self.file_id, value: id }, data))
     }
 
     pub fn value_id(&self, name: impl Borrow<str>) -> Option<InFile<ValueGroupId>> {
-        self.name_to_value.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
+        self.name_to.value.get(name.borrow()).map(|id| InFile { file_id: self.file_id, value: *id })
     }
 
     pub fn value_group(&self, id: InFile<ValueGroupId>) -> &ValueGroup {
-        &self.value_groups[id.value]
+        &self.groups.value[id.value]
     }
 
     pub fn iter_value_group(&self) -> impl Iterator<Item = (InFile<ValueGroupId>, &ValueGroup)> {
-        self.value_groups
+        self.groups
+            .value
             .iter()
             .map(|(id, data)| (InFile { file_id: self.file_id, value: id }, data))
     }
@@ -293,14 +287,15 @@ fn collect_class(
 
         let class_name = Arc::clone(&name);
         let class_group_id =
-            nominal_map.class_groups.alloc(ClassGroup { name, signature, declaration, members });
+            nominal_map.groups.class.alloc(ClassGroup { name, signature, declaration, members });
 
-        let class_group = &nominal_map.class_groups[class_group_id];
+        let class_group = &nominal_map.groups.class[class_group_id];
 
-        nominal_map.name_to_class.insert(class_name, class_group_id);
+        nominal_map.name_to.class.insert(class_name, class_group_id);
         for (member_name, member_id) in class_group.members.iter() {
             nominal_map
-                .name_to_member
+                .name_to
+                .class_member
                 .insert(Arc::clone(member_name), (class_group_id, *member_id));
         }
     }
@@ -339,14 +334,15 @@ fn collect_data(
 
         let data_name = Arc::clone(&name);
         let data_group_id =
-            nominal_map.data_groups.alloc(DataGroup { name, annotation, equation, constructors });
+            nominal_map.groups.data.alloc(DataGroup { name, annotation, equation, constructors });
 
-        let data_group = &nominal_map.data_groups[data_group_id];
+        let data_group = &nominal_map.groups.data[data_group_id];
 
-        nominal_map.name_to_data.insert(data_name, data_group_id);
+        nominal_map.name_to.data.insert(data_name, data_group_id);
         for (constructor_name, constructor_id) in data_group.constructors.iter() {
             nominal_map
-                .name_to_constructor
+                .name_to
+                .data_constructor
                 .insert(Arc::clone(constructor_name), (data_group_id, *constructor_id));
         }
     } else {
@@ -394,12 +390,10 @@ fn collect_instance_chain(
         collected.push(collect_single_instance(db, positional_map, current_instance)?);
     }
 
-    let class_name = Arc::clone(&initial_name);
-    let instance_index = nominal_map
-        .instance_groups
+    nominal_map
+        .groups
+        .instance
         .alloc(InstanceChain { class_name: initial_name, instances: collected });
-
-    nominal_map.name_to_instances.entry(class_name).or_default().push(instance_index);
 
     Some(())
 }
@@ -476,9 +470,9 @@ fn collect_value(
     }));
 
     let value_name = Arc::clone(&name);
-    let value_index = nominal_map.value_groups.alloc(ValueGroup { name, annotation, equations });
+    let value_index = nominal_map.groups.value.alloc(ValueGroup { name, annotation, equations });
 
-    nominal_map.name_to_value.insert(value_name, value_index);
+    nominal_map.name_to.value.insert(value_name, value_index);
 
     Some(())
 }
