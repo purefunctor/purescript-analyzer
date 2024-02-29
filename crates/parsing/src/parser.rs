@@ -113,6 +113,14 @@ impl<'a> Parser<'a> {
         false
     }
 
+    pub(crate) fn expect_recover(&mut self, kind: SyntaxKind) -> bool {
+        if self.eat(kind) {
+            return true;
+        }
+        self.error_recover(format!("expected {kind:?}"));
+        false
+    }
+
     pub(crate) fn start(&mut self) -> NodeMarker {
         let index = self.output.len();
         self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
@@ -124,6 +132,32 @@ impl<'a> Parser<'a> {
         let event_index = self.output.len();
         self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
         SaveMarker::new(input_index, event_index)
+    }
+
+    pub(crate) fn repeat(&mut self, rule: impl Fn(&mut Parser) -> bool) {
+        while rule(self) {
+            let steps = self.steps.get();
+            if steps > PARSER_LIMIT {
+                panic!("infinite loop in parser");
+            }
+            self.steps.set(steps + 1);
+        }
+        self.steps.set(0);
+    }
+
+    pub(crate) fn separated(
+        &mut self,
+        rule: impl Fn(&mut Parser),
+        separator: impl Fn(&mut Parser) -> bool,
+    ) {
+        rule(self);
+        loop {
+            if separator(self) {
+                rule(self);
+            } else {
+                break;
+            }
+        }
     }
 }
 
