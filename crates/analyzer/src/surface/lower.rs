@@ -378,69 +378,10 @@ fn lower_class_group(
     });
 
     let declaration = ctx.ast_of(class_group.declaration);
-    let constraints = declaration
-        .constraints()
-        .map(|constraints| {
-            constraints
-                .children()
-                .map(|constraint| lower_type(ctx, db, Some(constraint)))
-                .collect_vec()
-        })
-        .unwrap_or_default();
-
-    let variables = declaration
-        .variables()
-        .map(|variables| lower_type_variable_binding(ctx, db, variables.children()))
-        .unwrap_or_default();
-
-    let fundeps = declaration
-        .fundeps()
-        .and_then(|fundeps| {
-            Some(
-                fundeps
-                    .fundeps()?
-                    .children()
-                    .filter_map(|fundep| match fundep {
-                        ast::Fundep::Determined(determined) => {
-                            let rhs = determined
-                                .rhs()?
-                                .children()
-                                .map(|name| lower_name(db, Some(name)))
-                                .collect_vec();
-                            Some(FunctionalDependency::Determined(rhs))
-                        }
-                        ast::Fundep::Determines(determines) => {
-                            let lhs = determines
-                                .lhs()?
-                                .children()
-                                .map(|name| lower_name(db, Some(name)))
-                                .collect_vec();
-                            let rhs = determines
-                                .rhs()?
-                                .children()
-                                .map(|name| lower_name(db, Some(name)))
-                                .collect_vec();
-                            Some(FunctionalDependency::Determines(lhs, rhs))
-                        }
-                    })
-                    .collect_vec(),
-            )
-        })
-        .unwrap_or_default();
-
-    let members = declaration
-        .members()
-        .map(|members| {
-            members
-                .children()
-                .map(|member| {
-                    let name = lower_name(db, member.name());
-                    let ty = lower_type(ctx, db, member.ty());
-                    ClassMember { name, ty }
-                })
-                .collect_vec()
-        })
-        .unwrap_or_default();
+    let constraints = lower_class_constraints(ctx, db, declaration.constraints());
+    let variables = lower_class_variables(ctx, db, declaration.variables());
+    let fundeps = lower_class_fundeps(db, declaration.fundeps());
+    let members = lower_class_members(ctx, db, declaration.members());
 
     ClassDeclaration { id, name, signature, constraints, variables, fundeps, members }
 }
@@ -451,6 +392,84 @@ fn lower_class_signature(
     signature: ast::ClassSignature,
 ) -> TypeId {
     lower_type(ctx, db, signature.kind())
+}
+
+fn lower_class_constraints(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    constraints: Option<ast::ClassConstraints>,
+) -> Vec<TypeId> {
+    if let Some(constraints) = constraints {
+        constraints.children().map(|constraint| lower_type(ctx, db, Some(constraint))).collect_vec()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_class_variables(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    variables: Option<ast::ClassVariables>,
+) -> Vec<TypeVariable> {
+    if let Some(variables) = variables {
+        lower_type_variable_binding(ctx, db, variables.children())
+    } else {
+        vec![]
+    }
+}
+
+fn lower_class_fundeps(
+    db: &dyn SurfaceDatabase,
+    fundeps: Option<ast::ClassFundeps>,
+) -> Vec<FunctionalDependency> {
+    if let Some(fundeps) = fundeps {
+        fundeps
+            .children()
+            .map(|fundep| match fundep {
+                ast::Fundep::Determined(determined) => {
+                    let rhs = lower_fundep_variables(db, determined.rhs());
+                    FunctionalDependency::Determined(rhs)
+                }
+                ast::Fundep::Determines(determines) => {
+                    let lhs = lower_fundep_variables(db, determines.lhs());
+                    let rhs = lower_fundep_variables(db, determines.rhs());
+                    FunctionalDependency::Determines(lhs, rhs)
+                }
+            })
+            .collect_vec()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_fundep_variables(
+    db: &dyn SurfaceDatabase,
+    variables: Option<ast::FundepVariables>,
+) -> Vec<Name> {
+    if let Some(variables) = variables {
+        variables.children().map(|variable| lower_name(db, Some(variable))).collect_vec()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_class_members(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    members: Option<ast::ClassMembers>,
+) -> Vec<ClassMember> {
+    if let Some(members) = members {
+        members
+            .children()
+            .map(|member| {
+                let name = lower_name(db, member.name());
+                let ty = lower_type(ctx, db, member.ty());
+                ClassMember { name, ty }
+            })
+            .collect_vec()
+    } else {
+        vec![]
+    }
 }
 
 // endregion
