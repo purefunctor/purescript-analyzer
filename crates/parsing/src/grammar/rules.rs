@@ -264,8 +264,6 @@ fn expr_case(parser: &mut Parser) {
 }
 
 fn expr_case_branch(parser: &mut Parser) {
-    // Known errors:
-    //   a, b | 4 <- a + b -> 3
     let mut marker = parser.start();
     separated(parser, SyntaxKind::Comma, pat_0);
 
@@ -561,6 +559,13 @@ fn expr_atom(parser: &mut Parser) {
         SyntaxKind::LeftCurly => {
             expr_record(parser);
             return expression.end(parser, SyntaxKind::LiteralExpression);
+        }
+        SyntaxKind::Underscore => {
+            parser.consume();
+            // It's called `ExprSection` in the purs compiler, and I just stole that name because I
+            // couldn't come up with anything that felt right. `ImplicitFunctionExpression`,
+            // `UnderscoreExpression`?
+            return expression.end(parser, SyntaxKind::SectionExpression);
         }
         _ => (),
     }

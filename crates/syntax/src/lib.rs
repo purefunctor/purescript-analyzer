@@ -117,6 +117,7 @@ pub enum SyntaxKind {
     OperatorNameExpression,
     VariableExpression,
 
+    SectionExpression,
     LambdaExpression,
     LiteralExpression,
     ParenthesizedExpression,
