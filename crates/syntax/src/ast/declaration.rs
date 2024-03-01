@@ -75,23 +75,13 @@ impl ClassSignature {
     }
 }
 
-impl ClassConstraints {
-    pub fn children(&self) -> AstChildren<Type> {
-        support::children(&self.node)
-    }
-}
-
-impl ClassVariables {
-    pub fn children(&self) -> AstChildren<TypeVariableBinding> {
-        support::children(&self.node)
-    }
-}
-
-impl ClassFundeps {
-    pub fn children(&self) -> AstChildren<Fundep> {
-        support::children(&self.node)
-    }
-}
+_has_children!(
+    ClassConstraints<Type>,
+    ClassVariables<TypeVariableBinding>,
+    ClassFundeps<Fundep>,
+    FundepVariables<Name>,
+    ClassMembers<ClassMember>
+);
 
 impl FundepDetermined {
     pub fn rhs(&self) -> Option<FundepVariables> {
@@ -106,18 +96,6 @@ impl FundepDetermines {
 
     pub fn rhs(&self) -> Option<FundepVariables> {
         FundepVariables::cast(self.node.last_child()?)
-    }
-}
-
-impl FundepVariables {
-    pub fn children(&self) -> AstChildren<Name> {
-        support::children(&self.node)
-    }
-}
-
-impl ClassMembers {
-    pub fn children(&self) -> AstChildren<ClassMember> {
-        support::children(&self.node)
     }
 }
 
