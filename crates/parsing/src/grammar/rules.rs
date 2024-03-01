@@ -250,8 +250,33 @@ fn expr_if(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
-fn expr_case(_: &mut Parser) {
-    todo!("case kw");
+// 'case' sep(expr_0, ',') 'of' '\{' sep(expr_case_branch, '\;') '\}'
+fn expr_case(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::CaseKw);
+    separated(parser, SyntaxKind::Comma, expr_0);
+    parser.expect(SyntaxKind::OfKw);
+
+    layout_one_or_more(parser, expr_case_branch);
+
+    marker.end(parser, SyntaxKind::CaseExpression);
+}
+
+fn expr_case_branch(parser: &mut Parser) {
+    // Known errors:
+    //   a, b | 4 <- a + b -> 3
+    let mut marker = parser.start();
+    separated(parser, SyntaxKind::Comma, pat_0);
+
+    if parser.current() == SyntaxKind::Pipe {
+        expr_guarded(parser, SyntaxKind::RightArrow);
+    } else {
+        parser.expect(SyntaxKind::RightArrow);
+        expr_where(parser);
+    }
+
+    marker.end(parser, SyntaxKind::CaseBranch);
 }
 
 // 'let' '{' (expr_let_binding ';')* expr_let_binding '}' 'in' expr_0
@@ -754,6 +779,7 @@ fn at_type_start(parser: &mut Parser) -> bool {
             | SyntaxKind::LiteralInteger
             | SyntaxKind::Minus
             | SyntaxKind::LeftParenthesis
+            | SyntaxKind::LeftCurly
     )
 }
 
