@@ -1,0 +1,44 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/expression/case_with_underscore.input
+---
+Input: case _ of
+  [] -> []
+
+Start { kind: CaseExpression }
+  Token { kind: CaseKw }
+  Start { kind: Separated }
+    Start { kind: SectionExpression }
+      Token { kind: Underscore }
+    Finish
+  Finish
+  Token { kind: OfKw }
+  Token { kind: LayoutStart }
+  Start { kind: OneOrMore }
+    Start { kind: CaseBranch }
+      Start { kind: Separated }
+        Start { kind: LiteralBinder }
+          Start { kind: LiteralArray }
+            Start { kind: Wrapped }
+              Token { kind: LeftSquare }
+              Token { kind: RightSquare }
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: RightArrow }
+      Start { kind: WhereExpression }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralArray }
+            Start { kind: Wrapped }
+              Token { kind: LeftSquare }
+              Token { kind: RightSquare }
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
