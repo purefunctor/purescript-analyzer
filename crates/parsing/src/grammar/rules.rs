@@ -1657,16 +1657,28 @@ fn foreign_import_declaration(parser: &mut Parser) {
 
     parser.expect(SyntaxKind::ForeignKw);
     parser.expect(SyntaxKind::ImportKw);
-    parser.expect(SyntaxKind::DataKw);
-    if parser.at(SyntaxKind::Upper) {
-        name(parser, SyntaxKind::Upper);
-    } else {
-        parser.error_recover("expected an Upper");
+    match parser.current() {
+        SyntaxKind::DataKw => {
+            parser.consume();
+            if parser.at(SyntaxKind::Upper) {
+                name(parser, SyntaxKind::Upper);
+            } else {
+                parser.error_recover("expected an Upper");
+            }
+            parser.expect(SyntaxKind::Colon2);
+            type_0(parser);
+            marker.end(parser, SyntaxKind::ForeignDataDeclaration);
+        }
+        SyntaxKind::Lower => {
+            name(parser, SyntaxKind::Lower);
+            parser.expect(SyntaxKind::Colon2);
+            type_0(parser);
+            marker.end(parser, SyntaxKind::ForeignValueDeclaration);
+        }
+        _ => {
+            parser.error_recover("expected either lower-case name or `data` for this foreign import");
+        }
     }
-    parser.expect(SyntaxKind::Colon2);
-    type_0(parser);
-
-    marker.end(parser, SyntaxKind::ForeignDataDeclaration);
 }
 
 fn at_type_var_binding_plain(parser: &mut Parser) -> bool {
