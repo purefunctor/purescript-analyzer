@@ -1,8 +1,8 @@
 use rowan::ast::{support, AstChildren, AstNode};
 
 use super::{
-    Binder, Binding, Name, OneOrMore, QualifiedName, Separated, Type, TypeVariableBinding,
-    WhereExpression, ZeroOrMore,
+    Binder, Binding, Name, OneOrMore, QualifiedName, Type, TypeVariableBinding, WhereExpression,
+    ZeroOrMore,
 };
 
 _create_ast_v!(
@@ -24,7 +24,10 @@ _create_ast!(
     FundepVariables,
     ClassMembers,
     ClassMember,
+    DataVariables,
+    DataConstructors,
     DataConstructor,
+    ConstructorFields,
     InstanceDeclaration
 );
 
@@ -124,22 +127,28 @@ impl DataDeclaration {
         Name::cast(self.node.first_child()?)
     }
 
-    pub fn variables(&self) -> Option<ZeroOrMore<TypeVariableBinding>> {
-        ZeroOrMore::cast(self.node.children().nth(1)?)
+    pub fn variables(&self) -> Option<DataVariables> {
+        DataVariables::cast(self.node.children().nth(1)?)
     }
 
-    pub fn constructors(&self) -> Option<Separated<DataConstructor>> {
-        Separated::cast(self.node.last_child()?)
+    pub fn constructors(&self) -> Option<DataConstructors> {
+        DataConstructors::cast(self.node.last_child()?)
     }
 }
+
+_has_children!(
+    DataVariables<TypeVariableBinding>,
+    DataConstructors<DataConstructor>,
+    ConstructorFields<Type>
+);
 
 impl DataConstructor {
     pub fn name(&self) -> Option<Name> {
         Name::cast(self.node.first_child()?)
     }
 
-    pub fn fields(&self) -> Option<ZeroOrMore<Type>> {
-        ZeroOrMore::cast(self.node.last_child()?)
+    pub fn fields(&self) -> Option<ConstructorFields> {
+        ConstructorFields::cast(self.node.last_child()?)
     }
 }
 

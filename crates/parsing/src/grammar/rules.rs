@@ -1547,22 +1547,41 @@ fn data_declaration(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::DataAnnotation);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_type_variable_binding_start(parser) {
-                type_variable_binding_plain(parser);
-                true
-            } else {
-                false
-            }
-        });
+        data_variables(parser);
 
         if parser.at(SyntaxKind::Equal) {
-            parser.expect(SyntaxKind::Equal);
-            separated(parser, SyntaxKind::Pipe, data_constructor);
+            data_constructors(parser);
         }
 
         marker.end(parser, SyntaxKind::DataDeclaration);
     }
+}
+
+fn data_variables(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        if at_type_variable_binding_start(parser) {
+            type_variable_binding_plain(parser);
+            true
+        } else {
+            false
+        }
+    });
+    marker.end(parser, SyntaxKind::DataVariables);
+}
+
+fn data_constructors(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::Equal);
+    parser.separated(data_constructor, |parser| {
+        let current = parser.current();
+        if current.is_end() {
+            false
+        } else {
+            parser.expect_recover(SyntaxKind::Pipe)
+        }
+    });
+    marker.end(parser, SyntaxKind::DataConstructors);
 }
 
 // 'upper' type_atom
@@ -1575,7 +1594,14 @@ fn data_constructor(parser: &mut Parser) {
         parser.error_recover("expected an Upper");
     }
 
-    zero_or_more(parser, |parser| {
+    constructor_fields(parser);
+
+    marker.end(parser, SyntaxKind::DataConstructor);
+}
+
+fn constructor_fields(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
         if at_type_start(parser) {
             type_atom(parser);
             true
@@ -1583,8 +1609,7 @@ fn data_constructor(parser: &mut Parser) {
             false
         }
     });
-
-    marker.end(parser, SyntaxKind::DataConstructor);
+    marker.end(parser, SyntaxKind::ConstructorFields);
 }
 
 //   'foreign' 'import' 'lower' '::' type_0

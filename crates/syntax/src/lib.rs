@@ -173,7 +173,10 @@ pub enum SyntaxKind {
 
     DataAnnotation,
     DataDeclaration,
+    DataVariables,
+    DataConstructors,
     DataConstructor,
+    ConstructorFields,
     DataKw,
 
     NewtypeDeclaration,

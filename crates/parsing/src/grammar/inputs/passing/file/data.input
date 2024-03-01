@@ -1,0 +1,10 @@
+module Main where
+
+data Void :: Type
+data Void
+
+data Unit = Unit
+
+data Maybe a = Just a | Nothing
+
+data Maybe (a :: Type) = Just a | Nothing
