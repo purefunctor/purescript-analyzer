@@ -89,7 +89,6 @@ impl ClassVariables {
 
 impl ClassFundeps {
     pub fn children(&self) -> AstChildren<Fundep> {
-        dbg!(&self.node);
         support::children(&self.node)
     }
 }
