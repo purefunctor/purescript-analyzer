@@ -1676,7 +1676,8 @@ fn foreign_import_declaration(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::ForeignValueDeclaration);
         }
         _ => {
-            parser.error_recover("expected either lower-case name or `data` for this foreign import");
+            parser
+                .error_recover("expected either lower-case name or `data` for this foreign import");
         }
     }
 }
