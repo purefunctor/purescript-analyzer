@@ -171,6 +171,10 @@ fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> 
 
 fn lower_export_item(db: &dyn SurfaceDatabase, export_item: ast::ExportItem) -> ExportItem {
     match export_item {
+        ast::ExportItem::ExportClass(c) => {
+            let name = lower_name_ref(db, c.name_ref());
+            ExportItem::ExportClass(name)
+        }
         ast::ExportItem::ExportType(t) => {
             let name = lower_name_ref(db, t.name_ref());
             let data_members =
@@ -229,7 +233,10 @@ fn lower_import_list(db: &dyn SurfaceDatabase, import_list: ast::ImportList) -> 
 
 fn lower_import_item(db: &dyn SurfaceDatabase, import_item: ast::ImportItem) -> ImportItem {
     match import_item {
-        ast::ImportItem::ImportClass(_) => todo!("ImportClass"),
+        ast::ImportItem::ImportClass(c) => {
+            let name = lower_name_ref(db, c.name_ref());
+            ImportItem::ImportClass(name)
+        }
         ast::ImportItem::ImportOp(_) => todo!("ImportOp"),
         ast::ImportItem::ImportType(t) => {
             let name = lower_name_ref(db, t.name_ref());

@@ -110,6 +110,7 @@ pub struct ExportList {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExportItem {
+    ExportClass(Name),
     ExportType(Name, Option<DataMembers>),
     ExportValue(Name),
 }
@@ -138,6 +139,7 @@ pub struct ImportList {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ImportItem {
+    ImportClass(Name),
     ImportType(Name, Option<DataMembers>),
     ImportValue(Name),
 }
