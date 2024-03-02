@@ -8,6 +8,7 @@ use rowan::{
     ast::{AstChildren, AstNode, AstPtr},
     NodeOrToken,
 };
+use rustc_hash::FxHashMap;
 use syntax::{ast, PureScript, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::{
@@ -388,7 +389,7 @@ fn lower_class_group(
     let constraints = lower_class_constraints(ctx, db, declaration.constraints());
     let variables = lower_class_variables(ctx, db, declaration.variables());
     let fundeps = lower_class_fundeps(db, declaration.fundeps());
-    let members = lower_class_members(ctx, db, declaration.members());
+    let members = lower_class_members(ctx, db, class_group.members.values().copied());
 
     ClassDeclaration { id, name, signature, constraints, variables, fundeps, members }
 }
@@ -463,20 +464,16 @@ fn lower_fundep_variables(
 fn lower_class_members(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
-    members: Option<ast::ClassMembers>,
-) -> Vec<ClassMember> {
-    if let Some(members) = members {
-        members
-            .children()
-            .map(|member| {
-                let name = lower_name(db, member.name());
-                let ty = lower_type(ctx, db, member.ty());
-                ClassMember { name, ty }
-            })
-            .collect_vec()
-    } else {
-        vec![]
-    }
+    members: impl Iterator<Item = AstId<ast::ClassMember>>,
+) -> FxHashMap<AstId<ast::ClassMember>, ClassMember> {
+    members
+        .map(|id| {
+            let member = ctx.ast_of(id);
+            let name = lower_name(db, member.name());
+            let ty = lower_type(ctx, db, member.ty());
+            (id, ClassMember { name, ty })
+        })
+        .collect()
 }
 
 // endregion

@@ -244,7 +244,7 @@ pub struct ClassDeclaration {
     pub constraints: Vec<TypeId>,
     pub variables: Vec<TypeVariable>,
     pub fundeps: Vec<FunctionalDependency>,
-    pub members: Vec<ClassMember>,
+    pub members: FxHashMap<AstId<ast::ClassMember>, ClassMember>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
