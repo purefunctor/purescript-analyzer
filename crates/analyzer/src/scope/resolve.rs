@@ -6,7 +6,7 @@ use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    index::nominal::{DataGroupId, ValueGroupId},
+    index::nominal::{ClassGroupId, DataGroupId, ValueGroupId},
     surface::tree::*,
     ScopeDatabase,
 };
@@ -46,7 +46,9 @@ type Imports = FxHashMap<ModuleName, (FileId, UsableItems)>;
 #[derive(Debug, Default)]
 struct UsableItems {
     data: FxHashMap<Name, DataGroupId>,
-    constructor: FxHashMap<Name, (DataGroupId, AstId<ast::DataConstructor>)>,
+    data_constructor: FxHashMap<Name, (DataGroupId, AstId<ast::DataConstructor>)>,
+    class: FxHashMap<Name, ClassGroupId>,
+    class_member: FxHashMap<Name, (ClassGroupId, AstId<ast::ClassMember>)>,
     value: FxHashMap<Name, ValueGroupId>,
 }
 
@@ -62,7 +64,7 @@ impl UsableItems {
     }
 
     fn find_constructor(&self, name: &Name) -> Option<(DataGroupId, AstId<ast::DataConstructor>)> {
-        self.constructor.iter().find_map(|(constructor_name, data_constructor_id)| {
+        self.data_constructor.iter().find_map(|(constructor_name, data_constructor_id)| {
             if name == constructor_name {
                 Some(*data_constructor_id)
             } else {
@@ -90,10 +92,12 @@ fn resolve_constructor(ctx: &Ctx, name: &Qualified<Name>) -> Option<ConstructorR
     if let Some(prefix) = &name.prefix {
         let name = &name.value;
         let (file_id, usable_items) = ctx.imports.get(prefix)?;
-        usable_items.constructor.get(name).map(|(data_id, constructor_id)| ConstructorResolution {
-            file_id: *file_id,
-            data_id: *data_id,
-            constructor_id: *constructor_id,
+        usable_items.data_constructor.get(name).map(|(data_id, constructor_id)| {
+            ConstructorResolution {
+                file_id: *file_id,
+                data_id: *data_id,
+                constructor_id: *constructor_id,
+            }
         })
     } else {
         let name = &name.value;
@@ -191,6 +195,15 @@ fn resolve_variable(
 // endregion
 
 // region: Traversals
+
+fn resolve_class_declaration(ctx: &mut Ctx, class_declaration: &ClassDeclaration) {
+    if let Some(signature) = class_declaration.signature {
+        resolve_type(ctx, signature);
+    }
+    class_declaration.members.iter().for_each(|(_, class_member)| {
+        resolve_type(ctx, class_member.ty);
+    });
+}
 
 fn resolve_data_declaration(ctx: &mut Ctx, data_declaration: &DataDeclaration) {
     if let Some(annotation) = data_declaration.annotation {
@@ -384,6 +397,7 @@ enum AllowListMembers {
 #[derive(Default)]
 struct ExportedItems {
     data: FxHashMap<Name, ExportedData>,
+    class: FxHashMap<Name, ClassGroupId>,
     value: FxHashMap<Name, ValueGroupId>,
 }
 
@@ -395,11 +409,15 @@ struct ExportedData {
 fn exported_items(surface: &Module) -> ExportedItems {
     let export_all = surface.header.export_list.is_none();
     let mut allowlist_data = FxHashMap::default();
+    let mut allowlist_class = FxHashSet::default();
     let mut allowlist_value = FxHashSet::default();
 
     if let Some(export_list) = &surface.header.export_list {
         for export_item in &export_list.items {
             match export_item {
+                ExportItem::ExportClass(name) => {
+                    allowlist_class.insert(Name::clone(name));
+                }
                 ExportItem::ExportType(name, members) => {
                     let members = if let Some(members) = members {
                         match members {
@@ -434,8 +452,12 @@ fn exported_items(surface: &Module) -> ExportedItems {
 
     for declaration in &surface.body.declarations {
         match declaration {
-            Declaration::ClassDeclaration(_) => {
-                todo!("ClassDeclaration");
+            Declaration::ClassDeclaration(class_declaration) => {
+                if export_all || allowlist_class.contains(&class_declaration.name) {
+                    exported_items
+                        .class
+                        .insert(Name::clone(&class_declaration.name), class_declaration.id);
+                }
             }
             Declaration::DataDeclaration(data_declaration) => {
                 let id = data_declaration.id;
@@ -483,6 +505,9 @@ fn usable_items(surface: &Module, import: &ImportDeclaration) -> UsableItems {
         import_hiding = import_list.hiding;
         for item in &import_list.items {
             match item {
+                ImportItem::ImportClass(name) => {
+                    allowlist_value.insert(Name::clone(name));
+                }
                 ImportItem::ImportType(name, members) => {
                     let members = if let Some(members) = members {
                         match members {
@@ -525,7 +550,7 @@ fn usable_items(surface: &Module, import: &ImportDeclaration) -> UsableItems {
         }
         for (constructor_name, id) in data.constructors {
             if is_constructor_imported(&data_name, &constructor_name) {
-                usable_items.constructor.insert(constructor_name, (data.id, id));
+                usable_items.data_constructor.insert(constructor_name, (data.id, id));
             }
         }
     }
@@ -542,8 +567,15 @@ fn usable_items(surface: &Module, import: &ImportDeclaration) -> UsableItems {
 fn local_items(surface: &Module) -> UsableItems {
     let mut usable_items = UsableItems::default();
     surface.body.declarations.iter().for_each(|declaration| match declaration {
-        Declaration::ClassDeclaration(_) => {
-            todo!("ClassDeclaration");
+        Declaration::ClassDeclaration(class_declaration) => {
+            let class_name = Name::clone(&class_declaration.name);
+            let class_id = class_declaration.id;
+            usable_items.class.insert(class_name, class_id);
+
+            class_declaration.members.iter().for_each(|(member_id, class_member)| {
+                let member_name = Name::clone(&class_member.name);
+                usable_items.class_member.insert(member_name, (class_id, *member_id));
+            });
         }
         Declaration::DataDeclaration(data_declaration) => {
             let data_name = Name::clone(&data_declaration.name);
@@ -552,7 +584,7 @@ fn local_items(surface: &Module) -> UsableItems {
 
             data_declaration.constructors.iter().for_each(|(constructor_id, data_constructor)| {
                 let constructor_name = Name::clone(&data_constructor.name);
-                usable_items.constructor.insert(constructor_name, (data_id, *constructor_id));
+                usable_items.data_constructor.insert(constructor_name, (data_id, *constructor_id));
             });
         }
         Declaration::ValueDeclaration(value_declaration) => {
@@ -588,8 +620,8 @@ pub(super) fn file_resolve_query(db: &dyn ScopeDatabase, file_id: FileId) -> Arc
 
     let mut ctx = Ctx::new(file_id, &arena, &imports, &local, &scope_info);
     surface.body.declarations.iter().for_each(|declaration| match declaration {
-        Declaration::ClassDeclaration(_) => {
-            todo!("ClassDeclaration");
+        Declaration::ClassDeclaration(class_declaration) => {
+            resolve_class_declaration(&mut ctx, class_declaration);
         }
         Declaration::DataDeclaration(data_declaration) => {
             resolve_data_declaration(&mut ctx, data_declaration);
