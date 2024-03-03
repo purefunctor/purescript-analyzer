@@ -89,38 +89,6 @@ impl<'ast> Visitor<'ast> for AnalyzeRecursiveGroupCtx<'ast, '_> {
     }
 }
 
-pub(super) fn recursive_data_groups<'ast, 'env>(
-    arena: &'ast SurfaceArena,
-    resolve: &'env ResolveInfo,
-    data_declarations: impl Iterator<Item = &'ast DataDeclaration>,
-) -> Vec<Vec<DataGroupId>> {
-    let mut ctx = AnalyzeRecursiveGroupCtx::new(arena, resolve);
-    for data_declaration in data_declarations {
-        ctx.with_dependent(NodeKind::DataGroup(data_declaration.id));
-        for data_constructor in data_declaration.constructors.values() {
-            for field in &data_constructor.fields {
-                ctx.visit_type(*field);
-            }
-        }
-    }
-    kosaraju_scc(&ctx.graph)
-        .into_iter()
-        .map(|components| {
-            components
-                .into_iter()
-                .filter_map(|node_kind| {
-                    if let NodeKind::DataGroup(data_group_id) = node_kind {
-                        Some(data_group_id)
-                    } else {
-                        None
-                    }
-                })
-                .collect_vec()
-        })
-        .filter(|components| !components.is_empty())
-        .collect_vec()
-}
-
 pub(super) fn recursive_type_groups<'ast, 'env>(
     arena: &'ast SurfaceArena,
     resolve: &'env ResolveInfo,
