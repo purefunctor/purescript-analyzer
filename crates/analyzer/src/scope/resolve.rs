@@ -13,7 +13,7 @@ use crate::{
 
 use super::{
     ConstructorResolution, ResolveInfo, ScopeInfo, ScopeKind, TypeConstructorKind,
-    TypeConstructorResolution, VariableResolution,
+    TypeConstructorResolution, TypeVariableResolution, VariableResolution,
 };
 
 struct Ctx<'a> {
@@ -149,6 +149,26 @@ fn resolve_type_constructor(
     }
 }
 
+fn resolve_type_variable(
+    ctx: &mut Ctx,
+    type_id: TypeId,
+    name: &Name,
+) -> Option<TypeVariableResolution> {
+    let scope_id = ctx.scope_info.type_scope(type_id);
+    ctx.scope_info.ancestors(scope_id).find_map(|scope_data| match &scope_data.kind {
+        ScopeKind::Root => None,
+        ScopeKind::Binders(_) => None,
+        ScopeKind::LetBound(_) => None,
+        ScopeKind::TypeVariable(names, kind) => {
+            if names.contains(name) {
+                Some(TypeVariableResolution { kind: *kind })
+            } else {
+                None
+            }
+        }
+    })
+}
+
 fn resolve_variable(
     ctx: &mut Ctx,
     expr_id: ExprId,
@@ -175,6 +195,7 @@ fn resolve_variable(
                     }
                 }
                 ScopeKind::LetBound(names) => Some(VariableResolution::LetName(*names.get(name)?)),
+                ScopeKind::TypeVariable(_, _) => None,
             });
 
         let local_resolution = scope_resolution.or_else(|| {
@@ -349,7 +370,11 @@ fn resolve_type(ctx: &mut Ctx, type_id: TypeId) {
             resolve_type(ctx, *inner);
         }
         Type::Parenthesized(parenthesized) => resolve_type(ctx, *parenthesized),
-        Type::Variable(_) => (),
+        Type::Variable(name) => {
+            if let Some(type_variable) = resolve_type_variable(ctx, type_id, name) {
+                ctx.resolve_info.per_variable_type.insert(type_id, type_variable);
+            }
+        }
         Type::NotImplemented => (),
     }
 }

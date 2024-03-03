@@ -7,12 +7,12 @@ use std::{iter, sync::Arc};
 
 use files::FileId;
 use la_arena::{Arena, Idx};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::ast;
 
 use crate::{
     id::{AstId, InFile},
-    index::nominal::{DataGroupId, ValueGroupId},
+    index::nominal::{ClassGroupId, DataGroupId, ValueGroupId},
     surface::{BinderId, ExprId, LetNameId, Name, TypeId},
     SurfaceDatabase,
 };
@@ -36,6 +36,7 @@ pub enum ScopeKind {
     Root,
     Binders(Option<FxHashMap<Name, BinderId>>),
     LetBound(FxHashMap<Name, LetNameId>),
+    TypeVariable(FxHashSet<Name>, TypeVariableKind),
 }
 
 /// Associates surface IDs to scope information.
@@ -43,12 +44,20 @@ pub enum ScopeKind {
 pub struct ScopeInfo {
     pub scope_data: Arena<ScopeData>,
     pub per_expr: FxHashMap<ExprId, ScopeId>,
+    pub per_type: FxHashMap<TypeId, ScopeId>,
 }
 
 impl ScopeInfo {
     pub fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
         let scope_id = self.per_expr.get(&expr_id).unwrap_or_else(|| {
             unreachable!("invariant violated: expression should have been assigned a scope.");
+        });
+        *scope_id
+    }
+
+    pub fn type_scope(&self, type_id: TypeId) -> ScopeId {
+        let scope_id = self.per_type.get(&type_id).unwrap_or_else(|| {
+            unreachable!("impossible: type should have been assigned a scope.");
         });
         *scope_id
     }
@@ -77,6 +86,18 @@ pub enum TypeConstructorKind {
     Data(DataGroupId),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeVariableResolution {
+    pub kind: TypeVariableKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TypeVariableKind {
+    Class(ClassGroupId),
+    Data(DataGroupId),
+    Type(TypeId),
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum VariableResolution {
     Binder(BinderId),
@@ -91,6 +112,7 @@ pub struct ResolveInfo {
     pub per_constructor_binder: FxHashMap<BinderId, ConstructorResolution>,
     pub per_constructor_expr: FxHashMap<ExprId, ConstructorResolution>,
     pub per_type_type: FxHashMap<TypeId, TypeConstructorResolution>,
+    pub per_variable_type: FxHashMap<TypeId, TypeVariableResolution>,
     pub per_variable_expr: FxHashMap<ExprId, VariableResolution>,
 }
 
@@ -99,12 +121,14 @@ impl ResolveInfo {
         let per_constructor_binder = FxHashMap::default();
         let per_constructor_expr = FxHashMap::default();
         let per_type_type = FxHashMap::default();
+        let per_variable_type = FxHashMap::default();
         let per_variable_expr = FxHashMap::default();
         ResolveInfo {
             imports,
             per_constructor_binder,
             per_constructor_expr,
             per_type_type,
+            per_variable_type,
             per_variable_expr,
         }
     }

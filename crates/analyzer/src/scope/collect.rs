@@ -5,7 +5,7 @@ use itertools::Itertools;
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 
-use crate::surface::tree::*;
+use crate::{scope::TypeVariableKind, surface::tree::*};
 
 use super::{ScopeData, ScopeDatabase, ScopeId, ScopeInfo, ScopeKind};
 
@@ -13,6 +13,7 @@ struct Ctx<'a> {
     arena: &'a SurfaceArena,
     scope_data: Arena<ScopeData>,
     per_expr: FxHashMap<ExprId, ScopeId>,
+    per_type: FxHashMap<TypeId, ScopeId>,
     current_scope: ScopeId,
     root_scope: ScopeId,
 }
@@ -21,11 +22,12 @@ impl Ctx<'_> {
     fn new(arena: &SurfaceArena) -> Ctx<'_> {
         let mut scope_data = Arena::default();
         let per_expr = FxHashMap::default();
+        let per_type = FxHashMap::default();
 
         let current_scope = scope_data.alloc(ScopeData { parent: None, kind: ScopeKind::Root });
         let root_scope = current_scope;
 
-        Ctx { arena, scope_data, per_expr, current_scope, root_scope }
+        Ctx { arena, scope_data, per_expr, per_type, current_scope, root_scope }
     }
 
     fn with_reverting_scope<T>(&mut self, f: impl FnOnce(&mut Ctx) -> T) -> T {
@@ -37,13 +39,16 @@ impl Ctx<'_> {
 }
 
 fn collect_value_declaration(ctx: &mut Ctx, value_declaration: &ValueDeclaration) {
+    assert!(ctx.current_scope == ctx.root_scope);
+    if let Some(annotation) = value_declaration.annotation {
+        collect_type(ctx, annotation);
+    }
     value_declaration.equations.iter().for_each(|value_equation| {
         collect_value_equation(ctx, value_equation);
     });
 }
 
 fn collect_value_equation(ctx: &mut Ctx, value_equation: &ValueEquation) {
-    assert!(ctx.current_scope == ctx.root_scope);
     ctx.with_reverting_scope(|ctx| {
         collect_binders(ctx, &value_equation.binders);
         collect_binding(ctx, &value_equation.binding);
@@ -190,6 +195,49 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
     }
 }
 
+fn collect_type(ctx: &mut Ctx, type_id: TypeId) {
+    ctx.per_type.insert(type_id, ctx.current_scope);
+    match &ctx.arena[type_id] {
+        Type::Arrow(arguments, result) => {
+            for argument in arguments {
+                collect_type(ctx, *argument);
+            }
+            collect_type(ctx, *result);
+        }
+        Type::Application(function, arguments) => {
+            collect_type(ctx, *function);
+            for argument in arguments {
+                collect_type(ctx, *argument);
+            }
+        }
+        Type::Constrained(constraint, constrained) => {
+            collect_type(ctx, *constraint);
+            collect_type(ctx, *constrained);
+        }
+        Type::Constructor(_) => (),
+        Type::Forall(variables, inner) => {
+            let variables = variables
+                .iter()
+                .map(|variable| {
+                    Name::clone(match variable {
+                        TypeVariable::Kinded(name, _) => name,
+                        TypeVariable::Name(name) => name,
+                    })
+                })
+                .collect();
+
+            let parent = Some(ctx.current_scope);
+            let kind = ScopeKind::TypeVariable(variables, TypeVariableKind::Type(type_id));
+            ctx.current_scope = ctx.scope_data.alloc(ScopeData { parent, kind });
+
+            collect_type(ctx, *inner);
+        }
+        Type::Parenthesized(parenthesized) => collect_type(ctx, *parenthesized),
+        Type::Variable(_) => (),
+        Type::NotImplemented => (),
+    }
+}
+
 fn collect_literal<T>(
     ctx: &mut Ctx,
     literal: &Literal<T>,
@@ -233,5 +281,9 @@ pub(super) fn file_scope_query(db: &dyn ScopeDatabase, file_id: FileId) -> Arc<S
         }
     });
 
-    Arc::new(ScopeInfo { scope_data: ctx.scope_data, per_expr: ctx.per_expr })
+    Arc::new(ScopeInfo {
+        scope_data: ctx.scope_data,
+        per_expr: ctx.per_expr,
+        per_type: ctx.per_type,
+    })
 }
