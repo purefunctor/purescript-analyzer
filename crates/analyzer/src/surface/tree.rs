@@ -163,6 +163,17 @@ pub struct ModuleBody {
 }
 
 impl ModuleBody {
+    pub fn class_declaration(&self, class_id: ClassGroupId) -> Option<&ClassDeclaration> {
+        self.class_declarations.get(&class_id).map(|index| {
+            let declaration = &self.declarations[*index];
+            if let Declaration::ClassDeclaration(class_declaration) = declaration {
+                class_declaration
+            } else {
+                unreachable!("impossible: index does not point to a class declaration");
+            }
+        })
+    }
+
     pub fn data_declaration(&self, data_id: DataGroupId) -> Option<&DataDeclaration> {
         self.data_declarations.get(&data_id).map(|index| {
             let declaration = &self.declarations[*index];
@@ -181,6 +192,16 @@ impl ModuleBody {
                 value_declaration
             } else {
                 unreachable!("impossible: index does not point to a value declaration");
+            }
+        })
+    }
+
+    pub fn iter_class_declarations(&self) -> impl Iterator<Item = &ClassDeclaration> {
+        self.declarations.iter().filter_map(|declaration| {
+            if let Declaration::ClassDeclaration(data_declaration) = declaration {
+                Some(data_declaration)
+            } else {
+                None
             }
         })
     }

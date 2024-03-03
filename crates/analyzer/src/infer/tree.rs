@@ -12,7 +12,12 @@
 
 use pretty::{DocAllocator, DocBuilder};
 
-use crate::{id::InFile, index::nominal::DataGroupId, surface::Name, InferenceDatabase};
+use crate::{
+    id::InFile,
+    index::nominal::{ClassGroupId, DataGroupId},
+    surface::Name,
+    InferenceDatabase,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CoreTypeId(salsa::InternId);
@@ -31,13 +36,19 @@ impl salsa::InternKey for CoreTypeId {
 pub enum CoreType {
     Application(CoreTypeId, CoreTypeId),
     Constrained(CoreTypeId, CoreTypeId),
-    Constructor(InFile<DataGroupId>),
+    Constructor(InFile<ConstructorId>),
     Forall(CoreTypeVariable, CoreTypeId),
     Function(CoreTypeId, CoreTypeId),
     Primitive(Name),
     Unification(InFile<u32>),
     Variable(Name),
     NotImplemented,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConstructorId {
+    Class(ClassGroupId),
+    Data(DataGroupId),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -82,8 +93,18 @@ where
         }
         CoreType::Constructor(id) => {
             let (surface, _) = db.file_surface(id.file_id);
-            if let Some(data_declaration) = surface.body.data_declaration(id.value) {
-                allocator.text(data_declaration.name.as_ref().to_string())
+            let name = match id.value {
+                ConstructorId::Class(class_id) => surface
+                    .body
+                    .class_declaration(class_id)
+                    .map(|class_declaration| &class_declaration.name),
+                ConstructorId::Data(data_id) => surface
+                    .body
+                    .data_declaration(data_id)
+                    .map(|data_declaration| &data_declaration.name),
+            };
+            if let Some(name) = name {
+                allocator.text(name.as_ref().to_string())
             } else {
                 allocator.text("?")
             }

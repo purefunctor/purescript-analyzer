@@ -1,8 +1,12 @@
 use itertools::Itertools;
 
 use crate::{
-    id::InFile, index::nominal::ValueGroupId, infer::Hint, scope::VariableResolution,
-    surface::tree::*, InferenceDatabase,
+    id::InFile,
+    index::nominal::ValueGroupId,
+    infer::{ConstructorId, Hint},
+    scope::VariableResolution,
+    surface::tree::*,
+    InferenceDatabase,
 };
 
 use super::{recursive_let_names, CoreType, CoreTypeId, InferContext};
@@ -365,12 +369,15 @@ impl InferContext<'_> {
         match &self.arena[binder_id] {
             Binder::Constructor { fields, .. } => {
                 if let Some(constructor) = self.resolve.per_constructor_binder.get(&binder_id) {
-                    if let CoreType::Constructor(expected_data_id) =
-                        db.lookup_intern_type(expected_ty)
-                    {
-                        if constructor.file_id != expected_data_id.file_id
-                            || constructor.data_id != expected_data_id.value
-                        {
+                    if let CoreType::Constructor(expected) = db.lookup_intern_type(expected_ty) {
+                        if let ConstructorId::Data(expected_data_id) = expected.value {
+                            if constructor.file_id != expected.file_id
+                                || constructor.data_id != expected_data_id
+                            {
+                                return assign_error(self);
+                            }
+                        } else {
+                            // Not a data constructor!
                             return assign_error(self);
                         }
                     }

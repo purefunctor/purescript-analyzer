@@ -4,7 +4,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     id::InFile,
-    infer::{Constraint, CoreTypeVariable, Hint, InferError, InferErrorKind},
+    infer::{Constraint, ConstructorId, CoreTypeVariable, Hint, InferError, InferErrorKind},
     scope::TypeConstructorKind,
     surface::tree::*,
     InferenceDatabase,
@@ -50,12 +50,11 @@ impl InferContext<'_> {
                 let resolution = self.resolve.per_type_type.get(&type_id);
                 db.intern_type(resolution.map_or(CoreType::NotImplemented, |resolution| {
                     let file_id = resolution.file_id;
-                    match resolution.kind {
-                        TypeConstructorKind::Class(_) => todo!(),
-                        TypeConstructorKind::Data(data_id) => {
-                            CoreType::Constructor(InFile { file_id, value: data_id })
-                        }
-                    }
+                    let constructor_id = match resolution.kind {
+                        TypeConstructorKind::Class(class_id) => ConstructorId::Class(class_id),
+                        TypeConstructorKind::Data(data_id) => ConstructorId::Data(data_id),
+                    };
+                    CoreType::Constructor(InFile { file_id, value: constructor_id })
                 }))
             }
             Type::Forall(variables, inner) => {
