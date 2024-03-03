@@ -36,8 +36,10 @@ impl InferContext<'_> {
                     db.intern_type(CoreType::Application(function, argument))
                 })
             }
-            Type::Constrained(_, _) => {
-                todo!("lower_type(Constrained)");
+            Type::Constrained(constraint, constrained) => {
+                let constraint = self.lower_type(db, *constraint);
+                let constrained = self.lower_type(db, *constrained);
+                db.intern_type(CoreType::Constrained(constraint, constrained))
             }
             Type::Constructor(name) => {
                 // FIXME: actually resolve primitives
@@ -253,6 +255,11 @@ fn replace_type(
                 let function = aux(db, in_scope, replacements, function);
                 let argument = aux(db, in_scope, replacements, argument);
                 db.intern_type(CoreType::Application(function, argument))
+            }
+            CoreType::Constrained(constraint, constrained) => {
+                let constraint = aux(db, in_scope, replacements, constraint);
+                let constrained = aux(db, in_scope, replacements, constrained);
+                db.intern_type(CoreType::Constrained(constraint, constrained))
             }
             CoreType::Constructor(_) => type_id,
             CoreType::Forall(variable, body) => {

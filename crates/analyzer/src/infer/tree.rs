@@ -30,6 +30,7 @@ impl salsa::InternKey for CoreTypeId {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CoreType {
     Application(CoreTypeId, CoreTypeId),
+    Constrained(CoreTypeId, CoreTypeId),
     Constructor(InFile<DataGroupId>),
     Forall(CoreTypeVariable, CoreTypeId),
     Function(CoreTypeId, CoreTypeId),
@@ -73,6 +74,11 @@ where
             let function = pretty_print_core(db, allocator, function);
             let argument = pretty_print_core(db, allocator, argument);
             function.append(" ").append(argument)
+        }
+        CoreType::Constrained(constraint, constrained) => {
+            let constraint = pretty_print_core(db, allocator, constraint);
+            let constrained = pretty_print_core(db, allocator, constrained);
+            constraint.append(" => ").append(constrained)
         }
         CoreType::Constructor(id) => {
             let (surface, _) = db.file_surface(id.file_id);
