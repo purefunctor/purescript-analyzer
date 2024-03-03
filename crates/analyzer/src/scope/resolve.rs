@@ -185,7 +185,7 @@ fn resolve_variable(
         let name = &name.value;
         let (file_id, usable_items) = ctx.imports.get(prefix)?;
         usable_items.value.get(name).map(|value_id| {
-            VariableResolution::Imported(InFile { file_id: *file_id, value: *value_id })
+            VariableResolution::ValueImported(InFile { file_id: *file_id, value: *value_id })
         })
     } else {
         let name = &name.value;
@@ -207,14 +207,14 @@ fn resolve_variable(
 
         let local_resolution = scope_resolution.or_else(|| {
             let value_id = ctx.local.find_value(name)?;
-            Some(VariableResolution::Local(value_id))
+            Some(VariableResolution::ValueLocal(value_id))
         });
 
         local_resolution.or_else(|| {
             ctx.imports.values().find_map(|(file_id, usable_items)| {
                 let file_id = *file_id;
                 let value = usable_items.find_value(name)?;
-                Some(VariableResolution::Imported(InFile { file_id, value }))
+                Some(VariableResolution::ValueImported(InFile { file_id, value }))
             })
         })
     }

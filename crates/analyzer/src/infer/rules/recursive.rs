@@ -53,16 +53,15 @@ impl<'ast> Visitor<'ast> for AnalyzeRecursiveGroupCtx<'ast, '_> {
             Expr::Variable(_) => {
                 if let Some(resolution) = self.resolve.per_variable_expr.get(&expr_id) {
                     match resolution {
-                        VariableResolution::Binder(_) => (),
-                        VariableResolution::Imported(_) => (),
                         VariableResolution::LetName(let_id) => {
                             let dependency = NodeKind::LetName(*let_id);
                             self.graph.add_edge(dependent, dependency, ());
                         }
-                        VariableResolution::Local(value_id) => {
+                        VariableResolution::ValueLocal(value_id) => {
                             let dependency = NodeKind::ValueGroup(*value_id);
                             self.graph.add_edge(dependent, dependency, ());
                         }
+                        _ => (),
                     }
                 }
             }

@@ -118,9 +118,9 @@ pub enum TypeVariableKind {
 #[derive(Debug, PartialEq, Eq)]
 pub enum VariableResolution {
     Binder(BinderId),
-    Imported(InFile<ValueGroupId>),
     LetName(LetNameId),
-    Local(ValueGroupId),
+    ValueImported(InFile<ValueGroupId>),
+    ValueLocal(ValueGroupId),
 }
 
 /// Associates surface IDs to resolution information.

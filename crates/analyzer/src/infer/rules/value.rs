@@ -314,17 +314,17 @@ impl InferContext<'_> {
                         VariableResolution::Binder(binder_id) => {
                             self.state.map.of_binder.get(binder_id).copied()
                         }
-                        VariableResolution::Imported(InFile { file_id, value }) => {
+                        VariableResolution::LetName(let_id) => {
+                            self.state.map.of_let_name.get(let_id).copied()
+                        }
+                        VariableResolution::ValueImported(InFile { file_id, value }) => {
                             if let Some(result) = self.imported.get(file_id) {
                                 result.map.of_value_group.get(value).copied()
                             } else {
                                 None
                             }
                         }
-                        VariableResolution::LetName(let_id) => {
-                            self.state.map.of_let_name.get(let_id).copied()
-                        }
-                        VariableResolution::Local(value_id) => {
+                        VariableResolution::ValueLocal(value_id) => {
                             self.state.map.of_value_group.get(value_id).copied()
                         }
                     };
@@ -500,17 +500,17 @@ impl InferContext<'_> {
                         VariableResolution::Binder(binder_id) => {
                             self.state.map.of_binder.get(binder_id)
                         }
-                        VariableResolution::Imported(InFile { file_id, value }) => {
+                        VariableResolution::LetName(let_id) => {
+                            self.state.map.of_let_name.get(let_id)
+                        }
+                        VariableResolution::ValueImported(InFile { file_id, value }) => {
                             if let Some(result) = self.imported.get(file_id) {
                                 result.map.of_value_group.get(value)
                             } else {
                                 None
                             }
                         }
-                        VariableResolution::LetName(let_id) => {
-                            self.state.map.of_let_name.get(let_id)
-                        }
-                        VariableResolution::Local(local_id) => {
+                        VariableResolution::ValueLocal(local_id) => {
                             self.state.map.of_value_group.get(local_id)
                         }
                     };
