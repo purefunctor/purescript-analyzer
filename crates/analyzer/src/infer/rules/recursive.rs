@@ -77,6 +77,7 @@ impl<'ast> Visitor<'ast> for AnalyzeRecursiveGroupCtx<'ast, '_> {
             Type::Constructor(_) => {
                 if let Some(type_constructor) = self.resolve.per_type_type.get(&type_id) {
                     let dependency = match type_constructor.kind {
+                        TypeConstructorKind::Class(_) => todo!(),
                         TypeConstructorKind::Data(data_id) => NodeKind::DataGroup(data_id),
                     };
                     self.graph.add_edge(dependent, dependency, ());

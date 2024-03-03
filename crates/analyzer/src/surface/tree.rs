@@ -392,6 +392,15 @@ pub enum TypeVariable {
     Name(Name),
 }
 
+impl TypeVariable {
+    pub fn to_name(&self) -> Name {
+        match self {
+            TypeVariable::Kinded(name, _) => Name::clone(name),
+            TypeVariable::Name(name) => Name::clone(name),
+        }
+    }
+}
+
 // endregion
 
 // region: SurfaceArena

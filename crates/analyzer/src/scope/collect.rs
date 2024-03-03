@@ -38,6 +38,44 @@ impl Ctx<'_> {
     }
 }
 
+fn collect_class_declaration(ctx: &mut Ctx, class_declaration: &ClassDeclaration) {
+    assert!(ctx.current_scope == ctx.root_scope);
+    if let Some(signature) = class_declaration.signature {
+        collect_type(ctx, signature);
+    }
+
+    let variables = class_declaration.variables.iter().map(TypeVariable::to_name).collect();
+    let parent = Some(ctx.current_scope);
+    let kind = ScopeKind::TypeVariable(variables, TypeVariableKind::Class(class_declaration.id));
+    ctx.current_scope = ctx.scope_data.alloc(ScopeData { parent, kind });
+
+    for class_member in class_declaration.members.values() {
+        ctx.with_reverting_scope(|ctx| {
+            collect_type(ctx, class_member.ty);
+        });
+    }
+}
+
+fn collect_data_declaration(ctx: &mut Ctx, data_declaration: &DataDeclaration) {
+    assert!(ctx.current_scope == ctx.root_scope);
+    if let Some(annotation) = data_declaration.annotation {
+        collect_type(ctx, annotation);
+    }
+
+    let variables = data_declaration.variables.iter().map(TypeVariable::to_name).collect();
+    let parent = Some(ctx.current_scope);
+    let kind = ScopeKind::TypeVariable(variables, TypeVariableKind::Data(data_declaration.id));
+    ctx.current_scope = ctx.scope_data.alloc(ScopeData { parent, kind });
+
+    for data_constructor in data_declaration.constructors.values() {
+        for field in &data_constructor.fields {
+            ctx.with_reverting_scope(|ctx| {
+                collect_type(ctx, *field);
+            });
+        }
+    }
+}
+
 fn collect_value_declaration(ctx: &mut Ctx, value_declaration: &ValueDeclaration) {
     assert!(ctx.current_scope == ctx.root_scope);
     if let Some(annotation) = value_declaration.annotation {
@@ -273,12 +311,18 @@ pub(super) fn file_scope_query(db: &dyn ScopeDatabase, file_id: FileId) -> Arc<S
     let (surface, arena) = db.file_surface(file_id);
 
     let mut ctx = Ctx::new(&arena);
-    surface.body.declarations.iter().for_each(|declaration| match declaration {
-        Declaration::ClassDeclaration(_) => (),
-        Declaration::DataDeclaration(_) => (),
-        Declaration::ValueDeclaration(value_declaration) => {
-            collect_value_declaration(&mut ctx, value_declaration);
-        }
+    surface.body.declarations.iter().for_each(|declaration| {
+        ctx.with_reverting_scope(|ctx| match declaration {
+            Declaration::ClassDeclaration(class_declaration) => {
+                collect_class_declaration(ctx, class_declaration);
+            }
+            Declaration::DataDeclaration(data_declaration) => {
+                collect_data_declaration(ctx, data_declaration);
+            }
+            Declaration::ValueDeclaration(value_declaration) => {
+                collect_value_declaration(ctx, value_declaration);
+            }
+        });
     });
 
     Arc::new(ScopeInfo {

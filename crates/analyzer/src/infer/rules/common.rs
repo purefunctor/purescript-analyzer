@@ -51,6 +51,7 @@ impl InferContext<'_> {
                 db.intern_type(resolution.map_or(CoreType::NotImplemented, |resolution| {
                     let file_id = resolution.file_id;
                     match resolution.kind {
+                        TypeConstructorKind::Class(_) => todo!(),
                         TypeConstructorKind::Data(data_id) => {
                             CoreType::Constructor(InFile { file_id, value: data_id })
                         }
