@@ -88,6 +88,7 @@ pub enum TypeConstructorKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TypeVariableResolution {
+    pub file_id: FileId,
     pub kind: TypeVariableKind,
 }
 

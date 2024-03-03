@@ -161,7 +161,7 @@ fn resolve_type_variable(
         ScopeKind::LetBound(_) => None,
         ScopeKind::TypeVariable(names, kind) => {
             if names.contains(name) {
-                Some(TypeVariableResolution { kind: *kind })
+                Some(TypeVariableResolution { file_id: ctx.file_id, kind: *kind })
             } else {
                 None
             }
