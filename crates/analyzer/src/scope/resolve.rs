@@ -53,17 +53,25 @@ struct UsableItems {
 }
 
 impl UsableItems {
-    fn find_data(&self, name: &Name) -> Option<DataGroupId> {
-        self.data.iter().find_map(|(type_constructor_name, type_constructor_id)| {
+    fn find_type_constructor(&self, name: &Name) -> Option<TypeConstructorKind> {
+        let class =
+            self.class.iter().map(|(name, class_id)| (name, TypeConstructorKind::Class(*class_id)));
+        let data =
+            self.data.iter().map(|(name, data_id)| (name, TypeConstructorKind::Data(*data_id)));
+
+        class.chain(data).find_map(|(type_constructor_name, type_constructor_id)| {
             if name == type_constructor_name {
-                Some(*type_constructor_id)
+                Some(type_constructor_id)
             } else {
                 None
             }
         })
     }
 
-    fn find_constructor(&self, name: &Name) -> Option<(DataGroupId, AstId<ast::DataConstructor>)> {
+    fn find_data_constructor(
+        &self,
+        name: &Name,
+    ) -> Option<(DataGroupId, AstId<ast::DataConstructor>)> {
         self.data_constructor.iter().find_map(|(constructor_name, data_constructor_id)| {
             if name == constructor_name {
                 Some(*data_constructor_id)
@@ -102,15 +110,16 @@ fn resolve_constructor(ctx: &Ctx, name: &Qualified<Name>) -> Option<ConstructorR
     } else {
         let name = &name.value;
 
-        let local_resolution = ctx.local.find_constructor(name).map(|(data_id, constructor_id)| {
-            let file_id = ctx.file_id;
-            ConstructorResolution { file_id, data_id, constructor_id }
-        });
+        let local_resolution =
+            ctx.local.find_data_constructor(name).map(|(data_id, constructor_id)| {
+                let file_id = ctx.file_id;
+                ConstructorResolution { file_id, data_id, constructor_id }
+            });
 
         local_resolution.or_else(|| {
             ctx.imports.values().find_map(|(file_id, usable_items)| {
                 let file_id = *file_id;
-                let (data_id, constructor_id) = usable_items.find_constructor(name)?;
+                let (data_id, constructor_id) = usable_items.find_data_constructor(name)?;
                 Some(ConstructorResolution { file_id, data_id, constructor_id })
             })
         })
@@ -132,17 +141,15 @@ fn resolve_type_constructor(
     } else {
         let name = &name.value;
 
-        let local_resolution = ctx.local.find_data(name).map(|data_id| {
+        let local_resolution = ctx.local.find_type_constructor(name).map(|kind| {
             let file_id = ctx.file_id;
-            let kind = TypeConstructorKind::Data(data_id);
             TypeConstructorResolution { file_id, kind }
         });
 
         local_resolution.or_else(|| {
             ctx.imports.values().find_map(|(file_id, usable_items)| {
                 let file_id = *file_id;
-                let data_id = usable_items.find_data(name)?;
-                let kind = TypeConstructorKind::Data(data_id);
+                let kind = usable_items.find_type_constructor(name)?;
                 Some(TypeConstructorResolution { file_id, kind })
             })
         })

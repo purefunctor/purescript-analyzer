@@ -95,6 +95,7 @@ pub struct TypeConstructorResolution {
 /// Determines the kind of the type constructor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TypeConstructorKind {
+    Class(ClassGroupId),
     Data(DataGroupId),
 }
 
