@@ -1,4 +1,13 @@
 //! Queries pertaining to name resolution.
+//!
+//! In particular, this module is responsible for collecting the [`ScopeInfo`]
+//! and [`ResolveInfo`] structs by traversing the surface AST.
+//!
+//! [`ScopeInfo`] builds a directed acyclic graph of scope information, and
+//! associates surface IDs to corresponding [`ScopeData`] nodes.
+//!
+//! [`ResolveInfo`] maps surface IDs to what they actually resolve to based
+//! on the scope information provided by the [`ScopeInfo`].
 
 mod collect;
 mod resolve;
@@ -68,6 +77,7 @@ impl ScopeInfo {
     }
 }
 
+/// Resolution information for a data constructor.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstructorResolution {
     pub file_id: FileId,
@@ -75,23 +85,27 @@ pub struct ConstructorResolution {
     pub constructor_id: AstId<ast::DataConstructor>,
 }
 
+/// Resolution information for a type constructor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TypeConstructorResolution {
     pub file_id: FileId,
     pub kind: TypeConstructorKind,
 }
 
+/// Determines the kind of the type constructor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TypeConstructorKind {
     Data(DataGroupId),
 }
 
+/// Resolution information for a type variable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TypeVariableResolution {
     pub file_id: FileId,
     pub kind: TypeVariableKind,
 }
 
+/// Determines the provenance of a type variable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TypeVariableKind {
     Class(ClassGroupId),
@@ -99,6 +113,7 @@ pub enum TypeVariableKind {
     Type(TypeId),
 }
 
+/// Resolution information for a variable expression.
 #[derive(Debug, PartialEq, Eq)]
 pub enum VariableResolution {
     Binder(BinderId),
@@ -107,6 +122,7 @@ pub enum VariableResolution {
     Local(ValueGroupId),
 }
 
+/// Associates surface IDs to resolution information.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ResolveInfo {
     pub imports: Vec<FileId>,
