@@ -110,11 +110,9 @@ impl ImportList {
             None
         }
     }
-
-    pub fn import_items(&self) -> Option<Separated<ImportItem>> {
-        Separated::cast(self.node.first_child()?.first_child()?)
-    }
 }
+
+_has_children!(ImportList<ImportItem>);
 
 impl ImportClass {
     pub fn name_ref(&self) -> Option<NameRef> {

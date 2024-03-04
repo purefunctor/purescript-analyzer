@@ -1432,11 +1432,16 @@ fn import_list(parser: &mut Parser) {
     if parser.at(SyntaxKind::HidingKw) {
         parser.consume();
     }
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftParenthesis);
-    separated(parser, SyntaxKind::Comma, import_item);
+    parser.separated(import_item, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+            false
+        } else {
+            parser.expect_recover(SyntaxKind::Comma)
+        }
+    });
     parser.expect(SyntaxKind::RightParenthesis);
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::ImportList);
 }
 

@@ -225,12 +225,8 @@ fn lower_import_declaration(
 
 fn lower_import_list(db: &dyn SurfaceDatabase, import_list: ast::ImportList) -> ImportList {
     let hiding = import_list.hiding_token().is_some();
-    let items = import_list
-        .import_items()
-        .map(|import_items| {
-            import_items.children().map(|import_item| lower_import_item(db, import_item)).collect()
-        })
-        .unwrap_or_default();
+    let items =
+        import_list.children().map(|import_item| lower_import_item(db, import_item)).collect_vec();
     ImportList { items, hiding }
 }
 
