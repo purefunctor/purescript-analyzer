@@ -1,8 +1,0 @@
----
-source: crates/parsing/tests/grammar_tests.rs
-expression: result
-input_file: crates/parsing/tests/inputs/passing/type/typed-variable.input
----
-Input: 
-Error { message: "expected a type" }
-

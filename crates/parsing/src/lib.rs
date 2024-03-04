@@ -5,7 +5,7 @@ mod parser;
 
 use builder::Builder;
 use error::ParseError;
-use grammar::{expression, module, pattern, ty};
+use grammar::module;
 use lexing::{layout, lex, Lexed};
 use parser::{Event, Parser};
 use syntax::{SyntaxKind, SyntaxNode};
@@ -39,41 +39,6 @@ fn process_output(
         }
     }
     (node, errors)
-}
-
-pub fn parse_expression(source: &str) -> (SyntaxNode, Vec<ParseError>) {
-    let lexed = lex(source);
-    let input = layout(&lexed);
-
-    let mut parser = Parser::new(&input);
-    expression(&mut parser);
-    let output = parser.finalize();
-
-    process_output(&lexed, output)
-}
-
-// FIXME: remove
-pub fn parse_type(source: &str) -> (SyntaxNode, Vec<ParseError>) {
-    let lexed = lex(source);
-    let input = layout(&lexed);
-
-    let mut parser = Parser::new(&input);
-    ty(&mut parser);
-    let output = parser.finalize();
-
-    process_output(&lexed, output)
-}
-
-// FIXME: remove
-pub fn parse_pattern(source: &str) -> (SyntaxNode, Vec<ParseError>) {
-    let lexed = lex(source);
-    let input = layout(&lexed);
-
-    let mut parser = Parser::new(&input);
-    pattern(&mut parser);
-    let output = parser.finalize();
-
-    process_output(&lexed, output)
 }
 
 pub fn parse_module(source: &str) -> (SyntaxNode, Vec<ParseError>) {

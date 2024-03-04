@@ -174,7 +174,10 @@ pub enum SyntaxKind {
 
     DataAnnotation,
     DataDeclaration,
+    DataVariables,
+    DataConstructors,
     DataConstructor,
+    ConstructorFields,
     DataKw,
 
     NewtypeDeclaration,
@@ -185,10 +188,23 @@ pub enum SyntaxKind {
     TypeDeclaration,
     TypeKw,
 
+    ClassSignature,
     ClassDeclaration,
+    ClassConstraints,
+    ClassVariables,
+    ClassFundeps,
+    FundepDetermined,
+    FundepDetermines,
+    FundepVariables,
+    ClassMembers,
+    ClassMember,
     ClassKw,
 
+    InstanceChain,
     InstanceDeclaration,
+    InstanceAssertions,
+    InstanceMemberSignature,
+    InstanceMemberEquation,
     InstanceKw,
 
     DeriveInstanceDeclaration,

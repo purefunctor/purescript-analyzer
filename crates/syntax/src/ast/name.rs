@@ -36,14 +36,12 @@ impl QualifiedName {
         QualifiedPrefix::cast(self.node.first_child()?)
     }
 
+    pub fn name(&self) -> Option<Name> {
+        self.node.children().find_map(Name::cast)
+    }
+
     pub fn name_ref(&self) -> Option<NameRef> {
-        // prefix is optional, so we try to parse name_ref
-        // at the first position, and then the second...
-        if let Some(name_ref) = NameRef::cast(self.node.first_child()?) {
-            Some(name_ref)
-        } else {
-            NameRef::cast(self.node.children().nth(1)?)
-        }
+        self.node.children().find_map(NameRef::cast)
     }
 }
 

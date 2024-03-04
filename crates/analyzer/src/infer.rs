@@ -31,6 +31,7 @@ pub struct InferMap {
     pub of_constructor: FxHashMap<AstId<ast::DataConstructor>, CoreTypeId>,
     pub of_expr: FxHashMap<ExprId, CoreTypeId>,
     pub of_let_name: FxHashMap<LetNameId, CoreTypeId>,
+    pub of_member: FxHashMap<AstId<ast::ClassMember>, CoreTypeId>,
     pub of_value_group: FxHashMap<ValueGroupId, CoreTypeId>,
 }
 

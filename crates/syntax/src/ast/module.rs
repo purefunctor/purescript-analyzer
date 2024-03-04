@@ -15,7 +15,12 @@ _create_ast!(
     ModuleBody
 );
 
-_create_ast_v!(ExportItem, ExportType(ExportType), ExportValue(ExportValue));
+_create_ast_v!(
+    ExportItem,
+    ExportClass(ExportClass),
+    ExportType(ExportType),
+    ExportValue(ExportValue)
+);
 
 _create_ast_v!(
     ImportItem,
@@ -55,6 +60,12 @@ impl ModuleHeader {
 impl ExportList {
     pub fn export_items(&self) -> Option<Separated<ExportItem>> {
         Separated::cast(self.node.first_child()?.first_child()?)
+    }
+}
+
+impl ExportClass {
+    pub fn name_ref(&self) -> Option<NameRef> {
+        NameRef::cast(self.node.first_child()?)
     }
 }
 
@@ -106,6 +117,12 @@ impl ImportList {
 
     pub fn import_items(&self) -> Option<Separated<ImportItem>> {
         Separated::cast(self.node.first_child()?.first_child()?)
+    }
+}
+
+impl ImportClass {
+    pub fn name_ref(&self) -> Option<NameRef> {
+        NameRef::cast(self.node.first_child()?)
     }
 }
 

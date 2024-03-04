@@ -1,8 +1,12 @@
 use itertools::Itertools;
 
 use crate::{
-    id::InFile, index::nominal::ValueGroupId, infer::Hint, scope::VariableResolution,
-    surface::tree::*, InferenceDatabase,
+    id::InFile,
+    index::nominal::ValueGroupId,
+    infer::{ConstructorId, Hint},
+    scope::VariableResolution,
+    surface::tree::*,
+    InferenceDatabase,
 };
 
 use super::{recursive_let_names, CoreType, CoreTypeId, InferContext};
@@ -310,17 +314,27 @@ impl InferContext<'_> {
                         VariableResolution::Binder(binder_id) => {
                             self.state.map.of_binder.get(binder_id).copied()
                         }
-                        VariableResolution::Imported(InFile { file_id, value }) => {
+                        VariableResolution::ClassMemberImported(file_id, _, member_id) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.map.of_member.get(member_id).copied()
+                            } else {
+                                None
+                            }
+                        }
+                        VariableResolution::ClassMemberLocal(_, member_id) => {
+                            self.state.map.of_member.get(member_id).copied()
+                        }
+                        VariableResolution::LetName(let_id) => {
+                            self.state.map.of_let_name.get(let_id).copied()
+                        }
+                        VariableResolution::ValueImported(InFile { file_id, value }) => {
                             if let Some(result) = self.imported.get(file_id) {
                                 result.map.of_value_group.get(value).copied()
                             } else {
                                 None
                             }
                         }
-                        VariableResolution::LetName(let_id) => {
-                            self.state.map.of_let_name.get(let_id).copied()
-                        }
-                        VariableResolution::Local(value_id) => {
+                        VariableResolution::ValueLocal(value_id) => {
                             self.state.map.of_value_group.get(value_id).copied()
                         }
                     };
@@ -365,12 +379,15 @@ impl InferContext<'_> {
         match &self.arena[binder_id] {
             Binder::Constructor { fields, .. } => {
                 if let Some(constructor) = self.resolve.per_constructor_binder.get(&binder_id) {
-                    if let CoreType::Constructor(expected_data_id) =
-                        db.lookup_intern_type(expected_ty)
-                    {
-                        if constructor.file_id != expected_data_id.file_id
-                            || constructor.data_id != expected_data_id.value
-                        {
+                    if let CoreType::Constructor(expected) = db.lookup_intern_type(expected_ty) {
+                        if let ConstructorId::Data(expected_data_id) = expected.value {
+                            if constructor.file_id != expected.file_id
+                                || constructor.data_id != expected_data_id
+                            {
+                                return assign_error(self);
+                            }
+                        } else {
+                            // Not a data constructor!
                             return assign_error(self);
                         }
                     }
@@ -493,17 +510,27 @@ impl InferContext<'_> {
                         VariableResolution::Binder(binder_id) => {
                             self.state.map.of_binder.get(binder_id)
                         }
-                        VariableResolution::Imported(InFile { file_id, value }) => {
+                        VariableResolution::ClassMemberImported(file_id, _, member_id) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.map.of_member.get(member_id)
+                            } else {
+                                None
+                            }
+                        }
+                        VariableResolution::ClassMemberLocal(_, member_id) => {
+                            self.state.map.of_member.get(member_id)
+                        }
+                        VariableResolution::LetName(let_id) => {
+                            self.state.map.of_let_name.get(let_id)
+                        }
+                        VariableResolution::ValueImported(InFile { file_id, value }) => {
                             if let Some(result) = self.imported.get(file_id) {
                                 result.map.of_value_group.get(value)
                             } else {
                                 None
                             }
                         }
-                        VariableResolution::LetName(let_id) => {
-                            self.state.map.of_let_name.get(let_id)
-                        }
-                        VariableResolution::Local(local_id) => {
+                        VariableResolution::ValueLocal(local_id) => {
                             self.state.map.of_value_group.get(local_id)
                         }
                     };

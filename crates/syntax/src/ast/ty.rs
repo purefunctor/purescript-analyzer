@@ -16,7 +16,9 @@ _create_ast_v!(
     Type,
     ApplicationType(ApplicationType),
     ArrowType(ArrowType),
+    ConstrainedType(ConstrainedType),
     ConstructorType(ConstructorType),
+    ForallType(ForallType),
     IntegerType(IntegerType),
     KindedType(KindedType),
     OperatorNameType(OperatorNameType),
@@ -73,9 +75,29 @@ impl ApplicationType {
     }
 }
 
+impl ConstrainedType {
+    pub fn constraint(&self) -> Option<Type> {
+        Type::cast(self.node.first_child()?)
+    }
+
+    pub fn constrained(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
+}
+
 impl ConstructorType {
     pub fn qualified_name(&self) -> Option<QualifiedName> {
         QualifiedName::cast(self.node.first_child()?)
+    }
+}
+
+impl ForallType {
+    pub fn variables(&self) -> Option<OneOrMore<TypeVariableBinding>> {
+        OneOrMore::cast(self.node.first_child()?)
+    }
+
+    pub fn inner(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
     }
 }
 

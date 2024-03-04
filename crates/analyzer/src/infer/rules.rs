@@ -1,5 +1,6 @@
 //! Implements inference rules.
 
+mod class;
 mod common;
 mod data;
 mod recursive;
@@ -13,12 +14,16 @@ use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    id::InFile, infer::pretty_print, scope::ResolveInfo, surface::tree::*, InferenceDatabase,
+    id::InFile,
+    infer::pretty_print,
+    scope::{ResolveInfo, TypeConstructorKind},
+    surface::tree::*,
+    InferenceDatabase,
 };
 
 use super::{Constraint, CoreType, CoreTypeId, Hint, InferError, InferMap, InferResult};
 
-use recursive::{recursive_data_groups, recursive_let_names, recursive_value_groups};
+use recursive::{recursive_let_names, recursive_type_groups, recursive_value_groups};
 
 #[derive(Default)]
 struct InferState {
@@ -98,14 +103,28 @@ pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> A
 
     let mut infer_ctx = InferContext::new(file_id, &arena, &resolve, &imported);
 
-    let recursive_data =
-        recursive_data_groups(&arena, &resolve, surface.body.iter_data_declarations());
-    for recursive_group in recursive_data {
-        for data_group_id in recursive_group {
-            let Some(data_declaration) = surface.body.data_declaration(data_group_id) else {
-                unreachable!("impossible: unknown data_group_id");
-            };
-            infer_ctx.infer_data_declaration(db, data_declaration);
+    let recursive_type = recursive_type_groups(
+        &arena,
+        &resolve,
+        surface.body.iter_class_declarations(),
+        surface.body.iter_data_declarations(),
+    );
+    for recursive_group in recursive_type {
+        for constructor_id in recursive_group {
+            match constructor_id {
+                TypeConstructorKind::Class(class_id) => {
+                    let Some(class_declaration) = surface.body.class_declaration(class_id) else {
+                        unreachable!("impossible: unknown class_id");
+                    };
+                    infer_ctx.infer_class_declaration(db, class_declaration);
+                }
+                TypeConstructorKind::Data(data_id) => {
+                    let Some(data_declaration) = surface.body.data_declaration(data_id) else {
+                        unreachable!("impossible: unknown data_id");
+                    };
+                    infer_ctx.infer_data_declaration(db, data_declaration);
+                }
+            }
         }
     }
 

@@ -59,7 +59,6 @@ fn test_expression() {
 fn test_expression_failing() {
     glob!("inputs/failing/expression", "*.input", |path| {
         let source = std::fs::read_to_string(path).unwrap();
-        println!("{path:?}");
         expect_parse(&source, expr_0);
     })
 }

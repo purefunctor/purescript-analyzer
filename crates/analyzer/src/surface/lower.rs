@@ -14,7 +14,7 @@ use syntax::{ast, PureScript, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 use crate::{
     id::AstId,
     index::{
-        nominal::{DataGroup, DataGroupId, ValueGroup, ValueGroupId},
+        nominal::{ClassGroup, ClassGroupId, DataGroup, DataGroupId, ValueGroup, ValueGroupId},
         NominalMap, PositionalMap,
     },
     interner::InDb,
@@ -22,6 +22,8 @@ use crate::{
 };
 
 use super::tree::*;
+
+// region: Context
 
 struct Ctx {
     arena: SurfaceArena,
@@ -85,6 +87,10 @@ impl Ctx {
     }
 }
 
+// endregion
+
+// region: Names
+
 fn lower_name(db: &dyn SurfaceDatabase, name: Option<ast::Name>) -> Name {
     Name::from_raw(
         name.and_then(|name| name.in_db(db)).unwrap_or_else(|| db.interner().intern("$Invalid")),
@@ -126,12 +132,20 @@ fn lower_qualified_name(
     }
 }
 
+// endregion
+
+// region: Module
+
 fn lower_module(ctx: &mut Ctx, db: &dyn SurfaceDatabase, module: ast::Module) -> Module {
     let header = lower_header(db, module.header());
     let imports = lower_imports(db, module.imports());
     let body = lower_module_body(ctx, db, module.body());
     Module { header, imports, body }
 }
+
+// endregion
+
+// region: ModuleHeader
 
 fn lower_header(db: &dyn SurfaceDatabase, header: Option<ast::ModuleHeader>) -> ModuleHeader {
     if let Some(header) = header {
@@ -158,6 +172,10 @@ fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> 
 
 fn lower_export_item(db: &dyn SurfaceDatabase, export_item: ast::ExportItem) -> ExportItem {
     match export_item {
+        ast::ExportItem::ExportClass(c) => {
+            let name = lower_name_ref(db, c.name_ref());
+            ExportItem::ExportClass(name)
+        }
         ast::ExportItem::ExportType(t) => {
             let name = lower_name_ref(db, t.name_ref());
             let data_members =
@@ -216,7 +234,10 @@ fn lower_import_list(db: &dyn SurfaceDatabase, import_list: ast::ImportList) -> 
 
 fn lower_import_item(db: &dyn SurfaceDatabase, import_item: ast::ImportItem) -> ImportItem {
     match import_item {
-        ast::ImportItem::ImportClass(_) => todo!("ImportClass"),
+        ast::ImportItem::ImportClass(c) => {
+            let name = lower_name_ref(db, c.name_ref());
+            ImportItem::ImportClass(name)
+        }
         ast::ImportItem::ImportOp(_) => todo!("ImportOp"),
         ast::ImportItem::ImportType(t) => {
             let name = lower_name_ref(db, t.name_ref());
@@ -245,22 +266,20 @@ fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) 
     }
 }
 
+// endregion
+
+// region: ModuleBody
+
 fn lower_module_body(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
     body: Option<ast::ModuleBody>,
 ) -> ModuleBody {
-    body.and_then(|body| {
-        let (declarations, data_declarations, value_declarations) =
-            lower_declarations(ctx, db, body.declarations()?.children());
-        Some(ModuleBody { declarations, data_declarations, value_declarations })
-    })
-    .unwrap_or_else(|| {
-        let declarations = vec![];
-        let data_declarations = FxHashMap::default();
-        let value_declarations = FxHashMap::default();
-        ModuleBody { declarations, data_declarations, value_declarations }
-    })
+    if let Some(declarations) = body.and_then(|body| Some(body.declarations()?.children())) {
+        lower_declarations(ctx, db, declarations)
+    } else {
+        ModuleBody::default()
+    }
 }
 
 // For declarations that exist in groups, we prefer using the nominal map
@@ -268,31 +287,36 @@ fn lower_module_body(
 fn lower_declarations(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
-    _: AstChildren<ast::Declaration>,
-) -> (Vec<Declaration>, FxHashMap<DataGroupId, usize>, FxHashMap<ValueGroupId, usize>) {
+    _declarations: AstChildren<ast::Declaration>,
+) -> ModuleBody {
     let nominal_map = Arc::clone(&ctx.nominal_map);
-
-    let mut all = vec![];
-    let mut data_declarations = FxHashMap::default();
-    let mut value_declarations = FxHashMap::default();
+    let mut module_body = ModuleBody::default();
 
     let mut index = 0;
-    all.extend(nominal_map.iter_data_group().map(|(id, data_group)| {
-        data_declarations.insert(id.value, index);
+    module_body.declarations.extend(nominal_map.iter_class_group().map(|(id, class_group)| {
+        module_body.class_declarations.insert(id.value, index);
+        index += 1;
+        Declaration::ClassDeclaration(lower_class_group(ctx, db, id.value, class_group))
+    }));
+
+    module_body.declarations.extend(nominal_map.iter_data_group().map(|(id, data_group)| {
+        module_body.data_declarations.insert(id.value, index);
         index += 1;
         Declaration::DataDeclaration(lower_data_group(ctx, db, id.value, data_group))
     }));
 
-    all.extend(nominal_map.iter_value_group().map(|(id, value_group)| {
-        value_declarations.insert(id.value, index);
+    module_body.declarations.extend(nominal_map.iter_value_group().map(|(id, value_group)| {
+        module_body.value_declarations.insert(id.value, index);
         index += 1;
         Declaration::ValueDeclaration(lower_value_group(ctx, db, id.value, value_group))
     }));
 
-    (all, data_declarations, value_declarations)
+    module_body
 }
 
-// ===== Section: DataGroup ===== //
+// endregion
+
+// region: DataGroup
 
 fn lower_data_group(
     ctx: &mut Ctx,
@@ -345,7 +369,116 @@ fn lower_data_constructor(
     DataConstructor { name, fields }
 }
 
-// ===== Section: ValueGroup ===== //
+// endregion
+
+// region: ClassGroup
+
+fn lower_class_group(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    id: ClassGroupId,
+    class_group: &ClassGroup,
+) -> ClassDeclaration {
+    let name = Name::from_raw(Arc::clone(&class_group.name));
+    let signature = class_group.signature.map(|id| {
+        let signature = ctx.ast_of(id);
+        lower_class_signature(ctx, db, signature)
+    });
+
+    let declaration = ctx.ast_of(class_group.declaration);
+    let constraints = lower_class_constraints(ctx, db, declaration.constraints());
+    let variables = lower_class_variables(ctx, db, declaration.variables());
+    let fundeps = lower_class_fundeps(db, declaration.fundeps());
+    let members = lower_class_members(ctx, db, class_group.members.values().copied());
+
+    ClassDeclaration { id, name, signature, constraints, variables, fundeps, members }
+}
+
+fn lower_class_signature(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    signature: ast::ClassSignature,
+) -> TypeId {
+    lower_type(ctx, db, signature.kind())
+}
+
+fn lower_class_constraints(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    constraints: Option<ast::ClassConstraints>,
+) -> Vec<TypeId> {
+    if let Some(constraints) = constraints {
+        constraints.children().map(|constraint| lower_type(ctx, db, Some(constraint))).collect_vec()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_class_variables(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    variables: Option<ast::ClassVariables>,
+) -> Vec<TypeVariable> {
+    if let Some(variables) = variables {
+        lower_type_variable_binding(ctx, db, variables.children())
+    } else {
+        vec![]
+    }
+}
+
+fn lower_class_fundeps(
+    db: &dyn SurfaceDatabase,
+    fundeps: Option<ast::ClassFundeps>,
+) -> Vec<FunctionalDependency> {
+    if let Some(fundeps) = fundeps {
+        fundeps
+            .children()
+            .map(|fundep| match fundep {
+                ast::Fundep::Determined(determined) => {
+                    let rhs = lower_fundep_variables(db, determined.rhs());
+                    FunctionalDependency::Determined(rhs)
+                }
+                ast::Fundep::Determines(determines) => {
+                    let lhs = lower_fundep_variables(db, determines.lhs());
+                    let rhs = lower_fundep_variables(db, determines.rhs());
+                    FunctionalDependency::Determines(lhs, rhs)
+                }
+            })
+            .collect_vec()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_fundep_variables(
+    db: &dyn SurfaceDatabase,
+    variables: Option<ast::FundepVariables>,
+) -> Vec<Name> {
+    if let Some(variables) = variables {
+        variables.children().map(|variable| lower_name(db, Some(variable))).collect_vec()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_class_members(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    members: impl Iterator<Item = AstId<ast::ClassMember>>,
+) -> FxHashMap<AstId<ast::ClassMember>, ClassMember> {
+    members
+        .map(|id| {
+            let member = ctx.ast_of(id);
+            let name = lower_name(db, member.name());
+            let ty = lower_type(ctx, db, member.ty());
+            (id, ClassMember { name, ty })
+        })
+        .collect()
+}
+
+// endregion
+
+// region: ValueGroup
 
 fn lower_value_group(
     ctx: &mut Ctx,
@@ -432,7 +565,9 @@ fn lower_where_expr(
     }
 }
 
-// ===== Section: LetBinding ===== //
+// endregion
+
+// region: LetBinding
 
 fn lower_let_bindings(
     ctx: &mut Ctx,
@@ -535,7 +670,9 @@ fn lower_let_binding_signature(
     lower_type(ctx, db, let_binding_signature.ty())
 }
 
-// ===== Section: Literal ===== //
+// endregion
+
+// region: Literal
 
 fn lower_literal<T, I>(
     ctx: &mut Ctx,
@@ -618,7 +755,9 @@ where
     }
 }
 
-// ===== Section: Expr ===== //
+// endregion
+
+// region: Expr
 
 fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Expression>) -> ExprId {
     if let Some(expr) = expr {
@@ -721,7 +860,9 @@ fn lower_expr_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableExpress
     Expr::Variable(name)
 }
 
-// ===== Section: Binder ===== //
+// endregion
+
+// region: Binder
 
 fn lower_binder(ctx: &mut Ctx, db: &dyn SurfaceDatabase, binder: Option<ast::Binder>) -> BinderId {
     if let Some(binder) = &binder {
@@ -797,14 +938,18 @@ fn lower_binder_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableBinde
     Binder::Variable(name)
 }
 
-// ===== Section: Type ===== //
+// endregion
+
+// region: Type
 
 fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) -> TypeId {
     if let Some(ty) = ty {
         let lowered = match &ty {
             ast::Type::ApplicationType(a) => lower_type_application(ctx, db, a),
             ast::Type::ArrowType(a) => lower_type_arrow(ctx, db, a),
+            ast::Type::ConstrainedType(c) => lower_type_constrained(ctx, db, c),
             ast::Type::ConstructorType(c) => lower_type_constructor(db, c),
+            ast::Type::ForallType(f) => lower_type_forall(ctx, db, f),
             ast::Type::IntegerType(_) => Type::NotImplemented,
             ast::Type::KindedType(_) => Type::NotImplemented,
             ast::Type::OperatorNameType(_) => Type::NotImplemented,
@@ -850,10 +995,29 @@ fn lower_type_arrow(ctx: &mut Ctx, db: &dyn SurfaceDatabase, arrow: &ast::ArrowT
     Type::Arrow(arguments, result)
 }
 
+fn lower_type_constrained(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    constrained: &ast::ConstrainedType,
+) -> Type {
+    let constraint = lower_type(ctx, db, constrained.constraint());
+    let constrained = lower_type(ctx, db, constrained.constrained());
+    Type::Constrained(constraint, constrained)
+}
+
 fn lower_type_constructor(db: &dyn SurfaceDatabase, constructor: &ast::ConstructorType) -> Type {
     let name = lower_qualified_name(db, constructor.qualified_name());
 
     Type::Constructor(name)
+}
+
+fn lower_type_forall(ctx: &mut Ctx, db: &dyn SurfaceDatabase, forall: &ast::ForallType) -> Type {
+    let variables = forall
+        .variables()
+        .map(|variables| lower_type_variable_binding(ctx, db, variables.children()))
+        .unwrap_or_default();
+    let inner = lower_type(ctx, db, forall.inner());
+    Type::Forall(variables, inner)
 }
 
 fn lower_type_parenthesized(
@@ -889,6 +1053,8 @@ fn lower_type_variable_binding(
         })
         .collect()
 }
+
+// endregion
 
 pub(super) fn file_surface_query(
     db: &dyn SurfaceDatabase,

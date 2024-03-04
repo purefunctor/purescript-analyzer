@@ -1,0 +1,16 @@
+module Main where
+
+class F :: Int -> Constraint
+class F
+class F a
+class E a <= F a
+class (E a, E a) <= F a
+class F a where
+  f :: a -> Int
+class F a where
+  f :: a -> Int
+  g :: Int -> a
+class F a b | -> a b
+class F a b | -> a, -> b
+class F a b | a -> b
+class F a b | a -> b, b -> a

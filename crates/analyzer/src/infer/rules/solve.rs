@@ -13,6 +13,9 @@ fn occurs_check(db: &dyn InferenceDatabase, u: InFile<u32>, t: CoreTypeId) -> bo
         CoreType::Application(function, argument) => {
             occurs_check(db, u, function) || occurs_check(db, u, argument)
         }
+        CoreType::Constrained(constraint, constrained) => {
+            occurs_check(db, u, constraint) || occurs_check(db, u, constrained)
+        }
         CoreType::Constructor(_) => false,
         CoreType::Forall(_, inner) => occurs_check(db, u, inner),
         CoreType::Function(argument, result) => {

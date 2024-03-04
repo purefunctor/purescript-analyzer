@@ -13,10 +13,10 @@ use syntax::{ast, SyntaxNodePtr};
 
 use crate::{
     id::AstId,
-    index::nominal::{DataGroupId, ValueGroupId},
+    index::nominal::{ClassGroupId, DataGroupId, ValueGroupId},
 };
 
-// ===== SECTION: Names ====== //
+// region: Names
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleName(Arc<str>);
@@ -82,7 +82,9 @@ pub struct Qualified<T> {
     pub value: T,
 }
 
-// ===== SECTION: Module ====== //
+// endregion
+
+// region: Module
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Module {
@@ -91,7 +93,9 @@ pub struct Module {
     pub body: ModuleBody,
 }
 
-// ===== SECTION: ModuleHeader ====== //
+// endregion
+
+// region: ModuleHeader
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleHeader {
@@ -106,11 +110,14 @@ pub struct ExportList {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExportItem {
+    ExportClass(Name),
     ExportType(Name, Option<DataMembers>),
     ExportValue(Name),
 }
 
-// ===== SECTION: ModuleImports ====== //
+// endregion
+
+// region: ModuleImports
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleImports {
@@ -132,6 +139,7 @@ pub struct ImportList {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ImportItem {
+    ImportClass(Name),
     ImportType(Name, Option<DataMembers>),
     ImportValue(Name),
 }
@@ -142,16 +150,30 @@ pub enum DataMembers {
     DataEnumerated(Vec<Name>),
 }
 
-// ===== SECTION: ModuleBody ====== //
+// endregion
 
-#[derive(Debug, PartialEq, Eq)]
+// region: ModuleBody
+
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ModuleBody {
     pub declarations: Vec<Declaration>,
+    pub class_declarations: FxHashMap<ClassGroupId, usize>,
     pub data_declarations: FxHashMap<DataGroupId, usize>,
     pub value_declarations: FxHashMap<ValueGroupId, usize>,
 }
 
 impl ModuleBody {
+    pub fn class_declaration(&self, class_id: ClassGroupId) -> Option<&ClassDeclaration> {
+        self.class_declarations.get(&class_id).map(|index| {
+            let declaration = &self.declarations[*index];
+            if let Declaration::ClassDeclaration(class_declaration) = declaration {
+                class_declaration
+            } else {
+                unreachable!("impossible: index does not point to a class declaration");
+            }
+        })
+    }
+
     pub fn data_declaration(&self, data_id: DataGroupId) -> Option<&DataDeclaration> {
         self.data_declarations.get(&data_id).map(|index| {
             let declaration = &self.declarations[*index];
@@ -170,6 +192,16 @@ impl ModuleBody {
                 value_declaration
             } else {
                 unreachable!("impossible: index does not point to a value declaration");
+            }
+        })
+    }
+
+    pub fn iter_class_declarations(&self) -> impl Iterator<Item = &ClassDeclaration> {
+        self.declarations.iter().filter_map(|declaration| {
+            if let Declaration::ClassDeclaration(data_declaration) = declaration {
+                Some(data_declaration)
+            } else {
+                None
             }
         })
     }
@@ -197,11 +229,14 @@ impl ModuleBody {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Declaration {
+    ClassDeclaration(ClassDeclaration),
     DataDeclaration(DataDeclaration),
     ValueDeclaration(ValueDeclaration),
 }
 
-// ===== SECTION: DataDeclaration ====== //
+// endregion
+
+// region: DataDeclaration
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DataDeclaration {
@@ -218,7 +253,34 @@ pub struct DataConstructor {
     pub fields: Vec<TypeId>,
 }
 
-// ===== SECTION: ValueDeclaration ====== //
+// endregion
+
+// region: ClassDeclaration
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ClassDeclaration {
+    pub id: ClassGroupId,
+    pub name: Name,
+    pub signature: Option<TypeId>,
+    pub constraints: Vec<TypeId>,
+    pub variables: Vec<TypeVariable>,
+    pub fundeps: Vec<FunctionalDependency>,
+    pub members: FxHashMap<AstId<ast::ClassMember>, ClassMember>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum FunctionalDependency {
+    Determined(Vec<Name>),
+    Determines(Vec<Name>, Vec<Name>),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ClassMember {
+    pub name: Name,
+    pub ty: TypeId,
+}
+
+// region: ValueDeclaration
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueDeclaration {
@@ -245,7 +307,9 @@ pub struct WhereExpr {
     pub let_bindings: Vec<LetBinding>,
 }
 
-// ===== SECTION: Common ====== //
+// endregion
+
+// region: Literal
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Literal<I> {
@@ -270,7 +334,9 @@ pub enum RecordItem<I> {
     RecordField(Name, I),
 }
 
-// ===== SECTION: Expr ====== //
+// endregion
+
+// region: Expr
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
@@ -306,7 +372,9 @@ pub struct LetNameEquation {
     pub binding: Binding,
 }
 
-// ===== SECTION: Binder ====== //
+// endregion
+
+// region: Binder
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Binder {
@@ -321,13 +389,17 @@ pub enum Binder {
 
 pub type BinderId = Idx<Binder>;
 
-// ===== SECTION: Type ====== //
+// endregion
+
+// region: Type
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Type {
     Arrow(Vec<TypeId>, TypeId),
     Application(TypeId, Vec<TypeId>),
+    Constrained(TypeId, TypeId),
     Constructor(Qualified<Name>),
+    Forall(Vec<TypeVariable>, TypeId),
     Parenthesized(TypeId),
     Variable(Name),
     NotImplemented,
@@ -341,7 +413,18 @@ pub enum TypeVariable {
     Name(Name),
 }
 
-// ===== SECTION: SurfaceArena ====== //
+impl TypeVariable {
+    pub fn to_name(&self) -> Name {
+        match self {
+            TypeVariable::Kinded(name, _) => Name::clone(name),
+            TypeVariable::Name(name) => Name::clone(name),
+        }
+    }
+}
+
+// endregion
+
+// region: SurfaceArena
 
 macro_rules! _surface_arena {
     ($($name:ident: $tree:ident),*) => {
@@ -376,7 +459,9 @@ macro_rules! _surface_arena {
 
 _surface_arena!(expr: Expr, let_name: LetName, binder: Binder, ty: Type);
 
-// ===== SECTION: SourceMap ====== //
+// endregion
+
+// region: SourceMap
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct LetNamePtr {
@@ -396,3 +481,5 @@ pub struct SourceMap {
     pub(crate) type_to_cst: FxHashMap<TypeId, SyntaxNodePtr>,
     pub(crate) cst_to_type: FxHashMap<SyntaxNodePtr, TypeId>,
 }
+
+// endregion

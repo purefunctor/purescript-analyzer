@@ -1,0 +1,17 @@
+module Main where
+
+instance Eq
+
+instance withName :: Eq
+
+instance Eq a where
+  eq :: a -> a -> Boolean
+  eq _ _ = false
+
+instance Eq a => Ord a where
+  ord :: a -> a -> Ordering
+  ord _ _ = EQ
+
+instance First
+
+else instance Second
