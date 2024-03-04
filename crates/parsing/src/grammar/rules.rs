@@ -1488,9 +1488,6 @@ fn module_body(parser: &mut Parser) {
             SyntaxKind::TypeKw => {
                 annotation_or_type_declaration(parser);
             }
-            SyntaxKind::Lower => {
-                annotation_or_value_declaration(parser);
-            }
             _ => {
                 annotation_or_value_declaration(parser);
             }
