@@ -1,5 +1,6 @@
 //! Implements inference rules.
 
+mod class;
 mod common;
 mod data;
 mod recursive;
@@ -111,7 +112,12 @@ pub(super) fn file_infer_query(db: &dyn InferenceDatabase, file_id: FileId) -> A
     for recursive_group in recursive_type {
         for constructor_id in recursive_group {
             match constructor_id {
-                TypeConstructorKind::Class(_) => (),
+                TypeConstructorKind::Class(class_id) => {
+                    let Some(class_declaration) = surface.body.class_declaration(class_id) else {
+                        unreachable!("impossible: unknown class_id");
+                    };
+                    infer_ctx.infer_class_declaration(db, class_declaration);
+                }
                 TypeConstructorKind::Data(data_id) => {
                     let Some(data_declaration) = surface.body.data_declaration(data_id) else {
                         unreachable!("impossible: unknown data_id");
