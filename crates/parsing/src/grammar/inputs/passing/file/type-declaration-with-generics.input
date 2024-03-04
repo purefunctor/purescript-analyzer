@@ -1,0 +1,3 @@
+module A where
+
+type A a a = A

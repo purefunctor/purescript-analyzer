@@ -69,8 +69,8 @@ pub enum SyntaxKind {
     RightThickArrow,
     LeftParenthesis,
     RightParenthesis,
-    LeftBracket,
-    RightBracket,
+    LeftCurly,
+    RightCurly,
     LeftSquare,
     RightSquare,
 
@@ -80,6 +80,7 @@ pub enum SyntaxKind {
 
     DoExpression,
     QualifiedDo,
+    // UnqualifiedDo,
     DoKw,
 
     DoBind,
@@ -183,6 +184,7 @@ pub enum SyntaxKind {
     NewtypeKw,
     ForallKw,
 
+    TypeDeclarationAnnotation,
     TypeDeclaration,
     TypeKw,
 

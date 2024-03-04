@@ -429,7 +429,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 self.push_stack(self.now_position, Delimiter::Paren);
             }
 
-            SyntaxKind::LeftBracket => {
+            SyntaxKind::LeftCurly => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 self.push_stack(self.now_position, Delimiter::Brace);
@@ -449,7 +449,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::RightBracket => {
+            SyntaxKind::RightCurly => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.collapse_and_commit(InsertWithLayout::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);

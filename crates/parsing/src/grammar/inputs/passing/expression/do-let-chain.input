@@ -1,0 +1,6 @@
+do
+  p <- f
+  let
+    a = 0
+  p <- f
+  f
