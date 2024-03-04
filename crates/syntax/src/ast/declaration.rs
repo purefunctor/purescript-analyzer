@@ -1,8 +1,8 @@
 use rowan::ast::{support, AstChildren, AstNode};
 
 use super::{
-    Binder, Binding, Name, OneOrMore, QualifiedName, Type, TypeVariableBinding, WhereExpression,
-    ZeroOrMore,
+    Binder, BinderList, Binding, Name, OneOrMore, QualifiedName, Type, TypeVariableBinding,
+    WhereExpression,
 };
 
 _create_ast_v!(
@@ -195,8 +195,8 @@ impl ValueEquationDeclaration {
         Name::cast(self.node.first_child()?)
     }
 
-    pub fn binders(&self) -> Option<ZeroOrMore<Binder>> {
-        ZeroOrMore::cast(self.node.children().nth(1)?)
+    pub fn binders(&self) -> Option<BinderList> {
+        BinderList::cast(self.node.children().nth(1)?)
     }
 
     pub fn binding(&self) -> Option<Binding> {
@@ -219,8 +219,8 @@ impl LetBindingName {
         Name::cast(self.node.first_child()?)
     }
 
-    pub fn binders(&self) -> Option<ZeroOrMore<Binder>> {
-        ZeroOrMore::cast(self.node.children().nth(1)?)
+    pub fn binders(&self) -> Option<BinderList> {
+        BinderList::cast(self.node.children().nth(1)?)
     }
 
     pub fn binding(&self) -> Option<Binding> {

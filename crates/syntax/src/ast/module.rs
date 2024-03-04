@@ -1,4 +1,4 @@
-use rowan::ast::{support, AstChildren, AstNode};
+use rowan::ast::AstNode;
 
 use crate::{SyntaxKind, SyntaxToken};
 

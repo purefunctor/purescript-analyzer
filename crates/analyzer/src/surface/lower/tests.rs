@@ -8,11 +8,12 @@
 use std::sync::Arc;
 
 use files::{ChangedFile, FileId, Files};
+use itertools::Itertools;
 use salsa::Durability;
 
 use crate::{RootDatabase, SourceDatabase, SurfaceDatabase};
 
-use super::Module;
+use super::{Module, SurfaceArena};
 
 fn default_db(source: &str) -> (RootDatabase, Files, FileId) {
     let mut db = RootDatabase::default();
@@ -32,15 +33,14 @@ fn default_db(source: &str) -> (RootDatabase, Files, FileId) {
     (db, files, file_id)
 }
 
-fn file_surface(source: &str) -> Arc<Module> {
+fn file_surface(source: &str) -> (Arc<Module>, Arc<SurfaceArena>) {
     let (db, _, file_id) = default_db(source);
-    let (surface, _) = db.file_surface(file_id);
-    surface
+    db.file_surface(file_id)
 }
 
 #[test]
 fn module_none_export_list() {
-    let surface = file_surface(
+    let (surface, _) = file_surface(
         "
 module Main where    
 ",
@@ -51,7 +51,7 @@ module Main where
 
 #[test]
 fn module_some_export_list() {
-    let surface = file_surface(
+    let (surface, _) = file_surface(
         "
 module Main (Type, Data(..), List(Cons, List), value, class Class) where    
 ",
@@ -62,7 +62,7 @@ module Main (Type, Data(..), List(Cons, List), value, class Class) where
 
 #[test]
 fn module_imports() {
-    let surface = file_surface(
+    let (surface, _) = file_surface(
         "module Main where
     
 import Lib
@@ -78,7 +78,7 @@ import Lib hiding (Type, Data(..), List(Cons, List), value, class Class) as Qual
 
 #[test]
 fn module_body() {
-    let surface = file_surface(
+    let (surface, _) = file_surface(
         "module Main where
 
 valueGroup = 0
@@ -88,4 +88,20 @@ data DataGroup
     );
 
     insta::assert_debug_snapshot!(surface.body.declarations);
+}
+
+#[test]
+fn binder_list() {
+    let (surface, arena) = file_surface(
+        "module Main where
+
+const a b = a
+inLet = let const a b = a in const
+",
+    );
+
+    let value_declarations = surface.body.iter_value_declarations().collect_vec();
+    let let_names = arena.iter_let_name().collect_vec();
+
+    insta::assert_debug_snapshot!((value_declarations, let_names));
 }

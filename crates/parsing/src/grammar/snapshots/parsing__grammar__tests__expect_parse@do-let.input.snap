@@ -43,7 +43,7 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: UnconditionalBinding }
             Token { kind: Equal }
@@ -59,7 +59,7 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
             Start { kind: VariableBinder }
               Start { kind: Name }
                 Token { kind: Lower }
@@ -84,7 +84,7 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: GuardedBinding }
             Start { kind: OneOrMore }
@@ -116,7 +116,7 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: GuardedBinding }
             Start { kind: OneOrMore }
@@ -178,4 +178,3 @@ Start { kind: DoExpression }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

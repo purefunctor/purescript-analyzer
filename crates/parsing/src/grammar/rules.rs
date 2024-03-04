@@ -307,15 +307,7 @@ fn expr_let_binding_name(parser: &mut Parser) {
     let mut marker = parser.start();
 
     name(parser, SyntaxKind::Lower);
-    zero_or_more(parser, |parser| {
-        if at_pat_start(parser) {
-            pat_atom(parser);
-            true
-        } else {
-            false
-        }
-    });
-
+    pat_list(parser, pat_atom);
     expr_binding(parser, SyntaxKind::Equal);
 
     marker.end(parser, SyntaxKind::LetBindingName);
@@ -1125,6 +1117,19 @@ fn pat_record(parser: &mut Parser) {
     record_container(parser, SyntaxKind::Name, pat_0)
 }
 
+fn pat_list(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        if at_pat_start(parser) {
+            rule(parser);
+            true
+        } else {
+            false
+        }
+    });
+    marker.end(parser, SyntaxKind::BinderList);
+}
+
 // ('upper' '.')+
 fn qualified_prefix(parser: &mut Parser) -> bool {
     let mut marker = parser.start();
@@ -1535,14 +1540,7 @@ fn annotation_or_value_declaration(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::ValueAnnotationDeclaration);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_pat_start(parser) {
-                pat_atom(parser);
-                true
-            } else {
-                false
-            }
-        });
+        pat_list(parser, pat_atom);
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::ValueEquationDeclaration);
     }
@@ -1909,14 +1907,7 @@ fn instance_member(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::InstanceMemberSignature);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_pat_start(parser) {
-                pat_atom(parser);
-                true
-            } else {
-                false
-            }
-        });
+        pat_list(parser, pat_atom);
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::InstanceMemberEquation);
     }

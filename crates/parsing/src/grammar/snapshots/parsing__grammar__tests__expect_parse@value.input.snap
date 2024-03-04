@@ -40,7 +40,7 @@ Start { kind: Module }
       Start { kind: Name }
         Token { kind: Lower }
       Finish
-      Start { kind: ZeroOrMore }
+      Start { kind: BinderList }
       Finish
       Start { kind: UnconditionalBinding }
         Token { kind: Equal }
