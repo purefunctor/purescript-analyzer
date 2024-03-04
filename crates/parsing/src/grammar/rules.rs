@@ -1620,21 +1620,19 @@ fn signature_or_type_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
     parser.expect(SyntaxKind::TypeKw);
-    if matches!(parser.current(), SyntaxKind::Upper) {
+    if parser.at(SyntaxKind::Upper) {
         name(parser, SyntaxKind::Upper);
     } else {
         parser.error_recover("expected a name");
     }
 
-    if parser.at(SyntaxKind::Colon2) {
-        parser.consume();
+    if parser.eat(SyntaxKind::Colon2) {
         type_0(parser);
         marker.end(parser, SyntaxKind::TypeDeclarationSignature);
     } else {
         synonym_variables(parser);
 
-        if parser.at(SyntaxKind::Equal) {
-            parser.expect(SyntaxKind::Equal);
+        if parser.eat(SyntaxKind::Equal) {
             type_0(parser);
         }
 
