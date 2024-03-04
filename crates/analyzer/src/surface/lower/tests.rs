@@ -13,7 +13,7 @@ use salsa::Durability;
 
 use crate::{RootDatabase, SourceDatabase, SurfaceDatabase};
 
-use super::{Module, SurfaceArena};
+use super::{Binding, Module, SurfaceArena};
 
 fn default_db(source: &str) -> (RootDatabase, Files, FileId) {
     let mut db = RootDatabase::default();
@@ -104,4 +104,39 @@ inLet = let const a b = a in const
     let let_names = arena.iter_let_name().collect_vec();
 
     insta::assert_debug_snapshot!((value_declarations, let_names));
+}
+
+#[test]
+fn expressions() {
+    let (surface, arena) = file_surface(
+        "module Main where
+
+application = function argument
+constructor = Constructor
+prefixedConstructor = A.Constructor
+lambda = \\a b -> a
+letIn = let const a b = a in const
+literalInt = 0
+literalNumber = 0.0
+literalChar = 'a'
+literalString = \"hello\"
+literalArray = [ 0, 0 ]
+literalRecord = { a: 0, b }
+variable = a
+prefixedVariable = A.a
+",
+    );
+
+    let expressions = surface
+        .body
+        .iter_value_declarations()
+        .map(|value_declaration| {
+            let equation = &value_declaration.equations[0];
+            match &equation.binding {
+                Binding::Unconditional { where_expr } => &arena[where_expr.expr_id],
+            }
+        })
+        .collect_vec();
+
+    insta::assert_debug_snapshot!(expressions);
 }
