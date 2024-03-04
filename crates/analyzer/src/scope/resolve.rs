@@ -68,6 +68,18 @@ impl UsableItems {
         })
     }
 
+    fn find_class_member(&self, name: &Name) -> Option<(ClassGroupId, AstId<ast::ClassMember>)> {
+        self.class_member.iter().find_map(
+            |(member_name, member_id)| {
+                if name == member_name {
+                    Some(*member_id)
+                } else {
+                    None
+                }
+            },
+        )
+    }
+
     fn find_data_constructor(
         &self,
         name: &Name,
@@ -205,14 +217,29 @@ fn resolve_variable(
                 ScopeKind::TypeVariable(_, _) => None,
             });
 
-        let local_resolution = scope_resolution.or_else(|| {
-            let value_id = ctx.local.find_value(name)?;
-            Some(VariableResolution::ValueLocal(value_id))
-        });
+        let local_resolution = scope_resolution
+            .or_else(|| {
+                let value_id = ctx.local.find_value(name)?;
+                Some(VariableResolution::ValueLocal(value_id))
+            })
+            .or_else(|| {
+                let (class_id, member_id) = ctx.local.find_class_member(name)?;
+                Some(VariableResolution::ClassMemberLocal(class_id, member_id))
+            });
 
         local_resolution.or_else(|| {
             ctx.imports.values().find_map(|(file_id, usable_items)| {
                 let file_id = *file_id;
+
+                None.or_else(|| {
+                    let value_id = usable_items.find_value(name)?;
+                    Some(VariableResolution::ValueImported(InFile { file_id, value: value_id }))
+                })
+                .or_else(|| {
+                    let (class_id, member_id) = usable_items.find_class_member(name)?;
+                    Some(VariableResolution::ClassMemberImported(file_id, class_id, member_id))
+                });
+
                 let value = usable_items.find_value(name)?;
                 Some(VariableResolution::ValueImported(InFile { file_id, value }))
             })

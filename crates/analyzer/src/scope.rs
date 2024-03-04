@@ -118,6 +118,8 @@ pub enum TypeVariableKind {
 #[derive(Debug, PartialEq, Eq)]
 pub enum VariableResolution {
     Binder(BinderId),
+    ClassMemberImported(FileId, ClassGroupId, AstId<ast::ClassMember>),
+    ClassMemberLocal(ClassGroupId, AstId<ast::ClassMember>),
     LetName(LetNameId),
     ValueImported(InFile<ValueGroupId>),
     ValueLocal(ValueGroupId),

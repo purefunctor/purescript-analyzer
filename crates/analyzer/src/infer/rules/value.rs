@@ -314,6 +314,16 @@ impl InferContext<'_> {
                         VariableResolution::Binder(binder_id) => {
                             self.state.map.of_binder.get(binder_id).copied()
                         }
+                        VariableResolution::ClassMemberImported(file_id, _, member_id) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.map.of_member.get(member_id).copied()
+                            } else {
+                                None
+                            }
+                        }
+                        VariableResolution::ClassMemberLocal(_, member_id) => {
+                            self.state.map.of_member.get(member_id).copied()
+                        }
                         VariableResolution::LetName(let_id) => {
                             self.state.map.of_let_name.get(let_id).copied()
                         }
@@ -499,6 +509,16 @@ impl InferContext<'_> {
                     let variable_ty = match variable {
                         VariableResolution::Binder(binder_id) => {
                             self.state.map.of_binder.get(binder_id)
+                        }
+                        VariableResolution::ClassMemberImported(file_id, _, member_id) => {
+                            if let Some(result) = self.imported.get(file_id) {
+                                result.map.of_member.get(member_id)
+                            } else {
+                                None
+                            }
+                        }
+                        VariableResolution::ClassMemberLocal(_, member_id) => {
+                            self.state.map.of_member.get(member_id)
                         }
                         VariableResolution::LetName(let_id) => {
                             self.state.map.of_let_name.get(let_id)
