@@ -1,10 +1,10 @@
 use crate::{
     id::InFile,
-    infer::{ConstructorId, CoreType, CoreTypeVariable},
+    infer::{ConstructorId, CoreType},
     InferenceDatabase,
 };
 
-use super::{ClassDeclaration, InferContext, Name, TypeVariable};
+use super::{ClassDeclaration, InferContext};
 
 impl InferContext<'_> {
     pub(super) fn infer_class_declaration(
@@ -26,23 +26,7 @@ impl InferContext<'_> {
         class_declaration.members.iter().for_each(|(member_id, class_member)| {
             let member_ty = self.lower_type(db, class_member.ty);
             let constrained_ty = db.intern_type(CoreType::Constrained(constraint_ty, member_ty));
-            let qualified_ty = class_declaration.variables.iter().rev().fold(
-                constrained_ty,
-                |constrained_ty, variable| {
-                    let variable = match variable {
-                        TypeVariable::Kinded(name, kind) => {
-                            let name = Name::clone(name);
-                            let kind = self.lower_type(db, *kind);
-                            CoreTypeVariable::Kinded(name, kind)
-                        }
-                        TypeVariable::Name(name) => {
-                            let name = Name::clone(name);
-                            CoreTypeVariable::Name(name)
-                        }
-                    };
-                    db.intern_type(CoreType::Forall(variable, constrained_ty))
-                },
-            );
+            let qualified_ty = self.qualify_type(db, &class_declaration.variables, constrained_ty);
             self.state.map.of_member.insert(*member_id, qualified_ty);
         });
     }

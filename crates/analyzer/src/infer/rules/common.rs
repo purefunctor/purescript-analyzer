@@ -237,6 +237,28 @@ impl InferContext<'_> {
             type_id
         }
     }
+
+    pub(super) fn qualify_type(
+        &mut self,
+        db: &dyn InferenceDatabase,
+        variables: &[TypeVariable],
+        unqualified_ty: CoreTypeId,
+    ) -> CoreTypeId {
+        variables.iter().rev().fold(unqualified_ty, |unqualified_ty, variable| {
+            let variable = match variable {
+                TypeVariable::Kinded(name, kind) => {
+                    let name = Name::clone(name);
+                    let kind = self.lower_type(db, *kind);
+                    CoreTypeVariable::Kinded(name, kind)
+                }
+                TypeVariable::Name(name) => {
+                    let name = Name::clone(name);
+                    CoreTypeVariable::Name(name)
+                }
+            };
+            db.intern_type(CoreType::Forall(variable, unqualified_ty))
+        })
+    }
 }
 
 fn replace_type(
