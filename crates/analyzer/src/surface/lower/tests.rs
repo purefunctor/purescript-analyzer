@@ -91,22 +91,6 @@ data DataGroup
 }
 
 #[test]
-fn binder_list() {
-    let (surface, arena) = file_surface(
-        "module Main where
-
-const a b = a
-inLet = let const a b = a in const
-",
-    );
-
-    let value_declarations = surface.body.iter_value_declarations().collect_vec();
-    let let_names = arena.iter_let_name().collect_vec();
-
-    insta::assert_debug_snapshot!((value_declarations, let_names));
-}
-
-#[test]
 fn expressions() {
     let (surface, arena) = file_surface(
         "module Main where
@@ -139,4 +123,18 @@ prefixedVariable = A.a
         .collect_vec();
 
     insta::assert_debug_snapshot!(expressions);
+}
+
+#[test]
+fn value_declarations() {
+    let (surface, _) = file_surface(
+        "module Main where
+
+const :: forall a b. a -> b -> a
+const a b = a",
+    );
+
+    let value_declarations = surface.body.iter_value_declarations().collect_vec();
+
+    insta::assert_debug_snapshot!(value_declarations);
 }
