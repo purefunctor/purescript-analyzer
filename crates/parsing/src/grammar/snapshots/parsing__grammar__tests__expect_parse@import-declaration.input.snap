@@ -260,19 +260,15 @@ Start { kind: Module }
                 Token { kind: Upper }
               Finish
               Start { kind: DataEnumerated }
-                Start { kind: Wrapped }
-                  Token { kind: LeftParenthesis }
-                  Start { kind: Separated }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
-                    Token { kind: Comma }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
-                  Finish
-                  Token { kind: RightParenthesis }
+                Token { kind: LeftParenthesis }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
                 Finish
+                Token { kind: Comma }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+                Token { kind: RightParenthesis }
               Finish
             Finish
             Token { kind: Comma }
@@ -281,11 +277,9 @@ Start { kind: Module }
                 Token { kind: Upper }
               Finish
               Start { kind: DataAll }
-                Start { kind: Wrapped }
-                  Token { kind: LeftParenthesis }
-                  Token { kind: Period2 }
-                  Token { kind: RightParenthesis }
-                Finish
+                Token { kind: LeftParenthesis }
+                Token { kind: Period2 }
+                Token { kind: RightParenthesis }
               Finish
             Finish
             Token { kind: Comma }
@@ -294,10 +288,8 @@ Start { kind: Module }
                 Token { kind: Upper }
               Finish
               Start { kind: DataEnumerated }
-                Start { kind: Wrapped }
-                  Token { kind: LeftParenthesis }
-                  Token { kind: RightParenthesis }
-                Finish
+                Token { kind: LeftParenthesis }
+                Token { kind: RightParenthesis }
               Finish
             Finish
           Finish

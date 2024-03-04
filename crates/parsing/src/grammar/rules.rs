@@ -1308,7 +1308,6 @@ fn export_list(parser: &mut Parser) {
 fn data_members(parser: &mut Parser) {
     if parser.at(SyntaxKind::LeftParenthesis) {
         let mut data = parser.start();
-        let mut wrapped = parser.start();
         parser.consume();
         let kind = match parser.current() {
             SyntaxKind::RightParenthesis => {
@@ -1321,19 +1320,28 @@ fn data_members(parser: &mut Parser) {
                 SyntaxKind::DataAll
             }
             _ => {
-                separated(parser, SyntaxKind::Comma, |parser| {
-                    if parser.at(SyntaxKind::Upper) {
-                        name_ref(parser, SyntaxKind::Upper);
-                    } else {
-                        parser.error_recover("expected an Upper");
-                    }
-                });
+                parser.separated(
+                    |parser| {
+                        if parser.at(SyntaxKind::Upper) {
+                            name_ref(parser, SyntaxKind::Upper)
+                        } else {
+                            parser.error_recover("expected a constructor");
+                        }
+                    },
+                    |parser| {
+                        let current = parser.current();
+                        if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+                            false
+                        } else {
+                            parser.expect_recover(SyntaxKind::Comma)
+                        }
+                    },
+                );
                 parser.expect(SyntaxKind::RightParenthesis);
                 SyntaxKind::DataEnumerated
             }
         };
         data.end(parser, kind);
-        wrapped.end(parser, SyntaxKind::Wrapped)
     }
 }
 

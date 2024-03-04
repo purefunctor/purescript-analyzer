@@ -144,8 +144,4 @@ impl ImportType {
     }
 }
 
-impl DataEnumerated {
-    pub fn constructors(&self) -> Option<Separated<NameRef>> {
-        Separated::cast(self.node.first_child()?.first_child()?)
-    }
-}
+_has_children!(DataEnumerated<NameRef>);

@@ -259,10 +259,8 @@ fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) 
     match data_members {
         ast::DataMembers::DataAll(_) => DataMembers::DataAll,
         ast::DataMembers::DataEnumerated(e) => {
-            let names = e
-                .constructors()
-                .map(|names| names.children().map(|name| lower_name_ref(db, Some(name))).collect())
-                .unwrap_or_default();
+            let names =
+                e.children().map(|name_ref| lower_name_ref(db, Some(name_ref))).collect_vec();
             DataMembers::DataEnumerated(names)
         }
     }
