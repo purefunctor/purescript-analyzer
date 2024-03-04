@@ -164,12 +164,8 @@ fn lower_header(db: &dyn SurfaceDatabase, header: Option<ast::ModuleHeader>) -> 
 }
 
 fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> ExportList {
-    let items = export_list
-        .export_items()
-        .map(|export_items| {
-            export_items.children().map(|export_item| lower_export_item(db, export_item)).collect()
-        })
-        .unwrap_or_default();
+    let items =
+        export_list.children().map(|export_item| lower_export_item(db, export_item)).collect_vec();
     ExportList { items }
 }
 

@@ -39,6 +39,28 @@ fn file_surface(source: &str) -> Arc<Module> {
 }
 
 #[test]
+fn module_none_export_list() {
+    let surface = file_surface(
+        "
+module Main where    
+",
+    );
+
+    insta::assert_debug_snapshot!(surface.header.export_list);
+}
+
+#[test]
+fn module_some_export_list() {
+    let surface = file_surface(
+        "
+module Main (Type, Data(..), List(Cons, List), value, class Class) where    
+",
+    );
+
+    insta::assert_debug_snapshot!(surface.header.export_list);
+}
+
+#[test]
 fn module_imports() {
     let surface = file_surface(
         "module Main where

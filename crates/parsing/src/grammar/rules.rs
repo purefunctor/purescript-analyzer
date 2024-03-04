@@ -1295,11 +1295,16 @@ fn module_name(parser: &mut Parser) {
 
 fn export_list(parser: &mut Parser) {
     let mut marker = parser.start();
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftParenthesis);
-    separated(parser, SyntaxKind::Comma, export_item);
+    parser.separated(export_item, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+            false
+        } else {
+            parser.expect(SyntaxKind::Comma)
+        }
+    });
     parser.expect(SyntaxKind::RightParenthesis);
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::ExportList);
 }
 
