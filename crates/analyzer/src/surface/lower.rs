@@ -1,5 +1,8 @@
 //! Conversion from the CST to AST
 
+#[cfg(test)]
+mod tests;
+
 use std::sync::Arc;
 
 use files::FileId;

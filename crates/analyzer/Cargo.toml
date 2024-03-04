@@ -18,3 +18,6 @@ rowan = "0.15.15"
 rustc-hash = "1.1.0"
 salsa = "0.17.0-pre.2"
 syntax = { version = "0.1.0", path = "../syntax" }
+
+[dev-dependencies]
+insta = "1.36.1"
