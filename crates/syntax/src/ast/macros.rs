@@ -126,15 +126,15 @@ macro_rules! _create_ast_v {
 macro_rules! _has_children {
     ($kind_0:ident<$item_0:ident> $(,$kind:ident<$item:ident>)*) => {
         impl $kind_0 {
-            pub fn children(&self) -> AstChildren<$item_0> {
-                support::children(&self.node)
+            pub fn children(&self) -> rowan::ast::AstChildren<$item_0> {
+                rowan::ast::support::children(&self.node)
             }
         }
 
         $(
             impl $kind {
-                pub fn children(&self) -> AstChildren<$item> {
-                    support::children(&self.node)
+                pub fn children(&self) -> rowan::ast::AstChildren<$item> {
+                    rowan::ast::support::children(&self.node)
                 }
             }
         )*
