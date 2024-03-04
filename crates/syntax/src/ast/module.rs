@@ -1,4 +1,4 @@
-use rowan::ast::AstNode;
+use rowan::ast::{support, AstChildren, AstNode};
 
 use crate::{SyntaxKind, SyntaxToken};
 
@@ -85,11 +85,7 @@ impl ExportValue {
     }
 }
 
-impl ModuleImports {
-    pub fn imports(&self) -> Option<ZeroOrMore<ImportDeclaration>> {
-        ZeroOrMore::cast(self.node.first_child()?)
-    }
-}
+_has_children!(ModuleImports<ImportDeclaration>);
 
 impl ImportDeclaration {
     pub fn module_name(&self) -> Option<ModuleName> {

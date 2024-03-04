@@ -193,7 +193,6 @@ fn lower_imports(db: &dyn SurfaceDatabase, imports: Option<ast::ModuleImports>) 
     imports
         .and_then(|imports| {
             let declarations = imports
-                .imports()?
                 .children()
                 .map(|import_declaration| lower_import_declaration(db, import_declaration))
                 .collect();

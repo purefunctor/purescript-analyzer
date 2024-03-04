@@ -25,285 +25,283 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutStart }
   Start { kind: ModuleImports }
-    Start { kind: ZeroOrMore }
-      Start { kind: ImportDeclaration }
-        Token { kind: ImportKw }
+    Start { kind: ImportDeclaration }
+      Token { kind: ImportKw }
+      Start { kind: ModuleName }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: ImportDeclaration }
+      Token { kind: ImportKw }
+      Start { kind: ModuleName }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+      Finish
+      Start { kind: ImportList }
+        Start { kind: Wrapped }
+          Token { kind: LeftParenthesis }
+          Start { kind: Separated }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: ImportDeclaration }
+      Token { kind: ImportKw }
+      Start { kind: ModuleName }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+      Finish
+      Start { kind: ImportList }
+        Token { kind: HidingKw }
+        Start { kind: Wrapped }
+          Token { kind: LeftParenthesis }
+          Start { kind: Separated }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: ImportDeclaration }
+      Token { kind: ImportKw }
+      Start { kind: ModuleName }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+      Finish
+      Start { kind: ImportList }
+        Start { kind: Wrapped }
+          Token { kind: LeftParenthesis }
+          Start { kind: Separated }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
+        Finish
+      Finish
+      Start { kind: ImportQualified }
+        Token { kind: AsKw }
         Start { kind: ModuleName }
           Start { kind: Name }
             Token { kind: Upper }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: ImportDeclaration }
-        Token { kind: ImportKw }
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: ImportDeclaration }
+      Token { kind: ImportKw }
+      Start { kind: ModuleName }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+        Start { kind: Name }
+          Token { kind: Upper }
+        Finish
+      Finish
+      Start { kind: ImportList }
+        Token { kind: HidingKw }
+        Start { kind: Wrapped }
+          Token { kind: LeftParenthesis }
+          Start { kind: Separated }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightParenthesis }
+        Finish
+      Finish
+      Start { kind: ImportQualified }
+        Token { kind: AsKw }
         Start { kind: ModuleName }
           Start { kind: Name }
             Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-        Finish
-        Start { kind: ImportList }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Separated }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Token { kind: RightParenthesis }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: ImportDeclaration }
-        Token { kind: ImportKw }
-        Start { kind: ModuleName }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-        Finish
-        Start { kind: ImportList }
-          Token { kind: HidingKw }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Separated }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Token { kind: RightParenthesis }
-          Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: ImportDeclaration }
+      Token { kind: ImportKw }
+      Start { kind: ModuleName }
+        Start { kind: Name }
+          Token { kind: Upper }
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: ImportDeclaration }
-        Token { kind: ImportKw }
-        Start { kind: ModuleName }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-        Finish
-        Start { kind: ImportList }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Separated }
-              Start { kind: ImportValue }
+      Start { kind: ImportList }
+        Start { kind: Wrapped }
+          Token { kind: LeftParenthesis }
+          Start { kind: Separated }
+            Start { kind: ImportOp }
+              Start { kind: Wrapped }
+                Token { kind: LeftParenthesis }
                 Start { kind: NameRef }
-                  Token { kind: Lower }
+                  Token { kind: Operator }
                 Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
+                Token { kind: RightParenthesis }
               Finish
             Finish
-            Token { kind: RightParenthesis }
-          Finish
-        Finish
-        Start { kind: ImportQualified }
-          Token { kind: AsKw }
-          Start { kind: ModuleName }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-          Finish
-        Finish
-      Finish
-      Token { kind: LayoutSep }
-      Start { kind: ImportDeclaration }
-        Token { kind: ImportKw }
-        Start { kind: ModuleName }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-        Finish
-        Start { kind: ImportList }
-          Token { kind: HidingKw }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Separated }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
+            Token { kind: Comma }
+            Start { kind: ImportType }
+              Start { kind: NameRef }
+                Token { kind: Upper }
               Finish
             Finish
-            Token { kind: RightParenthesis }
-          Finish
-        Finish
-        Start { kind: ImportQualified }
-          Token { kind: AsKw }
-          Start { kind: ModuleName }
-            Start { kind: Name }
-              Token { kind: Upper }
+            Token { kind: Comma }
+            Start { kind: ImportTypeOp }
+              Token { kind: TypeKw }
+              Start { kind: Wrapped }
+                Token { kind: LeftParenthesis }
+                Start { kind: NameRef }
+                  Token { kind: Operator }
+                Finish
+                Token { kind: RightParenthesis }
+              Finish
             Finish
-          Finish
-        Finish
-      Finish
-      Token { kind: LayoutSep }
-      Start { kind: ImportDeclaration }
-        Token { kind: ImportKw }
-        Start { kind: ModuleName }
-          Start { kind: Name }
-            Token { kind: Upper }
-          Finish
-        Finish
-        Start { kind: ImportList }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Separated }
-              Start { kind: ImportOp }
+            Token { kind: Comma }
+            Start { kind: ImportClass }
+              Token { kind: ClassKw }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportValue }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportType }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+              Start { kind: DataEnumerated }
                 Start { kind: Wrapped }
                   Token { kind: LeftParenthesis }
-                  Start { kind: NameRef }
-                    Token { kind: Operator }
-                  Finish
-                  Token { kind: RightParenthesis }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportType }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportTypeOp }
-                Token { kind: TypeKw }
-                Start { kind: Wrapped }
-                  Token { kind: LeftParenthesis }
-                  Start { kind: NameRef }
-                    Token { kind: Operator }
-                  Finish
-                  Token { kind: RightParenthesis }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportClass }
-                Token { kind: ClassKw }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportValue }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportType }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-                Start { kind: DataEnumerated }
-                  Start { kind: Wrapped }
-                    Token { kind: LeftParenthesis }
-                    Start { kind: Separated }
-                      Start { kind: NameRef }
-                        Token { kind: Upper }
-                      Finish
-                      Token { kind: Comma }
-                      Start { kind: NameRef }
-                        Token { kind: Upper }
-                      Finish
+                  Start { kind: Separated }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
                     Finish
-                    Token { kind: RightParenthesis }
+                    Token { kind: Comma }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
+                    Finish
                   Finish
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportType }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-                Start { kind: DataAll }
-                  Start { kind: Wrapped }
-                    Token { kind: LeftParenthesis }
-                    Token { kind: Period2 }
-                    Token { kind: RightParenthesis }
-                  Finish
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ImportType }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-                Start { kind: DataEnumerated }
-                  Start { kind: Wrapped }
-                    Token { kind: LeftParenthesis }
-                    Token { kind: RightParenthesis }
-                  Finish
+                  Token { kind: RightParenthesis }
                 Finish
               Finish
             Finish
-            Token { kind: RightParenthesis }
+            Token { kind: Comma }
+            Start { kind: ImportType }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+              Start { kind: DataAll }
+                Start { kind: Wrapped }
+                  Token { kind: LeftParenthesis }
+                  Token { kind: Period2 }
+                  Token { kind: RightParenthesis }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: ImportType }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+              Start { kind: DataEnumerated }
+                Start { kind: Wrapped }
+                  Token { kind: LeftParenthesis }
+                  Token { kind: RightParenthesis }
+                Finish
+              Finish
+            Finish
           Finish
+          Token { kind: RightParenthesis }
         Finish
       Finish
     Finish

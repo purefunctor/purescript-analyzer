@@ -1377,7 +1377,7 @@ fn export_item(parser: &mut Parser) {
 
 fn module_imports(parser: &mut Parser) {
     let mut marker = parser.start();
-    zero_or_more(parser, |parser| {
+    parser.repeat(|parser| {
         if !parser.at(SyntaxKind::ImportKw) {
             return false;
         }
