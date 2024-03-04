@@ -80,7 +80,7 @@ expression: expressions
                 ),
                 RecordPun(
                     Name(
-                        "$Invalid",
+                        "b",
                     ),
                 ),
             ],

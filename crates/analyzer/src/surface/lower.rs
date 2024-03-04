@@ -711,7 +711,7 @@ where
                                     RecordItem::RecordField(name, value)
                                 }
                                 ast::RecordItem::RecordPun(pun) => {
-                                    let name = lower_name(db, pun.name());
+                                    let name = lower_name_ref(db, pun.name_ref());
                                     RecordItem::RecordPun(name)
                                 }
                             })
