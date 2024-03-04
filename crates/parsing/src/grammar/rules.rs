@@ -431,14 +431,7 @@ fn expr_ado(parser: &mut Parser, mut qualified: NodeMarker, mut expression: Node
 fn expr_lambda(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::Backslash);
-    one_or_more(parser, |parser| {
-        if at_pat_start(parser) {
-            pat_atom(parser);
-            true
-        } else {
-            false
-        }
-    });
+    pat_list(parser, pat_atom);
     parser.expect(SyntaxKind::RightArrow);
     expr_0(parser);
     marker.end(parser, SyntaxKind::LambdaExpression);

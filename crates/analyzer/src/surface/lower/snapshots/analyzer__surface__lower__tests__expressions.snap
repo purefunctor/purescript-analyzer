@@ -30,7 +30,10 @@ expression: expressions
         },
     ),
     Lambda(
-        [],
+        [
+            Idx::<Binder>(0),
+            Idx::<Binder>(1),
+        ],
         Idx::<Expr>(5),
     ),
     LetIn(
