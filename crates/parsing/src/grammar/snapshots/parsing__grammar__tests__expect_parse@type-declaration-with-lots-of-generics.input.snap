@@ -29,7 +29,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: SynonymVariables }
           Start { kind: TypeVariableName }
             Start { kind: Name }
               Token { kind: Lower }
@@ -69,3 +69,4 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
+

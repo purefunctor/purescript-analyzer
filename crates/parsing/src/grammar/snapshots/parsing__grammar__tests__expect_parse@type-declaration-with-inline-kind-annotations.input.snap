@@ -29,51 +29,63 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
-          Start { kind: TypeVariableName }
-            Token { kind: LeftParenthesis }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-            Token { kind: Colon2 }
-            Start { kind: ConstructorType }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
+        Start { kind: SynonymVariables }
+          Start { kind: TypeVariableKinded }
+            Start { kind: Wrapped }
+              Token { kind: LeftParenthesis }
+              Start { kind: Labeled }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+                Token { kind: Colon2 }
+                Start { kind: ConstructorType }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
+                    Finish
+                  Finish
                 Finish
               Finish
+              Token { kind: RightParenthesis }
             Finish
-            Token { kind: RightParenthesis }
           Finish
-          Start { kind: TypeVariableName }
-            Token { kind: LeftParenthesis }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-            Token { kind: Colon2 }
-            Start { kind: ConstructorType }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
+          Start { kind: TypeVariableKinded }
+            Start { kind: Wrapped }
+              Token { kind: LeftParenthesis }
+              Start { kind: Labeled }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+                Token { kind: Colon2 }
+                Start { kind: ConstructorType }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
+                    Finish
+                  Finish
                 Finish
               Finish
+              Token { kind: RightParenthesis }
             Finish
-            Token { kind: RightParenthesis }
           Finish
-          Start { kind: TypeVariableName }
-            Token { kind: LeftParenthesis }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-            Token { kind: Colon2 }
-            Start { kind: ConstructorType }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
+          Start { kind: TypeVariableKinded }
+            Start { kind: Wrapped }
+              Token { kind: LeftParenthesis }
+              Start { kind: Labeled }
+                Start { kind: Name }
+                  Token { kind: Lower }
+                Finish
+                Token { kind: Colon2 }
+                Start { kind: ConstructorType }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
+                    Finish
+                  Finish
                 Finish
               Finish
+              Token { kind: RightParenthesis }
             Finish
-            Token { kind: RightParenthesis }
           Finish
         Finish
         Token { kind: Equal }
@@ -89,3 +101,4 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
+

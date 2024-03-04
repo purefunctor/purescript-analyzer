@@ -186,6 +186,7 @@ pub enum SyntaxKind {
 
     TypeDeclarationSignature,
     TypeDeclaration,
+    SynonymVariables,
     TypeKw,
 
     ClassSignature,

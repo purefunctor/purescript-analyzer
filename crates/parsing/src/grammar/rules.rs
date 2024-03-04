@@ -1631,14 +1631,7 @@ fn signature_or_type_declaration(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::TypeDeclarationSignature);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_type_var_binding_plain(parser) {
-                type_var_binding_plain(parser);
-                true
-            } else {
-                false
-            }
-        });
+        synonym_variables(parser);
 
         if parser.at(SyntaxKind::Equal) {
             parser.expect(SyntaxKind::Equal);
@@ -1647,6 +1640,19 @@ fn signature_or_type_declaration(parser: &mut Parser) {
 
         marker.end(parser, SyntaxKind::TypeDeclaration);
     }
+}
+
+fn synonym_variables(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        if at_type_variable_binding_start(parser) {
+            type_variable_binding_plain(parser);
+            true
+        } else {
+            false
+        }
+    });
+    marker.end(parser, SyntaxKind::SynonymVariables);
 }
 
 //   'foreign' 'import' 'lower' '::' type_0
@@ -1666,25 +1672,6 @@ fn foreign_import_declaration(parser: &mut Parser) {
     type_0(parser);
 
     marker.end(parser, SyntaxKind::ForeignDataDeclaration);
-}
-
-fn at_type_var_binding_plain(parser: &mut Parser) -> bool {
-    parser.current().is_lower() || matches!(parser.current(), SyntaxKind::LeftParenthesis)
-}
-
-// Upper | '(' Upper '::' type_0 ')'
-fn type_var_binding_plain(parser: &mut Parser) {
-    let mut marker = parser.start();
-    if parser.current().is_lower() {
-        name(parser, SyntaxKind::Lower);
-    } else {
-        parser.expect(SyntaxKind::LeftParenthesis);
-        name(parser, SyntaxKind::Lower);
-        parser.expect(SyntaxKind::Colon2);
-        type_0(parser);
-        parser.expect(SyntaxKind::RightParenthesis);
-    }
-    marker.end(parser, SyntaxKind::TypeVariableName);
 }
 
 fn class_declaration(parser: &mut Parser) {

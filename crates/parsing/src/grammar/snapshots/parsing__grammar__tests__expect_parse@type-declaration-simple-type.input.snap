@@ -29,7 +29,7 @@ Start { kind: Module }
         Start { kind: Name }
           Token { kind: Upper }
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: SynonymVariables }
         Finish
         Token { kind: Equal }
         Start { kind: ConstructorType }
@@ -44,3 +44,4 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
+
