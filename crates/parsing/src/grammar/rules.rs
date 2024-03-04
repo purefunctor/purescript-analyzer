@@ -2,9 +2,7 @@ use syntax::SyntaxKind;
 
 use crate::parser::{NodeMarker, Parser};
 
-use super::combinators::{
-    attempt, layout_one_or_more, one_or_more, separated, separated_quiet, zero_or_more,
-};
+use super::combinators::{attempt, layout_one_or_more, one_or_more, separated, zero_or_more};
 
 // expr_1 '::' type_0 | expr_1
 pub(super) fn expr_0(parser: &mut Parser) {
@@ -1879,7 +1877,14 @@ fn instance_assertions(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::LeftParenthesis) {
         parser.expect(SyntaxKind::LeftParenthesis);
-        separated_quiet(parser, SyntaxKind::Comma, type_3);
+        parser.separated(type_3, |parser| {
+            let current = parser.current();
+            if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+                false
+            } else {
+                parser.expect(SyntaxKind::Comma)
+            }
+        });
         parser.expect(SyntaxKind::RightParenthesis);
     } else {
         type_5(parser);

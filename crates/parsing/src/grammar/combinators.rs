@@ -57,22 +57,6 @@ pub(super) fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl F
     marker.end(parser, SyntaxKind::Separated);
 }
 
-pub(super) fn separated_quiet(
-    parser: &mut Parser,
-    separator: SyntaxKind,
-    rule: impl Fn(&mut Parser),
-) {
-    rule(parser);
-    loop {
-        if parser.at(separator) {
-            parser.consume();
-            rule(parser);
-        } else {
-            break;
-        }
-    }
-}
-
 pub(super) fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
     if !parser.expect(SyntaxKind::LayoutStart) {
         return;
