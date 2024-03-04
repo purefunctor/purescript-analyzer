@@ -1465,10 +1465,9 @@ fn import_item(parser: &mut Parser) {
     }
 }
 
-// FIXME: support all other declarations...
 fn module_body(parser: &mut Parser) {
     let mut marker = parser.start();
-    zero_or_more(parser, |parser| {
+    parser.repeat(|parser| {
         if parser.at(SyntaxKind::LayoutEnd) {
             return false;
         }

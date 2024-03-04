@@ -194,12 +194,12 @@ fn lower_export_item(db: &dyn SurfaceDatabase, export_item: ast::ExportItem) -> 
 
 fn lower_imports(db: &dyn SurfaceDatabase, imports: Option<ast::ModuleImports>) -> ModuleImports {
     imports
-        .and_then(|imports| {
+        .map(|imports| {
             let declarations = imports
                 .children()
                 .map(|import_declaration| lower_import_declaration(db, import_declaration))
                 .collect();
-            Some(ModuleImports { declarations })
+            ModuleImports { declarations }
         })
         .unwrap_or_else(|| {
             let declarations = vec![];
@@ -277,7 +277,7 @@ fn lower_module_body(
     db: &dyn SurfaceDatabase,
     body: Option<ast::ModuleBody>,
 ) -> ModuleBody {
-    if let Some(declarations) = body.and_then(|body| Some(body.declarations()?.children())) {
+    if let Some(declarations) = body.map(|body| body.children()) {
         lower_declarations(ctx, db, declarations)
     } else {
         ModuleBody::default()

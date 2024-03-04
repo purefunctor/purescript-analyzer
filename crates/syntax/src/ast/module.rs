@@ -2,7 +2,7 @@ use rowan::ast::{support, AstChildren, AstNode};
 
 use crate::{SyntaxKind, SyntaxToken};
 
-use super::{Declaration, ModuleName, NameRef, Separated, ZeroOrMore};
+use super::{Declaration, ModuleName, NameRef, Separated};
 
 _create_ast!(
     Module,
@@ -47,6 +47,8 @@ impl Module {
     }
 }
 
+_has_children!(ModuleImports<ImportDeclaration>, ModuleBody<Declaration>);
+
 impl ModuleHeader {
     pub fn name(&self) -> Option<ModuleName> {
         ModuleName::cast(self.node.first_child()?)
@@ -84,8 +86,6 @@ impl ExportValue {
         NameRef::cast(self.node.first_child()?)
     }
 }
-
-_has_children!(ModuleImports<ImportDeclaration>);
 
 impl ImportDeclaration {
     pub fn module_name(&self) -> Option<ModuleName> {
@@ -147,11 +147,5 @@ impl ImportType {
 impl DataEnumerated {
     pub fn constructors(&self) -> Option<Separated<NameRef>> {
         Separated::cast(self.node.first_child()?.first_child()?)
-    }
-}
-
-impl ModuleBody {
-    pub fn declarations(&self) -> Option<ZeroOrMore<Declaration>> {
-        ZeroOrMore::cast(self.node.first_child()?)
     }
 }

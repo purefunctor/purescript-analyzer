@@ -23,9 +23,6 @@ Start { kind: Module }
   Start { kind: ModuleImports }
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-    Finish
   Finish
   Token { kind: LayoutEnd }
 Finish
-

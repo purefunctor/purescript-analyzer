@@ -21,20 +21,18 @@ Start { kind: Module }
   Start { kind: ModuleImports }
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-      Start { kind: TypeDeclaration }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: SynonymVariables }
-        Finish
-        Token { kind: Equal }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+    Start { kind: TypeDeclaration }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: SynonymVariables }
+      Finish
+      Token { kind: Equal }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
@@ -42,4 +40,3 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

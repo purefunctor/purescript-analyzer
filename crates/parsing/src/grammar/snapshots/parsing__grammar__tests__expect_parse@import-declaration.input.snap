@@ -307,9 +307,6 @@ Start { kind: Module }
     Finish
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-    Finish
   Finish
   Token { kind: LayoutEnd }
 Finish
-

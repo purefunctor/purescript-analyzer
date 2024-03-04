@@ -35,60 +35,66 @@ Start { kind: Module }
   Start { kind: ModuleImports }
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-      Start { kind: InstanceChain }
-        Start { kind: InstanceDeclaration }
-          Token { kind: InstanceKw }
-          Start { kind: QualifiedName }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-          Finish
-          Start { kind: ZeroOrMore }
-          Finish
-        Finish
-      Finish
-      Token { kind: LayoutSep }
-      Start { kind: InstanceChain }
-        Start { kind: InstanceDeclaration }
-          Token { kind: InstanceKw }
+    Start { kind: InstanceChain }
+      Start { kind: InstanceDeclaration }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
           Start { kind: Name }
-            Token { kind: Lower }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: QualifiedName }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-          Finish
-          Start { kind: ZeroOrMore }
+            Token { kind: Upper }
           Finish
         Finish
+        Start { kind: ZeroOrMore }
+        Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: InstanceChain }
-        Start { kind: InstanceDeclaration }
-          Token { kind: InstanceKw }
-          Start { kind: QualifiedName }
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: InstanceChain }
+      Start { kind: InstanceDeclaration }
+        Token { kind: InstanceKw }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+        Token { kind: Colon2 }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: InstanceChain }
+      Start { kind: InstanceDeclaration }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: VariableType }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: WhereKw }
+        Token { kind: LayoutStart }
+        Start { kind: OneOrMore }
+          Start { kind: InstanceMemberSignature }
             Start { kind: Name }
-              Token { kind: Upper }
+              Token { kind: Lower }
             Finish
-          Finish
-          Start { kind: ZeroOrMore }
-            Start { kind: VariableType }
-              Start { kind: NameRef }
-                Token { kind: Lower }
+            Token { kind: Colon2 }
+            Start { kind: ArrowType }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
               Finish
-            Finish
-          Finish
-          Token { kind: WhereKw }
-          Token { kind: LayoutStart }
-          Start { kind: OneOrMore }
-            Start { kind: InstanceMemberSignature }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-              Token { kind: Colon2 }
+              Token { kind: RightArrow }
               Start { kind: ArrowType }
                 Start { kind: VariableType }
                   Start { kind: NameRef }
@@ -96,92 +102,92 @@ Start { kind: Module }
                   Finish
                 Finish
                 Token { kind: RightArrow }
-                Start { kind: ArrowType }
-                  Start { kind: VariableType }
+                Start { kind: ConstructorType }
+                  Start { kind: QualifiedName }
                     Start { kind: NameRef }
-                      Token { kind: Lower }
-                    Finish
-                  Finish
-                  Token { kind: RightArrow }
-                  Start { kind: ConstructorType }
-                    Start { kind: QualifiedName }
-                      Start { kind: NameRef }
-                        Token { kind: Upper }
-                      Finish
+                      Token { kind: Upper }
                     Finish
                   Finish
                 Finish
               Finish
             Finish
-            Token { kind: LayoutSep }
-            Start { kind: InstanceMemberEquation }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-              Start { kind: ZeroOrMore }
-                Start { kind: WildcardBinder }
-                  Token { kind: Underscore }
-                Finish
-                Start { kind: WildcardBinder }
-                  Token { kind: Underscore }
-                Finish
-              Finish
-              Start { kind: UnconditionalBinding }
-                Token { kind: Equal }
-                Start { kind: WhereExpression }
-                  Start { kind: LiteralExpression }
-                    Token { kind: LiteralFalse }
-                  Finish
-                Finish
-              Finish
-            Finish
           Finish
-          Token { kind: LayoutEnd }
-        Finish
-      Finish
-      Token { kind: LayoutSep }
-      Start { kind: InstanceChain }
-        Start { kind: InstanceDeclaration }
-          Token { kind: InstanceKw }
-          Start { kind: InstanceAssertions }
-            Start { kind: ApplicationType }
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-                Start { kind: VariableType }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-            Finish
-            Token { kind: RightThickArrow }
-          Finish
-          Start { kind: QualifiedName }
+          Token { kind: LayoutSep }
+          Start { kind: InstanceMemberEquation }
             Start { kind: Name }
-              Token { kind: Upper }
+              Token { kind: Lower }
             Finish
-          Finish
-          Start { kind: ZeroOrMore }
-            Start { kind: VariableType }
-              Start { kind: NameRef }
-                Token { kind: Lower }
+            Start { kind: ZeroOrMore }
+              Start { kind: WildcardBinder }
+                Token { kind: Underscore }
+              Finish
+              Start { kind: WildcardBinder }
+                Token { kind: Underscore }
+              Finish
+            Finish
+            Start { kind: UnconditionalBinding }
+              Token { kind: Equal }
+              Start { kind: WhereExpression }
+                Start { kind: LiteralExpression }
+                  Token { kind: LiteralFalse }
+                Finish
               Finish
             Finish
           Finish
-          Token { kind: WhereKw }
-          Token { kind: LayoutStart }
-          Start { kind: OneOrMore }
-            Start { kind: InstanceMemberSignature }
-              Start { kind: Name }
-                Token { kind: Lower }
+        Finish
+        Token { kind: LayoutEnd }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: InstanceChain }
+      Start { kind: InstanceDeclaration }
+        Token { kind: InstanceKw }
+        Start { kind: InstanceAssertions }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
               Finish
-              Token { kind: Colon2 }
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+          Token { kind: RightThickArrow }
+        Finish
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: VariableType }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: WhereKw }
+        Token { kind: LayoutStart }
+        Start { kind: OneOrMore }
+          Start { kind: InstanceMemberSignature }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+            Token { kind: Colon2 }
+            Start { kind: ArrowType }
+              Start { kind: VariableType }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+              Token { kind: RightArrow }
               Start { kind: ArrowType }
                 Start { kind: VariableType }
                   Start { kind: NameRef }
@@ -189,79 +195,70 @@ Start { kind: Module }
                   Finish
                 Finish
                 Token { kind: RightArrow }
-                Start { kind: ArrowType }
-                  Start { kind: VariableType }
+                Start { kind: ConstructorType }
+                  Start { kind: QualifiedName }
                     Start { kind: NameRef }
-                      Token { kind: Lower }
-                    Finish
-                  Finish
-                  Token { kind: RightArrow }
-                  Start { kind: ConstructorType }
-                    Start { kind: QualifiedName }
-                      Start { kind: NameRef }
-                        Token { kind: Upper }
-                      Finish
-                    Finish
-                  Finish
-                Finish
-              Finish
-            Finish
-            Token { kind: LayoutSep }
-            Start { kind: InstanceMemberEquation }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-              Start { kind: ZeroOrMore }
-                Start { kind: WildcardBinder }
-                  Token { kind: Underscore }
-                Finish
-                Start { kind: WildcardBinder }
-                  Token { kind: Underscore }
-                Finish
-              Finish
-              Start { kind: UnconditionalBinding }
-                Token { kind: Equal }
-                Start { kind: WhereExpression }
-                  Start { kind: ConstructorExpression }
-                    Start { kind: QualifiedName }
-                      Start { kind: NameRef }
-                        Token { kind: Upper }
-                      Finish
+                      Token { kind: Upper }
                     Finish
                   Finish
                 Finish
               Finish
             Finish
           Finish
-          Token { kind: LayoutEnd }
+          Token { kind: LayoutSep }
+          Start { kind: InstanceMemberEquation }
+            Start { kind: Name }
+              Token { kind: Lower }
+            Finish
+            Start { kind: ZeroOrMore }
+              Start { kind: WildcardBinder }
+                Token { kind: Underscore }
+              Finish
+              Start { kind: WildcardBinder }
+                Token { kind: Underscore }
+              Finish
+            Finish
+            Start { kind: UnconditionalBinding }
+              Token { kind: Equal }
+              Start { kind: WhereExpression }
+                Start { kind: ConstructorExpression }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
+                    Finish
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: LayoutEnd }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: InstanceChain }
+      Start { kind: InstanceDeclaration }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: InstanceChain }
-        Start { kind: InstanceDeclaration }
-          Token { kind: InstanceKw }
-          Start { kind: QualifiedName }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-          Finish
-          Start { kind: ZeroOrMore }
+      Token { kind: ElseKw }
+      Start { kind: InstanceDeclaration }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
           Finish
         Finish
-        Token { kind: ElseKw }
-        Start { kind: InstanceDeclaration }
-          Token { kind: InstanceKw }
-          Start { kind: QualifiedName }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-          Finish
-          Start { kind: ZeroOrMore }
-          Finish
+        Start { kind: ZeroOrMore }
         Finish
       Finish
     Finish
   Finish
   Token { kind: LayoutEnd }
 Finish
-

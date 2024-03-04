@@ -1,8 +1,8 @@
 //! Snapshot tests for lowering.
-//! 
+//!
 //! These tests ensure that CST nodes are lowered correctly as well as
 //! consistently, especially for refactorings like [#9].
-//! 
+//!
 //! [#9]: https://github.com/purefunctor/purescript-analyzer/issues/9
 
 use std::sync::Arc;
@@ -52,4 +52,18 @@ import Lib hiding (Type, Data(..), List(Cons, List), value, class Class) as Qual
     );
 
     insta::assert_debug_snapshot!(surface.imports);
+}
+
+#[test]
+fn module_body() {
+    let surface = file_surface(
+        "module Main where
+
+valueGroup = 0
+class ClassGroup
+data DataGroup
+",
+    );
+
+    insta::assert_debug_snapshot!(surface.body.declarations);
 }

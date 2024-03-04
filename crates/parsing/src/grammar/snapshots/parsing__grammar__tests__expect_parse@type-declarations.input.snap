@@ -31,219 +31,217 @@ Start { kind: Module }
   Start { kind: ModuleImports }
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-      Start { kind: TypeDeclaration }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: SynonymVariables }
-        Finish
-        Token { kind: Equal }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+    Start { kind: TypeDeclaration }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: SynonymVariables }
+      Finish
+      Token { kind: Equal }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: TypeDeclaration }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: SynonymVariables }
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: TypeDeclaration }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: SynonymVariables }
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
           Finish
         Finish
-        Token { kind: Equal }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: TypeDeclaration }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: SynonymVariables }
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-        Finish
-        Token { kind: Equal }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+      Token { kind: Equal }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: TypeDeclaration }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: TypeDeclaration }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: SynonymVariables }
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
         Finish
-        Start { kind: SynonymVariables }
-          Start { kind: TypeVariableKinded }
-            Start { kind: Wrapped }
-              Token { kind: LeftParenthesis }
-              Start { kind: Labeled }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Token { kind: Colon2 }
-                Start { kind: ConstructorType }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+      Token { kind: Equal }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: TypeDeclaration }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: SynonymVariables }
+        Start { kind: TypeVariableKinded }
+          Start { kind: Wrapped }
+            Token { kind: LeftParenthesis }
+            Start { kind: Labeled }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
                   Finish
                 Finish
               Finish
-              Token { kind: RightParenthesis }
             Finish
-          Finish
-          Start { kind: TypeVariableKinded }
-            Start { kind: Wrapped }
-              Token { kind: LeftParenthesis }
-              Start { kind: Labeled }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Token { kind: Colon2 }
-                Start { kind: ConstructorType }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
-                  Finish
-                Finish
-              Finish
-              Token { kind: RightParenthesis }
-            Finish
-          Finish
-          Start { kind: TypeVariableKinded }
-            Start { kind: Wrapped }
-              Token { kind: LeftParenthesis }
-              Start { kind: Labeled }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Token { kind: Colon2 }
-                Start { kind: ConstructorType }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
-                  Finish
-                Finish
-              Finish
-              Token { kind: RightParenthesis }
-            Finish
+            Token { kind: RightParenthesis }
           Finish
         Finish
-        Token { kind: Equal }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
+        Start { kind: TypeVariableKinded }
+          Start { kind: Wrapped }
+            Token { kind: LeftParenthesis }
+            Start { kind: Labeled }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
             Finish
+            Token { kind: RightParenthesis }
+          Finish
+        Finish
+        Start { kind: TypeVariableKinded }
+          Start { kind: Wrapped }
+            Token { kind: LeftParenthesis }
+            Start { kind: Labeled }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
+            Finish
+            Token { kind: RightParenthesis }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: TypeDeclarationSignature }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Token { kind: Colon2 }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+      Token { kind: Equal }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: TypeDeclaration }
-        Token { kind: TypeKw }
-        Start { kind: Name }
-          Token { kind: Upper }
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: TypeDeclarationSignature }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Colon2 }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
         Finish
-        Start { kind: SynonymVariables }
-          Start { kind: TypeVariableKinded }
-            Start { kind: Wrapped }
-              Token { kind: LeftParenthesis }
-              Start { kind: Labeled }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Token { kind: Colon2 }
-                Start { kind: ConstructorType }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: TypeDeclaration }
+      Token { kind: TypeKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: SynonymVariables }
+        Start { kind: TypeVariableKinded }
+          Start { kind: Wrapped }
+            Token { kind: LeftParenthesis }
+            Start { kind: Labeled }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
                   Finish
                 Finish
               Finish
-              Token { kind: RightParenthesis }
             Finish
-          Finish
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
+            Token { kind: RightParenthesis }
           Finish
         Finish
-        Token { kind: Equal }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+      Token { kind: Equal }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
@@ -251,4 +249,3 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
-
