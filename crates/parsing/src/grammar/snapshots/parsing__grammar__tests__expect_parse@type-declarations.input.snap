@@ -182,7 +182,7 @@ Start { kind: Module }
         Finish
       Finish
       Token { kind: LayoutSep }
-      Start { kind: TypeDeclarationAnnotation }
+      Start { kind: TypeDeclarationSignature }
         Token { kind: TypeKw }
         Start { kind: Name }
           Token { kind: Upper }
@@ -237,3 +237,4 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
+

@@ -1486,7 +1486,7 @@ fn module_body(parser: &mut Parser) {
                 instance_chain_declaration(parser);
             }
             SyntaxKind::TypeKw => {
-                annotation_or_type_declaration(parser);
+                signature_or_type_declaration(parser);
             }
             _ => {
                 annotation_or_value_declaration(parser);
@@ -1616,7 +1616,7 @@ fn constructor_fields(parser: &mut Parser) {
 }
 
 // 'type' Upper '::' type_0 | 'type' Upper manyOrEmpty(type_var_binding_plain) '=' type_0
-fn annotation_or_type_declaration(parser: &mut Parser) {
+fn signature_or_type_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
     parser.expect(SyntaxKind::TypeKw);
@@ -1629,7 +1629,7 @@ fn annotation_or_type_declaration(parser: &mut Parser) {
     if parser.at(SyntaxKind::Colon2) {
         parser.consume();
         type_0(parser);
-        marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
+        marker.end(parser, SyntaxKind::TypeDeclarationSignature);
     } else {
         zero_or_more(parser, |parser| {
             if at_type_var_binding_plain(parser) {
