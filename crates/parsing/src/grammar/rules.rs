@@ -363,6 +363,7 @@ fn expr_binding(parser: &mut Parser, separator: SyntaxKind) {
         expr_where(parser);
         marker.end(parser, SyntaxKind::UnconditionalBinding);
     } else {
+        // NOTE[et]: We get an infinet loop here since `expr_guarded` needs to beable to match an empty expression, so we just abort this loop if we have looped. It's a crude solution but it works to eliminate infinet loops in the parser. This logic lies inside the `one_or_more` parser
         one_or_more(parser, |parser| {
             // FIXME: is there an advantage if we use positives here?
             if parser.current().is_end() || parser.at(separator) {

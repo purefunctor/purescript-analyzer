@@ -66,6 +66,10 @@ impl<'a> Parser<'a> {
         self.nth(offset) == kind
     }
 
+    pub(crate) fn index(&self) -> usize {
+        self.index
+    }
+
     pub(crate) fn current(&self) -> SyntaxKind {
         self.nth(0)
     }

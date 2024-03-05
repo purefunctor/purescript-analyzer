@@ -5,10 +5,12 @@ use crate::parser::Parser;
 pub(super) fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) -> bool {
     let mut marker = parser.start();
     let mut at_least_one = false;
+    let mut last_index = 0;
     loop {
-        if !rule(parser) {
+        if parser.index() == last_index || !rule(parser) {
             break;
         }
+        last_index = parser.index();
         at_least_one = true;
     }
     if at_least_one {
