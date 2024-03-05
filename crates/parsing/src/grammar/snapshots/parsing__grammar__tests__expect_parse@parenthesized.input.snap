@@ -56,41 +56,5 @@ Start { kind: ExpressionOperatorChain }
         Token { kind: RightParenthesis }
       Finish
     Finish
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-      Finish
-      Start { kind: ParenthesizedExpression }
-        Token { kind: LeftParenthesis }
-        Start { kind: ParenthesizedExpression }
-          Token { kind: LeftParenthesis }
-          Start { kind: ApplicationExpression }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-              Start { kind: TermArgument }
-                Start { kind: VariableExpression }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Lower }
-                    Finish
-                  Finish
-                Finish
-              Finish
-            Finish
-          Finish
-          Token { kind: RightParenthesis }
-        Finish
-        Token { kind: RightParenthesis }
-      Finish
-    Finish
   Finish
 Finish
-

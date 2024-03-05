@@ -38,7 +38,7 @@ Start { kind: DoExpression }
         Start { kind: QualifiedDo }
           Token { kind: DoKw }
         Finish
-        Error { message: "expected LayoutStart" }
+        Error { message: "expected LayoutStart, but got LayoutSep" }
       Finish
     Finish
     Token { kind: LayoutSep }
@@ -63,4 +63,3 @@ Start { kind: DoExpression }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

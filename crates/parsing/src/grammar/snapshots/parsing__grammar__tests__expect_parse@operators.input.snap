@@ -20,26 +20,5 @@ Start { kind: ExpressionOperatorChain }
         Token { kind: LiteralInteger }
       Finish
     Finish
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-      Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
-      Finish
-    Finish
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-      Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
-      Finish
-    Finish
   Finish
 Finish
-

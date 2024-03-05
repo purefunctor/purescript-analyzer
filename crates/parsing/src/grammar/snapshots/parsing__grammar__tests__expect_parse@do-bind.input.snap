@@ -7,12 +7,12 @@ Input: do
   a <- b
   Tuple c d <- e
 
-Start { kind: DoExpression }
-  Start { kind: QualifiedDo }
-    Token { kind: DoKw }
-  Finish
-  Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+Start { kind: ApplicationExpression }
+  Start { kind: DoExpression }
+    Start { kind: QualifiedDo }
+      Token { kind: DoKw }
+    Finish
+    Token { kind: LayoutStart }
     Start { kind: DoBind }
       Start { kind: VariableBinder }
         Start { kind: Name }
@@ -29,27 +29,32 @@ Start { kind: DoExpression }
       Finish
     Finish
     Token { kind: LayoutSep }
-    Start { kind: DoBind }
-      Start { kind: ConstructorBinder }
-        Start { kind: QualifiedName }
-          Start { kind: NameRef }
-            Token { kind: Upper }
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: ConstructorExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
           Finish
         Finish
         Start { kind: OneOrMore }
-          Start { kind: VariableBinder }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
-          Finish
-          Start { kind: VariableBinder }
-            Start { kind: Name }
-              Token { kind: Lower }
+          Start { kind: TermArgument }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
             Finish
           Finish
         Finish
       Finish
-      Token { kind: LeftArrow }
+    Finish
+    Error { message: "expected LayoutSep or LayoutEnd" }
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: TermArgument }
       Start { kind: VariableExpression }
         Start { kind: QualifiedName }
           Start { kind: NameRef }
@@ -59,6 +64,4 @@ Start { kind: DoExpression }
       Finish
     Finish
   Finish
-  Token { kind: LayoutEnd }
 Finish
-

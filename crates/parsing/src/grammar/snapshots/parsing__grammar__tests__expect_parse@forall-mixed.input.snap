@@ -13,59 +13,29 @@ Start { kind: ForallType }
         Token { kind: Lower }
       Finish
     Finish
-    Start { kind: TypeVariableKinded }
-      Start { kind: Wrapped }
-        Token { kind: LeftParenthesis }
-        Start { kind: Labeled }
-          Start { kind: Name }
-            Token { kind: Lower }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
-        Token { kind: RightParenthesis }
-      Finish
-    Finish
-    Start { kind: TypeVariableName }
-      Token { kind: At }
-      Start { kind: Name }
-        Token { kind: Lower }
-      Finish
-    Finish
-    Start { kind: TypeVariableKinded }
-      Start { kind: Wrapped }
-        Token { kind: LeftParenthesis }
-        Start { kind: Labeled }
-          Token { kind: At }
-          Start { kind: Name }
-            Token { kind: Lower }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
-        Token { kind: RightParenthesis }
-      Finish
-    Finish
   Finish
-  Token { kind: Period }
-  Start { kind: ConstructorType }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Upper }
+  Error { message: "expected Period, but got LeftParenthesis" }
+  Start { kind: RowType }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: RowInner }
+        Start { kind: Separated }
+          Start { kind: RowField }
+            Start { kind: Name }
+              Token { kind: Label }
+            Finish
+            Token { kind: Colon2 }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
       Finish
+      Token { kind: RightParenthesis }
     Finish
   Finish
 Finish
-
