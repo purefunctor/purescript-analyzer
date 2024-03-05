@@ -5,47 +5,23 @@ input_file: crates/parsing/src/grammar/inputs/failing/expression/invalid-record-
 ---
 Input: { 1: "hello" }
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: LiteralExpression }
-        Start { kind: LiteralRecord }
-          Start { kind: Wrapped }
-            Token { kind: LeftCurly }
-            Start { kind: Separated }
-              Start { kind: RecordField }
-                Start { kind: Error }
-                  Token { kind: LiteralInteger }
-                  Error { message: "expected a label" }
-                Finish
-                Token { kind: Colon }
-                Start { kind: ExpressionOperatorChain }
-                  Start { kind: ExpressionInfixChain }
-                    Start { kind: ApplicationExpression }
-                      Start { kind: LiteralExpression }
-                        Token { kind: LiteralString }
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-              Finish
-            Finish
-            Token { kind: RightCurly }
+Start { kind: LiteralExpression }
+  Start { kind: LiteralRecord }
+    Start { kind: Wrapped }
+      Token { kind: LeftCurly }
+      Start { kind: Separated }
+        Start { kind: RecordField }
+          Start { kind: Error }
+            Token { kind: LiteralInteger }
+            Error { message: "expected a label" }
+          Finish
+          Token { kind: Colon }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralString }
           Finish
         Finish
       Finish
-      Start { kind: OneOrMore }
-      Finish
+      Token { kind: RightCurly }
     Finish
-    Start { kind: OneOrMore }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

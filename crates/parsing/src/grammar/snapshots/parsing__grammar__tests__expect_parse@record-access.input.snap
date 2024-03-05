@@ -5,34 +5,22 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/record-access.i
 ---
 Input: foo.bar.baz
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: RecordAccessExpression }
-        Start { kind: VariableExpression }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Lower }
-            Finish
-          Finish
-        Finish
-        Token { kind: Period }
-        Start { kind: Separated }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Token { kind: Period }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-        Finish
+Start { kind: RecordAccessExpression }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
       Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
     Finish
   Finish
-  Start { kind: OneOrMore }
+  Token { kind: Period }
+  Start { kind: Separated }
+    Start { kind: Name }
+      Token { kind: Label }
+    Finish
+    Token { kind: Period }
+    Start { kind: Name }
+      Token { kind: Label }
+    Finish
   Finish
 Finish

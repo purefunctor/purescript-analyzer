@@ -5,28 +5,20 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/qualified-operator-na
 ---
 Input: Add.(+)
 
-Start { kind: TypeOperatorChain }
-  Start { kind: ApplicationType }
-    Start { kind: OperatorNameType }
-      Start { kind: QualifiedName }
-        Start { kind: QualifiedPrefix }
-          Start { kind: NameRef }
-            Token { kind: Upper }
-          Finish
-          Token { kind: Period }
-        Finish
-        Start { kind: Wrapped }
-          Token { kind: LeftParenthesis }
-          Start { kind: NameRef }
-            Token { kind: Operator }
-          Finish
-          Token { kind: RightParenthesis }
-        Finish
+Start { kind: OperatorNameType }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
       Finish
+      Token { kind: Period }
     Finish
-    Start { kind: OneOrMore }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
+      Token { kind: RightParenthesis }
     Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

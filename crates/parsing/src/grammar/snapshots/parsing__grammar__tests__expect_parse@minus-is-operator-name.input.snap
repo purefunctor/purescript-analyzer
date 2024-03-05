@@ -5,26 +5,14 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/minus-is-operat
 ---
 Input: (-)
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: OperatorNameExpression }
-        Start { kind: QualifiedName }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: NameRef }
-              Token { kind: Operator }
-            Finish
-            Token { kind: RightParenthesis }
-          Finish
-        Finish
+Start { kind: OperatorNameExpression }
+  Start { kind: QualifiedName }
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
-      Start { kind: OneOrMore }
-      Finish
+      Token { kind: RightParenthesis }
     Finish
-    Start { kind: OneOrMore }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

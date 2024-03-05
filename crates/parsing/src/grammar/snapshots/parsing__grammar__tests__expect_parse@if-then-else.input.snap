@@ -5,77 +5,29 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/if-then-else.in
 ---
 Input: if f then g else h
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: IfThenElseExpression }
-        Token { kind: IfKw }
-        Start { kind: ExpressionOperatorChain }
-          Start { kind: ExpressionInfixChain }
-            Start { kind: ApplicationExpression }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-        Token { kind: ThenKw }
-        Start { kind: ExpressionOperatorChain }
-          Start { kind: ExpressionInfixChain }
-            Start { kind: ApplicationExpression }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-        Token { kind: ElseKw }
-        Start { kind: ExpressionOperatorChain }
-          Start { kind: ExpressionInfixChain }
-            Start { kind: ApplicationExpression }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
+Start { kind: IfThenElseExpression }
+  Token { kind: IfKw }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
       Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
     Finish
   Finish
-  Start { kind: OneOrMore }
+  Token { kind: ThenKw }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Token { kind: ElseKw }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
   Finish
 Finish

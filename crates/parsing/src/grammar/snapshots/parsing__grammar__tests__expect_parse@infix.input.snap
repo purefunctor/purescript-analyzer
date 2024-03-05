@@ -5,9 +5,27 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/infix.input
 ---
 Input: a `plus` b `(+)` c `flip plus` d
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
+Start { kind: ExpressionInfixChain }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: Pair }
+      Start { kind: Wrapped }
+        Token { kind: Tick }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: Tick }
+      Finish
       Start { kind: VariableExpression }
         Start { kind: QualifiedName }
           Start { kind: NameRef }
@@ -15,15 +33,44 @@ Start { kind: ExpressionOperatorChain }
           Finish
         Finish
       Finish
-      Start { kind: OneOrMore }
+    Finish
+    Start { kind: Pair }
+      Start { kind: Wrapped }
+        Token { kind: Tick }
+        Start { kind: OperatorNameExpression }
+          Start { kind: QualifiedName }
+            Start { kind: Wrapped }
+              Token { kind: LeftParenthesis }
+              Start { kind: NameRef }
+                Token { kind: Operator }
+              Finish
+              Token { kind: RightParenthesis }
+            Finish
+          Finish
+        Finish
+        Token { kind: Tick }
+      Finish
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
       Finish
     Finish
-    Start { kind: OneOrMore }
-      Start { kind: Pair }
-        Start { kind: Wrapped }
-          Token { kind: Tick }
-          Start { kind: ExpressionOperatorChain }
-            Start { kind: ApplicationExpression }
+    Start { kind: Pair }
+      Start { kind: Wrapped }
+        Token { kind: Tick }
+        Start { kind: ApplicationExpression }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Start { kind: OneOrMore }
+            Start { kind: TermArgument }
               Start { kind: VariableExpression }
                 Start { kind: QualifiedName }
                   Start { kind: NameRef }
@@ -31,105 +78,18 @@ Start { kind: ExpressionOperatorChain }
                   Finish
                 Finish
               Finish
-              Start { kind: OneOrMore }
-              Finish
             Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Token { kind: Tick }
-        Finish
-        Start { kind: ApplicationExpression }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
-          Finish
-          Start { kind: OneOrMore }
           Finish
         Finish
+        Token { kind: Tick }
       Finish
-      Start { kind: Pair }
-        Start { kind: Wrapped }
-          Token { kind: Tick }
-          Start { kind: ExpressionOperatorChain }
-            Start { kind: ApplicationExpression }
-              Start { kind: OperatorNameExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: Wrapped }
-                    Token { kind: LeftParenthesis }
-                    Start { kind: NameRef }
-                      Token { kind: Operator }
-                    Finish
-                    Token { kind: RightParenthesis }
-                  Finish
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Token { kind: Tick }
-        Finish
-        Start { kind: ApplicationExpression }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-      Finish
-      Start { kind: Pair }
-        Start { kind: Wrapped }
-          Token { kind: Tick }
-          Start { kind: ExpressionOperatorChain }
-            Start { kind: ApplicationExpression }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-                Start { kind: TermArgument }
-                  Start { kind: VariableExpression }
-                    Start { kind: QualifiedName }
-                      Start { kind: NameRef }
-                        Token { kind: Lower }
-                      Finish
-                    Finish
-                  Finish
-                Finish
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Token { kind: Tick }
-        Finish
-        Start { kind: ApplicationExpression }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
-          Finish
-          Start { kind: OneOrMore }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
           Finish
         Finish
       Finish
     Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

@@ -8,221 +8,109 @@ Input: case 1, 2 of
     a, b | 4 <- a + b -> 3
     _ -> 5
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: CaseExpression }
-        Token { kind: CaseKw }
-        Start { kind: Separated }
-          Start { kind: ExpressionOperatorChain }
-            Start { kind: ExpressionInfixChain }
-              Start { kind: ApplicationExpression }
-                Start { kind: LiteralExpression }
-                  Token { kind: LiteralInteger }
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Token { kind: Comma }
-          Start { kind: ExpressionOperatorChain }
-            Start { kind: ExpressionInfixChain }
-              Start { kind: ApplicationExpression }
-                Start { kind: LiteralExpression }
-                  Token { kind: LiteralInteger }
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-        Finish
-        Token { kind: OfKw }
-        Token { kind: LayoutStart }
-        Start { kind: OneOrMore }
-          Start { kind: CaseBranch }
-            Start { kind: Separated }
-              Start { kind: BinderOperatorChain }
-                Start { kind: LiteralBinder }
-                  Token { kind: LiteralInteger }
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: BinderOperatorChain }
-                Start { kind: LiteralBinder }
-                  Token { kind: LiteralInteger }
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-            Finish
-            Token { kind: RightArrow }
-            Start { kind: WhereExpression }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralInteger }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-            Finish
-          Finish
-          Token { kind: LayoutSep }
-          Start { kind: CaseBranch }
-            Start { kind: Separated }
-              Start { kind: BinderOperatorChain }
-                Start { kind: VariableBinder }
-                  Start { kind: Name }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: BinderOperatorChain }
-                Start { kind: VariableBinder }
-                  Start { kind: Name }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-            Finish
-            Start { kind: GuardedExpression }
-              Token { kind: Pipe }
-              Start { kind: Separated }
-                Start { kind: PatternGuard }
-                  Start { kind: BinderOperatorChain }
-                    Start { kind: LiteralBinder }
-                      Token { kind: LiteralInteger }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Token { kind: LeftArrow }
-                  Start { kind: ExpressionOperatorChain }
-                    Start { kind: ExpressionInfixChain }
-                      Start { kind: ApplicationExpression }
-                        Start { kind: VariableExpression }
-                          Start { kind: QualifiedName }
-                            Start { kind: NameRef }
-                              Token { kind: Lower }
-                            Finish
-                          Finish
-                        Finish
-                        Start { kind: OneOrMore }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                      Start { kind: Pair }
-                        Start { kind: QualifiedName }
-                          Start { kind: NameRef }
-                            Token { kind: Operator }
-                          Finish
-                        Finish
-                        Start { kind: ExpressionInfixChain }
-                          Start { kind: ApplicationExpression }
-                            Start { kind: VariableExpression }
-                              Start { kind: QualifiedName }
-                                Start { kind: NameRef }
-                                  Token { kind: Lower }
-                                Finish
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                      Finish
-                    Finish
-                  Finish
-                Finish
-              Finish
-              Token { kind: RightArrow }
-              Start { kind: WhereExpression }
-                Start { kind: ExpressionOperatorChain }
-                  Start { kind: ExpressionInfixChain }
-                    Start { kind: ApplicationExpression }
-                      Start { kind: LiteralExpression }
-                        Token { kind: LiteralInteger }
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-              Finish
-            Finish
-          Finish
-          Token { kind: LayoutSep }
-          Start { kind: CaseBranch }
-            Start { kind: Separated }
-              Start { kind: BinderOperatorChain }
-                Start { kind: WildcardBinder }
-                  Token { kind: Underscore }
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-            Finish
-            Token { kind: RightArrow }
-            Start { kind: WhereExpression }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralInteger }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-            Finish
-          Finish
-        Finish
-        Token { kind: LayoutEnd }
-      Finish
-      Start { kind: OneOrMore }
-      Finish
+Start { kind: CaseExpression }
+  Token { kind: CaseKw }
+  Start { kind: Separated }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
     Finish
-    Start { kind: OneOrMore }
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
     Finish
   Finish
+  Token { kind: OfKw }
+  Token { kind: LayoutStart }
   Start { kind: OneOrMore }
+    Start { kind: CaseBranch }
+      Start { kind: Separated }
+        Start { kind: LiteralBinder }
+          Token { kind: LiteralInteger }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralBinder }
+          Token { kind: LiteralInteger }
+        Finish
+      Finish
+      Token { kind: RightArrow }
+      Start { kind: WhereExpression }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: CaseBranch }
+      Start { kind: Separated }
+        Start { kind: VariableBinder }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: VariableBinder }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+      Start { kind: GuardedExpression }
+        Token { kind: Pipe }
+        Start { kind: Separated }
+          Start { kind: PatternGuard }
+            Start { kind: LiteralBinder }
+              Token { kind: LiteralInteger }
+            Finish
+            Token { kind: LeftArrow }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+                Start { kind: Pair }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Operator }
+                    Finish
+                  Finish
+                  Start { kind: VariableExpression }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Lower }
+                      Finish
+                    Finish
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: RightArrow }
+        Start { kind: WhereExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: CaseBranch }
+      Start { kind: Separated }
+        Start { kind: WildcardBinder }
+          Token { kind: Underscore }
+        Finish
+      Finish
+      Token { kind: RightArrow }
+      Start { kind: WhereExpression }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+      Finish
+    Finish
   Finish
+  Token { kind: LayoutEnd }
 Finish

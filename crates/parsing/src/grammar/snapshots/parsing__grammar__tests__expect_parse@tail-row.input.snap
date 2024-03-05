@@ -5,35 +5,19 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/tail-row.input
 ---
 Input: ( | r )
 
-Start { kind: TypeOperatorChain }
-  Start { kind: ApplicationType }
-    Start { kind: RowType }
-      Start { kind: Wrapped }
-        Token { kind: LeftParenthesis }
-        Start { kind: RowInner }
-          Start { kind: RowTail }
-            Token { kind: Pipe }
-            Start { kind: TypeOperatorChain }
-              Start { kind: ApplicationType }
-                Start { kind: VariableType }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
+Start { kind: RowType }
+  Start { kind: Wrapped }
+    Token { kind: LeftParenthesis }
+    Start { kind: RowInner }
+      Start { kind: RowTail }
+        Token { kind: Pipe }
+        Start { kind: VariableType }
+          Start { kind: NameRef }
+            Token { kind: Lower }
           Finish
         Finish
-        Token { kind: RightParenthesis }
       Finish
     Finish
-    Start { kind: OneOrMore }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
+    Token { kind: RightParenthesis }
   Finish
 Finish

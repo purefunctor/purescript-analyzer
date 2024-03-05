@@ -4,10 +4,6 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/string-binder.input
 ---
 Input: "hi!"
-Start { kind: BinderOperatorChain }
-  Start { kind: LiteralBinder }
-    Token { kind: LiteralString }
-  Finish
-  Start { kind: OneOrMore }
-  Finish
+Start { kind: LiteralBinder }
+  Token { kind: LiteralString }
 Finish

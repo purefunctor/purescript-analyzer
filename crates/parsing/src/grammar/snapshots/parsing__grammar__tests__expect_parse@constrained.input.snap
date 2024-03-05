@@ -6,15 +6,11 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/constrained.input
 Input: A => B => a
 
 Start { kind: TypeOperatorChain }
-  Start { kind: ApplicationType }
-    Start { kind: ConstructorType }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Upper }
-        Finish
+  Start { kind: ConstructorType }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
       Finish
-    Finish
-    Start { kind: OneOrMore }
     Finish
   Finish
   Start { kind: OneOrMore }
@@ -24,15 +20,11 @@ Start { kind: TypeOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: ApplicationType }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
-        Finish
-        Start { kind: OneOrMore }
         Finish
       Finish
     Finish
@@ -42,13 +34,9 @@ Start { kind: TypeOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: ApplicationType }
-        Start { kind: VariableType }
-          Start { kind: NameRef }
-            Token { kind: Lower }
-          Finish
-        Finish
-        Start { kind: OneOrMore }
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
         Finish
       Finish
     Finish

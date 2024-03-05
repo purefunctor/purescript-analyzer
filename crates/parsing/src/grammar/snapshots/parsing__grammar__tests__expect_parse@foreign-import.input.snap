@@ -47,31 +47,15 @@ Start { kind: Module }
           Finish
           Token { kind: Period }
           Start { kind: ArrowType }
-            Start { kind: TypeOperatorChain }
-              Start { kind: ApplicationType }
-                Start { kind: VariableType }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
+            Start { kind: VariableType }
+              Start { kind: NameRef }
+                Token { kind: Lower }
               Finish
             Finish
             Token { kind: RightArrow }
-            Start { kind: TypeOperatorChain }
-              Start { kind: ApplicationType }
-                Start { kind: VariableType }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
+            Start { kind: VariableType }
+              Start { kind: NameRef }
+                Token { kind: Lower }
               Finish
             Finish
           Finish

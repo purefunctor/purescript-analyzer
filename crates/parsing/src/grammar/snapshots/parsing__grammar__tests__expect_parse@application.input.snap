@@ -5,9 +5,16 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/application.inp
 ---
 Input: f x y z
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
+Start { kind: ApplicationExpression }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: TermArgument }
       Start { kind: VariableExpression }
         Start { kind: QualifiedName }
           Start { kind: NameRef }
@@ -15,39 +22,24 @@ Start { kind: ExpressionOperatorChain }
           Finish
         Finish
       Finish
-      Start { kind: OneOrMore }
-        Start { kind: TermArgument }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
-          Finish
-        Finish
-        Start { kind: TermArgument }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
-          Finish
-        Finish
-        Start { kind: TermArgument }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
+    Finish
+    Start { kind: TermArgument }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
           Finish
         Finish
       Finish
     Finish
-    Start { kind: OneOrMore }
+    Start { kind: TermArgument }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
     Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

@@ -4,12 +4,8 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/variable-binder.input
 ---
 Input: f
-Start { kind: BinderOperatorChain }
-  Start { kind: VariableBinder }
-    Start { kind: Name }
-      Token { kind: Lower }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
+Start { kind: VariableBinder }
+  Start { kind: Name }
+    Token { kind: Lower }
   Finish
 Finish

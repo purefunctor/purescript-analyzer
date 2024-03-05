@@ -5,32 +5,20 @@ input_file: crates/parsing/src/grammar/inputs/failing/expression/qualified-opera
 ---
 Input: Add.(+
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: OperatorNameExpression }
-        Start { kind: QualifiedName }
-          Start { kind: QualifiedPrefix }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
-            Token { kind: Period }
-          Finish
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: NameRef }
-              Token { kind: Operator }
-            Finish
-            Error { message: "expected RightParenthesis, but got EndOfFile" }
-          Finish
-        Finish
+Start { kind: OperatorNameExpression }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
+      Start { kind: NameRef }
+        Token { kind: Upper }
       Finish
-      Start { kind: OneOrMore }
+      Token { kind: Period }
+    Finish
+    Start { kind: Wrapped }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
+      Error { message: "expected RightParenthesis, but got EndOfFile" }
     Finish
-    Start { kind: OneOrMore }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

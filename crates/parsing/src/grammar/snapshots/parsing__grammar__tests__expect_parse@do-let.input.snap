@@ -15,274 +15,166 @@ Input: do
     d | Just e <- f 
       , g = h
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: DoExpression }
-        Start { kind: QualifiedDo }
-          Token { kind: DoKw }
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: OneOrMore }
+    Start { kind: DoLetBinding }
+      Token { kind: LetKw }
+      Token { kind: LayoutStart }
+      Start { kind: OneOrMore }
+        Start { kind: LetBindingSignature }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
         Finish
-        Token { kind: LayoutStart }
-        Start { kind: OneOrMore }
-          Start { kind: DoLetBinding }
-            Token { kind: LetKw }
-            Token { kind: LayoutStart }
+        Token { kind: LayoutSep }
+        Start { kind: LetBindingName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Start { kind: ZeroOrMore }
+          Finish
+          Start { kind: UnconditionalBinding }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: LiteralExpression }
+                Token { kind: LiteralInteger }
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: LayoutSep }
+        Start { kind: LetBindingName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Start { kind: ZeroOrMore }
+            Start { kind: VariableBinder }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Start { kind: UnconditionalBinding }
+            Token { kind: Equal }
+            Start { kind: WhereExpression }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: LayoutSep }
+        Start { kind: LetBindingName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Start { kind: ZeroOrMore }
+          Finish
+          Start { kind: GuardedBinding }
             Start { kind: OneOrMore }
-              Start { kind: LetBindingSignature }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Token { kind: Colon2 }
-                Start { kind: TypeOperatorChain }
-                  Start { kind: ApplicationType }
-                    Start { kind: ConstructorType }
-                      Start { kind: QualifiedName }
-                        Start { kind: NameRef }
-                          Token { kind: Upper }
-                        Finish
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-              Finish
-              Token { kind: LayoutSep }
-              Start { kind: LetBindingName }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Start { kind: ZeroOrMore }
-                Finish
-                Start { kind: UnconditionalBinding }
-                  Token { kind: Equal }
-                  Start { kind: WhereExpression }
-                    Start { kind: ExpressionOperatorChain }
-                      Start { kind: ExpressionInfixChain }
-                        Start { kind: ApplicationExpression }
-                          Start { kind: LiteralExpression }
-                            Token { kind: LiteralInteger }
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                        Start { kind: OneOrMore }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
+              Start { kind: GuardedExpression }
+                Token { kind: Pipe }
+                Start { kind: Separated }
+                  Start { kind: PatternGuard }
+                    Start { kind: LiteralExpression }
+                      Token { kind: LiteralTrue }
                     Finish
                   Finish
                 Finish
-              Finish
-              Token { kind: LayoutSep }
-              Start { kind: LetBindingName }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Start { kind: ZeroOrMore }
-                  Start { kind: VariableBinder }
-                    Start { kind: Name }
-                      Token { kind: Lower }
-                    Finish
-                  Finish
-                Finish
-                Start { kind: UnconditionalBinding }
-                  Token { kind: Equal }
-                  Start { kind: WhereExpression }
-                    Start { kind: ExpressionOperatorChain }
-                      Start { kind: ExpressionInfixChain }
-                        Start { kind: ApplicationExpression }
-                          Start { kind: VariableExpression }
-                            Start { kind: QualifiedName }
-                              Start { kind: NameRef }
-                                Token { kind: Lower }
-                              Finish
-                            Finish
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                        Start { kind: OneOrMore }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                  Finish
-                Finish
-              Finish
-              Token { kind: LayoutSep }
-              Start { kind: LetBindingName }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Start { kind: ZeroOrMore }
-                Finish
-                Start { kind: GuardedBinding }
-                  Start { kind: OneOrMore }
-                    Start { kind: GuardedExpression }
-                      Token { kind: Pipe }
-                      Start { kind: Separated }
-                        Start { kind: PatternGuard }
-                          Start { kind: ExpressionOperatorChain }
-                            Start { kind: ExpressionInfixChain }
-                              Start { kind: ApplicationExpression }
-                                Start { kind: LiteralExpression }
-                                  Token { kind: LiteralTrue }
-                                Finish
-                                Start { kind: OneOrMore }
-                                Finish
-                              Finish
-                              Start { kind: OneOrMore }
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                        Finish
-                      Finish
-                      Token { kind: Equal }
-                      Start { kind: WhereExpression }
-                        Start { kind: ExpressionOperatorChain }
-                          Start { kind: ExpressionInfixChain }
-                            Start { kind: ApplicationExpression }
-                              Start { kind: VariableExpression }
-                                Start { kind: QualifiedName }
-                                  Start { kind: NameRef }
-                                    Token { kind: Lower }
-                                  Finish
-                                Finish
-                              Finish
-                              Start { kind: OneOrMore }
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                      Finish
-                    Finish
-                  Finish
-                Finish
-              Finish
-              Token { kind: LayoutSep }
-              Start { kind: LetBindingName }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Start { kind: ZeroOrMore }
-                Finish
-                Start { kind: GuardedBinding }
-                  Start { kind: OneOrMore }
-                    Start { kind: GuardedExpression }
-                      Token { kind: Pipe }
-                      Start { kind: Separated }
-                        Start { kind: PatternGuard }
-                          Start { kind: BinderOperatorChain }
-                            Start { kind: ConstructorBinder }
-                              Start { kind: QualifiedName }
-                                Start { kind: NameRef }
-                                  Token { kind: Upper }
-                                Finish
-                              Finish
-                              Start { kind: OneOrMore }
-                                Start { kind: VariableBinder }
-                                  Start { kind: Name }
-                                    Token { kind: Lower }
-                                  Finish
-                                Finish
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                          Token { kind: LeftArrow }
-                          Start { kind: ExpressionOperatorChain }
-                            Start { kind: ExpressionInfixChain }
-                              Start { kind: ApplicationExpression }
-                                Start { kind: VariableExpression }
-                                  Start { kind: QualifiedName }
-                                    Start { kind: NameRef }
-                                      Token { kind: Lower }
-                                    Finish
-                                  Finish
-                                Finish
-                                Start { kind: OneOrMore }
-                                Finish
-                              Finish
-                              Start { kind: OneOrMore }
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                        Finish
-                        Token { kind: Comma }
-                        Start { kind: PatternGuard }
-                          Start { kind: ExpressionOperatorChain }
-                            Start { kind: ExpressionInfixChain }
-                              Start { kind: ApplicationExpression }
-                                Start { kind: VariableExpression }
-                                  Start { kind: QualifiedName }
-                                    Start { kind: NameRef }
-                                      Token { kind: Lower }
-                                    Finish
-                                  Finish
-                                Finish
-                                Start { kind: OneOrMore }
-                                Finish
-                              Finish
-                              Start { kind: OneOrMore }
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                        Finish
-                      Finish
-                      Token { kind: Equal }
-                      Start { kind: WhereExpression }
-                        Start { kind: ExpressionOperatorChain }
-                          Start { kind: ExpressionInfixChain }
-                            Start { kind: ApplicationExpression }
-                              Start { kind: VariableExpression }
-                                Start { kind: QualifiedName }
-                                  Start { kind: NameRef }
-                                    Token { kind: Lower }
-                                  Finish
-                                Finish
-                              Finish
-                              Start { kind: OneOrMore }
-                              Finish
-                            Finish
-                            Start { kind: OneOrMore }
-                            Finish
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
+                Token { kind: Equal }
+                Start { kind: WhereExpression }
+                  Start { kind: VariableExpression }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Lower }
                       Finish
                     Finish
                   Finish
                 Finish
               Finish
             Finish
-            Token { kind: LayoutEnd }
           Finish
         Finish
-        Token { kind: LayoutEnd }
+        Token { kind: LayoutSep }
+        Start { kind: LetBindingName }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Start { kind: ZeroOrMore }
+          Finish
+          Start { kind: GuardedBinding }
+            Start { kind: OneOrMore }
+              Start { kind: GuardedExpression }
+                Token { kind: Pipe }
+                Start { kind: Separated }
+                  Start { kind: PatternGuard }
+                    Start { kind: ConstructorBinder }
+                      Start { kind: QualifiedName }
+                        Start { kind: NameRef }
+                          Token { kind: Upper }
+                        Finish
+                      Finish
+                      Start { kind: OneOrMore }
+                        Start { kind: VariableBinder }
+                          Start { kind: Name }
+                            Token { kind: Lower }
+                          Finish
+                        Finish
+                      Finish
+                    Finish
+                    Token { kind: LeftArrow }
+                    Start { kind: VariableExpression }
+                      Start { kind: QualifiedName }
+                        Start { kind: NameRef }
+                          Token { kind: Lower }
+                        Finish
+                      Finish
+                    Finish
+                  Finish
+                  Token { kind: Comma }
+                  Start { kind: PatternGuard }
+                    Start { kind: VariableExpression }
+                      Start { kind: QualifiedName }
+                        Start { kind: NameRef }
+                          Token { kind: Lower }
+                        Finish
+                      Finish
+                    Finish
+                  Finish
+                Finish
+                Token { kind: Equal }
+                Start { kind: WhereExpression }
+                  Start { kind: VariableExpression }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Lower }
+                      Finish
+                    Finish
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
       Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
+      Token { kind: LayoutEnd }
     Finish
   Finish
-  Start { kind: OneOrMore }
-  Finish
+  Token { kind: LayoutEnd }
 Finish

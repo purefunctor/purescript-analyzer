@@ -5,27 +5,15 @@ input_file: crates/parsing/src/grammar/inputs/passing/pattern/typed-binder.input
 ---
 Input: 1 :: Type
 Start { kind: TypedBinder }
-  Start { kind: BinderOperatorChain }
-    Start { kind: LiteralBinder }
-      Token { kind: LiteralInteger }
-    Finish
-    Start { kind: OneOrMore }
-    Finish
+  Start { kind: LiteralBinder }
+    Token { kind: LiteralInteger }
   Finish
   Token { kind: Colon2 }
-  Start { kind: TypeOperatorChain }
-    Start { kind: ApplicationType }
-      Start { kind: ConstructorType }
-        Start { kind: QualifiedName }
-          Start { kind: NameRef }
-            Token { kind: Upper }
-          Finish
-        Finish
+  Start { kind: ConstructorType }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
       Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
     Finish
   Finish
 Finish

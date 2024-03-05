@@ -5,10 +5,27 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/qualified.input
 ---
 Input: Add.(+) Foo.Foo Bar.bar
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: OperatorNameExpression }
+Start { kind: ApplicationExpression }
+  Start { kind: OperatorNameExpression }
+    Start { kind: QualifiedName }
+      Start { kind: QualifiedPrefix }
+        Start { kind: NameRef }
+          Token { kind: Upper }
+        Finish
+        Token { kind: Period }
+      Finish
+      Start { kind: Wrapped }
+        Token { kind: LeftParenthesis }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
+        Token { kind: RightParenthesis }
+      Finish
+    Finish
+  Finish
+  Start { kind: OneOrMore }
+    Start { kind: TermArgument }
+      Start { kind: ConstructorExpression }
         Start { kind: QualifiedName }
           Start { kind: QualifiedPrefix }
             Start { kind: NameRef }
@@ -16,51 +33,26 @@ Start { kind: ExpressionOperatorChain }
             Finish
             Token { kind: Period }
           Finish
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: TermArgument }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: QualifiedPrefix }
             Start { kind: NameRef }
-              Token { kind: Operator }
+              Token { kind: Upper }
             Finish
-            Token { kind: RightParenthesis }
+            Token { kind: Period }
           Finish
-        Finish
-      Finish
-      Start { kind: OneOrMore }
-        Start { kind: TermArgument }
-          Start { kind: ConstructorExpression }
-            Start { kind: QualifiedName }
-              Start { kind: QualifiedPrefix }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-                Token { kind: Period }
-              Finish
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
-        Start { kind: TermArgument }
-          Start { kind: VariableExpression }
-            Start { kind: QualifiedName }
-              Start { kind: QualifiedPrefix }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-                Token { kind: Period }
-              Finish
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
-            Finish
+          Start { kind: NameRef }
+            Token { kind: Lower }
           Finish
         Finish
       Finish
     Finish
-    Start { kind: OneOrMore }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

@@ -4,13 +4,9 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/negative-binder.input
 ---
 Input: -1
-Start { kind: BinderOperatorChain }
-  Start { kind: NegativeBinder }
-    Token { kind: Minus }
-    Start { kind: LiteralBinder }
-      Token { kind: LiteralInteger }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
+Start { kind: NegativeBinder }
+  Token { kind: Minus }
+  Start { kind: LiteralBinder }
+    Token { kind: LiteralInteger }
   Finish
 Finish

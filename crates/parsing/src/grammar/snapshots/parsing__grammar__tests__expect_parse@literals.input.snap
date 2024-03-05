@@ -5,234 +5,90 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/literals.input
 ---
 Input: [ 1, 1.0, "hello", 'a', true, false, [], {}, { a, b: "c", "d": "e" } ]
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: LiteralExpression }
-        Start { kind: LiteralArray }
-          Start { kind: Wrapped }
-            Token { kind: LeftSquare }
-            Start { kind: Separated }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralInteger }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralNumber }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralString }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralChar }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralTrue }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralFalse }
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Start { kind: LiteralArray }
-                        Start { kind: Wrapped }
-                          Token { kind: LeftSquare }
-                          Token { kind: RightSquare }
-                        Finish
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Start { kind: LiteralRecord }
-                        Start { kind: Wrapped }
-                          Token { kind: LeftCurly }
-                          Token { kind: RightCurly }
-                        Finish
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: ExpressionOperatorChain }
-                Start { kind: ExpressionInfixChain }
-                  Start { kind: ApplicationExpression }
-                    Start { kind: LiteralExpression }
-                      Start { kind: LiteralRecord }
-                        Start { kind: Wrapped }
-                          Token { kind: LeftCurly }
-                          Start { kind: Separated }
-                            Start { kind: RecordPun }
-                              Start { kind: NameRef }
-                                Token { kind: Label }
-                              Finish
-                            Finish
-                            Token { kind: Comma }
-                            Start { kind: RecordField }
-                              Start { kind: Name }
-                                Token { kind: Label }
-                              Finish
-                              Token { kind: Colon }
-                              Start { kind: ExpressionOperatorChain }
-                                Start { kind: ExpressionInfixChain }
-                                  Start { kind: ApplicationExpression }
-                                    Start { kind: LiteralExpression }
-                                      Token { kind: LiteralString }
-                                    Finish
-                                    Start { kind: OneOrMore }
-                                    Finish
-                                  Finish
-                                  Start { kind: OneOrMore }
-                                  Finish
-                                Finish
-                                Start { kind: OneOrMore }
-                                Finish
-                              Finish
-                            Finish
-                            Token { kind: Comma }
-                            Start { kind: RecordField }
-                              Start { kind: Name }
-                                Token { kind: Label }
-                              Finish
-                              Token { kind: Colon }
-                              Start { kind: ExpressionOperatorChain }
-                                Start { kind: ExpressionInfixChain }
-                                  Start { kind: ApplicationExpression }
-                                    Start { kind: LiteralExpression }
-                                      Token { kind: LiteralString }
-                                    Finish
-                                    Start { kind: OneOrMore }
-                                    Finish
-                                  Finish
-                                  Start { kind: OneOrMore }
-                                  Finish
-                                Finish
-                                Start { kind: OneOrMore }
-                                Finish
-                              Finish
-                            Finish
-                          Finish
-                          Token { kind: RightCurly }
-                        Finish
-                      Finish
-                    Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
+Start { kind: LiteralExpression }
+  Start { kind: LiteralArray }
+    Start { kind: Wrapped }
+      Token { kind: LeftSquare }
+      Start { kind: Separated }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralNumber }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralString }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralChar }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralTrue }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralFalse }
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralArray }
+            Start { kind: Wrapped }
+              Token { kind: LeftSquare }
+              Token { kind: RightSquare }
             Finish
-            Token { kind: RightSquare }
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralRecord }
+            Start { kind: Wrapped }
+              Token { kind: LeftCurly }
+              Token { kind: RightCurly }
+            Finish
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: LiteralExpression }
+          Start { kind: LiteralRecord }
+            Start { kind: Wrapped }
+              Token { kind: LeftCurly }
+              Start { kind: Separated }
+                Start { kind: RecordPun }
+                  Start { kind: NameRef }
+                    Token { kind: Label }
+                  Finish
+                Finish
+                Token { kind: Comma }
+                Start { kind: RecordField }
+                  Start { kind: Name }
+                    Token { kind: Label }
+                  Finish
+                  Token { kind: Colon }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralString }
+                  Finish
+                Finish
+                Token { kind: Comma }
+                Start { kind: RecordField }
+                  Start { kind: Name }
+                    Token { kind: Label }
+                  Finish
+                  Token { kind: Colon }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralString }
+                  Finish
+                Finish
+              Finish
+              Token { kind: RightCurly }
+            Finish
           Finish
         Finish
       Finish
-      Start { kind: OneOrMore }
-      Finish
+      Token { kind: RightSquare }
     Finish
-    Start { kind: OneOrMore }
-    Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish

@@ -5,58 +5,26 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/kinded-variable.input
 ---
 Input: ((a) :: Int)
 
-Start { kind: TypeOperatorChain }
-  Start { kind: ApplicationType }
+Start { kind: ParenthesizedType }
+  Token { kind: LeftParenthesis }
+  Start { kind: KindedType }
     Start { kind: ParenthesizedType }
       Token { kind: LeftParenthesis }
-      Start { kind: KindedType }
-        Start { kind: TypeOperatorChain }
-          Start { kind: ApplicationType }
-            Start { kind: ParenthesizedType }
-              Token { kind: LeftParenthesis }
-              Start { kind: TypeOperatorChain }
-                Start { kind: ApplicationType }
-                  Start { kind: VariableType }
-                    Start { kind: NameRef }
-                      Token { kind: Lower }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Token { kind: RightParenthesis }
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-        Token { kind: Colon2 }
-        Start { kind: TypeOperatorChain }
-          Start { kind: ApplicationType }
-            Start { kind: ConstructorType }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Start { kind: OneOrMore }
-          Finish
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
         Finish
       Finish
       Token { kind: RightParenthesis }
     Finish
-    Start { kind: OneOrMore }
+    Token { kind: Colon2 }
+    Start { kind: ConstructorType }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Upper }
+        Finish
+      Finish
     Finish
   Finish
-  Start { kind: OneOrMore }
-  Finish
+  Token { kind: RightParenthesis }
 Finish

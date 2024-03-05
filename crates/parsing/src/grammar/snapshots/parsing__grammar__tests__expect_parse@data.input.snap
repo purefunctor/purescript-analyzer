@@ -37,19 +37,11 @@ Start { kind: Module }
           Token { kind: Upper }
         Finish
         Token { kind: Colon2 }
-        Start { kind: TypeOperatorChain }
-          Start { kind: ApplicationType }
-            Start { kind: ConstructorType }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Upper }
-                Finish
-              Finish
+        Start { kind: ConstructorType }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Upper }
             Finish
-            Start { kind: OneOrMore }
-            Finish
-          Finish
-          Start { kind: OneOrMore }
           Finish
         Finish
       Finish
@@ -133,19 +125,11 @@ Start { kind: Module }
                   Token { kind: Lower }
                 Finish
                 Token { kind: Colon2 }
-                Start { kind: TypeOperatorChain }
-                  Start { kind: ApplicationType }
-                    Start { kind: ConstructorType }
-                      Start { kind: QualifiedName }
-                        Start { kind: NameRef }
-                          Token { kind: Upper }
-                        Finish
-                      Finish
+                Start { kind: ConstructorType }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Upper }
                     Finish
-                    Start { kind: OneOrMore }
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
                   Finish
                 Finish
               Finish

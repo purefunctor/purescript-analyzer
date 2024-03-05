@@ -30,8 +30,15 @@ Start { kind: Module }
           Token { kind: Lower }
         Finish
         Token { kind: Colon2 }
-        Start { kind: TypeOperatorChain }
-          Start { kind: ApplicationType }
+        Start { kind: ApplicationType }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: OneOrMore }
             Start { kind: ConstructorType }
               Start { kind: QualifiedName }
                 Start { kind: NameRef }
@@ -39,24 +46,13 @@ Start { kind: Module }
                 Finish
               Finish
             Finish
-            Start { kind: OneOrMore }
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
-                Finish
-              Finish
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
                 Finish
               Finish
             Finish
-          Finish
-          Start { kind: OneOrMore }
           Finish
         Finish
       Finish
@@ -70,20 +66,8 @@ Start { kind: Module }
         Start { kind: UnconditionalBinding }
           Token { kind: Equal }
           Start { kind: WhereExpression }
-            Start { kind: ExpressionOperatorChain }
-              Start { kind: ExpressionInfixChain }
-                Start { kind: ApplicationExpression }
-                  Start { kind: LiteralExpression }
-                    Token { kind: LiteralInteger }
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
+            Start { kind: LiteralExpression }
+              Token { kind: LiteralInteger }
             Finish
           Finish
         Finish

@@ -6,16 +6,8 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/operators.input
 Input: 1 + 2 * 3 / 4
 
 Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
-      Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
-    Finish
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
   Finish
   Start { kind: OneOrMore }
     Start { kind: Pair }
@@ -24,16 +16,8 @@ Start { kind: ExpressionOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: ExpressionInfixChain }
-        Start { kind: ApplicationExpression }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-        Start { kind: OneOrMore }
-        Finish
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
       Finish
     Finish
     Start { kind: Pair }
@@ -42,16 +26,8 @@ Start { kind: ExpressionOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: ExpressionInfixChain }
-        Start { kind: ApplicationExpression }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-        Start { kind: OneOrMore }
-        Finish
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
       Finish
     Finish
     Start { kind: Pair }
@@ -60,16 +36,8 @@ Start { kind: ExpressionOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: ExpressionInfixChain }
-        Start { kind: ApplicationExpression }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
-          Finish
-          Start { kind: OneOrMore }
-          Finish
-        Finish
-        Start { kind: OneOrMore }
-        Finish
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
       Finish
     Finish
   Finish

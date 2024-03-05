@@ -11,116 +11,44 @@ Input: do
   else 
   c
 
-Start { kind: ExpressionOperatorChain }
-  Start { kind: ExpressionInfixChain }
-    Start { kind: ApplicationExpression }
-      Start { kind: DoExpression }
-        Start { kind: QualifiedDo }
-          Token { kind: DoKw }
-        Finish
-        Token { kind: LayoutStart }
-        Start { kind: OneOrMore }
-          Start { kind: DoDiscard }
-            Start { kind: ExpressionOperatorChain }
-              Start { kind: ExpressionInfixChain }
-                Start { kind: ApplicationExpression }
-                  Start { kind: IfThenElseExpression }
-                    Token { kind: IfKw }
-                    Start { kind: ExpressionOperatorChain }
-                      Start { kind: ExpressionInfixChain }
-                        Start { kind: ApplicationExpression }
-                          Start { kind: VariableExpression }
-                            Start { kind: QualifiedName }
-                              Start { kind: NameRef }
-                                Token { kind: Lower }
-                              Finish
-                            Finish
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                        Start { kind: OneOrMore }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                    Token { kind: ThenKw }
-                    Start { kind: ExpressionOperatorChain }
-                      Start { kind: ExpressionInfixChain }
-                        Start { kind: ApplicationExpression }
-                          Start { kind: VariableExpression }
-                            Start { kind: QualifiedName }
-                              Start { kind: NameRef }
-                                Token { kind: Lower }
-                              Finish
-                            Finish
-                          Finish
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                        Start { kind: OneOrMore }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                    Token { kind: ElseKw }
-                    Start { kind: ExpressionOperatorChain }
-                      Start { kind: ExpressionInfixChain }
-                        Start { kind: ApplicationExpression }
-                          Error { message: "expected an expression" }
-                          Start { kind: OneOrMore }
-                          Finish
-                        Finish
-                        Start { kind: OneOrMore }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                      Finish
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-          Finish
-          Token { kind: LayoutSep }
-          Start { kind: DoDiscard }
-            Start { kind: ExpressionOperatorChain }
-              Start { kind: ExpressionInfixChain }
-                Start { kind: ApplicationExpression }
-                  Start { kind: VariableExpression }
-                    Start { kind: QualifiedName }
-                      Start { kind: NameRef }
-                        Token { kind: Lower }
-                      Finish
-                    Finish
-                  Finish
-                  Start { kind: OneOrMore }
-                  Finish
-                Finish
-                Start { kind: OneOrMore }
-                Finish
-              Finish
-              Start { kind: OneOrMore }
-              Finish
-            Finish
-          Finish
-        Finish
-        Token { kind: LayoutEnd }
-      Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
-    Finish
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
   Finish
+  Token { kind: LayoutStart }
   Start { kind: OneOrMore }
+    Start { kind: DoDiscard }
+      Start { kind: IfThenElseExpression }
+        Token { kind: IfKw }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: ThenKw }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Token { kind: ElseKw }
+        Error { message: "expected an expression" }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoDiscard }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+    Finish
   Finish
+  Token { kind: LayoutEnd }
 Finish

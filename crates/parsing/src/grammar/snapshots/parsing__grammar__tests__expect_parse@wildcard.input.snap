@@ -6,27 +6,11 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/wildcard.input
 Input: _ -> _
 
 Start { kind: ArrowType }
-  Start { kind: TypeOperatorChain }
-    Start { kind: ApplicationType }
-      Start { kind: WildcardType }
-        Token { kind: Underscore }
-      Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
-    Finish
+  Start { kind: WildcardType }
+    Token { kind: Underscore }
   Finish
   Token { kind: RightArrow }
-  Start { kind: TypeOperatorChain }
-    Start { kind: ApplicationType }
-      Start { kind: WildcardType }
-        Token { kind: Underscore }
-      Finish
-      Start { kind: OneOrMore }
-      Finish
-    Finish
-    Start { kind: OneOrMore }
-    Finish
+  Start { kind: WildcardType }
+    Token { kind: Underscore }
   Finish
 Finish

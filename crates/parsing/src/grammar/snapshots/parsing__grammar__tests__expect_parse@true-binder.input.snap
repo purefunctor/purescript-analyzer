@@ -4,10 +4,6 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/true-binder.input
 ---
 Input: true
-Start { kind: BinderOperatorChain }
-  Start { kind: LiteralBinder }
-    Token { kind: LiteralTrue }
-  Finish
-  Start { kind: OneOrMore }
-  Finish
+Start { kind: LiteralBinder }
+  Token { kind: LiteralTrue }
 Finish

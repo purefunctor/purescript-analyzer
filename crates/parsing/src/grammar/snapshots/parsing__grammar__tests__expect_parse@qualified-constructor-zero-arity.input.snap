@@ -4,26 +4,20 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/qualified-constructor-zero-arity.input
 ---
 Input: Data.List.Nil
-Start { kind: BinderOperatorChain }
-  Start { kind: ConstructorBinder }
-    Start { kind: QualifiedName }
-      Start { kind: QualifiedPrefix }
-        Start { kind: NameRef }
-          Token { kind: Upper }
-        Finish
-        Token { kind: Period }
-        Start { kind: NameRef }
-          Token { kind: Upper }
-        Finish
-        Token { kind: Period }
-      Finish
+Start { kind: ConstructorBinder }
+  Start { kind: QualifiedName }
+    Start { kind: QualifiedPrefix }
       Start { kind: NameRef }
         Token { kind: Upper }
       Finish
+      Token { kind: Period }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
     Finish
-    Start { kind: OneOrMore }
+    Start { kind: NameRef }
+      Token { kind: Upper }
     Finish
-  Finish
-  Start { kind: OneOrMore }
   Finish
 Finish
