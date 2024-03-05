@@ -470,15 +470,26 @@ fn expr_6(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_7(parser);
     if at_record_update(parser) {
-        let mut wrapped = parser.start();
-        parser.expect(SyntaxKind::LeftCurly);
-        separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
-        parser.expect(SyntaxKind::RightCurly);
-        wrapped.end(parser, SyntaxKind::Wrapped);
+        record_update_list(parser);
         marker.end(parser, SyntaxKind::RecordUpdateExpression);
     } else {
         marker.cancel(parser);
     }
+}
+
+fn record_update_list(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::LeftCurly);
+    parser.separated(record_update_leaf_or_branch, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::RightCurly) {
+            false
+        } else {
+            parser.expect(SyntaxKind::Comma)
+        }
+    });
+    parser.expect(SyntaxKind::RightCurly);
+    marker.end(parser, SyntaxKind::RecordUpdateList);
 }
 
 fn record_update_leaf_or_branch(parser: &mut Parser) {
@@ -491,11 +502,7 @@ fn record_update_leaf_or_branch(parser: &mut Parser) {
             leaf_or_branch.end(parser, SyntaxKind::RecordUpdateLeaf);
         }
         SyntaxKind::LeftCurly => {
-            let mut wrapped = parser.start();
-            parser.consume();
-            separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
-            parser.expect(SyntaxKind::RightCurly);
-            wrapped.end(parser, SyntaxKind::Wrapped);
+            record_update_list(parser);
             leaf_or_branch.end(parser, SyntaxKind::RecordUpdateBranch);
         }
         _ => parser.error_recover("expected '=' or '{'"),

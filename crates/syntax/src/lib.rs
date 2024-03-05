@@ -121,6 +121,7 @@ pub enum SyntaxKind {
     ParenthesizedExpression,
     RecordAccessExpression,
     RecordUpdateExpression,
+    RecordUpdateList,
     RecordUpdateLeaf,
     RecordUpdateBranch,
     TypedExpression,
