@@ -330,9 +330,9 @@ fn expr_binding(parser: &mut Parser, separator: SyntaxKind) {
         expr_where(parser);
         marker.end(parser, SyntaxKind::UnconditionalBinding);
     } else {
-        one_or_more(parser, |parser| {
-            // FIXME: is there an advantage if we use positives here?
-            if parser.current().is_end() || parser.at(separator) {
+        parser.repeat(|parser| {
+            let current = parser.current();
+            if current.is_end() || current == separator {
                 false
             } else {
                 expr_guarded(parser, separator);
@@ -358,10 +358,23 @@ fn expr_where(parser: &mut Parser) {
 fn expr_guarded(parser: &mut Parser, separator: SyntaxKind) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::Pipe);
-    separated(parser, SyntaxKind::Comma, pat_guard);
+    guard_list(parser, separator);
     parser.expect(separator);
     expr_where(parser);
     marker.end(parser, SyntaxKind::GuardedExpression);
+}
+
+fn guard_list(parser: &mut Parser, separator: SyntaxKind) {
+    let mut marker = parser.start();
+    parser.separated(pat_guard, |parser| {
+        let current = parser.current();
+        if current.is_end() || current == separator {
+            false
+        } else {
+            parser.expect(SyntaxKind::Comma)
+        }
+    });
+    marker.end(parser, SyntaxKind::PatternGuardList);
 }
 
 // (pat_0 '<-') expr_0

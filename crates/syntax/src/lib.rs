@@ -224,6 +224,7 @@ pub enum SyntaxKind {
     UnconditionalBinding,
     GuardedBinding,
     PatternGuard,
+    PatternGuardList,
     GuardedExpression,
 
     /// Convenience node for patterns such as `l: e` or `e :: T`.
