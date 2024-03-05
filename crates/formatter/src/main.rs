@@ -3,6 +3,7 @@
 use std::fs;
 
 use gumdrop::Options;
+use syntax::SyntaxNode;
 
 #[derive(Options)]
 struct Args {
@@ -19,6 +20,15 @@ pub fn main() {
         fs::read_to_string(args.source_file).expect("Should have been able to read the file");
 
     let (node, errors) = parsing::parse_module(&source);
-    println!("{:?}", node);
+
+    render(node, 0);
+
     println!("{:?}", errors);
+}
+
+fn render(node: SyntaxNode, indentation: usize) {
+    println!("{:indentation$}{:?}", "", node.kind(), indentation = indentation);
+    for child in node.children() {
+        render(child, indentation + 1);
+    }
 }
