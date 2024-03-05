@@ -1943,6 +1943,7 @@ fn derive_declaration(parser: &mut Parser) {
 
     parser.expect(SyntaxKind::DeriveKw);
     let end_kind = if parser.at(SyntaxKind::NewtypeKw) {
+        parser.consume();
         SyntaxKind::DeriveNewtypeDeclaration
     } else {
         SyntaxKind::DeriveInstanceDeclaration

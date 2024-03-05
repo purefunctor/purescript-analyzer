@@ -13,63 +13,174 @@ derive newtype instance Eq A
 derive newtype instance Eq A B C
 derive newtype instance Eq A _
 
-   0: parsing::parser::Parser::nth
-             at ./src/parser.rs:59:29
-   1: parsing::parser::Parser::nth_at
-             at ./src/parser.rs:70:9
-   2: parsing::parser::Parser::at
-             at ./src/parser.rs:82:9
-   3: parsing::grammar::rules::type_atom
-             at ./src/grammar/rules.rs:844:25
-   4: parsing::grammar::rules::instance_head::{{closure}}
-             at ./src/grammar/rules.rs:1993:9
-   5: parsing::grammar::combinators::zero_or_more
-             at ./src/grammar/combinators.rs:30:13
-   6: parsing::grammar::rules::instance_head
-             at ./src/grammar/rules.rs:1988:5
-   7: parsing::grammar::rules::derive_declaration
-             at ./src/grammar/rules.rs:1951:5
-   8: parsing::grammar::rules::module_body::{{closure}}
-             at ./src/grammar/rules.rs:1522:17
-   9: parsing::grammar::combinators::zero_or_more
-             at ./src/grammar/combinators.rs:30:13
-  10: parsing::grammar::rules::module_body
-             at ./src/grammar/rules.rs:1504:5
-  11: parsing::grammar::rules::module
-             at ./src/grammar/rules.rs:1293:5
-  12: core::ops::function::Fn::call
-             at /usr/src/debug/rust/rustc-1.76.0-src/library/core/src/ops/function.rs:79:5
-  13: parsing::grammar::tests::expect_parse::{{closure}}
-             at ./src/grammar/tests.rs:21:9
-  14: std::panicking::try::do_call
-             at /usr/src/debug/rust/rustc-1.76.0-src/library/std/src/panicking.rs:552:40
-  15: __rust_try
-  16: std::panicking::try
-             at /usr/src/debug/rust/rustc-1.76.0-src/library/std/src/panicking.rs:516:19
-  17: std::panic::catch_unwind
-             at /usr/src/debug/rust/rustc-1.76.0-src/library/std/src/panic.rs:142:14
-  18: parsing::grammar::tests::expect_parse
-             at ./src/grammar/tests.rs:17:28
-  19: parsing::grammar::tests::test_file::{{closure}}
-             at ./src/grammar/tests.rs:116:9
-  20: insta::glob::glob_exec::{{closure}}
-             at /home/ed/.cargo/registry/src/index.crates.io-6f17d22bba15001f/insta-1.34.0/src/glob.rs:106:13
-  21: insta::settings::Settings::bind
-             at /home/ed/.cargo/registry/src/index.crates.io-6f17d22bba15001f/insta-1.34.0/src/settings.rs:510:9
-  22: insta::glob::glob_exec
-             at /home/ed/.cargo/registry/src/index.crates.io-6f17d22bba15001f/insta-1.34.0/src/glob.rs:105:9
-  23: parsing::grammar::tests::test_file
-             at ./src/grammar/tests.rs:114:5
-  24: parsing::grammar::tests::test_file::{{closure}}
-             at ./src/grammar/tests.rs:113:15
-  25: core::ops::function::FnOnce::call_once
-             at /usr/src/debug/rust/rustc-1.76.0-src/library/core/src/ops/function.rs:250:5
-  26: test::__rust_begin_short_backtrace
-  27: test::run_test::{{closure}}
-  28: std::sys_common::backtrace::__rust_begin_short_backtrace
-  29: core::ops::function::FnOnce::call_once{{vtable.shim}}
-  30: std::sys::unix::thread::Thread::new::thread_start
-  31: <unknown>
-  32: <unknown>
-
-infinite loop in parser
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+      Start { kind: DeriveInstanceDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveInstanceDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveInstanceDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: WildcardType }
+            Token { kind: Underscore }
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveNewtypeDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: NewtypeKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveNewtypeDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: NewtypeKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveNewtypeDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: NewtypeKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: WildcardType }
+            Token { kind: Underscore }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish
