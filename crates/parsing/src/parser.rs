@@ -113,7 +113,8 @@ impl<'a> Parser<'a> {
         if self.eat(kind) {
             return true;
         }
-        self.error(format!("expected {kind:?}"));
+        let current = self.current();
+        self.error(format!("expected {kind:?}, but got {current:?}"));
         false
     }
 

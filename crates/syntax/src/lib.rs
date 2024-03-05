@@ -182,6 +182,7 @@ pub enum SyntaxKind {
     ConstructorFields,
     DataKw,
 
+    NewtypeDeclarationAnnotation,
     NewtypeDeclaration,
     NewtypeKw,
     ForallKw,

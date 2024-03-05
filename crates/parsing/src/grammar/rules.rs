@@ -1521,6 +1521,9 @@ fn module_body(parser: &mut Parser) {
             SyntaxKind::TypeKw => {
                 annotation_or_type_declaration(parser);
             }
+            SyntaxKind::NewtypeKw => {
+                annotation_or_newtype_declaration(parser);
+            }
             SyntaxKind::Lower => {
                 annotation_or_value_declaration(parser);
             }
@@ -1693,7 +1696,7 @@ fn annotation_or_type_declaration(parser: &mut Parser) {
             marker.end(parser, SyntaxKind::TypeDeclarationRole);
         }
         _ => {
-            parser.error_recover("expected type statement");
+            parser.error_recover("expected type declaration");
         }
     }
 }
@@ -1703,6 +1706,42 @@ fn is_role_kind(parser: &mut Parser) -> bool {
         parser.current(),
         SyntaxKind::NominalKw | SyntaxKind::RepresentationalKw | SyntaxKind::PhantomKw
     )
+}
+
+// 'newtype' Upper '::' type_0 | 'newtype' Upper manyOrEmpty(type_var_binding_plain) '=' type_0
+fn annotation_or_newtype_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::NewtypeKw);
+    match parser.current() {
+        SyntaxKind::Upper => {
+            name(parser, SyntaxKind::Upper);
+            if parser.at(SyntaxKind::Colon2) {
+                parser.consume();
+                type_0(parser);
+                marker.end(parser, SyntaxKind::NewtypeDeclarationAnnotation);
+            } else {
+                zero_or_more(parser, |parser| {
+                    if at_type_var_binding_plain(parser) {
+                        type_var_binding_plain(parser);
+                        true
+                    } else {
+                        false
+                    }
+                });
+
+                if parser.at(SyntaxKind::Equal) {
+                    parser.expect(SyntaxKind::Equal);
+                    type_0(parser);
+                }
+
+                marker.end(parser, SyntaxKind::NewtypeDeclaration);
+            }
+        }
+        _ => {
+            parser.error_recover("expected newtype declaration");
+        }
+    }
 }
 
 //   'foreign' 'import' 'lower' '::' type_0
