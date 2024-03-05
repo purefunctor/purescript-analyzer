@@ -126,6 +126,33 @@ prefixedVariable = A.a
 }
 
 #[test]
+fn types() {
+    let (surface, arena) = file_surface(
+        "module Main where
+
+application :: Function Argument
+arrow :: Argument -> Result
+constrained :: Constraint a => a
+constructor :: Constructor
+qualified :: forall a (b :: Type). a -> b -> a
+parenthesized :: (Constructor Argument)
+variable :: a
+    ",
+    );
+
+    let types = surface
+        .body
+        .iter_value_declarations()
+        .filter_map(|value_declaration| {
+            let signature = value_declaration.annotation?;
+            Some(&arena[signature])
+        })
+        .collect_vec();
+
+    insta::assert_debug_snapshot!(types);
+}
+
+#[test]
 fn value_declarations() {
     let (surface, _) = file_surface(
         "module Main where
