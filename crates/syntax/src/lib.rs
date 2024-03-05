@@ -120,6 +120,7 @@ pub enum SyntaxKind {
     LiteralExpression,
     ParenthesizedExpression,
     RecordAccessExpression,
+    RecordAccessPath,
     RecordUpdateExpression,
     RecordUpdateList,
     RecordUpdateLeaf,

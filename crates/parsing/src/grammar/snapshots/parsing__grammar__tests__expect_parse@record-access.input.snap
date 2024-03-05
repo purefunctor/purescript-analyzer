@@ -13,8 +13,8 @@ Start { kind: RecordAccessExpression }
       Finish
     Finish
   Finish
-  Token { kind: Period }
-  Start { kind: Separated }
+  Start { kind: RecordAccessPath }
+    Token { kind: Period }
     Start { kind: Name }
       Token { kind: Label }
     Finish
@@ -24,4 +24,3 @@ Start { kind: RecordAccessExpression }
     Finish
   Finish
 Finish
-

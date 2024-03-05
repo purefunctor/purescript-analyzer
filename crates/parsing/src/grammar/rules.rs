@@ -513,12 +513,18 @@ fn expr_7(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_atom(parser);
     if parser.at(SyntaxKind::Period) {
-        parser.consume();
-        separated(parser, SyntaxKind::Period, label_name);
+        record_access_path(parser);
         marker.end(parser, SyntaxKind::RecordAccessExpression);
     } else {
         marker.cancel(parser);
     }
+}
+
+fn record_access_path(parser: &mut Parser<'_>) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::Period);
+    parser.separated(label_name, |parser| parser.eat(SyntaxKind::Period));
+    marker.end(parser, SyntaxKind::RecordAccessPath);
 }
 
 fn expr_atom(parser: &mut Parser) {
