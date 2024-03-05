@@ -4,7 +4,10 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/wildcard-binder.input
 ---
 Input: _
-Start { kind: WildcardBinder }
-  Token { kind: Underscore }
+Start { kind: BinderOperatorChain }
+  Start { kind: WildcardBinder }
+    Token { kind: Underscore }
+  Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

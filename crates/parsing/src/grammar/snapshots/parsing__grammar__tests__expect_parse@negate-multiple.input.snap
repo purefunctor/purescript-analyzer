@@ -5,21 +5,32 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/negate-multiple
 ---
 Input: - -1
 
-Start { kind: NegateExpression }
-  Start { kind: QualifiedName }
-    Start { kind: NameRef }
-      Token { kind: Operator }
-    Finish
-  Finish
-  Start { kind: NegateExpression }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Operator }
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: NegateExpression }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
+      Finish
+      Start { kind: NegateExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Operator }
+          Finish
+        Finish
+        Start { kind: ApplicationExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: OneOrMore }
+          Finish
+        Finish
       Finish
     Finish
-    Start { kind: LiteralExpression }
-      Token { kind: LiteralInteger }
+    Start { kind: OneOrMore }
     Finish
   Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

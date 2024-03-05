@@ -6,17 +6,37 @@ input_file: crates/parsing/src/grammar/inputs/failing/expression/empty-do-in-ope
 Input: do + 0
 
 Start { kind: ExpressionOperatorChain }
-  Start { kind: DoExpression }
-    Start { kind: QualifiedDo }
-      Token { kind: DoKw }
-    Finish
-    Token { kind: LayoutStart }
-    Start { kind: OneOrMore }
-      Start { kind: DoDiscard }
-        Error { message: "expected an expression" }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
+      Start { kind: DoExpression }
+        Start { kind: QualifiedDo }
+          Token { kind: DoKw }
+        Finish
+        Token { kind: LayoutStart }
+        Start { kind: OneOrMore }
+          Start { kind: DoDiscard }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Error { message: "expected an expression" }
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: LayoutEnd }
+      Finish
+      Start { kind: OneOrMore }
       Finish
     Finish
-    Token { kind: LayoutEnd }
+    Start { kind: OneOrMore }
+    Finish
   Finish
   Start { kind: OneOrMore }
     Start { kind: Pair }
@@ -25,10 +45,17 @@ Start { kind: ExpressionOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
+      Start { kind: ExpressionInfixChain }
+        Start { kind: ApplicationExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: OneOrMore }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+        Finish
       Finish
     Finish
   Finish
 Finish
-

@@ -20,62 +20,208 @@ as,
 well
   ]
 
-Start { kind: ApplicationExpression }
-  Start { kind: DoExpression }
-    Start { kind: QualifiedDo }
-      Token { kind: DoKw }
-    Finish
-    Token { kind: LayoutStart }
-    Start { kind: DoDiscard }
-      Start { kind: ApplicationExpression }
-        Start { kind: ParenthesizedExpression }
-          Token { kind: LeftParenthesis }
-          Start { kind: ApplicationExpression }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-              Start { kind: TermArgument }
-                Start { kind: VariableExpression }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Lower }
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
+      Start { kind: DoExpression }
+        Start { kind: QualifiedDo }
+          Token { kind: DoKw }
+        Finish
+        Token { kind: LayoutStart }
+        Start { kind: OneOrMore }
+          Start { kind: DoDiscard }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Start { kind: ParenthesizedExpression }
+                    Token { kind: LeftParenthesis }
+                    Start { kind: ExpressionOperatorChain }
+                      Start { kind: ExpressionInfixChain }
+                        Start { kind: ApplicationExpression }
+                          Start { kind: VariableExpression }
+                            Start { kind: QualifiedName }
+                              Start { kind: NameRef }
+                                Token { kind: Lower }
+                              Finish
+                            Finish
+                          Finish
+                          Start { kind: OneOrMore }
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                            Start { kind: TermArgument }
+                              Start { kind: VariableExpression }
+                                Start { kind: QualifiedName }
+                                  Start { kind: NameRef }
+                                    Token { kind: Lower }
+                                  Finish
+                                Finish
+                              Finish
+                            Finish
+                          Finish
+                        Finish
+                        Start { kind: OneOrMore }
+                        Finish
+                      Finish
+                      Start { kind: OneOrMore }
+                      Finish
                     Finish
+                    Token { kind: RightParenthesis }
+                  Finish
+                  Start { kind: OneOrMore }
                   Finish
                 Finish
-              Finish
-            Finish
-          Finish
-          Error { message: "expected RightParenthesis, but got Lower" }
-        Finish
-        Start { kind: OneOrMore }
-          Start { kind: TermArgument }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
+                Start { kind: OneOrMore }
                 Finish
               Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+          Finish
+          Token { kind: LayoutSep }
+          Start { kind: DoDiscard }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Start { kind: LiteralExpression }
+                    Start { kind: LiteralArray }
+                      Start { kind: Wrapped }
+                        Token { kind: LeftSquare }
+                        Start { kind: Separated }
+                          Start { kind: ExpressionOperatorChain }
+                            Start { kind: ExpressionInfixChain }
+                              Start { kind: ApplicationExpression }
+                                Start { kind: VariableExpression }
+                                  Start { kind: QualifiedName }
+                                    Start { kind: NameRef }
+                                      Token { kind: Lower }
+                                    Finish
+                                  Finish
+                                Finish
+                                Start { kind: OneOrMore }
+                                Finish
+                              Finish
+                              Start { kind: OneOrMore }
+                              Finish
+                            Finish
+                            Start { kind: OneOrMore }
+                            Finish
+                          Finish
+                          Token { kind: Comma }
+                          Start { kind: ExpressionOperatorChain }
+                            Start { kind: ExpressionInfixChain }
+                              Start { kind: ApplicationExpression }
+                                Start { kind: VariableExpression }
+                                  Start { kind: QualifiedName }
+                                    Start { kind: NameRef }
+                                      Token { kind: Lower }
+                                    Finish
+                                  Finish
+                                Finish
+                                Start { kind: OneOrMore }
+                                Finish
+                              Finish
+                              Start { kind: OneOrMore }
+                              Finish
+                            Finish
+                            Start { kind: OneOrMore }
+                            Finish
+                          Finish
+                          Token { kind: Comma }
+                          Start { kind: ExpressionOperatorChain }
+                            Start { kind: ExpressionInfixChain }
+                              Start { kind: ApplicationExpression }
+                                Start { kind: VariableExpression }
+                                  Start { kind: QualifiedName }
+                                    Start { kind: NameRef }
+                                      Token { kind: Lower }
+                                    Finish
+                                  Finish
+                                Finish
+                                Start { kind: OneOrMore }
+                                Finish
+                              Finish
+                              Start { kind: OneOrMore }
+                              Finish
+                            Finish
+                            Start { kind: OneOrMore }
+                            Finish
+                          Finish
+                        Finish
+                        Token { kind: RightSquare }
+                      Finish
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
             Finish
           Finish
         Finish
+        Token { kind: LayoutEnd }
+      Finish
+      Start { kind: OneOrMore }
       Finish
     Finish
-    Error { message: "expected LayoutSep or LayoutEnd" }
+    Start { kind: OneOrMore }
+    Finish
   Finish
   Start { kind: OneOrMore }
-    Start { kind: TermArgument }
-      Start { kind: VariableExpression }
-        Start { kind: QualifiedName }
-          Start { kind: NameRef }
-            Token { kind: Lower }
-          Finish
-        Finish
-      Finish
-    Finish
   Finish
 Finish

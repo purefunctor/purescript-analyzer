@@ -1,0 +1,94 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/file/more_than_one_type_argument.input
+---
+Input: module A where
+
+f :: A B C
+f = 1
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+      Start { kind: ValueAnnotationDeclaration }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+        Token { kind: Colon2 }
+        Start { kind: TypeOperatorChain }
+          Start { kind: ApplicationType }
+            Start { kind: ConstructorType }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Upper }
+                Finish
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
+              Start { kind: ConstructorType }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Upper }
+                  Finish
+                Finish
+              Finish
+            Finish
+          Finish
+          Start { kind: OneOrMore }
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: ValueEquationDeclaration }
+        Start { kind: Name }
+          Token { kind: Lower }
+        Finish
+        Start { kind: ZeroOrMore }
+        Finish
+        Start { kind: UnconditionalBinding }
+          Token { kind: Equal }
+          Start { kind: WhereExpression }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralInteger }
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish

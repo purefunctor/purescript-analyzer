@@ -6,39 +6,79 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/case_with_under
 Input: case _ of
   [] -> []
 
-Start { kind: CaseExpression }
-  Token { kind: CaseKw }
-  Start { kind: Separated }
-    Start { kind: SectionExpression }
-      Token { kind: Underscore }
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
+      Start { kind: CaseExpression }
+        Token { kind: CaseKw }
+        Start { kind: Separated }
+          Start { kind: ExpressionOperatorChain }
+            Start { kind: ExpressionInfixChain }
+              Start { kind: ApplicationExpression }
+                Start { kind: SectionExpression }
+                  Token { kind: Underscore }
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+            Start { kind: OneOrMore }
+            Finish
+          Finish
+        Finish
+        Token { kind: OfKw }
+        Token { kind: LayoutStart }
+        Start { kind: OneOrMore }
+          Start { kind: CaseBranch }
+            Start { kind: Separated }
+              Start { kind: BinderOperatorChain }
+                Start { kind: LiteralBinder }
+                  Start { kind: LiteralArray }
+                    Start { kind: Wrapped }
+                      Token { kind: LeftSquare }
+                      Token { kind: RightSquare }
+                    Finish
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+            Finish
+            Token { kind: RightArrow }
+            Start { kind: WhereExpression }
+              Start { kind: ExpressionOperatorChain }
+                Start { kind: ExpressionInfixChain }
+                  Start { kind: ApplicationExpression }
+                    Start { kind: LiteralExpression }
+                      Start { kind: LiteralArray }
+                        Start { kind: Wrapped }
+                          Token { kind: LeftSquare }
+                          Token { kind: RightSquare }
+                        Finish
+                      Finish
+                    Finish
+                    Start { kind: OneOrMore }
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+        Token { kind: LayoutEnd }
+      Finish
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
-  Token { kind: OfKw }
-  Token { kind: LayoutStart }
   Start { kind: OneOrMore }
-    Start { kind: CaseBranch }
-      Start { kind: Separated }
-        Start { kind: LiteralBinder }
-          Start { kind: LiteralArray }
-            Start { kind: Wrapped }
-              Token { kind: LeftSquare }
-              Token { kind: RightSquare }
-            Finish
-          Finish
-        Finish
-      Finish
-      Token { kind: RightArrow }
-      Start { kind: WhereExpression }
-        Start { kind: LiteralExpression }
-          Start { kind: LiteralArray }
-            Start { kind: Wrapped }
-              Token { kind: LeftSquare }
-              Token { kind: RightSquare }
-            Finish
-          Finish
-        Finish
-      Finish
-    Finish
   Finish
-  Token { kind: LayoutEnd }
 Finish

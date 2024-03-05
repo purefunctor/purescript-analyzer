@@ -39,17 +39,45 @@ Start { kind: Module }
                 Token { kind: Lower }
               Finish
             Finish
+            Start { kind: TypeVariableName }
+              Start { kind: Name }
+                Token { kind: Lower }
+              Finish
+            Finish
           Finish
-          Error { message: "expected Period, but got Lower" }
-          Start { kind: VariableType }
-            Start { kind: NameRef }
-              Token { kind: Lower }
+          Token { kind: Period }
+          Start { kind: ArrowType }
+            Start { kind: TypeOperatorChain }
+              Start { kind: ApplicationType }
+                Start { kind: VariableType }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+            Token { kind: RightArrow }
+            Start { kind: TypeOperatorChain }
+              Start { kind: ApplicationType }
+                Start { kind: VariableType }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
             Finish
           Finish
         Finish
       Finish
-      Error { message: "expected LayoutEnd or LayoutSep" }
     Finish
   Finish
-  Error { message: "expected LayoutEnd, but got Period" }
+  Token { kind: LayoutEnd }
 Finish

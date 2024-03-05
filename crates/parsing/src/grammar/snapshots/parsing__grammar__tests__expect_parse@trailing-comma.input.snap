@@ -5,19 +5,54 @@ input_file: crates/parsing/src/grammar/inputs/failing/expression/trailing-comma.
 ---
 Input: [ 1, ]
 
-Start { kind: LiteralExpression }
-  Start { kind: LiteralArray }
-    Start { kind: Wrapped }
-      Token { kind: LeftSquare }
-      Start { kind: Separated }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
+      Start { kind: LiteralExpression }
+        Start { kind: LiteralArray }
+          Start { kind: Wrapped }
+            Token { kind: LeftSquare }
+            Start { kind: Separated }
+              Start { kind: ExpressionOperatorChain }
+                Start { kind: ExpressionInfixChain }
+                  Start { kind: ApplicationExpression }
+                    Start { kind: LiteralExpression }
+                      Token { kind: LiteralInteger }
+                    Finish
+                    Start { kind: OneOrMore }
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Token { kind: Comma }
+              Start { kind: ExpressionOperatorChain }
+                Start { kind: ExpressionInfixChain }
+                  Start { kind: ApplicationExpression }
+                    Error { message: "expected an expression" }
+                    Start { kind: OneOrMore }
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+            Finish
+            Token { kind: RightSquare }
+          Finish
         Finish
-        Token { kind: Comma }
-        Error { message: "expected an expression" }
       Finish
-      Token { kind: RightSquare }
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

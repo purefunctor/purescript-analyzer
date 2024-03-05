@@ -4,7 +4,10 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/char-binder.input
 ---
 Input: 'a'
-Start { kind: LiteralBinder }
-  Token { kind: LiteralChar }
+Start { kind: BinderOperatorChain }
+  Start { kind: LiteralBinder }
+    Token { kind: LiteralChar }
+  Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

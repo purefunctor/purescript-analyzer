@@ -6,8 +6,16 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/minus-is-operat
 Input: 1 - 2
 
 Start { kind: ExpressionOperatorChain }
-  Start { kind: LiteralExpression }
-    Token { kind: LiteralInteger }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
+    Finish
   Finish
   Start { kind: OneOrMore }
     Start { kind: Pair }
@@ -16,10 +24,17 @@ Start { kind: ExpressionOperatorChain }
           Token { kind: Operator }
         Finish
       Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
+      Start { kind: ExpressionInfixChain }
+        Start { kind: ApplicationExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+          Start { kind: OneOrMore }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+        Finish
       Finish
     Finish
   Finish
 Finish
-

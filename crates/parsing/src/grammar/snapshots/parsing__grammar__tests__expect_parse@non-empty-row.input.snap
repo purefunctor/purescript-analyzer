@@ -5,41 +5,64 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/non-empty-row.input
 ---
 Input: ( a :: Hello, b :: Hello )
 
-Start { kind: RowType }
-  Start { kind: Wrapped }
-    Token { kind: LeftParenthesis }
-    Start { kind: RowInner }
-      Start { kind: Separated }
-        Start { kind: RowField }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
+Start { kind: TypeOperatorChain }
+  Start { kind: ApplicationType }
+    Start { kind: RowType }
+      Start { kind: Wrapped }
+        Token { kind: LeftParenthesis }
+        Start { kind: RowInner }
+          Start { kind: Separated }
+            Start { kind: RowField }
+              Start { kind: Name }
+                Token { kind: Label }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: TypeOperatorChain }
+                Start { kind: ApplicationType }
+                  Start { kind: ConstructorType }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
+                      Finish
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: RowField }
+              Start { kind: Name }
+                Token { kind: Label }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: TypeOperatorChain }
+                Start { kind: ApplicationType }
+                  Start { kind: ConstructorType }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
+                      Finish
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
               Finish
             Finish
           Finish
         Finish
-        Token { kind: Comma }
-        Start { kind: RowField }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
+        Token { kind: RightParenthesis }
       Finish
     Finish
-    Token { kind: RightParenthesis }
+    Start { kind: OneOrMore }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
   Finish
 Finish
-

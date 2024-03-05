@@ -5,12 +5,19 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/empty-record.input
 ---
 Input: {}
 
-Start { kind: RecordType }
-  Start { kind: Wrapped }
-    Token { kind: LeftCurly }
-    Start { kind: RowInner }
+Start { kind: TypeOperatorChain }
+  Start { kind: ApplicationType }
+    Start { kind: RecordType }
+      Start { kind: Wrapped }
+        Token { kind: LeftCurly }
+        Start { kind: RowInner }
+        Finish
+        Token { kind: RightCurly }
+      Finish
     Finish
-    Token { kind: RightCurly }
+    Start { kind: OneOrMore }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
   Finish
 Finish
-

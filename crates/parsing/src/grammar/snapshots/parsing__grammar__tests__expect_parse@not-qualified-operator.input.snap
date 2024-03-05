@@ -5,22 +5,33 @@ input_file: crates/parsing/src/grammar/inputs/failing/expression/not-qualified-o
 ---
 Input: Invalid.(invalid)
 
-Start { kind: OperatorNameExpression }
-  Start { kind: QualifiedName }
-    Start { kind: QualifiedPrefix }
-      Start { kind: NameRef }
-        Token { kind: Upper }
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
+      Start { kind: OperatorNameExpression }
+        Start { kind: QualifiedName }
+          Start { kind: QualifiedPrefix }
+            Start { kind: NameRef }
+              Token { kind: Upper }
+            Finish
+            Token { kind: Period }
+          Finish
+          Start { kind: Wrapped }
+            Token { kind: LeftParenthesis }
+            Start { kind: Error }
+              Token { kind: Lower }
+              Error { message: "expected an operator" }
+            Finish
+            Token { kind: RightParenthesis }
+          Finish
+        Finish
       Finish
-      Token { kind: Period }
+      Start { kind: OneOrMore }
+      Finish
     Finish
-    Start { kind: Wrapped }
-      Token { kind: LeftParenthesis }
-      Start { kind: Error }
-        Token { kind: Lower }
-        Error { message: "expected an operator" }
-      Finish
-      Token { kind: RightParenthesis }
+    Start { kind: OneOrMore }
     Finish
   Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

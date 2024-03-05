@@ -4,7 +4,10 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/false-binder.input
 ---
 Input: false
-Start { kind: LiteralBinder }
-  Token { kind: LiteralFalse }
+Start { kind: BinderOperatorChain }
+  Start { kind: LiteralBinder }
+    Token { kind: LiteralFalse }
+  Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

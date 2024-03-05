@@ -6,20 +6,35 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/kinded-type.input
 Input: Type :: Type
 
 Start { kind: KindedType }
-  Start { kind: ConstructorType }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Upper }
+  Start { kind: TypeOperatorChain }
+    Start { kind: ApplicationType }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
       Finish
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
   Token { kind: Colon2 }
-  Start { kind: ConstructorType }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Upper }
+  Start { kind: TypeOperatorChain }
+    Start { kind: ApplicationType }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
       Finish
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
 Finish
-

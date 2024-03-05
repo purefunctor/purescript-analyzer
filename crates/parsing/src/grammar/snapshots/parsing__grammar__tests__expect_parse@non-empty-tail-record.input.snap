@@ -5,49 +5,80 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/non-empty-tail-record
 ---
 Input: { a :: Int, b :: Int | r }
 
-Start { kind: RecordType }
-  Start { kind: Wrapped }
-    Token { kind: LeftCurly }
-    Start { kind: RowInner }
-      Start { kind: Separated }
-        Start { kind: RowField }
-          Start { kind: Name }
-            Token { kind: Label }
+Start { kind: TypeOperatorChain }
+  Start { kind: ApplicationType }
+    Start { kind: RecordType }
+      Start { kind: Wrapped }
+        Token { kind: LeftCurly }
+        Start { kind: RowInner }
+          Start { kind: Separated }
+            Start { kind: RowField }
+              Start { kind: Name }
+                Token { kind: Label }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: TypeOperatorChain }
+                Start { kind: ApplicationType }
+                  Start { kind: ConstructorType }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
+                      Finish
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+            Finish
+            Token { kind: Comma }
+            Start { kind: RowField }
+              Start { kind: Name }
+                Token { kind: Label }
+              Finish
+              Token { kind: Colon2 }
+              Start { kind: TypeOperatorChain }
+                Start { kind: ApplicationType }
+                  Start { kind: ConstructorType }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
+                      Finish
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+            Finish
           Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
+          Start { kind: RowTail }
+            Token { kind: Pipe }
+            Start { kind: TypeOperatorChain }
+              Start { kind: ApplicationType }
+                Start { kind: VariableType }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
               Finish
             Finish
           Finish
         Finish
-        Token { kind: Comma }
-        Start { kind: RowField }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
-      Finish
-      Start { kind: RowTail }
-        Token { kind: Pipe }
-        Start { kind: VariableType }
-          Start { kind: NameRef }
-            Token { kind: Lower }
-          Finish
-        Finish
+        Token { kind: RightCurly }
       Finish
     Finish
-    Token { kind: RightCurly }
+    Start { kind: OneOrMore }
+    Finish
+  Finish
+  Start { kind: OneOrMore }
   Finish
 Finish
-

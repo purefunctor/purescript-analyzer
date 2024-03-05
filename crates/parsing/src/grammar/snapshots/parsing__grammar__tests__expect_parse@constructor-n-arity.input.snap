@@ -4,16 +4,19 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/constructor-n-arity.input
 ---
 Input: Cons 1
-Start { kind: ConstructorBinder }
-  Start { kind: QualifiedName }
-    Start { kind: NameRef }
-      Token { kind: Upper }
+Start { kind: BinderOperatorChain }
+  Start { kind: ConstructorBinder }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
+      Start { kind: LiteralBinder }
+        Token { kind: LiteralInteger }
+      Finish
     Finish
   Finish
   Start { kind: OneOrMore }
-    Start { kind: LiteralBinder }
-      Token { kind: LiteralInteger }
-    Finish
   Finish
 Finish
-

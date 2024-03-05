@@ -6,24 +6,47 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/arrow.input
 Input: a -> b -> c
 
 Start { kind: ArrowType }
-  Start { kind: VariableType }
-    Start { kind: NameRef }
-      Token { kind: Lower }
+  Start { kind: TypeOperatorChain }
+    Start { kind: ApplicationType }
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
   Token { kind: RightArrow }
   Start { kind: ArrowType }
-    Start { kind: VariableType }
-      Start { kind: NameRef }
-        Token { kind: Lower }
+    Start { kind: TypeOperatorChain }
+      Start { kind: ApplicationType }
+        Start { kind: VariableType }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+        Finish
+      Finish
+      Start { kind: OneOrMore }
       Finish
     Finish
     Token { kind: RightArrow }
-    Start { kind: VariableType }
-      Start { kind: NameRef }
-        Token { kind: Lower }
+    Start { kind: TypeOperatorChain }
+      Start { kind: ApplicationType }
+        Start { kind: VariableType }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+        Start { kind: OneOrMore }
+        Finish
+      Finish
+      Start { kind: OneOrMore }
       Finish
     Finish
   Finish
 Finish
-

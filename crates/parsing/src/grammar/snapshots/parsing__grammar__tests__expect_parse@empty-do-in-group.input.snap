@@ -8,58 +8,98 @@ Input: do
   do
   'a' pure
 
-Start { kind: DoExpression }
-  Start { kind: QualifiedDo }
-    Token { kind: DoKw }
-  Finish
-  Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
-    Start { kind: DoDiscard }
-      Start { kind: ApplicationExpression }
-        Start { kind: VariableExpression }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Lower }
-            Finish
-          Finish
-        Finish
-        Start { kind: OneOrMore }
-          Start { kind: TermArgument }
-            Start { kind: LiteralExpression }
-              Token { kind: LiteralString }
-            Finish
-          Finish
-        Finish
-      Finish
-    Finish
-    Token { kind: LayoutSep }
-    Start { kind: DoDiscard }
+Start { kind: ExpressionOperatorChain }
+  Start { kind: ExpressionInfixChain }
+    Start { kind: ApplicationExpression }
       Start { kind: DoExpression }
         Start { kind: QualifiedDo }
           Token { kind: DoKw }
         Finish
-        Error { message: "expected LayoutStart, but got LayoutSep" }
-      Finish
-    Finish
-    Token { kind: LayoutSep }
-    Start { kind: DoDiscard }
-      Start { kind: ApplicationExpression }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralChar }
-        Finish
+        Token { kind: LayoutStart }
         Start { kind: OneOrMore }
-          Start { kind: TermArgument }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
+          Start { kind: DoDiscard }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Start { kind: VariableExpression }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Lower }
+                      Finish
+                    Finish
+                  Finish
+                  Start { kind: OneOrMore }
+                    Start { kind: TermArgument }
+                      Start { kind: LiteralExpression }
+                        Token { kind: LiteralString }
+                      Finish
+                    Finish
+                  Finish
                 Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+          Finish
+          Token { kind: LayoutSep }
+          Start { kind: DoDiscard }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Start { kind: DoExpression }
+                    Start { kind: QualifiedDo }
+                      Token { kind: DoKw }
+                    Finish
+                    Error { message: "expected LayoutStart, but got LayoutSep" }
+                  Finish
+                  Start { kind: OneOrMore }
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
+              Finish
+            Finish
+          Finish
+          Token { kind: LayoutSep }
+          Start { kind: DoDiscard }
+            Start { kind: ExpressionOperatorChain }
+              Start { kind: ExpressionInfixChain }
+                Start { kind: ApplicationExpression }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralChar }
+                  Finish
+                  Start { kind: OneOrMore }
+                    Start { kind: TermArgument }
+                      Start { kind: VariableExpression }
+                        Start { kind: QualifiedName }
+                          Start { kind: NameRef }
+                            Token { kind: Lower }
+                          Finish
+                        Finish
+                      Finish
+                    Finish
+                  Finish
+                Finish
+                Start { kind: OneOrMore }
+                Finish
+              Finish
+              Start { kind: OneOrMore }
               Finish
             Finish
           Finish
         Finish
+        Token { kind: LayoutEnd }
+      Finish
+      Start { kind: OneOrMore }
       Finish
     Finish
+    Start { kind: OneOrMore }
+    Finish
   Finish
-  Token { kind: LayoutEnd }
+  Start { kind: OneOrMore }
+  Finish
 Finish

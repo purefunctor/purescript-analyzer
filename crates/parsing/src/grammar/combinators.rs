@@ -8,9 +8,10 @@ pub(super) fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> boo
     let mut last_index = 0;
     loop {
         if !rule(parser) {
-            if parser.index() == last_index {
-                break;
-            }
+            break;
+        }
+        if parser.index() == last_index {
+            break;
         }
         last_index = parser.index();
         at_least_one = true;

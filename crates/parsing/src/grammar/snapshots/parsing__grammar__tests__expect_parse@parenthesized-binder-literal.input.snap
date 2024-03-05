@@ -4,11 +4,18 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/parenthesized-binder-literal.input
 ---
 Input: (1.0)
-Start { kind: ParenthesizedBinder }
-  Token { kind: LeftParenthesis }
-  Start { kind: LiteralBinder }
-    Token { kind: LiteralNumber }
+Start { kind: BinderOperatorChain }
+  Start { kind: ParenthesizedBinder }
+    Token { kind: LeftParenthesis }
+    Start { kind: BinderOperatorChain }
+      Start { kind: LiteralBinder }
+        Token { kind: LiteralNumber }
+      Finish
+      Start { kind: OneOrMore }
+      Finish
+    Finish
+    Token { kind: RightParenthesis }
   Finish
-  Token { kind: RightParenthesis }
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

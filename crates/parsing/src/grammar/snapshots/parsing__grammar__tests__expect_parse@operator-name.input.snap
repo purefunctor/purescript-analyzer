@@ -5,15 +5,22 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/operator-name.input
 ---
 Input: (+)
 
-Start { kind: OperatorNameType }
-  Start { kind: QualifiedName }
-    Start { kind: Wrapped }
-      Token { kind: LeftParenthesis }
-      Start { kind: NameRef }
-        Token { kind: Operator }
+Start { kind: TypeOperatorChain }
+  Start { kind: ApplicationType }
+    Start { kind: OperatorNameType }
+      Start { kind: QualifiedName }
+        Start { kind: Wrapped }
+          Token { kind: LeftParenthesis }
+          Start { kind: NameRef }
+            Token { kind: Operator }
+          Finish
+          Token { kind: RightParenthesis }
+        Finish
       Finish
-      Token { kind: RightParenthesis }
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-

@@ -4,11 +4,16 @@ expression: result
 input_file: crates/parsing/src/grammar/inputs/passing/pattern/constructor-zero-arity.input
 ---
 Input: Nil
-Start { kind: ConstructorBinder }
-  Start { kind: QualifiedName }
-    Start { kind: NameRef }
-      Token { kind: Upper }
+Start { kind: BinderOperatorChain }
+  Start { kind: ConstructorBinder }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Start { kind: OneOrMore }
     Finish
   Finish
+  Start { kind: OneOrMore }
+  Finish
 Finish
-
