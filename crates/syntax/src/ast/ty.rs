@@ -6,6 +6,8 @@ use crate::SyntaxToken;
 
 use super::{Name, NameRef, OneOrMore, QualifiedName};
 
+_create_ast!(ForallVariables);
+
 _create_ast_v!(
     TypeVariableBinding,
     TypeVariableKinded(TypeVariableKinded),
@@ -92,14 +94,16 @@ impl ConstructorType {
 }
 
 impl ForallType {
-    pub fn variables(&self) -> Option<OneOrMore<TypeVariableBinding>> {
-        OneOrMore::cast(self.node.first_child()?)
+    pub fn variables(&self) -> Option<ForallVariables> {
+        ForallVariables::cast(self.node.first_child()?)
     }
 
     pub fn inner(&self) -> Option<Type> {
         Type::cast(self.node.last_child()?)
     }
 }
+
+_has_children!(ForallVariables<TypeVariableBinding>);
 
 impl ParenthesizedType {
     pub fn ty(&self) -> Option<Type> {

@@ -7,7 +7,7 @@ Input: forall (a :: Type). Type
 
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: OneOrMore }
+  Start { kind: ForallVariables }
     Start { kind: TypeVariableKinded }
       Token { kind: LeftParenthesis }
       Start { kind: Name }

@@ -7,7 +7,7 @@ Input: forall a (b :: C) @d (@e :: F). Type
 
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: OneOrMore }
+  Start { kind: ForallVariables }
     Start { kind: TypeVariableName }
       Start { kind: Name }
         Token { kind: Lower }

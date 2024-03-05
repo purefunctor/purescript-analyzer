@@ -138,6 +138,7 @@ pub enum SyntaxKind {
     RecordField,
 
     ForallType,
+    ForallVariables,
     TypeVariableKinded,
     TypeVariableName,
 

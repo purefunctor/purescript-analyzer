@@ -618,17 +618,24 @@ fn type_1(parser: &mut Parser) {
 fn type_forall(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::ForallKw);
-    one_or_more(parser, |parser| {
-        if parser.current().is_end() || parser.at(SyntaxKind::Period) {
+    forall_variables(parser);
+    parser.expect(SyntaxKind::Period);
+    type_1(parser);
+    marker.end(parser, SyntaxKind::ForallType);
+}
+
+fn forall_variables(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::Period) {
             false
         } else {
             type_variable_binding_with_visibility(parser);
             true
         }
     });
-    parser.expect(SyntaxKind::Period);
-    type_1(parser);
-    marker.end(parser, SyntaxKind::ForallType);
+    marker.end(parser, SyntaxKind::ForallVariables);
 }
 
 fn type_variable_binding_plain(parser: &mut Parser) {
