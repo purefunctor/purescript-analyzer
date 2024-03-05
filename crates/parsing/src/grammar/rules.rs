@@ -787,6 +787,7 @@ fn at_type_start(parser: &mut Parser) -> bool {
             | SyntaxKind::Minus
             | SyntaxKind::LeftParenthesis
             | SyntaxKind::LeftCurly
+            | SyntaxKind::Underscore
     )
 }
 
