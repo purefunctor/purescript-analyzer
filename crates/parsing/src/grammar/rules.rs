@@ -1167,32 +1167,45 @@ fn qualified_prefix(parser: &mut Parser) -> bool {
 // '[' rule (',' rule)* ']'
 fn array_container(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftSquare);
     if parser.at(SyntaxKind::RightSquare) {
         parser.expect(SyntaxKind::RightSquare);
     } else {
-        separated(parser, SyntaxKind::Comma, rule);
+        parser.separated(rule, |parser| {
+            let current = parser.current();
+            if current.is_end() || matches!(current, SyntaxKind::RightSquare) {
+                false
+            } else {
+                parser.expect(SyntaxKind::Comma)
+            }
+        });
         parser.expect(SyntaxKind::RightSquare);
     }
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::LiteralArray);
 }
 
 // '{' record_field_or_pun (',' record_field_or_pun)* '}'
 fn record_container(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftCurly);
     if parser.at(SyntaxKind::RightCurly) {
         parser.expect(SyntaxKind::RightCurly);
     } else {
-        separated(parser, SyntaxKind::Comma, |parser| {
-            record_field_or_pun(parser, pun_kind, &rule);
-        });
+        parser.separated(
+            |parser| {
+                record_field_or_pun(parser, pun_kind, &rule);
+            },
+            |parser| {
+                let current = parser.current();
+                if current.is_end() || matches!(current, SyntaxKind::RightSquare) {
+                    false
+                } else {
+                    parser.expect(SyntaxKind::Comma)
+                }
+            },
+        );
         parser.expect(SyntaxKind::RightCurly);
     }
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::LiteralRecord);
 }
 

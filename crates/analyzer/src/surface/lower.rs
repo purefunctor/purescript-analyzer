@@ -675,49 +675,31 @@ fn lower_literal<T, I>(
 where
     T: AstNode<Language = PureScript>,
 {
+    use rowan::ast::support;
+
     match literal {
         NodeOrToken::Node(n) => match n.kind() {
             SyntaxKind::LiteralArray => {
-                type Contents<T> = ast::Wrapped<ast::Separated<T>>;
-
-                let contents = n
-                    .first_child()
-                    .and_then(Contents::cast)
-                    .and_then(|wrapped| Some(wrapped.child()?.children()));
-
-                let contents = contents
-                    .map(|contents| {
-                        contents.map(|inner| lower_inner(ctx, db, Some(inner))).collect()
-                    })
-                    .unwrap_or_default();
+                let contents = support::children(&n)
+                    .map(|inner| lower_inner(ctx, db, Some(inner)))
+                    .collect_vec();
 
                 Literal::Array(contents)
             }
             SyntaxKind::LiteralRecord => {
-                type Contents = ast::Wrapped<ast::Separated<ast::RecordItem>>;
-
-                let contents = n
-                    .first_child()
-                    .and_then(Contents::cast)
-                    .and_then(|wrapped| Some(wrapped.child()?.children()));
-
-                let contents = contents
-                    .map(|contents| {
-                        contents
-                            .map(|item| match item {
-                                ast::RecordItem::RecordField(field) => {
-                                    let name = lower_name(db, field.name());
-                                    let value = lower_inner(ctx, db, field.value());
-                                    RecordItem::RecordField(name, value)
-                                }
-                                ast::RecordItem::RecordPun(pun) => {
-                                    let name = lower_name_ref(db, pun.name_ref());
-                                    RecordItem::RecordPun(name)
-                                }
-                            })
-                            .collect()
+                let contents = support::children(&n)
+                    .map(|item| match item {
+                        ast::RecordItem::RecordField(field) => {
+                            let name = lower_name(db, field.name());
+                            let value = lower_inner(ctx, db, field.value());
+                            RecordItem::RecordField(name, value)
+                        }
+                        ast::RecordItem::RecordPun(pun) => {
+                            let name = lower_name_ref(db, pun.name_ref());
+                            RecordItem::RecordPun(name)
+                        }
                     })
-                    .unwrap_or_default();
+                    .collect_vec();
 
                 Literal::Record(contents)
             }

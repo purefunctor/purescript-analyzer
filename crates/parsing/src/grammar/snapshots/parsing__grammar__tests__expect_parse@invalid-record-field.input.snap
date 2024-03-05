@@ -7,22 +7,18 @@ Input: { 1: "hello" }
 
 Start { kind: LiteralExpression }
   Start { kind: LiteralRecord }
-    Start { kind: Wrapped }
-      Token { kind: LeftCurly }
-      Start { kind: Separated }
-        Start { kind: RecordField }
-          Start { kind: Error }
-            Token { kind: LiteralInteger }
-            Error { message: "expected a label" }
-          Finish
-          Token { kind: Colon }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralString }
-          Finish
-        Finish
+    Token { kind: LeftCurly }
+    Start { kind: RecordField }
+      Start { kind: Error }
+        Token { kind: LiteralInteger }
+        Error { message: "expected a label" }
       Finish
-      Token { kind: RightCurly }
+      Token { kind: Colon }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralString }
+      Finish
     Finish
+    Error { message: "expected Comma" }
+    Token { kind: RightCurly }
   Finish
 Finish
-
