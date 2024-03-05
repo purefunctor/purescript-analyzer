@@ -13,30 +13,27 @@ Start { kind: RecordUpdateExpression }
       Finish
     Finish
   Finish
-  Start { kind: Wrapped }
+  Start { kind: RecordUpdateList }
     Token { kind: LeftCurly }
-    Start { kind: Separated }
-      Start { kind: RecordUpdateLeaf }
-        Start { kind: Name }
-          Token { kind: Label }
-        Finish
-        Token { kind: Equal }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
-        Finish
+    Start { kind: RecordUpdateLeaf }
+      Start { kind: Name }
+        Token { kind: Label }
       Finish
-      Token { kind: Comma }
-      Start { kind: RecordUpdateLeaf }
-        Start { kind: Name }
-          Token { kind: Label }
-        Finish
-        Token { kind: Equal }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
-        Finish
+      Token { kind: Equal }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Token { kind: Comma }
+    Start { kind: RecordUpdateLeaf }
+      Start { kind: Name }
+        Token { kind: Label }
+      Finish
+      Token { kind: Equal }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
       Finish
     Finish
     Token { kind: RightCurly }
   Finish
 Finish
-

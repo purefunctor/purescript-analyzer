@@ -7,19 +7,15 @@ Input: { "a" }
 
 Start { kind: LiteralExpression }
   Start { kind: LiteralRecord }
-    Start { kind: Wrapped }
-      Token { kind: LeftCurly }
-      Start { kind: Separated }
-        Start { kind: RecordField }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Error { message: "expected Colon" }
-          Error { message: "expected an expression" }
-        Finish
+    Token { kind: LeftCurly }
+    Start { kind: RecordField }
+      Start { kind: Name }
+        Token { kind: Label }
       Finish
-      Token { kind: RightCurly }
+      Error { message: "expected Colon" }
+      Error { message: "expected an expression" }
     Finish
+    Error { message: "expected Comma" }
+    Token { kind: RightCurly }
   Finish
 Finish
-

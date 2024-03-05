@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::{PureScript, SyntaxToken};
 
-use super::{Binder, LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
+use super::{BinderList, LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
 
 _create_ast_v!(
     Expression,
@@ -62,8 +62,8 @@ impl TypeArgument {
 }
 
 impl LambdaExpression {
-    pub fn binders(&self) -> Option<OneOrMore<Binder>> {
-        OneOrMore::cast(self.node.first_child()?)
+    pub fn binders(&self) -> Option<BinderList> {
+        BinderList::cast(self.node.first_child()?)
     }
 
     pub fn body(&self) -> Option<Expression> {

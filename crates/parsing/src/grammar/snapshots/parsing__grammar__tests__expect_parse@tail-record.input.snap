@@ -6,19 +6,16 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/tail-record.input
 Input: { | r }
 
 Start { kind: RecordType }
-  Start { kind: Wrapped }
-    Token { kind: LeftCurly }
-    Start { kind: RowInner }
-      Start { kind: RowTail }
-        Token { kind: Pipe }
-        Start { kind: VariableType }
-          Start { kind: NameRef }
-            Token { kind: Lower }
-          Finish
+  Token { kind: LeftCurly }
+  Start { kind: RowInner }
+    Start { kind: RowTail }
+      Token { kind: Pipe }
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
         Finish
       Finish
     Finish
-    Token { kind: RightCurly }
   Finish
+  Token { kind: RightCurly }
 Finish
-

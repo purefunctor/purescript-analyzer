@@ -7,26 +7,22 @@ Input: forall (@a :: Type). Type
 
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: OneOrMore }
+  Start { kind: ForallVariables }
     Start { kind: TypeVariableKinded }
-      Start { kind: Wrapped }
-        Token { kind: LeftParenthesis }
-        Start { kind: Labeled }
-          Token { kind: At }
-          Start { kind: Name }
-            Token { kind: Lower }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
+      Token { kind: LeftParenthesis }
+      Token { kind: At }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
+      Token { kind: Colon2 }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
-        Token { kind: RightParenthesis }
       Finish
+      Token { kind: RightParenthesis }
     Finish
   Finish
   Token { kind: Period }
@@ -38,4 +34,3 @@ Start { kind: ForallType }
     Finish
   Finish
 Finish
-

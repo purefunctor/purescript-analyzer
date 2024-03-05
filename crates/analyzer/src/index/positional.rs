@@ -46,7 +46,7 @@ pub(super) fn positional_map_query(db: &dyn IndexDatabase, file_id: FileId) -> A
 
     let node = db.parse_file(file_id);
     let declarations = ast::Source::<ast::Module>::cast(node)
-        .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
+        .and_then(|source| Some(source.child()?.body()?.children()));
 
     if let Some(declarations) = declarations {
         for declaration in declarations {

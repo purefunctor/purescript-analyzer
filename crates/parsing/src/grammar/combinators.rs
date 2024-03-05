@@ -19,16 +19,6 @@ pub(super) fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> boo
     at_least_one
 }
 
-pub(super) fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
-    let mut marker = parser.start();
-    loop {
-        if !rule(parser) {
-            break;
-        }
-    }
-    marker.end(parser, SyntaxKind::ZeroOrMore);
-}
-
 pub(super) fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -> bool {
     let mut save = parser.save();
     rule(parser);
@@ -38,38 +28,6 @@ pub(super) fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -
     } else {
         save.delete(parser);
         true
-    }
-}
-
-pub(super) fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl Fn(&mut Parser)) {
-    let mut marker = parser.start();
-
-    rule(parser);
-    loop {
-        if parser.at(separator) {
-            parser.consume();
-            rule(parser);
-        } else {
-            break;
-        }
-    }
-
-    marker.end(parser, SyntaxKind::Separated);
-}
-
-pub(super) fn separated_quiet(
-    parser: &mut Parser,
-    separator: SyntaxKind,
-    rule: impl Fn(&mut Parser),
-) {
-    rule(parser);
-    loop {
-        if parser.at(separator) {
-            parser.consume();
-            rule(parser);
-        } else {
-            break;
-        }
     }
 }
 

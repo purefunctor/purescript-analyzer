@@ -122,7 +122,9 @@ pub enum SyntaxKind {
     LiteralExpression,
     ParenthesizedExpression,
     RecordAccessExpression,
+    RecordAccessPath,
     RecordUpdateExpression,
+    RecordUpdateList,
     RecordUpdateLeaf,
     RecordUpdateBranch,
     TypedExpression,
@@ -140,6 +142,7 @@ pub enum SyntaxKind {
     RecordField,
 
     ForallType,
+    ForallVariables,
     TypeVariableKinded,
     TypeVariableName,
 
@@ -170,6 +173,7 @@ pub enum SyntaxKind {
     TypedBinder,
     VariableBinder,
     WildcardBinder,
+    BinderList,
 
     ValueEquationDeclaration,
     ValueAnnotationDeclaration,
@@ -186,8 +190,9 @@ pub enum SyntaxKind {
     NewtypeKw,
     ForallKw,
 
-    TypeDeclarationAnnotation,
+    TypeDeclarationSignature,
     TypeDeclaration,
+    SynonymVariables,
     TypeKw,
 
     ClassSignature,
@@ -205,6 +210,7 @@ pub enum SyntaxKind {
     InstanceChain,
     InstanceDeclaration,
     InstanceAssertions,
+    InstanceArguments,
     InstanceMemberSignature,
     InstanceMemberEquation,
     InstanceKw,
@@ -224,6 +230,7 @@ pub enum SyntaxKind {
     UnconditionalBinding,
     GuardedBinding,
     PatternGuard,
+    PatternGuardList,
     GuardedExpression,
 
     /// Convenience node for patterns such as `l: e` or `e :: T`.
@@ -234,8 +241,6 @@ pub enum SyntaxKind {
     Wrapped,
     /// Convenience node for a non-empty array of elements.
     OneOrMore,
-    /// Convenience node for an array of elements.
-    ZeroOrMore,
     /// Convenience node for a tuple of elements.
     Pair,
     /// Convenience node for patterns such as `a , b , c`

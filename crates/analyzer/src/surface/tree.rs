@@ -441,6 +441,10 @@ macro_rules! _surface_arena {
                     pub fn [<alloc_ $name>](&mut self, $name: $tree) -> [<$tree Id>] {
                         self.$name.alloc($name)
                     }
+
+                    pub fn [<iter_ $name>](&self) -> impl Iterator<Item = &$tree> {
+                        self.$name.iter().map(|(_, tree)| tree)
+                    }
                 )*
             }
 

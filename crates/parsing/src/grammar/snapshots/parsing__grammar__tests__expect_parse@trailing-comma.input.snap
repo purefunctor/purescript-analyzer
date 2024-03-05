@@ -7,17 +7,12 @@ Input: [ 1, ]
 
 Start { kind: LiteralExpression }
   Start { kind: LiteralArray }
-    Start { kind: Wrapped }
-      Token { kind: LeftSquare }
-      Start { kind: Separated }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
-        Finish
-        Token { kind: Comma }
-        Error { message: "expected an expression" }
-      Finish
-      Token { kind: RightSquare }
+    Token { kind: LeftSquare }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
     Finish
+    Token { kind: Comma }
+    Error { message: "expected an expression" }
+    Token { kind: RightSquare }
   Finish
 Finish
-

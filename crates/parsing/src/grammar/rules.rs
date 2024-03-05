@@ -2,9 +2,7 @@ use syntax::SyntaxKind;
 
 use crate::parser::{NodeMarker, Parser};
 
-use super::combinators::{
-    attempt, layout_one_or_more, one_or_more, separated, separated_quiet, zero_or_more,
-};
+use super::combinators::{attempt, layout_one_or_more, one_or_more};
 
 // expr_1 '::' type_0 | expr_1
 pub(super) fn expr_0(parser: &mut Parser) {
@@ -332,15 +330,7 @@ fn expr_let_binding_name(parser: &mut Parser) {
     let mut marker = parser.start();
 
     name(parser, SyntaxKind::Lower);
-    zero_or_more(parser, |parser| {
-        if at_pat_start(parser) {
-            pat_atom(parser);
-            true
-        } else {
-            false
-        }
-    });
-
+    pat_list(parser, pat_atom);
     expr_binding(parser, SyntaxKind::Equal);
 
     marker.end(parser, SyntaxKind::LetBindingName);
@@ -363,9 +353,9 @@ fn expr_binding(parser: &mut Parser, separator: SyntaxKind) {
         expr_where(parser);
         marker.end(parser, SyntaxKind::UnconditionalBinding);
     } else {
-        one_or_more(parser, |parser| {
-            // FIXME: is there an advantage if we use positives here?
-            if parser.current().is_end() || parser.at(separator) {
+        parser.repeat(|parser| {
+            let current = parser.current();
+            if current.is_end() || current == separator {
                 false
             } else {
                 expr_guarded(parser, separator);
@@ -391,10 +381,23 @@ fn expr_where(parser: &mut Parser) {
 fn expr_guarded(parser: &mut Parser, separator: SyntaxKind) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::Pipe);
-    separated(parser, SyntaxKind::Comma, pat_guard);
+    guard_list(parser, separator);
     parser.expect(separator);
     expr_where(parser);
     marker.end(parser, SyntaxKind::GuardedExpression);
+}
+
+fn guard_list(parser: &mut Parser, separator: SyntaxKind) {
+    let mut marker = parser.start();
+    parser.separated(pat_guard, |parser| {
+        let current = parser.current();
+        if current.is_end() || current == separator {
+            false
+        } else {
+            parser.expect(SyntaxKind::Comma)
+        }
+    });
+    marker.end(parser, SyntaxKind::PatternGuardList);
 }
 
 // (pat_0 '<-') expr_0
@@ -464,14 +467,7 @@ fn expr_ado(parser: &mut Parser, mut qualified: NodeMarker, mut expression: Node
 fn expr_lambda(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::Backslash);
-    one_or_more(parser, |parser| {
-        if at_pat_start(parser) {
-            pat_atom(parser);
-            true
-        } else {
-            false
-        }
-    });
+    pat_list(parser, pat_atom);
     parser.expect(SyntaxKind::RightArrow);
     expr_0(parser);
     marker.end(parser, SyntaxKind::LambdaExpression);
@@ -497,15 +493,26 @@ fn expr_6(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_7(parser);
     if at_record_update(parser) {
-        let mut wrapped = parser.start();
-        parser.expect(SyntaxKind::LeftCurly);
-        separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
-        parser.expect(SyntaxKind::RightCurly);
-        wrapped.end(parser, SyntaxKind::Wrapped);
+        record_update_list(parser);
         marker.end(parser, SyntaxKind::RecordUpdateExpression);
     } else {
         marker.cancel(parser);
     }
+}
+
+fn record_update_list(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::LeftCurly);
+    parser.separated(record_update_leaf_or_branch, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::RightCurly) {
+            false
+        } else {
+            parser.expect(SyntaxKind::Comma)
+        }
+    });
+    parser.expect(SyntaxKind::RightCurly);
+    marker.end(parser, SyntaxKind::RecordUpdateList);
 }
 
 fn record_update_leaf_or_branch(parser: &mut Parser) {
@@ -518,11 +525,7 @@ fn record_update_leaf_or_branch(parser: &mut Parser) {
             leaf_or_branch.end(parser, SyntaxKind::RecordUpdateLeaf);
         }
         SyntaxKind::LeftCurly => {
-            let mut wrapped = parser.start();
-            parser.consume();
-            separated(parser, SyntaxKind::Comma, record_update_leaf_or_branch);
-            parser.expect(SyntaxKind::RightCurly);
-            wrapped.end(parser, SyntaxKind::Wrapped);
+            record_update_list(parser);
             leaf_or_branch.end(parser, SyntaxKind::RecordUpdateBranch);
         }
         _ => parser.error_recover("expected '=' or '{'"),
@@ -533,12 +536,18 @@ fn expr_7(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_atom(parser);
     if parser.at(SyntaxKind::Period) {
-        parser.consume();
-        separated(parser, SyntaxKind::Period, label_name);
+        record_access_path(parser);
         marker.end(parser, SyntaxKind::RecordAccessExpression);
     } else {
         marker.cancel(parser);
     }
+}
+
+fn record_access_path(parser: &mut Parser<'_>) {
+    let mut marker = parser.start();
+    parser.expect(SyntaxKind::Period);
+    parser.separated(label_name, |parser| parser.eat(SyntaxKind::Period));
+    marker.end(parser, SyntaxKind::RecordAccessPath);
 }
 
 fn expr_atom(parser: &mut Parser) {
@@ -652,17 +661,24 @@ fn type_1(parser: &mut Parser) {
 fn type_forall(parser: &mut Parser) {
     let mut marker = parser.start();
     parser.expect(SyntaxKind::ForallKw);
-    one_or_more(parser, |parser| {
-        if parser.current().is_end() || parser.at(SyntaxKind::Period) {
+    forall_variables(parser);
+    parser.expect(SyntaxKind::Period);
+    type_1(parser);
+    marker.end(parser, SyntaxKind::ForallType);
+}
+
+fn forall_variables(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::Period) {
             false
         } else {
             type_variable_binding_with_visibility(parser);
             true
         }
     });
-    parser.expect(SyntaxKind::Period);
-    type_1(parser);
-    marker.end(parser, SyntaxKind::ForallType);
+    marker.end(parser, SyntaxKind::ForallVariables);
 }
 
 fn type_variable_binding_plain(parser: &mut Parser) {
@@ -692,15 +708,11 @@ fn type_variable_binding_with_visibility(parser: &mut Parser) {
 fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::LeftParenthesis) {
-        let mut wrapped = parser.start();
         parser.consume();
-        let mut kinded = parser.start();
         binding_name(parser);
         parser.expect(SyntaxKind::Colon2);
         type_1(parser);
-        kinded.end(parser, SyntaxKind::Labeled);
         parser.expect(SyntaxKind::RightParenthesis);
-        wrapped.end(parser, SyntaxKind::Wrapped);
         marker.end(parser, SyntaxKind::TypeVariableKinded);
     } else {
         binding_name(parser);
@@ -854,7 +866,6 @@ fn type_atom(parser: &mut Parser) {
 }
 
 fn type_record(parser: &mut Parser, mut ty: NodeMarker) {
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftCurly);
 
     let mut inner = parser.start();
@@ -868,14 +879,13 @@ fn type_record(parser: &mut Parser, mut ty: NodeMarker) {
         }
         // '{' ('label' '::' type_0)+? ('|' type_0?) '}'
         _ => {
-            separated(parser, SyntaxKind::Comma, row_field);
+            parser.separated(row_field, |parser| parser.eat(SyntaxKind::Comma));
             row_tail(parser);
         }
     }
 
     inner.end(parser, SyntaxKind::RowInner);
     parser.expect(SyntaxKind::RightCurly);
-    wrapped.end(parser, SyntaxKind::Wrapped);
     ty.end(parser, SyntaxKind::RecordType);
 }
 
@@ -892,12 +902,10 @@ fn qualified_name_or_row_or_parenthesized_type(
             ty.end(parser, SyntaxKind::ConstructorType);
         }
         SyntaxKind::LeftParenthesis => {
-            let mut wrapped = parser.start();
             parser.expect(SyntaxKind::LeftParenthesis);
 
             let mut operator_name_end = |parser: &mut Parser| {
                 parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.end(parser, SyntaxKind::Wrapped);
                 qualified.end(parser, SyntaxKind::QualifiedName);
                 ty.end(parser, SyntaxKind::OperatorNameType);
             };
@@ -914,7 +922,7 @@ fn qualified_name_or_row_or_parenthesized_type(
                 operator_name_end(parser);
             } else {
                 qualified.cancel(parser);
-                open_row_or_parenthesized_type(parser, wrapped, ty);
+                open_row_or_parenthesized_type(parser, ty);
             }
         }
         _ => {
@@ -924,16 +932,11 @@ fn qualified_name_or_row_or_parenthesized_type(
     }
 }
 
-fn open_row_or_parenthesized_type(
-    parser: &mut Parser,
-    mut wrapped: NodeMarker,
-    mut ty: NodeMarker,
-) {
+fn open_row_or_parenthesized_type(parser: &mut Parser, mut ty: NodeMarker) {
     let mut inner = parser.start();
     let mut row_type_end = |parser: &mut Parser| {
         inner.end(parser, SyntaxKind::RowInner);
         parser.expect(SyntaxKind::RightParenthesis);
-        wrapped.end(parser, SyntaxKind::Wrapped);
         ty.end(parser, SyntaxKind::RowType);
     };
     match parser.current() {
@@ -948,7 +951,7 @@ fn open_row_or_parenthesized_type(
         }
         // '(' ('label' '::' type_0)+? ('|' type_0?) ')'
         token if token.is_label() && parser.nth_at(1, SyntaxKind::Colon2) => {
-            separated(parser, SyntaxKind::Comma, row_field);
+            parser.separated(row_field, |parser| parser.eat(SyntaxKind::Comma));
             row_tail(parser);
             row_type_end(parser);
         }
@@ -956,7 +959,6 @@ fn open_row_or_parenthesized_type(
             type_0(parser);
             parser.expect(SyntaxKind::RightParenthesis);
             inner.cancel(parser);
-            wrapped.cancel(parser);
             ty.end(parser, SyntaxKind::ParenthesizedType);
         }
     }
@@ -1158,6 +1160,19 @@ fn pat_record(parser: &mut Parser) {
     record_container(parser, SyntaxKind::Name, pat_0)
 }
 
+fn pat_list(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        if at_pat_start(parser) {
+            rule(parser);
+            true
+        } else {
+            false
+        }
+    });
+    marker.end(parser, SyntaxKind::BinderList);
+}
+
 // ('upper' '.')+
 fn qualified_prefix(parser: &mut Parser) -> bool {
     let mut marker = parser.start();
@@ -1186,32 +1201,45 @@ fn qualified_prefix(parser: &mut Parser) -> bool {
 // '[' rule (',' rule)* ']'
 fn array_container(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftSquare);
     if parser.at(SyntaxKind::RightSquare) {
         parser.expect(SyntaxKind::RightSquare);
     } else {
-        separated(parser, SyntaxKind::Comma, rule);
+        parser.separated(rule, |parser| {
+            let current = parser.current();
+            if current.is_end() || matches!(current, SyntaxKind::RightSquare) {
+                false
+            } else {
+                parser.expect(SyntaxKind::Comma)
+            }
+        });
         parser.expect(SyntaxKind::RightSquare);
     }
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::LiteralArray);
 }
 
 // '{' record_field_or_pun (',' record_field_or_pun)* '}'
 fn record_container(parser: &mut Parser, pun_kind: SyntaxKind, rule: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftCurly);
     if parser.at(SyntaxKind::RightCurly) {
         parser.expect(SyntaxKind::RightCurly);
     } else {
-        separated(parser, SyntaxKind::Comma, |parser| {
-            record_field_or_pun(parser, pun_kind, &rule);
-        });
+        parser.separated(
+            |parser| {
+                record_field_or_pun(parser, pun_kind, &rule);
+            },
+            |parser| {
+                let current = parser.current();
+                if current.is_end() || matches!(current, SyntaxKind::RightSquare) {
+                    false
+                } else {
+                    parser.expect(SyntaxKind::Comma)
+                }
+            },
+        );
         parser.expect(SyntaxKind::RightCurly);
     }
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::LiteralRecord);
 }
 
@@ -1328,18 +1356,22 @@ fn module_name(parser: &mut Parser) {
 
 fn export_list(parser: &mut Parser) {
     let mut marker = parser.start();
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftParenthesis);
-    separated(parser, SyntaxKind::Comma, export_item);
+    parser.separated(export_item, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+            false
+        } else {
+            parser.expect(SyntaxKind::Comma)
+        }
+    });
     parser.expect(SyntaxKind::RightParenthesis);
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::ExportList);
 }
 
 fn data_members(parser: &mut Parser) {
     if parser.at(SyntaxKind::LeftParenthesis) {
         let mut data = parser.start();
-        let mut wrapped = parser.start();
         parser.consume();
         let kind = match parser.current() {
             SyntaxKind::RightParenthesis => {
@@ -1352,19 +1384,28 @@ fn data_members(parser: &mut Parser) {
                 SyntaxKind::DataAll
             }
             _ => {
-                separated(parser, SyntaxKind::Comma, |parser| {
-                    if parser.at(SyntaxKind::Upper) {
-                        name_ref(parser, SyntaxKind::Upper);
-                    } else {
-                        parser.error_recover("expected an Upper");
-                    }
-                });
+                parser.separated(
+                    |parser| {
+                        if parser.at(SyntaxKind::Upper) {
+                            name_ref(parser, SyntaxKind::Upper)
+                        } else {
+                            parser.error_recover("expected a constructor");
+                        }
+                    },
+                    |parser| {
+                        let current = parser.current();
+                        if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+                            false
+                        } else {
+                            parser.expect_recover(SyntaxKind::Comma)
+                        }
+                    },
+                );
                 parser.expect(SyntaxKind::RightParenthesis);
                 SyntaxKind::DataEnumerated
             }
         };
         data.end(parser, kind);
-        wrapped.end(parser, SyntaxKind::Wrapped)
     }
 }
 
@@ -1408,7 +1449,7 @@ fn export_item(parser: &mut Parser) {
 
 fn module_imports(parser: &mut Parser) {
     let mut marker = parser.start();
-    zero_or_more(parser, |parser| {
+    parser.repeat(|parser| {
         if !parser.at(SyntaxKind::ImportKw) {
             return false;
         }
@@ -1455,11 +1496,16 @@ fn import_list(parser: &mut Parser) {
     if parser.at(SyntaxKind::HidingKw) {
         parser.consume();
     }
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftParenthesis);
-    separated(parser, SyntaxKind::Comma, import_item);
+    parser.separated(import_item, |parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+            false
+        } else {
+            parser.expect_recover(SyntaxKind::Comma)
+        }
+    });
     parser.expect(SyntaxKind::RightParenthesis);
-    wrapped.end(parser, SyntaxKind::Wrapped);
     marker.end(parser, SyntaxKind::ImportList);
 }
 
@@ -1496,10 +1542,9 @@ fn import_item(parser: &mut Parser) {
     }
 }
 
-// FIXME: support all other declarations...
 fn module_body(parser: &mut Parser) {
     let mut marker = parser.start();
-    zero_or_more(parser, |parser| {
+    parser.repeat(|parser| {
         if parser.at(SyntaxKind::LayoutEnd) {
             return false;
         }
@@ -1517,10 +1562,7 @@ fn module_body(parser: &mut Parser) {
                 instance_chain_declaration(parser);
             }
             SyntaxKind::TypeKw => {
-                annotation_or_type_declaration(parser);
-            }
-            SyntaxKind::Lower => {
-                annotation_or_value_declaration(parser);
+                signature_or_type_declaration(parser);
             }
             _ => {
                 annotation_or_value_declaration(parser);
@@ -1554,14 +1596,7 @@ fn annotation_or_value_declaration(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::ValueAnnotationDeclaration);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_pat_start(parser) {
-                pat_atom(parser);
-                true
-            } else {
-                false
-            }
-        });
+        pat_list(parser, pat_atom);
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::ValueEquationDeclaration);
     }
@@ -1650,37 +1685,41 @@ fn constructor_fields(parser: &mut Parser) {
 }
 
 // 'type' Upper '::' type_0 | 'type' Upper manyOrEmpty(type_var_binding_plain) '=' type_0
-fn annotation_or_type_declaration(parser: &mut Parser) {
+fn signature_or_type_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
     parser.expect(SyntaxKind::TypeKw);
-    if matches!(parser.current(), SyntaxKind::Upper) {
+    if parser.at(SyntaxKind::Upper) {
         name(parser, SyntaxKind::Upper);
     } else {
         parser.error_recover("expected a name");
     }
 
-    if parser.at(SyntaxKind::Colon2) {
-        parser.consume();
+    if parser.eat(SyntaxKind::Colon2) {
         type_0(parser);
-        marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
+        marker.end(parser, SyntaxKind::TypeDeclarationSignature);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_type_var_binding_plain(parser) {
-                type_var_binding_plain(parser);
-                true
-            } else {
-                false
-            }
-        });
+        synonym_variables(parser);
 
-        if parser.at(SyntaxKind::Equal) {
-            parser.expect(SyntaxKind::Equal);
+        if parser.eat(SyntaxKind::Equal) {
             type_0(parser);
         }
 
         marker.end(parser, SyntaxKind::TypeDeclaration);
     }
+}
+
+fn synonym_variables(parser: &mut Parser) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        if at_type_variable_binding_start(parser) {
+            type_variable_binding_plain(parser);
+            true
+        } else {
+            false
+        }
+    });
+    marker.end(parser, SyntaxKind::SynonymVariables);
 }
 
 //   'foreign' 'import' 'lower' '::' type_0
@@ -1713,25 +1752,6 @@ fn foreign_import_declaration(parser: &mut Parser) {
                 .error_recover("expected either lower-case name or `data` for this foreign import");
         }
     }
-}
-
-fn at_type_var_binding_plain(parser: &mut Parser) -> bool {
-    parser.current().is_lower() || matches!(parser.current(), SyntaxKind::LeftParenthesis)
-}
-
-// Upper | '(' Upper '::' type_0 ')'
-fn type_var_binding_plain(parser: &mut Parser) {
-    let mut marker = parser.start();
-    if parser.current().is_lower() {
-        name(parser, SyntaxKind::Lower);
-    } else {
-        parser.expect(SyntaxKind::LeftParenthesis);
-        name(parser, SyntaxKind::Lower);
-        parser.expect(SyntaxKind::Colon2);
-        type_0(parser);
-        parser.expect(SyntaxKind::RightParenthesis);
-    }
-    marker.end(parser, SyntaxKind::TypeVariableName);
 }
 
 fn class_declaration(parser: &mut Parser) {
@@ -1908,14 +1928,7 @@ fn instance_declaration(parser: &mut Parser) {
     }
     qualified.end(parser, SyntaxKind::QualifiedName);
 
-    zero_or_more(parser, |parser| {
-        let current = parser.current();
-        if current.is_end() || matches!(current, SyntaxKind::WhereKw | SyntaxKind::ElseKw) {
-            return false;
-        }
-        type_atom(parser);
-        true
-    });
+    instance_arguments(parser);
 
     attempt(parser, |parser| {
         parser.expect(SyntaxKind::WhereKw);
@@ -1929,13 +1942,33 @@ fn instance_assertions(parser: &mut Parser) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::LeftParenthesis) {
         parser.expect(SyntaxKind::LeftParenthesis);
-        separated_quiet(parser, SyntaxKind::Comma, type_3);
+        parser.separated(type_3, |parser| {
+            let current = parser.current();
+            if current.is_end() || matches!(current, SyntaxKind::RightParenthesis) {
+                false
+            } else {
+                parser.expect(SyntaxKind::Comma)
+            }
+        });
         parser.expect(SyntaxKind::RightParenthesis);
     } else {
         type_5(parser);
     }
     parser.expect(SyntaxKind::RightThickArrow);
     marker.end(parser, SyntaxKind::InstanceAssertions);
+}
+
+fn instance_arguments(parser: &mut Parser<'_>) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::WhereKw | SyntaxKind::ElseKw) {
+            return false;
+        }
+        type_atom(parser);
+        true
+    });
+    marker.end(parser, SyntaxKind::InstanceArguments);
 }
 
 fn instance_member(parser: &mut Parser) {
@@ -1949,14 +1982,7 @@ fn instance_member(parser: &mut Parser) {
         type_0(parser);
         marker.end(parser, SyntaxKind::InstanceMemberSignature);
     } else {
-        zero_or_more(parser, |parser| {
-            if at_pat_start(parser) {
-                pat_atom(parser);
-                true
-            } else {
-                false
-            }
-        });
+        pat_list(parser, pat_atom);
         expr_binding(parser, SyntaxKind::Equal);
         marker.end(parser, SyntaxKind::InstanceMemberEquation);
     }

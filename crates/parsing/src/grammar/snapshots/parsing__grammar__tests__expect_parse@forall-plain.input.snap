@@ -7,7 +7,7 @@ Input: forall a. Type
 
 Start { kind: ForallType }
   Token { kind: ForallKw }
-  Start { kind: OneOrMore }
+  Start { kind: ForallVariables }
     Start { kind: TypeVariableName }
       Start { kind: Name }
         Token { kind: Lower }
@@ -23,4 +23,3 @@ Start { kind: ForallType }
     Finish
   Finish
 Finish
-

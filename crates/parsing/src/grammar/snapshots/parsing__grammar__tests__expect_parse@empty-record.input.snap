@@ -6,11 +6,8 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/empty-record.input
 Input: {}
 
 Start { kind: RecordType }
-  Start { kind: Wrapped }
-    Token { kind: LeftCurly }
-    Start { kind: RowInner }
-    Finish
-    Token { kind: RightCurly }
+  Token { kind: LeftCurly }
+  Start { kind: RowInner }
   Finish
+  Token { kind: RightCurly }
 Finish
-

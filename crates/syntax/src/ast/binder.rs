@@ -15,6 +15,10 @@ _create_ast_v!(
     WildcardBinder(WildcardBinder)
 );
 
+_create_ast!(BinderList);
+
+_has_children!(BinderList<Binder>);
+
 impl ConstructorBinder {
     pub fn qualified_name(&self) -> Option<QualifiedName> {
         QualifiedName::cast(self.node.first_child()?)

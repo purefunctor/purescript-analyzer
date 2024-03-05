@@ -7,89 +7,77 @@ Input: [ 1, 1.0, "hello", 'a', true, false, [], {}, { a, b: "c", "d": "e" } ]
 
 Start { kind: LiteralExpression }
   Start { kind: LiteralArray }
-    Start { kind: Wrapped }
-      Token { kind: LeftSquare }
-      Start { kind: Separated }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralNumber }
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralString }
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralChar }
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralTrue }
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralFalse }
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Start { kind: LiteralArray }
-            Start { kind: Wrapped }
-              Token { kind: LeftSquare }
-              Token { kind: RightSquare }
-            Finish
-          Finish
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Start { kind: LiteralRecord }
-            Start { kind: Wrapped }
-              Token { kind: LeftCurly }
-              Token { kind: RightCurly }
-            Finish
-          Finish
-        Finish
-        Token { kind: Comma }
-        Start { kind: LiteralExpression }
-          Start { kind: LiteralRecord }
-            Start { kind: Wrapped }
-              Token { kind: LeftCurly }
-              Start { kind: Separated }
-                Start { kind: RecordPun }
-                  Start { kind: NameRef }
-                    Token { kind: Label }
-                  Finish
-                Finish
-                Token { kind: Comma }
-                Start { kind: RecordField }
-                  Start { kind: Name }
-                    Token { kind: Label }
-                  Finish
-                  Token { kind: Colon }
-                  Start { kind: LiteralExpression }
-                    Token { kind: LiteralString }
-                  Finish
-                Finish
-                Token { kind: Comma }
-                Start { kind: RecordField }
-                  Start { kind: Name }
-                    Token { kind: Label }
-                  Finish
-                  Token { kind: Colon }
-                  Start { kind: LiteralExpression }
-                    Token { kind: LiteralString }
-                  Finish
-                Finish
-              Finish
-              Token { kind: RightCurly }
-            Finish
-          Finish
-        Finish
-      Finish
-      Token { kind: RightSquare }
+    Token { kind: LeftSquare }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
     Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralNumber }
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralString }
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralChar }
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralTrue }
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralFalse }
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Start { kind: LiteralArray }
+        Token { kind: LeftSquare }
+        Token { kind: RightSquare }
+      Finish
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Start { kind: LiteralRecord }
+        Token { kind: LeftCurly }
+        Token { kind: RightCurly }
+      Finish
+    Finish
+    Token { kind: Comma }
+    Start { kind: LiteralExpression }
+      Start { kind: LiteralRecord }
+        Token { kind: LeftCurly }
+        Start { kind: RecordPun }
+          Start { kind: NameRef }
+            Token { kind: Label }
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: RecordField }
+          Start { kind: Name }
+            Token { kind: Label }
+          Finish
+          Token { kind: Colon }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralString }
+          Finish
+        Finish
+        Token { kind: Comma }
+        Start { kind: RecordField }
+          Start { kind: Name }
+            Token { kind: Label }
+          Finish
+          Token { kind: Colon }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralString }
+          Finish
+        Finish
+        Error { message: "expected Comma" }
+        Token { kind: RightCurly }
+      Finish
+    Finish
+    Token { kind: RightSquare }
   Finish
 Finish
-

@@ -110,39 +110,34 @@ Start { kind: DoExpression }
     Start { kind: DoDiscard }
       Start { kind: LiteralExpression }
         Start { kind: LiteralArray }
-          Start { kind: Wrapped }
-            Token { kind: LeftSquare }
-            Start { kind: Separated }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
+          Token { kind: LeftSquare }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
               Finish
             Finish
-            Token { kind: RightSquare }
           Finish
+          Token { kind: Comma }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightSquare }
         Finish
       Finish
     Finish
   Finish
   Token { kind: LayoutEnd }
 Finish
-
