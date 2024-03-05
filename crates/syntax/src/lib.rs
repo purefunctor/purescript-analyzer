@@ -104,9 +104,10 @@ pub enum SyntaxKind {
     LetBindingPattern,
     WhereExpression,
 
-    CaseExpression,
     CaseKw,
     OfKw,
+    CaseBranch,
+    CaseExpression,
 
     ExpressionInfixChain,
     ExpressionOperatorChain,
@@ -116,6 +117,7 @@ pub enum SyntaxKind {
     OperatorNameExpression,
     VariableExpression,
 
+    SectionExpression,
     LambdaExpression,
     LiteralExpression,
     ParenthesizedExpression,

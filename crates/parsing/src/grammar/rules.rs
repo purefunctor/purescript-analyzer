@@ -252,8 +252,31 @@ fn expr_if(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::IfThenElseExpression);
 }
 
-fn expr_case(_: &mut Parser) {
-    todo!("case kw");
+// 'case' sep(expr_0, ',') 'of' '\{' sep(expr_case_branch, '\;') '\}'
+fn expr_case(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::CaseKw);
+    separated(parser, SyntaxKind::Comma, expr_0);
+    parser.expect(SyntaxKind::OfKw);
+
+    layout_one_or_more(parser, expr_case_branch);
+
+    marker.end(parser, SyntaxKind::CaseExpression);
+}
+
+fn expr_case_branch(parser: &mut Parser) {
+    let mut marker = parser.start();
+    separated(parser, SyntaxKind::Comma, pat_0);
+
+    if parser.current() == SyntaxKind::Pipe {
+        expr_guarded(parser, SyntaxKind::RightArrow);
+    } else {
+        parser.expect(SyntaxKind::RightArrow);
+        expr_where(parser);
+    }
+
+    marker.end(parser, SyntaxKind::CaseBranch);
 }
 
 // 'let' '{' (expr_let_binding ';')* expr_let_binding '}' 'in' expr_0
@@ -539,6 +562,13 @@ fn expr_atom(parser: &mut Parser) {
             expr_record(parser);
             return expression.end(parser, SyntaxKind::LiteralExpression);
         }
+        SyntaxKind::Underscore => {
+            parser.consume();
+            // It's called `ExprSection` in the purs compiler, and I just stole that name because I
+            // couldn't come up with anything that felt right. `ImplicitFunctionExpression`,
+            // `UnderscoreExpression`?
+            return expression.end(parser, SyntaxKind::SectionExpression);
+        }
         _ => (),
     }
 
@@ -756,6 +786,7 @@ fn at_type_start(parser: &mut Parser) -> bool {
             | SyntaxKind::LiteralInteger
             | SyntaxKind::Minus
             | SyntaxKind::LeftParenthesis
+            | SyntaxKind::LeftCurly
     )
 }
 
@@ -1659,16 +1690,29 @@ fn foreign_import_declaration(parser: &mut Parser) {
 
     parser.expect(SyntaxKind::ForeignKw);
     parser.expect(SyntaxKind::ImportKw);
-    parser.expect(SyntaxKind::DataKw);
-    if parser.at(SyntaxKind::Upper) {
-        name(parser, SyntaxKind::Upper);
-    } else {
-        parser.error_recover("expected an Upper");
+    match parser.current() {
+        SyntaxKind::DataKw => {
+            parser.consume();
+            if parser.at(SyntaxKind::Upper) {
+                name(parser, SyntaxKind::Upper);
+            } else {
+                parser.error_recover("expected an Upper");
+            }
+            parser.expect(SyntaxKind::Colon2);
+            type_0(parser);
+            marker.end(parser, SyntaxKind::ForeignDataDeclaration);
+        }
+        SyntaxKind::Lower => {
+            name(parser, SyntaxKind::Lower);
+            parser.expect(SyntaxKind::Colon2);
+            type_0(parser);
+            marker.end(parser, SyntaxKind::ForeignValueDeclaration);
+        }
+        _ => {
+            parser
+                .error_recover("expected either lower-case name or `data` for this foreign import");
+        }
     }
-    parser.expect(SyntaxKind::Colon2);
-    type_0(parser);
-
-    marker.end(parser, SyntaxKind::ForeignDataDeclaration);
 }
 
 fn at_type_var_binding_plain(parser: &mut Parser) -> bool {
