@@ -28,61 +28,49 @@ Start { kind: Module }
       Finish
       Start { kind: SynonymVariables }
         Start { kind: TypeVariableKinded }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Labeled }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-              Token { kind: Colon2 }
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
-                Finish
+          Token { kind: LeftParenthesis }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
               Finish
             Finish
-            Token { kind: RightParenthesis }
           Finish
+          Token { kind: RightParenthesis }
         Finish
         Start { kind: TypeVariableKinded }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Labeled }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-              Token { kind: Colon2 }
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
-                Finish
+          Token { kind: LeftParenthesis }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
               Finish
             Finish
-            Token { kind: RightParenthesis }
           Finish
+          Token { kind: RightParenthesis }
         Finish
         Start { kind: TypeVariableKinded }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: Labeled }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-              Token { kind: Colon2 }
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
-                Finish
+          Token { kind: LeftParenthesis }
+          Start { kind: Name }
+            Token { kind: Lower }
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
               Finish
             Finish
-            Token { kind: RightParenthesis }
           Finish
+          Token { kind: RightParenthesis }
         Finish
       Finish
       Token { kind: Equal }

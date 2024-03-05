@@ -658,15 +658,11 @@ fn type_variable_binding_with_visibility(parser: &mut Parser) {
 fn type_variable_binding(parser: &mut Parser, binding_name: impl Fn(&mut Parser)) {
     let mut marker = parser.start();
     if parser.at(SyntaxKind::LeftParenthesis) {
-        let mut wrapped = parser.start();
         parser.consume();
-        let mut kinded = parser.start();
         binding_name(parser);
         parser.expect(SyntaxKind::Colon2);
         type_1(parser);
-        kinded.end(parser, SyntaxKind::Labeled);
         parser.expect(SyntaxKind::RightParenthesis);
-        wrapped.end(parser, SyntaxKind::Wrapped);
         marker.end(parser, SyntaxKind::TypeVariableKinded);
     } else {
         binding_name(parser);
