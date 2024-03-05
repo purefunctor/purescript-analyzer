@@ -43,7 +43,7 @@ Start { kind: Module }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: InstanceArguments }
         Finish
       Finish
     Finish
@@ -60,7 +60,7 @@ Start { kind: Module }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: InstanceArguments }
         Finish
       Finish
     Finish
@@ -73,7 +73,7 @@ Start { kind: Module }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: InstanceArguments }
           Start { kind: VariableType }
             Start { kind: NameRef }
               Token { kind: Lower }
@@ -166,7 +166,7 @@ Start { kind: Module }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: InstanceArguments }
           Start { kind: VariableType }
             Start { kind: NameRef }
               Token { kind: Lower }
@@ -244,7 +244,7 @@ Start { kind: Module }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: InstanceArguments }
         Finish
       Finish
       Token { kind: ElseKw }
@@ -255,7 +255,7 @@ Start { kind: Module }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: ZeroOrMore }
+        Start { kind: InstanceArguments }
         Finish
       Finish
     Finish

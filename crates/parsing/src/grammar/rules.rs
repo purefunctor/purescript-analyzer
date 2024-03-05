@@ -2,7 +2,7 @@ use syntax::SyntaxKind;
 
 use crate::parser::{NodeMarker, Parser};
 
-use super::combinators::{attempt, layout_one_or_more, one_or_more, separated, zero_or_more};
+use super::combinators::{attempt, layout_one_or_more, one_or_more, separated};
 
 // expr_1 '::' type_0 | expr_1
 pub(super) fn expr_0(parser: &mut Parser) {
@@ -1868,14 +1868,7 @@ fn instance_declaration(parser: &mut Parser) {
     }
     qualified.end(parser, SyntaxKind::QualifiedName);
 
-    zero_or_more(parser, |parser| {
-        let current = parser.current();
-        if current.is_end() || matches!(current, SyntaxKind::WhereKw | SyntaxKind::ElseKw) {
-            return false;
-        }
-        type_atom(parser);
-        true
-    });
+    instance_arguments(parser);
 
     attempt(parser, |parser| {
         parser.expect(SyntaxKind::WhereKw);
@@ -1903,6 +1896,19 @@ fn instance_assertions(parser: &mut Parser) {
     }
     parser.expect(SyntaxKind::RightThickArrow);
     marker.end(parser, SyntaxKind::InstanceAssertions);
+}
+
+fn instance_arguments(parser: &mut Parser<'_>) {
+    let mut marker = parser.start();
+    parser.repeat(|parser| {
+        let current = parser.current();
+        if current.is_end() || matches!(current, SyntaxKind::WhereKw | SyntaxKind::ElseKw) {
+            return false;
+        }
+        type_atom(parser);
+        true
+    });
+    marker.end(parser, SyntaxKind::InstanceArguments);
 }
 
 fn instance_member(parser: &mut Parser) {

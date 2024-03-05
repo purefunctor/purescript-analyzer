@@ -19,16 +19,6 @@ pub(super) fn one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> boo
     at_least_one
 }
 
-pub(super) fn zero_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser) -> bool) {
-    let mut marker = parser.start();
-    loop {
-        if !rule(parser) {
-            break;
-        }
-    }
-    marker.end(parser, SyntaxKind::ZeroOrMore);
-}
-
 pub(super) fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -> bool {
     let mut save = parser.save();
     rule(parser);
