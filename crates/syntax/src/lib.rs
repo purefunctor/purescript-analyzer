@@ -290,6 +290,7 @@ impl SyntaxKind {
     }
 
     pub fn is_operator(&self) -> bool {
+        matches!(self, Self::Operator | Self::Minus | Self::Colon | Self::LeftThickArrow | Self::RightThickArrow)
     }
 
     pub fn is_reserved_operator(&self) -> bool {
