@@ -69,7 +69,7 @@ where
             }
         }
         Err(err) => {
-            writeln!(result, "{}", err.downcast_ref::<String>().unwrap_or(&"".to_string()))
+            writeln!(result, "{}", err.downcast_ref::<String>().unwrap_or(&"UNKNOWN ERROR".to_string()))
                 .unwrap();
         }
     }
