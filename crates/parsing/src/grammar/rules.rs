@@ -1518,6 +1518,9 @@ fn module_body(parser: &mut Parser) {
             SyntaxKind::InstanceKw => {
                 instance_chain_declaration(parser);
             }
+            SyntaxKind::DeriveKw => {
+                derive_declaration(parser);
+            }
             SyntaxKind::TypeKw => {
                 annotation_or_type_declaration(parser);
             }
@@ -1935,6 +1938,21 @@ fn class_members(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::ClassMembers);
 }
 
+fn derive_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::DeriveKw);
+    let end_kind = if parser.at(SyntaxKind::NewtypeKw) {
+        SyntaxKind::DeriveNewtypeDeclaration
+    } else {
+        SyntaxKind::DeriveInstanceDeclaration
+    };
+
+    instance_head(parser);
+
+    marker.end(parser, end_kind);
+}
+
 fn instance_chain_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
@@ -1950,9 +1968,7 @@ fn instance_chain_declaration(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::InstanceChain);
 }
 
-fn instance_declaration(parser: &mut Parser) {
-    let mut marker = parser.start();
-
+fn instance_head(parser: &mut Parser) {
     parser.expect(SyntaxKind::InstanceKw);
     if parser.current().is_lower() {
         name(parser, SyntaxKind::Lower);
@@ -1977,6 +1993,12 @@ fn instance_declaration(parser: &mut Parser) {
         type_atom(parser);
         true
     });
+}
+
+fn instance_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    instance_head(parser);
 
     attempt(parser, |parser| {
         parser.expect(SyntaxKind::WhereKw);

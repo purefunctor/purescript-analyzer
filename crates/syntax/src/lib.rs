@@ -215,6 +215,7 @@ pub enum SyntaxKind {
     InstanceMemberEquation,
     InstanceKw,
 
+    DeriveNewtypeDeclaration,
     DeriveInstanceDeclaration,
     DeriveKw,
 
