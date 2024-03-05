@@ -11,36 +11,66 @@ use crate::{
 
 fn expect_parse<F, T>(source: &str, rule: F)
 where
-    F: Fn(&mut Parser) -> T,
+    F: Fn(&mut Parser) -> T + std::panic::RefUnwindSafe,
 {
-    let lexed = lex(source);
-    let input = layout(&lexed);
-    let mut parser = Parser::new(&input);
-    let _ = rule(&mut parser);
+    let cloned_source = source.to_string();
+    let results_or_crash = std::panic::catch_unwind(|| {
+        let lexed = lex(&cloned_source);
+        let input = layout(&lexed);
+        let mut parser = Parser::new(&input);
+        rule(&mut parser);
+        parser.finalize()
+    });
 
     let mut result = String::new();
     writeln!(result, "Input: {source}").unwrap();
 
-    let mut indentation = 0;
-    for actual in parser.finalize() {
-        if let Event::Start { kind: SyntaxKind::Sentinel } = actual {
-            continue;
+    match results_or_crash {
+        Ok(events) => {
+            let mut indentation = 0;
+            for actual in events {
+                if let Event::Start { kind: SyntaxKind::Sentinel } = actual {
+                    continue;
+                }
+                match actual {
+                    Event::Start { .. } => {
+                        writeln!(
+                            result,
+                            "{:indentation$}{:?}",
+                            "",
+                            actual,
+                            indentation = indentation
+                        )
+                        .unwrap();
+                        indentation += 2
+                    }
+                    Event::Finish => {
+                        indentation -= 2;
+                        writeln!(
+                            result,
+                            "{:indentation$}{:?}",
+                            "",
+                            actual,
+                            indentation = indentation
+                        )
+                        .unwrap();
+                    }
+                    _ => {
+                        writeln!(
+                            result,
+                            "{:indentation$}{:?}",
+                            "",
+                            actual,
+                            indentation = indentation
+                        )
+                        .unwrap();
+                    }
+                }
+            }
         }
-        match actual {
-            Event::Start { .. } => {
-                writeln!(result, "{:indentation$}{:?}", "", actual, indentation = indentation)
-                    .unwrap();
-                indentation += 2
-            }
-            Event::Finish => {
-                indentation -= 2;
-                writeln!(result, "{:indentation$}{:?}", "", actual, indentation = indentation)
-                    .unwrap();
-            }
-            _ => {
-                writeln!(result, "{:indentation$}{:?}", "", actual, indentation = indentation)
-                    .unwrap();
-            }
+        Err(err) => {
+            writeln!(result, "{}", err.downcast_ref::<String>().unwrap_or(&"".to_string()))
+                .unwrap();
         }
     }
 
