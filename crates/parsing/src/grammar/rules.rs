@@ -835,7 +835,6 @@ fn type_atom(parser: &mut Parser) {
 }
 
 fn type_record(parser: &mut Parser, mut ty: NodeMarker) {
-    let mut wrapped = parser.start();
     parser.expect(SyntaxKind::LeftCurly);
 
     let mut inner = parser.start();
@@ -849,14 +848,13 @@ fn type_record(parser: &mut Parser, mut ty: NodeMarker) {
         }
         // '{' ('label' '::' type_0)+? ('|' type_0?) '}'
         _ => {
-            separated(parser, SyntaxKind::Comma, row_field);
+            parser.separated(row_field, |parser| parser.eat(SyntaxKind::Comma));
             row_tail(parser);
         }
     }
 
     inner.end(parser, SyntaxKind::RowInner);
     parser.expect(SyntaxKind::RightCurly);
-    wrapped.end(parser, SyntaxKind::Wrapped);
     ty.end(parser, SyntaxKind::RecordType);
 }
 
