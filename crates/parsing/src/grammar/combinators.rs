@@ -31,22 +31,6 @@ pub(super) fn attempt<T>(parser: &mut Parser, rule: impl Fn(&mut Parser) -> T) -
     }
 }
 
-pub(super) fn separated(parser: &mut Parser, separator: SyntaxKind, rule: impl Fn(&mut Parser)) {
-    let mut marker = parser.start();
-
-    rule(parser);
-    loop {
-        if parser.at(separator) {
-            parser.consume();
-            rule(parser);
-        } else {
-            break;
-        }
-    }
-
-    marker.end(parser, SyntaxKind::Separated);
-}
-
 pub(super) fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)) {
     if !parser.expect(SyntaxKind::LayoutStart) {
         return;

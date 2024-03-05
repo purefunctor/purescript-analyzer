@@ -2,7 +2,7 @@ use syntax::SyntaxKind;
 
 use crate::parser::{NodeMarker, Parser};
 
-use super::combinators::{attempt, layout_one_or_more, one_or_more, separated};
+use super::combinators::{attempt, layout_one_or_more, one_or_more};
 
 // expr_1 '::' type_0 | expr_1
 pub(super) fn expr_0(parser: &mut Parser) {
@@ -871,12 +871,10 @@ fn qualified_name_or_row_or_parenthesized_type(
             ty.end(parser, SyntaxKind::ConstructorType);
         }
         SyntaxKind::LeftParenthesis => {
-            let mut wrapped = parser.start();
             parser.expect(SyntaxKind::LeftParenthesis);
 
             let mut operator_name_end = |parser: &mut Parser| {
                 parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.end(parser, SyntaxKind::Wrapped);
                 qualified.end(parser, SyntaxKind::QualifiedName);
                 ty.end(parser, SyntaxKind::OperatorNameType);
             };
@@ -893,7 +891,7 @@ fn qualified_name_or_row_or_parenthesized_type(
                 operator_name_end(parser);
             } else {
                 qualified.cancel(parser);
-                open_row_or_parenthesized_type(parser, wrapped, ty);
+                open_row_or_parenthesized_type(parser, ty);
             }
         }
         _ => {
@@ -903,16 +901,11 @@ fn qualified_name_or_row_or_parenthesized_type(
     }
 }
 
-fn open_row_or_parenthesized_type(
-    parser: &mut Parser,
-    mut wrapped: NodeMarker,
-    mut ty: NodeMarker,
-) {
+fn open_row_or_parenthesized_type(parser: &mut Parser, mut ty: NodeMarker) {
     let mut inner = parser.start();
     let mut row_type_end = |parser: &mut Parser| {
         inner.end(parser, SyntaxKind::RowInner);
         parser.expect(SyntaxKind::RightParenthesis);
-        wrapped.end(parser, SyntaxKind::Wrapped);
         ty.end(parser, SyntaxKind::RowType);
     };
     match parser.current() {
@@ -927,7 +920,7 @@ fn open_row_or_parenthesized_type(
         }
         // '(' ('label' '::' type_0)+? ('|' type_0?) ')'
         token if token.is_label() && parser.nth_at(1, SyntaxKind::Colon2) => {
-            separated(parser, SyntaxKind::Comma, row_field);
+            parser.separated(row_field, |parser| parser.eat(SyntaxKind::Comma));
             row_tail(parser);
             row_type_end(parser);
         }
@@ -935,7 +928,6 @@ fn open_row_or_parenthesized_type(
             type_0(parser);
             parser.expect(SyntaxKind::RightParenthesis);
             inner.cancel(parser);
-            wrapped.cancel(parser);
             ty.end(parser, SyntaxKind::ParenthesizedType);
         }
     }
