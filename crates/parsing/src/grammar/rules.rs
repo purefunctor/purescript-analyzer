@@ -1654,33 +1654,53 @@ fn annotation_or_type_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
     parser.expect(SyntaxKind::TypeKw);
-    if matches!(parser.current(), SyntaxKind::Upper) {
-        name(parser, SyntaxKind::Upper);
-    } else {
-        parser.error_recover("expected a name");
-    }
-
-    if parser.at(SyntaxKind::Colon2) {
-        parser.consume();
-        type_0(parser);
-        marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
-    } else {
-        zero_or_more(parser, |parser| {
-            if at_type_var_binding_plain(parser) {
-                type_var_binding_plain(parser);
-                true
+    match parser.current() {
+        SyntaxKind::Upper => {
+            name(parser, SyntaxKind::Upper);
+            if parser.at(SyntaxKind::Colon2) {
+                parser.consume();
+                type_0(parser);
+                marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
             } else {
-                false
+                zero_or_more(parser, |parser| {
+                    if at_type_var_binding_plain(parser) {
+                        type_var_binding_plain(parser);
+                        true
+                    } else {
+                        false
+                    }
+                });
+
+                if parser.at(SyntaxKind::Equal) {
+                    parser.expect(SyntaxKind::Equal);
+                    type_0(parser);
+                }
+
+                marker.end(parser, SyntaxKind::TypeDeclaration);
             }
-        });
-
-        if parser.at(SyntaxKind::Equal) {
-            parser.expect(SyntaxKind::Equal);
-            type_0(parser);
         }
-
-        marker.end(parser, SyntaxKind::TypeDeclaration);
+        SyntaxKind::RoleKw => {
+            parser.consume();
+            name(parser, SyntaxKind::Upper);
+            loop {
+                if !is_role_kind(parser) {
+                    break;
+                }
+                parser.consume()
+            }
+            marker.end(parser, SyntaxKind::TypeDeclarationRole);
+        }
+        _ => {
+            parser.error_recover("expected type statement");
+        }
     }
+}
+
+fn is_role_kind(parser: &mut Parser) -> bool {
+    matches!(
+        parser.current(),
+        SyntaxKind::NominalKw | SyntaxKind::RepresentationalKw | SyntaxKind::PhantomKw
+    )
 }
 
 //   'foreign' 'import' 'lower' '::' type_0

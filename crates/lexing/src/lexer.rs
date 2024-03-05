@@ -165,6 +165,10 @@ impl<'a> Lexer<'a> {
             "true" => SyntaxKind::LiteralTrue,
             "type" => SyntaxKind::TypeKw,
             "where" => SyntaxKind::WhereKw,
+            "role" => SyntaxKind::RoleKw,
+            "nominal" => SyntaxKind::NominalKw,
+            "representational" => SyntaxKind::RepresentationalKw,
+            "phantom" => SyntaxKind::PhantomKw,
             _ => SyntaxKind::Lower,
         };
         self.lexed.push(kind, position, None)

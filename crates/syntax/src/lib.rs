@@ -187,8 +187,13 @@ pub enum SyntaxKind {
     ForallKw,
 
     TypeDeclarationAnnotation,
+    TypeDeclarationRole,
     TypeDeclaration,
     TypeKw,
+    RoleKw,
+    NominalKw,
+    RepresentationalKw,
+    PhantomKw,
 
     ClassSignature,
     ClassDeclaration,
@@ -285,7 +290,6 @@ impl SyntaxKind {
     }
 
     pub fn is_operator(&self) -> bool {
-        matches!(self, Self::Operator | Self::Minus | Self::Colon)
     }
 
     pub fn is_reserved_operator(&self) -> bool {
