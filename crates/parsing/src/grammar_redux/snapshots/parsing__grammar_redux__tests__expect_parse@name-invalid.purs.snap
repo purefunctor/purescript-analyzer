@@ -1,0 +1,24 @@
+---
+source: crates/parsing/src/grammar_redux/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar_redux/inputs/module/name-invalid.purs
+---
+Input: module invalid.header where
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Error }
+        Token { kind: Lower }
+        Error { message: "expected a module name" }
+      Finish
+      Token { kind: Period }
+      Start { kind: Error }
+        Token { kind: Lower }
+        Error { message: "expected a module name" }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+Finish

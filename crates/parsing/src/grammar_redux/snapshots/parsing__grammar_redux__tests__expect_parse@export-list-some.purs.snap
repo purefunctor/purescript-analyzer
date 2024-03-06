@@ -1,0 +1,25 @@
+---
+source: crates/parsing/src/grammar_redux/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar_redux/inputs/module/export-list-some.purs
+---
+Input: module Main (value) where
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Start { kind: ExportList }
+      Token { kind: LeftParenthesis }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
+      Token { kind: RightParenthesis }
+    Finish
+    Token { kind: WhereKw }
+  Finish
+Finish

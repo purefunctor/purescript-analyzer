@@ -1,0 +1,22 @@
+---
+source: crates/parsing/src/grammar_redux/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar_redux/inputs/module/name-simple.purs
+---
+Input: module Module.Header where
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+Finish

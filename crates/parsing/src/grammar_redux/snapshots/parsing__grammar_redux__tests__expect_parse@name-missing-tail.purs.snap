@@ -1,0 +1,20 @@
+---
+source: crates/parsing/src/grammar_redux/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar_redux/inputs/module/name-missing-tail.purs
+---
+Input: module Main. where
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Period }
+      Error { message: "expected a module name" }
+    Finish
+    Token { kind: WhereKw }
+  Finish
+Finish

@@ -1,6 +1,7 @@
 mod builder;
 pub mod error;
 mod grammar;
+mod grammar_redux;
 mod parser;
 
 use builder::Builder;
