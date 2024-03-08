@@ -18,8 +18,7 @@ Start { kind: OperatorNameExpression }
       Start { kind: NameRef }
         Token { kind: Operator }
       Finish
-      Error { message: "expected RightParenthesis" }
+      Error { message: "expected RightParenthesis, but got EndOfFile" }
     Finish
   Finish
 Finish
-

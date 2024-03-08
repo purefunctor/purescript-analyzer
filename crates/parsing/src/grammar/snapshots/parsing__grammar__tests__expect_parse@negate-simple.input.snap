@@ -15,4 +15,3 @@ Start { kind: NegateExpression }
     Token { kind: LiteralInteger }
   Finish
 Finish
-

@@ -7,4 +7,3 @@ Input: _
 Start { kind: WildcardBinder }
   Token { kind: Underscore }
 Finish
-

@@ -14,4 +14,3 @@ Start { kind: ParenthesizedBinder }
   Finish
   Token { kind: RightParenthesis }
 Finish
-

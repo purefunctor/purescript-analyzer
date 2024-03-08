@@ -39,4 +39,3 @@ Start { kind: RecordUpdateExpression }
     Token { kind: RightCurly }
   Finish
 Finish
-

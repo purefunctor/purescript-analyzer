@@ -50,4 +50,3 @@ Start { kind: RecordType }
     Token { kind: RightCurly }
   Finish
 Finish
-

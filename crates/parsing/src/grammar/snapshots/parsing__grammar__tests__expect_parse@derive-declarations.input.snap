@@ -1,0 +1,186 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+input_file: crates/parsing/src/grammar/inputs/passing/file/derive-declarations.input
+---
+Input: module A where
+
+derive instance Eq A
+derive instance Eq A B C
+derive instance Eq A _
+
+derive newtype instance Eq A
+derive newtype instance Eq A B C
+derive newtype instance Eq A _
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+    Start { kind: ZeroOrMore }
+    Finish
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ZeroOrMore }
+      Start { kind: DeriveInstanceDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveInstanceDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveInstanceDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: WildcardType }
+            Token { kind: Underscore }
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveNewtypeDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: NewtypeKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveNewtypeDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: NewtypeKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: LayoutSep }
+      Start { kind: DeriveNewtypeDeclaration }
+        Token { kind: DeriveKw }
+        Token { kind: NewtypeKw }
+        Token { kind: InstanceKw }
+        Start { kind: QualifiedName }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+        Finish
+        Start { kind: ZeroOrMore }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+          Start { kind: WildcardType }
+            Token { kind: Underscore }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish

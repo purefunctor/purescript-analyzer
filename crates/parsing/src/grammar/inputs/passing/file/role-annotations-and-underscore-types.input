@@ -1,0 +1,8 @@
+module A where
+
+newtype A a b c = c  
+
+type rule A nominal phantom representational
+
+t :: A _ _ _
+t = A 1

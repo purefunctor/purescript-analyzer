@@ -28,4 +28,3 @@ Start { kind: ParenthesizedType }
   Finish
   Token { kind: RightParenthesis }
 Finish
-

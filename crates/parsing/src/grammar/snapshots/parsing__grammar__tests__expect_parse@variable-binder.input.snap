@@ -9,4 +9,3 @@ Start { kind: VariableBinder }
     Token { kind: Lower }
   Finish
 Finish
-

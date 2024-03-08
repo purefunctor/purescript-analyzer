@@ -7,4 +7,3 @@ Input: false
 Start { kind: LiteralBinder }
   Token { kind: LiteralFalse }
 Finish
-

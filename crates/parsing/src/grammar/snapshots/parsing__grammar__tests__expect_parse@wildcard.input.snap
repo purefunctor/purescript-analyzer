@@ -14,4 +14,3 @@ Start { kind: ArrowType }
     Token { kind: Underscore }
   Finish
 Finish
-

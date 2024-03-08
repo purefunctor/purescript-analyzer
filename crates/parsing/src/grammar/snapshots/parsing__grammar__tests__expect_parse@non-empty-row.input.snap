@@ -42,4 +42,3 @@ Start { kind: RowType }
     Token { kind: RightParenthesis }
   Finish
 Finish
-

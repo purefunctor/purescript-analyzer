@@ -363,6 +363,7 @@ fn expr_binding(parser: &mut Parser, separator: SyntaxKind) {
         expr_where(parser);
         marker.end(parser, SyntaxKind::UnconditionalBinding);
     } else {
+        // NOTE[et]: We get an infinet loop here since `expr_guarded` needs to beable to match an empty expression, so we just abort this loop if we have looped. It's a crude solution but it works to eliminate infinet loops in the parser. This logic lies inside the `one_or_more` parser
         one_or_more(parser, |parser| {
             // FIXME: is there an advantage if we use positives here?
             if parser.current().is_end() || parser.at(separator) {
@@ -787,6 +788,7 @@ fn at_type_start(parser: &mut Parser) -> bool {
             | SyntaxKind::Minus
             | SyntaxKind::LeftParenthesis
             | SyntaxKind::LeftCurly
+            | SyntaxKind::Underscore
     )
 }
 
@@ -1516,8 +1518,14 @@ fn module_body(parser: &mut Parser) {
             SyntaxKind::InstanceKw => {
                 instance_chain_declaration(parser);
             }
+            SyntaxKind::DeriveKw => {
+                derive_declaration(parser);
+            }
             SyntaxKind::TypeKw => {
                 annotation_or_type_declaration(parser);
+            }
+            SyntaxKind::NewtypeKw => {
+                annotation_or_newtype_declaration(parser);
             }
             SyntaxKind::Lower => {
                 annotation_or_value_declaration(parser);
@@ -1654,32 +1662,88 @@ fn annotation_or_type_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
     parser.expect(SyntaxKind::TypeKw);
-    if matches!(parser.current(), SyntaxKind::Upper) {
-        name(parser, SyntaxKind::Upper);
-    } else {
-        parser.error_recover("expected a name");
-    }
-
-    if parser.at(SyntaxKind::Colon2) {
-        parser.consume();
-        type_0(parser);
-        marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
-    } else {
-        zero_or_more(parser, |parser| {
-            if at_type_var_binding_plain(parser) {
-                type_var_binding_plain(parser);
-                true
+    match parser.current() {
+        SyntaxKind::Upper => {
+            name(parser, SyntaxKind::Upper);
+            if parser.at(SyntaxKind::Colon2) {
+                parser.consume();
+                type_0(parser);
+                marker.end(parser, SyntaxKind::TypeDeclarationAnnotation);
             } else {
-                false
+                zero_or_more(parser, |parser| {
+                    if at_type_var_binding_plain(parser) {
+                        type_var_binding_plain(parser);
+                        true
+                    } else {
+                        false
+                    }
+                });
+
+                if parser.at(SyntaxKind::Equal) {
+                    parser.expect(SyntaxKind::Equal);
+                    type_0(parser);
+                }
+
+                marker.end(parser, SyntaxKind::TypeDeclaration);
             }
-        });
-
-        if parser.at(SyntaxKind::Equal) {
-            parser.expect(SyntaxKind::Equal);
-            type_0(parser);
         }
+        SyntaxKind::RoleKw => {
+            parser.consume();
+            name(parser, SyntaxKind::Upper);
+            loop {
+                if !is_role_kind(parser) {
+                    break;
+                }
+                parser.consume()
+            }
+            marker.end(parser, SyntaxKind::TypeDeclarationRole);
+        }
+        _ => {
+            parser.error_recover("expected type declaration");
+        }
+    }
+}
 
-        marker.end(parser, SyntaxKind::TypeDeclaration);
+fn is_role_kind(parser: &mut Parser) -> bool {
+    matches!(
+        parser.current(),
+        SyntaxKind::NominalKw | SyntaxKind::RepresentationalKw | SyntaxKind::PhantomKw
+    )
+}
+
+// 'newtype' Upper '::' type_0 | 'newtype' Upper manyOrEmpty(type_var_binding_plain) '=' type_0
+fn annotation_or_newtype_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::NewtypeKw);
+    match parser.current() {
+        SyntaxKind::Upper => {
+            name(parser, SyntaxKind::Upper);
+            if parser.at(SyntaxKind::Colon2) {
+                parser.consume();
+                type_0(parser);
+                marker.end(parser, SyntaxKind::NewtypeDeclarationAnnotation);
+            } else {
+                zero_or_more(parser, |parser| {
+                    if at_type_var_binding_plain(parser) {
+                        type_var_binding_plain(parser);
+                        true
+                    } else {
+                        false
+                    }
+                });
+
+                if parser.at(SyntaxKind::Equal) {
+                    parser.expect(SyntaxKind::Equal);
+                    type_0(parser);
+                }
+
+                marker.end(parser, SyntaxKind::NewtypeDeclaration);
+            }
+        }
+        _ => {
+            parser.error_recover("expected newtype declaration");
+        }
     }
 }
 
@@ -1874,6 +1938,22 @@ fn class_members(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::ClassMembers);
 }
 
+fn derive_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    parser.expect(SyntaxKind::DeriveKw);
+    let end_kind = if parser.at(SyntaxKind::NewtypeKw) {
+        parser.consume();
+        SyntaxKind::DeriveNewtypeDeclaration
+    } else {
+        SyntaxKind::DeriveInstanceDeclaration
+    };
+
+    instance_head(parser);
+
+    marker.end(parser, end_kind);
+}
+
 fn instance_chain_declaration(parser: &mut Parser) {
     let mut marker = parser.start();
 
@@ -1889,9 +1969,7 @@ fn instance_chain_declaration(parser: &mut Parser) {
     marker.end(parser, SyntaxKind::InstanceChain);
 }
 
-fn instance_declaration(parser: &mut Parser) {
-    let mut marker = parser.start();
-
+fn instance_head(parser: &mut Parser) {
     parser.expect(SyntaxKind::InstanceKw);
     if parser.current().is_lower() {
         name(parser, SyntaxKind::Lower);
@@ -1916,6 +1994,12 @@ fn instance_declaration(parser: &mut Parser) {
         type_atom(parser);
         true
     });
+}
+
+fn instance_declaration(parser: &mut Parser) {
+    let mut marker = parser.start();
+
+    instance_head(parser);
 
     attempt(parser, |parser| {
         parser.expect(SyntaxKind::WhereKw);

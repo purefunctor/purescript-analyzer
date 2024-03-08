@@ -7,4 +7,3 @@ Input: 'a'
 Start { kind: LiteralBinder }
   Token { kind: LiteralChar }
 Finish
-

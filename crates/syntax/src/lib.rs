@@ -182,13 +182,19 @@ pub enum SyntaxKind {
     ConstructorFields,
     DataKw,
 
+    NewtypeDeclarationAnnotation,
     NewtypeDeclaration,
     NewtypeKw,
     ForallKw,
 
     TypeDeclarationAnnotation,
+    TypeDeclarationRole,
     TypeDeclaration,
     TypeKw,
+    RoleKw,
+    NominalKw,
+    RepresentationalKw,
+    PhantomKw,
 
     ClassSignature,
     ClassDeclaration,
@@ -209,6 +215,7 @@ pub enum SyntaxKind {
     InstanceMemberEquation,
     InstanceKw,
 
+    DeriveNewtypeDeclaration,
     DeriveInstanceDeclaration,
     DeriveKw,
 
@@ -285,7 +292,7 @@ impl SyntaxKind {
     }
 
     pub fn is_operator(&self) -> bool {
-        matches!(self, Self::Operator | Self::Minus | Self::Colon)
+        matches!(self, Self::Operator | Self::Minus | Self::Colon | Self::LeftThickArrow)
     }
 
     pub fn is_reserved_operator(&self) -> bool {

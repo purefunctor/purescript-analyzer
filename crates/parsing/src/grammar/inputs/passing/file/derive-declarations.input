@@ -1,0 +1,9 @@
+module A where
+
+derive instance Eq A
+derive instance Eq A B C
+derive instance Eq A _
+
+derive newtype instance Eq A
+derive newtype instance Eq A B C
+derive newtype instance Eq A _

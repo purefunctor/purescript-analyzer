@@ -7,4 +7,3 @@ Input: "hi!"
 Start { kind: LiteralBinder }
   Token { kind: LiteralString }
 Finish
-

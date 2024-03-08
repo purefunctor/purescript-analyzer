@@ -56,7 +56,11 @@ impl<'a> Parser<'a> {
     pub(crate) fn nth(&self, offset: usize) -> SyntaxKind {
         let steps = self.steps.get();
         if steps > PARSER_LIMIT {
-            panic!("infinite loop in parser");
+            let backtrace = std::backtrace::Backtrace::force_capture();
+            let mut output = Vec::new();
+            output.push(format!("{}", backtrace));
+            output.push("infinite loop in parser".to_string());
+            panic!("{}", output.join("\n"));
         }
         self.steps.set(steps + 1);
         self.input.get(self.index + offset).cloned().unwrap_or(SyntaxKind::EndOfFile)
@@ -64,6 +68,10 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn nth_at(&self, offset: usize, kind: SyntaxKind) -> bool {
         self.nth(offset) == kind
+    }
+
+    pub(crate) fn index(&self) -> usize {
+        self.index
     }
 
     pub(crate) fn current(&self) -> SyntaxKind {
@@ -109,7 +117,8 @@ impl<'a> Parser<'a> {
         if self.eat(kind) {
             return true;
         }
-        self.error(format!("expected {kind:?}"));
+        let current = self.current();
+        self.error(format!("expected {kind:?}, but got {current:?}"));
         false
     }
 
@@ -124,7 +133,7 @@ impl<'a> Parser<'a> {
     pub(crate) fn start(&mut self) -> NodeMarker {
         let index = self.output.len();
         self.output.push(Event::Start { kind: SyntaxKind::Sentinel });
-        NodeMarker::new(index)
+        NodeMarker::new(index, self.current(), self.index())
     }
 
     pub(crate) fn save(&mut self) -> SaveMarker {
@@ -167,8 +176,8 @@ pub struct NodeMarker {
 }
 
 impl NodeMarker {
-    pub(crate) fn new(index: usize) -> NodeMarker {
-        let bomb = DropBomb::new("failed to call end or cancel");
+    pub(crate) fn new(index: usize, token: SyntaxKind, offset: usize) -> NodeMarker {
+        let bomb = DropBomb::new(format!("failed to call end or cancel - started {:?} {:?}", token, offset));
         NodeMarker { index, bomb }
     }
 

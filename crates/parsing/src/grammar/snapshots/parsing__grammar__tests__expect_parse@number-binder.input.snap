@@ -7,4 +7,3 @@ Input: 1.0
 Start { kind: LiteralBinder }
   Token { kind: LiteralNumber }
 Finish
-

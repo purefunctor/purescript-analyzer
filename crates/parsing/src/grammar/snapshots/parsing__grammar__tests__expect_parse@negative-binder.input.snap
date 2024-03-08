@@ -10,4 +10,3 @@ Start { kind: NegativeBinder }
     Token { kind: LiteralInteger }
   Finish
 Finish
-
