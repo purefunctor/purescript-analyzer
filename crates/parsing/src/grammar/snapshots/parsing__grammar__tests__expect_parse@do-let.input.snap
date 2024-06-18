@@ -127,7 +127,7 @@ Start { kind: DoExpression }
                         Token { kind: Upper }
                       Finish
                     Finish
-                    Start { kind: OneOrMore }
+                    Start { kind: ArgumentList }
                       Start { kind: VariableBinder }
                         Start { kind: Name }
                           Token { kind: Lower }

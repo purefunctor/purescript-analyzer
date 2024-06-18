@@ -10,7 +10,7 @@ Start { kind: ConstructorBinder }
       Token { kind: Upper }
     Finish
   Finish
-  Start { kind: OneOrMore }
+  Start { kind: ArgumentList }
     Start { kind: ParenthesizedBinder }
       Token { kind: LeftParenthesis }
       Start { kind: ConstructorBinder }
@@ -19,7 +19,7 @@ Start { kind: ConstructorBinder }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: OneOrMore }
+        Start { kind: ArgumentList }
           Start { kind: LiteralBinder }
             Token { kind: LiteralInteger }
           Finish
@@ -42,7 +42,7 @@ Start { kind: ConstructorBinder }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: OneOrMore }
+        Start { kind: ArgumentList }
           Start { kind: LiteralBinder }
             Token { kind: LiteralInteger }
           Finish
@@ -59,4 +59,3 @@ Start { kind: ConstructorBinder }
     Finish
   Finish
 Finish
-

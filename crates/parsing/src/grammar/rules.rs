@@ -2,7 +2,7 @@ use syntax::SyntaxKind;
 
 use crate::parser::{NodeMarker, Parser};
 
-use super::combinators::{attempt, layout_one_or_more, one_or_more};
+use super::combinators::{attempt, layout_one_or_more};
 
 // expr_1 '::' type_0 | expr_1
 pub(super) fn expr_0(parser: &mut Parser) {
@@ -1072,15 +1072,23 @@ fn pat_constructor(parser: &mut Parser) {
     }
     qualified.end(parser, SyntaxKind::QualifiedName);
 
-    one_or_more(parser, |parser| {
+    let mut arguments = parser.start();
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_pat_start(parser) {
             pat_atom(parser);
+            at_least_one = true;
             true
         } else {
             false
         }
     });
 
+    if at_least_one {
+        arguments.end(parser, SyntaxKind::ArgumentList);
+    } else {
+        arguments.cancel(parser);
+    }
     marker.end(parser, SyntaxKind::ConstructorBinder);
 }
 
