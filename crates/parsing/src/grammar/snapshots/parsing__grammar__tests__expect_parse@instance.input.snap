@@ -82,7 +82,7 @@ Start { kind: Module }
         Finish
         Token { kind: WhereKw }
         Token { kind: LayoutStart }
-        Start { kind: OneOrMore }
+        Start { kind: LayoutList }
           Start { kind: InstanceMemberSignature }
             Start { kind: Name }
               Token { kind: Lower }
@@ -175,7 +175,7 @@ Start { kind: Module }
         Finish
         Token { kind: WhereKw }
         Token { kind: LayoutStart }
-        Start { kind: OneOrMore }
+        Start { kind: LayoutList }
           Start { kind: InstanceMemberSignature }
             Start { kind: Name }
               Token { kind: Lower }

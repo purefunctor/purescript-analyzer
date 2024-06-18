@@ -11,7 +11,7 @@ Start { kind: ExpressionOperatorChain }
       Token { kind: DoKw }
     Finish
     Token { kind: LayoutStart }
-    Start { kind: OneOrMore }
+    Start { kind: LayoutList }
       Start { kind: DoDiscard }
         Error { message: "expected an expression" }
       Finish

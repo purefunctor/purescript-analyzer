@@ -19,7 +19,7 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoDiscard }
       Start { kind: ApplicationExpression }
         Start { kind: VariableExpression }
@@ -46,7 +46,7 @@ Start { kind: DoExpression }
     Start { kind: DoLetBinding }
       Token { kind: LetKw }
       Token { kind: LayoutStart }
-      Start { kind: OneOrMore }
+      Start { kind: LayoutList }
         Start { kind: LetBindingPattern }
           Start { kind: WildcardBinder }
             Token { kind: Underscore }

@@ -25,7 +25,7 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoDiscard }
       Start { kind: ParenthesizedExpression }
         Token { kind: LeftParenthesis }

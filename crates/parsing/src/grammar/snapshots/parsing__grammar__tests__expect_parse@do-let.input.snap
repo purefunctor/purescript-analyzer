@@ -20,11 +20,11 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoLetBinding }
       Token { kind: LetKw }
       Token { kind: LayoutStart }
-      Start { kind: OneOrMore }
+      Start { kind: LayoutList }
         Start { kind: LetBindingSignature }
           Start { kind: Name }
             Token { kind: Lower }

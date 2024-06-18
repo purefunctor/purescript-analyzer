@@ -245,6 +245,7 @@ pub enum SyntaxKind {
     /// Convenience node for a tuple of elements.
     Pair,
 
+    LayoutList,
     LayoutStart,
     LayoutSep,
     LayoutEnd,

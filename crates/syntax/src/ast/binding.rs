@@ -1,6 +1,6 @@
 use rowan::ast::AstNode;
 
-use super::{Expression, LetBinding, OneOrMore};
+use super::{Expression, LayoutList, LetBinding, OneOrMore};
 
 _create_ast_v!(Binding, UnconditionalBinding(UnconditionalBinding), GuardedBinding(GuardedBinding));
 
@@ -29,7 +29,7 @@ impl WhereExpression {
         Expression::cast(self.node.first_child()?)
     }
 
-    pub fn let_bindings(&self) -> Option<OneOrMore<LetBinding>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn let_bindings(&self) -> Option<LayoutList<LetBinding>> {
+        LayoutList::cast(self.node.last_child()?)
     }
 }

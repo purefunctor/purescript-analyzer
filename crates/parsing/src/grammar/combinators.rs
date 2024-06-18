@@ -30,7 +30,7 @@ pub(super) fn layout_one_or_more(parser: &mut Parser, rule: impl Fn(&mut Parser)
                 rule(parser);
             }
             SyntaxKind::LayoutEnd => {
-                marker.end(parser, SyntaxKind::OneOrMore);
+                marker.end(parser, SyntaxKind::LayoutList);
                 parser.consume();
                 break;
             }

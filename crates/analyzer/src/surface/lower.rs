@@ -564,7 +564,7 @@ fn lower_where_expr(
 fn lower_let_bindings(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
-    let_bindings: &ast::OneOrMore<ast::LetBinding>,
+    let_bindings: &ast::LayoutList<ast::LetBinding>,
 ) -> Vec<LetBinding> {
     #[derive(Debug, PartialEq, Eq)]
     enum GroupKey {
