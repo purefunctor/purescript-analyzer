@@ -13,29 +13,25 @@ Start { kind: ApplicationType }
       Finish
     Finish
   Finish
-  Start { kind: OneOrMore }
+  Start { kind: ArgumentList }
     Start { kind: RecordType }
-      Start { kind: Wrapped }
-        Token { kind: LeftCurly }
-        Start { kind: RowInner }
-          Start { kind: Separated }
-            Start { kind: RowField }
-              Start { kind: Name }
-                Token { kind: Label }
-              Finish
-              Token { kind: Colon2 }
-              Start { kind: ConstructorType }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Upper }
-                  Finish
-                Finish
+      Token { kind: LeftCurly }
+      Start { kind: RowInner }
+        Start { kind: RowField }
+          Start { kind: Name }
+            Token { kind: Label }
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
               Finish
             Finish
           Finish
         Finish
-        Token { kind: RightCurly }
       Finish
+      Token { kind: RightCurly }
     Finish
   Finish
 Finish

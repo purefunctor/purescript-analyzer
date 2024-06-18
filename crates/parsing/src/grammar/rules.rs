@@ -262,27 +262,21 @@ fn expr_if(parser: &mut Parser) {
 // 'case' sep(expr_0, ',') 'of' '\{' sep(expr_case_branch, '\;') '\}'
 fn expr_case(parser: &mut Parser) {
     let mut marker = parser.start();
-
     parser.expect(SyntaxKind::CaseKw);
-    separated(parser, SyntaxKind::Comma, expr_0);
+    let mut head = parser.start();
+    parser.separated(expr_0, |parser| parser.eat(SyntaxKind::Comma));
+    head.end(parser, SyntaxKind::CaseHead);
     parser.expect(SyntaxKind::OfKw);
-
     layout_one_or_more(parser, expr_case_branch);
-
     marker.end(parser, SyntaxKind::CaseExpression);
 }
 
 fn expr_case_branch(parser: &mut Parser) {
     let mut marker = parser.start();
-    separated(parser, SyntaxKind::Comma, pat_0);
-
-    if parser.current() == SyntaxKind::Pipe {
-        expr_guarded(parser, SyntaxKind::RightArrow);
-    } else {
-        parser.expect(SyntaxKind::RightArrow);
-        expr_where(parser);
-    }
-
+    let mut patterns = parser.start();
+    parser.separated(pat_0, |parser| parser.eat(SyntaxKind::Comma));
+    patterns.end(parser, SyntaxKind::CasePatterns);
+    expr_binding(parser, SyntaxKind::RightArrow);
     marker.end(parser, SyntaxKind::CaseBranch);
 }
 

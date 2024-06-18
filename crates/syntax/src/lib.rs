@@ -109,7 +109,9 @@ pub enum SyntaxKind {
 
     CaseKw,
     OfKw,
+    CaseHead,
     CaseBranch,
+    CasePatterns,
     CaseExpression,
 
     ExpressionInfixChain,
