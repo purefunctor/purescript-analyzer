@@ -236,8 +236,6 @@ pub enum SyntaxKind {
 
     /// Convenience node for patterns such as `( element )`.
     Wrapped,
-    /// Convenience node for a tuple of elements.
-    Pair,
 
     LayoutList,
     LayoutStart,
