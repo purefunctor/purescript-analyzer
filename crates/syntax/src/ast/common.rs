@@ -2,13 +2,7 @@ use rowan::ast::{support, AstChildren, AstNode};
 
 use crate::PureScript;
 
-_create_ast_t!(OneOrMore, Source, Wrapped);
-
-impl<T: AstNode<Language = PureScript>> OneOrMore<T> {
-    pub fn children(&self) -> AstChildren<T> {
-        support::children(&self.node)
-    }
-}
+_create_ast_t!(Source, Wrapped);
 
 impl<T: AstNode<Language = PureScript>> Source<T> {
     pub fn child(&self) -> Option<T> {

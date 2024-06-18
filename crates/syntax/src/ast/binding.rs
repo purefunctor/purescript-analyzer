@@ -1,6 +1,6 @@
-use rowan::ast::AstNode;
+use rowan::ast::{support, AstChildren, AstNode};
 
-use super::{Expression, LayoutList, LetBinding, OneOrMore};
+use super::{Expression, LayoutList, LetBinding};
 
 _create_ast_v!(Binding, UnconditionalBinding(UnconditionalBinding), GuardedBinding(GuardedBinding));
 
@@ -13,8 +13,8 @@ impl UnconditionalBinding {
 }
 
 impl GuardedBinding {
-    pub fn guarded_expressions(&self) -> Option<OneOrMore<GuardedExpression>> {
-        OneOrMore::cast(self.node.first_child()?)
+    pub fn guarded_expressions(&self) -> AstChildren<GuardedExpression> {
+        support::children(&self.node)
     }
 }
 

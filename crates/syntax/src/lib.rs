@@ -240,8 +240,6 @@ pub enum SyntaxKind {
     Prefixed,
     /// Convenience node for patterns such as `( element )`.
     Wrapped,
-    /// Convenience node for a non-empty array of elements.
-    OneOrMore,
     /// Convenience node for a tuple of elements.
     Pair,
 

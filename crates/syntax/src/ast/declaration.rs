@@ -1,8 +1,7 @@
 use rowan::ast::{support, AstChildren, AstNode};
 
 use super::{
-    Binder, BinderList, Binding, Name, OneOrMore, QualifiedName, Type, TypeVariableBinding,
-    WhereExpression,
+    Binder, BinderList, Binding, LayoutList, Name, QualifiedName, Type, TypeVariableBinding, WhereExpression
 };
 
 _create_ast_v!(
@@ -163,8 +162,8 @@ impl InstanceDeclaration {
         self.node.children().find_map(QualifiedName::cast)
     }
 
-    pub fn members(&self) -> Option<OneOrMore<InstanceMember>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn members(&self) -> Option<LayoutList<InstanceMember>> {
+        LayoutList::cast(self.node.last_child()?)
     }
 }
 
