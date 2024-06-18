@@ -530,7 +530,11 @@ fn lower_binding(
                 let where_expr = lower_where_expr(ctx, db, unconditional.where_expression());
                 Binding::Unconditional { where_expr }
             }
-            ast::Binding::GuardedBinding(_) => todo!("FIXME: fix support for guarded binding."),
+            ast::Binding::GuardedBinding(guarded) => {
+                let guarded_exprs =
+                    lower_guarded_expressions(ctx, db, guarded.guarded_expressions());
+                Binding::Guarded { guarded_exprs }
+            }
         }
     } else {
         let where_expr = lower_where_expr(ctx, db, None);
@@ -555,6 +559,46 @@ fn lower_where_expr(
         let expr_id = lower_expr(ctx, db, None);
         WhereExpr { expr_id, let_bindings }
     }
+}
+
+fn lower_guarded_expressions(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    guarded_expression: AstChildren<ast::GuardedExpression>,
+) -> Vec<GuardedExpr> {
+    guarded_expression
+        .map(|guarded_expression| {
+            let pattern_guards =
+                lower_pattern_guard_list(ctx, db, guarded_expression.pattern_guard_list());
+            let where_expr = lower_where_expr(ctx, db, guarded_expression.where_expression());
+            GuardedExpr { pattern_guards, where_expr }
+        })
+        .collect()
+}
+
+fn lower_pattern_guard_list(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    pattern_guard_list: Option<ast::PatternGuardList>,
+) -> Vec<PatternGuard> {
+    if let Some(pattern_guard_list) = pattern_guard_list {
+        pattern_guard_list
+            .children()
+            .map(|pattern_guard| lower_pattern_guard(ctx, db, pattern_guard))
+            .collect()
+    } else {
+        vec![]
+    }
+}
+
+fn lower_pattern_guard(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    pattern_guard: ast::PatternGuard,
+) -> PatternGuard {
+    let binder_id = pattern_guard.binder().map(|binder| lower_binder(ctx, db, Some(binder)));
+    let expr_id = lower_expr(ctx, db, pattern_guard.expression());
+    PatternGuard { binder_id, expr_id }
 }
 
 // endregion

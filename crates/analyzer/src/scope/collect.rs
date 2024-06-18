@@ -12,7 +12,7 @@ use super::{ScopeData, ScopeDatabase, ScopeId, ScopeInfo, ScopeKind};
 struct Ctx<'a> {
     arena: &'a SurfaceArena,
     scope_data: Arena<ScopeData>,
-    per_expr: FxHashMap<ExprId, ScopeId>,
+    per_expr: FxHashMap<ExprId, Vec<ScopeId>>,
     per_type: FxHashMap<TypeId, ScopeId>,
     current_scope: ScopeId,
     root_scope: ScopeId,
@@ -112,6 +112,11 @@ fn collect_binders(ctx: &mut Ctx, binders: &[BinderId]) {
 fn collect_binding(ctx: &mut Ctx, binding: &Binding) {
     match binding {
         Binding::Unconditional { where_expr } => collect_where_expr(ctx, where_expr),
+        Binding::Guarded { guarded_exprs } => {
+            for guarded_expr in guarded_exprs {
+                collect_guarded_expr(ctx, guarded_expr);
+            }
+        }
     }
 }
 
@@ -120,6 +125,33 @@ fn collect_where_expr(ctx: &mut Ctx, where_expr: &WhereExpr) {
         collect_let_bindings(ctx, &where_expr.let_bindings);
         collect_expr(ctx, where_expr.expr_id);
     })
+}
+
+fn collect_guarded_expr(ctx: &mut Ctx, guarded_expr: &GuardedExpr) {
+    // This is a little tricky to visualize because of the ff.
+    //
+    // 1. The where block may not use values bound from the pattern guards.
+    // 2. The pattern guards may not use values bound from the where block.
+    // 3. The pattern guards form a chain of scope nodes linked sequentially.
+    // 4. The expression must be able to use the where block and pattern guards.
+    //
+    // Guarded expressions effectively require branching in order to be modeled
+    // correctly with the scope graph. By allowing multiple "entry points" for
+    // each term, branching can be achieved simply through repeated traversal.
+    // Note that traversal order also matters to preserve shadowing semantics.
+    ctx.with_reverting_scope(|ctx| {
+        for pattern_guard in &guarded_expr.pattern_guards {
+            ctx.with_reverting_scope(|ctx| {
+                collect_expr(ctx, pattern_guard.expr_id);
+            });
+            collect_binders(ctx, pattern_guard.binder_id.as_slice());
+        }
+        collect_expr(ctx, guarded_expr.where_expr.expr_id);
+    });
+    ctx.with_reverting_scope(|ctx| {
+        collect_let_bindings(ctx, &guarded_expr.where_expr.let_bindings);
+        collect_expr(ctx, guarded_expr.where_expr.expr_id);
+    });
 }
 
 fn collect_let_bindings(ctx: &mut Ctx, let_bindings: &[LetBinding]) {
@@ -206,7 +238,7 @@ fn collect_binder(ctx: &mut Ctx, per_name: &mut FxHashMap<Name, BinderId>, binde
 }
 
 fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
-    ctx.per_expr.insert(expr_id, ctx.current_scope);
+    ctx.per_expr.entry(expr_id).or_default().push(ctx.current_scope);
     match &ctx.arena[expr_id] {
         Expr::Application(head, spine) => {
             collect_expr(ctx, *head);

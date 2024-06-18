@@ -299,12 +299,25 @@ pub struct ValueEquation {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Binding {
     Unconditional { where_expr: WhereExpr },
+    Guarded { guarded_exprs: Vec<GuardedExpr> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct WhereExpr {
     pub expr_id: ExprId,
     pub let_bindings: Vec<LetBinding>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct GuardedExpr {
+    pub pattern_guards: Vec<PatternGuard>,
+    pub where_expr: WhereExpr,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct PatternGuard {
+    pub binder_id: Option<BinderId>,
+    pub expr_id: ExprId,
 }
 
 // endregion

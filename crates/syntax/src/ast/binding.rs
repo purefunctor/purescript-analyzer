@@ -1,10 +1,10 @@
 use rowan::ast::{support, AstChildren, AstNode};
 
-use super::{Expression, LayoutList, LetBinding};
+use super::{Binder, Expression, LayoutList, LetBinding};
 
 _create_ast_v!(Binding, UnconditionalBinding(UnconditionalBinding), GuardedBinding(GuardedBinding));
 
-_create_ast!(GuardedExpression, WhereExpression);
+_create_ast!(PatternGuard, PatternGuardList, GuardedExpression, WhereExpression);
 
 impl UnconditionalBinding {
     pub fn where_expression(&self) -> Option<WhereExpression> {
@@ -18,7 +18,27 @@ impl GuardedBinding {
     }
 }
 
+impl PatternGuard {
+    pub fn binder(&self) -> Option<Binder> {
+        Binder::cast(self.node.first_child()?)
+    }
+
+    pub fn expression(&self) -> Option<Expression> {
+        Expression::cast(self.node.last_child()?)
+    }
+}
+
+impl PatternGuardList {
+    pub fn children(&self) -> AstChildren<PatternGuard> {
+        support::children(&self.node)
+    }
+}
+
 impl GuardedExpression {
+    pub fn pattern_guard_list(&self) -> Option<PatternGuardList> {
+        PatternGuardList::cast(self.node.first_child()?)
+    }
+
     pub fn where_expression(&self) -> Option<WhereExpression> {
         WhereExpression::cast(self.node.last_child()?)
     }

@@ -149,6 +149,18 @@ pub(super) fn recursive_value_groups<'ast, 'env>(
                     ctx.visit_let_bindings(&where_expr.let_bindings);
                     ctx.visit_expr(where_expr.expr_id);
                 }
+                Binding::Guarded { guarded_exprs } => {
+                    for guarded_expr in guarded_exprs {
+                        for pattern_guard in &guarded_expr.pattern_guards {
+                            if let Some(binder_id) = pattern_guard.binder_id {
+                                ctx.visit_binder(binder_id);
+                            }
+                            ctx.visit_expr(pattern_guard.expr_id);
+                        }
+                        ctx.visit_let_bindings(&guarded_expr.where_expr.let_bindings);
+                        ctx.visit_expr(guarded_expr.where_expr.expr_id);
+                    }
+                }
             }
         }
     }
@@ -184,6 +196,18 @@ pub(super) fn recursive_let_names<'ast, 'env>(
                 Binding::Unconditional { where_expr } => {
                     ctx.visit_let_bindings(&where_expr.let_bindings);
                     ctx.visit_expr(where_expr.expr_id);
+                }
+                Binding::Guarded { guarded_exprs } => {
+                    for guarded_expr in guarded_exprs {
+                        for pattern_guard in &guarded_expr.pattern_guards {
+                            if let Some(binder_id) = pattern_guard.binder_id {
+                                ctx.visit_binder(binder_id);
+                            }
+                            ctx.visit_expr(pattern_guard.expr_id);
+                        }
+                        ctx.visit_let_bindings(&guarded_expr.where_expr.let_bindings);
+                        ctx.visit_expr(guarded_expr.where_expr.expr_id);
+                    }
                 }
             }
         }

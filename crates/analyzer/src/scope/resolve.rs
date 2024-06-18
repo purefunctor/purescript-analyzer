@@ -201,20 +201,22 @@ fn resolve_variable(
         })
     } else {
         let name = &name.value;
-        let scope_id = ctx.scope_info.expr_scope(expr_id);
-
         let scope_resolution =
-            ctx.scope_info.ancestors(scope_id).find_map(|scope_data| match &scope_data.kind {
-                ScopeKind::Root => None,
-                ScopeKind::Binders(names) => {
-                    if let Some(names) = names {
-                        Some(VariableResolution::Binder(*names.get(name)?))
-                    } else {
-                        None
+            ctx.scope_info.expr_scope(expr_id).into_iter().find_map(|scope_id| {
+                ctx.scope_info.ancestors(*scope_id).find_map(|scope_data| match &scope_data.kind {
+                    ScopeKind::Root => None,
+                    ScopeKind::Binders(names) => {
+                        if let Some(names) = names {
+                            Some(VariableResolution::Binder(*names.get(name)?))
+                        } else {
+                            None
+                        }
                     }
-                }
-                ScopeKind::LetBound(names) => Some(VariableResolution::LetName(*names.get(name)?)),
-                ScopeKind::TypeVariable(_, _) => None,
+                    ScopeKind::LetBound(names) => {
+                        Some(VariableResolution::LetName(*names.get(name)?))
+                    }
+                    ScopeKind::TypeVariable(_, _) => None,
+                })
             });
 
         let local_resolution = scope_resolution
@@ -290,12 +292,31 @@ fn resolve_value_equation(ctx: &mut Ctx, value_equation: &ValueEquation) {
 fn resolve_binding(ctx: &mut Ctx, binding: &Binding) {
     match binding {
         Binding::Unconditional { where_expr } => resolve_where_expr(ctx, where_expr),
+        Binding::Guarded { guarded_exprs } => {
+            for guarded_expr in guarded_exprs {
+                resolve_guarded_expr(ctx, guarded_expr);
+            }
+        }
     }
 }
 
 fn resolve_where_expr(ctx: &mut Ctx, where_expr: &WhereExpr) {
     resolve_let_bindings(ctx, &where_expr.let_bindings);
     resolve_expr(ctx, where_expr.expr_id);
+}
+
+fn resolve_guarded_expr(ctx: &mut Ctx, guarded_expr: &GuardedExpr) {
+    for pattern_guard in &guarded_expr.pattern_guards {
+        resolve_pattern_guard(ctx, pattern_guard);
+    }
+    resolve_where_expr(ctx, &guarded_expr.where_expr);
+}
+
+fn resolve_pattern_guard(ctx: &mut Ctx, pattern_guard: &PatternGuard) {
+    if let Some(binder_id) = pattern_guard.binder_id {
+        resolve_binder(ctx, binder_id);
+    }
+    resolve_expr(ctx, pattern_guard.expr_id);
 }
 
 fn resolve_let_bindings(ctx: &mut Ctx, let_bindings: &[LetBinding]) {

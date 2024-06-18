@@ -119,6 +119,18 @@ where
                             visitor.visit_let_bindings(&where_expr.let_bindings);
                             visitor.visit_expr(where_expr.expr_id);
                         }
+                        Binding::Guarded { guarded_exprs } => {
+                            for guarded_expr in guarded_exprs {
+                                for pattern_guard in &guarded_expr.pattern_guards {
+                                    if let Some(binder_id) = pattern_guard.binder_id {
+                                        visitor.visit_binder(binder_id);
+                                    }
+                                    visitor.visit_expr(pattern_guard.expr_id);
+                                }
+                                visitor.visit_let_bindings(&guarded_expr.where_expr.let_bindings);
+                                visitor.visit_expr(guarded_expr.where_expr.expr_id);
+                            }
+                        }
                     }
                 }
             }

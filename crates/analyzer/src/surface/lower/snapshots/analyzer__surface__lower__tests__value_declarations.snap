@@ -26,4 +26,126 @@ expression: value_declarations
             },
         ],
     },
+    ValueDeclaration {
+        id: Idx::<ValueGroup>(1),
+        name: Name(
+            "basicGuards",
+        ),
+        annotation: None,
+        equations: [
+            ValueEquation {
+                binders: [],
+                binding: Guarded {
+                    guarded_exprs: [
+                        GuardedExpr {
+                            pattern_guards: [
+                                PatternGuard {
+                                    binder_id: None,
+                                    expr_id: Idx::<Expr>(1),
+                                },
+                            ],
+                            where_expr: WhereExpr {
+                                expr_id: Idx::<Expr>(2),
+                                let_bindings: [],
+                            },
+                        },
+                        GuardedExpr {
+                            pattern_guards: [
+                                PatternGuard {
+                                    binder_id: None,
+                                    expr_id: Idx::<Expr>(3),
+                                },
+                            ],
+                            where_expr: WhereExpr {
+                                expr_id: Idx::<Expr>(4),
+                                let_bindings: [],
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
+    ValueDeclaration {
+        id: Idx::<ValueGroup>(2),
+        name: Name(
+            "bindGuard",
+        ),
+        annotation: None,
+        equations: [
+            ValueEquation {
+                binders: [],
+                binding: Guarded {
+                    guarded_exprs: [
+                        GuardedExpr {
+                            pattern_guards: [
+                                PatternGuard {
+                                    binder_id: Some(
+                                        Idx::<Binder>(2),
+                                    ),
+                                    expr_id: Idx::<Expr>(5),
+                                },
+                            ],
+                            where_expr: WhereExpr {
+                                expr_id: Idx::<Expr>(6),
+                                let_bindings: [],
+                            },
+                        },
+                        GuardedExpr {
+                            pattern_guards: [
+                                PatternGuard {
+                                    binder_id: Some(
+                                        Idx::<Binder>(3),
+                                    ),
+                                    expr_id: Idx::<Expr>(7),
+                                },
+                            ],
+                            where_expr: WhereExpr {
+                                expr_id: Idx::<Expr>(8),
+                                let_bindings: [],
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
+    ValueDeclaration {
+        id: Idx::<ValueGroup>(3),
+        name: Name(
+            "mixedGuard",
+        ),
+        annotation: None,
+        equations: [
+            ValueEquation {
+                binders: [],
+                binding: Guarded {
+                    guarded_exprs: [
+                        GuardedExpr {
+                            pattern_guards: [
+                                PatternGuard {
+                                    binder_id: Some(
+                                        Idx::<Binder>(4),
+                                    ),
+                                    expr_id: Idx::<Expr>(9),
+                                },
+                                PatternGuard {
+                                    binder_id: None,
+                                    expr_id: Idx::<Expr>(10),
+                                },
+                            ],
+                            where_expr: WhereExpr {
+                                expr_id: Idx::<Expr>(12),
+                                let_bindings: [
+                                    Name {
+                                        id: Idx::<LetName>(0),
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
 ]

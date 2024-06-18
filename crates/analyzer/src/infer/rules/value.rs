@@ -156,6 +156,29 @@ impl InferContext<'_> {
                 self.infer_let_bindings(db, &where_expr.let_bindings);
                 self.infer_expr(db, where_expr.expr_id)
             }
+            Binding::Guarded { guarded_exprs } => {
+                let fresh_ty = self.fresh_unification(db);
+                for guarded_expr in guarded_exprs {
+                    self.infer_let_bindings(db, &guarded_expr.where_expr.let_bindings);
+                    for pattern_guard in &guarded_expr.pattern_guards {
+                        if let Some(binder_id) = pattern_guard.binder_id {
+                            let pattern_ty = self.infer_expr(db, pattern_guard.expr_id);
+                            self.check_binder(db, binder_id, pattern_ty);
+                        } else {
+                            self.check_expr(
+                                db,
+                                pattern_guard.expr_id,
+                                db.intern_type(CoreType::Primitive(Name::from_raw(
+                                    "Boolean".into(),
+                                ))),
+                            );
+                        }
+                    }
+                    let expr_ty = self.infer_expr(db, guarded_expr.where_expr.expr_id);
+                    self.unify_types(db, expr_ty, fresh_ty);
+                }
+                fresh_ty
+            }
         }
     }
 
@@ -443,6 +466,26 @@ impl InferContext<'_> {
             Binding::Unconditional { where_expr } => {
                 self.infer_let_bindings(db, &where_expr.let_bindings);
                 self.check_expr(db, where_expr.expr_id, expected_ty);
+            }
+            Binding::Guarded { guarded_exprs } => {
+                for guarded_expr in guarded_exprs {
+                    self.infer_let_bindings(db, &guarded_expr.where_expr.let_bindings);
+                    for pattern_guard in &guarded_expr.pattern_guards {
+                        if let Some(binder_id) = pattern_guard.binder_id {
+                            let pattern_ty = self.infer_expr(db, pattern_guard.expr_id);
+                            self.check_binder(db, binder_id, pattern_ty);
+                        } else {
+                            self.check_expr(
+                                db,
+                                pattern_guard.expr_id,
+                                db.intern_type(CoreType::Primitive(Name::from_raw(
+                                    "Boolean".into(),
+                                ))),
+                            );
+                        }
+                    }
+                    self.check_expr(db, guarded_expr.where_expr.expr_id, expected_ty);
+                }
             }
         }
     }

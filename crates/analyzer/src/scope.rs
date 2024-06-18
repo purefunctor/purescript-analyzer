@@ -52,16 +52,15 @@ pub enum ScopeKind {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ScopeInfo {
     pub scope_data: Arena<ScopeData>,
-    pub per_expr: FxHashMap<ExprId, ScopeId>,
+    pub per_expr: FxHashMap<ExprId, Vec<ScopeId>>,
     pub per_type: FxHashMap<TypeId, ScopeId>,
 }
 
 impl ScopeInfo {
-    pub fn expr_scope(&self, expr_id: ExprId) -> ScopeId {
-        let scope_id = self.per_expr.get(&expr_id).unwrap_or_else(|| {
+    pub fn expr_scope(&self, expr_id: ExprId) -> &[ScopeId] {
+        self.per_expr.get(&expr_id).unwrap_or_else(|| {
             unreachable!("invariant violated: expression should have been assigned a scope.");
-        });
-        *scope_id
+        })
     }
 
     pub fn type_scope(&self, type_id: TypeId) -> ScopeId {

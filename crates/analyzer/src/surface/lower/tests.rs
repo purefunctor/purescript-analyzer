@@ -114,10 +114,14 @@ prefixedVariable = A.a
     let expressions = surface
         .body
         .iter_value_declarations()
-        .map(|value_declaration| {
+        .flat_map(|value_declaration| {
             let equation = &value_declaration.equations[0];
             match &equation.binding {
-                Binding::Unconditional { where_expr } => &arena[where_expr.expr_id],
+                Binding::Unconditional { where_expr } => vec![&arena[where_expr.expr_id]],
+                Binding::Guarded { guarded_exprs } => guarded_exprs
+                    .iter()
+                    .map(|guarded_expr| &arena[guarded_expr.where_expr.expr_id])
+                    .collect_vec(),
             }
         })
         .collect_vec();
@@ -158,7 +162,22 @@ fn value_declarations() {
         "module Main where
 
 const :: forall a b. a -> b -> a
-const a b = a",
+const a b = a
+
+basicGuards
+  | 1909 = 'm'
+  | 99.0 = \"a\"
+
+bindGuard
+  | a <- b = 0
+  | c <- d = 1
+
+mixedGuard
+  | a <- b
+  , b = 0
+  where
+  c = d
+    ",
     );
 
     let value_declarations = surface.body.iter_value_declarations().collect_vec();
