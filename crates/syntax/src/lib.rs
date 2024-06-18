@@ -234,15 +234,13 @@ pub enum SyntaxKind {
     PatternGuardList,
     GuardedExpression,
 
-    /// Convenience node for patterns such as `( element )`.
-    Wrapped,
-
     LayoutList,
     LayoutStart,
     LayoutSep,
     LayoutEnd,
 
     Sentinel,
+    Wrapped,
     Source,
     Error,
     EndOfFile,
