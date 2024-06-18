@@ -25,7 +25,7 @@ fn at_operator_start(parser: &Parser) -> bool {
     }
 }
 
-fn operator_pair(operator: impl Fn(&mut Parser), term: impl Fn(&mut Parser),parser: &mut Parser) {
+fn operator_pair(operator: impl Fn(&mut Parser), term: impl Fn(&mut Parser), parser: &mut Parser) {
     let mut marker = parser.start();
     operator(parser);
     term(parser);

@@ -1,7 +1,8 @@
 use rowan::ast::{support, AstChildren, AstNode};
 
 use super::{
-    Binder, BinderList, Binding, LayoutList, Name, QualifiedName, Type, TypeVariableBinding, WhereExpression
+    Binder, BinderList, Binding, LayoutList, Name, QualifiedName, Type, TypeVariableBinding,
+    WhereExpression,
 };
 
 _create_ast_v!(
