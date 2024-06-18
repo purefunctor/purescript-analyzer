@@ -48,6 +48,8 @@ pub enum SyntaxKind {
     Label,
     Hole,
     Operator,
+    TickOperator,
+    OperatorPair,
 
     At,
     Backslash,

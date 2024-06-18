@@ -12,8 +12,32 @@ Start { kind: ExpressionOperatorChain }
       Start { kind: LiteralExpression }
         Token { kind: LiteralInteger }
       Finish
-      Start { kind: OneOrMore }
-        Start { kind: Pair }
+      Start { kind: OperatorPair }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Operator }
+          Finish
+        Finish
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+      Finish
+    Finish
+    Token { kind: RightParenthesis }
+  Finish
+  Start { kind: OperatorPair }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
+    Finish
+    Start { kind: ParenthesizedExpression }
+      Token { kind: LeftParenthesis }
+      Start { kind: ExpressionOperatorChain }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralInteger }
+        Finish
+        Start { kind: OperatorPair }
           Start { kind: QualifiedName }
             Start { kind: NameRef }
               Token { kind: Operator }
@@ -24,73 +48,42 @@ Start { kind: ExpressionOperatorChain }
           Finish
         Finish
       Finish
+      Token { kind: RightParenthesis }
     Finish
-    Token { kind: RightParenthesis }
   Finish
-  Start { kind: OneOrMore }
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
+  Start { kind: OperatorPair }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
+    Finish
+    Start { kind: ParenthesizedExpression }
+      Token { kind: LeftParenthesis }
       Start { kind: ParenthesizedExpression }
         Token { kind: LeftParenthesis }
-        Start { kind: ExpressionOperatorChain }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
+        Start { kind: ApplicationExpression }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
           Finish
           Start { kind: OneOrMore }
-            Start { kind: Pair }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Operator }
-                Finish
-              Finish
-              Start { kind: LiteralExpression }
-                Token { kind: LiteralInteger }
-              Finish
-            Finish
-          Finish
-        Finish
-        Token { kind: RightParenthesis }
-      Finish
-    Finish
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-      Finish
-      Start { kind: ParenthesizedExpression }
-        Token { kind: LeftParenthesis }
-        Start { kind: ParenthesizedExpression }
-          Token { kind: LeftParenthesis }
-          Start { kind: ApplicationExpression }
-            Start { kind: VariableExpression }
-              Start { kind: QualifiedName }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
-              Finish
-            Finish
-            Start { kind: OneOrMore }
-              Start { kind: TermArgument }
-                Start { kind: VariableExpression }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Lower }
-                    Finish
+            Start { kind: TermArgument }
+              Start { kind: VariableExpression }
+                Start { kind: QualifiedName }
+                  Start { kind: NameRef }
+                    Token { kind: Lower }
                   Finish
                 Finish
               Finish
             Finish
           Finish
-          Token { kind: RightParenthesis }
         Finish
         Token { kind: RightParenthesis }
       Finish
+      Token { kind: RightParenthesis }
     Finish
   Finish
 Finish
-

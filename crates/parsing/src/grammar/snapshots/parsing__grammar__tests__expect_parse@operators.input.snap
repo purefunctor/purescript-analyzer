@@ -9,37 +9,34 @@ Start { kind: ExpressionOperatorChain }
   Start { kind: LiteralExpression }
     Token { kind: LiteralInteger }
   Finish
-  Start { kind: OneOrMore }
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-      Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
+  Start { kind: OperatorPair }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
     Finish
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-      Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
+    Finish
+  Finish
+  Start { kind: OperatorPair }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
     Finish
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
+    Finish
+  Finish
+  Start { kind: OperatorPair }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
-      Finish
+    Finish
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
     Finish
   Finish
 Finish
-

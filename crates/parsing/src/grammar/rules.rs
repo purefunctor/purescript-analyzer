@@ -25,16 +25,22 @@ fn at_operator_start(parser: &Parser) -> bool {
     }
 }
 
+fn operator_pair(operator: impl Fn(&mut Parser), term: impl Fn(&mut Parser),parser: &mut Parser) {
+    let mut marker = parser.start();
+    operator(parser);
+    term(parser);
+    marker.end(parser, SyntaxKind::OperatorPair);
+}
+
 // expr_2 ('operator' expr_2) + | expr_2
 fn expr_1(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_2(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_operator_start(parser) {
-            let mut marker = parser.start();
-            operator_ref(parser);
-            expr_2(parser);
-            marker.end(parser, SyntaxKind::Pair);
+            operator_pair(operator_ref, expr_2, parser);
+            at_least_one = true;
             true
         } else {
             false
@@ -59,12 +65,11 @@ fn at_tick_expr_start(parser: &Parser) -> bool {
 fn expr_2(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_3(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_tick_expr_start(parser) {
-            let mut marker = parser.start();
-            tick_expr(parser);
-            expr_3(parser);
-            marker.end(parser, SyntaxKind::Pair);
+            operator_pair(tick_expr, expr_3, parser);
+            at_least_one = true;
             true
         } else {
             false
@@ -83,19 +88,18 @@ fn tick_expr(parser: &mut Parser) {
     parser.expect(SyntaxKind::Tick);
     tick_expr_1(parser);
     parser.expect(SyntaxKind::Tick);
-    marker.end(parser, SyntaxKind::Wrapped);
+    marker.end(parser, SyntaxKind::TickOperator);
 }
 
 // expr_3 ('operator' expr_3) | expr_3
 fn tick_expr_1(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_3(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_operator_start(parser) {
-            let mut marker = parser.start();
-            operator_ref(parser);
-            expr_3(parser);
-            marker.end(parser, SyntaxKind::Pair);
+            operator_pair(operator_ref, expr_3, parser);
+            at_least_one = true;
             true
         } else {
             false
@@ -727,12 +731,11 @@ fn type_2(parser: &mut Parser) {
 fn type_3(parser: &mut Parser) {
     let mut marker = parser.start();
     type_4(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_operator_start(parser) {
-            let mut marker = parser.start();
-            operator_ref(parser);
-            type_4(parser);
-            marker.end(parser, SyntaxKind::Pair);
+            operator_pair(operator_ref, type_4, parser);
+            at_least_one = true;
             true
         } else {
             false
@@ -969,12 +972,11 @@ pub(crate) fn pat_0(parser: &mut Parser) {
 fn pat_1(parser: &mut Parser) {
     let mut operator = parser.start();
     pat_2(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_operator_start(parser) {
-            let mut pair = parser.start();
-            operator_ref(parser);
-            pat_2(parser);
-            pair.end(parser, SyntaxKind::Pair);
+            operator_pair(operator_ref, pat_2, parser);
+            at_least_one = true;
             true
         } else {
             false

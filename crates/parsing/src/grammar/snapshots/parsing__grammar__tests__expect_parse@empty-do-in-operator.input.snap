@@ -18,17 +18,14 @@ Start { kind: ExpressionOperatorChain }
     Finish
     Token { kind: LayoutEnd }
   Finish
-  Start { kind: OneOrMore }
-    Start { kind: Pair }
-      Start { kind: QualifiedName }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
+  Start { kind: OperatorPair }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
-      Start { kind: LiteralExpression }
-        Token { kind: LiteralInteger }
-      Finish
+    Finish
+    Start { kind: LiteralExpression }
+      Token { kind: LiteralInteger }
     Finish
   Finish
 Finish
-
