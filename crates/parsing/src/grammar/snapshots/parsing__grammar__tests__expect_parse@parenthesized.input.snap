@@ -69,7 +69,7 @@ Start { kind: ExpressionOperatorChain }
               Finish
             Finish
           Finish
-          Start { kind: OneOrMore }
+          Start { kind: ArgumentList }
             Start { kind: TermArgument }
               Start { kind: VariableExpression }
                 Start { kind: QualifiedName }

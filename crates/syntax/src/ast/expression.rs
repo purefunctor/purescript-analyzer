@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::{PureScript, SyntaxToken};
 
-use super::{BinderList, LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
+use super::{ArgumentList, BinderList, LetBinding, Name, NameRef, OneOrMore, QualifiedName, Type};
 
 _create_ast_v!(
     Expression,
@@ -34,8 +34,8 @@ impl ApplicationExpression {
         Expression::cast(self.node.first_child()?)
     }
 
-    pub fn spine(&self) -> Option<OneOrMore<Argument>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn spine(&self) -> Option<ArgumentList<Argument>> {
+        ArgumentList::cast(self.node.last_child()?)
     }
 }
 

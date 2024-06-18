@@ -4,7 +4,7 @@ use rowan::ast::AstNode;
 
 use crate::SyntaxToken;
 
-use super::{Name, NameRef, OneOrMore, QualifiedName};
+use super::{ArgumentList, Name, NameRef, QualifiedName};
 
 _create_ast!(ForallVariables);
 
@@ -72,8 +72,8 @@ impl ApplicationType {
         Type::cast(self.node.first_child()?)
     }
 
-    pub fn spine(&self) -> Option<OneOrMore<Type>> {
-        OneOrMore::cast(self.node.last_child()?)
+    pub fn spine(&self) -> Option<ArgumentList<Type>> {
+        ArgumentList::cast(self.node.last_child()?)
     }
 }
 

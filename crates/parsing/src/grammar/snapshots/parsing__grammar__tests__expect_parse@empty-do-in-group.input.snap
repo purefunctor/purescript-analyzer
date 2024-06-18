@@ -23,7 +23,7 @@ Start { kind: DoExpression }
             Finish
           Finish
         Finish
-        Start { kind: OneOrMore }
+        Start { kind: ArgumentList }
           Start { kind: TermArgument }
             Start { kind: LiteralExpression }
               Token { kind: LiteralString }
@@ -47,7 +47,7 @@ Start { kind: DoExpression }
         Start { kind: LiteralExpression }
           Token { kind: LiteralChar }
         Finish
-        Start { kind: OneOrMore }
+        Start { kind: ArgumentList }
           Start { kind: TermArgument }
             Start { kind: VariableExpression }
               Start { kind: QualifiedName }
@@ -63,4 +63,3 @@ Start { kind: DoExpression }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

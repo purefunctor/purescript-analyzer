@@ -89,6 +89,7 @@ pub enum SyntaxKind {
     DoLetBinding,
     DoDiscard,
 
+    ArgumentList,
     ApplicationExpression,
     TermArgument,
     TypeArgument,

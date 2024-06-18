@@ -151,7 +151,7 @@ Start { kind: Module }
                 Finish
               Finish
             Finish
-            Start { kind: OneOrMore }
+            Start { kind: ArgumentList }
               Start { kind: VariableType }
                 Start { kind: NameRef }
                   Token { kind: Lower }

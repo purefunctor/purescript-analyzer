@@ -27,3 +27,11 @@ impl<T: AstNode<Language = PureScript>> Wrapped<T> {
         support::child(&self.node)
     }
 }
+
+_create_ast_t!(ArgumentList);
+
+impl<T: AstNode<Language = PureScript>> ArgumentList<T> {
+    pub fn children(&self) -> AstChildren<T> {
+        support::children(&self.node)
+    }
+}

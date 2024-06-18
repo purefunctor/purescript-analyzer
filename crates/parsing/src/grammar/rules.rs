@@ -161,17 +161,22 @@ fn at_expr_start(parser: &Parser) -> bool {
 fn expr_4(parser: &mut Parser) {
     let mut marker = parser.start();
     expr_5(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut arguments = parser.start();
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_expr_start(parser) {
             expr_sp(parser);
+            at_least_one = true;
             true
         } else {
             false
         }
     });
     if at_least_one {
+        arguments.end(parser, SyntaxKind::ArgumentList);
         marker.end(parser, SyntaxKind::ApplicationExpression);
     } else {
+        arguments.cancel(parser);
         marker.cancel(parser);
     }
 }
@@ -777,17 +782,22 @@ fn at_type_start(parser: &mut Parser) -> bool {
 fn type_5(parser: &mut Parser) {
     let mut marker = parser.start();
     type_atom(parser);
-    let at_least_one = one_or_more(parser, |parser| {
+    let mut arguments = parser.start();
+    let mut at_least_one = false;
+    parser.repeat(|parser| {
         if at_type_start(parser) {
             type_atom(parser);
+            at_least_one = true;
             true
         } else {
             false
         }
     });
     if at_least_one {
+        arguments.end(parser, SyntaxKind::ArgumentList);
         marker.end(parser, SyntaxKind::ApplicationType);
     } else {
+        arguments.cancel(parser);
         marker.cancel(parser);
     }
 }

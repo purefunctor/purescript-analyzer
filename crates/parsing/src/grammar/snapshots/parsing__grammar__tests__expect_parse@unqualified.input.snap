@@ -17,7 +17,7 @@ Start { kind: ApplicationExpression }
       Finish
     Finish
   Finish
-  Start { kind: OneOrMore }
+  Start { kind: ArgumentList }
     Start { kind: TermArgument }
       Start { kind: ConstructorExpression }
         Start { kind: QualifiedName }
@@ -38,4 +38,3 @@ Start { kind: ApplicationExpression }
     Finish
   Finish
 Finish
-
