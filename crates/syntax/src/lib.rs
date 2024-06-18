@@ -234,8 +234,6 @@ pub enum SyntaxKind {
     PatternGuardList,
     GuardedExpression,
 
-    /// Convenience node for patterns such as `l: e` or `e :: T`.
-    Labeled,
     /// Convenience node for patterns such as `( element )`.
     Wrapped,
     /// Convenience node for a tuple of elements.
