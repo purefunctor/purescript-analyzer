@@ -8,30 +8,28 @@ Input: case _ of
 
 Start { kind: CaseExpression }
   Token { kind: CaseKw }
-  Start { kind: Separated }
+  Start { kind: CaseHead }
     Start { kind: SectionExpression }
       Token { kind: Underscore }
     Finish
   Finish
   Token { kind: OfKw }
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: CaseBranch }
-      Start { kind: Separated }
+      Start { kind: CasePatterns }
         Start { kind: LiteralBinder }
           Start { kind: LiteralArray }
-            Start { kind: Wrapped }
-              Token { kind: LeftSquare }
-              Token { kind: RightSquare }
-            Finish
+            Token { kind: LeftSquare }
+            Token { kind: RightSquare }
           Finish
         Finish
       Finish
-      Token { kind: RightArrow }
-      Start { kind: WhereExpression }
-        Start { kind: LiteralExpression }
-          Start { kind: LiteralArray }
-            Start { kind: Wrapped }
+      Start { kind: UnconditionalBinding }
+        Token { kind: RightArrow }
+        Start { kind: WhereExpression }
+          Start { kind: LiteralExpression }
+            Start { kind: LiteralArray }
               Token { kind: LeftSquare }
               Token { kind: RightSquare }
             Finish

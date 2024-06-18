@@ -1,0 +1,50 @@
+---
+source: crates/analyzer/src/surface/lower/tests.rs
+expression: surface.body.declarations
+---
+[
+    ClassDeclaration(
+        ClassDeclaration {
+            id: Idx::<ClassGroup>(0),
+            name: Name(
+                "ClassGroup",
+            ),
+            signature: None,
+            constraints: [],
+            variables: [],
+            fundeps: [],
+            members: {},
+        },
+    ),
+    DataDeclaration(
+        DataDeclaration {
+            id: Idx::<DataGroup>(0),
+            name: Name(
+                "DataGroup",
+            ),
+            annotation: None,
+            variables: [],
+            constructors: {},
+        },
+    ),
+    ValueDeclaration(
+        ValueDeclaration {
+            id: Idx::<ValueGroup>(0),
+            name: Name(
+                "valueGroup",
+            ),
+            annotation: None,
+            equations: [
+                ValueEquation {
+                    binders: [],
+                    binding: Unconditional {
+                        where_expr: WhereExpr {
+                            expr_id: Idx::<Expr>(0),
+                            let_bindings: [],
+                        },
+                    },
+                },
+            ],
+        },
+    ),
+]

@@ -26,138 +26,130 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutStart }
   Start { kind: ModuleImports }
-    Start { kind: ZeroOrMore }
-    Finish
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-      Start { kind: DataAnnotation }
-        Token { kind: DataKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Token { kind: Colon2 }
-        Start { kind: ConstructorType }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Upper }
-            Finish
+    Start { kind: DataAnnotation }
+      Token { kind: DataKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Token { kind: Colon2 }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: DataDeclaration }
-        Token { kind: DataKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: DataVariables }
-        Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DataDeclaration }
+      Token { kind: DataKw }
+      Start { kind: Name }
+        Token { kind: Upper }
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: DataDeclaration }
-        Token { kind: DataKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: DataVariables }
-        Finish
-        Start { kind: DataConstructors }
-          Token { kind: Equal }
-          Start { kind: DataConstructor }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-            Start { kind: ConstructorFields }
-            Finish
+      Start { kind: DataVariables }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DataDeclaration }
+      Token { kind: DataKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: DataVariables }
+      Finish
+      Start { kind: DataConstructors }
+        Token { kind: Equal }
+        Start { kind: DataConstructor }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+          Start { kind: ConstructorFields }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: DataDeclaration }
-        Token { kind: DataKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: DataVariables }
-          Start { kind: TypeVariableName }
-            Start { kind: Name }
-              Token { kind: Lower }
-            Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DataDeclaration }
+      Token { kind: DataKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: DataVariables }
+        Start { kind: TypeVariableName }
+          Start { kind: Name }
+            Token { kind: Lower }
           Finish
         Finish
-        Start { kind: DataConstructors }
-          Token { kind: Equal }
-          Start { kind: DataConstructor }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-            Start { kind: ConstructorFields }
-              Start { kind: VariableType }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
+      Finish
+      Start { kind: DataConstructors }
+        Token { kind: Equal }
+        Start { kind: DataConstructor }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+          Start { kind: ConstructorFields }
+            Start { kind: VariableType }
+              Start { kind: NameRef }
+                Token { kind: Lower }
               Finish
             Finish
           Finish
-          Token { kind: Pipe }
-          Start { kind: DataConstructor }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-            Start { kind: ConstructorFields }
-            Finish
+        Finish
+        Token { kind: Pipe }
+        Start { kind: DataConstructor }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+          Start { kind: ConstructorFields }
           Finish
         Finish
       Finish
-      Token { kind: LayoutSep }
-      Start { kind: DataDeclaration }
-        Token { kind: DataKw }
-        Start { kind: Name }
-          Token { kind: Upper }
-        Finish
-        Start { kind: DataVariables }
-          Start { kind: TypeVariableKinded }
-            Start { kind: Wrapped }
-              Token { kind: LeftParenthesis }
-              Start { kind: Labeled }
-                Start { kind: Name }
-                  Token { kind: Lower }
-                Finish
-                Token { kind: Colon2 }
-                Start { kind: ConstructorType }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Upper }
-                    Finish
-                  Finish
-                Finish
-              Finish
-              Token { kind: RightParenthesis }
-            Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DataDeclaration }
+      Token { kind: DataKw }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+      Start { kind: DataVariables }
+        Start { kind: TypeVariableKinded }
+          Token { kind: LeftParenthesis }
+          Start { kind: Name }
+            Token { kind: Lower }
           Finish
-        Finish
-        Start { kind: DataConstructors }
-          Token { kind: Equal }
-          Start { kind: DataConstructor }
-            Start { kind: Name }
-              Token { kind: Upper }
-            Finish
-            Start { kind: ConstructorFields }
-              Start { kind: VariableType }
-                Start { kind: NameRef }
-                  Token { kind: Lower }
-                Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
               Finish
             Finish
           Finish
-          Token { kind: Pipe }
-          Start { kind: DataConstructor }
-            Start { kind: Name }
-              Token { kind: Upper }
+          Token { kind: RightParenthesis }
+        Finish
+      Finish
+      Start { kind: DataConstructors }
+        Token { kind: Equal }
+        Start { kind: DataConstructor }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+          Start { kind: ConstructorFields }
+            Start { kind: VariableType }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
             Finish
-            Start { kind: ConstructorFields }
-            Finish
+          Finish
+        Finish
+        Token { kind: Pipe }
+        Start { kind: DataConstructor }
+          Start { kind: Name }
+            Token { kind: Upper }
+          Finish
+          Start { kind: ConstructorFields }
           Finish
         Finish
       Finish
@@ -165,4 +157,3 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

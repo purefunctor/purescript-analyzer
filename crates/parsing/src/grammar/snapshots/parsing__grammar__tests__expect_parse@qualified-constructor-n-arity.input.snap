@@ -20,10 +20,9 @@ Start { kind: ConstructorBinder }
       Token { kind: Upper }
     Finish
   Finish
-  Start { kind: OneOrMore }
+  Start { kind: ArgumentList }
     Start { kind: LiteralBinder }
       Token { kind: LiteralInteger }
     Finish
   Finish
 Finish
-

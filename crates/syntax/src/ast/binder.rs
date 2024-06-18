@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::SyntaxToken;
 
-use super::{Name, OneOrMore, QualifiedName};
+use super::{ArgumentList, Name, QualifiedName};
 
 _create_ast_v!(
     Binder,
@@ -15,13 +15,17 @@ _create_ast_v!(
     WildcardBinder(WildcardBinder)
 );
 
+_create_ast!(BinderList);
+
+_has_children!(BinderList<Binder>);
+
 impl ConstructorBinder {
     pub fn qualified_name(&self) -> Option<QualifiedName> {
         QualifiedName::cast(self.node.first_child()?)
     }
 
-    pub fn fields(&self) -> Option<OneOrMore<Binder>> {
-        OneOrMore::cast(self.node.children().nth(1)?)
+    pub fn fields(&self) -> Option<ArgumentList<Binder>> {
+        ArgumentList::cast(self.node.children().nth(1)?)
     }
 }
 

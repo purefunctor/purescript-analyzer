@@ -2,7 +2,7 @@ use rowan::ast::AstNode;
 
 use crate::{SyntaxKind, SyntaxToken};
 
-use super::{Declaration, ModuleName, NameRef, Separated, ZeroOrMore};
+use super::{Declaration, ModuleName, NameRef};
 
 _create_ast!(
     Module,
@@ -47,6 +47,8 @@ impl Module {
     }
 }
 
+_has_children!(ModuleImports<ImportDeclaration>, ModuleBody<Declaration>);
+
 impl ModuleHeader {
     pub fn name(&self) -> Option<ModuleName> {
         ModuleName::cast(self.node.first_child()?)
@@ -57,11 +59,7 @@ impl ModuleHeader {
     }
 }
 
-impl ExportList {
-    pub fn export_items(&self) -> Option<Separated<ExportItem>> {
-        Separated::cast(self.node.first_child()?.first_child()?)
-    }
-}
+_has_children!(ExportList<ExportItem>);
 
 impl ExportClass {
     pub fn name_ref(&self) -> Option<NameRef> {
@@ -82,12 +80,6 @@ impl ExportType {
 impl ExportValue {
     pub fn name_ref(&self) -> Option<NameRef> {
         NameRef::cast(self.node.first_child()?)
-    }
-}
-
-impl ModuleImports {
-    pub fn imports(&self) -> Option<ZeroOrMore<ImportDeclaration>> {
-        ZeroOrMore::cast(self.node.first_child()?)
     }
 }
 
@@ -114,11 +106,9 @@ impl ImportList {
             None
         }
     }
-
-    pub fn import_items(&self) -> Option<Separated<ImportItem>> {
-        Separated::cast(self.node.first_child()?.first_child()?)
-    }
 }
+
+_has_children!(ImportList<ImportItem>);
 
 impl ImportClass {
     pub fn name_ref(&self) -> Option<NameRef> {
@@ -148,14 +138,4 @@ impl ImportType {
     }
 }
 
-impl DataEnumerated {
-    pub fn constructors(&self) -> Option<Separated<NameRef>> {
-        Separated::cast(self.node.first_child()?.first_child()?)
-    }
-}
-
-impl ModuleBody {
-    pub fn declarations(&self) -> Option<ZeroOrMore<Declaration>> {
-        ZeroOrMore::cast(self.node.first_child()?)
-    }
-}
+_has_children!(DataEnumerated<NameRef>);

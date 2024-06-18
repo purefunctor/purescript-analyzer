@@ -6,48 +6,43 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/non-empty-tail-record
 Input: { a :: Int, b :: Int | r }
 
 Start { kind: RecordType }
-  Start { kind: Wrapped }
-    Token { kind: LeftCurly }
-    Start { kind: RowInner }
-      Start { kind: Separated }
-        Start { kind: RowField }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
-        Token { kind: Comma }
-        Start { kind: RowField }
-          Start { kind: Name }
-            Token { kind: Label }
-          Finish
-          Token { kind: Colon2 }
-          Start { kind: ConstructorType }
-            Start { kind: QualifiedName }
-              Start { kind: NameRef }
-                Token { kind: Upper }
-              Finish
-            Finish
-          Finish
-        Finish
+  Token { kind: LeftCurly }
+  Start { kind: RowInner }
+    Start { kind: RowField }
+      Start { kind: Name }
+        Token { kind: Label }
       Finish
-      Start { kind: RowTail }
-        Token { kind: Pipe }
-        Start { kind: VariableType }
+      Token { kind: Colon2 }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
           Start { kind: NameRef }
-            Token { kind: Lower }
+            Token { kind: Upper }
           Finish
         Finish
       Finish
     Finish
-    Token { kind: RightCurly }
+    Token { kind: Comma }
+    Start { kind: RowField }
+      Start { kind: Name }
+        Token { kind: Label }
+      Finish
+      Token { kind: Colon2 }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+      Finish
+    Finish
+    Start { kind: RowTail }
+      Token { kind: Pipe }
+      Start { kind: VariableType }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+    Finish
   Finish
+  Token { kind: RightCurly }
 Finish
-

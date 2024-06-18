@@ -134,7 +134,7 @@ impl<'a> Parser<'a> {
         SaveMarker::new(input_index, event_index)
     }
 
-    pub(crate) fn repeat(&mut self, rule: impl Fn(&mut Parser) -> bool) {
+    pub(crate) fn repeat(&mut self, mut rule: impl FnMut(&mut Parser) -> bool) {
         while rule(self) {
             let steps = self.steps.get();
             if steps > PARSER_LIMIT {

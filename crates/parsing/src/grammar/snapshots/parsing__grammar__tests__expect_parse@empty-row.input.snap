@@ -6,11 +6,8 @@ input_file: crates/parsing/src/grammar/inputs/passing/type/empty-row.input
 Input: ()
 
 Start { kind: RowType }
-  Start { kind: Wrapped }
-    Token { kind: LeftParenthesis }
-    Start { kind: RowInner }
-    Finish
-    Token { kind: RightParenthesis }
+  Token { kind: LeftParenthesis }
+  Start { kind: RowInner }
   Finish
+  Token { kind: RightParenthesis }
 Finish
-

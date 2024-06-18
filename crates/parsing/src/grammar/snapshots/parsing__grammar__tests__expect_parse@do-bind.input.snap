@@ -12,7 +12,7 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoBind }
       Start { kind: VariableBinder }
         Start { kind: Name }
@@ -36,7 +36,7 @@ Start { kind: DoExpression }
             Token { kind: Upper }
           Finish
         Finish
-        Start { kind: OneOrMore }
+        Start { kind: ArgumentList }
           Start { kind: VariableBinder }
             Start { kind: Name }
               Token { kind: Lower }
@@ -61,4 +61,3 @@ Start { kind: DoExpression }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

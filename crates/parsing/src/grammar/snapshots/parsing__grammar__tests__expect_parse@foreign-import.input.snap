@@ -19,44 +19,40 @@ Start { kind: Module }
   Finish
   Token { kind: LayoutStart }
   Start { kind: ModuleImports }
-    Start { kind: ZeroOrMore }
-    Finish
   Finish
   Start { kind: ModuleBody }
-    Start { kind: ZeroOrMore }
-      Start { kind: ForeignValueDeclaration }
-        Token { kind: ForeignKw }
-        Token { kind: ImportKw }
-        Start { kind: Name }
-          Token { kind: Lower }
-        Finish
-        Token { kind: Colon2 }
-        Start { kind: ForallType }
-          Token { kind: ForallKw }
-          Start { kind: OneOrMore }
-            Start { kind: TypeVariableName }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
-            Finish
-            Start { kind: TypeVariableName }
-              Start { kind: Name }
-                Token { kind: Lower }
-              Finish
+    Start { kind: ForeignValueDeclaration }
+      Token { kind: ForeignKw }
+      Token { kind: ImportKw }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
+      Token { kind: Colon2 }
+      Start { kind: ForallType }
+        Token { kind: ForallKw }
+        Start { kind: ForallVariables }
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
             Finish
           Finish
-          Token { kind: Period }
-          Start { kind: ArrowType }
-            Start { kind: VariableType }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
+          Start { kind: TypeVariableName }
+            Start { kind: Name }
+              Token { kind: Lower }
             Finish
-            Token { kind: RightArrow }
-            Start { kind: VariableType }
-              Start { kind: NameRef }
-                Token { kind: Lower }
-              Finish
+          Finish
+        Finish
+        Token { kind: Period }
+        Start { kind: ArrowType }
+          Start { kind: VariableType }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+          Token { kind: RightArrow }
+          Start { kind: VariableType }
+            Start { kind: NameRef }
+              Token { kind: Lower }
             Finish
           Finish
         Finish

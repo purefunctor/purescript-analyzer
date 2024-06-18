@@ -20,11 +20,11 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoLetBinding }
       Token { kind: LetKw }
       Token { kind: LayoutStart }
-      Start { kind: OneOrMore }
+      Start { kind: LayoutList }
         Start { kind: LetBindingSignature }
           Start { kind: Name }
             Token { kind: Lower }
@@ -43,7 +43,7 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: UnconditionalBinding }
             Token { kind: Equal }
@@ -59,7 +59,7 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
             Start { kind: VariableBinder }
               Start { kind: Name }
                 Token { kind: Lower }
@@ -84,26 +84,24 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: GuardedBinding }
-            Start { kind: OneOrMore }
-              Start { kind: GuardedExpression }
-                Token { kind: Pipe }
-                Start { kind: Separated }
-                  Start { kind: PatternGuard }
-                    Start { kind: LiteralExpression }
-                      Token { kind: LiteralTrue }
-                    Finish
+            Start { kind: GuardedExpression }
+              Token { kind: Pipe }
+              Start { kind: PatternGuardList }
+                Start { kind: PatternGuard }
+                  Start { kind: LiteralExpression }
+                    Token { kind: LiteralTrue }
                   Finish
                 Finish
-                Token { kind: Equal }
-                Start { kind: WhereExpression }
-                  Start { kind: VariableExpression }
-                    Start { kind: QualifiedName }
-                      Start { kind: NameRef }
-                        Token { kind: Lower }
-                      Finish
+              Finish
+              Token { kind: Equal }
+              Start { kind: WhereExpression }
+                Start { kind: VariableExpression }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Lower }
                     Finish
                   Finish
                 Finish
@@ -116,55 +114,53 @@ Start { kind: DoExpression }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: GuardedBinding }
-            Start { kind: OneOrMore }
-              Start { kind: GuardedExpression }
-                Token { kind: Pipe }
-                Start { kind: Separated }
-                  Start { kind: PatternGuard }
-                    Start { kind: ConstructorBinder }
-                      Start { kind: QualifiedName }
-                        Start { kind: NameRef }
-                          Token { kind: Upper }
-                        Finish
-                      Finish
-                      Start { kind: OneOrMore }
-                        Start { kind: VariableBinder }
-                          Start { kind: Name }
-                            Token { kind: Lower }
-                          Finish
-                        Finish
+            Start { kind: GuardedExpression }
+              Token { kind: Pipe }
+              Start { kind: PatternGuardList }
+                Start { kind: PatternGuard }
+                  Start { kind: ConstructorBinder }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Upper }
                       Finish
                     Finish
-                    Token { kind: LeftArrow }
-                    Start { kind: VariableExpression }
-                      Start { kind: QualifiedName }
-                        Start { kind: NameRef }
+                    Start { kind: ArgumentList }
+                      Start { kind: VariableBinder }
+                        Start { kind: Name }
                           Token { kind: Lower }
                         Finish
                       Finish
                     Finish
                   Finish
-                  Token { kind: Comma }
-                  Start { kind: PatternGuard }
-                    Start { kind: VariableExpression }
-                      Start { kind: QualifiedName }
-                        Start { kind: NameRef }
-                          Token { kind: Lower }
-                        Finish
-                      Finish
-                    Finish
-                  Finish
-                Finish
-                Token { kind: Equal }
-                Start { kind: WhereExpression }
+                  Token { kind: LeftArrow }
                   Start { kind: VariableExpression }
                     Start { kind: QualifiedName }
                       Start { kind: NameRef }
                         Token { kind: Lower }
                       Finish
+                    Finish
+                  Finish
+                Finish
+                Token { kind: Comma }
+                Start { kind: PatternGuard }
+                  Start { kind: VariableExpression }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Lower }
+                      Finish
+                    Finish
+                  Finish
+                Finish
+              Finish
+              Token { kind: Equal }
+              Start { kind: WhereExpression }
+                Start { kind: VariableExpression }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Lower }
                     Finish
                   Finish
                 Finish
@@ -178,4 +174,3 @@ Start { kind: DoExpression }
   Finish
   Token { kind: LayoutEnd }
 Finish
-

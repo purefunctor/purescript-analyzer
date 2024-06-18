@@ -15,7 +15,7 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoBind }
       Start { kind: VariableBinder }
         Start { kind: Name }
@@ -35,12 +35,12 @@ Start { kind: DoExpression }
     Start { kind: DoLetBinding }
       Token { kind: LetKw }
       Token { kind: LayoutStart }
-      Start { kind: OneOrMore }
+      Start { kind: LayoutList }
         Start { kind: LetBindingName }
           Start { kind: Name }
             Token { kind: Lower }
           Finish
-          Start { kind: ZeroOrMore }
+          Start { kind: BinderList }
           Finish
           Start { kind: UnconditionalBinding }
             Token { kind: Equal }

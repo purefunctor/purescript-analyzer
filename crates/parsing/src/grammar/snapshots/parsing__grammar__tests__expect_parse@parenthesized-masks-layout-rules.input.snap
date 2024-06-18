@@ -25,7 +25,7 @@ Start { kind: DoExpression }
     Token { kind: DoKw }
   Finish
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: DoDiscard }
       Start { kind: ParenthesizedExpression }
         Token { kind: LeftParenthesis }
@@ -37,7 +37,7 @@ Start { kind: DoExpression }
               Finish
             Finish
           Finish
-          Start { kind: OneOrMore }
+          Start { kind: ArgumentList }
             Start { kind: TermArgument }
               Start { kind: VariableExpression }
                 Start { kind: QualifiedName }
@@ -110,39 +110,34 @@ Start { kind: DoExpression }
     Start { kind: DoDiscard }
       Start { kind: LiteralExpression }
         Start { kind: LiteralArray }
-          Start { kind: Wrapped }
-            Token { kind: LeftSquare }
-            Start { kind: Separated }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
-              Finish
-              Token { kind: Comma }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
-                  Finish
-                Finish
+          Token { kind: LeftSquare }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
               Finish
             Finish
-            Token { kind: RightSquare }
           Finish
+          Token { kind: Comma }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: Comma }
+          Start { kind: VariableExpression }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Lower }
+              Finish
+            Finish
+          Finish
+          Token { kind: RightSquare }
         Finish
       Finish
     Finish
   Finish
   Token { kind: LayoutEnd }
 Finish
-

@@ -1,5 +1,8 @@
 //! Conversion from the CST to AST
 
+#[cfg(test)]
+mod tests;
+
 use std::sync::Arc;
 
 use files::FileId;
@@ -161,12 +164,8 @@ fn lower_header(db: &dyn SurfaceDatabase, header: Option<ast::ModuleHeader>) -> 
 }
 
 fn lower_export_list(db: &dyn SurfaceDatabase, export_list: ast::ExportList) -> ExportList {
-    let items = export_list
-        .export_items()
-        .map(|export_items| {
-            export_items.children().map(|export_item| lower_export_item(db, export_item)).collect()
-        })
-        .unwrap_or_default();
+    let items =
+        export_list.children().map(|export_item| lower_export_item(db, export_item)).collect_vec();
     ExportList { items }
 }
 
@@ -191,13 +190,12 @@ fn lower_export_item(db: &dyn SurfaceDatabase, export_item: ast::ExportItem) -> 
 
 fn lower_imports(db: &dyn SurfaceDatabase, imports: Option<ast::ModuleImports>) -> ModuleImports {
     imports
-        .and_then(|imports| {
+        .map(|imports| {
             let declarations = imports
-                .imports()?
                 .children()
                 .map(|import_declaration| lower_import_declaration(db, import_declaration))
                 .collect();
-            Some(ModuleImports { declarations })
+            ModuleImports { declarations }
         })
         .unwrap_or_else(|| {
             let declarations = vec![];
@@ -223,12 +221,8 @@ fn lower_import_declaration(
 
 fn lower_import_list(db: &dyn SurfaceDatabase, import_list: ast::ImportList) -> ImportList {
     let hiding = import_list.hiding_token().is_some();
-    let items = import_list
-        .import_items()
-        .map(|import_items| {
-            import_items.children().map(|import_item| lower_import_item(db, import_item)).collect()
-        })
-        .unwrap_or_default();
+    let items =
+        import_list.children().map(|import_item| lower_import_item(db, import_item)).collect_vec();
     ImportList { items, hiding }
 }
 
@@ -257,10 +251,8 @@ fn lower_data_members(db: &dyn SurfaceDatabase, data_members: ast::DataMembers) 
     match data_members {
         ast::DataMembers::DataAll(_) => DataMembers::DataAll,
         ast::DataMembers::DataEnumerated(e) => {
-            let names = e
-                .constructors()
-                .map(|names| names.children().map(|name| lower_name_ref(db, Some(name))).collect())
-                .unwrap_or_default();
+            let names =
+                e.children().map(|name_ref| lower_name_ref(db, Some(name_ref))).collect_vec();
             DataMembers::DataEnumerated(names)
         }
     }
@@ -275,7 +267,7 @@ fn lower_module_body(
     db: &dyn SurfaceDatabase,
     body: Option<ast::ModuleBody>,
 ) -> ModuleBody {
-    if let Some(declarations) = body.and_then(|body| Some(body.declarations()?.children())) {
+    if let Some(declarations) = body.map(|body| body.children()) {
         lower_declarations(ctx, db, declarations)
     } else {
         ModuleBody::default()
@@ -572,7 +564,7 @@ fn lower_where_expr(
 fn lower_let_bindings(
     ctx: &mut Ctx,
     db: &dyn SurfaceDatabase,
-    let_bindings: &ast::OneOrMore<ast::LetBinding>,
+    let_bindings: &ast::LayoutList<ast::LetBinding>,
 ) -> Vec<LetBinding> {
     #[derive(Debug, PartialEq, Eq)]
     enum GroupKey {
@@ -683,49 +675,31 @@ fn lower_literal<T, I>(
 where
     T: AstNode<Language = PureScript>,
 {
+    use rowan::ast::support;
+
     match literal {
         NodeOrToken::Node(n) => match n.kind() {
             SyntaxKind::LiteralArray => {
-                type Contents<T> = ast::Wrapped<ast::Separated<T>>;
-
-                let contents = n
-                    .first_child()
-                    .and_then(Contents::cast)
-                    .and_then(|wrapped| Some(wrapped.child()?.children()));
-
-                let contents = contents
-                    .map(|contents| {
-                        contents.map(|inner| lower_inner(ctx, db, Some(inner))).collect()
-                    })
-                    .unwrap_or_default();
+                let contents = support::children(&n)
+                    .map(|inner| lower_inner(ctx, db, Some(inner)))
+                    .collect_vec();
 
                 Literal::Array(contents)
             }
             SyntaxKind::LiteralRecord => {
-                type Contents = ast::Wrapped<ast::Separated<ast::RecordItem>>;
-
-                let contents = n
-                    .first_child()
-                    .and_then(Contents::cast)
-                    .and_then(|wrapped| Some(wrapped.child()?.children()));
-
-                let contents = contents
-                    .map(|contents| {
-                        contents
-                            .map(|item| match item {
-                                ast::RecordItem::RecordField(field) => {
-                                    let name = lower_name(db, field.name());
-                                    let value = lower_inner(ctx, db, field.value());
-                                    RecordItem::RecordField(name, value)
-                                }
-                                ast::RecordItem::RecordPun(pun) => {
-                                    let name = lower_name(db, pun.name());
-                                    RecordItem::RecordPun(name)
-                                }
-                            })
-                            .collect()
+                let contents = support::children(&n)
+                    .map(|item| match item {
+                        ast::RecordItem::RecordField(field) => {
+                            let name = lower_name(db, field.name());
+                            let value = lower_inner(ctx, db, field.value());
+                            RecordItem::RecordField(name, value)
+                        }
+                        ast::RecordItem::RecordPun(pun) => {
+                            let name = lower_name_ref(db, pun.name_ref());
+                            RecordItem::RecordPun(name)
+                        }
                     })
-                    .unwrap_or_default();
+                    .collect_vec();
 
                 Literal::Record(contents)
             }

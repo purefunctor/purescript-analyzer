@@ -183,7 +183,7 @@ pub(super) fn nominal_map_query(db: &dyn IndexDatabase, file_id: FileId) -> Arc<
 
     let node = db.parse_file(file_id);
     let declarations = ast::Source::<ast::Module>::cast(node)
-        .and_then(|source| Some(source.child()?.body()?.declarations()?.children()));
+        .and_then(|source| Some(source.child()?.body()?.children()));
 
     if let Some(declarations) = declarations {
         let positional_map = db.positional_map(file_id);

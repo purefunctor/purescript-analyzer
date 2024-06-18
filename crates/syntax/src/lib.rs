@@ -48,6 +48,8 @@ pub enum SyntaxKind {
     Label,
     Hole,
     Operator,
+    TickOperator,
+    OperatorPair,
 
     At,
     Backslash,
@@ -87,6 +89,7 @@ pub enum SyntaxKind {
     DoLetBinding,
     DoDiscard,
 
+    ArgumentList,
     ApplicationExpression,
     TermArgument,
     TypeArgument,
@@ -106,7 +109,9 @@ pub enum SyntaxKind {
 
     CaseKw,
     OfKw,
+    CaseHead,
     CaseBranch,
+    CasePatterns,
     CaseExpression,
 
     ExpressionInfixChain,
@@ -122,7 +127,9 @@ pub enum SyntaxKind {
     LiteralExpression,
     ParenthesizedExpression,
     RecordAccessExpression,
+    RecordAccessPath,
     RecordUpdateExpression,
+    RecordUpdateList,
     RecordUpdateLeaf,
     RecordUpdateBranch,
     TypedExpression,
@@ -140,6 +147,7 @@ pub enum SyntaxKind {
     RecordField,
 
     ForallType,
+    ForallVariables,
     TypeVariableKinded,
     TypeVariableName,
 
@@ -170,6 +178,7 @@ pub enum SyntaxKind {
     TypedBinder,
     VariableBinder,
     WildcardBinder,
+    BinderList,
 
     ValueEquationDeclaration,
     ValueAnnotationDeclaration,
@@ -186,8 +195,9 @@ pub enum SyntaxKind {
     NewtypeKw,
     ForallKw,
 
-    TypeDeclarationAnnotation,
+    TypeDeclarationSignature,
     TypeDeclaration,
+    SynonymVariables,
     TypeKw,
 
     ClassSignature,
@@ -205,6 +215,7 @@ pub enum SyntaxKind {
     InstanceChain,
     InstanceDeclaration,
     InstanceAssertions,
+    InstanceArguments,
     InstanceMemberSignature,
     InstanceMemberEquation,
     InstanceKw,
@@ -224,28 +235,16 @@ pub enum SyntaxKind {
     UnconditionalBinding,
     GuardedBinding,
     PatternGuard,
+    PatternGuardList,
     GuardedExpression,
 
-    /// Convenience node for patterns such as `l: e` or `e :: T`.
-    Labeled,
-    /// Convenience node for patterns such as `@variable` or `?hole`.
-    Prefixed,
-    /// Convenience node for patterns such as `( element )`.
-    Wrapped,
-    /// Convenience node for a non-empty array of elements.
-    OneOrMore,
-    /// Convenience node for an array of elements.
-    ZeroOrMore,
-    /// Convenience node for a tuple of elements.
-    Pair,
-    /// Convenience node for patterns such as `a , b , c`
-    Separated,
-
+    LayoutList,
     LayoutStart,
     LayoutSep,
     LayoutEnd,
 
     Sentinel,
+    Wrapped,
     Source,
     Error,
     EndOfFile,

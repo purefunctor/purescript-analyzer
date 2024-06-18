@@ -10,7 +10,7 @@ Input: case 1, 2 of
 
 Start { kind: CaseExpression }
   Token { kind: CaseKw }
-  Start { kind: Separated }
+  Start { kind: CaseHead }
     Start { kind: LiteralExpression }
       Token { kind: LiteralInteger }
     Finish
@@ -21,9 +21,9 @@ Start { kind: CaseExpression }
   Finish
   Token { kind: OfKw }
   Token { kind: LayoutStart }
-  Start { kind: OneOrMore }
+  Start { kind: LayoutList }
     Start { kind: CaseBranch }
-      Start { kind: Separated }
+      Start { kind: CasePatterns }
         Start { kind: LiteralBinder }
           Token { kind: LiteralInteger }
         Finish
@@ -32,16 +32,18 @@ Start { kind: CaseExpression }
           Token { kind: LiteralInteger }
         Finish
       Finish
-      Token { kind: RightArrow }
-      Start { kind: WhereExpression }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
+      Start { kind: UnconditionalBinding }
+        Token { kind: RightArrow }
+        Start { kind: WhereExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
         Finish
       Finish
     Finish
     Token { kind: LayoutSep }
     Start { kind: CaseBranch }
-      Start { kind: Separated }
+      Start { kind: CasePatterns }
         Start { kind: VariableBinder }
           Start { kind: Name }
             Token { kind: Lower }
@@ -54,24 +56,24 @@ Start { kind: CaseExpression }
           Finish
         Finish
       Finish
-      Start { kind: GuardedExpression }
-        Token { kind: Pipe }
-        Start { kind: Separated }
-          Start { kind: PatternGuard }
-            Start { kind: LiteralBinder }
-              Token { kind: LiteralInteger }
-            Finish
-            Token { kind: LeftArrow }
-            Start { kind: ExpressionOperatorChain }
-              Start { kind: VariableExpression }
-                Start { kind: QualifiedName }
-                  Start { kind: NameRef }
-                    Token { kind: Lower }
+      Start { kind: GuardedBinding }
+        Start { kind: GuardedExpression }
+          Token { kind: Pipe }
+          Start { kind: PatternGuardList }
+            Start { kind: PatternGuard }
+              Start { kind: LiteralBinder }
+                Token { kind: LiteralInteger }
+              Finish
+              Token { kind: LeftArrow }
+              Start { kind: ExpressionOperatorChain }
+                Start { kind: VariableExpression }
+                  Start { kind: QualifiedName }
+                    Start { kind: NameRef }
+                      Token { kind: Lower }
+                    Finish
                   Finish
                 Finish
-              Finish
-              Start { kind: OneOrMore }
-                Start { kind: Pair }
+                Start { kind: OperatorPair }
                   Start { kind: QualifiedName }
                     Start { kind: NameRef }
                       Token { kind: Operator }
@@ -88,26 +90,28 @@ Start { kind: CaseExpression }
               Finish
             Finish
           Finish
-        Finish
-        Token { kind: RightArrow }
-        Start { kind: WhereExpression }
-          Start { kind: LiteralExpression }
-            Token { kind: LiteralInteger }
+          Token { kind: RightArrow }
+          Start { kind: WhereExpression }
+            Start { kind: LiteralExpression }
+              Token { kind: LiteralInteger }
+            Finish
           Finish
         Finish
       Finish
     Finish
     Token { kind: LayoutSep }
     Start { kind: CaseBranch }
-      Start { kind: Separated }
+      Start { kind: CasePatterns }
         Start { kind: WildcardBinder }
           Token { kind: Underscore }
         Finish
       Finish
-      Token { kind: RightArrow }
-      Start { kind: WhereExpression }
-        Start { kind: LiteralExpression }
-          Token { kind: LiteralInteger }
+      Start { kind: UnconditionalBinding }
+        Token { kind: RightArrow }
+        Start { kind: WhereExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
         Finish
       Finish
     Finish
