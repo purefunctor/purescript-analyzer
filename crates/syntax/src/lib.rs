@@ -244,8 +244,6 @@ pub enum SyntaxKind {
     OneOrMore,
     /// Convenience node for a tuple of elements.
     Pair,
-    /// Convenience node for patterns such as `a , b , c`
-    Separated,
 
     LayoutStart,
     LayoutSep,
