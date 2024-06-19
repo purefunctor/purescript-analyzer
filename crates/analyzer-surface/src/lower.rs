@@ -779,8 +779,8 @@ fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Express
             ast::Expression::CaseExpression(_) => Expr::NotImplemented,
             ast::Expression::ConstructorExpression(c) => lower_expr_constructor(db, c),
             ast::Expression::DoExpression(_) => Expr::NotImplemented,
-            ast::Expression::ExpressionInfixChain(_) => Expr::NotImplemented,
-            ast::Expression::ExpressionOperatorChain(_) => Expr::NotImplemented,
+            ast::Expression::ExpressionInfixChain(c) => lower_expr_infix_chain(ctx, db, c),
+            ast::Expression::ExpressionOperatorChain(c) => lower_expr_operator_chain(ctx, db, c),
             ast::Expression::IfThenElseExpression(_) => Expr::NotImplemented,
             ast::Expression::LambdaExpression(l) => lower_expr_lambda(ctx, db, l),
             ast::Expression::LetInExpression(l) => lower_expr_let_in(ctx, db, l),
@@ -825,6 +825,40 @@ fn lower_expr_constructor(
 ) -> Expr {
     let name = lower_qualified_name(db, constructor.qualified_name());
     Expr::Constructor(name)
+}
+
+fn lower_expr_infix_chain(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    chain: &ast::ExpressionInfixChain,
+) -> Expr {
+    let head = lower_expr(ctx, db, chain.head());
+    let tail = chain
+        .tail()
+        .filter_map(|pair| {
+            let term = lower_expr(ctx, db, pair.operator()?.term());
+            let expr = lower_expr(ctx, db, pair.term());
+            Some((term, expr))
+        })
+        .collect_vec();
+    Expr::InfixChain(head, tail)
+}
+
+fn lower_expr_operator_chain(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    chain: &ast::ExpressionOperatorChain,
+) -> Expr {
+    let head = lower_expr(ctx, db, chain.head());
+    let tail = chain
+        .tail()
+        .filter_map(|pair| {
+            let name = lower_qualified_name(db, pair.operator()?.name());
+            let expr = lower_expr(ctx, db, pair.term());
+            Some((name, expr))
+        })
+        .collect_vec();
+    Expr::OperatorChain(head, tail)
 }
 
 fn lower_expr_lambda(

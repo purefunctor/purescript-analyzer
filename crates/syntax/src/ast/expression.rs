@@ -1,8 +1,11 @@
-use rowan::ast::AstNode;
+use rowan::ast::{support, AstChildren, AstNode};
 
 use crate::{PureScript, SyntaxToken};
 
-use super::{ArgumentList, BinderList, LayoutList, LetBinding, Name, NameRef, QualifiedName, Type};
+use super::{
+    ArgumentList, BinderList, LayoutList, LetBinding, Name, NameRef, OperatorPair, QualifiedName,
+    SymbolOperator, TickOperator, Type,
+};
 
 _create_ast_v!(
     Expression,
@@ -58,6 +61,26 @@ impl TypeArgument {
 
     pub fn ty(&self) -> Option<Type> {
         Type::cast(self.node.first_child()?)
+    }
+}
+
+impl ExpressionInfixChain {
+    pub fn head(&self) -> Option<Expression> {
+        Expression::cast(self.node.first_child()?)
+    }
+
+    pub fn tail(&self) -> AstChildren<OperatorPair<TickOperator<Expression>, Expression>> {
+        support::children(&self.node)
+    }
+}
+
+impl ExpressionOperatorChain {
+    pub fn head(&self) -> Option<Expression> {
+        Expression::cast(self.node.first_child()?)
+    }
+
+    pub fn tail(&self) -> AstChildren<OperatorPair<SymbolOperator, Expression>> {
+        support::children(&self.node)
     }
 }
 

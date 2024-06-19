@@ -73,6 +73,45 @@ macro_rules! _create_ast_t {
     };
 }
 
+macro_rules! _create_ast_t2 {
+    ($($kind:ident),+) => {
+        $(
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            pub struct $kind<T, U> {
+                node: crate::SyntaxNode,
+                _kind_t: std::marker::PhantomData<fn() -> T>,
+                _kind_u: std::marker::PhantomData<fn() -> U>,
+            }
+
+            impl<T, U> rowan::ast::AstNode for $kind<T, U> {
+                type Language = crate::PureScript;
+
+                fn can_cast(kind: crate::SyntaxKind) -> bool
+                where
+                    Self: Sized,
+                {
+                    matches!(kind, crate::SyntaxKind::$kind)
+                }
+
+                fn cast(node: crate::SyntaxNode) -> Option<Self>
+                where
+                    Self: Sized,
+                {
+                    if Self::can_cast(node.kind()) {
+                        Some(Self { node, _kind_t: std::marker::PhantomData::default(), _kind_u: std::marker::PhantomData::default() })
+                    } else {
+                        None
+                    }
+                }
+
+                fn syntax(&self) -> &crate::SyntaxNode {
+                    &self.node
+                }
+            }
+        )+
+    };
+}
+
 macro_rules! _create_ast_v {
     ($kind:ident, $key_0:ident($value_0:ident)$(,$key:ident($value:ident))*) => {
         #[derive(Debug, Clone, PartialEq, Eq, Hash)]

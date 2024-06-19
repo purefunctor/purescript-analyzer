@@ -1,0 +1,103 @@
+---
+source: crates/analyzer-surface/src/lower/tests.rs
+expression: "(surface, expressions, let_names, binders, types)"
+---
+(
+    Module {
+        header: ModuleHeader {
+            name: ModuleName(
+                "Main",
+            ),
+            export_list: None,
+        },
+        imports: ModuleImports {
+            declarations: [],
+        },
+        body: ModuleBody {
+            declarations: [
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(0),
+                        name: Name(
+                            "operatorChain",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(4),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            class_declarations: {},
+            data_declarations: {},
+            value_declarations: {
+                Idx::<ValueGroup>(0): 0,
+            },
+        },
+    },
+    [
+        Literal(
+            Int(
+                1,
+            ),
+        ),
+        Literal(
+            Int(
+                2,
+            ),
+        ),
+        Literal(
+            Int(
+                3,
+            ),
+        ),
+        Literal(
+            Int(
+                4,
+            ),
+        ),
+        OperatorChain(
+            Idx::<Expr>(0),
+            [
+                (
+                    Qualified {
+                        prefix: None,
+                        value: Name(
+                            "+",
+                        ),
+                    },
+                    Idx::<Expr>(1),
+                ),
+                (
+                    Qualified {
+                        prefix: None,
+                        value: Name(
+                            "-",
+                        ),
+                    },
+                    Idx::<Expr>(2),
+                ),
+                (
+                    Qualified {
+                        prefix: None,
+                        value: Name(
+                            "*",
+                        ),
+                    },
+                    Idx::<Expr>(3),
+                ),
+            ],
+        ),
+    ],
+    [],
+    [],
+    [],
+)

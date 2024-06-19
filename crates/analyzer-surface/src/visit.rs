@@ -69,6 +69,13 @@ where
             }
         }
         Expr::Constructor(_) => (),
+        Expr::InfixChain(head, tail) => {
+            visitor.visit_expr(*head);
+            for (term, expr) in tail {
+                visitor.visit_expr(*term);
+                visitor.visit_expr(*expr);
+            }
+        }
         Expr::Lambda(binders, body) => {
             for binder in binders {
                 visitor.visit_binder(*binder);
@@ -93,6 +100,12 @@ where
             }
             _ => (),
         },
+        Expr::OperatorChain(head, tail) => {
+            visitor.visit_expr(*head);
+            for (_, expr) in tail {
+                visitor.visit_expr(*expr);
+            }
+        }
         Expr::Variable(_) => (),
         Expr::NotImplemented => (),
     }

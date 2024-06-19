@@ -1,0 +1,112 @@
+---
+source: crates/analyzer-surface/src/lower/tests.rs
+expression: "(surface, expressions, let_names, binders, types)"
+---
+(
+    Module {
+        header: ModuleHeader {
+            name: ModuleName(
+                "Main",
+            ),
+            export_list: None,
+        },
+        imports: ModuleImports {
+            declarations: [],
+        },
+        body: ModuleBody {
+            declarations: [
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(0),
+                        name: Name(
+                            "infixChain",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(7),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            class_declarations: {},
+            data_declarations: {},
+            value_declarations: {
+                Idx::<ValueGroup>(0): 0,
+            },
+        },
+    },
+    [
+        Literal(
+            Int(
+                1,
+            ),
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "plus",
+                ),
+            },
+        ),
+        Literal(
+            Int(
+                2,
+            ),
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "minus",
+                ),
+            },
+        ),
+        Literal(
+            Int(
+                3,
+            ),
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "times",
+                ),
+            },
+        ),
+        Literal(
+            Int(
+                4,
+            ),
+        ),
+        InfixChain(
+            Idx::<Expr>(0),
+            [
+                (
+                    Idx::<Expr>(1),
+                    Idx::<Expr>(2),
+                ),
+                (
+                    Idx::<Expr>(3),
+                    Idx::<Expr>(4),
+                ),
+                (
+                    Idx::<Expr>(5),
+                    Idx::<Expr>(6),
+                ),
+            ],
+        ),
+    ],
+    [],
+    [],
+    [],
+)
