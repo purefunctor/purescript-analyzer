@@ -1,0 +1,14 @@
+[package]
+name = "analyzer-scope"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+analyzer-index = { version = "0.1.0", path = "../analyzer-index" }
+analyzer-surface = { version = "0.1.0", path = "../analyzer-surface" }
+files = { version = "0.1.0", path = "../files" }
+itertools = "0.13.0"
+la-arena = "0.3.1"
+rustc-hash = "2.0.0"
+salsa = "0.16.1"
+syntax = { version = "0.1.0", path = "../syntax" }

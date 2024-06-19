@@ -6,7 +6,7 @@
 
 use std::{borrow::Borrow, ops::Index, sync::Arc};
 
-use analyzer_index::{AstId, nominal::*};
+use analyzer_index::{nominal::*, AstId};
 use la_arena::{Arena, Idx};
 use paste::paste;
 use rustc_hash::FxHashMap;

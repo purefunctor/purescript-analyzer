@@ -36,6 +36,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "analyzer-scope"
+version = "0.1.0"
+dependencies = [
+ "analyzer-index",
+ "analyzer-surface",
+ "files",
+ "itertools",
+ "la-arena",
+ "rustc-hash 2.0.0",
+ "salsa",
+ "syntax",
+]
+
+[[package]]
 name = "analyzer-source"
 version = "0.1.0"
 dependencies = [
