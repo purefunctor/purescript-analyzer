@@ -375,6 +375,13 @@ fn resolve_expr(ctx: &mut Ctx, expr_id: ExprId) {
                 ctx.resolve_info.per_constructor_expr.insert(expr_id, constructor);
             }
         }
+        Expr::InfixChain(head, tail) => {
+            resolve_expr(ctx, *head);
+            for (term, expr) in tail {
+                resolve_expr(ctx, *term);
+                resolve_expr(ctx, *expr);
+            }
+        }
         Expr::Lambda(binders, body) => {
             for binder in binders {
                 resolve_binder(ctx, *binder);
@@ -386,6 +393,12 @@ fn resolve_expr(ctx: &mut Ctx, expr_id: ExprId) {
             resolve_expr(ctx, *body);
         }
         Expr::Literal(literal) => resolve_literal(ctx, literal, resolve_expr),
+        Expr::OperatorChain(head, tail) => {
+            resolve_expr(ctx, *head);
+            for (_, expr) in tail {
+                resolve_expr(ctx, *expr);
+            }
+        }
         Expr::Variable(name) => {
             if let Some(variable) = resolve_variable(ctx, expr_id, name) {
                 ctx.resolve_info.per_variable_expr.insert(expr_id, variable);

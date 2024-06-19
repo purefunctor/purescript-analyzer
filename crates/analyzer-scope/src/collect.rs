@@ -247,6 +247,13 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
             }
         }
         Expr::Constructor(_) => (),
+        Expr::InfixChain(head, tail) => {
+            collect_expr(ctx, *head);
+            for (term, expr) in tail {
+                collect_expr(ctx, *term);
+                collect_expr(ctx, *expr);
+            }
+        }
         Expr::Lambda(binders, body) => {
             ctx.with_reverting_scope(|ctx| {
                 collect_binders(ctx, binders);
@@ -260,6 +267,12 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
             });
         }
         Expr::Literal(literal) => collect_literal(ctx, literal, collect_expr),
+        Expr::OperatorChain(head, tail) => {
+            collect_expr(ctx, *head);
+            for (_, expr) in tail {
+                collect_expr(ctx, *expr);
+            }
+        }
         Expr::Variable(_) => (),
         Expr::NotImplemented => (),
     }
