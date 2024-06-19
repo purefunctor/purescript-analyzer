@@ -1,0 +1,73 @@
+---
+source: crates/analyzer-surface/src/lower/tests.rs
+expression: "(surface, expressions, let_names, binders, types)"
+---
+(
+    Module {
+        header: ModuleHeader {
+            name: ModuleName(
+                "Main",
+            ),
+            export_list: Some(
+                ExportList {
+                    items: [
+                        ExportType(
+                            Name(
+                                "Type",
+                            ),
+                            None,
+                        ),
+                        ExportType(
+                            Name(
+                                "Data",
+                            ),
+                            Some(
+                                DataAll,
+                            ),
+                        ),
+                        ExportType(
+                            Name(
+                                "List",
+                            ),
+                            Some(
+                                DataEnumerated(
+                                    [
+                                        Name(
+                                            "Cons",
+                                        ),
+                                        Name(
+                                            "List",
+                                        ),
+                                    ],
+                                ),
+                            ),
+                        ),
+                        ExportValue(
+                            Name(
+                                "value",
+                            ),
+                        ),
+                        ExportClass(
+                            Name(
+                                "Class",
+                            ),
+                        ),
+                    ],
+                },
+            ),
+        },
+        imports: ModuleImports {
+            declarations: [],
+        },
+        body: ModuleBody {
+            declarations: [],
+            class_declarations: {},
+            data_declarations: {},
+            value_declarations: {},
+        },
+    },
+    [],
+    [],
+    [],
+    [],
+)

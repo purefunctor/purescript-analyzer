@@ -61,6 +61,7 @@ dependencies = [
  "rustc-hash 2.0.0",
  "salsa",
  "syntax",
+ "test-each",
 ]
 
 [[package]]
@@ -166,6 +167,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "globset"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -195,7 +202,7 @@ checksum = "729f9bd3449d77e7831a18abfb7ba2f99ee813dfd15b8c2167c9a54ba20aa99d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -504,7 +511,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -561,11 +568,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "syn"
+version = "2.0.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee659fb5f3d355364e1f3e5bc10fb82068efbf824a1e9d1c9504244a6469ad53"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
 name = "syntax"
 version = "0.1.0"
 dependencies = [
  "rowan",
  "smol_str",
+]
+
+[[package]]
+name = "test-each"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d822711cf1d4a8d8adc34414c26c85f9144c692903c45a47a04ee4ffb360e5bc"
+dependencies = [
+ "test-each-codegen",
+]
+
+[[package]]
+name = "test-each-codegen"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad5bbe324addbdc5ee683822d0812e9bb63fbeabff10baf0d11fcfc7a0ff2122"
+dependencies = [
+ "glob",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.43",
 ]
 
 [[package]]

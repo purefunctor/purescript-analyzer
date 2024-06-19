@@ -1,0 +1,754 @@
+---
+source: crates/analyzer-surface/src/lower/tests.rs
+expression: "(surface, expressions, let_names, binders, types)"
+---
+(
+    Module {
+        header: ModuleHeader {
+            name: ModuleName(
+                "Main",
+            ),
+            export_list: None,
+        },
+        imports: ModuleImports {
+            declarations: [],
+        },
+        body: ModuleBody {
+            declarations: [
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(0),
+                        name: Name(
+                            "application",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(2),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(1),
+                        name: Name(
+                            "constructor",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(3),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(2),
+                        name: Name(
+                            "prefixedConstructor",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(4),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(3),
+                        name: Name(
+                            "lambda",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(6),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(4),
+                        name: Name(
+                            "letIn",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(9),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(5),
+                        name: Name(
+                            "literalInt",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(10),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(6),
+                        name: Name(
+                            "literalNumber",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(11),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(7),
+                        name: Name(
+                            "literalChar",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(12),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(8),
+                        name: Name(
+                            "literalString",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(13),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(9),
+                        name: Name(
+                            "literalArray",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(16),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(10),
+                        name: Name(
+                            "literalRecord",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(18),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(11),
+                        name: Name(
+                            "variable",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(19),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(12),
+                        name: Name(
+                            "prefixedVariable",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(20),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(13),
+                        name: Name(
+                            "application",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(2),
+                        ),
+                        equations: [],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(14),
+                        name: Name(
+                            "arrow",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(5),
+                        ),
+                        equations: [],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(15),
+                        name: Name(
+                            "constrained",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(10),
+                        ),
+                        equations: [],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(16),
+                        name: Name(
+                            "constructor",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(11),
+                        ),
+                        equations: [],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(17),
+                        name: Name(
+                            "qualified",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(17),
+                        ),
+                        equations: [],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(18),
+                        name: Name(
+                            "parenthesized",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(21),
+                        ),
+                        equations: [],
+                    },
+                ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(19),
+                        name: Name(
+                            "variable",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(22),
+                        ),
+                        equations: [],
+                    },
+                ),
+            ],
+            class_declarations: {},
+            data_declarations: {},
+            value_declarations: {
+                Idx::<ValueGroup>(0): 0,
+                Idx::<ValueGroup>(19): 19,
+                Idx::<ValueGroup>(15): 15,
+                Idx::<ValueGroup>(11): 11,
+                Idx::<ValueGroup>(7): 7,
+                Idx::<ValueGroup>(3): 3,
+                Idx::<ValueGroup>(18): 18,
+                Idx::<ValueGroup>(14): 14,
+                Idx::<ValueGroup>(10): 10,
+                Idx::<ValueGroup>(6): 6,
+                Idx::<ValueGroup>(2): 2,
+                Idx::<ValueGroup>(17): 17,
+                Idx::<ValueGroup>(13): 13,
+                Idx::<ValueGroup>(9): 9,
+                Idx::<ValueGroup>(5): 5,
+                Idx::<ValueGroup>(1): 1,
+                Idx::<ValueGroup>(16): 16,
+                Idx::<ValueGroup>(12): 12,
+                Idx::<ValueGroup>(8): 8,
+                Idx::<ValueGroup>(4): 4,
+            },
+        },
+    },
+    [
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "function",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "argument",
+                ),
+            },
+        ),
+        Application(
+            Idx::<Expr>(0),
+            [
+                Idx::<Expr>(1),
+            ],
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Constructor",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: Some(
+                    ModuleName(
+                        "A",
+                    ),
+                ),
+                value: Name(
+                    "Constructor",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "a",
+                ),
+            },
+        ),
+        Lambda(
+            [
+                Idx::<Binder>(0),
+                Idx::<Binder>(1),
+            ],
+            Idx::<Expr>(5),
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "a",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "const",
+                ),
+            },
+        ),
+        LetIn(
+            [
+                Name {
+                    id: Idx::<LetName>(0),
+                },
+            ],
+            Idx::<Expr>(8),
+        ),
+        Literal(
+            Int(
+                0,
+            ),
+        ),
+        Literal(
+            Number(
+                "0.0",
+            ),
+        ),
+        Literal(
+            Char(
+                "'a'",
+            ),
+        ),
+        Literal(
+            String(
+                "\"hello\"",
+            ),
+        ),
+        Literal(
+            Int(
+                0,
+            ),
+        ),
+        Literal(
+            Int(
+                0,
+            ),
+        ),
+        Literal(
+            Array(
+                [
+                    Idx::<Expr>(14),
+                    Idx::<Expr>(15),
+                ],
+            ),
+        ),
+        Literal(
+            Int(
+                0,
+            ),
+        ),
+        Literal(
+            Record(
+                [
+                    RecordField(
+                        Name(
+                            "a",
+                        ),
+                        Idx::<Expr>(17),
+                    ),
+                    RecordPun(
+                        Name(
+                            "b",
+                        ),
+                    ),
+                ],
+            ),
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "a",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: Some(
+                    ModuleName(
+                        "A",
+                    ),
+                ),
+                value: Name(
+                    "a",
+                ),
+            },
+        ),
+    ],
+    [
+        LetName {
+            name: Name(
+                "const",
+            ),
+            annotation: None,
+            equations: [
+                LetNameEquation {
+                    binders: [
+                        Idx::<Binder>(2),
+                        Idx::<Binder>(3),
+                    ],
+                    binding: Unconditional {
+                        where_expr: WhereExpr {
+                            expr_id: Idx::<Expr>(7),
+                            let_bindings: [],
+                        },
+                    },
+                },
+            ],
+        },
+    ],
+    [
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+        Variable(
+            Name(
+                "b",
+            ),
+        ),
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+        Variable(
+            Name(
+                "b",
+            ),
+        ),
+    ],
+    [
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Function",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Argument",
+                ),
+            },
+        ),
+        Application(
+            Idx::<Type>(0),
+            [
+                Idx::<Type>(1),
+            ],
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Argument",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Result",
+                ),
+            },
+        ),
+        Arrow(
+            [
+                Idx::<Type>(3),
+            ],
+            Idx::<Type>(4),
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Constraint",
+                ),
+            },
+        ),
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+        Application(
+            Idx::<Type>(6),
+            [
+                Idx::<Type>(7),
+            ],
+        ),
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+        Constrained(
+            Idx::<Type>(8),
+            Idx::<Type>(9),
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Constructor",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Type",
+                ),
+            },
+        ),
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+        Variable(
+            Name(
+                "b",
+            ),
+        ),
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+        Arrow(
+            [
+                Idx::<Type>(13),
+                Idx::<Type>(14),
+            ],
+            Idx::<Type>(15),
+        ),
+        Forall(
+            [
+                Name(
+                    Name(
+                        "a",
+                    ),
+                ),
+                Kinded(
+                    Name(
+                        "b",
+                    ),
+                    Idx::<Type>(12),
+                ),
+            ],
+            Idx::<Type>(16),
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Constructor",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Argument",
+                ),
+            },
+        ),
+        Application(
+            Idx::<Type>(18),
+            [
+                Idx::<Type>(19),
+            ],
+        ),
+        Parenthesized(
+            Idx::<Type>(20),
+        ),
+        Variable(
+            Name(
+                "a",
+            ),
+        ),
+    ],
+)
