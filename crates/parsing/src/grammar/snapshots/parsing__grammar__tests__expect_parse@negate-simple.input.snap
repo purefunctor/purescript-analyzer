@@ -6,13 +6,14 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/negate-simple.i
 Input: -1
 
 Start { kind: NegateExpression }
-  Start { kind: QualifiedName }
-    Start { kind: NameRef }
-      Token { kind: Operator }
+  Start { kind: SymbolOperator }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
     Finish
   Finish
   Start { kind: LiteralExpression }
     Token { kind: LiteralInteger }
   Finish
 Finish
-

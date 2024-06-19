@@ -48,6 +48,7 @@ pub enum SyntaxKind {
     Label,
     Hole,
     Operator,
+    SymbolOperator,
     TickOperator,
     OperatorPair,
 

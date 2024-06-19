@@ -13,9 +13,11 @@ Start { kind: ExpressionOperatorChain }
         Token { kind: LiteralInteger }
       Finish
       Start { kind: OperatorPair }
-        Start { kind: QualifiedName }
-          Start { kind: NameRef }
-            Token { kind: Operator }
+        Start { kind: SymbolOperator }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Operator }
+            Finish
           Finish
         Finish
         Start { kind: LiteralExpression }
@@ -26,9 +28,11 @@ Start { kind: ExpressionOperatorChain }
     Token { kind: RightParenthesis }
   Finish
   Start { kind: OperatorPair }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Operator }
+    Start { kind: SymbolOperator }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
       Finish
     Finish
     Start { kind: ParenthesizedExpression }
@@ -38,9 +42,11 @@ Start { kind: ExpressionOperatorChain }
           Token { kind: LiteralInteger }
         Finish
         Start { kind: OperatorPair }
-          Start { kind: QualifiedName }
-            Start { kind: NameRef }
-              Token { kind: Operator }
+          Start { kind: SymbolOperator }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Operator }
+              Finish
             Finish
           Finish
           Start { kind: LiteralExpression }
@@ -52,9 +58,11 @@ Start { kind: ExpressionOperatorChain }
     Finish
   Finish
   Start { kind: OperatorPair }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Operator }
+    Start { kind: SymbolOperator }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
       Finish
     Finish
     Start { kind: ParenthesizedExpression }

@@ -6,15 +6,19 @@ input_file: crates/parsing/src/grammar/inputs/passing/expression/negate-multiple
 Input: - -1
 
 Start { kind: NegateExpression }
-  Start { kind: QualifiedName }
-    Start { kind: NameRef }
-      Token { kind: Operator }
-    Finish
-  Finish
-  Start { kind: NegateExpression }
+  Start { kind: SymbolOperator }
     Start { kind: QualifiedName }
       Start { kind: NameRef }
         Token { kind: Operator }
+      Finish
+    Finish
+  Finish
+  Start { kind: NegateExpression }
+    Start { kind: SymbolOperator }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
       Finish
     Finish
     Start { kind: LiteralExpression }
@@ -22,4 +26,3 @@ Start { kind: NegateExpression }
     Finish
   Finish
 Finish
-

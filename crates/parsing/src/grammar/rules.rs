@@ -1307,8 +1307,10 @@ fn label_name(parser: &mut Parser<'_>) {
 fn operator_ref(parser: &mut Parser) {
     assert!(parser.current().is_operator());
     let mut marker = parser.start();
+    let mut qualified = parser.start();
     name_ref(parser, SyntaxKind::Operator);
-    marker.end(parser, SyntaxKind::QualifiedName);
+    qualified.end(parser, SyntaxKind::QualifiedName);
+    marker.end(parser, SyntaxKind::SymbolOperator);
 }
 
 fn operator_name_ref(parser: &mut Parser) {

@@ -74,9 +74,11 @@ Start { kind: CaseExpression }
                   Finish
                 Finish
                 Start { kind: OperatorPair }
-                  Start { kind: QualifiedName }
-                    Start { kind: NameRef }
-                      Token { kind: Operator }
+                  Start { kind: SymbolOperator }
+                    Start { kind: QualifiedName }
+                      Start { kind: NameRef }
+                        Token { kind: Operator }
+                      Finish
                     Finish
                   Finish
                   Start { kind: VariableExpression }

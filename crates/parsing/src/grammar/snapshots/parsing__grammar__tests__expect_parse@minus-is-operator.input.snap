@@ -10,9 +10,11 @@ Start { kind: ExpressionOperatorChain }
     Token { kind: LiteralInteger }
   Finish
   Start { kind: OperatorPair }
-    Start { kind: QualifiedName }
-      Start { kind: NameRef }
-        Token { kind: Operator }
+    Start { kind: SymbolOperator }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Operator }
+        Finish
       Finish
     Finish
     Start { kind: LiteralExpression }
