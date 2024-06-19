@@ -1,0 +1,9 @@
+[package]
+name = "analyzer-interner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+interner = { version = "0.1.0", path = "../interner" }
+salsa = "0.16.1"
+syntax = { version = "0.1.0", path = "../syntax" }

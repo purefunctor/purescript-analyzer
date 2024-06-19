@@ -1,0 +1,10 @@
+[package]
+name = "analyzer-source"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+files = { version = "0.1.0", path = "../files" }
+parsing = { version = "0.1.0", path = "../parsing" }
+salsa = "0.16.1"
+syntax = { version = "0.1.0", path = "../syntax" }

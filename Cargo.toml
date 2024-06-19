@@ -2,6 +2,9 @@
 members = [
     "crates/*",
 ]
+exclude = [
+    "crates/analyzer"
+]
 resolver = "1"
 
 [profile.dev.package.insta]
