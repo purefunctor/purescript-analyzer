@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 interner = { version = "0.1.0", path = "../interner" }
-salsa = "0.16.1"
+salsa = "0.17.0-pre.2"
 syntax = { version = "0.1.0", path = "../syntax" }

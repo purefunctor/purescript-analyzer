@@ -10,7 +10,7 @@ drop_bomb = "0.1.5"
 either = "1.9.0"
 lexing = { version = "0.1.0", path = "../lexing" }
 position = { version = "0.1.0", path = "../position" }
-rowan = "0.15.11"
+rowan = "0.15.15"
 syntax = { version = "0.1.0", path = "../syntax" }
 unicode_categories = "0.1.1"
 

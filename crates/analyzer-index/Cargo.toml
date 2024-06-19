@@ -11,5 +11,5 @@ itertools = "0.13.0"
 la-arena = "0.3.1"
 rowan = "0.15.15"
 rustc-hash = "2.0.0"
-salsa = "0.16.1"
+salsa = "0.17.0-pre.2"
 syntax = { version = "0.1.0", path = "../syntax" }
