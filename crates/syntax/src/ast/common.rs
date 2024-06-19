@@ -27,7 +27,7 @@ impl SymbolOperator {
     }
 }
 
-impl <T: AstNode<Language = PureScript>> TickOperator<T> {
+impl<T: AstNode<Language = PureScript>> TickOperator<T> {
     pub fn term(&self) -> Option<T> {
         support::child(&self.node)
     }
