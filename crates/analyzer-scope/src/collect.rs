@@ -279,6 +279,10 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
                 collect_expr(ctx, *expr);
             }
         }
+        Expr::Typed(expr, ty) => {
+            collect_expr(ctx, *expr);
+            collect_type(ctx, *ty);
+        }
         Expr::Variable(_) => (),
         Expr::NotImplemented => (),
     }

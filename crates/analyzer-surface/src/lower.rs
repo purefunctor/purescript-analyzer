@@ -789,7 +789,7 @@ fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Express
             ast::Expression::ParenthesizedExpression(p) => lower_expr_parenthesized(ctx, db, p),
             ast::Expression::RecordAccessExpression(_) => Expr::NotImplemented,
             ast::Expression::RecordUpdateExpression(_) => Expr::NotImplemented,
-            ast::Expression::TypedExpression(_) => Expr::NotImplemented,
+            ast::Expression::TypedExpression(t) => lower_expr_typed(ctx, db, t),
             ast::Expression::VariableExpression(v) => lower_expr_variable(db, v),
         };
         ctx.alloc_expr(lowered, Some(&expr))
@@ -918,6 +918,12 @@ fn lower_expr_parenthesized(
     parenthesized: &ast::ParenthesizedExpression,
 ) -> Expr {
     Expr::Parenthesized(lower_expr(ctx, db, parenthesized.expression()))
+}
+
+fn lower_expr_typed(ctx: &mut Ctx, db: &dyn SurfaceDatabase, typed: &ast::TypedExpression) -> Expr {
+    let expr = lower_expr(ctx, db, typed.expression());
+    let ty = lower_type(ctx, db, typed.ty());
+    Expr::Typed(expr, ty)
 }
 
 fn lower_expr_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableExpression) -> Expr {

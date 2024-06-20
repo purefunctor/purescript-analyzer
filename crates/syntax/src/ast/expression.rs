@@ -147,6 +147,16 @@ impl ParenthesizedExpression {
     }
 }
 
+impl TypedExpression {
+    pub fn expression(&self) -> Option<Expression> {
+        Expression::cast(self.node.first_child()?)
+    }
+
+    pub fn ty(&self) -> Option<Type> {
+        Type::cast(self.node.last_child()?)
+    }
+}
+
 impl VariableExpression {
     pub fn qualified_name(&self) -> Option<QualifiedName> {
         QualifiedName::cast(self.node.first_child()?)

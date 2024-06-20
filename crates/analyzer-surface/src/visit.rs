@@ -114,6 +114,10 @@ where
                 visitor.visit_expr(*expr);
             }
         }
+        Expr::Typed(expr, ty) => {
+            visitor.visit_expr(*expr);
+            visitor.visit_type(*ty);
+        }
         Expr::Variable(_) => (),
         Expr::NotImplemented => (),
     }

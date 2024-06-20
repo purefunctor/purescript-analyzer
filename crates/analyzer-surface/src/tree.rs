@@ -358,6 +358,7 @@ pub enum Expr {
     Literal(Literal<ExprId>),
     OperatorChain(ExprId, Vec<(Qualified<Name>, ExprId)>),
     Parenthesized(ExprId),
+    Typed(ExprId, TypeId),
     Variable(Qualified<Name>),
     NotImplemented,
 }

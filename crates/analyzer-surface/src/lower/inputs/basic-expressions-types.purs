@@ -24,3 +24,4 @@ variable :: a
 
 ifThenElse = if a then b else c
 parenthesizedExpr = (f a)
+typedExpr = 0 :: Int

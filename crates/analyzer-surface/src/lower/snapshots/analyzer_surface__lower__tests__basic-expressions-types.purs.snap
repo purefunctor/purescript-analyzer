@@ -399,6 +399,26 @@ expression: "(surface, expressions, let_names, binders, types)"
                         ],
                     },
                 ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(22),
+                        name: Name(
+                            "typedExpr",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(30),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
             ],
             class_declarations: {},
             data_declarations: {},
@@ -409,6 +429,7 @@ expression: "(surface, expressions, let_names, binders, types)"
                 Idx::<ValueGroup>(11): 11,
                 Idx::<ValueGroup>(7): 7,
                 Idx::<ValueGroup>(3): 3,
+                Idx::<ValueGroup>(22): 22,
                 Idx::<ValueGroup>(18): 18,
                 Idx::<ValueGroup>(14): 14,
                 Idx::<ValueGroup>(10): 10,
@@ -644,6 +665,15 @@ expression: "(surface, expressions, let_names, binders, types)"
         Parenthesized(
             Idx::<Expr>(27),
         ),
+        Literal(
+            Int(
+                0,
+            ),
+        ),
+        Typed(
+            Idx::<Expr>(29),
+            Idx::<Type>(23),
+        ),
     ],
     [
         LetName {
@@ -845,6 +875,14 @@ expression: "(surface, expressions, let_names, binders, types)"
             Name(
                 "a",
             ),
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "Int",
+                ),
+            },
         ),
     ],
 )
