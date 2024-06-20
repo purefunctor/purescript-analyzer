@@ -914,7 +914,10 @@ fn lower_expr_literal(
     }
 }
 
-fn lower_expr_operator_name(db: &dyn SurfaceDatabase, operator_name: &ast::OperatorNameExpression) -> Expr {
+fn lower_expr_operator_name(
+    db: &dyn SurfaceDatabase,
+    operator_name: &ast::OperatorNameExpression,
+) -> Expr {
     Expr::Variable(lower_qualified_name(db, operator_name.qualified_name()))
 }
 
@@ -1114,7 +1117,10 @@ fn lower_type_operator_chain(
     Type::OperatorChain(head, tail)
 }
 
-fn lower_type_operator_name(db: &dyn SurfaceDatabase, operator_name: &ast::OperatorNameType) -> Type {
+fn lower_type_operator_name(
+    db: &dyn SurfaceDatabase,
+    operator_name: &ast::OperatorNameType,
+) -> Type {
     Type::Constructor(lower_qualified_name(db, operator_name.qualified_name()))
 }
 
