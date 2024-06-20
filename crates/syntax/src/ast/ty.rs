@@ -1,10 +1,10 @@
 //! of the Kingdom
 
-use rowan::ast::AstNode;
+use rowan::ast::{support, AstChildren, AstNode};
 
 use crate::SyntaxToken;
 
-use super::{ArgumentList, Name, NameRef, QualifiedName};
+use super::{ArgumentList, Name, NameRef, OperatorPair, QualifiedName, SymbolOperator};
 
 _create_ast!(ForallVariables);
 
@@ -108,6 +108,16 @@ _has_children!(ForallVariables<TypeVariableBinding>);
 impl ParenthesizedType {
     pub fn ty(&self) -> Option<Type> {
         Type::cast(self.node.first_child()?)
+    }
+}
+
+impl TypeOperatorChain {
+    pub fn head(&self) -> Option<Type> {
+        Type::cast(self.node.first_child()?)
+    }
+
+    pub fn tail(&self) -> AstChildren<OperatorPair<SymbolOperator, Type>> {
+        support::children(&self.node)
     }
 }
 

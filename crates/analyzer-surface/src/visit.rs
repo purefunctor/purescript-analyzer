@@ -187,6 +187,12 @@ where
         Type::Forall(_, inner) => {
             visitor.visit_type(*inner);
         }
+        Type::OperatorChain(head, tail) => {
+            visitor.visit_type(*head);
+            for (_, ty) in tail {
+                visitor.visit_type(*ty);
+            }
+        }
         Type::Parenthesized(parenthesized) => visitor.visit_type(*parenthesized),
         Type::Variable(_) => (),
         Type::NotImplemented => (),

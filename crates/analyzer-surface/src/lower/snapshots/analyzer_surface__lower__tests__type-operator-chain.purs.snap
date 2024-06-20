@@ -1,0 +1,90 @@
+---
+source: crates/analyzer-surface/src/lower/tests.rs
+expression: "(surface, expressions, let_names, binders, types)"
+---
+(
+    Module {
+        header: ModuleHeader {
+            name: ModuleName(
+                "Main",
+            ),
+            export_list: None,
+        },
+        imports: ModuleImports {
+            declarations: [],
+        },
+        body: ModuleBody {
+            declarations: [
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(0),
+                        name: Name(
+                            "x",
+                        ),
+                        annotation: Some(
+                            Idx::<Type>(3),
+                        ),
+                        equations: [],
+                    },
+                ),
+            ],
+            class_declarations: {},
+            data_declarations: {},
+            value_declarations: {
+                Idx::<ValueGroup>(0): 0,
+            },
+        },
+    },
+    [],
+    [],
+    [],
+    [
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "T",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "U",
+                ),
+            },
+        ),
+        Constructor(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "V",
+                ),
+            },
+        ),
+        OperatorChain(
+            Idx::<Type>(0),
+            [
+                (
+                    Qualified {
+                        prefix: None,
+                        value: Name(
+                            "+",
+                        ),
+                    },
+                    Idx::<Type>(1),
+                ),
+                (
+                    Qualified {
+                        prefix: None,
+                        value: Name(
+                            "*",
+                        ),
+                    },
+                    Idx::<Type>(2),
+                ),
+            ],
+        ),
+    ],
+)

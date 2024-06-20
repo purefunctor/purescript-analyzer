@@ -1014,7 +1014,7 @@ fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) ->
             ast::Type::RecordType(_) => Type::NotImplemented,
             ast::Type::RowType(_) => Type::NotImplemented,
             ast::Type::StringType(_) => Type::NotImplemented,
-            ast::Type::TypeOperatorChain(_) => Type::NotImplemented,
+            ast::Type::TypeOperatorChain(c) => lower_type_operator_chain(ctx, db, c),
             ast::Type::VariableType(v) => lower_type_variable(db, v),
             ast::Type::WildcardType(_) => Type::NotImplemented,
         };
@@ -1075,6 +1075,23 @@ fn lower_type_forall(ctx: &mut Ctx, db: &dyn SurfaceDatabase, forall: &ast::Fora
         .unwrap_or_default();
     let inner = lower_type(ctx, db, forall.inner());
     Type::Forall(variables, inner)
+}
+
+fn lower_type_operator_chain(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    chain: &ast::TypeOperatorChain,
+) -> Type {
+    let head = lower_type(ctx, db, chain.head());
+    let tail = chain
+        .tail()
+        .filter_map(|pair| {
+            let name = lower_qualified_name(db, pair.operator()?.name());
+            let expr = lower_type(ctx, db, pair.term());
+            Some((name, expr))
+        })
+        .collect_vec();
+    Type::OperatorChain(head, tail)
 }
 
 fn lower_type_parenthesized(

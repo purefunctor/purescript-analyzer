@@ -439,6 +439,12 @@ fn resolve_type(ctx: &mut Ctx, type_id: TypeId) {
         Type::Forall(_, inner) => {
             resolve_type(ctx, *inner);
         }
+        Type::OperatorChain(head, tail) => {
+            resolve_type(ctx, *head);
+            for (_, ty) in tail {
+                resolve_type(ctx, *ty);
+            }
+        }
         Type::Parenthesized(parenthesized) => resolve_type(ctx, *parenthesized),
         Type::Variable(name) => {
             if let Some(type_variable) = resolve_type_variable(ctx, type_id, name) {

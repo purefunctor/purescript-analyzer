@@ -320,6 +320,12 @@ fn collect_type(ctx: &mut Ctx, type_id: TypeId) {
 
             collect_type(ctx, *inner);
         }
+        Type::OperatorChain(head, tail) => {
+            collect_type(ctx, *head);
+            for (_, ty) in tail {
+                collect_type(ctx, *ty);
+            }
+        }
         Type::Parenthesized(parenthesized) => collect_type(ctx, *parenthesized),
         Type::Variable(_) => (),
         Type::NotImplemented => (),

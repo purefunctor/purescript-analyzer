@@ -412,6 +412,7 @@ pub enum Type {
     Constrained(TypeId, TypeId),
     Constructor(Qualified<Name>),
     Forall(Vec<TypeVariable>, TypeId),
+    OperatorChain(TypeId, Vec<(Qualified<Name>, TypeId)>),
     Parenthesized(TypeId),
     Variable(Name),
     NotImplemented,
