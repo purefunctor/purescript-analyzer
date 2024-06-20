@@ -21,3 +21,5 @@ constructor :: Constructor
 qualified :: forall a (b :: Type). a -> b -> a
 parenthesized :: (Constructor Argument)
 variable :: a
+
+ifThenElse = if a then b else c

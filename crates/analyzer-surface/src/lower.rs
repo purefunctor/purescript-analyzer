@@ -781,7 +781,7 @@ fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Express
             ast::Expression::DoExpression(_) => Expr::NotImplemented,
             ast::Expression::ExpressionInfixChain(c) => lower_expr_infix_chain(ctx, db, c),
             ast::Expression::ExpressionOperatorChain(c) => lower_expr_operator_chain(ctx, db, c),
-            ast::Expression::IfThenElseExpression(_) => Expr::NotImplemented,
+            ast::Expression::IfThenElseExpression(i) => lower_expr_if_then_else(ctx, db, i),
             ast::Expression::LambdaExpression(l) => lower_expr_lambda(ctx, db, l),
             ast::Expression::LetInExpression(l) => lower_expr_let_in(ctx, db, l),
             ast::Expression::LiteralExpression(l) => lower_expr_literal(ctx, db, l),
@@ -859,6 +859,17 @@ fn lower_expr_operator_chain(
         })
         .collect_vec();
     Expr::OperatorChain(head, tail)
+}
+
+fn lower_expr_if_then_else(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    if_then_else: &ast::IfThenElseExpression,
+) -> Expr {
+    let condition = lower_expr(ctx, db, if_then_else.condition());
+    let then = lower_expr(ctx, db, if_then_else.then());
+    let unless = lower_expr(ctx, db, if_then_else.unless());
+    Expr::IfThenElse(condition, then, unless)
 }
 
 fn lower_expr_lambda(

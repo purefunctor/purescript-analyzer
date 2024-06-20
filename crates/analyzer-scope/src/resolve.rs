@@ -375,6 +375,11 @@ fn resolve_expr(ctx: &mut Ctx, expr_id: ExprId) {
                 ctx.resolve_info.per_constructor_expr.insert(expr_id, constructor);
             }
         }
+        Expr::IfThenElse(condition, then, unless) => {
+            resolve_expr(ctx, *condition);
+            resolve_expr(ctx, *then);
+            resolve_expr(ctx, *unless);
+        }
         Expr::InfixChain(head, tail) => {
             resolve_expr(ctx, *head);
             for (term, expr) in tail {

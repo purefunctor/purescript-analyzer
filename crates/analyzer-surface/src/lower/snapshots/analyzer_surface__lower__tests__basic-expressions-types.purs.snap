@@ -359,6 +359,26 @@ expression: "(surface, expressions, let_names, binders, types)"
                         equations: [],
                     },
                 ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(20),
+                        name: Name(
+                            "ifThenElse",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(24),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
             ],
             class_declarations: {},
             data_declarations: {},
@@ -379,6 +399,7 @@ expression: "(surface, expressions, let_names, binders, types)"
                 Idx::<ValueGroup>(9): 9,
                 Idx::<ValueGroup>(5): 5,
                 Idx::<ValueGroup>(1): 1,
+                Idx::<ValueGroup>(20): 20,
                 Idx::<ValueGroup>(16): 16,
                 Idx::<ValueGroup>(12): 12,
                 Idx::<ValueGroup>(8): 8,
@@ -547,6 +568,35 @@ expression: "(surface, expressions, let_names, binders, types)"
                     "a",
                 ),
             },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "a",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "b",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "c",
+                ),
+            },
+        ),
+        IfThenElse(
+            Idx::<Expr>(21),
+            Idx::<Expr>(22),
+            Idx::<Expr>(23),
         ),
     ],
     [

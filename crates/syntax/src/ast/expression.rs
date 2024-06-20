@@ -84,6 +84,20 @@ impl ExpressionOperatorChain {
     }
 }
 
+impl IfThenElseExpression {
+    pub fn condition(&self) -> Option<Expression> {
+        Expression::cast(self.node.first_child()?)
+    }
+
+    pub fn then(&self) -> Option<Expression> {
+        Expression::cast(self.node.children().nth(1)?)
+    }
+
+    pub fn unless(&self) -> Option<Expression> {
+        Expression::cast(self.node.last_child()?)
+    }
+}
+
 impl LambdaExpression {
     pub fn binders(&self) -> Option<BinderList> {
         BinderList::cast(self.node.first_child()?)

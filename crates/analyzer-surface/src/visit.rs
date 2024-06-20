@@ -69,6 +69,11 @@ where
             }
         }
         Expr::Constructor(_) => (),
+        Expr::IfThenElse(condition, then, unless) => {
+            visitor.visit_expr(*condition);
+            visitor.visit_expr(*then);
+            visitor.visit_expr(*unless);
+        }
         Expr::InfixChain(head, tail) => {
             visitor.visit_expr(*head);
             for (term, expr) in tail {

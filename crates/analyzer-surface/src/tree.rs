@@ -351,6 +351,7 @@ pub enum RecordItem<I> {
 pub enum Expr {
     Application(ExprId, Vec<ExprId>),
     Constructor(Qualified<Name>),
+    IfThenElse(ExprId, ExprId, ExprId),
     InfixChain(ExprId, Vec<(ExprId, ExprId)>),
     Lambda(Vec<BinderId>, ExprId),
     LetIn(Vec<LetBinding>, ExprId),

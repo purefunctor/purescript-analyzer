@@ -247,6 +247,11 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
             }
         }
         Expr::Constructor(_) => (),
+        Expr::IfThenElse(condition, then, unless) => {
+            collect_expr(ctx, *condition);
+            collect_expr(ctx, *then);
+            collect_expr(ctx, *unless);
+        }
         Expr::InfixChain(head, tail) => {
             collect_expr(ctx, *head);
             for (term, expr) in tail {
