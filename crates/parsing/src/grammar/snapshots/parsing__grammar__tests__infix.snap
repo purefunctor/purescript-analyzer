@@ -37,13 +37,11 @@ Start { kind: ExpressionInfixChain }
       Token { kind: Tick }
       Start { kind: OperatorNameExpression }
         Start { kind: QualifiedName }
-          Start { kind: Wrapped }
-            Token { kind: LeftParenthesis }
-            Start { kind: NameRef }
-              Token { kind: Operator }
-            Finish
-            Token { kind: RightParenthesis }
+          Token { kind: LeftParenthesis }
+          Start { kind: NameRef }
+            Token { kind: Operator }
           Finish
+          Token { kind: RightParenthesis }
         Finish
       Finish
       Token { kind: Tick }

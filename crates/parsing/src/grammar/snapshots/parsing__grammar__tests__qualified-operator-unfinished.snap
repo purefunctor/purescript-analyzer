@@ -12,12 +12,10 @@ Start { kind: OperatorNameExpression }
       Finish
       Token { kind: Period }
     Finish
-    Start { kind: Wrapped }
-      Token { kind: LeftParenthesis }
-      Start { kind: NameRef }
-        Token { kind: Operator }
-      Finish
-      Error { message: "expected RightParenthesis" }
+    Token { kind: LeftParenthesis }
+    Start { kind: NameRef }
+      Token { kind: Operator }
     Finish
+    Error { message: "expected RightParenthesis" }
   Finish
 Finish

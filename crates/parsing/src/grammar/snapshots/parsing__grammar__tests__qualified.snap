@@ -13,13 +13,11 @@ Start { kind: ApplicationExpression }
         Finish
         Token { kind: Period }
       Finish
-      Start { kind: Wrapped }
-        Token { kind: LeftParenthesis }
-        Start { kind: NameRef }
-          Token { kind: Operator }
-        Finish
-        Token { kind: RightParenthesis }
+      Token { kind: LeftParenthesis }
+      Start { kind: NameRef }
+        Token { kind: Operator }
       Finish
+      Token { kind: RightParenthesis }
     Finish
   Finish
   Start { kind: ArgumentList }
