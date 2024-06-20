@@ -404,6 +404,7 @@ fn resolve_expr(ctx: &mut Ctx, expr_id: ExprId) {
                 resolve_expr(ctx, *expr);
             }
         }
+        Expr::Parenthesized(parenthesized) => resolve_expr(ctx, *parenthesized),
         Expr::Variable(name) => {
             if let Some(variable) = resolve_variable(ctx, expr_id, name) {
                 ctx.resolve_info.per_variable_expr.insert(expr_id, variable);

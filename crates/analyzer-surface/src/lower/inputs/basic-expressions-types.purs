@@ -23,3 +23,4 @@ parenthesized :: (Constructor Argument)
 variable :: a
 
 ifThenElse = if a then b else c
+parenthesizedExpr = (f a)

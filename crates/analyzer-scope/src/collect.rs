@@ -272,6 +272,7 @@ fn collect_expr(ctx: &mut Ctx, expr_id: ExprId) {
             });
         }
         Expr::Literal(literal) => collect_literal(ctx, literal, collect_expr),
+        Expr::Parenthesized(parenthesized) => collect_expr(ctx, *parenthesized),
         Expr::OperatorChain(head, tail) => {
             collect_expr(ctx, *head);
             for (_, expr) in tail {

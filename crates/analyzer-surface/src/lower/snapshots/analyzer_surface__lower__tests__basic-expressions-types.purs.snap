@@ -379,6 +379,26 @@ expression: "(surface, expressions, let_names, binders, types)"
                         ],
                     },
                 ),
+                ValueDeclaration(
+                    ValueDeclaration {
+                        id: Idx::<ValueGroup>(21),
+                        name: Name(
+                            "parenthesizedExpr",
+                        ),
+                        annotation: None,
+                        equations: [
+                            ValueEquation {
+                                binders: [],
+                                binding: Unconditional {
+                                    where_expr: WhereExpr {
+                                        expr_id: Idx::<Expr>(28),
+                                        let_bindings: [],
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ),
             ],
             class_declarations: {},
             data_declarations: {},
@@ -394,6 +414,7 @@ expression: "(surface, expressions, let_names, binders, types)"
                 Idx::<ValueGroup>(10): 10,
                 Idx::<ValueGroup>(6): 6,
                 Idx::<ValueGroup>(2): 2,
+                Idx::<ValueGroup>(21): 21,
                 Idx::<ValueGroup>(17): 17,
                 Idx::<ValueGroup>(13): 13,
                 Idx::<ValueGroup>(9): 9,
@@ -597,6 +618,31 @@ expression: "(surface, expressions, let_names, binders, types)"
             Idx::<Expr>(21),
             Idx::<Expr>(22),
             Idx::<Expr>(23),
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "f",
+                ),
+            },
+        ),
+        Variable(
+            Qualified {
+                prefix: None,
+                value: Name(
+                    "a",
+                ),
+            },
+        ),
+        Application(
+            Idx::<Expr>(25),
+            [
+                Idx::<Expr>(26),
+            ],
+        ),
+        Parenthesized(
+            Idx::<Expr>(27),
         ),
     ],
     [

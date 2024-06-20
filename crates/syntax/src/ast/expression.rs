@@ -141,6 +141,12 @@ impl RecordPun {
     }
 }
 
+impl ParenthesizedExpression {
+    pub fn expression(&self) -> Option<Expression> {
+        support::child(&self.node)
+    }
+}
+
 impl VariableExpression {
     pub fn qualified_name(&self) -> Option<QualifiedName> {
         QualifiedName::cast(self.node.first_child()?)

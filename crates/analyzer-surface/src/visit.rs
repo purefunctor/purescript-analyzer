@@ -105,6 +105,9 @@ where
             }
             _ => (),
         },
+        Expr::Parenthesized(parenthesized) => {
+            visitor.visit_expr(*parenthesized);
+        }
         Expr::OperatorChain(head, tail) => {
             visitor.visit_expr(*head);
             for (_, expr) in tail {

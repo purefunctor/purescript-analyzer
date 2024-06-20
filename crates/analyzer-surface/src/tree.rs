@@ -357,6 +357,7 @@ pub enum Expr {
     LetIn(Vec<LetBinding>, ExprId),
     Literal(Literal<ExprId>),
     OperatorChain(ExprId, Vec<(Qualified<Name>, ExprId)>),
+    Parenthesized(ExprId),
     Variable(Qualified<Name>),
     NotImplemented,
 }

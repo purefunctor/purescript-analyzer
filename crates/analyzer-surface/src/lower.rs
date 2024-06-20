@@ -786,7 +786,7 @@ fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Express
             ast::Expression::LetInExpression(l) => lower_expr_let_in(ctx, db, l),
             ast::Expression::LiteralExpression(l) => lower_expr_literal(ctx, db, l),
             ast::Expression::OperatorNameExpression(_) => Expr::NotImplemented,
-            ast::Expression::ParenthesizedExpression(_) => Expr::NotImplemented,
+            ast::Expression::ParenthesizedExpression(p) => lower_expr_parenthesized(ctx, db, p),
             ast::Expression::RecordAccessExpression(_) => Expr::NotImplemented,
             ast::Expression::RecordUpdateExpression(_) => Expr::NotImplemented,
             ast::Expression::TypedExpression(_) => Expr::NotImplemented,
@@ -910,6 +910,14 @@ fn lower_expr_literal(
     } else {
         Expr::NotImplemented
     }
+}
+
+fn lower_expr_parenthesized(
+    ctx: &mut Ctx,
+    db: &dyn SurfaceDatabase,
+    parenthesized: &ast::ParenthesizedExpression,
+) -> Expr {
+    Expr::Parenthesized(lower_expr(ctx, db, parenthesized.expression()))
 }
 
 fn lower_expr_variable(db: &dyn SurfaceDatabase, variable: &ast::VariableExpression) -> Expr {
