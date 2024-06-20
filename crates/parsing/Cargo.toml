@@ -15,4 +15,5 @@ syntax = { version = "0.1.0", path = "../syntax" }
 unicode_categories = "0.1.1"
 
 [dev-dependencies]
-insta = { version = "1.39.0", features = ["glob"] }
+insta = "1.39.0"
+test-each = "0.2.1"

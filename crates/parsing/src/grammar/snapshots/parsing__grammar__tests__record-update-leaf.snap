@@ -1,0 +1,38 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: a { b = 0, c = 1 }
+
+Start { kind: RecordUpdateExpression }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Start { kind: RecordUpdateList }
+    Token { kind: LeftCurly }
+    Start { kind: RecordUpdateLeaf }
+      Start { kind: Name }
+        Token { kind: Label }
+      Finish
+      Token { kind: Equal }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Token { kind: Comma }
+    Start { kind: RecordUpdateLeaf }
+      Start { kind: Name }
+        Token { kind: Label }
+      Finish
+      Token { kind: Equal }
+      Start { kind: LiteralExpression }
+        Token { kind: LiteralInteger }
+      Finish
+    Finish
+    Token { kind: RightCurly }
+  Finish
+Finish

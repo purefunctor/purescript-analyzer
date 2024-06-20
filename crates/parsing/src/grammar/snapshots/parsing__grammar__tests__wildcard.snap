@@ -1,0 +1,15 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: _ -> _
+
+Start { kind: ArrowType }
+  Start { kind: WildcardType }
+    Token { kind: Underscore }
+  Finish
+  Token { kind: RightArrow }
+  Start { kind: WildcardType }
+    Token { kind: Underscore }
+  Finish
+Finish

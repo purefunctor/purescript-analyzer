@@ -1,0 +1,36 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: Maybe { a :: Int }
+
+Start { kind: ApplicationType }
+  Start { kind: ConstructorType }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Upper }
+      Finish
+    Finish
+  Finish
+  Start { kind: ArgumentList }
+    Start { kind: RecordType }
+      Token { kind: LeftCurly }
+      Start { kind: RowInner }
+        Start { kind: RowField }
+          Start { kind: Name }
+            Token { kind: Label }
+          Finish
+          Token { kind: Colon2 }
+          Start { kind: ConstructorType }
+            Start { kind: QualifiedName }
+              Start { kind: NameRef }
+                Token { kind: Upper }
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: RightCurly }
+    Finish
+  Finish
+Finish

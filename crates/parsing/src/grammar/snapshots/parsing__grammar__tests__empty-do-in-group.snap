@@ -1,0 +1,64 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: do
+  pure "b"
+  do
+  'a' pure
+
+Start { kind: DoExpression }
+  Start { kind: QualifiedDo }
+    Token { kind: DoKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: LayoutList }
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ArgumentList }
+          Start { kind: TermArgument }
+            Start { kind: LiteralExpression }
+              Token { kind: LiteralString }
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoDiscard }
+      Start { kind: DoExpression }
+        Start { kind: QualifiedDo }
+          Token { kind: DoKw }
+        Finish
+        Error { message: "expected LayoutStart" }
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: DoDiscard }
+      Start { kind: ApplicationExpression }
+        Start { kind: LiteralExpression }
+          Token { kind: LiteralChar }
+        Finish
+        Start { kind: ArgumentList }
+          Start { kind: TermArgument }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish

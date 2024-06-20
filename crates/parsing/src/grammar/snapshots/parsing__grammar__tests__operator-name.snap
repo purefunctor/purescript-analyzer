@@ -1,0 +1,15 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: (+)
+
+Start { kind: OperatorNameType }
+  Start { kind: QualifiedName }
+    Token { kind: LeftParenthesis }
+    Start { kind: NameRef }
+      Token { kind: Operator }
+    Finish
+    Token { kind: RightParenthesis }
+  Finish
+Finish

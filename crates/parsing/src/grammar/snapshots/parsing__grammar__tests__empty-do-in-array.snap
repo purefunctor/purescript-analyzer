@@ -1,0 +1,24 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: [ do ]
+
+Start { kind: LiteralExpression }
+  Start { kind: LiteralArray }
+    Token { kind: LeftSquare }
+    Start { kind: DoExpression }
+      Start { kind: QualifiedDo }
+        Token { kind: DoKw }
+      Finish
+      Token { kind: LayoutStart }
+      Start { kind: LayoutList }
+        Start { kind: DoDiscard }
+          Error { message: "expected an expression" }
+        Finish
+      Finish
+      Token { kind: LayoutEnd }
+    Finish
+    Token { kind: RightSquare }
+  Finish
+Finish

@@ -1,6 +1,5 @@
-use std::fmt::Write;
+use std::{fmt::Write, fs, path::PathBuf};
 
-use insta::glob;
 use lexing::{layout, lex};
 use syntax::SyntaxKind;
 
@@ -9,11 +8,13 @@ use crate::{
     parser::{Event, Parser},
 };
 
-fn expect_parse<F, T>(source: &str, rule: F)
+fn expect_parse<F, T>(path: PathBuf, rule: F)
 where
     F: Fn(&mut Parser) -> T,
 {
-    let lexed = lex(source);
+    let source = fs::read_to_string(&path).unwrap();
+    let name = path.file_stem().unwrap().to_str().unwrap();
+    let lexed = lex(&source);
     let input = layout(&lexed);
     let mut parser = Parser::new(&input);
     let _ = rule(&mut parser);
@@ -44,45 +45,30 @@ where
         }
     }
 
-    insta::assert_snapshot!(result);
+    insta::assert_snapshot!(name, result);
 }
 
-#[test]
-fn test_expression() {
-    glob!("inputs/passing/expression", "*.input", |path| {
-        let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, expr_0);
-    })
+#[test_each::path(glob = "crates/parsing/src/grammar/inputs/passing/expression/*.input")]
+fn test_expression(path: PathBuf) {
+    expect_parse(path, expr_0);
 }
 
-#[test]
-fn test_expression_failing() {
-    glob!("inputs/failing/expression", "*.input", |path| {
-        let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, expr_0);
-    })
+#[test_each::path(glob = "crates/parsing/src/grammar/inputs/failing/expression/*.input")]
+fn test_expression_failing(path: PathBuf) {
+    expect_parse(path, expr_0);
 }
 
-#[test]
-fn test_type() {
-    glob!("inputs/passing/type", "*.input", |path| {
-        let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, type_0);
-    });
+#[test_each::path(glob = "crates/parsing/src/grammar/inputs/passing/type/*.input")]
+fn test_type(path: PathBuf) {
+    expect_parse(path, type_0);
 }
 
-#[test]
-fn test_pattern() {
-    glob!("inputs/passing/pattern", "*.input", |path| {
-        let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, pat_0);
-    });
+#[test_each::path(glob = "crates/parsing/src/grammar/inputs/passing/pattern/*.input")]
+fn test_pattern(path: PathBuf) {
+    expect_parse(path, pat_0);
 }
 
-#[test]
-fn test_file() {
-    glob!("inputs/passing/file", "*.input", |path| {
-        let source = std::fs::read_to_string(path).unwrap();
-        expect_parse(&source, module);
-    });
+#[test_each::path(glob = "crates/parsing/src/grammar/inputs/passing/file/*.input")]
+fn test_file(path: PathBuf) {
+    expect_parse(path, module);
 }

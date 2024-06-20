@@ -1,0 +1,55 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: module Main where
+
+a :: Int
+a = 0
+
+Start { kind: Module }
+  Start { kind: ModuleHeader }
+    Token { kind: ModuleKw }
+    Start { kind: ModuleName }
+      Start { kind: Name }
+        Token { kind: Upper }
+      Finish
+    Finish
+    Token { kind: WhereKw }
+  Finish
+  Token { kind: LayoutStart }
+  Start { kind: ModuleImports }
+  Finish
+  Start { kind: ModuleBody }
+    Start { kind: ValueAnnotationDeclaration }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
+      Token { kind: Colon2 }
+      Start { kind: ConstructorType }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Upper }
+          Finish
+        Finish
+      Finish
+    Finish
+    Token { kind: LayoutSep }
+    Start { kind: ValueEquationDeclaration }
+      Start { kind: Name }
+        Token { kind: Lower }
+      Finish
+      Start { kind: BinderList }
+      Finish
+      Start { kind: UnconditionalBinding }
+        Token { kind: Equal }
+        Start { kind: WhereExpression }
+          Start { kind: LiteralExpression }
+            Token { kind: LiteralInteger }
+          Finish
+        Finish
+      Finish
+    Finish
+  Finish
+  Token { kind: LayoutEnd }
+Finish

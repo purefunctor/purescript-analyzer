@@ -1,0 +1,92 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: a `plus` b `(+)` c `flip plus` d
+
+Start { kind: ExpressionInfixChain }
+  Start { kind: VariableExpression }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Lower }
+      Finish
+    Finish
+  Finish
+  Start { kind: OperatorPair }
+    Start { kind: TickOperator }
+      Token { kind: Tick }
+      Start { kind: VariableExpression }
+        Start { kind: QualifiedName }
+          Start { kind: NameRef }
+            Token { kind: Lower }
+          Finish
+        Finish
+      Finish
+      Token { kind: Tick }
+    Finish
+    Start { kind: VariableExpression }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+    Finish
+  Finish
+  Start { kind: OperatorPair }
+    Start { kind: TickOperator }
+      Token { kind: Tick }
+      Start { kind: OperatorNameExpression }
+        Start { kind: QualifiedName }
+          Start { kind: Wrapped }
+            Token { kind: LeftParenthesis }
+            Start { kind: NameRef }
+              Token { kind: Operator }
+            Finish
+            Token { kind: RightParenthesis }
+          Finish
+        Finish
+      Finish
+      Token { kind: Tick }
+    Finish
+    Start { kind: VariableExpression }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+    Finish
+  Finish
+  Start { kind: OperatorPair }
+    Start { kind: TickOperator }
+      Token { kind: Tick }
+      Start { kind: ApplicationExpression }
+        Start { kind: VariableExpression }
+          Start { kind: QualifiedName }
+            Start { kind: NameRef }
+              Token { kind: Lower }
+            Finish
+          Finish
+        Finish
+        Start { kind: ArgumentList }
+          Start { kind: TermArgument }
+            Start { kind: VariableExpression }
+              Start { kind: QualifiedName }
+                Start { kind: NameRef }
+                  Token { kind: Lower }
+                Finish
+              Finish
+            Finish
+          Finish
+        Finish
+      Finish
+      Token { kind: Tick }
+    Finish
+    Start { kind: VariableExpression }
+      Start { kind: QualifiedName }
+        Start { kind: NameRef }
+          Token { kind: Lower }
+        Finish
+      Finish
+    Finish
+  Finish
+Finish

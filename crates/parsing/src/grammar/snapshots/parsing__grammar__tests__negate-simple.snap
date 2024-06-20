@@ -1,0 +1,18 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: -1
+
+Start { kind: NegateExpression }
+  Start { kind: SymbolOperator }
+    Start { kind: QualifiedName }
+      Start { kind: NameRef }
+        Token { kind: Operator }
+      Finish
+    Finish
+  Finish
+  Start { kind: LiteralExpression }
+    Token { kind: LiteralInteger }
+  Finish
+Finish

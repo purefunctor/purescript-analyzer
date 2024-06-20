@@ -1,0 +1,10 @@
+---
+source: crates/parsing/src/grammar/tests.rs
+expression: result
+---
+Input: f
+Start { kind: VariableBinder }
+  Start { kind: Name }
+    Token { kind: Lower }
+  Finish
+Finish
