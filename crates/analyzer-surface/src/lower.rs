@@ -785,7 +785,7 @@ fn lower_expr(ctx: &mut Ctx, db: &dyn SurfaceDatabase, expr: Option<ast::Express
             ast::Expression::LambdaExpression(l) => lower_expr_lambda(ctx, db, l),
             ast::Expression::LetInExpression(l) => lower_expr_let_in(ctx, db, l),
             ast::Expression::LiteralExpression(l) => lower_expr_literal(ctx, db, l),
-            ast::Expression::OperatorNameExpression(_) => Expr::NotImplemented,
+            ast::Expression::OperatorNameExpression(o) => lower_expr_operator_name(db, o),
             ast::Expression::ParenthesizedExpression(p) => lower_expr_parenthesized(ctx, db, p),
             ast::Expression::RecordAccessExpression(_) => Expr::NotImplemented,
             ast::Expression::RecordUpdateExpression(_) => Expr::NotImplemented,
@@ -853,6 +853,8 @@ fn lower_expr_operator_chain(
     let tail = chain
         .tail()
         .filter_map(|pair| {
+            // dbg!(&pair);
+            // todo!();
             let name = lower_qualified_name(db, pair.operator()?.name());
             let expr = lower_expr(ctx, db, pair.term());
             Some((name, expr))
@@ -910,6 +912,10 @@ fn lower_expr_literal(
     } else {
         Expr::NotImplemented
     }
+}
+
+fn lower_expr_operator_name(db: &dyn SurfaceDatabase, operator_name: &ast::OperatorNameExpression) -> Expr {
+    Expr::Variable(lower_qualified_name(db, operator_name.qualified_name()))
 }
 
 fn lower_expr_parenthesized(
@@ -1023,7 +1029,7 @@ fn lower_type(ctx: &mut Ctx, db: &dyn SurfaceDatabase, ty: Option<ast::Type>) ->
             ast::Type::ForallType(f) => lower_type_forall(ctx, db, f),
             ast::Type::IntegerType(_) => Type::NotImplemented,
             ast::Type::KindedType(_) => Type::NotImplemented,
-            ast::Type::OperatorNameType(_) => Type::NotImplemented,
+            ast::Type::OperatorNameType(o) => lower_type_operator_name(db, o),
             ast::Type::ParenthesizedType(p) => lower_type_parenthesized(ctx, db, p),
             ast::Type::RecordType(_) => Type::NotImplemented,
             ast::Type::RowType(_) => Type::NotImplemented,
@@ -1106,6 +1112,10 @@ fn lower_type_operator_chain(
         })
         .collect_vec();
     Type::OperatorChain(head, tail)
+}
+
+fn lower_type_operator_name(db: &dyn SurfaceDatabase, operator_name: &ast::OperatorNameType) -> Type {
+    Type::Constructor(lower_qualified_name(db, operator_name.qualified_name()))
 }
 
 fn lower_type_parenthesized(

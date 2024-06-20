@@ -105,6 +105,12 @@ impl ForallType {
 
 _has_children!(ForallVariables<TypeVariableBinding>);
 
+impl OperatorNameType {
+    pub fn qualified_name(&self) -> Option<QualifiedName> {
+        support::child(&self.node)
+    }
+}
+
 impl ParenthesizedType {
     pub fn ty(&self) -> Option<Type> {
         Type::cast(self.node.first_child()?)

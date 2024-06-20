@@ -602,23 +602,18 @@ fn expr_atom(parser: &mut Parser) {
             name_end(parser, SyntaxKind::VariableExpression);
         }
         SyntaxKind::LeftParenthesis => {
-            let mut wrapped = parser.start();
             parser.expect(SyntaxKind::LeftParenthesis);
-
             if parser.current().is_operator() {
                 name_ref(parser, SyntaxKind::Operator);
                 parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.end(parser, SyntaxKind::Wrapped);
                 name_end(parser, SyntaxKind::OperatorNameExpression);
             } else if has_prefix {
                 parser.error_recover("expected an operator");
                 parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.end(parser, SyntaxKind::Wrapped);
                 name_end(parser, SyntaxKind::OperatorNameExpression);
             } else {
                 expr_0(parser);
                 parser.expect(SyntaxKind::RightParenthesis);
-                wrapped.cancel(parser);
                 qualified.cancel(parser);
                 expression.end(parser, SyntaxKind::ParenthesizedExpression);
             };
