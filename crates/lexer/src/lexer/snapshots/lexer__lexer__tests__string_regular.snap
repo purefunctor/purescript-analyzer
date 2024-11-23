@@ -1,0 +1,20 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Token(
+                STRING,
+            ),
+            range: 0..18,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 18..18,
+        },
+    ],
+)

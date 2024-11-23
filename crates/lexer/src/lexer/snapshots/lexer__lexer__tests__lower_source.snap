@@ -1,0 +1,86 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_IDENTIFIER,
+            ),
+            range: 0..5,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 5..6,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_IDENTIFIER,
+            ),
+            range: 6..14,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 14..15,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_IDENTIFIER,
+            ),
+            range: 15..24,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 24..25,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_IDENTIFIER,
+            ),
+            range: 25..34,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 34..35,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_IDENTIFIER,
+            ),
+            range: 35..39,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 39..40,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_IDENTIFIER,
+            ),
+            range: 40..45,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 45..45,
+        },
+    ],
+)

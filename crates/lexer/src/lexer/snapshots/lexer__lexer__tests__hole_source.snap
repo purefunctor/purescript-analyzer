@@ -1,0 +1,32 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Token(
+                SOURCE_HOLE,
+            ),
+            range: 0..5,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 5..6,
+        },
+        Lexed {
+            kind: Token(
+                SOURCE_HOLE,
+            ),
+            range: 6..11,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 11..11,
+        },
+    ],
+)

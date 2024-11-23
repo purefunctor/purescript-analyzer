@@ -1,1 +1,0 @@
-forall a (b :: C) @d (@e :: F). Type

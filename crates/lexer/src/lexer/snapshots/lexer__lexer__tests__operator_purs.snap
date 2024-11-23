@@ -1,0 +1,203 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Qualified(
+                None,
+                LEFT_ARROW,
+            ),
+            range: 0..2,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 2..3,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                LEFT_ARROW,
+            ),
+            range: 3..6,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 6..7,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                RIGHT_ARROW,
+            ),
+            range: 7..9,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 9..10,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                RIGHT_ARROW,
+            ),
+            range: 10..13,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 13..14,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                RIGHT_DOUBLE_ARROW,
+            ),
+            range: 14..16,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 16..17,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                RIGHT_DOUBLE_ARROW,
+            ),
+            range: 17..20,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 20..21,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                DOUBLE_COLON,
+            ),
+            range: 21..23,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 23..24,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                DOUBLE_COLON,
+            ),
+            range: 24..27,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 27..28,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                FORALL,
+            ),
+            range: 28..31,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 31..32,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                EQUALS,
+            ),
+            range: 32..33,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 33..34,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                DOT,
+            ),
+            range: 34..35,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 35..36,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                BACKSLASH,
+            ),
+            range: 36..37,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 37..38,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                PIPE,
+            ),
+            range: 38..39,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 39..40,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                AT,
+            ),
+            range: 40..41,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 41..42,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                TICK,
+            ),
+            range: 42..43,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 43..43,
+        },
+    ],
+)

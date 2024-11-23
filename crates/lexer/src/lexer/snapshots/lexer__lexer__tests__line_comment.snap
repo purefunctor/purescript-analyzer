@@ -1,0 +1,32 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Token(
+                LINE_COMMENT,
+            ),
+            range: 0..20,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 20..21,
+        },
+        Lexed {
+            kind: Token(
+                LINE_COMMENT,
+            ),
+            range: 21..47,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 47..47,
+        },
+    ],
+)

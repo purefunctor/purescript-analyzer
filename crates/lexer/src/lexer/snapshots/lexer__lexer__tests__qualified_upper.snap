@@ -1,0 +1,44 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Qualified(
+                Some(
+                    (
+                        MODULE_NAME,
+                        0..7,
+                    ),
+                ),
+                SOURCE_PROPER,
+            ),
+            range: 7..11,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 11..12,
+        },
+        Lexed {
+            kind: Qualified(
+                Some(
+                    (
+                        MODULE_NAME,
+                        12..22,
+                    ),
+                ),
+                SOURCE_PROPER,
+            ),
+            range: 22..26,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 26..26,
+        },
+    ],
+)

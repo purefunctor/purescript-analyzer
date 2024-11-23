@@ -1,0 +1,99 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 0..3,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 3..4,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 4..7,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 7..8,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 8..11,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 11..12,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 12..14,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 14..15,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 15..17,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 17..18,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 18..19,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 19..20,
+        },
+        Lexed {
+            kind: Qualified(
+                None,
+                SOURCE_OPERATOR,
+            ),
+            range: 20..22,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 22..22,
+        },
+    ],
+)

@@ -1,0 +1,92 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 0..4,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 4..5,
+        },
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 5..9,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 9..10,
+        },
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 10..14,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 14..15,
+        },
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 15..19,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 19..20,
+        },
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 20..24,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 24..25,
+        },
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 25..29,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            range: 29..30,
+        },
+        Lexed {
+            kind: Token(
+                CHAR,
+            ),
+            range: 30..36,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 36..36,
+        },
+    ],
+)

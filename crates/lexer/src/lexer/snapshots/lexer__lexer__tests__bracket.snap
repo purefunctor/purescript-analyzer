@@ -1,0 +1,50 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Token(
+                LEFT_PARENTHESIS,
+            ),
+            range: 0..1,
+        },
+        Lexed {
+            kind: Token(
+                RIGHT_PARENTHESIS,
+            ),
+            range: 1..2,
+        },
+        Lexed {
+            kind: Token(
+                LEFT_SQUARE,
+            ),
+            range: 2..3,
+        },
+        Lexed {
+            kind: Token(
+                RIGHT_SQUARE,
+            ),
+            range: 3..4,
+        },
+        Lexed {
+            kind: Token(
+                LEFT_CURLY,
+            ),
+            range: 4..5,
+        },
+        Lexed {
+            kind: Token(
+                RIGHT_CURLY,
+            ),
+            range: 5..6,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            range: 6..6,
+        },
+    ],
+)
