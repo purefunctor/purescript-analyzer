@@ -155,7 +155,7 @@ fn string(input: &mut Input<'_>) -> PResult<Lexed> {
                 take_until(0.., ('"', '\\')).map(|_| ()).parse_next(input)?;
             }
         }
-    };
+    }
     Ok(Lexed::token(SyntaxKind::STRING, offset))
 }
 
@@ -187,7 +187,7 @@ fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
             3..=5 => break,
             _ => unreachable!(),
         }
-    };
+    }
 
     Ok(Lexed::token(SyntaxKind::RAW_STRING, offset))
 }
@@ -293,7 +293,7 @@ fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
         if memmem::find_iter(content.as_bytes(), "{-").count() == 0 {
             break;
         }
-    };
+    }
     Ok(Lexed::token(SyntaxKind::BLOCK_COMMENT, offset))
 }
 
