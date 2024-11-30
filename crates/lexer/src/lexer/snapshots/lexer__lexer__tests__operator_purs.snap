@@ -182,22 +182,9 @@ Ok(
         },
         Lexed {
             kind: Token(
-                WHITESPACE,
-            ),
-            offset: 41,
-        },
-        Lexed {
-            kind: Qualified(
-                None,
-                TICK,
-            ),
-            offset: 42,
-        },
-        Lexed {
-            kind: Token(
                 END_OF_FILE,
             ),
-            offset: 43,
+            offset: 41,
         },
     ],
 )

@@ -97,6 +97,8 @@ pub enum SyntaxKind {
     EQUALS,
     /// .
     DOT,
+    /// ,
+    COMMA,
     /// \\
     BACKSLASH,
     /// |
@@ -170,3 +172,12 @@ pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<PureScript>;
 pub type SyntaxNodePtr = rowan::ast::SyntaxNodePtr<PureScript>;
 pub type SyntaxToken = rowan::SyntaxToken<PureScript>;
 pub type SyntaxElement = rowan::SyntaxElement<PureScript>;
+
+impl SyntaxKind {
+    pub fn is_whitespace_or_comment(self) -> bool {
+        matches!(
+            self,
+            SyntaxKind::WHITESPACE | SyntaxKind::LINE_COMMENT | SyntaxKind::BLOCK_COMMENT
+        )
+    }
+}

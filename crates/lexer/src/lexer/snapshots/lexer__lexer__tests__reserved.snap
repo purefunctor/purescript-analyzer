@@ -1,0 +1,32 @@
+---
+source: crates/lexer/src/lexer/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: Token(
+                TICK,
+            ),
+            offset: 0,
+        },
+        Lexed {
+            kind: Token(
+                WHITESPACE,
+            ),
+            offset: 1,
+        },
+        Lexed {
+            kind: Token(
+                COMMA,
+            ),
+            offset: 2,
+        },
+        Lexed {
+            kind: Token(
+                END_OF_FILE,
+            ),
+            offset: 3,
+        },
+    ],
+)

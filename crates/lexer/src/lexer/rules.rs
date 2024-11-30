@@ -93,7 +93,6 @@ fn operator(input: &mut Input<'_>) -> PResult<SyntaxKind> {
         "\\" => SyntaxKind::BACKSLASH,
         "|" => SyntaxKind::PIPE,
         "@" => SyntaxKind::AT,
-        "`" => SyntaxKind::TICK,
         _ => SyntaxKind::SOURCE_OPERATOR,
     };
     Ok(kind)
@@ -251,7 +250,14 @@ fn number(input: &mut Input<'_>) -> PResult<Lexed> {
     Ok(Lexed::token(kind, offset))
 }
 
-fn bracket(input: &mut Input<'_>) -> PResult<Lexed> {
+fn reserved(input: &mut Input<'_>) -> PResult<Lexed> {
+    let offset = input.location();
+    let kind =
+        alt(("`".value(SyntaxKind::TICK), ",".value(SyntaxKind::COMMA))).parse_next(input)?;
+    Ok(Lexed::token(kind, offset))
+}
+
+fn brackets(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let kind = alt((
         '('.value(SyntaxKind::LEFT_PARENTHESIS),
@@ -303,13 +309,14 @@ fn token(input: &mut Input<'_>) -> PResult<Lexed> {
         whitespace,
         line_comment,
         block_comment,
+        reserved,
         hole,
         qualified,
         number,
         character,
         raw_string,
         string,
-        bracket,
+        brackets,
     ))
     .parse_next(input)
 }
