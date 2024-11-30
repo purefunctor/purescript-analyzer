@@ -9,91 +9,91 @@ Ok(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 0..3,
+            offset: 0,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 3..4,
+            offset: 3,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 4..7,
+            offset: 4,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 7..8,
+            offset: 7,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 8..11,
+            offset: 8,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 11..12,
+            offset: 11,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 12..14,
+            offset: 12,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 14..15,
+            offset: 14,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 15..17,
+            offset: 15,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 17..18,
+            offset: 17,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 18..19,
+            offset: 18,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 19..20,
+            offset: 19,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_OPERATOR,
             ),
-            range: 20..22,
+            offset: 20,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 22..22,
+            offset: 22,
         },
     ],
 )

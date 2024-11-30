@@ -9,36 +9,36 @@ Ok(
                 Some(
                     (
                         MODULE_NAME,
-                        0..7,
+                        0,
                     ),
                 ),
                 SOURCE_PROPER,
             ),
-            range: 7..11,
+            offset: 7,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 11..12,
+            offset: 11,
         },
         Lexed {
             kind: Qualified(
                 Some(
                     (
                         MODULE_NAME,
-                        12..22,
+                        12,
                     ),
                 ),
                 SOURCE_PROPER,
             ),
-            range: 22..26,
+            offset: 22,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 26..26,
+            offset: 26,
         },
     ],
 )

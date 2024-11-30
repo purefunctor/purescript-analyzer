@@ -3,35 +3,29 @@ mod rules;
 #[cfg(test)]
 mod tests;
 
-use std::ops::Range;
-
 use winnow::{Located, PResult};
 
 use crate::syntax::SyntaxKind;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lexed {
     pub kind: LexedKind,
-    pub range: Range<usize>,
+    pub offset: usize,
 }
 
-pub type Prefix = Option<(SyntaxKind, Range<usize>)>;
+pub type Prefix = Option<(SyntaxKind, usize)>;
 
 impl Lexed {
-    pub fn new(kind: LexedKind, range: Range<usize>) -> Lexed {
-        Lexed { kind, range }
+    fn token(kind: SyntaxKind, offset: usize) -> Lexed {
+        Lexed { kind: LexedKind::Token(kind), offset }
     }
 
-    pub fn token(kind: SyntaxKind, range: Range<usize>) -> Lexed {
-        Lexed::new(LexedKind::Token(kind), range)
-    }
-
-    pub fn qualified(prefix: Prefix, kind: SyntaxKind, range: Range<usize>) -> Lexed {
-        Lexed::new(LexedKind::Qualified(prefix, kind), range)
+    fn qualified(prefix: Prefix, kind: SyntaxKind, offset: usize) -> Lexed {
+        Lexed { kind: LexedKind::Qualified(prefix, kind), offset }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LexedKind {
     Token(SyntaxKind),
     Qualified(Prefix, SyntaxKind),

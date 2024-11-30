@@ -9,78 +9,78 @@ Ok(
                 None,
                 SOURCE_IDENTIFIER,
             ),
-            range: 0..5,
+            offset: 0,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 5..6,
+            offset: 5,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_IDENTIFIER,
             ),
-            range: 6..14,
+            offset: 6,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 14..15,
+            offset: 14,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_IDENTIFIER,
             ),
-            range: 15..24,
+            offset: 15,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 24..25,
+            offset: 24,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_IDENTIFIER,
             ),
-            range: 25..34,
+            offset: 25,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 34..35,
+            offset: 34,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_IDENTIFIER,
             ),
-            range: 35..39,
+            offset: 35,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 39..40,
+            offset: 39,
         },
         Lexed {
             kind: Qualified(
                 None,
                 SOURCE_IDENTIFIER,
             ),
-            range: 40..45,
+            offset: 40,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 45..45,
+            offset: 45,
         },
     ],
 )

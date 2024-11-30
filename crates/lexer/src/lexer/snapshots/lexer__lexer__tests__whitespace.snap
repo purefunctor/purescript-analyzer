@@ -8,13 +8,13 @@ Ok(
             kind: Token(
                 WHITESPACE,
             ),
-            range: 0..4,
+            offset: 0,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 4..4,
+            offset: 4,
         },
     ],
 )

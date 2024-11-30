@@ -8,13 +8,13 @@ Ok(
             kind: Token(
                 STRING,
             ),
-            range: 0..28,
+            offset: 0,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 28..28,
+            offset: 28,
         },
     ],
 )

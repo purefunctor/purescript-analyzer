@@ -9,338 +9,338 @@ Ok(
                 None,
                 ADO,
             ),
-            range: 0..3,
+            offset: 0,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 3..4,
+            offset: 3,
         },
         Lexed {
             kind: Qualified(
                 None,
                 AS,
             ),
-            range: 4..6,
+            offset: 4,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 6..7,
+            offset: 6,
         },
         Lexed {
             kind: Qualified(
                 None,
                 CASE,
             ),
-            range: 7..11,
+            offset: 7,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 11..12,
+            offset: 11,
         },
         Lexed {
             kind: Qualified(
                 None,
                 CLASS,
             ),
-            range: 12..17,
+            offset: 12,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 17..18,
+            offset: 17,
         },
         Lexed {
             kind: Qualified(
                 None,
                 DATA,
             ),
-            range: 18..22,
+            offset: 18,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 22..23,
+            offset: 22,
         },
         Lexed {
             kind: Qualified(
                 None,
                 DERIVE,
             ),
-            range: 23..29,
+            offset: 23,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 29..30,
+            offset: 29,
         },
         Lexed {
             kind: Qualified(
                 None,
                 DO,
             ),
-            range: 30..32,
+            offset: 30,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 32..33,
+            offset: 32,
         },
         Lexed {
             kind: Qualified(
                 None,
                 ELSE,
             ),
-            range: 33..37,
+            offset: 33,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 37..38,
+            offset: 37,
         },
         Lexed {
             kind: Qualified(
                 None,
                 FALSE,
             ),
-            range: 38..43,
+            offset: 38,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 43..44,
+            offset: 43,
         },
         Lexed {
             kind: Qualified(
                 None,
                 FOREIGN,
             ),
-            range: 44..51,
+            offset: 44,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 51..52,
+            offset: 51,
         },
         Lexed {
             kind: Qualified(
                 None,
                 HIDING,
             ),
-            range: 52..58,
+            offset: 52,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 58..59,
+            offset: 58,
         },
         Lexed {
             kind: Qualified(
                 None,
                 IF,
             ),
-            range: 59..61,
+            offset: 59,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 61..62,
+            offset: 61,
         },
         Lexed {
             kind: Qualified(
                 None,
                 IMPORT,
             ),
-            range: 62..68,
+            offset: 62,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 68..69,
+            offset: 68,
         },
         Lexed {
             kind: Qualified(
                 None,
                 IN,
             ),
-            range: 69..71,
+            offset: 69,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 71..72,
+            offset: 71,
         },
         Lexed {
             kind: Qualified(
                 None,
                 INFIX,
             ),
-            range: 72..77,
+            offset: 72,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 77..78,
+            offset: 77,
         },
         Lexed {
             kind: Qualified(
                 None,
                 INFIXL,
             ),
-            range: 78..84,
+            offset: 78,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 84..85,
+            offset: 84,
         },
         Lexed {
             kind: Qualified(
                 None,
                 INFIXR,
             ),
-            range: 85..91,
+            offset: 85,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 91..92,
+            offset: 91,
         },
         Lexed {
             kind: Qualified(
                 None,
                 INSTANCE,
             ),
-            range: 92..100,
+            offset: 92,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 100..101,
+            offset: 100,
         },
         Lexed {
             kind: Qualified(
                 None,
                 LET,
             ),
-            range: 101..104,
+            offset: 101,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 104..105,
+            offset: 104,
         },
         Lexed {
             kind: Qualified(
                 None,
                 MODULE,
             ),
-            range: 105..111,
+            offset: 105,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 111..112,
+            offset: 111,
         },
         Lexed {
             kind: Qualified(
                 None,
                 NEWTYPE,
             ),
-            range: 112..119,
+            offset: 112,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 119..120,
+            offset: 119,
         },
         Lexed {
             kind: Qualified(
                 None,
                 OF,
             ),
-            range: 120..122,
+            offset: 120,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 122..123,
+            offset: 122,
         },
         Lexed {
             kind: Qualified(
                 None,
                 THEN,
             ),
-            range: 123..127,
+            offset: 123,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 127..128,
+            offset: 127,
         },
         Lexed {
             kind: Qualified(
                 None,
                 TRUE,
             ),
-            range: 128..132,
+            offset: 128,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 132..133,
+            offset: 132,
         },
         Lexed {
             kind: Qualified(
                 None,
                 TYPE,
             ),
-            range: 133..137,
+            offset: 133,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 137..138,
+            offset: 137,
         },
         Lexed {
             kind: Qualified(
                 None,
                 WHERE,
             ),
-            range: 138..143,
+            offset: 138,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 143..143,
+            offset: 143,
         },
     ],
 )

@@ -8,25 +8,25 @@ Ok(
             kind: Token(
                 BLOCK_COMMENT,
             ),
-            range: 0..23,
+            offset: 0,
         },
         Lexed {
             kind: Token(
                 WHITESPACE,
             ),
-            range: 23..24,
+            offset: 23,
         },
         Lexed {
             kind: Token(
                 BLOCK_COMMENT,
             ),
-            range: 24..59,
+            offset: 24,
         },
         Lexed {
             kind: Token(
                 END_OF_FILE,
             ),
-            range: 59..59,
+            offset: 59,
         },
     ],
 )

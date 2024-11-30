@@ -1,11 +1,9 @@
-use std::ops::Range;
-
 use memchr::memmem;
 use unicode_categories::UnicodeCategories;
 use winnow::{
     combinator::{alt, eof, fail, opt, repeat, repeat_till},
     error::{AddContext, ContextError, ErrMode, StrContext},
-    stream::Stream,
+    stream::{Location, Stream},
     token::{any, one_of, take_until, take_while},
     PResult, Parser,
 };
@@ -27,8 +25,9 @@ fn proper<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
 }
 
 fn hole(input: &mut Input<'_>) -> PResult<Lexed> {
-    let range = ('?', alt((identifier, proper))).span().parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::SOURCE_HOLE, range))
+    let offset = input.location();
+    let _ = ('?', alt((identifier, proper))).parse_next(input)?;
+    Ok(Lexed::token(SyntaxKind::SOURCE_HOLE, offset))
 }
 
 fn lower(input: &mut Input<'_>) -> PResult<SyntaxKind> {
@@ -109,15 +108,17 @@ fn name(input: &mut Input<'_>) -> PResult<SyntaxKind> {
     alt((lower, upper, symbol, operator)).parse_next(input)
 }
 
-fn prefix(input: &mut Input<'_>) -> PResult<SyntaxKind> {
+fn prefix(input: &mut Input<'_>) -> PResult<(SyntaxKind, usize)> {
+    let offset = input.location();
     let module_name = repeat(1.., (proper, '.')).map(|()| ());
-    module_name.map(|_| SyntaxKind::MODULE_NAME).parse_next(input)
+    module_name.map(|_| (SyntaxKind::MODULE_NAME, offset)).parse_next(input)
 }
 
 fn qualified(input: &mut Input<'_>) -> PResult<Lexed> {
-    let prefix = opt(prefix.with_span()).parse_next(input)?;
-    let (kind, range) = name.with_span().parse_next(input)?;
-    Ok(Lexed::qualified(prefix, kind, range))
+    let prefix = opt(prefix).parse_next(input)?;
+    let offset = input.location();
+    let kind = name.parse_next(input)?;
+    Ok(Lexed::qualified(prefix, kind, offset))
 }
 
 fn is_escape(c: char) -> bool {
@@ -125,12 +126,13 @@ fn is_escape(c: char) -> bool {
 }
 
 fn string(input: &mut Input<'_>) -> PResult<Lexed> {
-    let Range { start, .. } = '"'.span().parse_next(input)?;
-    let Range { end, .. } = loop {
-        let (next, range) = any.with_span().parse_next(input)?;
+    let offset = input.location();
+    let _ = '"'.parse_next(input)?;
+    let _ = loop {
+        let next = any.parse_next(input)?;
         match next {
             '"' => {
-                break range;
+                break;
             }
             '\\' => {
                 let next = any.parse_next(input)?;
@@ -154,16 +156,17 @@ fn string(input: &mut Input<'_>) -> PResult<Lexed> {
             }
         }
     };
-    Ok(Lexed::token(SyntaxKind::STRING, start..end))
+    Ok(Lexed::token(SyntaxKind::STRING, offset))
 }
 
 fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
+    let offset = input.location();
     let checkpoint = input.checkpoint();
 
-    let Range { start, .. } = "\"\"\"".span().parse_next(input)?;
-    let Range { end, .. } = loop {
+    let _ = "\"\"\"".parse_next(input)?;
+    let _ = loop {
         take_while(0.., |c| c != '"').parse_next(input)?;
-        let (quotes, range) = take_while(..=5, |c| c == '"').with_span().parse_next(input)?;
+        let quotes = take_while(..=5, |c| c == '"').parse_next(input)?;
 
         match quotes.len() {
             0 => {
@@ -181,18 +184,19 @@ fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
             // * """ """   - found the end three
             // * """ """"  - single at the end
             // * """ """"" - double at the end
-            3..=5 => break range,
+            3..=5 => break,
             _ => unreachable!(),
         }
     };
 
-    Ok(Lexed::token(SyntaxKind::RAW_STRING, start..end))
+    Ok(Lexed::token(SyntaxKind::RAW_STRING, offset))
 }
 
 fn character(input: &mut Input<'_>) -> PResult<Lexed> {
+    let offset = input.location();
     let checkpoint = input.checkpoint();
 
-    let Range { start, .. } = '\''.span().parse_next(input)?;
+    let _ = '\''.parse_next(input)?;
 
     let character = any.parse_next(input)?;
     if character == '\\' {
@@ -214,9 +218,9 @@ fn character(input: &mut Input<'_>) -> PResult<Lexed> {
         )));
     }
 
-    let Range { end, .. } = '\''.span().parse_next(input)?;
+    let _ = '\''.parse_next(input)?;
 
-    Ok(Lexed::token(SyntaxKind::CHAR, start..end))
+    Ok(Lexed::token(SyntaxKind::CHAR, offset))
 }
 
 fn int_part<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
@@ -233,22 +237,23 @@ fn exponent_part<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
 }
 
 fn number(input: &mut Input<'_>) -> PResult<Lexed> {
-    let integer = int_part.span().parse_next(input)?;
-    let fraction = opt(('.', fraction_part).span()).parse_next(input)?;
-    let exponent = opt(('e', exponent_part).span()).parse_next(input)?;
+    let offset = input.location();
 
-    let (kind, range) = match (fraction, exponent) {
-        (None, None) => (SyntaxKind::INTEGER, integer),
-        (Some(fraction), None) => (SyntaxKind::NUMBER, integer.start..fraction.end),
-        (None, Some(exponent)) => (SyntaxKind::NUMBER, integer.start..exponent.end),
-        (Some(_), Some(exponent)) => (SyntaxKind::NUMBER, integer.start..exponent.end),
+    let _ = int_part.parse_next(input)?;
+    let fraction = opt(('.', fraction_part)).parse_next(input)?;
+    let exponent = opt(('e', exponent_part)).parse_next(input)?;
+
+    let kind = match (fraction, exponent) {
+        (None, None) => SyntaxKind::INTEGER,
+        (_, _) => SyntaxKind::NUMBER,
     };
 
-    Ok(Lexed::token(kind, range))
+    Ok(Lexed::token(kind, offset))
 }
 
 fn bracket(input: &mut Input<'_>) -> PResult<Lexed> {
-    let (kind, range) = alt((
+    let offset = input.location();
+    let kind = alt((
         '('.value(SyntaxKind::LEFT_PARENTHESIS),
         ')'.value(SyntaxKind::RIGHT_PARENTHESIS),
         '['.value(SyntaxKind::LEFT_SQUARE),
@@ -256,37 +261,40 @@ fn bracket(input: &mut Input<'_>) -> PResult<Lexed> {
         '{'.value(SyntaxKind::LEFT_CURLY),
         '}'.value(SyntaxKind::RIGHT_CURLY),
     ))
-    .with_span()
     .parse_next(input)?;
-    Ok(Lexed::token(kind, range))
+    Ok(Lexed::token(kind, offset))
 }
 
 fn end_of_file(input: &mut Input<'_>) -> PResult<Lexed> {
-    let range = eof.span().parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::END_OF_FILE, range))
+    let offset = input.location();
+    let _ = eof.parse_next(input)?;
+    Ok(Lexed::token(SyntaxKind::END_OF_FILE, offset))
 }
 
 fn whitespace(input: &mut Input<'_>) -> PResult<Lexed> {
-    let range = take_while(1.., char::is_whitespace).span().parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::WHITESPACE, range))
+    let offset = input.location();
+    let _ = take_while(1.., char::is_whitespace).parse_next(input)?;
+    Ok(Lexed::token(SyntaxKind::WHITESPACE, offset))
 }
 
 fn line_comment(input: &mut Input<'_>) -> PResult<Lexed> {
+    let offset = input.location();
     let is_content = |c: char| c != '\r' && c != '\n';
-    let range = ("--", take_while(0.., is_content)).span().parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::LINE_COMMENT, range))
+    let _ = ("--", take_while(0.., is_content)).parse_next(input)?;
+    Ok(Lexed::token(SyntaxKind::LINE_COMMENT, offset))
 }
 
 fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
-    let Range { start, .. } = "{-".span().parse_next(input)?;
-    let Range { end, .. } = loop {
+    let offset = input.location();
+    let _ = "{-".parse_next(input)?;
+    let _ = loop {
         let content = take_until(0.., "-}").parse_next(input)?;
-        let end = "-}".span().parse_next(input)?;
+        let _ = "-}".parse_next(input)?;
         if memmem::find_iter(content.as_bytes(), "{-").count() == 0 {
-            break end;
+            break;
         }
     };
-    Ok(Lexed::token(SyntaxKind::BLOCK_COMMENT, start..end))
+    Ok(Lexed::token(SyntaxKind::BLOCK_COMMENT, offset))
 }
 
 // TODO: determine if `dispatch!` is an optimisation.
