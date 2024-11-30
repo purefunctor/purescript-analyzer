@@ -128,7 +128,7 @@ fn is_escape(c: char) -> bool {
 fn string(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let _ = '"'.parse_next(input)?;
-    let _ = loop {
+    loop {
         let next = any.parse_next(input)?;
         match next {
             '"' => {
@@ -164,7 +164,7 @@ fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
     let checkpoint = input.checkpoint();
 
     let _ = "\"\"\"".parse_next(input)?;
-    let _ = loop {
+    loop {
         take_while(0.., |c| c != '"').parse_next(input)?;
         let quotes = take_while(..=5, |c| c == '"').parse_next(input)?;
 
@@ -287,7 +287,7 @@ fn line_comment(input: &mut Input<'_>) -> PResult<Lexed> {
 fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let _ = "{-".parse_next(input)?;
-    let _ = loop {
+    loop {
         let content = take_until(0.., "-}").parse_next(input)?;
         let _ = "-}".parse_next(input)?;
         if memmem::find_iter(content.as_bytes(), "{-").count() == 0 {
