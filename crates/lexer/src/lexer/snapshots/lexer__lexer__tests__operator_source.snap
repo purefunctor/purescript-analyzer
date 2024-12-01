@@ -5,94 +5,59 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 3,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 4,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 7,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 8,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 11,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 12,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 14,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 15,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 17,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 18,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 19,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_OPERATOR,
-            ),
+            kind: SOURCE_OPERATOR,
             offset: 20,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 22,
         },
     ],

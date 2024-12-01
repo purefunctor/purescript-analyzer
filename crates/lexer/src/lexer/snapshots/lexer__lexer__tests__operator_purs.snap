@@ -5,185 +5,115 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Qualified(
-                None,
-                LEFT_ARROW,
-            ),
+            kind: LEFT_ARROW,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 2,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                LEFT_ARROW,
-            ),
+            kind: LEFT_ARROW,
             offset: 3,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 6,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                RIGHT_ARROW,
-            ),
+            kind: RIGHT_ARROW,
             offset: 7,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 9,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                RIGHT_ARROW,
-            ),
+            kind: RIGHT_ARROW,
             offset: 10,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 13,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                RIGHT_DOUBLE_ARROW,
-            ),
+            kind: RIGHT_DOUBLE_ARROW,
             offset: 14,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 16,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                RIGHT_DOUBLE_ARROW,
-            ),
+            kind: RIGHT_DOUBLE_ARROW,
             offset: 17,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 20,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                DOUBLE_COLON,
-            ),
+            kind: DOUBLE_COLON,
             offset: 21,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 23,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                DOUBLE_COLON,
-            ),
+            kind: DOUBLE_COLON,
             offset: 24,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 27,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                FORALL,
-            ),
+            kind: FORALL,
             offset: 28,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 31,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                EQUALS,
-            ),
+            kind: EQUALS,
             offset: 32,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 33,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                DOT,
-            ),
+            kind: DOT,
             offset: 34,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 35,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                BACKSLASH,
-            ),
+            kind: BACKSLASH,
             offset: 36,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 37,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                PIPE,
-            ),
+            kind: PIPE,
             offset: 38,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 39,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                AT,
-            ),
+            kind: AT,
             offset: 40,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 41,
         },
     ],

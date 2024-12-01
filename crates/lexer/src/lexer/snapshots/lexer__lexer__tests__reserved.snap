@@ -5,27 +5,19 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Token(
-                TICK,
-            ),
+            kind: TICK,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 1,
         },
         Lexed {
-            kind: Token(
-                COMMA,
-            ),
+            kind: COMMA,
             offset: 2,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 3,
         },
     ],

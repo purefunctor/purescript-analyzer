@@ -27,7 +27,7 @@ fn proper<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
 fn hole(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let _ = ('?', alt((identifier, proper))).parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::SOURCE_HOLE, offset))
+    Ok(Lexed::new(SyntaxKind::SOURCE_HOLE, offset))
 }
 
 fn lower(input: &mut Input<'_>) -> PResult<SyntaxKind> {
@@ -103,21 +103,16 @@ fn symbol(input: &mut Input<'_>) -> PResult<SyntaxKind> {
     Ok(SyntaxKind::SOURCE_SYMBOL)
 }
 
-fn name(input: &mut Input<'_>) -> PResult<SyntaxKind> {
-    alt((lower, upper, symbol, operator)).parse_next(input)
+fn name(input: &mut Input<'_>) -> PResult<Lexed> {
+    let offset = input.location();
+    let kind = alt((lower, upper, symbol, operator)).parse_next(input)?;
+    Ok(Lexed::new(kind, offset))
 }
 
-fn prefix(input: &mut Input<'_>) -> PResult<(SyntaxKind, usize)> {
+fn module_name_prefix(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
-    let module_name = repeat(1.., (proper, '.')).map(|()| ());
-    module_name.map(|_| (SyntaxKind::MODULE_NAME, offset)).parse_next(input)
-}
-
-fn qualified(input: &mut Input<'_>) -> PResult<Lexed> {
-    let prefix = opt(prefix).parse_next(input)?;
-    let offset = input.location();
-    let kind = name.parse_next(input)?;
-    Ok(Lexed::qualified(prefix, kind, offset))
+    let _ = repeat(1.., (proper, '.')).map(|()| ()).parse_next(input)?;
+    Ok(Lexed::new(SyntaxKind::MODULE_NAME_PREFIX, offset))
 }
 
 fn is_escape(c: char) -> bool {
@@ -155,7 +150,7 @@ fn string(input: &mut Input<'_>) -> PResult<Lexed> {
             }
         }
     }
-    Ok(Lexed::token(SyntaxKind::STRING, offset))
+    Ok(Lexed::new(SyntaxKind::STRING, offset))
 }
 
 fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
@@ -188,7 +183,7 @@ fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
         }
     }
 
-    Ok(Lexed::token(SyntaxKind::RAW_STRING, offset))
+    Ok(Lexed::new(SyntaxKind::RAW_STRING, offset))
 }
 
 fn character(input: &mut Input<'_>) -> PResult<Lexed> {
@@ -219,7 +214,7 @@ fn character(input: &mut Input<'_>) -> PResult<Lexed> {
 
     let _ = '\''.parse_next(input)?;
 
-    Ok(Lexed::token(SyntaxKind::CHAR, offset))
+    Ok(Lexed::new(SyntaxKind::CHAR, offset))
 }
 
 fn int_part<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
@@ -247,14 +242,14 @@ fn number(input: &mut Input<'_>) -> PResult<Lexed> {
         (_, _) => SyntaxKind::NUMBER,
     };
 
-    Ok(Lexed::token(kind, offset))
+    Ok(Lexed::new(kind, offset))
 }
 
 fn reserved(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let kind =
         alt(("`".value(SyntaxKind::TICK), ",".value(SyntaxKind::COMMA))).parse_next(input)?;
-    Ok(Lexed::token(kind, offset))
+    Ok(Lexed::new(kind, offset))
 }
 
 fn brackets(input: &mut Input<'_>) -> PResult<Lexed> {
@@ -268,26 +263,26 @@ fn brackets(input: &mut Input<'_>) -> PResult<Lexed> {
         '}'.value(SyntaxKind::RIGHT_CURLY),
     ))
     .parse_next(input)?;
-    Ok(Lexed::token(kind, offset))
+    Ok(Lexed::new(kind, offset))
 }
 
 fn end_of_file(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let _ = eof.parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::END_OF_FILE, offset))
+    Ok(Lexed::new(SyntaxKind::END_OF_FILE, offset))
 }
 
 fn whitespace(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let _ = take_while(1.., char::is_whitespace).parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::WHITESPACE, offset))
+    Ok(Lexed::new(SyntaxKind::WHITESPACE, offset))
 }
 
 fn line_comment(input: &mut Input<'_>) -> PResult<Lexed> {
     let offset = input.location();
     let is_content = |c: char| c != '\r' && c != '\n';
     let _ = ("--", take_while(0.., is_content)).parse_next(input)?;
-    Ok(Lexed::token(SyntaxKind::LINE_COMMENT, offset))
+    Ok(Lexed::new(SyntaxKind::LINE_COMMENT, offset))
 }
 
 fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
@@ -300,7 +295,7 @@ fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
             break;
         }
     }
-    Ok(Lexed::token(SyntaxKind::BLOCK_COMMENT, offset))
+    Ok(Lexed::new(SyntaxKind::BLOCK_COMMENT, offset))
 }
 
 // TODO: determine if `dispatch!` is an optimisation.
@@ -311,7 +306,8 @@ fn token(input: &mut Input<'_>) -> PResult<Lexed> {
         block_comment,
         reserved,
         hole,
-        qualified,
+        module_name_prefix,
+        name,
         number,
         character,
         raw_string,

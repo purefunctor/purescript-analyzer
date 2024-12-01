@@ -5,55 +5,35 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_SYMBOL,
-            ),
+            kind: SOURCE_SYMBOL,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 3,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_SYMBOL,
-            ),
+            kind: SOURCE_SYMBOL,
             offset: 4,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 7,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_SYMBOL,
-            ),
+            kind: SOURCE_SYMBOL,
             offset: 8,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 11,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_SYMBOL,
-            ),
+            kind: SOURCE_SYMBOL,
             offset: 12,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 15,
         },
     ],

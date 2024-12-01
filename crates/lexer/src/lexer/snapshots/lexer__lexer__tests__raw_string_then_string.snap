@@ -5,21 +5,15 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Token(
-                RAW_STRING,
-            ),
+            kind: RAW_STRING,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                STRING,
-            ),
+            kind: STRING,
             offset: 8,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 10,
         },
     ],

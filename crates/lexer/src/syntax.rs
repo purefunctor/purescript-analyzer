@@ -67,7 +67,7 @@ pub enum SyntaxKind {
 
     // region: names
     /// Module names
-    MODULE_NAME,
+    MODULE_NAME_PREFIX,
     /// Named holes
     SOURCE_HOLE,
     /// Lower-case name
@@ -179,5 +179,9 @@ impl SyntaxKind {
             self,
             SyntaxKind::WHITESPACE | SyntaxKind::LINE_COMMENT | SyntaxKind::BLOCK_COMMENT
         )
+    }
+
+    pub fn is_end_of_file(self) -> bool {
+        matches!(self, SyntaxKind::END_OF_FILE)
     }
 }

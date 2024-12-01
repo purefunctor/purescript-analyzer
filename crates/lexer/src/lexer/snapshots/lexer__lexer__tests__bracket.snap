@@ -5,45 +5,31 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Token(
-                LEFT_PARENTHESIS,
-            ),
+            kind: LEFT_PARENTHESIS,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                RIGHT_PARENTHESIS,
-            ),
+            kind: RIGHT_PARENTHESIS,
             offset: 1,
         },
         Lexed {
-            kind: Token(
-                LEFT_SQUARE,
-            ),
+            kind: LEFT_SQUARE,
             offset: 2,
         },
         Lexed {
-            kind: Token(
-                RIGHT_SQUARE,
-            ),
+            kind: RIGHT_SQUARE,
             offset: 3,
         },
         Lexed {
-            kind: Token(
-                LEFT_CURLY,
-            ),
+            kind: LEFT_CURLY,
             offset: 4,
         },
         Lexed {
-            kind: Token(
-                RIGHT_CURLY,
-            ),
+            kind: RIGHT_CURLY,
             offset: 5,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 6,
         },
     ],

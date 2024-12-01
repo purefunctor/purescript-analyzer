@@ -5,81 +5,51 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_IDENTIFIER,
-            ),
+            kind: SOURCE_IDENTIFIER,
             offset: 0,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 5,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_IDENTIFIER,
-            ),
+            kind: SOURCE_IDENTIFIER,
             offset: 6,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 14,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_IDENTIFIER,
-            ),
+            kind: SOURCE_IDENTIFIER,
             offset: 15,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 24,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_IDENTIFIER,
-            ),
+            kind: SOURCE_IDENTIFIER,
             offset: 25,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 34,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_IDENTIFIER,
-            ),
+            kind: SOURCE_IDENTIFIER,
             offset: 35,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 39,
         },
         Lexed {
-            kind: Qualified(
-                None,
-                SOURCE_IDENTIFIER,
-            ),
+            kind: SOURCE_IDENTIFIER,
             offset: 40,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 45,
         },
     ],

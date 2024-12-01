@@ -5,39 +5,27 @@ snapshot_kind: text
 Ok(
     [
         Lexed {
-            kind: Qualified(
-                Some(
-                    (
-                        MODULE_NAME,
-                        0,
-                    ),
-                ),
-                SOURCE_PROPER,
-            ),
+            kind: MODULE_NAME_PREFIX,
+            offset: 0,
+        },
+        Lexed {
+            kind: SOURCE_PROPER,
             offset: 7,
         },
         Lexed {
-            kind: Token(
-                WHITESPACE,
-            ),
+            kind: WHITESPACE,
             offset: 11,
         },
         Lexed {
-            kind: Qualified(
-                Some(
-                    (
-                        MODULE_NAME,
-                        12,
-                    ),
-                ),
-                SOURCE_PROPER,
-            ),
+            kind: MODULE_NAME_PREFIX,
+            offset: 12,
+        },
+        Lexed {
+            kind: SOURCE_PROPER,
             offset: 22,
         },
         Lexed {
-            kind: Token(
-                END_OF_FILE,
-            ),
+            kind: END_OF_FILE,
             offset: 26,
         },
     ],

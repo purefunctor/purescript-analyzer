@@ -1,3 +1,4 @@
+mod layout;
 mod rules;
 
 #[cfg(test)]
@@ -9,26 +10,16 @@ use crate::syntax::SyntaxKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lexed {
-    pub kind: LexedKind,
+    pub kind: SyntaxKind,
     pub offset: usize,
 }
 
 pub type Prefix = Option<(SyntaxKind, usize)>;
 
 impl Lexed {
-    fn token(kind: SyntaxKind, offset: usize) -> Lexed {
-        Lexed { kind: LexedKind::Token(kind), offset }
+    fn new(kind: SyntaxKind, offset: usize) -> Lexed {
+        Lexed { kind, offset }
     }
-
-    fn qualified(prefix: Prefix, kind: SyntaxKind, offset: usize) -> Lexed {
-        Lexed { kind: LexedKind::Qualified(prefix, kind), offset }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum LexedKind {
-    Token(SyntaxKind),
-    Qualified(Prefix, SyntaxKind),
 }
 
 type Input<'s> = Located<&'s str>;
