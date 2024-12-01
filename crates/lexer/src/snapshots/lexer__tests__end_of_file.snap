@@ -1,0 +1,12 @@
+---
+source: crates/lexer/src/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: END_OF_FILE,
+            offset: 0,
+        },
+    ],
+)

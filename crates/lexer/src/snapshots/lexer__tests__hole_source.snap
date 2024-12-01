@@ -1,0 +1,24 @@
+---
+source: crates/lexer/src/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: SOURCE_HOLE,
+            offset: 0,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 5,
+        },
+        Lexed {
+            kind: SOURCE_HOLE,
+            offset: 6,
+        },
+        Lexed {
+            kind: END_OF_FILE,
+            offset: 11,
+        },
+    ],
+)

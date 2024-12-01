@@ -1,0 +1,36 @@
+---
+source: crates/lexer/src/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: LEFT_PARENTHESIS,
+            offset: 0,
+        },
+        Lexed {
+            kind: RIGHT_PARENTHESIS,
+            offset: 1,
+        },
+        Lexed {
+            kind: LEFT_SQUARE,
+            offset: 2,
+        },
+        Lexed {
+            kind: RIGHT_SQUARE,
+            offset: 3,
+        },
+        Lexed {
+            kind: LEFT_CURLY,
+            offset: 4,
+        },
+        Lexed {
+            kind: RIGHT_CURLY,
+            offset: 5,
+        },
+        Lexed {
+            kind: END_OF_FILE,
+            offset: 6,
+        },
+    ],
+)

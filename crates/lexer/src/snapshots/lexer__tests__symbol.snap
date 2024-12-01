@@ -1,0 +1,40 @@
+---
+source: crates/lexer/src/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: SOURCE_SYMBOL,
+            offset: 0,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 3,
+        },
+        Lexed {
+            kind: SOURCE_SYMBOL,
+            offset: 4,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 7,
+        },
+        Lexed {
+            kind: SOURCE_SYMBOL,
+            offset: 8,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 11,
+        },
+        Lexed {
+            kind: SOURCE_SYMBOL,
+            offset: 12,
+        },
+        Lexed {
+            kind: END_OF_FILE,
+            offset: 15,
+        },
+    ],
+)

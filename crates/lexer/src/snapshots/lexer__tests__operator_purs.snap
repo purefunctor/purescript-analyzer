@@ -1,0 +1,120 @@
+---
+source: crates/lexer/src/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: LEFT_ARROW,
+            offset: 0,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 2,
+        },
+        Lexed {
+            kind: LEFT_ARROW,
+            offset: 3,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 6,
+        },
+        Lexed {
+            kind: RIGHT_ARROW,
+            offset: 7,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 9,
+        },
+        Lexed {
+            kind: RIGHT_ARROW,
+            offset: 10,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 13,
+        },
+        Lexed {
+            kind: RIGHT_DOUBLE_ARROW,
+            offset: 14,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 16,
+        },
+        Lexed {
+            kind: RIGHT_DOUBLE_ARROW,
+            offset: 17,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 20,
+        },
+        Lexed {
+            kind: DOUBLE_COLON,
+            offset: 21,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 23,
+        },
+        Lexed {
+            kind: DOUBLE_COLON,
+            offset: 24,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 27,
+        },
+        Lexed {
+            kind: FORALL,
+            offset: 28,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 31,
+        },
+        Lexed {
+            kind: EQUALS,
+            offset: 32,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 33,
+        },
+        Lexed {
+            kind: DOT,
+            offset: 34,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 35,
+        },
+        Lexed {
+            kind: BACKSLASH,
+            offset: 36,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 37,
+        },
+        Lexed {
+            kind: PIPE,
+            offset: 38,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 39,
+        },
+        Lexed {
+            kind: AT,
+            offset: 40,
+        },
+        Lexed {
+            kind: END_OF_FILE,
+            offset: 41,
+        },
+    ],
+)

@@ -1,0 +1,24 @@
+---
+source: crates/lexer/src/tests.rs
+snapshot_kind: text
+---
+Ok(
+    [
+        Lexed {
+            kind: LINE_COMMENT,
+            offset: 0,
+        },
+        Lexed {
+            kind: WHITESPACE,
+            offset: 20,
+        },
+        Lexed {
+            kind: LINE_COMMENT,
+            offset: 21,
+        },
+        Lexed {
+            kind: END_OF_FILE,
+            offset: 47,
+        },
+    ],
+)

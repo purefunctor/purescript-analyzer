@@ -5,8 +5,10 @@ edition = "2021"
 
 [dependencies]
 memchr = "2.7.4"
+position = { version = "0.1.0", path = "../position" }
 rowan = "0.15.16"
 smol_str = "0.3.2"
+syntax = { version = "0.1.0", path = "../syntax" }
 unicode_categories = "0.1.1"
 winnow = "0.6.20"
 
