@@ -4,27 +4,27 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: MODULE_NAME_PREFIX,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: SOURCE_PROPER,
             offset: 7,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 11,
         },
-        Lexed {
+        Token {
             kind: MODULE_NAME_PREFIX,
             offset: 12,
         },
-        Lexed {
+        Token {
             kind: SOURCE_PROPER,
             offset: 22,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 26,
         },

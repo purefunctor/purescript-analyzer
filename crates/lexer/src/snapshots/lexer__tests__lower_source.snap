@@ -4,51 +4,51 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: SOURCE_IDENTIFIER,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 5,
         },
-        Lexed {
+        Token {
             kind: SOURCE_IDENTIFIER,
             offset: 6,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 14,
         },
-        Lexed {
+        Token {
             kind: SOURCE_IDENTIFIER,
             offset: 15,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 24,
         },
-        Lexed {
+        Token {
             kind: SOURCE_IDENTIFIER,
             offset: 25,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 34,
         },
-        Lexed {
+        Token {
             kind: SOURCE_IDENTIFIER,
             offset: 35,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 39,
         },
-        Lexed {
+        Token {
             kind: SOURCE_IDENTIFIER,
             offset: 40,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 45,
         },

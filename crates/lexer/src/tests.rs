@@ -1,17 +1,18 @@
-macro_rules! lexer_tests {
+macro_rules! grammar_tests {
     ($($name:ident => $source:expr),* $(,)?) => {
         $(
             #[test]
             fn $name() {
                 insta::with_settings!({omit_expression => true}, {
-                    insta::assert_debug_snapshot!(super::tokenize($source));
+                    let mut input = winnow::Located::new($source);
+                    insta::assert_debug_snapshot!(crate::grammar::tokens(&mut input));
                 })
             }
         )*
     }
 }
 
-lexer_tests!(
+grammar_tests!(
     hole_source => "?help ?Help",
     upper_source => "Works Works123 Works'123 Works_123",
     lower_source => "works works123 works'123 works_123 _123 _'123",

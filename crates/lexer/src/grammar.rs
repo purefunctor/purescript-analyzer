@@ -5,12 +5,14 @@ use winnow::{
     error::{AddContext, ContextError, ErrMode, StrContext},
     stream::{Location, Stream},
     token::{any, one_of, take_until, take_while},
-    PResult, Parser,
+    Located, PResult, Parser,
 };
 
 use syntax::SyntaxKind;
 
-use super::{Input, Lexed};
+use super::Token;
+
+type Input<'s> = Located<&'s str>;
 
 fn identifier<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
     let h = any.verify(|c: &char| *c == '_' || c.is_letter_lowercase());
@@ -24,10 +26,10 @@ fn proper<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
     (h, t).take().parse_next(input)
 }
 
-fn hole(input: &mut Input<'_>) -> PResult<Lexed> {
+fn hole(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let _ = ('?', alt((identifier, proper))).parse_next(input)?;
-    Ok(Lexed::new(SyntaxKind::SOURCE_HOLE, offset))
+    Ok(Token::new(SyntaxKind::SOURCE_HOLE, offset))
 }
 
 fn lower(input: &mut Input<'_>) -> PResult<SyntaxKind> {
@@ -103,23 +105,23 @@ fn symbol(input: &mut Input<'_>) -> PResult<SyntaxKind> {
     Ok(SyntaxKind::SOURCE_SYMBOL)
 }
 
-fn name(input: &mut Input<'_>) -> PResult<Lexed> {
+fn name(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let kind = alt((lower, upper, symbol, operator)).parse_next(input)?;
-    Ok(Lexed::new(kind, offset))
+    Ok(Token::new(kind, offset))
 }
 
-fn module_name_prefix(input: &mut Input<'_>) -> PResult<Lexed> {
+fn module_name_prefix(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let _ = repeat(1.., (proper, '.')).map(|()| ()).parse_next(input)?;
-    Ok(Lexed::new(SyntaxKind::MODULE_NAME_PREFIX, offset))
+    Ok(Token::new(SyntaxKind::MODULE_NAME_PREFIX, offset))
 }
 
 fn is_escape(c: char) -> bool {
     matches!(c, 't' | 'r' | 'n' | '"' | '\'' | '\\')
 }
 
-fn string(input: &mut Input<'_>) -> PResult<Lexed> {
+fn string(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let _ = '"'.parse_next(input)?;
     loop {
@@ -150,10 +152,10 @@ fn string(input: &mut Input<'_>) -> PResult<Lexed> {
             }
         }
     }
-    Ok(Lexed::new(SyntaxKind::STRING, offset))
+    Ok(Token::new(SyntaxKind::STRING, offset))
 }
 
-fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
+fn raw_string(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let checkpoint = input.checkpoint();
 
@@ -183,10 +185,10 @@ fn raw_string(input: &mut Input<'_>) -> PResult<Lexed> {
         }
     }
 
-    Ok(Lexed::new(SyntaxKind::RAW_STRING, offset))
+    Ok(Token::new(SyntaxKind::RAW_STRING, offset))
 }
 
-fn character(input: &mut Input<'_>) -> PResult<Lexed> {
+fn character(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let checkpoint = input.checkpoint();
 
@@ -214,7 +216,7 @@ fn character(input: &mut Input<'_>) -> PResult<Lexed> {
 
     let _ = '\''.parse_next(input)?;
 
-    Ok(Lexed::new(SyntaxKind::CHAR, offset))
+    Ok(Token::new(SyntaxKind::CHAR, offset))
 }
 
 fn int_part<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
@@ -230,7 +232,7 @@ fn exponent_part<'s>(input: &mut Input<'s>) -> PResult<&'s str> {
     (opt(alt(('+', '-'))), int_part).take().parse_next(input)
 }
 
-fn number(input: &mut Input<'_>) -> PResult<Lexed> {
+fn number(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
 
     let _ = int_part.parse_next(input)?;
@@ -242,17 +244,17 @@ fn number(input: &mut Input<'_>) -> PResult<Lexed> {
         (_, _) => SyntaxKind::NUMBER,
     };
 
-    Ok(Lexed::new(kind, offset))
+    Ok(Token::new(kind, offset))
 }
 
-fn reserved(input: &mut Input<'_>) -> PResult<Lexed> {
+fn reserved(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let kind =
         alt(("`".value(SyntaxKind::TICK), ",".value(SyntaxKind::COMMA))).parse_next(input)?;
-    Ok(Lexed::new(kind, offset))
+    Ok(Token::new(kind, offset))
 }
 
-fn brackets(input: &mut Input<'_>) -> PResult<Lexed> {
+fn brackets(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let kind = alt((
         '('.value(SyntaxKind::LEFT_PARENTHESIS),
@@ -263,29 +265,29 @@ fn brackets(input: &mut Input<'_>) -> PResult<Lexed> {
         '}'.value(SyntaxKind::RIGHT_CURLY),
     ))
     .parse_next(input)?;
-    Ok(Lexed::new(kind, offset))
+    Ok(Token::new(kind, offset))
 }
 
-fn end_of_file(input: &mut Input<'_>) -> PResult<Lexed> {
+fn end_of_file(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let _ = eof.parse_next(input)?;
-    Ok(Lexed::new(SyntaxKind::END_OF_FILE, offset))
+    Ok(Token::new(SyntaxKind::END_OF_FILE, offset))
 }
 
-fn whitespace(input: &mut Input<'_>) -> PResult<Lexed> {
+fn whitespace(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let _ = take_while(1.., char::is_whitespace).parse_next(input)?;
-    Ok(Lexed::new(SyntaxKind::WHITESPACE, offset))
+    Ok(Token::new(SyntaxKind::WHITESPACE, offset))
 }
 
-fn line_comment(input: &mut Input<'_>) -> PResult<Lexed> {
+fn line_comment(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let is_content = |c: char| c != '\r' && c != '\n';
     let _ = ("--", take_while(0.., is_content)).parse_next(input)?;
-    Ok(Lexed::new(SyntaxKind::LINE_COMMENT, offset))
+    Ok(Token::new(SyntaxKind::LINE_COMMENT, offset))
 }
 
-fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
+fn block_comment(input: &mut Input<'_>) -> PResult<Token> {
     let offset = input.location();
     let _ = "{-".parse_next(input)?;
     loop {
@@ -295,11 +297,11 @@ fn block_comment(input: &mut Input<'_>) -> PResult<Lexed> {
             break;
         }
     }
-    Ok(Lexed::new(SyntaxKind::BLOCK_COMMENT, offset))
+    Ok(Token::new(SyntaxKind::BLOCK_COMMENT, offset))
 }
 
 // TODO: determine if `dispatch!` is an optimisation.
-fn token(input: &mut Input<'_>) -> PResult<Lexed> {
+fn token(input: &mut Input<'_>) -> PResult<Token> {
     alt((
         whitespace,
         line_comment,
@@ -317,8 +319,8 @@ fn token(input: &mut Input<'_>) -> PResult<Lexed> {
     .parse_next(input)
 }
 
-pub(super) fn tokens(input: &mut Input<'_>) -> PResult<Vec<Lexed>> {
-    let (mut tokens, token): (Vec<Lexed>, Lexed) =
+pub(crate) fn tokens(input: &mut Input<'_>) -> PResult<Vec<Token>> {
+    let (mut tokens, token): (Vec<Token>, Token) =
         repeat_till(0.., token, end_of_file).parse_next(input)?;
 
     tokens.push(token);

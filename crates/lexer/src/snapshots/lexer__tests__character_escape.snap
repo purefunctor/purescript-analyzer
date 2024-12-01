@@ -4,59 +4,59 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 4,
         },
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 5,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 9,
         },
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 10,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 14,
         },
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 15,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 19,
         },
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 20,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 24,
         },
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 25,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 29,
         },
-        Lexed {
+        Token {
             kind: CHAR,
             offset: 30,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 36,
         },

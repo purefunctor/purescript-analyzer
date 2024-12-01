@@ -1,7 +1,7 @@
 use position::Position;
 use syntax::SyntaxKind;
 
-use super::Lexed;
+use super::Token;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Delimiter {
@@ -45,7 +45,7 @@ impl Delimiter {
 
 struct Layout<'s, 't> {
     source: &'s str,
-    tokens: &'t [Lexed],
+    tokens: &'t [Token],
     index: usize,
     stack: Vec<(Position, Delimiter)>,
     output: Vec<SyntaxKind>,
@@ -53,7 +53,7 @@ struct Layout<'s, 't> {
 }
 
 impl<'s, 't> Layout<'s, 't> {
-    fn new(source: &'s str, tokens: &'t [Lexed]) -> Layout<'s, 't> {
+    fn new(source: &'s str, tokens: &'t [Token]) -> Layout<'s, 't> {
         let index = 0;
         let stack = vec![(Position { offset: 0, line: 1, column: 1 }, Delimiter::Root)];
         let output = vec![];
@@ -61,7 +61,7 @@ impl<'s, 't> Layout<'s, 't> {
         Layout { source, tokens, index, stack, output, whitespace }
     }
 
-    fn insert(&mut self, token: Lexed, position: Position, next: Position) {
+    fn insert(&mut self, token: Token, position: Position, next: Position) {
         Insert { layout: self, token, position, next }.call()
     }
 
@@ -111,7 +111,7 @@ impl<'s, 't> Layout<'s, 't> {
 
 struct Insert<'l, 's, 't> {
     layout: &'l mut Layout<'s, 't>,
-    token: Lexed,
+    token: Token,
     position: Position,
     next: Position,
 }
@@ -570,4 +570,12 @@ impl Collapse {
             layout.output.push(SyntaxKind::LAYOUT_END);
         }
     }
+}
+
+pub(crate) fn layout(source: &str, tokens: &[Token]) -> Vec<SyntaxKind> {
+    let mut layout = Layout::new(source, tokens);
+    while !layout.is_eof() {
+        layout.step();
+    }
+    layout.finish()
 }

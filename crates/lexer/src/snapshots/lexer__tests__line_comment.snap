@@ -4,19 +4,19 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: LINE_COMMENT,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 20,
         },
-        Lexed {
+        Token {
             kind: LINE_COMMENT,
             offset: 21,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 47,
         },

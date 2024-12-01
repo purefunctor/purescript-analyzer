@@ -4,15 +4,15 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: RAW_STRING,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: STRING,
             offset: 8,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 10,
         },

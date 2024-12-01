@@ -4,31 +4,31 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: LEFT_PARENTHESIS,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: RIGHT_PARENTHESIS,
             offset: 1,
         },
-        Lexed {
+        Token {
             kind: LEFT_SQUARE,
             offset: 2,
         },
-        Lexed {
+        Token {
             kind: RIGHT_SQUARE,
             offset: 3,
         },
-        Lexed {
+        Token {
             kind: LEFT_CURLY,
             offset: 4,
         },
-        Lexed {
+        Token {
             kind: RIGHT_CURLY,
             offset: 5,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 6,
         },

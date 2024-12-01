@@ -4,35 +4,35 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: SOURCE_SYMBOL,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 3,
         },
-        Lexed {
+        Token {
             kind: SOURCE_SYMBOL,
             offset: 4,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 7,
         },
-        Lexed {
+        Token {
             kind: SOURCE_SYMBOL,
             offset: 8,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 11,
         },
-        Lexed {
+        Token {
             kind: SOURCE_SYMBOL,
             offset: 12,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 15,
         },

@@ -4,115 +4,115 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: LEFT_ARROW,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 2,
         },
-        Lexed {
+        Token {
             kind: LEFT_ARROW,
             offset: 3,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 6,
         },
-        Lexed {
+        Token {
             kind: RIGHT_ARROW,
             offset: 7,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 9,
         },
-        Lexed {
+        Token {
             kind: RIGHT_ARROW,
             offset: 10,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 13,
         },
-        Lexed {
+        Token {
             kind: RIGHT_DOUBLE_ARROW,
             offset: 14,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 16,
         },
-        Lexed {
+        Token {
             kind: RIGHT_DOUBLE_ARROW,
             offset: 17,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 20,
         },
-        Lexed {
+        Token {
             kind: DOUBLE_COLON,
             offset: 21,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 23,
         },
-        Lexed {
+        Token {
             kind: DOUBLE_COLON,
             offset: 24,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 27,
         },
-        Lexed {
+        Token {
             kind: FORALL,
             offset: 28,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 31,
         },
-        Lexed {
+        Token {
             kind: EQUALS,
             offset: 32,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 33,
         },
-        Lexed {
+        Token {
             kind: DOT,
             offset: 34,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 35,
         },
-        Lexed {
+        Token {
             kind: BACKSLASH,
             offset: 36,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 37,
         },
-        Lexed {
+        Token {
             kind: PIPE,
             offset: 38,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 39,
         },
-        Lexed {
+        Token {
             kind: AT,
             offset: 40,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 41,
         },

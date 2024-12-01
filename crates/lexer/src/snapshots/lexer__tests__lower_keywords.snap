@@ -4,211 +4,211 @@ snapshot_kind: text
 ---
 Ok(
     [
-        Lexed {
+        Token {
             kind: ADO,
             offset: 0,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 3,
         },
-        Lexed {
+        Token {
             kind: AS,
             offset: 4,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 6,
         },
-        Lexed {
+        Token {
             kind: CASE,
             offset: 7,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 11,
         },
-        Lexed {
+        Token {
             kind: CLASS,
             offset: 12,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 17,
         },
-        Lexed {
+        Token {
             kind: DATA,
             offset: 18,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 22,
         },
-        Lexed {
+        Token {
             kind: DERIVE,
             offset: 23,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 29,
         },
-        Lexed {
+        Token {
             kind: DO,
             offset: 30,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 32,
         },
-        Lexed {
+        Token {
             kind: ELSE,
             offset: 33,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 37,
         },
-        Lexed {
+        Token {
             kind: FALSE,
             offset: 38,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 43,
         },
-        Lexed {
+        Token {
             kind: FOREIGN,
             offset: 44,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 51,
         },
-        Lexed {
+        Token {
             kind: HIDING,
             offset: 52,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 58,
         },
-        Lexed {
+        Token {
             kind: IF,
             offset: 59,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 61,
         },
-        Lexed {
+        Token {
             kind: IMPORT,
             offset: 62,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 68,
         },
-        Lexed {
+        Token {
             kind: IN,
             offset: 69,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 71,
         },
-        Lexed {
+        Token {
             kind: INFIX,
             offset: 72,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 77,
         },
-        Lexed {
+        Token {
             kind: INFIXL,
             offset: 78,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 84,
         },
-        Lexed {
+        Token {
             kind: INFIXR,
             offset: 85,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 91,
         },
-        Lexed {
+        Token {
             kind: INSTANCE,
             offset: 92,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 100,
         },
-        Lexed {
+        Token {
             kind: LET,
             offset: 101,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 104,
         },
-        Lexed {
+        Token {
             kind: MODULE,
             offset: 105,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 111,
         },
-        Lexed {
+        Token {
             kind: NEWTYPE,
             offset: 112,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 119,
         },
-        Lexed {
+        Token {
             kind: OF,
             offset: 120,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 122,
         },
-        Lexed {
+        Token {
             kind: THEN,
             offset: 123,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 127,
         },
-        Lexed {
+        Token {
             kind: TRUE,
             offset: 128,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 132,
         },
-        Lexed {
+        Token {
             kind: TYPE,
             offset: 133,
         },
-        Lexed {
+        Token {
             kind: WHITESPACE,
             offset: 137,
         },
-        Lexed {
+        Token {
             kind: WHERE,
             offset: 138,
         },
-        Lexed {
+        Token {
             kind: END_OF_FILE,
             offset: 143,
         },
