@@ -1,7 +1,7 @@
 use position::Position;
 use syntax::SyntaxKind;
 
-use super::Token;
+use crate::Tokenized;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Delimiter {
@@ -43,59 +43,53 @@ impl Delimiter {
     }
 }
 
-struct Layout<'s, 't> {
-    source: &'s str,
-    tokens: &'t [Token],
+struct Layout<'t> {
+    tokenized: &'t Tokenized<'t>,
     index: usize,
     stack: Vec<(Position, Delimiter)>,
     output: Vec<SyntaxKind>,
     whitespace: Vec<SyntaxKind>,
 }
 
-impl<'s, 't> Layout<'s, 't> {
-    fn new(source: &'s str, tokens: &'t [Token]) -> Layout<'s, 't> {
+impl<'t> Layout<'t> {
+    fn new(tokenized: &'t Tokenized<'t>) -> Layout<'t> {
         let index = 0;
         let stack = vec![(Position { offset: 0, line: 1, column: 1 }, Delimiter::Root)];
         let output = vec![];
         let whitespace = vec![];
-        Layout { source, tokens, index, stack, output, whitespace }
+        Layout { tokenized, index, stack, output, whitespace }
     }
 
-    fn insert(&mut self, token: Token, position: Position, next: Position) {
+    fn insert(&mut self, token: SyntaxKind, position: Position, next: Position) {
         Insert { layout: self, token, position, next }.call()
     }
 
     fn is_eof(&self) -> bool {
-        self.index >= self.tokens.len()
+        self.tokenized.kind(self.index).is_end_of_file()
     }
 
     fn step(&mut self) {
-        assert!(self.index < self.tokens.len());
-
-        let mut tokens = self.tokens[self.index..].iter().copied();
-
         let (token, position) = loop {
-            let Some(token) = tokens.next() else {
-                return;
-            };
-            self.index += 1;
-            if token.kind.is_whitespace_or_comment() {
-                self.whitespace.push(token.kind);
+            let kind = self.tokenized.kind(self.index);
+            let position = self.tokenized.position(self.index);
+            if kind.is_whitespace_or_comment() {
+                self.whitespace.push(kind);
+                self.index += 1;
             } else {
-                break (token, Position::from_source(&self.source, token.offset));
+                break (kind, position);
             }
         };
 
+        let mut index = self.index;
         let next = loop {
-            let Some(token) = tokens.next() else {
-                return;
-            };
-            if !token.kind.is_whitespace_or_comment() {
-                break Position::from_source(&self.source, token.offset);
+            index += 1;
+            if !self.tokenized.kind(index).is_whitespace_or_comment() {
+                break self.tokenized.position(index);
             }
         };
 
         self.insert(token, position, next);
+        self.index += 1;
     }
 
     fn finish(mut self) -> Vec<SyntaxKind> {
@@ -109,16 +103,16 @@ impl<'s, 't> Layout<'s, 't> {
     }
 }
 
-struct Insert<'l, 's, 't> {
-    layout: &'l mut Layout<'s, 't>,
-    token: Token,
+struct Insert<'l, 't> {
+    layout: &'l mut Layout<'t>,
+    token: SyntaxKind,
     position: Position,
     next: Position,
 }
 
-impl<'l, 's, 't> Insert<'l, 's, 't> {
+impl<'l, 't> Insert<'l, 't> {
     fn call(&mut self) {
-        match self.token.kind {
+        match self.token {
             SyntaxKind::DATA => {
                 self.insert_default();
                 if self.is_top_declaration(self.position) {
@@ -392,7 +386,7 @@ impl<'l, 's, 't> Insert<'l, 's, 't> {
     fn insert_default(&mut self) {
         self.collapse_and_commit(Self::offside_p);
         self.insert_sep();
-        self.insert_token(self.token.kind);
+        self.insert_token(self.token);
     }
 
     fn insert_start(&mut self, delimiter: Delimiter) {
@@ -572,8 +566,8 @@ impl Collapse {
     }
 }
 
-pub(crate) fn layout(source: &str, tokens: &[Token]) -> Vec<SyntaxKind> {
-    let mut layout = Layout::new(source, tokens);
+pub(crate) fn layout(tokenized: &Tokenized) -> Vec<SyntaxKind> {
+    let mut layout = Layout::new(tokenized);
     while !layout.is_eof() {
         layout.step();
     }
