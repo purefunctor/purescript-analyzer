@@ -1,0 +1,10 @@
+[package]
+name = "parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lexer = { version = "0.1.0", path = "../lexer" }
+rowan = "0.16.1"
+syntax = { version = "0.1.0", path = "../syntax" }
+winnow = "0.6.20"

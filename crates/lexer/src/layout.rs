@@ -1,7 +1,7 @@
 use position::Position;
 use syntax::SyntaxKind;
 
-use crate::Tokenized;
+use crate::Lexed;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Delimiter {
@@ -44,7 +44,7 @@ impl Delimiter {
 }
 
 struct Layout<'t> {
-    tokenized: &'t Tokenized<'t>,
+    tokenized: &'t Lexed<'t>,
     index: usize,
     stack: Vec<(Position, Delimiter)>,
     output: Vec<SyntaxKind>,
@@ -52,7 +52,7 @@ struct Layout<'t> {
 }
 
 impl<'t> Layout<'t> {
-    fn new(tokenized: &'t Tokenized<'t>) -> Layout<'t> {
+    fn new(tokenized: &'t Lexed) -> Layout<'t> {
         let index = 0;
         let stack = vec![(Position { offset: 0, line: 1, column: 1 }, Delimiter::Root)];
         let output = vec![];
@@ -569,7 +569,7 @@ impl Collapse {
     }
 }
 
-pub(crate) fn layout(tokenized: &Tokenized) -> Vec<SyntaxKind> {
+pub(crate) fn layout(tokenized: &Lexed) -> Vec<SyntaxKind> {
     let mut layout = Layout::new(tokenized);
     while !layout.is_eof() {
         layout.step();

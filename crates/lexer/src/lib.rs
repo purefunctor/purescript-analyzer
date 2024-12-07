@@ -19,19 +19,19 @@ impl Token {
     }
 }
 
-pub struct Tokenized<'s> {
+struct Lexed<'s> {
     source: &'s str,
     tokens: Vec<Token>,
     positions: Vec<Position>,
 }
 
-impl<'s> Tokenized<'s> {
-    fn new(source: &'s str, tokens: Vec<Token>) -> Tokenized<'s> {
-        let positions = Tokenized::compute_positions(source, &tokens);
-        Tokenized { source, tokens, positions }
+impl<'s> Lexed<'s> {
+    fn new(source: &'s str, tokens: Vec<Token>) -> Lexed<'s> {
+        let positions = Lexed::compute_positions(source, &tokens);
+        Lexed { source, tokens, positions }
     }
 
-    fn compute_positions(source: &'s str, tokens: &[Token]) -> Vec<Position> {
+    fn compute_positions(source: &str, tokens: &[Token]) -> Vec<Position> {
         let mut positions = Vec::with_capacity(tokens.len());
 
         let mut index = 0;
@@ -59,20 +59,9 @@ impl<'s> Tokenized<'s> {
         positions
     }
 
-    pub fn len(&self) -> usize {
-        self.tokens.len()
-    }
-
     pub fn kind(&self, index: usize) -> SyntaxKind {
         assert!(index < self.tokens.len());
         self.tokens[index].kind
-    }
-
-    pub fn text(&self, index: usize) -> &'s str {
-        assert!(index < self.tokens.len());
-        let start = self.tokens[index].offset;
-        let end = self.tokens[index + 1].offset;
-        &self.source[start..end]
     }
 
     pub fn position(&self, index: usize) -> Position {
@@ -81,12 +70,46 @@ impl<'s> Tokenized<'s> {
     }
 }
 
-pub fn tokenize<'s>(source: &'s str) -> (Tokenized<'s>, Vec<SyntaxKind>) {
+#[derive(Debug)]
+pub struct Positions<'s> {
+    pub source: &'s str,
+    pub positions: Vec<Position>,
+}
+
+impl<'s> Positions<'s> {
+    fn from_lexed(lexed: Lexed<'s>, tokens: &[SyntaxKind]) -> Positions<'s> {
+        let source = lexed.source;
+        let mut positions = Vec::with_capacity(tokens.len());
+        let mut old_positions = lexed.positions.into_iter().peekable();
+
+        for kind in tokens {
+            let position = if kind.is_layout() {
+                *old_positions.peek().expect("a position")
+            } else {
+                old_positions.next().expect("a position")
+            };
+            positions.push(position);
+        }
+
+        Positions { source, positions }
+    }
+
+    pub fn text(&self, index: usize) -> &'s str {
+        assert!(index < self.positions.len());
+        let start = self.positions[index].offset as usize;
+        let end = self.positions[index + 1].offset as usize;
+        &self.source[start..end]
+    }
+}
+
+pub fn tokenize<'s>(source: &'s str) -> (Vec<SyntaxKind>, Positions<'s>) {
     let mut input = winnow::Located::new(source);
 
     let tokens = grammar::tokens(&mut input).unwrap();
-    let tokenized = Tokenized::new(source, tokens);
-    let tokens = layout::layout(&tokenized);
+    let lexed = Lexed::new(source, tokens);
 
-    (tokenized, tokens)
+    let tokens = layout::layout(&lexed);
+    let positions = Positions::from_lexed(lexed, &tokens);
+
+    (tokens, positions)
 }

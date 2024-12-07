@@ -1,3 +1,10 @@
+use winnow::{
+    error::ParserError,
+    stream::{Compare, CompareResult, ContainsToken, SliceLen, Stream, StreamIsPartial},
+    token::literal,
+    PResult, Parser,
+};
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(non_camel_case_types)]
 #[repr(u16)]
@@ -183,5 +190,50 @@ impl SyntaxKind {
 
     pub fn is_end_of_file(self) -> bool {
         matches!(self, SyntaxKind::END_OF_FILE)
+    }
+
+    pub fn is_layout(self) -> bool {
+        matches!(
+            self,
+            SyntaxKind::LAYOUT_START | SyntaxKind::LAYOUT_DELIMITER | SyntaxKind::LAYOUT_END
+        )
+    }
+}
+
+impl SliceLen for SyntaxKind {
+    fn slice_len(&self) -> usize {
+        1
+    }
+}
+
+impl ContainsToken<SyntaxKind> for SyntaxKind {
+    fn contains_token(&self, token: SyntaxKind) -> bool {
+        *self == token
+    }
+}
+
+impl ContainsToken<SyntaxKind> for &'_ [SyntaxKind] {
+    fn contains_token(&self, token: SyntaxKind) -> bool {
+        self.contains(&token)
+    }
+}
+
+impl Compare<SyntaxKind> for &'_ [SyntaxKind] {
+    fn compare(&self, t: SyntaxKind) -> CompareResult {
+        match self.first().copied() {
+            Some(h) if h == t => CompareResult::Ok(1),
+            Some(_) => CompareResult::Error,
+            None => CompareResult::Incomplete,
+        }
+    }
+}
+
+impl<I, E> Parser<I, SyntaxKind, E> for SyntaxKind
+where
+    I: Stream + Compare<SyntaxKind> + StreamIsPartial,
+    E: ParserError<I>,
+{
+    fn parse_next(&mut self, input: &mut I) -> PResult<SyntaxKind, E> {
+        literal(*self).value(*self).parse_next(input)
     }
 }
