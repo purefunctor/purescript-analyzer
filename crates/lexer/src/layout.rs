@@ -78,6 +78,9 @@ impl<'t> Layout<'t> {
             } else {
                 break (kind, position);
             }
+            if self.is_eof() {
+                return self.output.extend(self.whitespace.drain(..));
+            }
         };
 
         let mut index = self.index;
