@@ -212,8 +212,8 @@ impl<'a> Lexer<'a> {
         assert_eq!(self.take(), '\'');
         let c = self.take();
         if c == '\\' {
-            if let Some(err) = self.take_escape() {
-                return self.lexed.push(SyntaxKind::ERROR, position, Some(err));
+            if let error @ Some(_) = self.try_take_escape() {
+                return self.lexed.push(SyntaxKind::ERROR, position, error);
             }
         }
         if self.first() == '\'' {
@@ -225,7 +225,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_escape(&mut self) -> Option<&'static str> {
+    fn try_take_escape(&mut self) -> Option<&'static str> {
         match self.first() {
             't' | 'r' | 'n' | '"' | '\'' | '\\' => {
                 self.take();
@@ -236,7 +236,6 @@ impl<'a> Lexer<'a> {
                 self.take_while_max(is_hex_digit, 6);
                 None
             }
-
             _ => Some("invalid escaped character literal"),
         }
     }
@@ -249,7 +248,10 @@ impl<'a> Lexer<'a> {
         match leading_quotes {
             0 => panic!("Caller garantees leading quote!"),
             // "..." => a string
-            1 => self.take_normal_string(position),
+            1 => {
+                let (kind, error) = self.take_normal_string();
+                self.lexed.push(kind, position, error);
+            }
             // "" => an empty string
             2 => self.lexed.push(SyntaxKind::STRING, position, None),
             // """...""" => a raw string with leading quotes
@@ -260,32 +262,24 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn take_normal_string(&mut self, position: Position) {
+    fn take_normal_string(&mut self) -> (SyntaxKind, Option<&'static str>) {
         loop {
             match self.take() {
-                '\r' | '\n' => {
-                    break self.lexed.push(
-                        SyntaxKind::ERROR,
-                        position,
-                        Some(
-                            "invalid string literal - newlines are not allowed in string literals",
-                        ),
-                    )
-                }
+                '"' => return (SyntaxKind::STRING, None),
+                '\r' | '\n' => return (SyntaxKind::ERROR, Some("invalid string literal")),
+                EOF_CHAR => return (SyntaxKind::ERROR, Some("invalid string literal")),
                 '\\' => {
-                    if let Some(err) = self.take_escape() {
-                        break self.lexed.push(SyntaxKind::ERROR, position, Some(err));
-                    } else {
-                        continue;
+                    if self.first().is_ascii_whitespace() {
+                        self.take_while(|c| c.is_ascii_whitespace());
+                        if self.first() != '\\' {
+                            self.take_while(|c| c != '"');
+                            self.take();
+                            return (SyntaxKind::ERROR, Some("invalid string literal"));
+                        }
                     }
-                }
-                '"' => break self.lexed.push(SyntaxKind::STRING, position, None),
-                EOF_CHAR => {
-                    break self.lexed.push(
-                        SyntaxKind::ERROR,
-                        position,
-                        Some("invalid string literal - end of file"),
-                    )
+                    if let error @ Some(_) = self.try_take_escape() {
+                        return (SyntaxKind::ERROR, error);
+                    }
                 }
                 _ => continue,
             }

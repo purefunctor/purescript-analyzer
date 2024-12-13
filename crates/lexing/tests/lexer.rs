@@ -17,10 +17,10 @@ lexer_tests!(
     operator_source => "=>> >>= >=> && || : ++",
     string_regular => "\"this is a string\"",
     string_escape => "\"\\t \\r \\n \\\" \\' \\\\ \\xFFFFFF\"",
-    // string_space_escape => r#"
-    //     " hello \
-    //     \ world " 
-    // "#.trim(),
+    string_space_escape => r#"
+        " hello \
+        \ world "
+    "#.trim(),
     raw_string => "\"\"\"this is a string\"\"\"",
     raw_string_empty => "\"\"\"\"\"\"",
     raw_string_single_start => "\"\"\"\" \"\"\"",
