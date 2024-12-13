@@ -1,3 +1,0 @@
-module ForeignImport where 
-
-foreign import ffi :: forall a b. a -> b

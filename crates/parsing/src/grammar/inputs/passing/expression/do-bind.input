@@ -1,3 +1,0 @@
-do
-  a <- b
-  Tuple c d <- e
