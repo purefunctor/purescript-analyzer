@@ -13,6 +13,7 @@ macro_rules! lexer_tests {
 
 lexer_tests!(
     keyword => "ado as case class data derive do else false foreign hiding if import in infix infixl infixr instance let module newtype of then true type where",
+    prefixed => "Hooks.do Main.main List.Cons",
     operator_purs => "<- ← -> → => ⇒ :: ∷ ∀ = . \\ | @",
     operator_source => "=>> >>= >=> && || : ++",
     integer_leading_zero => "0",

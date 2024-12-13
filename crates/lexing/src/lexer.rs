@@ -110,7 +110,7 @@ impl<'a> Lexer<'a> {
                 if is_lower_start(i) {
                     self.take_lower()
                 } else if i.is_letter_uppercase() {
-                    self.take_upper()
+                    self.take_prefix_or_upper()
                 } else if is_operator(i) {
                     self.take_operator()
                 } else if i.is_whitespace() {
@@ -171,10 +171,54 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
-    fn take_upper(&mut self) {
-        let position = self.position();
-        self.take_while(|c| c.is_letter());
-        self.lexed.push(SyntaxKind::UPPER, position, None)
+    fn take_prefix_or_upper(&mut self) {
+        let prefix = self.position();
+        let mut has_prefix = false;
+
+        // It's best to follow through this block with a few examples:
+        //
+        //>================================================================
+        //
+        // Hooks.do => [PREFIX, LOWER]
+        // Main.main => [UPPER, LOWER]
+        //
+        // 1. (A) takes 'Hooks'
+        // 2. (B) takes '.'
+        // 3. (D) pushes [PREFIX] and finishes
+        //
+        //>================================================================
+        //
+        // List.Cons => [PREFIX, UPPER]
+        //
+        // 1. (A) takes 'List'
+        // 2. (B) takes '.'
+        // 3. (A) takes 'Cons'
+        // 4. (B) takes nothing
+        // 5. (C) pushes [PREFIX, UPPER] and finishes
+        //
+        //>================================================================
+        loop {
+            // (D)
+            if !self.first().is_letter_uppercase() && has_prefix {
+                return self.lexed.push(SyntaxKind::PREFIX, prefix, None);
+            }
+
+            // (A)
+            let proper = self.position();
+            self.take_while(|c| c.is_letter());
+
+            // (B)
+            if self.first() == '.' {
+                self.take();
+                has_prefix = true;
+            } else {
+                // (C)
+                if has_prefix {
+                    self.lexed.push(SyntaxKind::PREFIX, prefix, None);
+                }
+                return self.lexed.push(SyntaxKind::UPPER, proper, None);
+            }
+        }
     }
 
     #[inline]

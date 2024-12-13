@@ -8,6 +8,7 @@ pub enum SyntaxKind {
     BLOCK_COMMENT,
 
     // Names
+    PREFIX,
     UPPER,
     LOWER,
     OPERATOR,
