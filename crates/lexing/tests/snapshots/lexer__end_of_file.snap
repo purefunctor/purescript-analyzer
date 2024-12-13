@@ -1,0 +1,8 @@
+---
+source: crates/lexing/tests/lexer.rs
+expression: tokens
+snapshot_kind: text
+---
+[
+    END_OF_FILE,
+]

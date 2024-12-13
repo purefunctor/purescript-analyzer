@@ -102,4 +102,8 @@ impl<'a> Lexed<'a> {
         let error_index = self.errors.binary_search_by_key(&(index as u32), |v| v.index).ok()?;
         Some(&self.errors[error_index].message)
     }
+
+    pub fn kinds(&self) -> &[SyntaxKind] {
+        &self.kinds
+    }
 }
