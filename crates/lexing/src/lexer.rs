@@ -209,35 +209,17 @@ impl<'a> Lexer<'a> {
     #[inline]
     fn take_char(&mut self) {
         let position = self.position();
-        assert_eq!(self.take(), '\'');
-        let c = self.take();
-        if c == '\\' {
-            if let error @ Some(_) = self.try_take_escape() {
-                return self.lexed.push(SyntaxKind::ERROR, position, error);
-            }
-        }
-        if self.first() == '\'' {
-            self.take();
-            self.lexed.push(SyntaxKind::CHAR, position, None)
-        } else {
-            self.lexed.push(SyntaxKind::ERROR, position, Some("invalid character literal"))
-        }
-    }
 
-    #[inline]
-    fn try_take_escape(&mut self) -> Option<&'static str> {
-        match self.first() {
-            't' | 'r' | 'n' | '"' | '\'' | '\\' => {
-                self.take();
-                None
-            }
-            'x' => {
-                assert!(self.take() == 'x');
-                self.take_while_max(is_hex_digit, 6);
-                None
-            }
-            _ => Some("invalid escaped character literal"),
-        }
+        assert_eq!(self.take(), '\'');
+        self.take_while(|c| c != '\'');
+
+        let (kind, error) = if self.take() != '\'' {
+            (SyntaxKind::ERROR, Some("unexpected end of file"))
+        } else {
+            (SyntaxKind::CHAR, None)
+        };
+
+        self.lexed.push(kind, position, error);
     }
 
     #[inline]
@@ -246,64 +228,58 @@ impl<'a> Lexer<'a> {
         self.take_while_max(|c| c == '"', 8);
         let leading_quotes = self.consumed() - offset;
         match leading_quotes {
-            0 => panic!("Caller garantees leading quote!"),
             // "..." => a string
             1 => {
                 let (kind, error) = self.take_normal_string();
                 self.lexed.push(kind, position, error);
             }
             // "" => an empty string
-            2 => self.lexed.push(SyntaxKind::STRING, position, None),
+            2 => {
+                self.lexed.push(SyntaxKind::STRING, position, None);
+            }
             // """...""" => a raw string with leading quotes
-            3..=5 => self.take_raw_string(position),
+            3..=5 => {
+                let (kind, error) = self.take_raw_string();
+                self.lexed.push(kind, position, error);
+            }
             // """"""" => Trailing and leading quotes in a raw string
-            6..=8 => self.lexed.push(SyntaxKind::RAW_STRING, position, None),
-            _ => unreachable!(),
-        }
-    }
-
-    fn take_normal_string(&mut self) -> (SyntaxKind, Option<&'static str>) {
-        loop {
-            match self.take() {
-                '"' => return (SyntaxKind::STRING, None),
-                '\r' | '\n' => return (SyntaxKind::ERROR, Some("invalid string literal")),
-                EOF_CHAR => return (SyntaxKind::ERROR, Some("invalid string literal")),
-                '\\' => {
-                    if self.first().is_ascii_whitespace() {
-                        self.take_while(|c| c.is_ascii_whitespace());
-                        if self.first() != '\\' {
-                            self.take_while(|c| c != '"');
-                            self.take();
-                            return (SyntaxKind::ERROR, Some("invalid string literal"));
-                        }
-                    }
-                    if let error @ Some(_) = self.try_take_escape() {
-                        return (SyntaxKind::ERROR, error);
-                    }
-                }
-                _ => continue,
+            6..=8 => {
+                self.lexed.push(SyntaxKind::RAW_STRING, position, None);
+            }
+            _ => {
+                unreachable!();
             }
         }
     }
 
-    fn take_raw_string(&mut self, position: Position) {
+    fn take_normal_string(&mut self) -> (SyntaxKind, Option<&'static str>) {
+        self.take_while(|c| c != '"');
+        if self.take() != '"' {
+            (SyntaxKind::ERROR, Some("unexpected end of file"))
+        } else {
+            (SyntaxKind::STRING, None)
+        }
+    }
+
+    fn take_raw_string(&mut self) -> (SyntaxKind, Option<&'static str>) {
         loop {
             self.take_while(|c| c != '"');
-            let start_of_quotes = self.consumed();
+            let start = self.consumed();
             self.take_while_max(|c| c == '"', 5);
-            let end_of_quotes = self.consumed();
-            let num_quotes = end_of_quotes - start_of_quotes;
-            match num_quotes {
+            let end = self.consumed();
+            match end - start {
                 0 => {
-                    break self.lexed.push(
-                        SyntaxKind::ERROR,
-                        position,
-                        Some("invalid raw string literal - end of file"),
-                    )
+                    return (SyntaxKind::ERROR, Some("unexpected end of file"));
                 }
-                1 | 2 => continue,
-                3..=5 => break self.lexed.push(SyntaxKind::RAW_STRING, position, None),
-                _ => unreachable!(),
+                1 | 2 => {
+                    continue;
+                }
+                3..=5 => {
+                    return (SyntaxKind::RAW_STRING, None);
+                }
+                _ => {
+                    unreachable!();
+                }
             }
         }
     }
@@ -406,8 +382,4 @@ fn is_lower(c: char) -> bool {
 
 fn is_lower_start(c: char) -> bool {
     c.is_letter_lowercase() || c == '_'
-}
-
-fn is_hex_digit(c: char) -> bool {
-    c.is_ascii_hexdigit()
 }
