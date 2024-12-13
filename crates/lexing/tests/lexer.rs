@@ -15,18 +15,6 @@ lexer_tests!(
     keyword => "ado as case class data derive do else false foreign hiding if import in infix infixl infixr instance let module newtype of then true type where",
     operator_purs => "<- ← -> → => ⇒ :: ∷ ∀ = . \\ | @",
     operator_source => "=>> >>= >=> && || : ++",
-    // string_regular => "\"this is a string\"",
-    // string_escape => "\"\\t \\r \\n \\\" \\' \\\\ \\xFFFFFF\"",
-    // string_space_escape => r#"
-    //     " hello \
-    //     \ world "
-    // "#.trim(),
-    // raw_string => "\"\"\"this is a string\"\"\"",
-    // raw_string_empty => "\"\"\"\"\"\"",
-    // raw_string_single_start => "\"\"\"\" \"\"\"",
-    // raw_string_double_start => "\"\"\"\"\" \"\"\"",
-    // raw_string_single_end => "\"\"\" \"\"\"\"",
-    // raw_string_double_end => "\"\"\" \"\"\"\"\"",
     integer_leading_zero => "0",
     integer_underscores => "1_000_000",
     number => "42.0",
