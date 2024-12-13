@@ -317,39 +317,39 @@ impl<'a> Lexer<'a> {
     #[inline]
     fn take_integer_or_number(&mut self) {
         let position = self.position();
-        // NOTE: The PureScript parser does not allow multiple leading 0s - the best way to handle
-        // it is maybe to report the same errors as PureScript or we try to parse a super-set.
-        // NOTE: The first rune has to be a digit, but after that underscores are allowed in
-        // PureScript number- and int-literals.
-        self.take_while(|c| c.is_ascii_digit() || c == '_');
 
-        if self.first() == '.' {
-            // `1..x` => [INTEGER, DOUBLE_PERIOD, LOWER]
-            if self.second() == '.' {
-                return self.lexed.push(SyntaxKind::INTEGER, position, None);
-            }
-
-            // `1.2` => [NUMBER]
-            if self.second().is_ascii_digit() {
-                assert_eq!(self.take(), '.');
-                self.take_while(|c| c.is_ascii_digit() || c == '_');
-                // Scientific notation
-                if matches!(self.first(), 'e' | 'E') {
-                    self.take();
-                    if matches!(self.first(), '+' | '-') {
-                        self.take();
-                    }
-                    self.take_while(|c| c.is_ascii_digit() || c == '_');
-                }
-                return self.lexed.push(SyntaxKind::NUMBER, position, None);
-            }
-
-            // `1.` => [ERROR]
-            assert_eq!(self.take(), '.');
-            return self.lexed.push(SyntaxKind::ERROR, position, Some("invalid number literal"));
+        // lex(000_000.000_000e+42 ...) = [ERROR, ...]
+        if self.first() == '0' && self.second() == '0' {
+            self.take_while(|c| {
+                c.is_ascii_digit() || c == '_' || c == '.' || c == 'e' || c == '+' || c == '-'
+            });
+            return self.lexed.push(SyntaxKind::ERROR, position, Some("too many leading zeroes"));
         }
 
-        self.lexed.push(SyntaxKind::INTEGER, position, None)
+        let mut kind = SyntaxKind::INTEGER;
+        self.take_while(|c| c.is_ascii_digit() || c == '_');
+
+        // lex(1..2) = [INTEGER, DOUBLE_PERIOD, INTEGER]
+        if self.first() == '.' && self.second() == '.' {
+            return self.lexed.push(SyntaxKind::INTEGER, position, None);
+        }
+
+        if self.first() == '.' && self.second().is_ascii_digit() {
+            self.take();
+            self.take_while(|c| c.is_ascii_digit() || c == '_');
+            kind = SyntaxKind::NUMBER;
+        }
+
+        if self.first() == 'e' {
+            self.take();
+            if self.first() == '+' || self.first() == '-' {
+                self.take();
+            }
+            self.take_while(|c| c.is_ascii_digit() || c == '_');
+            kind = SyntaxKind::NUMBER;
+        }
+
+        self.lexed.push(kind, position, None);
     }
 
     #[inline]
