@@ -1,5 +1,0 @@
----
-source: crates/analyzer/src/surface/lower/tests.rs
-expression: surface.header.export_list
----
-None
