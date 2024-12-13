@@ -1,251 +1,84 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
+#[allow(non_camel_case_types)]
 pub enum SyntaxKind {
-    Whitespace = 0,
-    LineComment,
-    BlockComment,
+    // Comments
+    WHITESPACE = 0,
+    LINE_COMMENT,
+    BLOCK_COMMENT,
 
-    Module,
-    ModuleHeader,
-    ModuleImports,
-    ModuleBody,
-    ModuleKw,
-    WhereKw,
+    // Names
+    UPPER,
+    LOWER,
+    OPERATOR,
 
-    ExportList,
-    ExportTypeOp,
-    ExportClass,
-    ExportModule,
-    ExportOp,
-    ExportValue,
-    ExportType,
+    // Operators
+    AT,
+    BACKSLASH,
+    COLON,
+    DOUBLE_COLON,
+    COMMA,
+    EQUAL,
+    MINUS,
+    PERIOD,
+    DOUBLE_PERIOD,
+    PIPE,
+    QUESTION,
+    TICK,
+    UNDERSCORE,
+    LEFT_ARROW,
+    RIGHT_ARROW,
+    LEFT_THICK_ARROW,
+    RIGHT_THICK_ARROW,
+    LEFT_PARENTHESIS,
+    RIGHT_PARENTHESIS,
+    LEFT_CURLY,
+    RIGHT_CURLY,
+    LEFT_SQUARE,
+    RIGHT_SQUARE,
 
-    ImportList,
-    ImportOp,
-    ImportType,
-    DataAll,
-    DataEnumerated,
-    ImportTypeOp,
-    ImportClass,
-    ImportValue,
+    // Keywords
+    ADO,
+    AS,
+    CASE,
+    CLASS,
+    DATA,
+    DERIVE,
+    DO,
+    ELSE,
+    FORALL,
+    FOREIGN,
+    HIDING,
+    IF,
+    IMPORT,
+    IN,
+    INFIX,
+    INFIXL,
+    INFIXR,
+    INSTANCE,
+    LET,
+    MODULE,
+    NEWTYPE,
+    OF,
+    THEN,
+    TYPE,
+    WHERE,
 
-    ImportDeclaration,
-    ImportKw,
-    ImportHidden,
-    HidingKw,
-    ImportQualified,
-    AsKw,
+    // Literals
+    CHAR,
+    INTEGER,
+    NUMBER,
+    RAW_STRING,
+    STRING,
+    TRUE,
+    FALSE,
 
-    ModuleName,
-    QualifiedName,
-    QualifiedPrefix,
-    Name,
-    NameRef,
-    Upper,
-    Lower,
-    Label,
-    Hole,
-    Operator,
-    TickOperator,
-    OperatorPair,
-
-    At,
-    Backslash,
-    Colon,
-    Colon2,
-    Comma,
-    Equal,
-    Minus,
-    Period,
-    Period2,
-    Pipe,
-    Question,
-    Tick,
-    Underscore,
-
-    LeftArrow,
-    RightArrow,
-    LeftThickArrow,
-    RightThickArrow,
-    LeftParenthesis,
-    RightParenthesis,
-    LeftCurly,
-    RightCurly,
-    LeftSquare,
-    RightSquare,
-
-    AdoExpression,
-    QualifiedAdo,
-    AdoKw,
-
-    DoExpression,
-    QualifiedDo,
-    // UnqualifiedDo,
-    DoKw,
-
-    DoBind,
-    DoLetBinding,
-    DoDiscard,
-
-    ArgumentList,
-    ApplicationExpression,
-    TermArgument,
-    TypeArgument,
-
-    IfThenElseExpression,
-    IfKw,
-    ThenKw,
-    ElseKw,
-
-    LetInExpression,
-    LetKw,
-    InKw,
-    LetBindingSignature,
-    LetBindingName,
-    LetBindingPattern,
-    WhereExpression,
-
-    CaseKw,
-    OfKw,
-    CaseHead,
-    CaseBranch,
-    CasePatterns,
-    CaseExpression,
-
-    ExpressionInfixChain,
-    ExpressionOperatorChain,
-    NegateExpression,
-
-    ConstructorExpression,
-    OperatorNameExpression,
-    VariableExpression,
-
-    SectionExpression,
-    LambdaExpression,
-    LiteralExpression,
-    ParenthesizedExpression,
-    RecordAccessExpression,
-    RecordAccessPath,
-    RecordUpdateExpression,
-    RecordUpdateList,
-    RecordUpdateLeaf,
-    RecordUpdateBranch,
-    TypedExpression,
-
-    LiteralChar,
-    LiteralString,
-    LiteralRawString,
-    LiteralInteger,
-    LiteralNumber,
-    LiteralTrue,
-    LiteralFalse,
-    LiteralArray,
-    LiteralRecord,
-    RecordPun,
-    RecordField,
-
-    ForallType,
-    ForallVariables,
-    TypeVariableKinded,
-    TypeVariableName,
-
-    ArrowType,
-    ConstrainedType,
-
-    ApplicationType,
-    ConstructorType,
-    IntegerType,
-    KindedType,
-    OperatorNameType,
-    ParenthesizedType,
-    RecordType,
-    RowType,
-    RowInner,
-    RowField,
-    RowTail,
-    StringType,
-    TypeOperatorChain,
-    VariableType,
-    WildcardType,
-
-    BinderOperatorChain,
-    ConstructorBinder,
-    LiteralBinder,
-    NegativeBinder,
-    ParenthesizedBinder,
-    TypedBinder,
-    VariableBinder,
-    WildcardBinder,
-    BinderList,
-
-    ValueEquationDeclaration,
-    ValueAnnotationDeclaration,
-
-    DataAnnotation,
-    DataDeclaration,
-    DataVariables,
-    DataConstructors,
-    DataConstructor,
-    ConstructorFields,
-    DataKw,
-
-    NewtypeDeclaration,
-    NewtypeKw,
-    ForallKw,
-
-    TypeDeclarationSignature,
-    TypeDeclaration,
-    SynonymVariables,
-    TypeKw,
-
-    ClassSignature,
-    ClassDeclaration,
-    ClassConstraints,
-    ClassVariables,
-    ClassFundeps,
-    FundepDetermined,
-    FundepDetermines,
-    FundepVariables,
-    ClassMembers,
-    ClassMember,
-    ClassKw,
-
-    InstanceChain,
-    InstanceDeclaration,
-    InstanceAssertions,
-    InstanceArguments,
-    InstanceMemberSignature,
-    InstanceMemberEquation,
-    InstanceKw,
-
-    DeriveInstanceDeclaration,
-    DeriveKw,
-
-    ForeignDataDeclaration,
-    ForeignValueDeclaration,
-    ForeignKw,
-
-    FixityDeclaration,
-    InfixlKw,
-    InfixrKw,
-    InfixKw,
-
-    UnconditionalBinding,
-    GuardedBinding,
-    PatternGuard,
-    PatternGuardList,
-    GuardedExpression,
-
-    LayoutList,
-    LayoutStart,
-    LayoutSep,
-    LayoutEnd,
-
-    Sentinel,
-    Wrapped,
-    Source,
-    Error,
-    EndOfFile,
+    // Control
+    LAYOUT_START,
+    LAYOUT_SEPARATOR,
+    LAYOUT_END,
+    ERROR,
+    END_OF_FILE,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -255,7 +88,7 @@ impl rowan::Language for PureScript {
     type Kind = SyntaxKind;
 
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= SyntaxKind::EndOfFile as u16);
+        assert!(raw.0 <= SyntaxKind::END_OF_FILE as u16);
         unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
     }
 
@@ -278,59 +111,59 @@ pub type SyntaxElement = rowan::SyntaxElement<PureScript>;
 
 impl SyntaxKind {
     pub fn is_whitespace_or_comment(&self) -> bool {
-        matches!(self, Self::Whitespace | Self::LineComment | Self::BlockComment)
+        matches!(self, Self::WHITESPACE | Self::LINE_COMMENT | Self::BLOCK_COMMENT)
     }
 
     pub fn is_operator(&self) -> bool {
-        matches!(self, Self::Operator | Self::Minus | Self::Colon)
+        matches!(self, Self::OPERATOR | Self::MINUS | Self::COLON)
     }
 
     pub fn is_reserved_operator(&self) -> bool {
-        matches!(self, Self::RightArrow | Self::RightThickArrow)
+        matches!(self, Self::RIGHT_ARROW | Self::RIGHT_THICK_ARROW)
     }
 
     pub fn is_lower(&self) -> bool {
-        matches!(self, Self::Lower | Self::AsKw)
+        matches!(self, Self::LOWER | Self::AS)
     }
 
     pub fn is_label(&self) -> bool {
         matches!(
             self,
-            SyntaxKind::ModuleKw
-                | SyntaxKind::WhereKw
-                | SyntaxKind::ImportKw
-                | SyntaxKind::AsKw
-                | SyntaxKind::AdoKw
-                | SyntaxKind::DoKw
-                | SyntaxKind::IfKw
-                | SyntaxKind::ThenKw
-                | SyntaxKind::ElseKw
-                | SyntaxKind::LetKw
-                | SyntaxKind::InKw
-                | SyntaxKind::CaseKw
-                | SyntaxKind::OfKw
-                | SyntaxKind::DataKw
-                | SyntaxKind::NewtypeKw
-                | SyntaxKind::ForallKw
-                | SyntaxKind::TypeKw
-                | SyntaxKind::ClassKw
-                | SyntaxKind::InstanceKw
-                | SyntaxKind::DeriveKw
-                | SyntaxKind::ForeignKw
-                | SyntaxKind::InfixlKw
-                | SyntaxKind::InfixrKw
-                | SyntaxKind::InfixKw
-                | SyntaxKind::LiteralString
-                | SyntaxKind::LiteralRawString
-                | SyntaxKind::Lower
+            SyntaxKind::MODULE
+                | SyntaxKind::WHERE
+                | SyntaxKind::IMPORT
+                | SyntaxKind::AS
+                | SyntaxKind::ADO
+                | SyntaxKind::DO
+                | SyntaxKind::IF
+                | SyntaxKind::THEN
+                | SyntaxKind::ELSE
+                | SyntaxKind::LET
+                | SyntaxKind::IN
+                | SyntaxKind::CASE
+                | SyntaxKind::OF
+                | SyntaxKind::DATA
+                | SyntaxKind::NEWTYPE
+                | SyntaxKind::FORALL
+                | SyntaxKind::TYPE
+                | SyntaxKind::CLASS
+                | SyntaxKind::INSTANCE
+                | SyntaxKind::DERIVE
+                | SyntaxKind::FOREIGN
+                | SyntaxKind::INFIXL
+                | SyntaxKind::INFIXR
+                | SyntaxKind::INFIX
+                | SyntaxKind::STRING
+                | SyntaxKind::RAW_STRING
+                | SyntaxKind::LOWER
         )
     }
 
     pub fn is_end(&self) -> bool {
-        matches!(self, Self::LayoutSep | Self::LayoutEnd | Self::EndOfFile)
+        matches!(self, Self::LAYOUT_SEPARATOR | Self::LAYOUT_END | Self::END_OF_FILE)
     }
 
     pub fn is_layout(&self) -> bool {
-        matches!(self, Self::LayoutStart | Self::LayoutSep | Self::LayoutEnd)
+        matches!(self, Self::LAYOUT_START | Self::LAYOUT_SEPARATOR | Self::LAYOUT_END)
     }
 }

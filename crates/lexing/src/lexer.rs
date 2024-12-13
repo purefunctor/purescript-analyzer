@@ -28,7 +28,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub(crate) fn finalize(mut self) -> Lexed<'a> {
-        self.lexed.push(SyntaxKind::EndOfFile, self.position(), None);
+        self.lexed.push(SyntaxKind::END_OF_FILE, self.position(), None);
         self.lexed
     }
 
@@ -91,17 +91,17 @@ impl<'a> Lexer<'a> {
             '-' if self.second() == '-' => self.take_line_comment(),
             '{' if self.second() == '-' => self.take_block_comment(),
 
-            '(' => self.take_single(SyntaxKind::LeftParenthesis),
-            ')' => self.take_single(SyntaxKind::RightParenthesis),
-            '{' => self.take_single(SyntaxKind::LeftCurly),
-            '}' => self.take_single(SyntaxKind::RightCurly),
-            '[' => self.take_single(SyntaxKind::LeftSquare),
-            ']' => self.take_single(SyntaxKind::RightSquare),
+            '(' => self.take_single(SyntaxKind::LEFT_PARENTHESIS),
+            ')' => self.take_single(SyntaxKind::RIGHT_PARENTHESIS),
+            '{' => self.take_single(SyntaxKind::LEFT_CURLY),
+            '}' => self.take_single(SyntaxKind::RIGHT_CURLY),
+            '[' => self.take_single(SyntaxKind::LEFT_SQUARE),
+            ']' => self.take_single(SyntaxKind::RIGHT_SQUARE),
 
-            '`' => self.take_single(SyntaxKind::Tick),
-            ',' => self.take_single(SyntaxKind::Comma),
-            '?' => self.take_single(SyntaxKind::Question),
-            '_' if !is_lower(self.second()) => self.take_single(SyntaxKind::Underscore),
+            '`' => self.take_single(SyntaxKind::TICK),
+            ',' => self.take_single(SyntaxKind::COMMA),
+            '?' => self.take_single(SyntaxKind::QUESTION),
+            '_' if !is_lower(self.second()) => self.take_single(SyntaxKind::UNDERSCORE),
 
             '\'' => self.take_char(),
             '"' => self.take_string(),
@@ -138,34 +138,34 @@ impl<'a> Lexer<'a> {
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
-            "ado" => SyntaxKind::AdoKw,
-            "as" => SyntaxKind::AsKw,
-            "case" => SyntaxKind::CaseKw,
-            "class" => SyntaxKind::ClassKw,
-            "data" => SyntaxKind::DataKw,
-            "derive" => SyntaxKind::DeriveKw,
-            "do" => SyntaxKind::DoKw,
-            "else" => SyntaxKind::ElseKw,
-            "false" => SyntaxKind::LiteralFalse,
-            "forall" => SyntaxKind::ForallKw,
-            "foreign" => SyntaxKind::ForeignKw,
-            "hiding" => SyntaxKind::HidingKw,
-            "if" => SyntaxKind::IfKw,
-            "import" => SyntaxKind::ImportKw,
-            "in" => SyntaxKind::InKw,
-            "infix" => SyntaxKind::InfixKw,
-            "infixl" => SyntaxKind::InfixlKw,
-            "infixr" => SyntaxKind::InfixrKw,
-            "instance" => SyntaxKind::InstanceKw,
-            "let" => SyntaxKind::LetKw,
-            "module" => SyntaxKind::ModuleKw,
-            "newtype" => SyntaxKind::NewtypeKw,
-            "of" => SyntaxKind::OfKw,
-            "then" => SyntaxKind::ThenKw,
-            "true" => SyntaxKind::LiteralTrue,
-            "type" => SyntaxKind::TypeKw,
-            "where" => SyntaxKind::WhereKw,
-            _ => SyntaxKind::Lower,
+            "ado" => SyntaxKind::ADO,
+            "as" => SyntaxKind::AS,
+            "case" => SyntaxKind::CASE,
+            "class" => SyntaxKind::CLASS,
+            "data" => SyntaxKind::DATA,
+            "derive" => SyntaxKind::DERIVE,
+            "do" => SyntaxKind::DO,
+            "else" => SyntaxKind::ELSE,
+            "false" => SyntaxKind::FALSE,
+            "forall" => SyntaxKind::FORALL,
+            "foreign" => SyntaxKind::FOREIGN,
+            "hiding" => SyntaxKind::HIDING,
+            "if" => SyntaxKind::IF,
+            "import" => SyntaxKind::IMPORT,
+            "in" => SyntaxKind::IN,
+            "infix" => SyntaxKind::INFIX,
+            "infixl" => SyntaxKind::INFIXL,
+            "infixr" => SyntaxKind::INFIXR,
+            "instance" => SyntaxKind::INSTANCE,
+            "let" => SyntaxKind::LET,
+            "module" => SyntaxKind::MODULE,
+            "newtype" => SyntaxKind::NEWTYPE,
+            "of" => SyntaxKind::OF,
+            "then" => SyntaxKind::THEN,
+            "true" => SyntaxKind::TRUE,
+            "type" => SyntaxKind::TYPE,
+            "where" => SyntaxKind::WHERE,
+            _ => SyntaxKind::LOWER,
         };
         self.lexed.push(kind, position, None)
     }
@@ -174,7 +174,7 @@ impl<'a> Lexer<'a> {
     fn take_upper(&mut self) {
         let position = self.position();
         self.take_while(|c| c.is_letter());
-        self.lexed.push(SyntaxKind::Upper, position, None)
+        self.lexed.push(SyntaxKind::UPPER, position, None)
     }
 
     #[inline]
@@ -183,25 +183,25 @@ impl<'a> Lexer<'a> {
         self.take_while(is_operator);
         let offset_end = self.consumed();
         let kind = match &self.source[offset..offset_end] {
-            "∷" => SyntaxKind::Colon2,
-            "←" => SyntaxKind::LeftArrow,
-            "→" => SyntaxKind::RightArrow,
-            "⇒" => SyntaxKind::RightThickArrow,
-            "∀" => SyntaxKind::ForallKw,
-            "=" => SyntaxKind::Equal,
-            ":" => SyntaxKind::Colon,
-            "::" => SyntaxKind::Colon2,
-            "." => SyntaxKind::Period,
-            ".." => SyntaxKind::Period2,
-            "<-" => SyntaxKind::LeftArrow,
-            "->" => SyntaxKind::RightArrow,
-            "<=" => SyntaxKind::LeftThickArrow,
-            "=>" => SyntaxKind::RightThickArrow,
-            "|" => SyntaxKind::Pipe,
-            "@" => SyntaxKind::At,
-            "-" => SyntaxKind::Minus,
-            "\\" => SyntaxKind::Backslash,
-            _ => SyntaxKind::Operator,
+            "∷" => SyntaxKind::DOUBLE_COLON,
+            "←" => SyntaxKind::LEFT_ARROW,
+            "→" => SyntaxKind::RIGHT_ARROW,
+            "⇒" => SyntaxKind::RIGHT_THICK_ARROW,
+            "∀" => SyntaxKind::FORALL,
+            "=" => SyntaxKind::EQUAL,
+            ":" => SyntaxKind::COLON,
+            "::" => SyntaxKind::DOUBLE_COLON,
+            "." => SyntaxKind::PERIOD,
+            ".." => SyntaxKind::DOUBLE_PERIOD,
+            "<-" => SyntaxKind::LEFT_ARROW,
+            "->" => SyntaxKind::RIGHT_ARROW,
+            "<=" => SyntaxKind::LEFT_THICK_ARROW,
+            "=>" => SyntaxKind::RIGHT_THICK_ARROW,
+            "|" => SyntaxKind::PIPE,
+            "@" => SyntaxKind::AT,
+            "-" => SyntaxKind::MINUS,
+            "\\" => SyntaxKind::BACKSLASH,
+            _ => SyntaxKind::OPERATOR,
         };
         self.lexed.push(kind, position, None)
     }
@@ -213,14 +213,14 @@ impl<'a> Lexer<'a> {
         let c = self.take();
         if c == '\\' {
             if let Some(err) = self.take_escape() {
-                return self.lexed.push(SyntaxKind::Error, position, Some(err));
+                return self.lexed.push(SyntaxKind::ERROR, position, Some(err));
             }
         }
         if self.first() == '\'' {
             self.take();
-            self.lexed.push(SyntaxKind::LiteralChar, position, None)
+            self.lexed.push(SyntaxKind::CHAR, position, None)
         } else {
-            self.lexed.push(SyntaxKind::Error, position, Some("invalid character literal"))
+            self.lexed.push(SyntaxKind::ERROR, position, Some("invalid character literal"))
         }
     }
 
@@ -251,11 +251,11 @@ impl<'a> Lexer<'a> {
             // "..." => a string
             1 => self.take_normal_string(position),
             // "" => an empty string
-            2 => self.lexed.push(SyntaxKind::LiteralString, position, None),
+            2 => self.lexed.push(SyntaxKind::STRING, position, None),
             // """...""" => a raw string with leading quotes
             3..=5 => self.take_raw_string(position),
             // """"""" => Trailing and leading quotes in a raw string
-            6..=8 => self.lexed.push(SyntaxKind::LiteralRawString, position, None),
+            6..=8 => self.lexed.push(SyntaxKind::RAW_STRING, position, None),
             _ => unreachable!(),
         }
     }
@@ -265,7 +265,7 @@ impl<'a> Lexer<'a> {
             match self.take() {
                 '\r' | '\n' => {
                     break self.lexed.push(
-                        SyntaxKind::Error,
+                        SyntaxKind::ERROR,
                         position,
                         Some(
                             "invalid string literal - newlines are not allowed in string literals",
@@ -274,15 +274,15 @@ impl<'a> Lexer<'a> {
                 }
                 '\\' => {
                     if let Some(err) = self.take_escape() {
-                        break self.lexed.push(SyntaxKind::Error, position, Some(err));
+                        break self.lexed.push(SyntaxKind::ERROR, position, Some(err));
                     } else {
                         continue;
                     }
                 }
-                '"' => break self.lexed.push(SyntaxKind::LiteralString, position, None),
+                '"' => break self.lexed.push(SyntaxKind::STRING, position, None),
                 EOF_CHAR => {
                     break self.lexed.push(
-                        SyntaxKind::Error,
+                        SyntaxKind::ERROR,
                         position,
                         Some("invalid string literal - end of file"),
                     )
@@ -302,13 +302,13 @@ impl<'a> Lexer<'a> {
             match num_quotes {
                 0 => {
                     break self.lexed.push(
-                        SyntaxKind::Error,
+                        SyntaxKind::ERROR,
                         position,
                         Some("invalid raw string literal - end of file"),
                     )
                 }
                 1 | 2 => continue,
-                3..=5 => break self.lexed.push(SyntaxKind::LiteralRawString, position, None),
+                3..=5 => break self.lexed.push(SyntaxKind::RAW_STRING, position, None),
                 _ => unreachable!(),
             }
         }
@@ -324,12 +324,12 @@ impl<'a> Lexer<'a> {
         self.take_while(|c| c.is_ascii_digit() || c == '_');
 
         if self.first() == '.' {
-            // `1..x` => [LiteralInteger, Period2, Lower]
+            // `1..x` => [INTEGER, DOUBLE_PERIOD, LOWER]
             if self.second() == '.' {
-                return self.lexed.push(SyntaxKind::LiteralInteger, position, None);
+                return self.lexed.push(SyntaxKind::INTEGER, position, None);
             }
 
-            // `1.2` => [LiteralNumber]
+            // `1.2` => [NUMBER]
             if self.second().is_ascii_digit() {
                 assert_eq!(self.take(), '.');
                 self.take_while(|c| c.is_ascii_digit() || c == '_');
@@ -341,22 +341,22 @@ impl<'a> Lexer<'a> {
                     }
                     self.take_while(|c| c.is_ascii_digit() || c == '_');
                 }
-                return self.lexed.push(SyntaxKind::LiteralNumber, position, None);
+                return self.lexed.push(SyntaxKind::NUMBER, position, None);
             }
 
-            // `1.` => [Error]
+            // `1.` => [ERROR]
             assert_eq!(self.take(), '.');
-            return self.lexed.push(SyntaxKind::Error, position, Some("invalid number literal"));
+            return self.lexed.push(SyntaxKind::ERROR, position, Some("invalid number literal"));
         }
 
-        self.lexed.push(SyntaxKind::LiteralInteger, position, None)
+        self.lexed.push(SyntaxKind::INTEGER, position, None)
     }
 
     #[inline]
     fn take_whitespace(&mut self) {
         let position = self.position();
         self.take_while(|c| c.is_whitespace());
-        self.lexed.push(SyntaxKind::Whitespace, position, None)
+        self.lexed.push(SyntaxKind::WHITESPACE, position, None)
     }
 
     #[inline]
@@ -365,7 +365,7 @@ impl<'a> Lexer<'a> {
         assert_eq!(self.take(), '-');
         assert_eq!(self.take(), '-');
         self.take_while(|c| c != '\n');
-        self.lexed.push(SyntaxKind::LineComment, position, None)
+        self.lexed.push(SyntaxKind::LINE_COMMENT, position, None)
     }
 
     #[inline]
@@ -393,7 +393,7 @@ impl<'a> Lexer<'a> {
             }
             self.take();
         }
-        self.lexed.push(SyntaxKind::BlockComment, position, None)
+        self.lexed.push(SyntaxKind::BLOCK_COMMENT, position, None)
     }
 }
 

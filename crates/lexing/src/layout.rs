@@ -117,7 +117,7 @@ impl<'a> Machine<'a> {
     pub(crate) fn finalize(mut self) -> Vec<SyntaxKind> {
         while let Some((_, delimiter)) = self.stack.pop() {
             if delimiter.is_indented() {
-                self.output.push(SyntaxKind::LayoutEnd);
+                self.output.push(SyntaxKind::LAYOUT_END);
             }
         }
         self.output
@@ -154,7 +154,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
 
     fn invoke(&mut self) {
         match self.now_token {
-            SyntaxKind::DataKw => {
+            SyntaxKind::DATA => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 if self.is_top_declaration(self.now_position) {
@@ -164,7 +164,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::ClassKw => {
+            SyntaxKind::CLASS => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 if self.is_top_declaration(self.now_position) {
@@ -174,7 +174,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::WhereKw => {
+            SyntaxKind::WHERE => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 match &self.machine.stack[..] {
                     [.., (_, Delimiter::TopDeclHead)] => {
@@ -194,7 +194,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::InKw => {
+            SyntaxKind::IN => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::in_p);
                 match collapse.preview(self.machine) {
@@ -219,7 +219,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::LetKw => {
+            SyntaxKind::LET => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_keyword_property(|this| match &this.machine.stack[..] {
                     [.., (position, Delimiter::Do)]
@@ -238,28 +238,28 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 });
             }
 
-            SyntaxKind::DoKw => {
+            SyntaxKind::DO => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_keyword_property(|this| {
                     this.insert_start(Delimiter::Do);
                 });
             }
 
-            SyntaxKind::AdoKw => {
+            SyntaxKind::ADO => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_keyword_property(|this| {
                     this.insert_start(Delimiter::Ado);
                 });
             }
 
-            SyntaxKind::CaseKw => {
+            SyntaxKind::CASE => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_keyword_property(|this| {
                     this.push_stack(this.now_position, Delimiter::Case);
                 });
             }
 
-            SyntaxKind::OfKw => {
+            SyntaxKind::OF => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::indented_p);
                 match collapse.preview(self.machine) {
@@ -277,14 +277,14 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::IfKw => {
+            SyntaxKind::IF => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_keyword_property(|this| {
                     this.push_stack(this.now_position, Delimiter::If);
                 });
             }
 
-            SyntaxKind::ThenKw => {
+            SyntaxKind::THEN => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::indented_p);
                 match collapse.preview(self.machine) {
@@ -301,7 +301,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::ElseKw => {
+            SyntaxKind::ELSE => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::indented_p);
                 match collapse.preview(self.machine) {
@@ -323,20 +323,20 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::ForallKw => {
+            SyntaxKind::FORALL => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_keyword_property(|this| {
                     this.push_stack(this.now_position, Delimiter::Forall);
                 });
             }
 
-            SyntaxKind::Backslash => {
+            SyntaxKind::BACKSLASH => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 self.push_stack(self.now_position, Delimiter::LambdaBinders);
             }
 
-            SyntaxKind::RightArrow => {
+            SyntaxKind::RIGHT_ARROW => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.collapse_and_commit(InsertWithLayout::arrow_p);
                 self.pop_stack_if(|delimiter| {
@@ -348,7 +348,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::Equal => {
+            SyntaxKind::EQUAL => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::equals_p);
                 match collapse.preview(self.machine) {
@@ -363,7 +363,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::Pipe => {
+            SyntaxKind::PIPE => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::offside_end_p);
                 match collapse.preview(self.machine) {
@@ -383,7 +383,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::Tick => {
+            SyntaxKind::TICK => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 let collapse = self.collapse(InsertWithLayout::indented_p);
                 match collapse.preview(self.machine) {
@@ -401,7 +401,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::Comma => {
+            SyntaxKind::COMMA => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.collapse_and_commit(InsertWithLayout::indented_p);
                 if let Some((_, Delimiter::Brace)) = self.machine.stack.last() {
@@ -412,7 +412,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::Period => {
+            SyntaxKind::PERIOD => {
                 self.insert_default();
                 if let Some((_, Delimiter::Forall | Delimiter::Qualified)) =
                     self.machine.stack.last()
@@ -423,33 +423,33 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 }
             }
 
-            SyntaxKind::LeftParenthesis => {
+            SyntaxKind::LEFT_PARENTHESIS => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 self.push_stack(self.now_position, Delimiter::Paren);
             }
 
-            SyntaxKind::LeftCurly => {
+            SyntaxKind::LEFT_CURLY => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 self.push_stack(self.now_position, Delimiter::Brace);
                 self.push_stack(self.now_position, Delimiter::Property);
             }
 
-            SyntaxKind::LeftSquare => {
+            SyntaxKind::LEFT_SQUARE => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 self.push_stack(self.now_position, Delimiter::Square);
             }
 
-            SyntaxKind::RightParenthesis => {
+            SyntaxKind::RIGHT_PARENTHESIS => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.collapse_and_commit(InsertWithLayout::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Paren);
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::RightCurly => {
+            SyntaxKind::RIGHT_CURLY => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.collapse_and_commit(InsertWithLayout::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
@@ -457,14 +457,14 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::RightSquare => {
+            SyntaxKind::RIGHT_SQUARE => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.collapse_and_commit(InsertWithLayout::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Square);
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::LiteralString | SyntaxKind::LiteralRawString | SyntaxKind::Lower => {
+            SyntaxKind::STRING | SyntaxKind::RAW_STRING | SyntaxKind::LOWER => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
@@ -478,7 +478,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                 self.insert_token(self.now_token);
             }
 
-            SyntaxKind::Upper => {
+            SyntaxKind::UPPER => {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Qualified);
                 self.insert_default();
                 self.push_stack(self.now_position, Delimiter::Qualified);
@@ -514,27 +514,27 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
         }
 
         self.push_stack(self.next_position, delimiter);
-        self.insert_token(SyntaxKind::LayoutStart);
+        self.insert_token(SyntaxKind::LAYOUT_START);
     }
 
     fn insert_sep(&mut self) {
         match &self.machine.stack[..] {
             [.., (position, Delimiter::TopDecl)] if self.sep_p(*position) => {
                 self.pop_stack();
-                self.insert_token(SyntaxKind::LayoutSep);
+                self.insert_token(SyntaxKind::LAYOUT_SEPARATOR);
             }
             [.., (position, Delimiter::TopDeclHead)] if self.sep_p(*position) => {
                 self.pop_stack();
-                self.insert_token(SyntaxKind::LayoutSep);
+                self.insert_token(SyntaxKind::LAYOUT_SEPARATOR);
             }
             [.., (position, delimiter)] if self.indent_sep_p(*position, *delimiter) => {
                 match delimiter {
                     Delimiter::Of => {
-                        self.insert_token(SyntaxKind::LayoutSep);
+                        self.insert_token(SyntaxKind::LAYOUT_SEPARATOR);
                         self.push_stack(self.now_position, Delimiter::CaseBinders);
                     }
                     _ => {
-                        self.insert_token(SyntaxKind::LayoutSep);
+                        self.insert_token(SyntaxKind::LAYOUT_SEPARATOR);
                     }
                 }
             }
@@ -552,7 +552,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
     }
 
     fn insert_end(&mut self) {
-        self.insert_token(SyntaxKind::LayoutEnd);
+        self.insert_token(SyntaxKind::LAYOUT_END);
     }
 
     fn insert_token(&mut self, token: SyntaxKind) {
@@ -660,7 +660,7 @@ impl Collapse {
     fn commit(self, machine: &mut Machine) {
         machine.stack.truncate(self.stack_len);
         for _ in 0..self.end_tokens {
-            machine.output.push(SyntaxKind::LayoutEnd);
+            machine.output.push(SyntaxKind::LAYOUT_END);
         }
     }
 }
