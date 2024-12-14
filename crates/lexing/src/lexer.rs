@@ -27,7 +27,7 @@ impl<'a> Lexer<'a> {
         Lexer { source, chars, line, column, lexed }
     }
 
-    pub(crate) fn finalize(mut self) -> Lexed<'a> {
+    pub(crate) fn finish(mut self) -> Lexed<'a> {
         self.lexed.push(SyntaxKind::END_OF_FILE, self.position(), None);
         self.lexed
     }
@@ -199,13 +199,13 @@ impl<'a> Lexer<'a> {
         //>================================================================
         loop {
             // (D)
-            if !self.first().is_letter_uppercase() && has_prefix {
+            if !is_upper_start(self.first()) && has_prefix {
                 return self.lexed.push(SyntaxKind::PREFIX, prefix, None);
             }
 
             // (A)
             let proper = self.position();
-            self.take_while(|c| c.is_letter());
+            self.take_while(is_upper);
 
             // (B)
             if self.first() == '.' {
@@ -426,4 +426,12 @@ fn is_lower(c: char) -> bool {
 
 fn is_lower_start(c: char) -> bool {
     c.is_letter_lowercase() || c == '_'
+}
+
+fn is_upper(c: char) -> bool {
+    c.is_letter() || c == '_' || c == '\''
+}
+
+fn is_upper_start(c: char) -> bool {
+    c.is_letter_uppercase()
 }
