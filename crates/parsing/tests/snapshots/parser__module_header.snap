@@ -1,0 +1,15 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: node
+snapshot_kind: text
+---
+Module@0..17
+  ModuleHeader@0..17
+    MODULE@0..6 "module"
+    Comment@6..7
+      WHITESPACE@6..7 " "
+    ModuleName@7..11
+      UPPER@7..11 "Main"
+    Comment@11..12
+      WHITESPACE@11..12 " "
+    WHERE@12..17 "where"

@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rowan = "0.15.11"
+rowan = "0.16.1"
 smol_str = "0.2.0"

@@ -74,6 +74,13 @@ pub enum SyntaxKind {
     TRUE,
     FALSE,
 
+    // Nodes
+    Node,
+    Comment,
+    Module,
+    ModuleHeader,
+    ModuleName,
+
     // Control
     LAYOUT_START,
     LAYOUT_SEPARATOR,

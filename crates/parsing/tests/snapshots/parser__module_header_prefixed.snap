@@ -1,0 +1,16 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: node
+snapshot_kind: text
+---
+Module@0..28
+  ModuleHeader@0..28
+    MODULE@0..6 "module"
+    Comment@6..7
+      WHITESPACE@6..7 " "
+    ModuleName@7..22
+      PREFIX@7..18 "PureScript."
+      UPPER@18..22 "Main"
+    Comment@22..23
+      WHITESPACE@22..23 " "
+    WHERE@23..28 "where"
