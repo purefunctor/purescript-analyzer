@@ -100,7 +100,7 @@ impl<'a> Layout<'a> {
                 self.output.push(SyntaxKind::LAYOUT_END);
             }
         }
-        self.output.extend(self.whitespace.drain(..));
+        self.output.append(&mut self.whitespace);
         self.output.push(SyntaxKind::END_OF_FILE);
         self.output
     }
@@ -487,16 +487,16 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
 
     fn insert_separator(&mut self) {
         self.layout.output.push(SyntaxKind::LAYOUT_SEPARATOR);
-        self.layout.output.extend(self.layout.whitespace.drain(..));
+        self.layout.output.append(&mut self.layout.whitespace);
     }
 
     fn insert_end(&mut self) {
         self.layout.output.push(SyntaxKind::LAYOUT_END);
-        self.layout.output.extend(self.layout.whitespace.drain(..));
+        self.layout.output.append(&mut self.layout.whitespace);
     }
 
     fn insert_token(&mut self, token: SyntaxKind) {
-        self.layout.output.extend(self.layout.whitespace.drain(..));
+        self.layout.output.append(&mut self.layout.whitespace);
         self.layout.output.push(token);
     }
 
