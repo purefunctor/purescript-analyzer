@@ -108,29 +108,29 @@ impl<'a> Layout<'a> {
 
 impl Layout<'_> {
     fn insert(&mut self, token: SyntaxKind, position: Position, next: Position) {
-        InsertWithLayout::new(self, token, position, next).invoke();
+        Insert::new(self, token, position, next).invoke();
     }
 }
 
-struct InsertWithLayout<'a, 'b> {
+struct Insert<'a, 'b> {
     layout: &'a mut Layout<'b>,
     token: SyntaxKind,
     position: Position,
     next: Position,
 }
 
-impl<'a, 'b> InsertWithLayout<'a, 'b> {
+impl<'a, 'b> Insert<'a, 'b> {
     fn new(
-        machine: &'a mut Layout<'b>,
+        layout: &'a mut Layout<'b>,
         token: SyntaxKind,
         position: Position,
         next: Position,
-    ) -> InsertWithLayout<'a, 'b> {
-        InsertWithLayout { layout: machine, token, position, next }
+    ) -> Insert<'a, 'b> {
+        Insert { layout, token, position, next }
     }
 
     fn invoke(&mut self) {
-        match dbg!(self.token) {
+        match self.token {
             SyntaxKind::DATA => {
                 self.insert_default();
                 if self.is_top_declaration(self.position) {
@@ -160,14 +160,14 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                     self.insert_token(self.token);
                 }
                 _ => {
-                    self.collapse_and_commit(InsertWithLayout::where_p);
+                    self.collapse_and_commit(Insert::where_p);
                     self.insert_token(self.token);
                     self.insert_start(Delimiter::Where);
                 }
             },
 
             SyntaxKind::IN => {
-                let collapse = self.collapse(InsertWithLayout::in_p);
+                let collapse = self.collapse(Insert::in_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Ado), (_, Delimiter::LetStmt)] => {
                         collapse.commit(self.layout);
@@ -223,7 +223,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::OF => {
-                let collapse = self.collapse(InsertWithLayout::indented_p);
+                let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Case)] => {
                         collapse.commit(self.layout);
@@ -246,7 +246,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::THEN => {
-                let collapse = self.collapse(InsertWithLayout::indented_p);
+                let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::If)] => {
                         collapse.commit(self.layout);
@@ -262,7 +262,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::ELSE => {
-                let collapse = self.collapse(InsertWithLayout::indented_p);
+                let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Then)] => {
                         collapse.commit(self.layout);
@@ -270,7 +270,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                         self.insert_token(self.token);
                     }
                     _ => {
-                        self.collapse_and_commit(InsertWithLayout::offside_p);
+                        self.collapse_and_commit(Insert::offside_p);
                         if self.is_top_declaration(self.position) {
                             self.insert_token(self.token);
                         } else {
@@ -294,7 +294,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::RIGHT_ARROW => {
-                self.collapse_and_commit(InsertWithLayout::arrow_p);
+                self.collapse_and_commit(Insert::arrow_p);
                 self.pop_stack_if(|delimiter| {
                     matches!(
                         delimiter,
@@ -305,7 +305,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::EQUAL => {
-                let collapse = self.collapse(InsertWithLayout::equals_p);
+                let collapse = self.collapse(Insert::equals_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::DeclGuard)] => {
                         collapse.commit(self.layout);
@@ -319,7 +319,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::PIPE => {
-                let collapse = self.collapse(InsertWithLayout::offside_end_p);
+                let collapse = self.collapse(Insert::offside_end_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Of)] => {
                         collapse.commit(self.layout);
@@ -338,7 +338,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::TICK => {
-                let collapse = self.collapse(InsertWithLayout::indented_p);
+                let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Tick)] => {
                         collapse.commit(self.layout);
@@ -346,7 +346,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
                         self.insert_token(self.token);
                     }
                     _ => {
-                        self.collapse_and_commit(InsertWithLayout::offside_end_p);
+                        self.collapse_and_commit(Insert::offside_end_p);
                         self.insert_sep();
                         self.insert_token(self.token);
                         self.push_stack(self.position, Delimiter::Tick);
@@ -355,7 +355,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::COMMA => {
-                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.collapse_and_commit(Insert::indented_p);
                 if let Some((_, Delimiter::Brace)) = self.layout.stack.last() {
                     self.insert_token(self.token);
                     self.push_stack(self.position, Delimiter::Property);
@@ -390,20 +390,20 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             SyntaxKind::RIGHT_PARENTHESIS => {
-                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.collapse_and_commit(Insert::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Paren);
                 self.insert_token(self.token);
             }
 
             SyntaxKind::RIGHT_CURLY => {
-                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.collapse_and_commit(Insert::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Brace);
                 self.insert_token(self.token);
             }
 
             SyntaxKind::RIGHT_SQUARE => {
-                self.collapse_and_commit(InsertWithLayout::indented_p);
+                self.collapse_and_commit(Insert::indented_p);
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Square);
                 self.insert_token(self.token);
             }
@@ -414,7 +414,7 @@ impl<'a, 'b> InsertWithLayout<'a, 'b> {
             }
 
             k if k.is_operator() => {
-                self.collapse_and_commit(InsertWithLayout::offside_end_p);
+                self.collapse_and_commit(Insert::offside_end_p);
                 self.insert_sep();
                 self.insert_token(self.token);
             }
