@@ -4,14 +4,14 @@ expression: node
 snapshot_kind: text
 ---
 Module@0..18
-  ModuleHeader@0..17
+  ModuleHeader@0..18
     MODULE@0..6 "module"
-    ModuleName@6..11
-      Comment@6..7
-        WHITESPACE@6..7 " "
+    Comment@6..7
+      WHITESPACE@6..7 " "
+    ModuleName@7..12
       UPPER@7..11 "Main"
-    Comment@11..12
-      WHITESPACE@11..12 " "
+      Comment@11..12
+        WHITESPACE@11..12 " "
     WHERE@12..17 "where"
-  Comment@17..18
-    WHITESPACE@17..18 "\n"
+    Comment@17..18
+      WHITESPACE@17..18 "\n"

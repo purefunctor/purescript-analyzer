@@ -13,6 +13,7 @@ macro_rules! parser_tests {
 }
 
 parser_tests!(
+    comment_pre_post => include_str!("parser/CommentPrePost.purs"),
     module_header => include_str!("parser/ModuleHeader.purs"),
     module_header_prefixed => include_str!("parser/ModuleHeaderPrefixed.purs"),
 );

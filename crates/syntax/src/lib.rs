@@ -122,6 +122,10 @@ impl SyntaxKind {
         matches!(self, Self::WHITESPACE | Self::LINE_COMMENT | Self::BLOCK_COMMENT)
     }
 
+    pub fn is_whitespace(&self) -> bool {
+        matches!(self, Self::WHITESPACE)
+    }
+
     pub fn is_operator(&self) -> bool {
         matches!(self, Self::OPERATOR | Self::MINUS | Self::COLON)
     }

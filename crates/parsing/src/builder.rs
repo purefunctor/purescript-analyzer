@@ -12,55 +12,90 @@ pub(crate) enum Output {
     Finish,
 }
 
-pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (SyntaxNode, Vec<ParseError>) {
-    let mut index = 0;
-    let mut builder = GreenNodeBuilder::new();
-    let mut errors = vec![];
-    let mut whitespace = vec![];
+enum Annotation {
+    Comment,
+    Whitespace,
+}
 
-    for event in output {
-        while lexed.kind(index).is_whitespace_or_comment() {
-            whitespace.push(index);
-            index += 1;
+struct Builder<'l, 's> {
+    lexed: &'l Lexed<'s>,
+    index: usize,
+    builder: GreenNodeBuilder<'static>,
+    errors: Vec<ParseError>,
+    whitespace: Vec<usize>,
+}
+
+impl<'l, 's> Builder<'l, 's> {
+    fn new(lexed: &'l Lexed<'s>) -> Builder<'l, 's> {
+        let index = 0;
+        let builder = GreenNodeBuilder::new();
+        let errors = vec![];
+        let whitespace = vec![];
+        Builder { lexed, index, builder, errors, whitespace }
+    }
+
+    fn build(self) -> (SyntaxNode, Vec<ParseError>) {
+        (SyntaxNode::new_root(self.builder.finish()), self.errors)
+    }
+
+    fn eat_whitespace(&mut self, annotation: Annotation) {
+        let predicate = match annotation {
+            Annotation::Comment => |k: SyntaxKind| k.is_whitespace_or_comment(),
+            Annotation::Whitespace => |k: SyntaxKind| k.is_whitespace(),
+        };
+        while predicate(self.lexed.kind(self.index)) {
+            self.whitespace.push(self.index);
+            self.index += 1;
         }
-
-        match event {
-            Output::Start { kind } => {
-                if kind != SyntaxKind::Node {
-                    builder.start_node(kind.into());
-                }
-            }
-            Output::Token { kind } => {
-                let text = lexed.text(index);
-                builder.token(kind.into(), text);
-                index += 1;
-            }
-            Output::Error { message } => {
-                let position = lexed.position(index);
-                errors.push(ParseError { position, message });
-            }
-            Output::Finish => {
-                builder.finish_node();
-            }
+        if self.whitespace.is_empty() {
+            return;
         }
+        self.builder.start_node(SyntaxKind::Comment.into());
+        self.whitespace.drain(..).for_each(|index| {
+            let kind = self.lexed.kind(index);
+            let text = self.lexed.text(index);
+            self.builder.token(kind.into(), text);
+        });
+        self.builder.finish_node();
+    }
 
-        if !whitespace.is_empty() {
-            builder.start_node(SyntaxKind::Comment.into());
-            whitespace.drain(..).for_each(|index| {
-                let kind = lexed.kind(index);
-                let text = lexed.text(index);
-                builder.token(kind.into(), text);
-            });
-            builder.finish_node();
-        }
-
-        if let Some(message) = lexed.error(index) {
-            let position = lexed.position(index);
-            let message = format!("lex error: {}", message);
-            errors.push(ParseError { position, message });
+    fn start(&mut self, kind: SyntaxKind) {
+        if kind != SyntaxKind::Node {
+            self.builder.start_node(kind.into());
+            self.eat_whitespace(Annotation::Comment);
         }
     }
 
-    let node = SyntaxNode::new_root(builder.finish());
-    (node, errors)
+    fn token(&mut self, kind: SyntaxKind) {
+        self.eat_whitespace(Annotation::Comment);
+        let text = self.lexed.text(self.index);
+        self.builder.token(kind.into(), text);
+        self.index += 1;
+        self.eat_whitespace(Annotation::Whitespace);
+    }
+
+    fn error(&mut self, message: String) {
+        let position = self.lexed.position(self.index);
+        self.errors.push(ParseError { position, message });
+    }
+
+    fn finish(&mut self) {
+        self.eat_whitespace(Annotation::Whitespace);
+        self.builder.finish_node();
+    }
+}
+
+pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (SyntaxNode, Vec<ParseError>) {
+    let mut builder = Builder::new(lexed);
+
+    for event in output {
+        match event {
+            Output::Start { kind } => builder.start(kind),
+            Output::Token { kind } => builder.token(kind),
+            Output::Error { message } => builder.error(message),
+            Output::Finish => builder.finish(),
+        }
+    }
+
+    builder.build()
 }
