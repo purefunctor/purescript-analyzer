@@ -4,7 +4,7 @@ macro_rules! parser_tests {
             #[test]
             fn $name() {
                 let lexed = lexing::lex($source);
-                let tokens = lexed.kinds();
+                let tokens = lexing::layout(&lexed);
                 let (node, _) = parsing::parse(&lexed, &tokens);
                 insta::assert_debug_snapshot!(node);
             }
