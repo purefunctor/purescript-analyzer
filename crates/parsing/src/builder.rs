@@ -16,8 +16,14 @@ pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (SyntaxNode, Vec<
     let mut index = 0;
     let mut builder = GreenNodeBuilder::new();
     let mut errors = vec![];
+    let mut whitespace = vec![];
 
     for event in output {
+        while lexed.kind(index).is_whitespace_or_comment() {
+            whitespace.push(index);
+            index += 1;
+        }
+
         match event {
             Output::Start { kind } => {
                 if kind != SyntaxKind::Node {
@@ -37,6 +43,17 @@ pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (SyntaxNode, Vec<
                 builder.finish_node();
             }
         }
+
+        if !whitespace.is_empty() {
+            builder.start_node(SyntaxKind::Comment.into());
+            whitespace.drain(..).for_each(|index| {
+                let kind = lexed.kind(index);
+                let text = lexed.text(index);
+                builder.token(kind.into(), text);
+            });
+            builder.finish_node();
+        }
+
         if let Some(message) = lexed.error(index) {
             let position = lexed.position(index);
             let message = format!("lex error: {}", message);

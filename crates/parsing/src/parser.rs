@@ -40,10 +40,6 @@ impl<'t> Parser<'t> {
         self.tokens.get(self.index) == Some(&kind)
     }
 
-    fn at_fn(&self, predicate: impl Fn(SyntaxKind) -> bool) -> bool {
-        predicate(*self.tokens.get(self.index).unwrap())
-    }
-
     fn eat(&mut self, kind: SyntaxKind) -> bool {
         if !self.at(kind) {
             return false;
@@ -83,31 +79,15 @@ impl NodeMarker {
         parser.output.push(Output::Finish);
     }
 
-    fn cancel(&mut self, parser: &mut Parser) {
-        self.bomb.defuse();
-        if self.index == parser.output.len() - 1 {
-            match parser.output.pop() {
-                Some(Output::Start { kind: SyntaxKind::Node }) => (),
-                _ => unreachable!(),
-            }
-        }
-    }
-}
-
-fn comment(parser: &mut Parser) {
-    let mut marker = parser.start();
-    let mut parsed = false;
-
-    while parser.at_fn(|k| k.is_whitespace_or_comment()) {
-        parser.consume();
-        parsed = true;
-    }
-
-    if parsed {
-        marker.end(parser, SyntaxKind::Comment);
-    } else {
-        marker.cancel(parser);
-    }
+    // fn cancel(&mut self, parser: &mut Parser) {
+    //     self.bomb.defuse();
+    //     if self.index == parser.output.len() - 1 {
+    //         match parser.output.pop() {
+    //             Some(Output::Start { kind: SyntaxKind::Node }) => (),
+    //             _ => unreachable!(),
+    //         }
+    //     }
+    // }
 }
 
 fn module_name(parser: &mut Parser) {
@@ -132,13 +112,8 @@ pub(crate) fn module(parser: &mut Parser) {
 fn module_header(parser: &mut Parser) {
     let mut marker = parser.start();
 
-    comment(parser);
     parser.eat(SyntaxKind::MODULE);
-
-    comment(parser);
     module_name(parser);
-
-    comment(parser);
     parser.eat(SyntaxKind::WHERE);
 
     marker.end(parser, SyntaxKind::ModuleHeader);

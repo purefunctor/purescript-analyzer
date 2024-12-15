@@ -51,7 +51,6 @@ pub(crate) struct Layout<'a> {
 
     stack: Vec<(Position, Delimiter)>,
     output: Vec<SyntaxKind>,
-    whitespace: Vec<SyntaxKind>,
 }
 
 impl<'a> Layout<'a> {
@@ -59,8 +58,7 @@ impl<'a> Layout<'a> {
         let index = 0;
         let stack = vec![(Position { offset: 0, line: 0, column: 0 }, Delimiter::Root)];
         let output = vec![];
-        let whitespace = vec![];
-        Layout { lexed, index, stack, output, whitespace }
+        Layout { lexed, index, stack, output }
     }
 
     pub(crate) fn is_eof(&self) -> bool {
@@ -72,7 +70,6 @@ impl<'a> Layout<'a> {
             let kind = self.lexed.kind(self.index);
             let position = self.lexed.position(self.index);
             if kind.is_whitespace_or_comment() {
-                self.whitespace.push(kind);
                 self.index += 1;
             } else {
                 break (kind, position);
@@ -100,7 +97,6 @@ impl<'a> Layout<'a> {
                 self.output.push(SyntaxKind::LAYOUT_END);
             }
         }
-        self.output.append(&mut self.whitespace);
         self.output.push(SyntaxKind::END_OF_FILE);
         self.output
     }
@@ -487,16 +483,13 @@ impl<'a, 'b> Insert<'a, 'b> {
 
     fn insert_separator(&mut self) {
         self.layout.output.push(SyntaxKind::LAYOUT_SEPARATOR);
-        self.layout.output.append(&mut self.layout.whitespace);
     }
 
     fn insert_end(&mut self) {
         self.layout.output.push(SyntaxKind::LAYOUT_END);
-        self.layout.output.append(&mut self.layout.whitespace);
     }
 
     fn insert_token(&mut self, token: SyntaxKind) {
-        self.layout.output.append(&mut self.layout.whitespace);
         self.layout.output.push(token);
     }
 

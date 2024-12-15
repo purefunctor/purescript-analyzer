@@ -1,10 +1,16 @@
 use lexing::Lexed;
 use syntax::SyntaxKind;
 
-fn print_tokens(lexed: &Lexed, tokens: Vec<SyntaxKind>) -> String {
+fn print_tokens(lexed: &Lexed, tokens: &[SyntaxKind]) -> String {
     let mut buffer = String::new();
     let mut index = 0;
+    let mut whitespace = vec![];
+
     for token in tokens {
+        while lexed.kind(index).is_whitespace_or_comment() {
+            whitespace.push(index);
+            index += 1;
+        }
         match token {
             SyntaxKind::LAYOUT_START => {
                 buffer.push('{');
@@ -16,9 +22,15 @@ fn print_tokens(lexed: &Lexed, tokens: Vec<SyntaxKind>) -> String {
                 buffer.push('}');
             }
             SyntaxKind::END_OF_FILE => {
+                whitespace.drain(..).for_each(|index| {
+                    buffer.push_str(lexed.text(index));
+                });
                 buffer.push_str("<eof>");
             }
             _ => {
+                whitespace.drain(..).for_each(|index| {
+                    buffer.push_str(lexed.text(index));
+                });
                 buffer.push_str(lexed.text(index));
                 index += 1;
             }
@@ -34,7 +46,7 @@ macro_rules! layout_tests {
             fn $name() {
                 let lexed = lexing::lex($source);
                 let tokens = lexing::layout(&lexed);
-                let source = print_tokens(&lexed, tokens);
+                let source = print_tokens(&lexed, &tokens);
                 insta::assert_snapshot!(source);
             }
         )+
