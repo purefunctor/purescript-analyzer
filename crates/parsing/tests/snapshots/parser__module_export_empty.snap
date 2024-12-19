@@ -1,0 +1,36 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..21
+      ModuleHeader@0..21
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..12
+          UPPER@7..11 "Main"
+          Comment@11..12
+            WHITESPACE@11..12 " "
+        ModuleExportList@12..15
+          LEFT_PARENTHESIS@12..13 "("
+          ERROR@13..13 ""
+          RIGHT_PARENTHESIS@13..14 ")"
+          Comment@14..15
+            WHITESPACE@14..15 " "
+        WHERE@15..20 "where"
+        Comment@20..21
+          WHITESPACE@20..21 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 13,
+                line: 1,
+                column: 14,
+            },
+            message: "Empty export list",
+        },
+    ],
+)

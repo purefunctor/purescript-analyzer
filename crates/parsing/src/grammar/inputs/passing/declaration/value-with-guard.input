@@ -1,3 +1,0 @@
-hello
-  | true, x <- a = 0
-  | false, y <- b = 1

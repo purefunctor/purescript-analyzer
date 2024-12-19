@@ -3,17 +3,12 @@ name = "parsing"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 drop_bomb = "0.1.5"
-either = "1.9.0"
-insta = { version = "1.31.0", features = ["glob"] }
 lexing = { version = "0.1.0", path = "../lexing" }
 position = { version = "0.1.0", path = "../position" }
-rowan = "0.15.11"
+rowan = "0.16.1"
 syntax = { version = "0.1.0", path = "../syntax" }
-unicode_categories = "0.1.1"
 
 [dev-dependencies]
-insta = "1.31.0"
+insta = "1.41.1"

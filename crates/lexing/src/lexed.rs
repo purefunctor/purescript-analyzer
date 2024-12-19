@@ -38,48 +38,20 @@ impl<'a> Lexed<'a> {
 
         if let Some(error) = error {
             let message = error.to_string();
-            let index = self.len() as u32;
+            let index = self.kinds.len() as u32;
             self.errors.push(LexError { message, index });
         }
     }
 
-    pub(crate) fn eof_position(&self) -> Position {
-        self.positions[self.positions.len() - 1]
-    }
-
-    /// # Invariant
-    ///
-    /// [`Lexed`] always contains [`SyntaxKind::EndOfFile`] as its final element.
-    /// It exclusively serves as an anchor for the final offset such that methods
-    /// can compute the range for a token in a given index. With this in mind, we
-    /// make sure that this token is hidden.
-    ///
-    /// For example, given `"hello"`
-    ///
-    /// ```rs
-    /// // with EndOfFile, 0..5
-    /// [(Lower, 0), (EndOfFile, 5)]
-    ///
-    /// // without EndOfFile, 0..?
-    /// [(Lower, 0)]
-    /// ```
-    pub fn len(&self) -> usize {
-        self.kinds.len() - 1
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     /// Returns the kind for an index.
     pub fn kind(&self, index: usize) -> SyntaxKind {
-        assert!(index < self.len());
+        assert!(index < self.kinds.len());
         self.kinds[index]
     }
 
     /// Returns the position for an index.
     pub fn position(&self, index: usize) -> Position {
-        assert!(index <= self.len());
+        assert!(index <= self.positions.len());
         self.positions[index]
     }
 
@@ -90,7 +62,7 @@ impl<'a> Lexed<'a> {
 
     /// Returns the text for a range.
     pub fn text_in_range(&self, range: Range<usize>) -> &str {
-        assert!(range.start < range.end && range.end <= self.len());
+        assert!(range.start < range.end && range.end < self.kinds.len());
         let low = self.positions[range.start].offset;
         let high = self.positions[range.end].offset;
         &self.source[low..high]
@@ -98,8 +70,12 @@ impl<'a> Lexed<'a> {
 
     /// Returns the error for an index.
     pub fn error(&self, index: usize) -> Option<&str> {
-        assert!(index < self.len());
+        assert!(index < self.kinds.len());
         let error_index = self.errors.binary_search_by_key(&(index as u32), |v| v.index).ok()?;
         Some(&self.errors[error_index].message)
+    }
+
+    pub fn kinds(&self) -> &[SyntaxKind] {
+        &self.kinds
     }
 }
