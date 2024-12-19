@@ -1,0 +1,54 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..52
+      ModuleHeader@0..52
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..30
+          UPPER@7..29 "ModuleExportCommaError"
+          Comment@29..30
+            WHITESPACE@29..30 " "
+        ModuleExportList@30..46
+          LEFT_PARENTHESIS@30..31 "("
+          ModuleExportValue@31..36
+            LOWER@31..36 "hello"
+          COMMA@36..37 ","
+          ERROR@37..38
+            ERROR@37..37 ""
+            COMMA@37..38 ","
+          ModuleExportValue@38..43
+            LOWER@38..43 "world"
+          ERROR@43..44
+            ERROR@43..43 ""
+            COMMA@43..44 ","
+          RIGHT_PARENTHESIS@44..45 ")"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+        WHERE@46..51 "where"
+        Comment@51..52
+          WHITESPACE@51..52 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 37,
+                line: 1,
+                column: 38,
+            },
+            message: "Missing item in export list",
+        },
+        ParseError {
+            position: Position {
+                offset: 43,
+                line: 1,
+                column: 44,
+            },
+            message: "Trailing comma in export list",
+        },
+    ],
+)

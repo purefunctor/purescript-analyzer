@@ -1,5 +1,5 @@
 use drop_bomb::DropBomb;
-use syntax::SyntaxKind;
+use syntax::{SyntaxKind, TokenSet};
 
 use crate::builder::Output;
 
@@ -20,6 +20,10 @@ impl<'t> Parser<'t> {
         self.output
     }
 
+    fn nth(&self, index: usize) -> SyntaxKind {
+        self.tokens.get(self.index + index).copied().unwrap_or(SyntaxKind::END_OF_FILE)
+    }
+
     fn consume(&mut self) {
         let kind = self.tokens[self.index];
         self.index += 1;
@@ -32,12 +36,31 @@ impl<'t> Parser<'t> {
         NodeMarker::new(index)
     }
 
-    fn error(&mut self, message: String) {
-        self.output.push(Output::Error { message });
+    fn error(&mut self, message: impl Into<String>) {
+        self.output.push(Output::Error { message: message.into() });
+    }
+
+    fn error_recover(&mut self, message: impl Into<String>) {
+        let mut marker = self.start();
+        self.error(message);
+        self.consume();
+        marker.end(self, SyntaxKind::ERROR);
     }
 
     fn at(&self, kind: SyntaxKind) -> bool {
-        self.tokens.get(self.index) == Some(&kind)
+        self.nth(0) == kind
+    }
+
+    fn at_next(&self, kind: SyntaxKind) -> bool {
+        self.nth(1) == kind
+    }
+
+    fn at_eof(&self) -> bool {
+        self.at(SyntaxKind::END_OF_FILE)
+    }
+
+    fn at_in(&self, set: TokenSet) -> bool {
+        set.contains(self.nth(0))
     }
 
     fn eat(&mut self, kind: SyntaxKind) -> bool {
@@ -90,31 +113,96 @@ impl NodeMarker {
     // }
 }
 
-fn module_name(parser: &mut Parser) {
-    let mut marker = parser.start();
+fn module_name(p: &mut Parser) {
+    let mut marker = p.start();
 
-    if parser.at(SyntaxKind::PREFIX) {
-        parser.consume();
+    if p.at(SyntaxKind::PREFIX) {
+        p.consume();
     }
-    parser.expect(SyntaxKind::UPPER);
+    p.expect(SyntaxKind::UPPER);
 
-    marker.end(parser, SyntaxKind::ModuleName);
+    marker.end(p, SyntaxKind::ModuleName);
 }
 
-pub(crate) fn module(parser: &mut Parser) {
-    let mut marker = parser.start();
+pub(crate) fn module(p: &mut Parser) {
+    let mut marker = p.start();
 
-    module_header(parser);
+    module_header(p);
 
-    marker.end(parser, SyntaxKind::Module);
+    marker.end(p, SyntaxKind::Module);
 }
 
-fn module_header(parser: &mut Parser) {
-    let mut marker = parser.start();
+fn module_header(p: &mut Parser) {
+    let mut marker = p.start();
 
-    parser.eat(SyntaxKind::MODULE);
-    module_name(parser);
-    parser.eat(SyntaxKind::WHERE);
+    p.eat(SyntaxKind::MODULE);
+    module_name(p);
+    module_export_list(p);
+    p.eat(SyntaxKind::WHERE);
 
-    marker.end(parser, SyntaxKind::ModuleHeader);
+    marker.end(p, SyntaxKind::ModuleHeader);
+}
+
+fn module_export_list(p: &mut Parser) {
+    let mut marker = p.start();
+
+    'list: {
+        if p.at(SyntaxKind::LEFT_PARENTHESIS) {
+            p.consume();
+
+            if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.error("Empty export list");
+                p.consume();
+                break 'list;
+            }
+
+            let mut after_item = false;
+            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+                if p.at_in(EXPORT_ITEM_START) {
+                    module_export_item(p);
+                    after_item = true;
+                    continue;
+                }
+                if p.at(SyntaxKind::COMMA) {
+                    if p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.error_recover("Trailing comma in export list");
+                        continue;
+                    }
+                    if after_item {
+                        p.consume();
+                        after_item = false;
+                        continue;
+                    }
+                    p.error_recover("Missing item in export list");
+                    continue;
+                }
+                if p.at_in(EXPORT_LIST_RECOVERY) {
+                    break;
+                }
+                p.error_recover("Invalid token in export list");
+                after_item = true;
+            }
+
+            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        }
+    }
+
+    marker.end(p, SyntaxKind::ModuleExportList);
+}
+
+const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
+    SyntaxKind::LOWER,
+    SyntaxKind::UPPER,
+    SyntaxKind::CLASS,
+    SyntaxKind::TYPE,
+    SyntaxKind::LEFT_PARENTHESIS,
+]);
+
+const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
+
+fn module_export_item(p: &mut Parser) {
+    let mut marker = p.start();
+    if p.eat(SyntaxKind::LOWER) {
+        marker.end(p, SyntaxKind::ModuleExportValue);
+    }
 }

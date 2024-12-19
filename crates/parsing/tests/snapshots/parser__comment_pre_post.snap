@@ -1,24 +1,29 @@
 ---
 source: crates/parsing/tests/parser.rs
-expression: node
+expression: "(node, errors)"
 snapshot_kind: text
 ---
-Module@0..51
-  ModuleHeader@0..51
-    MODULE@0..6 "module"
-    Comment@6..7
-      WHITESPACE@6..7 " "
-    ModuleName@7..34
-      Comment@7..17
-        BLOCK_COMMENT@7..16 "{- Pre -}"
-        WHITESPACE@16..17 " "
-      PREFIX@17..29 "Comment.Pre."
-      UPPER@29..33 "Post"
-      Comment@33..34
-        WHITESPACE@33..34 " "
-    Comment@34..45
-      BLOCK_COMMENT@34..44 "{- Post -}"
-      WHITESPACE@44..45 " "
-    WHERE@45..50 "where"
-    Comment@50..51
-      WHITESPACE@50..51 "\n"
+(
+    Module@0..51
+      ModuleHeader@0..51
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..34
+          Comment@7..17
+            BLOCK_COMMENT@7..16 "{- Pre -}"
+            WHITESPACE@16..17 " "
+          PREFIX@17..29 "Comment.Pre."
+          UPPER@29..33 "Post"
+          Comment@33..34
+            WHITESPACE@33..34 " "
+        ModuleExportList@34..45
+          Comment@34..45
+            BLOCK_COMMENT@34..44 "{- Post -}"
+            WHITESPACE@44..45 " "
+        WHERE@45..50 "where"
+        Comment@50..51
+          WHITESPACE@50..51 "\n"
+    ,
+    [],
+)

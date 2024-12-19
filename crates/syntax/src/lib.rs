@@ -1,3 +1,7 @@
+mod token_set;
+
+pub use token_set::TokenSet;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 #[allow(non_camel_case_types)]
@@ -74,19 +78,30 @@ pub enum SyntaxKind {
     TRUE,
     FALSE,
 
+    // Control
+    LAYOUT_START,
+    LAYOUT_SEPARATOR,
+    LAYOUT_END,
+    END_OF_FILE,
+
+    // Special
+    ERROR,
+
     // Nodes
     Node,
     Comment,
     Module,
     ModuleHeader,
     ModuleName,
+    ModuleExportList,
+    ModuleExportValue,
+    ModuleExportClass,
+    ModuleExportType,
+    ModuleExportOperator,
+    ModuleExportTypeOperator,
 
-    // Control
-    LAYOUT_START,
-    LAYOUT_SEPARATOR,
-    LAYOUT_END,
-    ERROR,
-    END_OF_FILE,
+    #[doc(hidden)]
+    __LAST,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -96,7 +111,7 @@ impl rowan::Language for PureScript {
     type Kind = SyntaxKind;
 
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= SyntaxKind::END_OF_FILE as u16);
+        assert!(raw.0 <= SyntaxKind::__LAST as u16);
         unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
     }
 

@@ -5,6 +5,7 @@ use syntax::{SyntaxKind, SyntaxNode};
 mod builder;
 mod parser;
 
+#[derive(Debug)]
 pub struct ParseError {
     pub position: Position,
     pub message: String,

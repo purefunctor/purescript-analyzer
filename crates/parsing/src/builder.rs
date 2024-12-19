@@ -76,6 +76,7 @@ impl<'l, 's> Builder<'l, 's> {
 
     fn error(&mut self, message: String) {
         let position = self.lexed.position(self.index);
+        self.builder.token(SyntaxKind::ERROR.into(), "");
         self.errors.push(ParseError { position, message });
     }
 
