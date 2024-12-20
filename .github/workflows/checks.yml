@@ -27,10 +27,13 @@ jobs:
       - name: Cache build artifacts
         uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: "v0-rinku"
+          prefix-key: "v1-maho"
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
 
       - name: Install cargo-nextest
-        run: cargo install cargo-nextest
+        run: cargo binstall cargo-nextest
 
       - name: Build and Test
         run: |
