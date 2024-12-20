@@ -1,0 +1,1 @@
+module ModuleExportTypeOperator (type (+)) where

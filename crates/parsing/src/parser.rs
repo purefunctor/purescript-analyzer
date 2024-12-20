@@ -201,7 +201,13 @@ fn module_export_item(p: &mut Parser) {
         p.expect(SyntaxKind::UPPER);
         m.end(p, SyntaxKind::ModuleExportClass);
     } else if p.eat(SyntaxKind::TYPE) {
-        todo!("TypeOperator");
+        p.expect(SyntaxKind::LEFT_PARENTHESIS);
+        // Make sure we don't accidentally consume 
+        // the ')' used to close the export list
+        if p.expect(SyntaxKind::OPERATOR) {
+            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        }
+        m.end(p, SyntaxKind::ModuleExportTypeOperator);
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
         p.expect(SyntaxKind::OPERATOR);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);

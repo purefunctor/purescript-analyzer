@@ -24,6 +24,9 @@ parser_tests!(
     module_export_data_item_before_double_period => include_str!("parser/ModuleExportDataItemBeforeDoublePeriod.purs"),
     module_export_empty => include_str!("parser/ModuleExportEmpty.purs"),
     module_export_invalid => include_str!("parser/ModuleExportInvalid.purs"),
+    module_export_type_operator => include_str!("parser/ModuleExportTypeOperator.purs"),
+    module_export_type_operator_error => include_str!("parser/ModuleExportTypeOperatorError.purs"),
+    module_export_type_operator_error_end => include_str!("parser/ModuleExportTypeOperatorErrorEnd.purs"),
     module_header => include_str!("parser/ModuleHeader.purs"),
     module_header_prefixed => include_str!("parser/ModuleHeaderPrefixed.purs"),
 );

@@ -1,0 +1,99 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..74
+      ModuleHeader@0..74
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..37
+          UPPER@7..36 "ModuleExportTypeOpera ..."
+          Comment@36..37
+            WHITESPACE@36..37 " "
+        ModuleExportList@37..68
+          LEFT_PARENTHESIS@37..38 "("
+          ModuleExportTypeOperator@38..46
+            TYPE@38..42 "type"
+            Comment@42..43
+              WHITESPACE@42..43 " "
+            LEFT_PARENTHESIS@43..44 "("
+            OPERATOR@44..45 "+"
+            RIGHT_PARENTHESIS@45..46 ")"
+          COMMA@46..47 ","
+          Comment@47..48
+            WHITESPACE@47..48 " "
+          ModuleExportTypeOperator@48..53
+            TYPE@48..52 "type"
+            Comment@52..53
+              WHITESPACE@52..53 " "
+            ERROR@53..53 ""
+            ERROR@53..53 ""
+          ERROR@53..53 ""
+          ERROR@53..56
+            ERROR@53..53 ""
+            INTEGER@53..56 "123"
+          ERROR@56..58
+            ERROR@56..56 ""
+            COMMA@56..57 ","
+            Comment@57..58
+              WHITESPACE@57..58 " "
+          ModuleExportTypeOperator@58..66
+            TYPE@58..62 "type"
+            Comment@62..63
+              WHITESPACE@62..63 " "
+            LEFT_PARENTHESIS@63..64 "("
+            OPERATOR@64..65 "*"
+            RIGHT_PARENTHESIS@65..66 ")"
+          RIGHT_PARENTHESIS@66..67 ")"
+          Comment@67..68
+            WHITESPACE@67..68 " "
+        WHERE@68..73 "where"
+        Comment@73..74
+          WHITESPACE@73..74 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 53,
+                line: 1,
+                column: 54,
+            },
+            message: "expected LEFT_PARENTHESIS",
+        },
+        ParseError {
+            position: Position {
+                offset: 53,
+                line: 1,
+                column: 54,
+            },
+            message: "expected OPERATOR",
+        },
+        ParseError {
+            position: Position {
+                offset: 53,
+                line: 1,
+                column: 54,
+            },
+            message: "expected COMMA",
+        },
+        ParseError {
+            position: Position {
+                offset: 53,
+                line: 1,
+                column: 54,
+            },
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 56,
+                line: 1,
+                column: 57,
+            },
+            message: "Invalid token",
+        },
+    ],
+)
