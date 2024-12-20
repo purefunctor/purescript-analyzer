@@ -38,7 +38,7 @@ impl<'a> Lexed<'a> {
 
         if let Some(error) = error {
             let message = error.to_string();
-            let index = self.kinds.len() as u32;
+            let index = self.kinds.len() as u32 - 1;
             self.errors.push(LexError { message, index });
         }
     }

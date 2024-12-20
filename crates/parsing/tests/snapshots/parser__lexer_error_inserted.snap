@@ -1,0 +1,67 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..54
+      ModuleHeader@0..54
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..26
+          UPPER@7..25 "LexerErrorInserted"
+          Comment@25..26
+            WHITESPACE@25..26 " "
+        ModuleExportList@26..48
+          LEFT_PARENTHESIS@26..27 "("
+          ModuleExportValue@27..32
+            LOWER@27..32 "hello"
+          COMMA@32..33 ","
+          Comment@33..34
+            WHITESPACE@33..34 " "
+          ERROR@34..39
+            ERROR@34..34 ""
+            ERROR@34..34 ""
+            INTEGER@34..39 "00123"
+          ERROR@39..41
+            ERROR@39..39 ""
+            COMMA@39..40 ","
+            Comment@40..41
+              WHITESPACE@40..41 " "
+          ModuleExportValue@41..46
+            LOWER@41..46 "world"
+          RIGHT_PARENTHESIS@46..47 ")"
+          Comment@47..48
+            WHITESPACE@47..48 " "
+        WHERE@48..53 "where"
+        Comment@53..54
+          WHITESPACE@53..54 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 34,
+                line: 1,
+                column: 35,
+            },
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 34,
+                line: 1,
+                column: 35,
+            },
+            message: "Too many leading zeros",
+        },
+        ParseError {
+            position: Position {
+                offset: 39,
+                line: 1,
+                column: 40,
+            },
+            message: "Invalid token",
+        },
+    ],
+)

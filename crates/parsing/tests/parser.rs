@@ -14,6 +14,7 @@ macro_rules! parser_tests {
 
 parser_tests!(
     comment_pre_post => include_str!("parser/CommentPrePost.purs"),
+    lexer_error_inserted => include_str!("parser/LexerErrorInserted.purs"),
     module_export => include_str!("parser/ModuleExport.purs"),
     module_export_class => include_str!("parser/ModuleExportClass.purs"),
     module_export_class_error_end => include_str!("parser/ModuleExportClassErrorEnd.purs"),

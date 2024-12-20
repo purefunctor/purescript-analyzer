@@ -328,7 +328,7 @@ impl<'a> Lexer<'a> {
         let position = self.position();
 
         let error = if self.first() == '0' && self.second() == '0' {
-            Some("too many leading zeroes")
+            Some("Too many leading zeros")
         } else {
             None
         };
