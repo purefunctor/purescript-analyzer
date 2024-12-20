@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use drop_bomb::DropBomb;
 use syntax::{SyntaxKind, TokenSet};
 
@@ -36,11 +38,11 @@ impl<'t> Parser<'t> {
         NodeMarker::new(index)
     }
 
-    fn error(&mut self, message: impl Into<String>) {
+    fn error(&mut self, message: impl Into<Arc<str>>) {
         self.output.push(Output::Error { message: message.into() });
     }
 
-    fn error_recover(&mut self, message: impl Into<String>) {
+    fn error_recover(&mut self, message: impl Into<Arc<str>>) {
         let mut marker = self.start();
         self.error(message);
         self.consume();

@@ -1,6 +1,6 @@
 //! The lexer's output type.
 
-use std::ops::Range;
+use std::{ops::Range, sync::Arc};
 
 use position::Position;
 use syntax::SyntaxKind;
@@ -20,7 +20,7 @@ pub struct Lexed<'a> {
 
 #[derive(Debug)]
 struct LexError {
-    message: String,
+    message: Arc<str>,
     index: u32,
 }
 
@@ -37,7 +37,7 @@ impl<'a> Lexed<'a> {
         self.positions.push(position);
 
         if let Some(error) = error {
-            let message = error.to_string();
+            let message = error.into();
             let index = self.kinds.len() as u32 - 1;
             self.errors.push(LexError { message, index });
         }

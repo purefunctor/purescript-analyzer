@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use lexing::Lexed;
 use rowan::GreenNodeBuilder;
 use syntax::{SyntaxKind, SyntaxNode};
@@ -8,7 +10,7 @@ use crate::ParseError;
 pub(crate) enum Output {
     Start { kind: SyntaxKind },
     Token { kind: SyntaxKind },
-    Error { message: String },
+    Error { message: Arc<str> },
     Finish,
 }
 
@@ -80,8 +82,9 @@ impl<'l, 's> Builder<'l, 's> {
         self.eat_whitespace(Annotation::Whitespace);
     }
 
-    fn error(&mut self, message: String) {
+    fn error(&mut self, message: impl Into<Arc<str>>) {
         let position = self.lexed.position(self.index);
+        let message = message.into();
         self.builder.token(SyntaxKind::ERROR.into(), "");
         self.errors.push(ParseError { position, message });
     }

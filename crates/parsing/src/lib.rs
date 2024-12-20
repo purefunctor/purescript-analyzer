@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use lexing::Lexed;
 use position::Position;
 use syntax::{SyntaxKind, SyntaxNode};
@@ -8,7 +10,7 @@ mod parser;
 #[derive(Debug)]
 pub struct ParseError {
     pub position: Position,
-    pub message: String,
+    pub message: Arc<str>,
 }
 
 pub fn parse(lexed: &Lexed<'_>, tokens: &[SyntaxKind]) -> (SyntaxNode, Vec<ParseError>) {
