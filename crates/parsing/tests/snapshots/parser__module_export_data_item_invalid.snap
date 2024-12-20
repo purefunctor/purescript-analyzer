@@ -1,0 +1,67 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..54
+      ModuleHeader@0..54
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..35
+          UPPER@7..34 "ModuleExportDataItemI ..."
+          Comment@34..35
+            WHITESPACE@34..35 " "
+        ModuleExportList@35..48
+          LEFT_PARENTHESIS@35..36 "("
+          ModuleExportType@36..46
+            UPPER@36..40 "List"
+            ModuleExportTypeItemsList@40..46
+              LEFT_PARENTHESIS@40..41 "("
+              ERROR@41..42
+                ERROR@41..41 ""
+                LOWER@41..42 "a"
+              ERROR@42..44
+                ERROR@42..42 ""
+                COMMA@42..43 ","
+                Comment@43..44
+                  WHITESPACE@43..44 " "
+              ERROR@44..45
+                ERROR@44..44 ""
+                LOWER@44..45 "b"
+              RIGHT_PARENTHESIS@45..46 ")"
+          RIGHT_PARENTHESIS@46..47 ")"
+          Comment@47..48
+            WHITESPACE@47..48 " "
+        WHERE@48..53 "where"
+        Comment@53..54
+          WHITESPACE@53..54 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 41,
+                line: 1,
+                column: 42,
+            },
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 42,
+                line: 1,
+                column: 43,
+            },
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 44,
+                line: 1,
+                column: 45,
+            },
+            message: "Invalid token",
+        },
+    ],
+)

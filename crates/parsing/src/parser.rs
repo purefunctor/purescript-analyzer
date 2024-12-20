@@ -202,7 +202,7 @@ fn module_export_item(p: &mut Parser) {
         m.end(p, SyntaxKind::ModuleExportClass);
     } else if p.eat(SyntaxKind::TYPE) {
         p.expect(SyntaxKind::LEFT_PARENTHESIS);
-        // Make sure we don't accidentally consume 
+        // Make sure we don't accidentally consume
         // the ')' used to close the export list
         if p.expect(SyntaxKind::OPERATOR) {
             p.expect(SyntaxKind::RIGHT_PARENTHESIS);
@@ -220,8 +220,7 @@ fn module_export_item(p: &mut Parser) {
 fn type_items(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.at(SyntaxKind::LEFT_PARENTHESIS) {
-        p.consume();
+    if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
         if p.eat(SyntaxKind::DOUBLE_PERIOD) {
             if p.expect(SyntaxKind::RIGHT_PARENTHESIS) {
                 m.end(p, SyntaxKind::ModuleExportTypeItemsAll);
@@ -229,27 +228,16 @@ fn type_items(p: &mut Parser) {
                 m.cancel(p);
             }
         } else {
-            let mut after_item = false;
             while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
                 if p.eat(SyntaxKind::UPPER) {
-                    after_item = true;
-                    continue;
-                }
-                if p.at(SyntaxKind::COMMA) {
-                    if p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.error_recover("Trailing comma in constructor list");
-                        continue;
+                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.error_recover("Trailing comma");
+                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.expect(SyntaxKind::COMMA);
                     }
-                    if after_item {
-                        p.consume();
-                        after_item = false;
-                        continue;
-                    }
-                    p.error_recover("Missing item in constructor list");
-                    continue;
+                } else {
+                    p.error_recover("Invalid token");
                 }
-                p.error_recover("Invalid item in constructor list");
-                after_item = true;
             }
             p.expect(SyntaxKind::RIGHT_PARENTHESIS);
             m.end(p, SyntaxKind::ModuleExportTypeItemsList);

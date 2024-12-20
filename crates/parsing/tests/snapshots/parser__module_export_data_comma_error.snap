@@ -43,7 +43,7 @@ snapshot_kind: text
                 line: 1,
                 column: 48,
             },
-            message: "Missing item in constructor list",
+            message: "Invalid token",
         },
         ParseError {
             position: Position {
@@ -51,7 +51,7 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "Trailing comma in constructor list",
+            message: "Trailing comma",
         },
     ],
 )
