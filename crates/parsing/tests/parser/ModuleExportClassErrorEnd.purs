@@ -1,0 +1,1 @@
+module ModuleExportClassErrorEnd (class) where

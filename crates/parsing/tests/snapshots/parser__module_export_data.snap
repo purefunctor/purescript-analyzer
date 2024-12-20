@@ -1,0 +1,50 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..68
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "ModuleExportData"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..62
+          LEFT_PARENTHESIS@24..25 "("
+          ModuleExportType@25..29
+            UPPER@25..29 "Void"
+          COMMA@29..30 ","
+          Comment@30..31
+            WHITESPACE@30..31 " "
+          ModuleExportType@31..39
+            UPPER@31..35 "List"
+            ModuleExportTypeItemsAll@35..39
+              LEFT_PARENTHESIS@35..36 "("
+              DOUBLE_PERIOD@36..38 ".."
+              RIGHT_PARENTHESIS@38..39 ")"
+          COMMA@39..40 ","
+          Comment@40..41
+            WHITESPACE@40..41 " "
+          ModuleExportType@41..60
+            UPPER@41..47 "Either"
+            ModuleExportTypeItemsList@47..60
+              LEFT_PARENTHESIS@47..48 "("
+              UPPER@48..52 "Left"
+              COMMA@52..53 ","
+              Comment@53..54
+                WHITESPACE@53..54 " "
+              UPPER@54..59 "Right"
+              RIGHT_PARENTHESIS@59..60 ")"
+          RIGHT_PARENTHESIS@60..61 ")"
+          Comment@61..62
+            WHITESPACE@61..62 " "
+        WHERE@62..67 "where"
+        Comment@67..68
+          WHITESPACE@67..68 "\n"
+    ,
+    [],
+)

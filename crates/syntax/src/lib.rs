@@ -97,6 +97,8 @@ pub enum SyntaxKind {
     ModuleExportValue,
     ModuleExportClass,
     ModuleExportType,
+    ModuleExportTypeItemsAll,
+    ModuleExportTypeItemsList,
     ModuleExportOperator,
     ModuleExportTypeOperator,
 

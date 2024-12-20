@@ -1,0 +1,40 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..62
+      ModuleHeader@0..62
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..45
+          UPPER@7..44 "ModuleExportDataItemA ..."
+          Comment@44..45
+            WHITESPACE@44..45 " "
+        ModuleExportList@45..62
+          LEFT_PARENTHESIS@45..46 "("
+          ModuleExportType@46..53
+            UPPER@46..50 "List"
+            LEFT_PARENTHESIS@50..51 "("
+            DOUBLE_PERIOD@51..53 ".."
+            ERROR@53..53 ""
+          COMMA@53..54 ","
+          Comment@54..55
+            WHITESPACE@54..55 " "
+          ModuleExportType@55..61
+            UPPER@55..61 "Period"
+          RIGHT_PARENTHESIS@61..62 ")"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 53,
+                line: 1,
+                column: 54,
+            },
+            message: "expected RIGHT_PARENTHESIS",
+        },
+    ],
+)

@@ -102,15 +102,15 @@ impl NodeMarker {
         parser.output.push(Output::Finish);
     }
 
-    // fn cancel(&mut self, parser: &mut Parser) {
-    //     self.bomb.defuse();
-    //     if self.index == parser.output.len() - 1 {
-    //         match parser.output.pop() {
-    //             Some(Output::Start { kind: SyntaxKind::Node }) => (),
-    //             _ => unreachable!(),
-    //         }
-    //     }
-    // }
+    fn cancel(&mut self, parser: &mut Parser) {
+        self.bomb.defuse();
+        if self.index == parser.output.len() - 1 {
+            match parser.output.pop() {
+                Some(Output::Start { kind: SyntaxKind::Node }) => (),
+                _ => unreachable!(),
+            }
+        }
+    }
 }
 
 fn module_name(p: &mut Parser) {
@@ -201,8 +201,79 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 
 fn module_export_item(p: &mut Parser) {
-    let mut marker = p.start();
+    let mut m = p.start();
+
+    let at_export_list_end =
+        |p: &Parser| p.at(SyntaxKind::RIGHT_PARENTHESIS) && p.at_next(SyntaxKind::WHERE);
+
+    let recover = |p: &mut Parser, m: &str| {
+        let mut r = p.start();
+        p.error(m);
+        while !at_export_list_end(p) && !p.at_in(EXPORT_ITEM_RECOVERY) && !p.at_eof() {
+            p.consume();
+        }
+        r.end(p, SyntaxKind::ERROR);
+    };
+
     if p.eat(SyntaxKind::LOWER) {
-        marker.end(p, SyntaxKind::ModuleExportValue);
+        m.end(p, SyntaxKind::ModuleExportValue);
+    } else if p.eat(SyntaxKind::UPPER) {
+        if p.at(SyntaxKind::LEFT_PARENTHESIS) {
+            type_items(p);
+        }
+        m.end(p, SyntaxKind::ModuleExportType);
+    } else if p.eat(SyntaxKind::CLASS) {
+        if p.eat(SyntaxKind::UPPER) {
+            return m.end(p, SyntaxKind::ModuleExportClass);
+        }
+        recover(p, "Expected a class name");
+        m.end(p, SyntaxKind::ModuleExportClass);
+    } else if p.eat(SyntaxKind::TYPE) {
+        todo!("TypeOperator");
+    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        todo!("Operator");
+    } else {
+        m.cancel(p);
     }
+}
+
+const EXPORT_ITEM_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::COMMA, SyntaxKind::WHERE]);
+
+fn type_items(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::LEFT_PARENTHESIS);
+
+    if p.eat(SyntaxKind::DOUBLE_PERIOD) {
+        if p.expect(SyntaxKind::RIGHT_PARENTHESIS) {
+            return m.end(p, SyntaxKind::ModuleExportTypeItemsAll);
+        } else {
+            return m.cancel(p);
+        }
+    } else {
+        let mut after_item = false;
+        while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+            if p.eat(SyntaxKind::UPPER) {
+                after_item = true;
+                continue;
+            }
+            if p.at(SyntaxKind::COMMA) {
+                if p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.error_recover("Trailing comma in constructor list");
+                    continue;
+                }
+                if after_item {
+                    p.consume();
+                    after_item = false;
+                    continue;
+                }
+                p.error_recover("Missing item in constructor list");
+                continue;
+            }
+            p.error_recover("Invalid item in constructor list");
+            after_item = true;
+        }
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        m.end(p, SyntaxKind::ModuleExportTypeItemsList);
+    };
 }

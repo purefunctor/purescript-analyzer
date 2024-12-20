@@ -15,7 +15,13 @@ macro_rules! parser_tests {
 parser_tests!(
     comment_pre_post => include_str!("parser/CommentPrePost.purs"),
     module_export => include_str!("parser/ModuleExport.purs"),
+    module_export_class => include_str!("parser/ModuleExportClass.purs"),
+    module_export_class_error_end => include_str!("parser/ModuleExportClassErrorEnd.purs"),
     module_export_comma_error => include_str!("parser/ModuleExportCommaError.purs"),
+    module_export_data => include_str!("parser/ModuleExportData.purs"),
+    module_export_data_comma_error => include_str!("parser/ModuleExportDataCommaError.purs"),
+    module_export_data_item_after_double_period => include_str!("parser/ModuleExportDataItemAfterDoublePeriod.purs"),
+    module_export_data_item_before_double_period => include_str!("parser/ModuleExportDataItemBeforeDoublePeriod.purs"),
     module_export_empty => include_str!("parser/ModuleExportEmpty.purs"),
     module_export_invalid => include_str!("parser/ModuleExportInvalid.purs"),
     module_header => include_str!("parser/ModuleHeader.purs"),

@@ -1,0 +1,47 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..70
+      ModuleHeader@0..70
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..45
+          UPPER@7..44 "ModuleExportDataItemA ..."
+          Comment@44..45
+            WHITESPACE@44..45 " "
+        ModuleExportList@45..64
+          LEFT_PARENTHESIS@45..46 "("
+          ModuleExportType@46..62
+            UPPER@46..50 "List"
+            ModuleExportTypeItemsList@50..62
+              LEFT_PARENTHESIS@50..51 "("
+              UPPER@51..57 "Period"
+              COMMA@57..58 ","
+              Comment@58..59
+                WHITESPACE@58..59 " "
+              ERROR@59..61
+                ERROR@59..59 ""
+                DOUBLE_PERIOD@59..61 ".."
+              RIGHT_PARENTHESIS@61..62 ")"
+          RIGHT_PARENTHESIS@62..63 ")"
+          Comment@63..64
+            WHITESPACE@63..64 " "
+        WHERE@64..69 "where"
+        Comment@69..70
+          WHITESPACE@69..70 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 59,
+                line: 1,
+                column: 60,
+            },
+            message: "Invalid item in constructor list",
+        },
+    ],
+)

@@ -1,0 +1,39 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..47
+      ModuleHeader@0..47
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..33
+          UPPER@7..32 "ModuleExportClassErro ..."
+          Comment@32..33
+            WHITESPACE@32..33 " "
+        ModuleExportList@33..41
+          LEFT_PARENTHESIS@33..34 "("
+          ModuleExportClass@34..39
+            CLASS@34..39 "class"
+            ERROR@39..39
+              ERROR@39..39 ""
+          RIGHT_PARENTHESIS@39..40 ")"
+          Comment@40..41
+            WHITESPACE@40..41 " "
+        WHERE@41..46 "where"
+        Comment@46..47
+          WHITESPACE@46..47 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 39,
+                line: 1,
+                column: 40,
+            },
+            message: "Expected a class name",
+        },
+    ],
+)
