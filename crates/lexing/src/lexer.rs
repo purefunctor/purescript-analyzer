@@ -257,13 +257,8 @@ impl<'a> Lexer<'a> {
         assert_eq!(self.take(), '\'');
         self.take_while(|c| c != '\'');
 
-        let (kind, error) = if self.take() != '\'' {
-            (SyntaxKind::ERROR, Some("unexpected end of file"))
-        } else {
-            (SyntaxKind::CHAR, None)
-        };
-
-        self.lexed.push(kind, position, error);
+        let error = if self.take() != '\'' { Some("unexpected end of file") } else { None };
+        self.lexed.push(SyntaxKind::CHAR, position, error);
     }
 
     #[inline]
@@ -274,8 +269,8 @@ impl<'a> Lexer<'a> {
         match leading_quotes {
             // "..." => a string
             1 => {
-                let (kind, error) = self.take_normal_string();
-                self.lexed.push(kind, position, error);
+                let error = self.take_normal_string();
+                self.lexed.push(SyntaxKind::STRING, position, error);
             }
             // "" => an empty string
             2 => {
@@ -283,8 +278,8 @@ impl<'a> Lexer<'a> {
             }
             // """...""" => a raw string with leading quotes
             3..=5 => {
-                let (kind, error) = self.take_raw_string();
-                self.lexed.push(kind, position, error);
+                let error = self.take_raw_string();
+                self.lexed.push(SyntaxKind::RAW_STRING, position, error);
             }
             // """"""" => Trailing and leading quotes in a raw string
             6..=8 => {
@@ -296,16 +291,16 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn take_normal_string(&mut self) -> (SyntaxKind, Option<&'static str>) {
+    fn take_normal_string(&mut self) -> Option<&'static str> {
         self.take_while(|c| c != '"');
         if self.take() != '"' {
-            (SyntaxKind::ERROR, Some("unexpected end of file"))
+            Some("unexpected end of file")
         } else {
-            (SyntaxKind::STRING, None)
+            None
         }
     }
 
-    fn take_raw_string(&mut self) -> (SyntaxKind, Option<&'static str>) {
+    fn take_raw_string(&mut self) -> Option<&'static str> {
         loop {
             self.take_while(|c| c != '"');
             let start = self.consumed();
@@ -313,13 +308,13 @@ impl<'a> Lexer<'a> {
             let end = self.consumed();
             match end - start {
                 0 => {
-                    return (SyntaxKind::ERROR, Some("unexpected end of file"));
+                    return Some("unexpected end of file");
                 }
                 1 | 2 => {
                     continue;
                 }
                 3..=5 => {
-                    return (SyntaxKind::RAW_STRING, None);
+                    return None;
                 }
                 _ => {
                     unreachable!();
@@ -332,20 +327,18 @@ impl<'a> Lexer<'a> {
     fn take_integer_or_number(&mut self) {
         let position = self.position();
 
-        // lex(000_000.000_000e+42 ...) = [ERROR, ...]
-        if self.first() == '0' && self.second() == '0' {
-            self.take_while(|c| {
-                c.is_ascii_digit() || c == '_' || c == '.' || c == 'e' || c == '+' || c == '-'
-            });
-            return self.lexed.push(SyntaxKind::ERROR, position, Some("too many leading zeroes"));
-        }
+        let error = if self.first() == '0' && self.second() == '0' {
+            Some("too many leading zeroes")
+        } else {
+            None
+        };
 
         let mut kind = SyntaxKind::INTEGER;
         self.take_while(|c| c.is_ascii_digit() || c == '_');
 
         // lex(1..2) = [INTEGER, DOUBLE_PERIOD, INTEGER]
         if self.first() == '.' && self.second() == '.' {
-            return self.lexed.push(SyntaxKind::INTEGER, position, None);
+            return self.lexed.push(SyntaxKind::INTEGER, position, error);
         }
 
         if self.first() == '.' && self.second().is_ascii_digit() {
@@ -363,7 +356,7 @@ impl<'a> Lexer<'a> {
             kind = SyntaxKind::NUMBER;
         }
 
-        self.lexed.push(kind, position, None);
+        self.lexed.push(kind, position, error);
     }
 
     #[inline]

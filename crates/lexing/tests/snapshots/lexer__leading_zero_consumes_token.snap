@@ -4,7 +4,7 @@ expression: tokens
 snapshot_kind: text
 ---
 [
-    ERROR,
+    NUMBER,
     WHITESPACE,
     MODULE,
     END_OF_FILE,
