@@ -1,1 +1,1 @@
-module ModuleExportClass (class A, class b(123), class C) where
+module ModuleExportClass (class A, class b, class C) where

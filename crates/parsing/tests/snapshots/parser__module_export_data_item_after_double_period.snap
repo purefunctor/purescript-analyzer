@@ -26,6 +26,7 @@ snapshot_kind: text
           ModuleExportType@55..61
             UPPER@55..61 "Period"
           RIGHT_PARENTHESIS@61..62 ")"
+        ERROR@62..62 ""
     ,
     [
         ParseError {
@@ -35,6 +36,14 @@ snapshot_kind: text
                 column: 54,
             },
             message: "expected RIGHT_PARENTHESIS",
+        },
+        ParseError {
+            position: Position {
+                offset: 62,
+                line: 1,
+                column: 63,
+            },
+            message: "expected WHERE",
         },
     ],
 )

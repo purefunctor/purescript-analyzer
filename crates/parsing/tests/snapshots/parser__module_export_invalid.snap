@@ -23,9 +23,11 @@ snapshot_kind: text
           ERROR@35..38
             ERROR@35..35 ""
             INTEGER@35..38 "123"
-          COMMA@38..39 ","
-          Comment@39..40
-            WHITESPACE@39..40 " "
+          ERROR@38..40
+            ERROR@38..38 ""
+            COMMA@38..39 ","
+            Comment@39..40
+              WHITESPACE@39..40 " "
           ModuleExportValue@40..45
             LOWER@40..45 "world"
           RIGHT_PARENTHESIS@45..46 ")"
@@ -42,7 +44,15 @@ snapshot_kind: text
                 line: 1,
                 column: 36,
             },
-            message: "Invalid token in export list",
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 38,
+                line: 1,
+                column: 39,
+            },
+            message: "Invalid token",
         },
     ],
 )

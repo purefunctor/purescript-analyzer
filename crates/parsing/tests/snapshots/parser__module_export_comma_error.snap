@@ -40,7 +40,7 @@ snapshot_kind: text
                 line: 1,
                 column: 38,
             },
-            message: "Missing item in export list",
+            message: "Invalid token",
         },
         ParseError {
             position: Position {
@@ -48,7 +48,7 @@ snapshot_kind: text
                 line: 1,
                 column: 44,
             },
-            message: "Trailing comma in export list",
+            message: "Trailing comma",
         },
     ],
 )

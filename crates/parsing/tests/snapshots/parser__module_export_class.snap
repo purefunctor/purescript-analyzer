@@ -4,8 +4,8 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..64
-      ModuleHeader@0..64
+    Module@0..59
+      ModuleHeader@0..59
         MODULE@0..6 "module"
         Comment@6..7
           WHITESPACE@6..7 " "
@@ -13,7 +13,7 @@ snapshot_kind: text
           UPPER@7..24 "ModuleExportClass"
           Comment@24..25
             WHITESPACE@24..25 " "
-        ModuleExportList@25..58
+        ModuleExportList@25..53
           LEFT_PARENTHESIS@25..26 "("
           ModuleExportClass@26..33
             CLASS@26..31 "class"
@@ -23,30 +23,28 @@ snapshot_kind: text
           COMMA@33..34 ","
           Comment@34..35
             WHITESPACE@34..35 " "
-          ModuleExportClass@35..47
+          ModuleExportClass@35..41
             CLASS@35..40 "class"
             Comment@40..41
               WHITESPACE@40..41 " "
-            ERROR@41..47
-              ERROR@41..41 ""
-              LOWER@41..42 "b"
-              LEFT_PARENTHESIS@42..43 "("
-              INTEGER@43..46 "123"
-              RIGHT_PARENTHESIS@46..47 ")"
-          COMMA@47..48 ","
-          Comment@48..49
-            WHITESPACE@48..49 " "
-          ModuleExportClass@49..56
-            CLASS@49..54 "class"
-            Comment@54..55
-              WHITESPACE@54..55 " "
-            UPPER@55..56 "C"
-          RIGHT_PARENTHESIS@56..57 ")"
-          Comment@57..58
-            WHITESPACE@57..58 " "
-        WHERE@58..63 "where"
-        Comment@63..64
-          WHITESPACE@63..64 "\n"
+            ERROR@41..41 ""
+          ERROR@41..41 ""
+          ModuleExportValue@41..42
+            LOWER@41..42 "b"
+          COMMA@42..43 ","
+          Comment@43..44
+            WHITESPACE@43..44 " "
+          ModuleExportClass@44..51
+            CLASS@44..49 "class"
+            Comment@49..50
+              WHITESPACE@49..50 " "
+            UPPER@50..51 "C"
+          RIGHT_PARENTHESIS@51..52 ")"
+          Comment@52..53
+            WHITESPACE@52..53 " "
+        WHERE@53..58 "where"
+        Comment@58..59
+          WHITESPACE@58..59 "\n"
     ,
     [
         ParseError {
@@ -55,7 +53,15 @@ snapshot_kind: text
                 line: 1,
                 column: 42,
             },
-            message: "Expected a class name",
+            message: "expected UPPER",
+        },
+        ParseError {
+            position: Position {
+                offset: 41,
+                line: 1,
+                column: 42,
+            },
+            message: "expected COMMA",
         },
     ],
 )

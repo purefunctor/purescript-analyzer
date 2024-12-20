@@ -17,8 +17,7 @@ snapshot_kind: text
           LEFT_PARENTHESIS@33..34 "("
           ModuleExportClass@34..39
             CLASS@34..39 "class"
-            ERROR@39..39
-              ERROR@39..39 ""
+            ERROR@39..39 ""
           RIGHT_PARENTHESIS@39..40 ")"
           Comment@40..41
             WHITESPACE@40..41 " "
@@ -33,7 +32,7 @@ snapshot_kind: text
                 line: 1,
                 column: 40,
             },
-            message: "Expected a class name",
+            message: "expected UPPER",
         },
     ],
 )
