@@ -17,6 +17,9 @@ snapshot_kind: text
         WHERE@12..17 "where"
         Comment@17..18
           WHITESPACE@17..18 "\n"
+      LAYOUT_START@18..18 ""
+      LAYOUT_END@18..18 ""
+      END_OF_FILE@18..18 ""
     ,
     [],
 )

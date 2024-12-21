@@ -130,6 +130,9 @@ pub(crate) fn module(p: &mut Parser) {
     let mut marker = p.start();
 
     module_header(p);
+    p.expect(SyntaxKind::LAYOUT_START);
+    p.expect(SyntaxKind::LAYOUT_END);
+    p.expect(SyntaxKind::END_OF_FILE);
 
     marker.end(p, SyntaxKind::Module);
 }

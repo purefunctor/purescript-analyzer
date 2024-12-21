@@ -71,7 +71,7 @@ impl<'l, 's> Builder<'l, 's> {
     fn token(&mut self, kind: SyntaxKind) {
         self.eat_whitespace(Annotation::Comment);
 
-        if kind.is_layout() {
+        if kind.is_layout() || kind.is_end() {
             self.builder.token(kind.into(), "");
         } else {
             if let Some(message) = self.lexed.error(self.index) {

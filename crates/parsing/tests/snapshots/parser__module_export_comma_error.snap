@@ -32,6 +32,9 @@ snapshot_kind: text
         WHERE@46..51 "where"
         Comment@51..52
           WHITESPACE@51..52 "\n"
+      LAYOUT_START@52..52 ""
+      LAYOUT_END@52..52 ""
+      END_OF_FILE@52..52 ""
     ,
     [
         ParseError {
