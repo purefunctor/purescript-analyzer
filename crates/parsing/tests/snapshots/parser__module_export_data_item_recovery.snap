@@ -1,0 +1,63 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..58
+      ModuleHeader@0..58
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..36
+          UPPER@7..35 "ModuleExportDataItemR ..."
+          Comment@35..36
+            WHITESPACE@35..36 " "
+        ModuleExportList@36..52
+          LEFT_PARENTHESIS@36..37 "("
+          ModuleExportType@37..52
+            UPPER@37..41 "List"
+            ModuleExportTypeItemsList@41..52
+              LEFT_PARENTHESIS@41..42 "("
+              UPPER@42..46 "Cons"
+              COMMA@46..47 ","
+              Comment@47..48
+                WHITESPACE@47..48 " "
+              ERROR@48..52
+                ERROR@48..48 ""
+                INTEGER@48..51 "123"
+                Comment@51..52
+                  WHITESPACE@51..52 " "
+              ERROR@52..52 ""
+          ERROR@52..52 ""
+        WHERE@52..57 "where"
+        Comment@57..58
+          WHITESPACE@57..58 "\n"
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 48,
+                line: 1,
+                column: 49,
+            },
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 52,
+                line: 1,
+                column: 53,
+            },
+            message: "expected RIGHT_PARENTHESIS",
+        },
+        ParseError {
+            position: Position {
+                offset: 52,
+                line: 1,
+                column: 53,
+            },
+            message: "expected COMMA",
+        },
+    ],
+)

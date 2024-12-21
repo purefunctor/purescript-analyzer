@@ -238,6 +238,9 @@ fn type_items(p: &mut Parser) {
                         p.expect(SyntaxKind::COMMA);
                     }
                 } else {
+                    if p.at(SyntaxKind::WHERE) {
+                        break;
+                    }
                     p.error_recover("Invalid token");
                 }
             }
