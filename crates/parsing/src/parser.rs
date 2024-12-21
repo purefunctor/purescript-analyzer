@@ -238,7 +238,7 @@ fn type_items(p: &mut Parser) {
                         p.expect(SyntaxKind::COMMA);
                     }
                 } else {
-                    if p.at(SyntaxKind::WHERE) {
+                    if p.at_in(EXPORT_LIST_RECOVERY) {
                         break;
                     }
                     p.error_recover("Invalid token");

@@ -71,13 +71,16 @@ impl<'l, 's> Builder<'l, 's> {
     fn token(&mut self, kind: SyntaxKind) {
         self.eat_whitespace(Annotation::Comment);
 
-        if let Some(message) = self.lexed.error(self.index) {
-            self.error(message.to_string());
+        if kind.is_layout() {
+            self.builder.token(kind.into(), "");
+        } else {
+            if let Some(message) = self.lexed.error(self.index) {
+                self.error(message);
+            }
+            let text = self.lexed.text(self.index);
+            self.builder.token(kind.into(), text);
+            self.index += 1;
         }
-
-        let text = self.lexed.text(self.index);
-        self.builder.token(kind.into(), text);
-        self.index += 1;
 
         self.eat_whitespace(Annotation::Whitespace);
     }

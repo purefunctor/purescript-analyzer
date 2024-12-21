@@ -69,10 +69,10 @@ impl<'a> Lexed<'a> {
     }
 
     /// Returns the error for an index.
-    pub fn error(&self, index: usize) -> Option<&str> {
+    pub fn error(&self, index: usize) -> Option<Arc<str>> {
         assert!(index < self.kinds.len());
         let error_index = self.errors.binary_search_by_key(&(index as u32), |v| v.index).ok()?;
-        Some(&self.errors[error_index].message)
+        Some(Arc::clone(&self.errors[error_index].message))
     }
 
     pub fn kinds(&self) -> &[SyntaxKind] {
