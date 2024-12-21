@@ -23,6 +23,7 @@ parser_tests!(
     module_export_data_comma_error => include_str!("parser/ModuleExportDataCommaError.purs"),
     module_export_data_item_after_double_period => include_str!("parser/ModuleExportDataItemAfterDoublePeriod.purs"),
     module_export_data_item_before_double_period => include_str!("parser/ModuleExportDataItemBeforeDoublePeriod.purs"),
+    module_export_data_item_empty => include_str!("parser/ModuleExportDataItemEmpty.purs"),
     module_export_data_item_invalid => include_str!("parser/ModuleExportDataItemInvalid.purs"),
     module_export_data_item_recovery => include_str!("parser/ModuleExportDataItemRecovery.purs"),
     module_export_empty => include_str!("parser/ModuleExportEmpty.purs"),

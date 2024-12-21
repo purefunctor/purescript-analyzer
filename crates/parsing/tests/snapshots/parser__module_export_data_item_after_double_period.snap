@@ -17,14 +17,16 @@ snapshot_kind: text
           LEFT_PARENTHESIS@45..46 "("
           ModuleExportType@46..53
             UPPER@46..50 "List"
-            LEFT_PARENTHESIS@50..51 "("
-            DOUBLE_PERIOD@51..53 ".."
-            ERROR@53..53 ""
+            ModuleExportTypeItemsAll@50..53
+              LEFT_PARENTHESIS@50..51 "("
+              DOUBLE_PERIOD@51..53 ".."
+              ERROR@53..53 ""
           COMMA@53..54 ","
           Comment@54..55
             WHITESPACE@54..55 " "
           ModuleExportType@55..61
             UPPER@55..61 "Period"
+            ModuleExportTypeItemsList@61..61
           RIGHT_PARENTHESIS@61..62 ")"
         ERROR@62..62 ""
       ERROR@62..62 ""

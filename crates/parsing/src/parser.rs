@@ -116,51 +116,48 @@ impl NodeMarker {
 }
 
 fn module_name(p: &mut Parser) {
-    let mut marker = p.start();
+    let mut m = p.start();
 
     if p.at(SyntaxKind::PREFIX) {
         p.consume();
     }
     p.expect(SyntaxKind::UPPER);
 
-    marker.end(p, SyntaxKind::ModuleName);
+    m.end(p, SyntaxKind::ModuleName);
 }
 
 pub(crate) fn module(p: &mut Parser) {
-    let mut marker = p.start();
+    let mut m = p.start();
 
     module_header(p);
     p.expect(SyntaxKind::LAYOUT_START);
     p.expect(SyntaxKind::LAYOUT_END);
     p.expect(SyntaxKind::END_OF_FILE);
 
-    marker.end(p, SyntaxKind::Module);
+    m.end(p, SyntaxKind::Module);
 }
 
 fn module_header(p: &mut Parser) {
-    let mut marker = p.start();
+    let mut m = p.start();
 
     p.expect(SyntaxKind::MODULE);
     module_name(p);
     module_export_list(p);
     p.expect(SyntaxKind::WHERE);
 
-    marker.end(p, SyntaxKind::ModuleHeader);
+    m.end(p, SyntaxKind::ModuleHeader);
 }
 
 fn module_export_list(p: &mut Parser) {
-    let mut marker = p.start();
+    let mut m = p.start();
 
     'list: {
-        if p.at(SyntaxKind::LEFT_PARENTHESIS) {
-            p.consume();
-
+        if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
             if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
                 p.error("Empty export list");
                 p.consume();
                 break 'list;
             }
-
             while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
                 if p.at_in(EXPORT_ITEM_START) {
                     module_export_item(p);
@@ -171,17 +168,16 @@ fn module_export_list(p: &mut Parser) {
                     }
                 } else {
                     if p.at_in(EXPORT_LIST_RECOVERY) {
-                        break 'list;
+                        break;
                     }
                     p.error_recover("Invalid token");
                 }
             }
-
             p.expect(SyntaxKind::RIGHT_PARENTHESIS);
         }
     }
 
-    marker.end(p, SyntaxKind::ModuleExportList);
+    m.end(p, SyntaxKind::ModuleExportList);
 }
 
 const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
@@ -225,32 +221,35 @@ fn module_export_item(p: &mut Parser) {
 fn type_items(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        if p.eat(SyntaxKind::DOUBLE_PERIOD) {
-            if p.expect(SyntaxKind::RIGHT_PARENTHESIS) {
-                m.end(p, SyntaxKind::ModuleExportTypeItemsAll);
-            } else {
-                m.cancel(p);
+    let mut kind = SyntaxKind::ModuleExportTypeItemsList;
+    'list: {
+        if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+            if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.error("Empty item list");
+                p.consume();
+                break 'list;
             }
-        } else {
-            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-                if p.eat(SyntaxKind::UPPER) {
-                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.error_recover("Trailing comma");
-                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.expect(SyntaxKind::COMMA);
+            if p.eat(SyntaxKind::DOUBLE_PERIOD) {
+                kind = SyntaxKind::ModuleExportTypeItemsAll;
+            } else {
+                while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+                    if p.eat(SyntaxKind::UPPER) {
+                        if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                            p.error_recover("Trailing comma");
+                        } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                            p.expect(SyntaxKind::COMMA);
+                        }
+                    } else {
+                        if p.at_in(EXPORT_LIST_RECOVERY) {
+                            break;
+                        }
+                        p.error_recover("Invalid token");
                     }
-                } else {
-                    if p.at_in(EXPORT_LIST_RECOVERY) {
-                        break;
-                    }
-                    p.error_recover("Invalid token");
                 }
             }
             p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-            m.end(p, SyntaxKind::ModuleExportTypeItemsList);
         };
-    } else {
-        m.cancel(p);
     }
+
+    m.end(p, kind);
 }

@@ -30,6 +30,7 @@ snapshot_kind: text
                   WHITESPACE@51..52 " "
               ERROR@52..52 ""
           ERROR@52..52 ""
+          ERROR@52..52 ""
         WHERE@52..57 "where"
         Comment@57..58
           WHITESPACE@57..58 "\n"
@@ -61,6 +62,14 @@ snapshot_kind: text
                 column: 53,
             },
             message: "expected COMMA",
+        },
+        ParseError {
+            position: Position {
+                offset: 52,
+                line: 1,
+                column: 53,
+            },
+            message: "expected RIGHT_PARENTHESIS",
         },
     ],
 )

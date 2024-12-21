@@ -17,6 +17,7 @@ snapshot_kind: text
           LEFT_PARENTHESIS@24..25 "("
           ModuleExportType@25..29
             UPPER@25..29 "Void"
+            ModuleExportTypeItemsList@29..29
           COMMA@29..30 ","
           Comment@30..31
             WHITESPACE@30..31 " "
