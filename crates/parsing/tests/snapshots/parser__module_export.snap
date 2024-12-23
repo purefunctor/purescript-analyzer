@@ -24,6 +24,8 @@ snapshot_kind: text
         Comment@25..26
           WHITESPACE@25..26 "\n"
       LAYOUT_START@26..26 ""
+      ModuleImports@26..26
+      ModuleStatements@26..26
       LAYOUT_END@26..26 ""
       END_OF_FILE@26..26 ""
     ,

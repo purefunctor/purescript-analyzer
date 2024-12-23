@@ -33,4 +33,6 @@ parser_tests!(
     module_export_type_operator_error_end => include_str!("parser/ModuleExportTypeOperatorErrorEnd.purs"),
     module_header => include_str!("parser/ModuleHeader.purs"),
     module_header_prefixed => include_str!("parser/ModuleHeaderPrefixed.purs"),
+    module_import => include_str!("parser/ModuleImport.purs"),
+    module_import_error => include_str!("parser/ModuleImportError.purs"),
 );

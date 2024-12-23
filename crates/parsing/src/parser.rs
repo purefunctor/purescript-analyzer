@@ -131,6 +131,7 @@ pub(crate) fn module(p: &mut Parser) {
 
     module_header(p);
     p.expect(SyntaxKind::LAYOUT_START);
+    module_statements(p);
     p.expect(SyntaxKind::LAYOUT_END);
     p.expect(SyntaxKind::END_OF_FILE);
 
@@ -259,3 +260,94 @@ fn type_items(p: &mut Parser) {
 
     m.end(p, kind);
 }
+
+fn module_statements(p: &mut Parser) {
+    let mut imports = p.start();
+
+    while !p.at_in(MODULE_STATEMENT_NON_IMPORT) || !p.at_eof() {
+        if p.at(SyntaxKind::IMPORT) {
+            import_statement(p);
+        } else {
+            // If we're at a LAYOUT_SEPARATOR, make sure that
+            // we consume it without emitting an error message.
+            if p.at(SyntaxKind::LAYOUT_SEPARATOR) {
+                p.consume();
+            } else if p.at(SyntaxKind::LAYOUT_END) {
+                break;
+            } else {
+                p.error_recover("Invalid token");
+            }
+        }
+    }
+
+    imports.end(p, SyntaxKind::ModuleImports);
+
+    let mut statements = p.start();
+
+    while !p.at_eof() {
+        if p.at_in(MODULE_STATEMENT_NON_IMPORT) {
+            module_statement(p);
+        } else if p.at(SyntaxKind::IMPORT) {
+            p.error_recover("Imports must be grouped together.");
+            import_statement(p);
+        } else {
+            if p.at(SyntaxKind::LAYOUT_SEPARATOR) {
+                p.consume();
+            } else if p.at(SyntaxKind::LAYOUT_END) {
+                break;
+            } else {
+                p.error_recover("Invalid token");
+            }
+        }
+    }
+
+    statements.end(p, SyntaxKind::ModuleStatements);
+}
+
+const MODULE_STATEMENT_NON_IMPORT: TokenSet = TokenSet::new(&[
+    SyntaxKind::CLASS,
+    SyntaxKind::DATA,
+    SyntaxKind::LOWER,
+    SyntaxKind::TYPE,
+    SyntaxKind::INFIX,
+    SyntaxKind::INFIXL,
+    SyntaxKind::INFIXR,
+    SyntaxKind::INSTANCE,
+    SyntaxKind::NEWTYPE,
+    SyntaxKind::FOREIGN,
+]);
+
+fn import_statement(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::IMPORT);
+    module_name(p);
+    import_list(p);
+    import_alias(p);
+    if !p.at(SyntaxKind::LAYOUT_END) {
+        p.expect(SyntaxKind::LAYOUT_SEPARATOR);
+    }
+
+    m.end(p, SyntaxKind::ModuleImportStatement);
+}
+
+fn import_list(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.eat(SyntaxKind::HIDING);
+    if p.eat(SyntaxKind::LEFT_PARENTHESIS) {}
+
+    m.end(p, SyntaxKind::ModuleImportList);
+}
+
+fn import_alias(p: &mut Parser) {
+    let mut m = p.start();
+
+    if p.eat(SyntaxKind::AS) {
+        module_name(p);
+    }
+
+    m.end(p, SyntaxKind::ModuleImportAlias);
+}
+
+fn module_statement(_p: &mut Parser) {}

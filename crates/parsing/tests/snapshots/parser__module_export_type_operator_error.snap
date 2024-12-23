@@ -54,6 +54,8 @@ snapshot_kind: text
         Comment@73..74
           WHITESPACE@73..74 "\n"
       LAYOUT_START@74..74 ""
+      ModuleImports@74..74
+      ModuleStatements@74..74
       LAYOUT_END@74..74 ""
       END_OF_FILE@74..74 ""
     ,

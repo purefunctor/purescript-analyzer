@@ -1,0 +1,78 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..64
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..25
+          UPPER@7..24 "ModuleImportError"
+          Comment@24..25
+            WHITESPACE@24..25 " "
+        ModuleExportList@25..25
+        WHERE@25..30 "where"
+        Comment@30..32
+          WHITESPACE@30..32 "\n\n"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..64
+        ModuleImportStatement@32..39
+          IMPORT@32..38 "import"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          ModuleName@39..39
+            ERROR@39..39 ""
+          ModuleImportList@39..39
+          ModuleImportAlias@39..39
+          ERROR@39..39 ""
+        ERROR@39..47
+          ERROR@39..39 ""
+          LOWER@39..46 "prelude"
+          Comment@46..47
+            WHITESPACE@46..47 "\n"
+        LAYOUT_SEPARATOR@47..47 ""
+        ModuleImportStatement@47..64
+          IMPORT@47..53 "import"
+          Comment@53..54
+            WHITESPACE@53..54 " "
+          ModuleName@54..64
+            PREFIX@54..59 "Data."
+            UPPER@59..63 "List"
+            Comment@63..64
+              WHITESPACE@63..64 "\n"
+          ModuleImportList@64..64
+          ModuleImportAlias@64..64
+      ModuleStatements@64..64
+      LAYOUT_END@64..64 ""
+      END_OF_FILE@64..64 ""
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 39,
+                line: 3,
+                column: 8,
+            },
+            message: "expected UPPER",
+        },
+        ParseError {
+            position: Position {
+                offset: 39,
+                line: 3,
+                column: 8,
+            },
+            message: "expected LAYOUT_SEPARATOR",
+        },
+        ParseError {
+            position: Position {
+                offset: 39,
+                line: 3,
+                column: 8,
+            },
+            message: "Invalid token",
+        },
+    ],
+)

@@ -101,6 +101,11 @@ pub enum SyntaxKind {
     ModuleExportTypeItemsList,
     ModuleExportOperator,
     ModuleExportTypeOperator,
+    ModuleImports,
+    ModuleImportStatement,
+    ModuleImportList,
+    ModuleImportAlias,
+    ModuleStatements,
 
     #[doc(hidden)]
     __LAST,
