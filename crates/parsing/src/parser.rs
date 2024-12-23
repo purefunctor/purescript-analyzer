@@ -231,6 +231,12 @@ fn type_items(p: &mut Parser) {
             }
             if p.eat(SyntaxKind::DOUBLE_PERIOD) {
                 kind = SyntaxKind::ModuleExportTypeItemsAll;
+                while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+                    if p.at_in(EXPORT_LIST_RECOVERY) {
+                        break;
+                    }
+                    p.error_recover("Invalid token");
+                }
             } else {
                 while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
                     if p.eat(SyntaxKind::UPPER) {

@@ -4,8 +4,8 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..62
-      ModuleHeader@0..62
+    Module@0..70
+      ModuleHeader@0..70
         MODULE@0..6 "module"
         Comment@6..7
           WHITESPACE@6..7 " "
@@ -13,25 +13,31 @@ snapshot_kind: text
           UPPER@7..44 "ModuleExportDataItemA ..."
           Comment@44..45
             WHITESPACE@44..45 " "
-        ModuleExportList@45..62
+        ModuleExportList@45..64
           LEFT_PARENTHESIS@45..46 "("
-          ModuleExportType@46..53
+          ModuleExportType@46..62
             UPPER@46..50 "List"
-            ModuleExportTypeItemsAll@50..53
+            ModuleExportTypeItemsAll@50..62
               LEFT_PARENTHESIS@50..51 "("
               DOUBLE_PERIOD@51..53 ".."
-              ERROR@53..53 ""
-          COMMA@53..54 ","
-          Comment@54..55
-            WHITESPACE@54..55 " "
-          ModuleExportType@55..61
-            UPPER@55..61 "Period"
-            ModuleExportTypeItemsList@61..61
-          RIGHT_PARENTHESIS@61..62 ")"
-        ERROR@62..62 ""
-      ERROR@62..62 ""
-      ERROR@62..62 ""
-      ERROR@62..62 ""
+              ERROR@53..55
+                ERROR@53..53 ""
+                COMMA@53..54 ","
+                Comment@54..55
+                  WHITESPACE@54..55 " "
+              ERROR@55..61
+                ERROR@55..55 ""
+                UPPER@55..61 "Period"
+              RIGHT_PARENTHESIS@61..62 ")"
+          RIGHT_PARENTHESIS@62..63 ")"
+          Comment@63..64
+            WHITESPACE@63..64 " "
+        WHERE@64..69 "where"
+        Comment@69..70
+          WHITESPACE@69..70 "\n"
+      LAYOUT_START@70..70 ""
+      LAYOUT_END@70..70 ""
+      END_OF_FILE@70..70 ""
     ,
     [
         ParseError {
@@ -40,39 +46,15 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "expected RIGHT_PARENTHESIS",
+            message: "Invalid token",
         },
         ParseError {
             position: Position {
-                offset: 62,
+                offset: 55,
                 line: 1,
-                column: 63,
+                column: 56,
             },
-            message: "expected WHERE",
-        },
-        ParseError {
-            position: Position {
-                offset: 62,
-                line: 1,
-                column: 63,
-            },
-            message: "expected LAYOUT_START",
-        },
-        ParseError {
-            position: Position {
-                offset: 62,
-                line: 1,
-                column: 63,
-            },
-            message: "expected LAYOUT_END",
-        },
-        ParseError {
-            position: Position {
-                offset: 62,
-                line: 1,
-                column: 63,
-            },
-            message: "expected END_OF_FILE",
+            message: "Invalid token",
         },
     ],
 )
