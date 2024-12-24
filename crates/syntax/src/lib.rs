@@ -114,6 +114,8 @@ pub enum SyntaxKind {
     ModuleImportTypeOperator,
     ModuleImportAlias,
     ModuleStatements,
+    ValueAnnotation,
+    ValueEquation,
 
     #[doc(hidden)]
     __LAST,

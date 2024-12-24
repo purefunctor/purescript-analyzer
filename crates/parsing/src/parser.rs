@@ -417,4 +417,26 @@ fn import_alias(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleImportAlias);
 }
 
-fn module_statement(_p: &mut Parser) {}
+fn module_statement(p: &mut Parser) {
+    if p.at(SyntaxKind::LOWER) {
+        value_annotation_or_equation(p);
+    }
+}
+
+fn value_annotation_or_equation(p: &mut Parser) {
+    let m = p.start();
+    p.expect(SyntaxKind::LOWER);
+    if p.at(SyntaxKind::DOUBLE_COLON) {
+        type_annotation(p, m);
+    } else {
+        value_equation(p, m);
+    };
+}
+
+fn type_annotation(p: &mut Parser, mut m: NodeMarker) {
+    m.end(p, SyntaxKind::ValueAnnotation);
+}
+
+fn value_equation(p: &mut Parser, mut m: NodeMarker) {
+    m.end(p, SyntaxKind::ValueEquation);
+}
