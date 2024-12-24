@@ -101,6 +101,7 @@ pub enum SyntaxKind {
     ModuleExportTypeItemsList,
     ModuleExportOperator,
     ModuleExportTypeOperator,
+    ModuleExportModule,
     ModuleImports,
     ModuleImportStatement,
     ModuleImportList,

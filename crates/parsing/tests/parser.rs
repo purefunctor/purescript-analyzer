@@ -28,6 +28,7 @@ parser_tests!(
     module_export_data_item_recovery => include_str!("parser/ModuleExportDataItemRecovery.purs"),
     module_export_empty => include_str!("parser/ModuleExportEmpty.purs"),
     module_export_invalid => include_str!("parser/ModuleExportInvalid.purs"),
+    module_export_module => include_str!("parser/ModuleExportModule.purs"),
     module_export_type_operator => include_str!("parser/ModuleExportTypeOperator.purs"),
     module_export_type_operator_error => include_str!("parser/ModuleExportTypeOperatorError.purs"),
     module_export_type_operator_error_end => include_str!("parser/ModuleExportTypeOperatorErrorEnd.purs"),

@@ -182,10 +182,11 @@ fn module_export_list(p: &mut Parser) {
 }
 
 const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::LOWER,
-    SyntaxKind::UPPER,
     SyntaxKind::CLASS,
+    SyntaxKind::LOWER,
+    SyntaxKind::MODULE,
     SyntaxKind::TYPE,
+    SyntaxKind::UPPER,
     SyntaxKind::LEFT_PARENTHESIS,
 ]);
 
@@ -214,6 +215,9 @@ fn module_export_item(p: &mut Parser) {
         p.expect(SyntaxKind::OPERATOR);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
         m.end(p, SyntaxKind::ModuleExportOperator);
+    } else if p.eat(SyntaxKind::MODULE) {
+        module_name(p);
+        m.end(p, SyntaxKind::ModuleExportModule);
     } else {
         m.cancel(p);
     }
