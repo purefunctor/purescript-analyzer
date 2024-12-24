@@ -335,9 +335,72 @@ fn import_list(p: &mut Parser) {
     let mut m = p.start();
 
     p.eat(SyntaxKind::HIDING);
-    if p.eat(SyntaxKind::LEFT_PARENTHESIS) {}
+    'list: {
+        if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+            if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.error("Empty export list");
+                p.consume();
+                break 'list;
+            }
+            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+                if p.at_in(IMPORT_ITEM_START) {
+                    import_item(p);
+                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.error_recover("Trailing comma");
+                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.expect(SyntaxKind::COMMA);
+                    }
+                } else {
+                    if p.at_in(IMPORT_LIST_RECOVERY) {
+                        break;
+                    }
+                    p.error_recover("Invalid token");
+                }
+            }
+            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        }
+    }
 
     m.end(p, SyntaxKind::ModuleImportList);
+}
+
+const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
+    SyntaxKind::LOWER,
+    SyntaxKind::UPPER,
+    SyntaxKind::CLASS,
+    SyntaxKind::TYPE,
+    SyntaxKind::LEFT_PARENTHESIS,
+]);
+
+const IMPORT_LIST_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn import_item(p: &mut Parser) {
+    let mut m = p.start();
+
+    if p.eat(SyntaxKind::LOWER) {
+        m.end(p, SyntaxKind::ModuleImportValue);
+    } else if p.eat(SyntaxKind::UPPER) {
+        type_items(p);
+        m.end(p, SyntaxKind::ModuleImportType);
+    } else if p.eat(SyntaxKind::CLASS) {
+        p.expect(SyntaxKind::UPPER);
+        m.end(p, SyntaxKind::ModuleImportClass);
+    } else if p.eat(SyntaxKind::TYPE) {
+        p.expect(SyntaxKind::LEFT_PARENTHESIS);
+        // Make sure we don't accidentally consume
+        // the ')' used to close the export list
+        if p.expect(SyntaxKind::OPERATOR) {
+            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        }
+        m.end(p, SyntaxKind::ModuleImportTypeOperator);
+    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        p.expect(SyntaxKind::OPERATOR);
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        m.end(p, SyntaxKind::ModuleImportTypeOperator);
+    } else {
+        m.cancel(p);
+    }
 }
 
 fn import_alias(p: &mut Parser) {

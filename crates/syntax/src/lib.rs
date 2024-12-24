@@ -104,6 +104,13 @@ pub enum SyntaxKind {
     ModuleImports,
     ModuleImportStatement,
     ModuleImportList,
+    ModuleImportValue,
+    ModuleImportClass,
+    ModuleImportType,
+    ModuleImportTypeItemsAll,
+    ModuleImportTypeItemsList,
+    ModuleImportOperator,
+    ModuleImportTypeOperator,
     ModuleImportAlias,
     ModuleStatements,
 
