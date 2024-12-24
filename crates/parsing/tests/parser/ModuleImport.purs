@@ -8,3 +8,4 @@ import Type (List)
 import DataList (Data(A, B))
 import DataAll (Data(..))
 import Prim as Prim
+import Data.List hiding (cons)

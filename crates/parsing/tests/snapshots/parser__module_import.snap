@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..201
+    Module@0..232
       ModuleHeader@0..27
         MODULE@0..6 "module"
         Comment@6..7
@@ -18,7 +18,7 @@ snapshot_kind: text
         Comment@25..27
           WHITESPACE@25..27 "\n\n"
       LAYOUT_START@27..27 ""
-      ModuleImports@27..201
+      ModuleImports@27..232
         ModuleImportStatement@27..42
           IMPORT@27..33 "import"
           Comment@33..34
@@ -160,9 +160,30 @@ snapshot_kind: text
               UPPER@196..200 "Prim"
               Comment@200..201
                 WHITESPACE@200..201 "\n"
-      ModuleStatements@201..201
-      LAYOUT_END@201..201 ""
-      END_OF_FILE@201..201 ""
+          LAYOUT_SEPARATOR@201..201 ""
+        ModuleImportStatement@201..232
+          IMPORT@201..207 "import"
+          Comment@207..208
+            WHITESPACE@207..208 " "
+          ModuleName@208..218
+            PREFIX@208..213 "Data."
+            UPPER@213..217 "List"
+            Comment@217..218
+              WHITESPACE@217..218 " "
+          ModuleImportList@218..232
+            HIDING@218..224 "hiding"
+            Comment@224..225
+              WHITESPACE@224..225 " "
+            LEFT_PARENTHESIS@225..226 "("
+            ModuleImportValue@226..230
+              LOWER@226..230 "cons"
+            RIGHT_PARENTHESIS@230..231 ")"
+            Comment@231..232
+              WHITESPACE@231..232 "\n"
+          ModuleImportAlias@232..232
+      ModuleStatements@232..232
+      LAYOUT_END@232..232 ""
+      END_OF_FILE@232..232 ""
     ,
     [],
 )
