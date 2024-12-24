@@ -292,7 +292,7 @@ fn module_statements(p: &mut Parser) {
         if p.at_in(MODULE_STATEMENT_NON_IMPORT) {
             module_statement(p);
         } else if p.at(SyntaxKind::IMPORT) {
-            p.error_recover("Imports must be grouped together.");
+            p.error("Imports must be grouped together");
             import_statement(p);
         } else {
             if p.at(SyntaxKind::LAYOUT_SEPARATOR) {
