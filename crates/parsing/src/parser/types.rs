@@ -120,7 +120,7 @@ fn ty_atom(p: &mut Parser) {
     }
 }
 
-const TYPE_ATOM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
+const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::PREFIX,
     SyntaxKind::STRING,
@@ -132,7 +132,8 @@ const TYPE_ATOM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::QUESTION,
     SyntaxKind::UNDERSCORE,
-]));
+])
+.union(LOWER_NON_RESERVED);
 
 fn ty_variable_bindings(p: &mut Parser) {
     while !p.at(SyntaxKind::PERIOD) && !p.at_eof() {
@@ -167,7 +168,7 @@ fn ty_variable_binding(p: &mut Parser) {
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
-    LOWER_NON_RESERVED.union(TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]));
+    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(LOWER_NON_RESERVED);
 
 fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_PARENTHESIS);

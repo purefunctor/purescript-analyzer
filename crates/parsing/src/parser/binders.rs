@@ -55,7 +55,7 @@ fn binder_2(p: &mut Parser) {
     }
 }
 
-const BINDER_ATOM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
+const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::PREFIX,
     SyntaxKind::UPPER,
     SyntaxKind::UNDERSCORE,
@@ -69,7 +69,8 @@ const BINDER_ATOM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
     SyntaxKind::LEFT_SQUARE,
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::LEFT_PARENTHESIS,
-]));
+])
+.union(LOWER_NON_RESERVED);
 
 const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 

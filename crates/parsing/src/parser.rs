@@ -204,13 +204,14 @@ fn module_export_list(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleExportList);
 }
 
-const EXPORT_ITEM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
+const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::CLASS,
     SyntaxKind::MODULE,
     SyntaxKind::OPERATOR_NAME,
     SyntaxKind::TYPE,
     SyntaxKind::UPPER,
-]));
+])
+.union(LOWER_NON_RESERVED);
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 
@@ -310,7 +311,7 @@ fn module_statements(p: &mut Parser) {
     statements.end(p, SyntaxKind::ModuleStatements);
 }
 
-const MODULE_STATEMENT_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
+const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::CLASS,
     SyntaxKind::DATA,
     SyntaxKind::TYPE,
@@ -320,7 +321,8 @@ const MODULE_STATEMENT_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(
     SyntaxKind::INSTANCE,
     SyntaxKind::NEWTYPE,
     SyntaxKind::FOREIGN,
-]));
+])
+.union(LOWER_NON_RESERVED);
 
 fn import_statement(p: &mut Parser) {
     let mut m = p.start();
@@ -366,12 +368,13 @@ fn import_list(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleImportList);
 }
 
-const IMPORT_ITEM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
+const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::CLASS,
     SyntaxKind::TYPE,
     SyntaxKind::LEFT_PARENTHESIS,
-]));
+])
+.union(LOWER_NON_RESERVED);
 
 const IMPORT_LIST_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
