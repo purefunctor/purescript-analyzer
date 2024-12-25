@@ -27,7 +27,6 @@ snapshot_kind: text
             ERROR@39..39 ""
           ModuleImportList@39..39
           ModuleImportAlias@39..39
-          ERROR@39..39 ""
         ERROR@39..47
           ERROR@39..39 ""
           LOWER@39..46 "prelude"
@@ -45,7 +44,7 @@ snapshot_kind: text
               WHITESPACE@63..64 "\n"
           ModuleImportList@64..64
           ModuleImportAlias@64..64
-          LAYOUT_SEPARATOR@64..64 ""
+        LAYOUT_SEPARATOR@64..64 ""
         ModuleImportStatement@64..99
           IMPORT@64..70 "import"
           Comment@70..71
@@ -77,7 +76,7 @@ snapshot_kind: text
             Comment@98..99
               WHITESPACE@98..99 "\n"
           ModuleImportAlias@99..99
-          LAYOUT_SEPARATOR@99..99 ""
+        LAYOUT_SEPARATOR@99..99 ""
         ModuleImportStatement@99..133
           IMPORT@99..105 "import"
           Comment@105..106
@@ -105,7 +104,7 @@ snapshot_kind: text
             Comment@132..133
               WHITESPACE@132..133 "\n"
           ModuleImportAlias@133..133
-          LAYOUT_SEPARATOR@133..133 ""
+        LAYOUT_SEPARATOR@133..133 ""
         ModuleImportStatement@133..167
           IMPORT@133..139 "import"
           Comment@139..140
@@ -135,7 +134,7 @@ snapshot_kind: text
             Comment@166..167
               WHITESPACE@166..167 "\n"
           ModuleImportAlias@167..167
-          LAYOUT_SEPARATOR@167..167 ""
+        LAYOUT_SEPARATOR@167..167 ""
         ModuleImportStatement@167..190
           IMPORT@167..173 "import"
           Comment@173..174
@@ -154,7 +153,7 @@ snapshot_kind: text
             Comment@189..190
               WHITESPACE@189..190 "\n"
           ModuleImportAlias@190..190
-          LAYOUT_SEPARATOR@190..190 ""
+        LAYOUT_SEPARATOR@190..190 ""
         ModuleImportStatement@190..207
           IMPORT@190..196 "import"
           Comment@196..197
@@ -166,7 +165,6 @@ snapshot_kind: text
               WHITESPACE@206..207 " "
           ModuleImportList@207..207
           ModuleImportAlias@207..207
-          ERROR@207..207 ""
         ERROR@207..209
           ERROR@207..207 ""
           LOWER@207..208 "s"
@@ -204,14 +202,6 @@ snapshot_kind: text
                 column: 8,
             },
             message: "expected UPPER",
-        },
-        ParseError {
-            position: Position {
-                offset: 39,
-                line: 3,
-                column: 8,
-            },
-            message: "expected LAYOUT_SEPARATOR",
         },
         ParseError {
             position: Position {
@@ -276,14 +266,6 @@ snapshot_kind: text
                 column: 19,
             },
             message: "Invalid token",
-        },
-        ParseError {
-            position: Position {
-                offset: 207,
-                line: 9,
-                column: 18,
-            },
-            message: "expected LAYOUT_SEPARATOR",
         },
         ParseError {
             position: Position {

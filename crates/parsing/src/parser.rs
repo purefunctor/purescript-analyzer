@@ -1,3 +1,5 @@
+mod types;
+
 use std::sync::Arc;
 
 use drop_bomb::DropBomb;
@@ -268,19 +270,13 @@ fn type_items(p: &mut Parser) {
 fn module_statements(p: &mut Parser) {
     let mut imports = p.start();
 
-    while !p.at_in(MODULE_STATEMENT_NON_IMPORT) || !p.at_eof() {
-        if p.at(SyntaxKind::IMPORT) {
-            import_statement(p);
-        } else {
-            // If we're at a LAYOUT_SEPARATOR, make sure that
-            // we consume it without emitting an error message.
-            if p.at(SyntaxKind::LAYOUT_SEPARATOR) {
-                p.consume();
-            } else if p.at(SyntaxKind::LAYOUT_END) {
-                break;
-            } else {
-                p.error_recover("Invalid token");
-            }
+    while p.at(SyntaxKind::IMPORT) && !p.at_eof() {
+        import_statement(p);
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            p.error_recover("Invalid token");
+        }
+        if !p.at(SyntaxKind::LAYOUT_END) {
+            p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
     }
 
@@ -288,27 +284,20 @@ fn module_statements(p: &mut Parser) {
 
     let mut statements = p.start();
 
-    while !p.at_eof() {
-        if p.at_in(MODULE_STATEMENT_NON_IMPORT) {
-            module_statement(p);
-        } else if p.at(SyntaxKind::IMPORT) {
-            p.error("Imports must be grouped together");
-            import_statement(p);
-        } else {
-            if p.at(SyntaxKind::LAYOUT_SEPARATOR) {
-                p.consume();
-            } else if p.at(SyntaxKind::LAYOUT_END) {
-                break;
-            } else {
-                p.error_recover("Invalid token");
-            }
+    while p.at_in(MODULE_STATEMENT_START) && !p.at_eof() {
+        module_statement(p);
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            p.error_recover("Invalid token");
+        }
+        if !p.at(SyntaxKind::LAYOUT_END) {
+            p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
     }
 
     statements.end(p, SyntaxKind::ModuleStatements);
 }
 
-const MODULE_STATEMENT_NON_IMPORT: TokenSet = TokenSet::new(&[
+const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::CLASS,
     SyntaxKind::DATA,
     SyntaxKind::LOWER,
@@ -328,9 +317,6 @@ fn import_statement(p: &mut Parser) {
     module_name(p);
     import_list(p);
     import_alias(p);
-    if !p.at(SyntaxKind::LAYOUT_END) {
-        p.expect(SyntaxKind::LAYOUT_SEPARATOR);
-    }
 
     m.end(p, SyntaxKind::ModuleImportStatement);
 }
@@ -434,6 +420,8 @@ fn value_annotation_or_equation(p: &mut Parser) {
 }
 
 fn type_annotation(p: &mut Parser, mut m: NodeMarker) {
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    types::ty(p);
     m.end(p, SyntaxKind::ValueAnnotation);
 }
 

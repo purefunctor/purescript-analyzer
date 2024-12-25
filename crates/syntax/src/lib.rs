@@ -117,6 +117,20 @@ pub enum SyntaxKind {
     ValueAnnotation,
     ValueEquation,
 
+    TypeApplicationChain,
+    TypeArrow,
+    TypeConstrained,
+    TypeConstructor,
+    TypeForall,
+    TypeHole,
+    TypeInteger,
+    TypeKinded,
+    TypeOperatorChain,
+    TypeString,
+    TypeVariable,
+    TypeVariableBinding,
+    TypeWildcard,
+
     #[doc(hidden)]
     __LAST,
 }

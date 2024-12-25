@@ -36,4 +36,5 @@ parser_tests!(
     module_header_prefixed => include_str!("parser/ModuleHeaderPrefixed.purs"),
     module_import => include_str!("parser/ModuleImport.purs"),
     module_import_error => include_str!("parser/ModuleImportError.purs"),
+    value_annotation => include_str!("parser/ValueAnnotation.purs"),
 );
