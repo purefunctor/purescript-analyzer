@@ -18,7 +18,6 @@ snapshot_kind: text
           ModuleExportTypeOperator@41..45
             TYPE@41..45 "type"
             ERROR@45..45 ""
-            ERROR@45..45 ""
           RIGHT_PARENTHESIS@45..46 ")"
           Comment@46..47
             WHITESPACE@46..47 " "
@@ -38,15 +37,7 @@ snapshot_kind: text
                 line: 1,
                 column: 46,
             },
-            message: "expected LEFT_PARENTHESIS",
-        },
-        ParseError {
-            position: Position {
-                offset: 45,
-                line: 1,
-                column: 46,
-            },
-            message: "expected OPERATOR",
+            message: "expected OPERATOR_NAME",
         },
     ],
 )

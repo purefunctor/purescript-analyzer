@@ -187,9 +187,9 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::CLASS,
     SyntaxKind::LOWER,
     SyntaxKind::MODULE,
+    SyntaxKind::OPERATOR_NAME,
     SyntaxKind::TYPE,
     SyntaxKind::UPPER,
-    SyntaxKind::LEFT_PARENTHESIS,
 ]);
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
@@ -206,16 +206,9 @@ fn module_export_item(p: &mut Parser) {
         p.expect(SyntaxKind::UPPER);
         m.end(p, SyntaxKind::ModuleExportClass);
     } else if p.eat(SyntaxKind::TYPE) {
-        p.expect(SyntaxKind::LEFT_PARENTHESIS);
-        // Make sure we don't accidentally consume
-        // the ')' used to close the export list
-        if p.expect(SyntaxKind::OPERATOR) {
-            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        }
+        p.expect(SyntaxKind::OPERATOR_NAME);
         m.end(p, SyntaxKind::ModuleExportTypeOperator);
-    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        p.expect(SyntaxKind::OPERATOR);
-        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::ModuleExportOperator);
     } else if p.eat(SyntaxKind::MODULE) {
         module_name(p);
@@ -377,16 +370,9 @@ fn import_item(p: &mut Parser) {
         p.expect(SyntaxKind::UPPER);
         m.end(p, SyntaxKind::ModuleImportClass);
     } else if p.eat(SyntaxKind::TYPE) {
-        p.expect(SyntaxKind::LEFT_PARENTHESIS);
-        // Make sure we don't accidentally consume
-        // the ')' used to close the export list
-        if p.expect(SyntaxKind::OPERATOR) {
-            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        }
+        p.expect(SyntaxKind::OPERATOR_NAME);
         m.end(p, SyntaxKind::ModuleImportTypeOperator);
-    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        p.expect(SyntaxKind::OPERATOR);
-        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::ModuleImportTypeOperator);
     } else {
         m.cancel(p);

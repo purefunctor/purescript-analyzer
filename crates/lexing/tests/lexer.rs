@@ -52,3 +52,10 @@ lexer_tests!(
     lenient_raw_string_double_end => "\"\"\" \"\"\"\"\"",
     lenient_raw_string_then_string => "\"\"\"\"\"\"\"\"\"\"",
 );
+
+lexer_tests!(
+    operator_name_glued => "(->) (=>) (::)",
+    operator_name_non_glue_type_var => "(@a :: Type)",
+    operator_name_non_glue_type_int => "(-1)",
+    operator_name_non_glue_export_all => "(..)",
+);

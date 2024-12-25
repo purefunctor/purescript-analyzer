@@ -19,9 +19,7 @@ snapshot_kind: text
             TYPE@33..37 "type"
             Comment@37..38
               WHITESPACE@37..38 " "
-            LEFT_PARENTHESIS@38..39 "("
-            OPERATOR@39..40 "+"
-            RIGHT_PARENTHESIS@40..41 ")"
+            OPERATOR_NAME@38..41 "(+)"
           RIGHT_PARENTHESIS@41..42 ")"
           Comment@42..43
             WHITESPACE@42..43 " "

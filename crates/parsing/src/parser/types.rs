@@ -101,8 +101,8 @@ fn ty_atom(p: &mut Parser) {
         m.end(p, SyntaxKind::TypeString);
     } else if p.eat(SyntaxKind::INTEGER) {
         m.end(p, SyntaxKind::TypeInteger);
-    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        todo!()
+    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+        m.end(p, SyntaxKind::TypeOperator);
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
         todo!()
     } else if p.eat(SyntaxKind::QUESTION) {
@@ -122,7 +122,7 @@ const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::STRING,
     SyntaxKind::RAW_STRING,
     SyntaxKind::INTEGER,
-    SyntaxKind::LEFT_PARENTHESIS,
+    SyntaxKind::OPERATOR_NAME,
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::QUESTION,
     SyntaxKind::UNDERSCORE,

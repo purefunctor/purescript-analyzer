@@ -19,9 +19,7 @@ snapshot_kind: text
             TYPE@38..42 "type"
             Comment@42..43
               WHITESPACE@42..43 " "
-            LEFT_PARENTHESIS@43..44 "("
-            OPERATOR@44..45 "+"
-            RIGHT_PARENTHESIS@45..46 ")"
+            OPERATOR_NAME@43..46 "(+)"
           COMMA@46..47 ","
           Comment@47..48
             WHITESPACE@47..48 " "
@@ -29,7 +27,6 @@ snapshot_kind: text
             TYPE@48..52 "type"
             Comment@52..53
               WHITESPACE@52..53 " "
-            ERROR@53..53 ""
             ERROR@53..53 ""
           ERROR@53..53 ""
           ERROR@53..56
@@ -44,9 +41,7 @@ snapshot_kind: text
             TYPE@58..62 "type"
             Comment@62..63
               WHITESPACE@62..63 " "
-            LEFT_PARENTHESIS@63..64 "("
-            OPERATOR@64..65 "*"
-            RIGHT_PARENTHESIS@65..66 ")"
+            OPERATOR_NAME@63..66 "(*)"
           RIGHT_PARENTHESIS@66..67 ")"
           Comment@67..68
             WHITESPACE@67..68 " "
@@ -66,15 +61,7 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "expected LEFT_PARENTHESIS",
-        },
-        ParseError {
-            position: Position {
-                offset: 53,
-                line: 1,
-                column: 54,
-            },
-            message: "expected OPERATOR",
+            message: "expected OPERATOR_NAME",
         },
         ParseError {
             position: Position {

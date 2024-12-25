@@ -16,6 +16,7 @@ pub enum SyntaxKind {
     UPPER,
     LOWER,
     OPERATOR,
+    OPERATOR_NAME,
 
     // Operators
     AT,
@@ -125,6 +126,7 @@ pub enum SyntaxKind {
     TypeHole,
     TypeInteger,
     TypeKinded,
+    TypeOperator,
     TypeOperatorChain,
     TypeString,
     TypeVariable,

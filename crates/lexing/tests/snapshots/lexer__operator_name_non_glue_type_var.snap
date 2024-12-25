@@ -1,0 +1,16 @@
+---
+source: crates/lexing/tests/lexer.rs
+expression: tokens
+snapshot_kind: text
+---
+[
+    LEFT_PARENTHESIS,
+    AT,
+    LOWER,
+    WHITESPACE,
+    DOUBLE_COLON,
+    WHITESPACE,
+    UPPER,
+    RIGHT_PARENTHESIS,
+    END_OF_FILE,
+]

@@ -91,7 +91,7 @@ impl<'a> Lexer<'a> {
             '-' if self.second() == '-' => self.take_line_comment(),
             '{' if self.second() == '-' => self.take_block_comment(),
 
-            '(' => self.take_single(SyntaxKind::LEFT_PARENTHESIS),
+            '(' => self.take_operator_name_or_left_parenthesis(),
             ')' => self.take_single(SyntaxKind::RIGHT_PARENTHESIS),
             '{' => self.take_single(SyntaxKind::LEFT_CURLY),
             '}' => self.take_single(SyntaxKind::RIGHT_CURLY),
@@ -222,6 +222,35 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
+    fn take_operator_kind(&mut self) -> (SyntaxKind, Position) {
+        let position @ Position { offset, .. } = self.position();
+        self.take_while(is_operator);
+        let offset_end = self.consumed();
+        let kind = match &self.source[offset..offset_end] {
+            "∷" => SyntaxKind::DOUBLE_COLON,
+            "←" => SyntaxKind::LEFT_ARROW,
+            "→" => SyntaxKind::RIGHT_ARROW,
+            "⇒" => SyntaxKind::RIGHT_THICK_ARROW,
+            "∀" => SyntaxKind::FORALL,
+            "=" => SyntaxKind::EQUAL,
+            ":" => SyntaxKind::COLON,
+            "::" => SyntaxKind::DOUBLE_COLON,
+            "." => SyntaxKind::PERIOD,
+            ".." => SyntaxKind::DOUBLE_PERIOD,
+            "<-" => SyntaxKind::LEFT_ARROW,
+            "->" => SyntaxKind::RIGHT_ARROW,
+            "<=" => SyntaxKind::LEFT_THICK_ARROW,
+            "=>" => SyntaxKind::RIGHT_THICK_ARROW,
+            "|" => SyntaxKind::PIPE,
+            "@" => SyntaxKind::AT,
+            "-" => SyntaxKind::MINUS,
+            "\\" => SyntaxKind::BACKSLASH,
+            _ => SyntaxKind::OPERATOR,
+        };
+        (kind, position)
+    }
+
+    #[inline]
     fn take_operator(&mut self) {
         let position @ Position { offset, .. } = self.position();
         self.take_while(is_operator);
@@ -248,6 +277,24 @@ impl<'a> Lexer<'a> {
             _ => SyntaxKind::OPERATOR,
         };
         self.lexed.push(kind, position, None)
+    }
+
+    #[inline]
+    fn take_operator_name_or_left_parenthesis(&mut self) {
+        let lp_position = self.position();
+        assert_eq!(self.take(), '(');
+        if is_operator(self.first()) {
+            let (op_kind, op_position) = self.take_operator_kind();
+            if op_kind != SyntaxKind::DOUBLE_PERIOD && self.first() == ')' {
+                self.take();
+                self.lexed.push(SyntaxKind::OPERATOR_NAME, lp_position, None);
+            } else {
+                self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_position, None);
+                self.lexed.push(op_kind, op_position, None);
+            }
+        } else {
+            self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_position, None);
+        }
     }
 
     #[inline]
