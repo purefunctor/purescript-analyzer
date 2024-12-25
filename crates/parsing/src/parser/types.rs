@@ -88,7 +88,7 @@ fn ty_5(p: &mut Parser) {
     }
 }
 
-fn ty_atom(p: &mut Parser) {
+pub fn ty_atom(p: &mut Parser) {
     let mut m = p.start();
     if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
@@ -107,9 +107,9 @@ fn ty_atom(p: &mut Parser) {
     } else if p.eat(SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::TypeOperator);
     } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
-        type_parentheses(p, m);
+        ty_parentheses(p, m);
     } else if p.at(SyntaxKind::LEFT_CURLY) {
-        type_record(p, m);
+        ty_record(p, m);
     } else if p.eat(SyntaxKind::QUESTION) {
         p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
         m.end(p, SyntaxKind::TypeHole);
@@ -170,7 +170,7 @@ fn ty_variable_binding(p: &mut Parser) {
 const TYPE_VARIABLE_BINDING_START: TokenSet =
     TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(LOWER_NON_RESERVED);
 
-fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
+fn ty_parentheses(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_PARENTHESIS);
 
     if p.at(SyntaxKind::LEFT_PARENTHESIS) && p.at_next(SyntaxKind::LOWER) {
@@ -243,7 +243,7 @@ fn row_tail(p: &mut Parser) {
     m.end(p, SyntaxKind::TypeRowTail);
 }
 
-fn type_record(p: &mut Parser, mut m: NodeMarker) {
+fn ty_record(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_CURLY);
 
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
