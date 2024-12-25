@@ -435,3 +435,16 @@ fn value_equation(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::INTEGER);
     m.end(p, SyntaxKind::ValueEquation);
 }
+
+fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
+    let mut m = p.start();
+
+    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    if p.at(SyntaxKind::COMMA) || p.at(SyntaxKind::RIGHT_CURLY) {
+        return m.end(p, SyntaxKind::RecordPun);
+    }
+
+    p.expect(SyntaxKind::COLON);
+    k(p);
+    m.end(p, SyntaxKind::RecordField);
+}

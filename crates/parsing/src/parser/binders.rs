@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{types, NodeMarker, Parser, LOWER_NON_RESERVED};
+use super::{record_item, types, NodeMarker, Parser, LOWER_NON_RESERVED};
 
 pub fn binder(p: &mut Parser) {
     let mut m = p.start();
@@ -120,7 +120,7 @@ fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
         while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
             if p.at_in(LOWER_NON_RESERVED) {
-                record_item(p);
+                record_item(p, binder);
                 if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
                     p.error_recover("Trailing comma");
                 } else if !p.at(SyntaxKind::RIGHT_CURLY) {
@@ -163,17 +163,4 @@ fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
         binder_atom(p, n);
     }
     m.end(p, SyntaxKind::BinderConstructor);
-}
-
-fn record_item(p: &mut Parser) {
-    let mut m = p.start();
-
-    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
-    if p.at(SyntaxKind::COMMA) || p.at(SyntaxKind::RIGHT_CURLY) {
-        return m.end(p, SyntaxKind::RecordPun);
-    }
-
-    p.expect(SyntaxKind::COLON);
-    binder(p);
-    m.end(p, SyntaxKind::RecordField);
 }
