@@ -13,6 +13,7 @@ macro_rules! parser_tests {
 }
 
 parser_tests!(
+    binder => include_str!("parser/Binder.purs"),
     comment_pre_post => include_str!("parser/CommentPrePost.purs"),
     lexer_error_inserted => include_str!("parser/LexerErrorInserted.purs"),
     module_export => include_str!("parser/ModuleExport.purs"),

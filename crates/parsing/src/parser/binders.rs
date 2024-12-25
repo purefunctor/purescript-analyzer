@@ -1,0 +1,179 @@
+use syntax::{SyntaxKind, TokenSet};
+
+use super::{types, NodeMarker, Parser, LOWER_NON_RESERVED};
+
+pub fn binder(p: &mut Parser) {
+    let mut m = p.start();
+
+    binder_1(p);
+    if p.at(SyntaxKind::DOUBLE_COLON) {
+        types::ty(p);
+        m.end(p, SyntaxKind::BinderKinded);
+    } else {
+        m.cancel(p);
+    }
+}
+
+fn binder_1(p: &mut Parser) {
+    let mut m = p.start();
+    let mut i = 0;
+
+    binder_2(p);
+    while p.eat(SyntaxKind::OPERATOR) && !p.at_eof() {
+        binder_2(p);
+        i += 1;
+    }
+
+    if i > 0 {
+        m.end(p, SyntaxKind::BinderOperatorChain);
+    } else {
+        m.cancel(p);
+    }
+}
+
+fn binder_2(p: &mut Parser) {
+    let mut m = p.start();
+
+    if p.at(SyntaxKind::MINUS) {
+        p.consume();
+        if p.at(SyntaxKind::INTEGER) {
+            p.consume();
+            m.end(p, SyntaxKind::BinderInteger);
+        } else if p.at(SyntaxKind::NUMBER) {
+            p.consume();
+            m.end(p, SyntaxKind::BinderNumber);
+        } else {
+            p.error("Expected INTEGER or NUMBER");
+            m.end(p, SyntaxKind::BinderInteger);
+        }
+    } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
+        binder_constructor(p, m);
+    } else if p.at_in(BINDER_ATOM_START) {
+        binder_atom(p, m);
+    } else {
+        m.cancel(p);
+    }
+}
+
+const BINDER_ATOM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
+    SyntaxKind::PREFIX,
+    SyntaxKind::UPPER,
+    SyntaxKind::UNDERSCORE,
+    SyntaxKind::STRING,
+    SyntaxKind::RAW_STRING,
+    SyntaxKind::CHAR,
+    SyntaxKind::TRUE,
+    SyntaxKind::FALSE,
+    SyntaxKind::INTEGER,
+    SyntaxKind::NUMBER,
+    SyntaxKind::LEFT_SQUARE,
+    SyntaxKind::LEFT_CURLY,
+    SyntaxKind::LEFT_PARENTHESIS,
+]));
+
+const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
+
+fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
+    if p.at_in(LOWER_NON_RESERVED) {
+        p.consume();
+        if p.eat(SyntaxKind::AT) {
+            let n = p.start();
+            binder_atom(p, n);
+            m.end(p, SyntaxKind::BinderNamed);
+        } else {
+            m.end(p, SyntaxKind::BinderVariable);
+        }
+    } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
+        binder_constructor(p, m);
+    } else if p.eat(SyntaxKind::UNDERSCORE) {
+        m.end(p, SyntaxKind::BinderWildcard);
+    } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
+        m.end(p, SyntaxKind::BinderString);
+    } else if p.eat(SyntaxKind::CHAR) {
+        m.end(p, SyntaxKind::BinderChar);
+    } else if p.eat(SyntaxKind::TRUE) {
+        m.end(p, SyntaxKind::BinderTrue);
+    } else if p.eat(SyntaxKind::FALSE) {
+        m.end(p, SyntaxKind::BinderFalse);
+    } else if p.eat(SyntaxKind::INTEGER) {
+        m.end(p, SyntaxKind::BinderInteger);
+    } else if p.eat(SyntaxKind::NUMBER) {
+        m.end(p, SyntaxKind::BinderNumber);
+    } else if p.eat(SyntaxKind::LEFT_SQUARE) {
+        while !p.at(SyntaxKind::RIGHT_SQUARE) && !p.at_eof() {
+            if p.at_in(BINDER_START) {
+                binder(p);
+                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_SQUARE) {
+                    p.error_recover("Trailing comma");
+                } else if !p.at(SyntaxKind::RIGHT_SQUARE) {
+                    p.expect(SyntaxKind::COMMA);
+                }
+            } else {
+                if p.at_in(BINDER_ATOM_RECOVERY) {
+                    break;
+                }
+                p.error_recover("Invalid token");
+            }
+        }
+        p.expect(SyntaxKind::RIGHT_SQUARE);
+        m.end(p, SyntaxKind::BinderArray);
+    } else if p.eat(SyntaxKind::LEFT_CURLY) {
+        while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
+            if p.at_in(LOWER_NON_RESERVED) {
+                record_item(p);
+                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
+                    p.error_recover("Trailing comma");
+                } else if !p.at(SyntaxKind::RIGHT_CURLY) {
+                    p.expect(SyntaxKind::COMMA);
+                }
+            } else {
+                if p.at_in(BINDER_ATOM_RECOVERY) {
+                    break;
+                }
+                p.error_recover("Invalid token");
+            }
+        }
+        p.expect(SyntaxKind::RIGHT_CURLY);
+        m.end(p, SyntaxKind::BinderRecord);
+    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        binder(p);
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        m.end(p, SyntaxKind::BinderParenthesized);
+    } else {
+        m.cancel(p);
+    }
+}
+
+const BINDER_ATOM_RECOVERY: TokenSet = TokenSet::new(&[
+    SyntaxKind::EQUAL,
+    SyntaxKind::PIPE,
+    SyntaxKind::RIGHT_ARROW,
+    SyntaxKind::LAYOUT_SEPARATOR,
+    SyntaxKind::LAYOUT_END,
+]);
+
+fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
+    let mut n = p.start();
+    p.eat(SyntaxKind::PREFIX);
+    p.eat(SyntaxKind::UPPER);
+    n.end(p, SyntaxKind::QualifiedName);
+
+    while p.at_in(BINDER_ATOM_START) && !p.at_eof() {
+        let n = p.start();
+        binder_atom(p, n);
+    }
+    m.end(p, SyntaxKind::BinderConstructor);
+}
+
+fn record_item(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    if p.at(SyntaxKind::COMMA) || p.at(SyntaxKind::RIGHT_CURLY) {
+        return m.end(p, SyntaxKind::RecordPun);
+    }
+
+    p.expect(SyntaxKind::COLON);
+    binder(p);
+    m.end(p, SyntaxKind::RecordField);
+}

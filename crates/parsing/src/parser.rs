@@ -1,3 +1,4 @@
+mod binders;
 mod types;
 
 use std::sync::Arc;
@@ -429,5 +430,8 @@ fn type_annotation(p: &mut Parser, mut m: NodeMarker) {
 }
 
 fn value_equation(p: &mut Parser, mut m: NodeMarker) {
+    binders::binder(p);
+    p.expect(SyntaxKind::EQUAL);
+    p.expect(SyntaxKind::INTEGER);
     m.end(p, SyntaxKind::ValueEquation);
 }

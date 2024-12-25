@@ -91,9 +91,12 @@ pub enum SyntaxKind {
     // Nodes
     Node,
     Comment,
+
+    ModuleName,
+    QualifiedName,
+
     Module,
     ModuleHeader,
-    ModuleName,
     ModuleExportList,
     ModuleExportValue,
     ModuleExportClass,
@@ -137,6 +140,25 @@ pub enum SyntaxKind {
     TypeRowItem,
     TypeRowTail,
     TypeParenthesized,
+
+    BinderKinded,
+    BinderOperatorChain,
+    BinderInteger,
+    BinderNumber,
+    BinderConstructor,
+    BinderVariable,
+    BinderNamed,
+    BinderWildcard,
+    BinderString,
+    BinderChar,
+    BinderTrue,
+    BinderFalse,
+    BinderArray,
+    BinderRecord,
+    BinderParenthesized,
+
+    RecordField,
+    RecordPun,
 
     #[doc(hidden)]
     __LAST,
