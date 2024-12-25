@@ -141,7 +141,7 @@ pub enum SyntaxKind {
     TypeRowTail,
     TypeParenthesized,
 
-    BinderKinded,
+    BinderTyped,
     BinderOperatorChain,
     BinderInteger,
     BinderNumber,
