@@ -75,14 +75,7 @@ const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKin
 
 fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
     if p.at_in(LOWER_NON_RESERVED) {
-        p.consume();
-        if p.eat(SyntaxKind::AT) {
-            let n = p.start();
-            binder_atom(p, n);
-            m.end(p, SyntaxKind::BinderNamed);
-        } else {
-            m.end(p, SyntaxKind::BinderVariable);
-        }
+        binder_named_or_variable(p, &mut m);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
         binder_constructor(p, m);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
@@ -100,41 +93,9 @@ fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
     } else if p.eat(SyntaxKind::NUMBER) {
         m.end(p, SyntaxKind::BinderNumber);
     } else if p.eat(SyntaxKind::LEFT_SQUARE) {
-        while !p.at(SyntaxKind::RIGHT_SQUARE) && !p.at_eof() {
-            if p.at_in(BINDER_START) {
-                binder(p);
-                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_SQUARE) {
-                    p.error_recover("Trailing comma");
-                } else if !p.at(SyntaxKind::RIGHT_SQUARE) {
-                    p.expect(SyntaxKind::COMMA);
-                }
-            } else {
-                if p.at_in(BINDER_ATOM_RECOVERY) {
-                    break;
-                }
-                p.error_recover("Invalid token");
-            }
-        }
-        p.expect(SyntaxKind::RIGHT_SQUARE);
-        m.end(p, SyntaxKind::BinderArray);
+        binder_array(p, m);
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
-        while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
-            if p.at_in(LOWER_NON_RESERVED) {
-                record_item(p, binder);
-                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
-                    p.error_recover("Trailing comma");
-                } else if !p.at(SyntaxKind::RIGHT_CURLY) {
-                    p.expect(SyntaxKind::COMMA);
-                }
-            } else {
-                if p.at_in(BINDER_ATOM_RECOVERY) {
-                    break;
-                }
-                p.error_recover("Invalid token");
-            }
-        }
-        p.expect(SyntaxKind::RIGHT_CURLY);
-        m.end(p, SyntaxKind::BinderRecord);
+        binder_record(p, m);
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
         binder(p);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
@@ -152,6 +113,17 @@ const BINDER_ATOM_RECOVERY: TokenSet = TokenSet::new(&[
     SyntaxKind::LAYOUT_END,
 ]);
 
+fn binder_named_or_variable(p: &mut Parser, m: &mut NodeMarker) {
+    p.consume();
+    if p.eat(SyntaxKind::AT) {
+        let n = p.start();
+        binder_atom(p, n);
+        m.end(p, SyntaxKind::BinderNamed);
+    } else {
+        m.end(p, SyntaxKind::BinderVariable);
+    }
+}
+
 fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
     let mut n = p.start();
     p.eat(SyntaxKind::PREFIX);
@@ -163,4 +135,44 @@ fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
         binder_atom(p, n);
     }
     m.end(p, SyntaxKind::BinderConstructor);
+}
+
+fn binder_array(p: &mut Parser, mut m: NodeMarker) {
+    while !p.at(SyntaxKind::RIGHT_SQUARE) && !p.at_eof() {
+        if p.at_in(BINDER_START) {
+            binder(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_SQUARE) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_SQUARE) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(BINDER_ATOM_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    p.expect(SyntaxKind::RIGHT_SQUARE);
+    m.end(p, SyntaxKind::BinderArray);
+}
+
+fn binder_record(p: &mut Parser, mut m: NodeMarker) {
+    while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
+        if p.at_in(LOWER_NON_RESERVED) {
+            record_item(p, binder);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_CURLY) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(BINDER_ATOM_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    p.expect(SyntaxKind::RIGHT_CURLY);
+    m.end(p, SyntaxKind::BinderRecord);
 }
