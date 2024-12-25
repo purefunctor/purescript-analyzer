@@ -132,6 +132,7 @@ pub enum SyntaxKind {
     TypeVariable,
     TypeVariableBinding,
     TypeWildcard,
+    TypeRecord,
     TypeRow,
     TypeRowItem,
     TypeRowTail,

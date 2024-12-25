@@ -107,8 +107,8 @@ fn ty_atom(p: &mut Parser) {
         m.end(p, SyntaxKind::TypeOperator);
     } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
         type_parentheses(p, m);
-    } else if p.eat(SyntaxKind::LEFT_CURLY) {
-        todo!()
+    } else if p.at(SyntaxKind::LEFT_CURLY) {
+        type_record(p, m);
     } else if p.eat(SyntaxKind::QUESTION) {
         p.expect(SyntaxKind::LOWER);
         m.end(p, SyntaxKind::TypeHole);
@@ -192,7 +192,10 @@ fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
                 p.expect(SyntaxKind::COMMA);
             }
         } else {
-            todo!()
+            if p.at_in(TYPE_ROW_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
         }
     }
 
@@ -203,6 +206,13 @@ fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::RIGHT_PARENTHESIS);
     m.end(p, SyntaxKind::TypeRow);
 }
+
+const TYPE_ROW_RECOVERY: TokenSet = TokenSet::new(&[
+    SyntaxKind::PIPE,
+    SyntaxKind::RIGHT_PARENTHESIS,
+    SyntaxKind::LAYOUT_SEPARATOR,
+    SyntaxKind::LAYOUT_END,
+]);
 
 fn row_item(p: &mut Parser) {
     let mut m = p.start();
@@ -221,4 +231,32 @@ fn row_tail(p: &mut Parser) {
     ty(p);
 
     m.end(p, SyntaxKind::TypeRowTail);
+}
+
+fn type_record(p: &mut Parser, mut m: NodeMarker) {
+    p.expect(SyntaxKind::LEFT_CURLY);
+
+    while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
+        if p.at(SyntaxKind::LOWER) {
+            row_item(p);
+            let ending = p.at_next(SyntaxKind::PIPE) || p.at_next(SyntaxKind::RIGHT_CURLY);
+            if p.at(SyntaxKind::COMMA) && ending {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_CURLY) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(TYPE_ROW_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+
+    if p.at(SyntaxKind::PIPE) {
+        row_tail(p);
+    }
+
+    p.expect(SyntaxKind::RIGHT_CURLY);
+    m.end(p, SyntaxKind::TypeRecord);
 }
