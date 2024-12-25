@@ -182,6 +182,15 @@ fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
         return m.end(p, SyntaxKind::TypeKinded);
     }
 
+    if !p.at(SyntaxKind::PIPE)
+        && !p.at(SyntaxKind::RIGHT_PARENTHESIS)
+        && !p.at_next(SyntaxKind::DOUBLE_COLON)
+    {
+        ty_1(p);
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        return m.end(p, SyntaxKind::TypeParenthesized);
+    }
+
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
         if p.at(SyntaxKind::LOWER) {
             row_item(p);

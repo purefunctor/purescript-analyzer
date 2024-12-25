@@ -13,3 +13,5 @@ itemTail :: ( a :: Type | r )
 items :: ( a :: Type, b :: Type )
 
 itemsTail :: ( a :: Type, b :: Type | r )
+
+parenthesized :: (Int)

@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..218
+    Module@0..242
       ModuleHeader@0..32
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@30..32 "\n\n"
       LAYOUT_START@32..32 ""
       ModuleImports@32..32
-      ModuleStatements@32..218
+      ModuleStatements@32..242
         ValueAnnotation@32..57
           LOWER@32..38 "kinded"
           Comment@38..39
@@ -177,14 +177,14 @@ snapshot_kind: text
             Comment@174..176
               WHITESPACE@174..176 "\n\n"
         LAYOUT_SEPARATOR@176..176 ""
-        ValueAnnotation@176..218
+        ValueAnnotation@176..219
           LOWER@176..185 "itemsTail"
           Comment@185..186
             WHITESPACE@185..186 " "
           DOUBLE_COLON@186..188 "::"
           Comment@188..189
             WHITESPACE@188..189 " "
-          TypeRow@189..218
+          TypeRow@189..219
             LEFT_PARENTHESIS@189..190 "("
             Comment@190..191
               WHITESPACE@190..191 " "
@@ -220,10 +220,25 @@ snapshot_kind: text
                 Comment@215..216
                   WHITESPACE@215..216 " "
             RIGHT_PARENTHESIS@216..217 ")"
-            Comment@217..218
-              WHITESPACE@217..218 "\n"
-      LAYOUT_END@218..218 ""
-      END_OF_FILE@218..218 ""
+            Comment@217..219
+              WHITESPACE@217..219 "\n\n"
+        LAYOUT_SEPARATOR@219..219 ""
+        ValueAnnotation@219..242
+          LOWER@219..232 "parenthesized"
+          Comment@232..233
+            WHITESPACE@232..233 " "
+          DOUBLE_COLON@233..235 "::"
+          Comment@235..236
+            WHITESPACE@235..236 " "
+          TypeParenthesized@236..242
+            LEFT_PARENTHESIS@236..237 "("
+            TypeConstructor@237..240
+              UPPER@237..240 "Int"
+            RIGHT_PARENTHESIS@240..241 ")"
+            Comment@241..242
+              WHITESPACE@241..242 "\n"
+      LAYOUT_END@242..242 ""
+      END_OF_FILE@242..242 ""
     ,
     [],
 )
