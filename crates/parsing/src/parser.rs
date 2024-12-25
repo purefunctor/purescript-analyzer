@@ -75,11 +75,28 @@ impl<'t> Parser<'t> {
         true
     }
 
+    fn eat_in(&mut self, set: TokenSet, kind: SyntaxKind) -> bool {
+        if !self.at_in(set) {
+            return false;
+        }
+        self.index += 1;
+        self.output.push(Output::Token { kind });
+        true
+    }
+
     fn expect(&mut self, kind: SyntaxKind) -> bool {
         if self.eat(kind) {
             return true;
         }
         self.error(format!("expected {:?}", kind));
+        false
+    }
+
+    fn expect_in(&mut self, set: TokenSet, kind: SyntaxKind, message: &str) -> bool {
+        if self.eat_in(set, kind) {
+            return true;
+        }
+        self.error(message);
         false
     }
 }
@@ -116,6 +133,9 @@ impl NodeMarker {
         }
     }
 }
+
+const LOWER_NON_RESERVED: TokenSet =
+    TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING]);
 
 fn module_name(p: &mut Parser) {
     let mut m = p.start();
@@ -183,21 +203,20 @@ fn module_export_list(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleExportList);
 }
 
-const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
+const EXPORT_ITEM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
     SyntaxKind::CLASS,
-    SyntaxKind::LOWER,
     SyntaxKind::MODULE,
     SyntaxKind::OPERATOR_NAME,
     SyntaxKind::TYPE,
     SyntaxKind::UPPER,
-]);
+]));
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 
 fn module_export_item(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat(SyntaxKind::LOWER) {
+    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ModuleExportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
@@ -290,10 +309,9 @@ fn module_statements(p: &mut Parser) {
     statements.end(p, SyntaxKind::ModuleStatements);
 }
 
-const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
+const MODULE_STATEMENT_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
     SyntaxKind::CLASS,
     SyntaxKind::DATA,
-    SyntaxKind::LOWER,
     SyntaxKind::TYPE,
     SyntaxKind::INFIX,
     SyntaxKind::INFIXL,
@@ -301,7 +319,7 @@ const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::INSTANCE,
     SyntaxKind::NEWTYPE,
     SyntaxKind::FOREIGN,
-]);
+]));
 
 fn import_statement(p: &mut Parser) {
     let mut m = p.start();
@@ -347,13 +365,12 @@ fn import_list(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleImportList);
 }
 
-const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::LOWER,
+const IMPORT_ITEM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::CLASS,
     SyntaxKind::TYPE,
     SyntaxKind::LEFT_PARENTHESIS,
-]);
+]));
 
 const IMPORT_LIST_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -361,7 +378,7 @@ const IMPORT_LIST_RECOVERY: TokenSet =
 fn import_item(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat(SyntaxKind::LOWER) {
+    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ModuleImportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
@@ -390,14 +407,14 @@ fn import_alias(p: &mut Parser) {
 }
 
 fn module_statement(p: &mut Parser) {
-    if p.at(SyntaxKind::LOWER) {
+    if p.at_in(LOWER_NON_RESERVED) {
         value_annotation_or_equation(p);
     }
 }
 
 fn value_annotation_or_equation(p: &mut Parser) {
     let m = p.start();
-    p.expect(SyntaxKind::LOWER);
+    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
     if p.at(SyntaxKind::DOUBLE_COLON) {
         type_annotation(p, m);
     } else {

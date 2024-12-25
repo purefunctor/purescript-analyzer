@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{NodeMarker, Parser};
+use super::{NodeMarker, Parser, LOWER_NON_RESERVED};
 
 pub fn ty(p: &mut Parser) {
     let mut m = p.start();
@@ -90,7 +90,7 @@ fn ty_5(p: &mut Parser) {
 
 fn ty_atom(p: &mut Parser) {
     let mut m = p.start();
-    if p.eat(SyntaxKind::LOWER) {
+    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
     } else if p.eat(SyntaxKind::UPPER) {
         m.end(p, SyntaxKind::TypeConstructor);
@@ -110,7 +110,7 @@ fn ty_atom(p: &mut Parser) {
     } else if p.at(SyntaxKind::LEFT_CURLY) {
         type_record(p, m);
     } else if p.eat(SyntaxKind::QUESTION) {
-        p.expect(SyntaxKind::LOWER);
+        p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
         m.end(p, SyntaxKind::TypeHole);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::TypeWildcard);
@@ -119,8 +119,7 @@ fn ty_atom(p: &mut Parser) {
     }
 }
 
-const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::LOWER,
+const TYPE_ATOM_START: TokenSet = LOWER_NON_RESERVED.union(TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::PREFIX,
     SyntaxKind::STRING,
@@ -132,7 +131,7 @@ const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::QUESTION,
     SyntaxKind::UNDERSCORE,
-]);
+]));
 
 fn ty_variable_bindings(p: &mut Parser) {
     while !p.at(SyntaxKind::PERIOD) && !p.at_eof() {
@@ -153,7 +152,7 @@ fn ty_variable_binding(p: &mut Parser) {
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
 
     p.eat(SyntaxKind::AT);
-    p.expect(SyntaxKind::LOWER);
+    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         ty(p);
@@ -167,7 +166,7 @@ fn ty_variable_binding(p: &mut Parser) {
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS, SyntaxKind::LOWER]);
+    LOWER_NON_RESERVED.union(TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]));
 
 fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_PARENTHESIS);

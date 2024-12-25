@@ -21,6 +21,10 @@ impl TokenSet {
         TokenSet(set)
     }
 
+    pub const fn union(self, other: TokenSet) -> TokenSet {
+        TokenSet([self.0[0] | other.0[0], self.0[1] | other.0[1], self.0[2] | other.0[2]])
+    }
+
     pub const fn contains(&self, kind: SyntaxKind) -> bool {
         let token = kind as usize;
         debug_assert!(token <= LAST_TOKEN, "Invalid token");
