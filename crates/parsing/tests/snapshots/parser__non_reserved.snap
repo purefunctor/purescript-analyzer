@@ -39,9 +39,10 @@ snapshot_kind: text
           Comment@48..49
             WHITESPACE@48..49 " "
           TypeConstructor@49..57
-            UPPER@49..55 "Hiding"
-            Comment@55..57
-              WHITESPACE@55..57 "\n\n"
+            QualifiedName@49..57
+              UPPER@49..55 "Hiding"
+              Comment@55..57
+                WHITESPACE@55..57 "\n\n"
         LAYOUT_SEPARATOR@57..57 ""
         ValueAnnotation@57..66
           LOWER@57..59 "as"
@@ -51,9 +52,10 @@ snapshot_kind: text
           Comment@62..63
             WHITESPACE@62..63 " "
           TypeConstructor@63..66
-            UPPER@63..65 "As"
-            Comment@65..66
-              WHITESPACE@65..66 "\n"
+            QualifiedName@63..66
+              UPPER@63..65 "As"
+              Comment@65..66
+                WHITESPACE@65..66 "\n"
       LAYOUT_END@66..66 ""
       END_OF_FILE@66..66 ""
     ,

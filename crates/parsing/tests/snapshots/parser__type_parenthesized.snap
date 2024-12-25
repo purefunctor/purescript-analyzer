@@ -38,7 +38,8 @@ snapshot_kind: text
             Comment@49..50
               WHITESPACE@49..50 " "
             TypeConstructor@50..54
-              UPPER@50..54 "Type"
+              QualifiedName@50..54
+                UPPER@50..54 "Type"
             RIGHT_PARENTHESIS@54..55 ")"
             Comment@55..57
               WHITESPACE@55..57 "\n\n"
@@ -98,9 +99,10 @@ snapshot_kind: text
               Comment@101..102
                 WHITESPACE@101..102 " "
               TypeConstructor@102..107
-                UPPER@102..106 "Type"
-                Comment@106..107
-                  WHITESPACE@106..107 " "
+                QualifiedName@102..107
+                  UPPER@102..106 "Type"
+                  Comment@106..107
+                    WHITESPACE@106..107 " "
             RIGHT_PARENTHESIS@107..108 ")"
             Comment@108..110
               WHITESPACE@108..110 "\n\n"
@@ -124,9 +126,10 @@ snapshot_kind: text
               Comment@128..129
                 WHITESPACE@128..129 " "
               TypeConstructor@129..134
-                UPPER@129..133 "Type"
-                Comment@133..134
-                  WHITESPACE@133..134 " "
+                QualifiedName@129..134
+                  UPPER@129..133 "Type"
+                  Comment@133..134
+                    WHITESPACE@133..134 " "
             TypeRowTail@134..138
               PIPE@134..135 "|"
               Comment@135..136
@@ -158,7 +161,8 @@ snapshot_kind: text
               Comment@156..157
                 WHITESPACE@156..157 " "
               TypeConstructor@157..161
-                UPPER@157..161 "Type"
+                QualifiedName@157..161
+                  UPPER@157..161 "Type"
             COMMA@161..162 ","
             Comment@162..163
               WHITESPACE@162..163 " "
@@ -170,9 +174,10 @@ snapshot_kind: text
               Comment@167..168
                 WHITESPACE@167..168 " "
               TypeConstructor@168..173
-                UPPER@168..172 "Type"
-                Comment@172..173
-                  WHITESPACE@172..173 " "
+                QualifiedName@168..173
+                  UPPER@168..172 "Type"
+                  Comment@172..173
+                    WHITESPACE@172..173 " "
             RIGHT_PARENTHESIS@173..174 ")"
             Comment@174..176
               WHITESPACE@174..176 "\n\n"
@@ -196,7 +201,8 @@ snapshot_kind: text
               Comment@195..196
                 WHITESPACE@195..196 " "
               TypeConstructor@196..200
-                UPPER@196..200 "Type"
+                QualifiedName@196..200
+                  UPPER@196..200 "Type"
             COMMA@200..201 ","
             Comment@201..202
               WHITESPACE@201..202 " "
@@ -208,9 +214,10 @@ snapshot_kind: text
               Comment@206..207
                 WHITESPACE@206..207 " "
               TypeConstructor@207..212
-                UPPER@207..211 "Type"
-                Comment@211..212
-                  WHITESPACE@211..212 " "
+                QualifiedName@207..212
+                  UPPER@207..211 "Type"
+                  Comment@211..212
+                    WHITESPACE@211..212 " "
             TypeRowTail@212..216
               PIPE@212..213 "|"
               Comment@213..214
@@ -233,7 +240,8 @@ snapshot_kind: text
           TypeParenthesized@236..242
             LEFT_PARENTHESIS@236..237 "("
             TypeConstructor@237..240
-              UPPER@237..240 "Int"
+              QualifiedName@237..240
+                UPPER@237..240 "Int"
             RIGHT_PARENTHESIS@240..241 ")"
             Comment@241..242
               WHITESPACE@241..242 "\n"

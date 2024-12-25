@@ -75,9 +75,10 @@ snapshot_kind: text
               Comment@69..70
                 WHITESPACE@69..70 " "
               TypeConstructor@70..75
-                UPPER@70..74 "Type"
-                Comment@74..75
-                  WHITESPACE@74..75 " "
+                QualifiedName@70..75
+                  UPPER@70..74 "Type"
+                  Comment@74..75
+                    WHITESPACE@74..75 " "
             RIGHT_CURLY@75..76 "}"
             Comment@76..78
               WHITESPACE@76..78 "\n\n"
@@ -101,9 +102,10 @@ snapshot_kind: text
               Comment@96..97
                 WHITESPACE@96..97 " "
               TypeConstructor@97..102
-                UPPER@97..101 "Type"
-                Comment@101..102
-                  WHITESPACE@101..102 " "
+                QualifiedName@97..102
+                  UPPER@97..101 "Type"
+                  Comment@101..102
+                    WHITESPACE@101..102 " "
             TypeRowTail@102..106
               PIPE@102..103 "|"
               Comment@103..104
@@ -135,7 +137,8 @@ snapshot_kind: text
               Comment@124..125
                 WHITESPACE@124..125 " "
               TypeConstructor@125..129
-                UPPER@125..129 "Type"
+                QualifiedName@125..129
+                  UPPER@125..129 "Type"
             COMMA@129..130 ","
             Comment@130..131
               WHITESPACE@130..131 " "
@@ -147,9 +150,10 @@ snapshot_kind: text
               Comment@135..136
                 WHITESPACE@135..136 " "
               TypeConstructor@136..141
-                UPPER@136..140 "Type"
-                Comment@140..141
-                  WHITESPACE@140..141 " "
+                QualifiedName@136..141
+                  UPPER@136..140 "Type"
+                  Comment@140..141
+                    WHITESPACE@140..141 " "
             RIGHT_CURLY@141..142 "}"
             Comment@142..144
               WHITESPACE@142..144 "\n\n"
@@ -173,7 +177,8 @@ snapshot_kind: text
               Comment@163..164
                 WHITESPACE@163..164 " "
               TypeConstructor@164..168
-                UPPER@164..168 "Type"
+                QualifiedName@164..168
+                  UPPER@164..168 "Type"
             COMMA@168..169 ","
             Comment@169..170
               WHITESPACE@169..170 " "
@@ -185,9 +190,10 @@ snapshot_kind: text
               Comment@174..175
                 WHITESPACE@174..175 " "
               TypeConstructor@175..180
-                UPPER@175..179 "Type"
-                Comment@179..180
-                  WHITESPACE@179..180 " "
+                QualifiedName@175..180
+                  UPPER@175..179 "Type"
+                  Comment@179..180
+                    WHITESPACE@179..180 " "
             TypeRowTail@180..184
               PIPE@180..181 "|"
               Comment@181..182

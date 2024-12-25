@@ -92,10 +92,11 @@ fn ty_atom(p: &mut Parser) {
     let mut m = p.start();
     if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
-    } else if p.eat(SyntaxKind::UPPER) {
-        m.end(p, SyntaxKind::TypeConstructor);
-    } else if p.eat(SyntaxKind::PREFIX) {
+    } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
+        let mut n = p.start();
+        p.eat(SyntaxKind::PREFIX);
         p.expect(SyntaxKind::UPPER);
+        n.end(p, SyntaxKind::QualifiedName);
         m.end(p, SyntaxKind::TypeConstructor);
     } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
         m.end(p, SyntaxKind::TypeString);

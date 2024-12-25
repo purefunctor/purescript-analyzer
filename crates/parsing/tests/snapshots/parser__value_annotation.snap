@@ -110,7 +110,8 @@ snapshot_kind: text
               Comment@119..120
                 WHITESPACE@119..120 " "
               TypeConstructor@120..124
-                UPPER@120..124 "Type"
+                QualifiedName@120..124
+                  UPPER@120..124 "Type"
               RIGHT_PARENTHESIS@124..125 ")"
             PERIOD@125..126 "."
             Comment@126..127
@@ -148,7 +149,8 @@ snapshot_kind: text
               Comment@155..156
                 WHITESPACE@155..156 " "
               TypeConstructor@156..160
-                UPPER@156..160 "Type"
+                QualifiedName@156..160
+                  UPPER@156..160 "Type"
               RIGHT_PARENTHESIS@160..161 ")"
               Comment@161..162
                 WHITESPACE@161..162 " "
@@ -161,7 +163,8 @@ snapshot_kind: text
               Comment@167..168
                 WHITESPACE@167..168 " "
               TypeConstructor@168..172
-                UPPER@168..172 "Type"
+                QualifiedName@168..172
+                  UPPER@168..172 "Type"
               RIGHT_PARENTHESIS@172..173 ")"
             PERIOD@173..174 "."
             Comment@174..175
@@ -281,7 +284,8 @@ snapshot_kind: text
               Comment@279..280
                 WHITESPACE@279..280 " "
               TypeConstructor@280..284
-                UPPER@280..284 "Type"
+                QualifiedName@280..284
+                  UPPER@280..284 "Type"
               RIGHT_PARENTHESIS@284..285 ")"
             PERIOD@285..286 "."
             Comment@286..287
@@ -320,7 +324,8 @@ snapshot_kind: text
               Comment@316..317
                 WHITESPACE@316..317 " "
               TypeConstructor@317..321
-                UPPER@317..321 "Type"
+                QualifiedName@317..321
+                  UPPER@317..321 "Type"
               RIGHT_PARENTHESIS@321..322 ")"
               Comment@322..323
                 WHITESPACE@322..323 " "
@@ -334,7 +339,8 @@ snapshot_kind: text
               Comment@329..330
                 WHITESPACE@329..330 " "
               TypeConstructor@330..334
-                UPPER@330..334 "Type"
+                QualifiedName@330..334
+                  UPPER@330..334 "Type"
               RIGHT_PARENTHESIS@334..335 ")"
             PERIOD@335..336 "."
             Comment@336..337
