@@ -132,6 +132,10 @@ pub enum SyntaxKind {
     TypeVariable,
     TypeVariableBinding,
     TypeWildcard,
+    TypeRow,
+    TypeRowItem,
+    TypeRowTail,
+    TypeParenthesized,
 
     #[doc(hidden)]
     __LAST,

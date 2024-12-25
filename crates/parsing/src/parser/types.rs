@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::Parser;
+use super::{NodeMarker, Parser};
 
 pub fn ty(p: &mut Parser) {
     let mut m = p.start();
@@ -99,10 +99,14 @@ fn ty_atom(p: &mut Parser) {
         m.end(p, SyntaxKind::TypeConstructor);
     } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
         m.end(p, SyntaxKind::TypeString);
-    } else if p.eat(SyntaxKind::INTEGER) {
+    } else if p.at(SyntaxKind::MINUS) || p.at(SyntaxKind::INTEGER) {
+        p.eat(SyntaxKind::MINUS);
+        p.eat(SyntaxKind::INTEGER);
         m.end(p, SyntaxKind::TypeInteger);
     } else if p.eat(SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::TypeOperator);
+    } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
+        type_parentheses(p, m);
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
         todo!()
     } else if p.eat(SyntaxKind::QUESTION) {
@@ -121,8 +125,10 @@ const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::PREFIX,
     SyntaxKind::STRING,
     SyntaxKind::RAW_STRING,
+    SyntaxKind::MINUS,
     SyntaxKind::INTEGER,
     SyntaxKind::OPERATOR_NAME,
+    SyntaxKind::LEFT_PARENTHESIS,
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::QUESTION,
     SyntaxKind::UNDERSCORE,
@@ -162,3 +168,57 @@ fn ty_variable_binding(p: &mut Parser) {
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
     TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS, SyntaxKind::LOWER]);
+
+fn type_parentheses(p: &mut Parser, mut m: NodeMarker) {
+    p.expect(SyntaxKind::LEFT_PARENTHESIS);
+
+    if p.at(SyntaxKind::LEFT_PARENTHESIS) && p.at_next(SyntaxKind::LOWER) {
+        p.expect(SyntaxKind::LEFT_PARENTHESIS);
+        p.expect(SyntaxKind::LOWER);
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        p.expect(SyntaxKind::DOUBLE_COLON);
+        ty(p);
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        return m.end(p, SyntaxKind::TypeKinded);
+    }
+
+    while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+        if p.at(SyntaxKind::LOWER) {
+            row_item(p);
+            let ending = p.at_next(SyntaxKind::PIPE) || p.at_next(SyntaxKind::RIGHT_PARENTHESIS);
+            if p.at(SyntaxKind::COMMA) && ending {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            todo!()
+        }
+    }
+
+    if p.at(SyntaxKind::PIPE) {
+        row_tail(p);
+    }
+
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    m.end(p, SyntaxKind::TypeRow);
+}
+
+fn row_item(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::LOWER);
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    ty(p);
+
+    m.end(p, SyntaxKind::TypeRowItem);
+}
+
+fn row_tail(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::PIPE);
+    ty(p);
+
+    m.end(p, SyntaxKind::TypeRowTail);
+}

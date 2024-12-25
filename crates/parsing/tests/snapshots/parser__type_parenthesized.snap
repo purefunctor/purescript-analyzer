@@ -1,0 +1,229 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..218
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..25
+          UPPER@7..24 "TypeParenthesized"
+          Comment@24..25
+            WHITESPACE@24..25 " "
+        ModuleExportList@25..25
+        WHERE@25..30 "where"
+        Comment@30..32
+          WHITESPACE@30..32 "\n\n"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..218
+        ValueAnnotation@32..57
+          LOWER@32..38 "kinded"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          DOUBLE_COLON@39..41 "::"
+          Comment@41..42
+            WHITESPACE@41..42 " "
+          TypeKinded@42..57
+            LEFT_PARENTHESIS@42..43 "("
+            LEFT_PARENTHESIS@43..44 "("
+            LOWER@44..45 "a"
+            RIGHT_PARENTHESIS@45..46 ")"
+            Comment@46..47
+              WHITESPACE@46..47 " "
+            DOUBLE_COLON@47..49 "::"
+            Comment@49..50
+              WHITESPACE@49..50 " "
+            TypeConstructor@50..54
+              UPPER@50..54 "Type"
+            RIGHT_PARENTHESIS@54..55 ")"
+            Comment@55..57
+              WHITESPACE@55..57 "\n\n"
+        LAYOUT_SEPARATOR@57..57 ""
+        ValueAnnotation@57..70
+          LOWER@57..62 "empty"
+          Comment@62..63
+            WHITESPACE@62..63 " "
+          DOUBLE_COLON@63..65 "::"
+          Comment@65..66
+            WHITESPACE@65..66 " "
+          TypeRow@66..70
+            LEFT_PARENTHESIS@66..67 "("
+            RIGHT_PARENTHESIS@67..68 ")"
+            Comment@68..70
+              WHITESPACE@68..70 "\n\n"
+        LAYOUT_SEPARATOR@70..70 ""
+        ValueAnnotation@70..87
+          LOWER@70..74 "tail"
+          Comment@74..75
+            WHITESPACE@74..75 " "
+          DOUBLE_COLON@75..77 "::"
+          Comment@77..78
+            WHITESPACE@77..78 " "
+          TypeRow@78..87
+            LEFT_PARENTHESIS@78..79 "("
+            Comment@79..80
+              WHITESPACE@79..80 " "
+            TypeRowTail@80..84
+              PIPE@80..81 "|"
+              Comment@81..82
+                WHITESPACE@81..82 " "
+              TypeVariable@82..84
+                LOWER@82..83 "r"
+                Comment@83..84
+                  WHITESPACE@83..84 " "
+            RIGHT_PARENTHESIS@84..85 ")"
+            Comment@85..87
+              WHITESPACE@85..87 "\n\n"
+        LAYOUT_SEPARATOR@87..87 ""
+        ValueAnnotation@87..110
+          LOWER@87..91 "item"
+          Comment@91..92
+            WHITESPACE@91..92 " "
+          DOUBLE_COLON@92..94 "::"
+          Comment@94..95
+            WHITESPACE@94..95 " "
+          TypeRow@95..110
+            LEFT_PARENTHESIS@95..96 "("
+            Comment@96..97
+              WHITESPACE@96..97 " "
+            TypeRowItem@97..107
+              LOWER@97..98 "a"
+              Comment@98..99
+                WHITESPACE@98..99 " "
+              DOUBLE_COLON@99..101 "::"
+              Comment@101..102
+                WHITESPACE@101..102 " "
+              TypeConstructor@102..107
+                UPPER@102..106 "Type"
+                Comment@106..107
+                  WHITESPACE@106..107 " "
+            RIGHT_PARENTHESIS@107..108 ")"
+            Comment@108..110
+              WHITESPACE@108..110 "\n\n"
+        LAYOUT_SEPARATOR@110..110 ""
+        ValueAnnotation@110..141
+          LOWER@110..118 "itemTail"
+          Comment@118..119
+            WHITESPACE@118..119 " "
+          DOUBLE_COLON@119..121 "::"
+          Comment@121..122
+            WHITESPACE@121..122 " "
+          TypeRow@122..141
+            LEFT_PARENTHESIS@122..123 "("
+            Comment@123..124
+              WHITESPACE@123..124 " "
+            TypeRowItem@124..134
+              LOWER@124..125 "a"
+              Comment@125..126
+                WHITESPACE@125..126 " "
+              DOUBLE_COLON@126..128 "::"
+              Comment@128..129
+                WHITESPACE@128..129 " "
+              TypeConstructor@129..134
+                UPPER@129..133 "Type"
+                Comment@133..134
+                  WHITESPACE@133..134 " "
+            TypeRowTail@134..138
+              PIPE@134..135 "|"
+              Comment@135..136
+                WHITESPACE@135..136 " "
+              TypeVariable@136..138
+                LOWER@136..137 "r"
+                Comment@137..138
+                  WHITESPACE@137..138 " "
+            RIGHT_PARENTHESIS@138..139 ")"
+            Comment@139..141
+              WHITESPACE@139..141 "\n\n"
+        LAYOUT_SEPARATOR@141..141 ""
+        ValueAnnotation@141..176
+          LOWER@141..146 "items"
+          Comment@146..147
+            WHITESPACE@146..147 " "
+          DOUBLE_COLON@147..149 "::"
+          Comment@149..150
+            WHITESPACE@149..150 " "
+          TypeRow@150..176
+            LEFT_PARENTHESIS@150..151 "("
+            Comment@151..152
+              WHITESPACE@151..152 " "
+            TypeRowItem@152..161
+              LOWER@152..153 "a"
+              Comment@153..154
+                WHITESPACE@153..154 " "
+              DOUBLE_COLON@154..156 "::"
+              Comment@156..157
+                WHITESPACE@156..157 " "
+              TypeConstructor@157..161
+                UPPER@157..161 "Type"
+            COMMA@161..162 ","
+            Comment@162..163
+              WHITESPACE@162..163 " "
+            TypeRowItem@163..173
+              LOWER@163..164 "b"
+              Comment@164..165
+                WHITESPACE@164..165 " "
+              DOUBLE_COLON@165..167 "::"
+              Comment@167..168
+                WHITESPACE@167..168 " "
+              TypeConstructor@168..173
+                UPPER@168..172 "Type"
+                Comment@172..173
+                  WHITESPACE@172..173 " "
+            RIGHT_PARENTHESIS@173..174 ")"
+            Comment@174..176
+              WHITESPACE@174..176 "\n\n"
+        LAYOUT_SEPARATOR@176..176 ""
+        ValueAnnotation@176..218
+          LOWER@176..185 "itemsTail"
+          Comment@185..186
+            WHITESPACE@185..186 " "
+          DOUBLE_COLON@186..188 "::"
+          Comment@188..189
+            WHITESPACE@188..189 " "
+          TypeRow@189..218
+            LEFT_PARENTHESIS@189..190 "("
+            Comment@190..191
+              WHITESPACE@190..191 " "
+            TypeRowItem@191..200
+              LOWER@191..192 "a"
+              Comment@192..193
+                WHITESPACE@192..193 " "
+              DOUBLE_COLON@193..195 "::"
+              Comment@195..196
+                WHITESPACE@195..196 " "
+              TypeConstructor@196..200
+                UPPER@196..200 "Type"
+            COMMA@200..201 ","
+            Comment@201..202
+              WHITESPACE@201..202 " "
+            TypeRowItem@202..212
+              LOWER@202..203 "b"
+              Comment@203..204
+                WHITESPACE@203..204 " "
+              DOUBLE_COLON@204..206 "::"
+              Comment@206..207
+                WHITESPACE@206..207 " "
+              TypeConstructor@207..212
+                UPPER@207..211 "Type"
+                Comment@211..212
+                  WHITESPACE@211..212 " "
+            TypeRowTail@212..216
+              PIPE@212..213 "|"
+              Comment@213..214
+                WHITESPACE@213..214 " "
+              TypeVariable@214..216
+                LOWER@214..215 "r"
+                Comment@215..216
+                  WHITESPACE@215..216 " "
+            RIGHT_PARENTHESIS@216..217 ")"
+            Comment@217..218
+              WHITESPACE@217..218 "\n"
+      LAYOUT_END@218..218 ""
+      END_OF_FILE@218..218 ""
+    ,
+    [],
+)
