@@ -65,8 +65,6 @@ fn equation_where(p: &mut Parser) {
     expressions::expression(p);
     if p.eat(SyntaxKind::WHERE) {
         binding::bindings(p);
-        m.end(p, SyntaxKind::EquationWhere);
-    } else {
-        m.cancel(p);
     }
+    m.end(p, SyntaxKind::EquationWhere);
 }

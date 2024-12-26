@@ -37,11 +37,12 @@ snapshot_kind: text
             EQUAL@32..33 "="
             Comment@33..34
               WHITESPACE@33..34 " "
-            ExpressionTyped@34..36
-              ExpressionInteger@34..36
-                INTEGER@34..35 "0"
-                Comment@35..36
-                  WHITESPACE@35..36 "\n"
+            EquationWhere@34..36
+              ExpressionTyped@34..36
+                ExpressionInteger@34..36
+                  INTEGER@34..35 "0"
+                  Comment@35..36
+                    WHITESPACE@35..36 "\n"
         LAYOUT_SEPARATOR@36..36 ""
         ValueEquation@36..54
           LOWER@36..41 "minus"
@@ -60,11 +61,12 @@ snapshot_kind: text
             EQUAL@49..50 "="
             Comment@50..51
               WHITESPACE@50..51 " "
-            ExpressionTyped@51..54
-              ExpressionInteger@51..54
-                INTEGER@51..52 "0"
-                Comment@52..54
-                  WHITESPACE@52..54 "\n\n"
+            EquationWhere@51..54
+              ExpressionTyped@51..54
+                ExpressionInteger@51..54
+                  INTEGER@51..52 "0"
+                  Comment@52..54
+                    WHITESPACE@52..54 "\n\n"
         LAYOUT_SEPARATOR@54..54 ""
         ValueEquation@54..82
           LOWER@54..65 "constructor"
@@ -91,11 +93,12 @@ snapshot_kind: text
             EQUAL@78..79 "="
             Comment@79..80
               WHITESPACE@79..80 " "
-            ExpressionTyped@80..82
-              ExpressionInteger@80..82
-                INTEGER@80..81 "0"
-                Comment@81..82
-                  WHITESPACE@81..82 "\n"
+            EquationWhere@80..82
+              ExpressionTyped@80..82
+                ExpressionInteger@80..82
+                  INTEGER@80..81 "0"
+                  Comment@81..82
+                    WHITESPACE@81..82 "\n"
         LAYOUT_SEPARATOR@82..82 ""
         ValueEquation@82..103
           LOWER@82..93 "constructor"
@@ -111,11 +114,12 @@ snapshot_kind: text
             EQUAL@98..99 "="
             Comment@99..100
               WHITESPACE@99..100 " "
-            ExpressionTyped@100..103
-              ExpressionInteger@100..103
-                INTEGER@100..101 "0"
-                Comment@101..103
-                  WHITESPACE@101..103 "\n\n"
+            EquationWhere@100..103
+              ExpressionTyped@100..103
+                ExpressionInteger@100..103
+                  INTEGER@100..101 "0"
+                  Comment@101..103
+                    WHITESPACE@101..103 "\n\n"
         LAYOUT_SEPARATOR@103..103 ""
         ValueEquation@103..136
           LOWER@103..114 "constructor"
@@ -143,11 +147,12 @@ snapshot_kind: text
             EQUAL@132..133 "="
             Comment@133..134
               WHITESPACE@133..134 " "
-            ExpressionTyped@134..136
-              ExpressionInteger@134..136
-                INTEGER@134..135 "0"
-                Comment@135..136
-                  WHITESPACE@135..136 "\n"
+            EquationWhere@134..136
+              ExpressionTyped@134..136
+                ExpressionInteger@134..136
+                  INTEGER@134..135 "0"
+                  Comment@135..136
+                    WHITESPACE@135..136 "\n"
         LAYOUT_SEPARATOR@136..136 ""
         ValueEquation@136..162
           LOWER@136..147 "constructor"
@@ -164,11 +169,12 @@ snapshot_kind: text
             EQUAL@157..158 "="
             Comment@158..159
               WHITESPACE@158..159 " "
-            ExpressionTyped@159..162
-              ExpressionInteger@159..162
-                INTEGER@159..160 "0"
-                Comment@160..162
-                  WHITESPACE@160..162 "\n\n"
+            EquationWhere@159..162
+              ExpressionTyped@159..162
+                ExpressionInteger@159..162
+                  INTEGER@159..160 "0"
+                  Comment@160..162
+                    WHITESPACE@160..162 "\n\n"
         LAYOUT_SEPARATOR@162..162 ""
         ValueEquation@162..177
           LOWER@162..170 "identity"
@@ -183,11 +189,12 @@ snapshot_kind: text
             EQUAL@173..174 "="
             Comment@174..175
               WHITESPACE@174..175 " "
-            ExpressionTyped@175..177
-              ExpressionInteger@175..177
-                INTEGER@175..176 "0"
-                Comment@176..177
-                  WHITESPACE@176..177 "\n"
+            EquationWhere@175..177
+              ExpressionTyped@175..177
+                ExpressionInteger@175..177
+                  INTEGER@175..176 "0"
+                  Comment@176..177
+                    WHITESPACE@176..177 "\n"
         LAYOUT_SEPARATOR@177..177 ""
         ValueEquation@177..195
           LOWER@177..185 "identity"
@@ -205,11 +212,12 @@ snapshot_kind: text
             EQUAL@190..191 "="
             Comment@191..192
               WHITESPACE@191..192 " "
-            ExpressionTyped@192..195
-              ExpressionInteger@192..195
-                INTEGER@192..193 "0"
-                Comment@193..195
-                  WHITESPACE@193..195 "\n\n"
+            EquationWhere@192..195
+              ExpressionTyped@192..195
+                ExpressionInteger@192..195
+                  INTEGER@192..193 "0"
+                  Comment@193..195
+                    WHITESPACE@193..195 "\n\n"
         LAYOUT_SEPARATOR@195..195 ""
         ValueEquation@195..211
           LOWER@195..203 "wildcard"
@@ -224,11 +232,12 @@ snapshot_kind: text
             EQUAL@206..207 "="
             Comment@207..208
               WHITESPACE@207..208 " "
-            ExpressionTyped@208..211
-              ExpressionInteger@208..211
-                INTEGER@208..209 "0"
-                Comment@209..211
-                  WHITESPACE@209..211 "\n\n"
+            EquationWhere@208..211
+              ExpressionTyped@208..211
+                ExpressionInteger@208..211
+                  INTEGER@208..209 "0"
+                  Comment@209..211
+                    WHITESPACE@209..211 "\n\n"
         LAYOUT_SEPARATOR@211..211 ""
         ValueEquation@211..230
           LOWER@211..217 "string"
@@ -243,11 +252,12 @@ snapshot_kind: text
             EQUAL@226..227 "="
             Comment@227..228
               WHITESPACE@227..228 " "
-            ExpressionTyped@228..230
-              ExpressionInteger@228..230
-                INTEGER@228..229 "0"
-                Comment@229..230
-                  WHITESPACE@229..230 "\n"
+            EquationWhere@228..230
+              ExpressionTyped@228..230
+                ExpressionInteger@228..230
+                  INTEGER@228..229 "0"
+                  Comment@229..230
+                    WHITESPACE@229..230 "\n"
         LAYOUT_SEPARATOR@230..230 ""
         ValueEquation@230..254
           LOWER@230..236 "string"
@@ -262,11 +272,12 @@ snapshot_kind: text
             EQUAL@249..250 "="
             Comment@250..251
               WHITESPACE@250..251 " "
-            ExpressionTyped@251..254
-              ExpressionInteger@251..254
-                INTEGER@251..252 "0"
-                Comment@252..254
-                  WHITESPACE@252..254 "\n\n"
+            EquationWhere@251..254
+              ExpressionTyped@251..254
+                ExpressionInteger@251..254
+                  INTEGER@251..252 "0"
+                  Comment@252..254
+                    WHITESPACE@252..254 "\n\n"
         LAYOUT_SEPARATOR@254..254 ""
         ValueEquation@254..268
           LOWER@254..258 "char"
@@ -281,11 +292,12 @@ snapshot_kind: text
             EQUAL@263..264 "="
             Comment@264..265
               WHITESPACE@264..265 " "
-            ExpressionTyped@265..268
-              ExpressionInteger@265..268
-                INTEGER@265..266 "0"
-                Comment@266..268
-                  WHITESPACE@266..268 "\n\n"
+            EquationWhere@265..268
+              ExpressionTyped@265..268
+                ExpressionInteger@265..268
+                  INTEGER@265..266 "0"
+                  Comment@266..268
+                    WHITESPACE@266..268 "\n\n"
         LAYOUT_SEPARATOR@268..268 ""
         ValueEquation@268..285
           LOWER@268..275 "boolean"
@@ -300,11 +312,12 @@ snapshot_kind: text
             EQUAL@281..282 "="
             Comment@282..283
               WHITESPACE@282..283 " "
-            ExpressionTyped@283..285
-              ExpressionInteger@283..285
-                INTEGER@283..284 "0"
-                Comment@284..285
-                  WHITESPACE@284..285 "\n"
+            EquationWhere@283..285
+              ExpressionTyped@283..285
+                ExpressionInteger@283..285
+                  INTEGER@283..284 "0"
+                  Comment@284..285
+                    WHITESPACE@284..285 "\n"
         LAYOUT_SEPARATOR@285..285 ""
         ValueEquation@285..304
           LOWER@285..292 "boolean"
@@ -319,11 +332,12 @@ snapshot_kind: text
             EQUAL@299..300 "="
             Comment@300..301
               WHITESPACE@300..301 " "
-            ExpressionTyped@301..304
-              ExpressionInteger@301..304
-                INTEGER@301..302 "0"
-                Comment@302..304
-                  WHITESPACE@302..304 "\n\n"
+            EquationWhere@301..304
+              ExpressionTyped@301..304
+                ExpressionInteger@301..304
+                  INTEGER@301..302 "0"
+                  Comment@302..304
+                    WHITESPACE@302..304 "\n\n"
         LAYOUT_SEPARATOR@304..304 ""
         ValueEquation@304..318
           LOWER@304..311 "integer"
@@ -338,11 +352,12 @@ snapshot_kind: text
             EQUAL@314..315 "="
             Comment@315..316
               WHITESPACE@315..316 " "
-            ExpressionTyped@316..318
-              ExpressionInteger@316..318
-                INTEGER@316..317 "0"
-                Comment@317..318
-                  WHITESPACE@317..318 "\n"
+            EquationWhere@316..318
+              ExpressionTyped@316..318
+                ExpressionInteger@316..318
+                  INTEGER@316..317 "0"
+                  Comment@317..318
+                    WHITESPACE@317..318 "\n"
         LAYOUT_SEPARATOR@318..318 ""
         ValueEquation@318..334
           LOWER@318..324 "number"
@@ -357,11 +372,12 @@ snapshot_kind: text
             EQUAL@329..330 "="
             Comment@330..331
               WHITESPACE@330..331 " "
-            ExpressionTyped@331..334
-              ExpressionInteger@331..334
-                INTEGER@331..332 "0"
-                Comment@332..334
-                  WHITESPACE@332..334 "\n\n"
+            EquationWhere@331..334
+              ExpressionTyped@331..334
+                ExpressionInteger@331..334
+                  INTEGER@331..332 "0"
+                  Comment@332..334
+                    WHITESPACE@332..334 "\n\n"
         LAYOUT_SEPARATOR@334..334 ""
         ValueEquation@334..347
           LOWER@334..339 "array"
@@ -377,11 +393,12 @@ snapshot_kind: text
             EQUAL@343..344 "="
             Comment@344..345
               WHITESPACE@344..345 " "
-            ExpressionTyped@345..347
-              ExpressionInteger@345..347
-                INTEGER@345..346 "0"
-                Comment@346..347
-                  WHITESPACE@346..347 "\n"
+            EquationWhere@345..347
+              ExpressionTyped@345..347
+                ExpressionInteger@345..347
+                  INTEGER@345..346 "0"
+                  Comment@346..347
+                    WHITESPACE@346..347 "\n"
         LAYOUT_SEPARATOR@347..347 ""
         ValueEquation@347..361
           LOWER@347..352 "array"
@@ -399,11 +416,12 @@ snapshot_kind: text
             EQUAL@357..358 "="
             Comment@358..359
               WHITESPACE@358..359 " "
-            ExpressionTyped@359..361
-              ExpressionInteger@359..361
-                INTEGER@359..360 "0"
-                Comment@360..361
-                  WHITESPACE@360..361 "\n"
+            EquationWhere@359..361
+              ExpressionTyped@359..361
+                ExpressionInteger@359..361
+                  INTEGER@359..360 "0"
+                  Comment@360..361
+                    WHITESPACE@360..361 "\n"
         LAYOUT_SEPARATOR@361..361 ""
         ValueEquation@361..379
           LOWER@361..366 "array"
@@ -426,11 +444,12 @@ snapshot_kind: text
             EQUAL@374..375 "="
             Comment@375..376
               WHITESPACE@375..376 " "
-            ExpressionTyped@376..379
-              ExpressionInteger@376..379
-                INTEGER@376..377 "0"
-                Comment@377..379
-                  WHITESPACE@377..379 "\n\n"
+            EquationWhere@376..379
+              ExpressionTyped@376..379
+                ExpressionInteger@376..379
+                  INTEGER@376..377 "0"
+                  Comment@377..379
+                    WHITESPACE@377..379 "\n\n"
         LAYOUT_SEPARATOR@379..379 ""
         ValueEquation@379..393
           LOWER@379..385 "record"
@@ -446,11 +465,12 @@ snapshot_kind: text
             EQUAL@389..390 "="
             Comment@390..391
               WHITESPACE@390..391 " "
-            ExpressionTyped@391..393
-              ExpressionInteger@391..393
-                INTEGER@391..392 "0"
-                Comment@392..393
-                  WHITESPACE@392..393 "\n"
+            EquationWhere@391..393
+              ExpressionTyped@391..393
+                ExpressionInteger@391..393
+                  INTEGER@391..392 "0"
+                  Comment@392..393
+                    WHITESPACE@392..393 "\n"
         LAYOUT_SEPARATOR@393..393 ""
         ValueEquation@393..408
           LOWER@393..399 "record"
@@ -468,11 +488,12 @@ snapshot_kind: text
             EQUAL@404..405 "="
             Comment@405..406
               WHITESPACE@405..406 " "
-            ExpressionTyped@406..408
-              ExpressionInteger@406..408
-                INTEGER@406..407 "0"
-                Comment@407..408
-                  WHITESPACE@407..408 "\n"
+            EquationWhere@406..408
+              ExpressionTyped@406..408
+                ExpressionInteger@406..408
+                  INTEGER@406..407 "0"
+                  Comment@407..408
+                    WHITESPACE@407..408 "\n"
         LAYOUT_SEPARATOR@408..408 ""
         ValueEquation@408..426
           LOWER@408..414 "record"
@@ -495,11 +516,12 @@ snapshot_kind: text
             EQUAL@422..423 "="
             Comment@423..424
               WHITESPACE@423..424 " "
-            ExpressionTyped@424..426
-              ExpressionInteger@424..426
-                INTEGER@424..425 "0"
-                Comment@425..426
-                  WHITESPACE@425..426 "\n"
+            EquationWhere@424..426
+              ExpressionTyped@424..426
+                ExpressionInteger@424..426
+                  INTEGER@424..425 "0"
+                  Comment@425..426
+                    WHITESPACE@425..426 "\n"
         LAYOUT_SEPARATOR@426..426 ""
         ValueEquation@426..450
           LOWER@426..432 "record"
@@ -532,11 +554,12 @@ snapshot_kind: text
             EQUAL@446..447 "="
             Comment@447..448
               WHITESPACE@447..448 " "
-            ExpressionTyped@448..450
-              ExpressionInteger@448..450
-                INTEGER@448..449 "0"
-                Comment@449..450
-                  WHITESPACE@449..450 "\n"
+            EquationWhere@448..450
+              ExpressionTyped@448..450
+                ExpressionInteger@448..450
+                  INTEGER@448..449 "0"
+                  Comment@449..450
+                    WHITESPACE@449..450 "\n"
         LAYOUT_SEPARATOR@450..450 ""
         ValueEquation@450..481
           LOWER@450..456 "record"
@@ -579,11 +602,12 @@ snapshot_kind: text
             EQUAL@476..477 "="
             Comment@477..478
               WHITESPACE@477..478 " "
-            ExpressionTyped@478..481
-              ExpressionInteger@478..481
-                INTEGER@478..479 "0"
-                Comment@479..481
-                  WHITESPACE@479..481 "\n\n"
+            EquationWhere@478..481
+              ExpressionTyped@478..481
+                ExpressionInteger@478..481
+                  INTEGER@478..479 "0"
+                  Comment@479..481
+                    WHITESPACE@479..481 "\n\n"
         LAYOUT_SEPARATOR@481..481 ""
         ValueEquation@481..503
           LOWER@481..494 "parenthesized"
@@ -601,11 +625,12 @@ snapshot_kind: text
             EQUAL@499..500 "="
             Comment@500..501
               WHITESPACE@500..501 " "
-            ExpressionTyped@501..503
-              ExpressionInteger@501..503
-                INTEGER@501..502 "0"
-                Comment@502..503
-                  WHITESPACE@502..503 "\n"
+            EquationWhere@501..503
+              ExpressionTyped@501..503
+                ExpressionInteger@501..503
+                  INTEGER@501..502 "0"
+                  Comment@502..503
+                    WHITESPACE@502..503 "\n"
         LAYOUT_SEPARATOR@503..503 ""
         ValueEquation@503..529
           LOWER@503..516 "parenthesized"
@@ -631,11 +656,12 @@ snapshot_kind: text
             EQUAL@525..526 "="
             Comment@526..527
               WHITESPACE@526..527 " "
-            ExpressionTyped@527..529
-              ExpressionInteger@527..529
-                INTEGER@527..528 "0"
-                Comment@528..529
-                  WHITESPACE@528..529 "\n"
+            EquationWhere@527..529
+              ExpressionTyped@527..529
+                ExpressionInteger@527..529
+                  INTEGER@527..528 "0"
+                  Comment@528..529
+                    WHITESPACE@528..529 "\n"
         LAYOUT_SEPARATOR@529..529 ""
         ValueEquation@529..555
           LOWER@529..542 "parenthesized"
@@ -659,11 +685,12 @@ snapshot_kind: text
             EQUAL@551..552 "="
             Comment@552..553
               WHITESPACE@552..553 " "
-            ExpressionTyped@553..555
-              ExpressionInteger@553..555
-                INTEGER@553..554 "0"
-                Comment@554..555
-                  WHITESPACE@554..555 "\n"
+            EquationWhere@553..555
+              ExpressionTyped@553..555
+                ExpressionInteger@553..555
+                  INTEGER@553..554 "0"
+                  Comment@554..555
+                    WHITESPACE@554..555 "\n"
       LAYOUT_END@555..555 ""
       END_OF_FILE@555..555 ""
     ,
