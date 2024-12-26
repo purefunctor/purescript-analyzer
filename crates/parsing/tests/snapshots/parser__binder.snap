@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..551
+    Module@0..555
       ModuleHeader@0..21
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,539 +19,653 @@ snapshot_kind: text
           WHITESPACE@19..21 "\n\n"
       LAYOUT_START@21..21 ""
       ModuleImports@21..21
-      ModuleStatements@21..551
-        ValueEquation@21..34
+      ModuleStatements@21..555
+        ValueEquation@21..36
           LOWER@21..26 "minus"
           Comment@26..27
             WHITESPACE@26..27 " "
-          BinderInteger@27..30
-            MINUS@27..28 "-"
-            INTEGER@28..29 "1"
-            Comment@29..30
-              WHITESPACE@29..30 " "
-          EQUAL@30..31 "="
-          Comment@31..32
-            WHITESPACE@31..32 " "
-          INTEGER@32..33 "0"
-          Comment@33..34
-            WHITESPACE@33..34 "\n"
-        LAYOUT_SEPARATOR@34..34 ""
-        ValueEquation@34..50
-          LOWER@34..39 "minus"
-          Comment@39..40
-            WHITESPACE@39..40 " "
-          BinderNumber@40..45
-            MINUS@40..41 "-"
-            NUMBER@41..44 "1.0"
-            Comment@44..45
-              WHITESPACE@44..45 " "
-          EQUAL@45..46 "="
-          Comment@46..47
-            WHITESPACE@46..47 " "
-          INTEGER@47..48 "0"
-          Comment@48..50
-            WHITESPACE@48..50 "\n\n"
-        LAYOUT_SEPARATOR@50..50 ""
-        ValueEquation@50..78
-          LOWER@50..61 "constructor"
-          Comment@61..62
-            WHITESPACE@61..62 " "
-          BinderParenthesized@62..74
-            LEFT_PARENTHESIS@62..63 "("
-            BinderConstructor@63..72
-              QualifiedName@63..68
-                UPPER@63..67 "Cons"
-                Comment@67..68
-                  WHITESPACE@67..68 " "
-              BinderVariable@68..70
-                LOWER@68..69 "x"
-                Comment@69..70
-                  WHITESPACE@69..70 " "
-              BinderVariable@70..72
-                LOWER@70..72 "xs"
-            RIGHT_PARENTHESIS@72..73 ")"
-            Comment@73..74
-              WHITESPACE@73..74 " "
-          EQUAL@74..75 "="
-          Comment@75..76
-            WHITESPACE@75..76 " "
-          INTEGER@76..77 "0"
-          Comment@77..78
-            WHITESPACE@77..78 "\n"
-        LAYOUT_SEPARATOR@78..78 ""
-        ValueEquation@78..99
-          LOWER@78..89 "constructor"
-          Comment@89..90
-            WHITESPACE@89..90 " "
-          BinderConstructor@90..94
-            QualifiedName@90..94
-              UPPER@90..93 "Nil"
-              Comment@93..94
-                WHITESPACE@93..94 " "
-          EQUAL@94..95 "="
-          Comment@95..96
-            WHITESPACE@95..96 " "
-          INTEGER@96..97 "0"
-          Comment@97..99
-            WHITESPACE@97..99 "\n\n"
-        LAYOUT_SEPARATOR@99..99 ""
-        ValueEquation@99..132
-          LOWER@99..110 "constructor"
-          Comment@110..111
-            WHITESPACE@110..111 " "
-          BinderParenthesized@111..128
-            LEFT_PARENTHESIS@111..112 "("
-            BinderConstructor@112..126
-              QualifiedName@112..122
-                PREFIX@112..117 "List."
-                UPPER@117..121 "Cons"
-                Comment@121..122
-                  WHITESPACE@121..122 " "
-              BinderVariable@122..124
-                LOWER@122..123 "x"
-                Comment@123..124
-                  WHITESPACE@123..124 " "
-              BinderVariable@124..126
-                LOWER@124..126 "xs"
-            RIGHT_PARENTHESIS@126..127 ")"
-            Comment@127..128
-              WHITESPACE@127..128 " "
-          EQUAL@128..129 "="
-          Comment@129..130
-            WHITESPACE@129..130 " "
-          INTEGER@130..131 "0"
-          Comment@131..132
-            WHITESPACE@131..132 "\n"
-        LAYOUT_SEPARATOR@132..132 ""
-        ValueEquation@132..158
-          LOWER@132..143 "constructor"
-          Comment@143..144
-            WHITESPACE@143..144 " "
-          BinderConstructor@144..153
-            QualifiedName@144..153
-              PREFIX@144..149 "List."
-              UPPER@149..152 "Nil"
-              Comment@152..153
-                WHITESPACE@152..153 " "
-          EQUAL@153..154 "="
-          Comment@154..155
-            WHITESPACE@154..155 " "
-          INTEGER@155..156 "0"
-          Comment@156..158
-            WHITESPACE@156..158 "\n\n"
-        LAYOUT_SEPARATOR@158..158 ""
-        ValueEquation@158..173
-          LOWER@158..166 "identity"
-          Comment@166..167
-            WHITESPACE@166..167 " "
-          BinderVariable@167..169
-            LOWER@167..168 "x"
-            Comment@168..169
-              WHITESPACE@168..169 " "
-          EQUAL@169..170 "="
+          EquationBinders@27..32
+            BinderParenthesized@27..32
+              LEFT_PARENTHESIS@27..28 "("
+              BinderInteger@28..30
+                MINUS@28..29 "-"
+                INTEGER@29..30 "1"
+              RIGHT_PARENTHESIS@30..31 ")"
+              Comment@31..32
+                WHITESPACE@31..32 " "
+          EquationUnguarded@32..36
+            EQUAL@32..33 "="
+            Comment@33..34
+              WHITESPACE@33..34 " "
+            ExpressionTyped@34..36
+              ExpressionInteger@34..36
+                INTEGER@34..35 "0"
+                Comment@35..36
+                  WHITESPACE@35..36 "\n"
+        LAYOUT_SEPARATOR@36..36 ""
+        ValueEquation@36..54
+          LOWER@36..41 "minus"
+          Comment@41..42
+            WHITESPACE@41..42 " "
+          EquationBinders@42..49
+            BinderParenthesized@42..49
+              LEFT_PARENTHESIS@42..43 "("
+              BinderNumber@43..47
+                MINUS@43..44 "-"
+                NUMBER@44..47 "1.0"
+              RIGHT_PARENTHESIS@47..48 ")"
+              Comment@48..49
+                WHITESPACE@48..49 " "
+          EquationUnguarded@49..54
+            EQUAL@49..50 "="
+            Comment@50..51
+              WHITESPACE@50..51 " "
+            ExpressionTyped@51..54
+              ExpressionInteger@51..54
+                INTEGER@51..52 "0"
+                Comment@52..54
+                  WHITESPACE@52..54 "\n\n"
+        LAYOUT_SEPARATOR@54..54 ""
+        ValueEquation@54..82
+          LOWER@54..65 "constructor"
+          Comment@65..66
+            WHITESPACE@65..66 " "
+          EquationBinders@66..78
+            BinderParenthesized@66..78
+              LEFT_PARENTHESIS@66..67 "("
+              BinderConstructor@67..76
+                QualifiedName@67..72
+                  UPPER@67..71 "Cons"
+                  Comment@71..72
+                    WHITESPACE@71..72 " "
+                BinderVariable@72..74
+                  LOWER@72..73 "x"
+                  Comment@73..74
+                    WHITESPACE@73..74 " "
+                BinderVariable@74..76
+                  LOWER@74..76 "xs"
+              RIGHT_PARENTHESIS@76..77 ")"
+              Comment@77..78
+                WHITESPACE@77..78 " "
+          EquationUnguarded@78..82
+            EQUAL@78..79 "="
+            Comment@79..80
+              WHITESPACE@79..80 " "
+            ExpressionTyped@80..82
+              ExpressionInteger@80..82
+                INTEGER@80..81 "0"
+                Comment@81..82
+                  WHITESPACE@81..82 "\n"
+        LAYOUT_SEPARATOR@82..82 ""
+        ValueEquation@82..103
+          LOWER@82..93 "constructor"
+          Comment@93..94
+            WHITESPACE@93..94 " "
+          EquationBinders@94..98
+            BinderConstructor@94..98
+              QualifiedName@94..98
+                UPPER@94..97 "Nil"
+                Comment@97..98
+                  WHITESPACE@97..98 " "
+          EquationUnguarded@98..103
+            EQUAL@98..99 "="
+            Comment@99..100
+              WHITESPACE@99..100 " "
+            ExpressionTyped@100..103
+              ExpressionInteger@100..103
+                INTEGER@100..101 "0"
+                Comment@101..103
+                  WHITESPACE@101..103 "\n\n"
+        LAYOUT_SEPARATOR@103..103 ""
+        ValueEquation@103..136
+          LOWER@103..114 "constructor"
+          Comment@114..115
+            WHITESPACE@114..115 " "
+          EquationBinders@115..132
+            BinderParenthesized@115..132
+              LEFT_PARENTHESIS@115..116 "("
+              BinderConstructor@116..130
+                QualifiedName@116..126
+                  PREFIX@116..121 "List."
+                  UPPER@121..125 "Cons"
+                  Comment@125..126
+                    WHITESPACE@125..126 " "
+                BinderVariable@126..128
+                  LOWER@126..127 "x"
+                  Comment@127..128
+                    WHITESPACE@127..128 " "
+                BinderVariable@128..130
+                  LOWER@128..130 "xs"
+              RIGHT_PARENTHESIS@130..131 ")"
+              Comment@131..132
+                WHITESPACE@131..132 " "
+          EquationUnguarded@132..136
+            EQUAL@132..133 "="
+            Comment@133..134
+              WHITESPACE@133..134 " "
+            ExpressionTyped@134..136
+              ExpressionInteger@134..136
+                INTEGER@134..135 "0"
+                Comment@135..136
+                  WHITESPACE@135..136 "\n"
+        LAYOUT_SEPARATOR@136..136 ""
+        ValueEquation@136..162
+          LOWER@136..147 "constructor"
+          Comment@147..148
+            WHITESPACE@147..148 " "
+          EquationBinders@148..157
+            BinderConstructor@148..157
+              QualifiedName@148..157
+                PREFIX@148..153 "List."
+                UPPER@153..156 "Nil"
+                Comment@156..157
+                  WHITESPACE@156..157 " "
+          EquationUnguarded@157..162
+            EQUAL@157..158 "="
+            Comment@158..159
+              WHITESPACE@158..159 " "
+            ExpressionTyped@159..162
+              ExpressionInteger@159..162
+                INTEGER@159..160 "0"
+                Comment@160..162
+                  WHITESPACE@160..162 "\n\n"
+        LAYOUT_SEPARATOR@162..162 ""
+        ValueEquation@162..177
+          LOWER@162..170 "identity"
           Comment@170..171
             WHITESPACE@170..171 " "
-          INTEGER@171..172 "0"
-          Comment@172..173
-            WHITESPACE@172..173 "\n"
-        LAYOUT_SEPARATOR@173..173 ""
-        ValueEquation@173..191
-          LOWER@173..181 "identity"
-          Comment@181..182
-            WHITESPACE@181..182 " "
-          BinderNamed@182..186
-            LOWER@182..183 "x"
-            AT@183..184 "@"
-            BinderVariable@184..186
-              LOWER@184..185 "y"
-              Comment@185..186
-                WHITESPACE@185..186 " "
-          EQUAL@186..187 "="
-          Comment@187..188
-            WHITESPACE@187..188 " "
-          INTEGER@188..189 "0"
-          Comment@189..191
-            WHITESPACE@189..191 "\n\n"
-        LAYOUT_SEPARATOR@191..191 ""
-        ValueEquation@191..207
-          LOWER@191..199 "wildcard"
-          Comment@199..200
-            WHITESPACE@199..200 " "
-          BinderWildcard@200..202
-            UNDERSCORE@200..201 "_"
-            Comment@201..202
-              WHITESPACE@201..202 " "
-          EQUAL@202..203 "="
+          EquationBinders@171..173
+            BinderVariable@171..173
+              LOWER@171..172 "x"
+              Comment@172..173
+                WHITESPACE@172..173 " "
+          EquationUnguarded@173..177
+            EQUAL@173..174 "="
+            Comment@174..175
+              WHITESPACE@174..175 " "
+            ExpressionTyped@175..177
+              ExpressionInteger@175..177
+                INTEGER@175..176 "0"
+                Comment@176..177
+                  WHITESPACE@176..177 "\n"
+        LAYOUT_SEPARATOR@177..177 ""
+        ValueEquation@177..195
+          LOWER@177..185 "identity"
+          Comment@185..186
+            WHITESPACE@185..186 " "
+          EquationBinders@186..190
+            BinderNamed@186..190
+              LOWER@186..187 "x"
+              AT@187..188 "@"
+              BinderVariable@188..190
+                LOWER@188..189 "y"
+                Comment@189..190
+                  WHITESPACE@189..190 " "
+          EquationUnguarded@190..195
+            EQUAL@190..191 "="
+            Comment@191..192
+              WHITESPACE@191..192 " "
+            ExpressionTyped@192..195
+              ExpressionInteger@192..195
+                INTEGER@192..193 "0"
+                Comment@193..195
+                  WHITESPACE@193..195 "\n\n"
+        LAYOUT_SEPARATOR@195..195 ""
+        ValueEquation@195..211
+          LOWER@195..203 "wildcard"
           Comment@203..204
             WHITESPACE@203..204 " "
-          INTEGER@204..205 "0"
-          Comment@205..207
-            WHITESPACE@205..207 "\n\n"
-        LAYOUT_SEPARATOR@207..207 ""
-        ValueEquation@207..226
-          LOWER@207..213 "string"
-          Comment@213..214
-            WHITESPACE@213..214 " "
-          BinderString@214..222
-            STRING@214..221 "\"hello\""
-            Comment@221..222
-              WHITESPACE@221..222 " "
-          EQUAL@222..223 "="
-          Comment@223..224
-            WHITESPACE@223..224 " "
-          INTEGER@224..225 "0"
-          Comment@225..226
-            WHITESPACE@225..226 "\n"
-        LAYOUT_SEPARATOR@226..226 ""
-        ValueEquation@226..250
-          LOWER@226..232 "string"
-          Comment@232..233
-            WHITESPACE@232..233 " "
-          BinderString@233..245
-            RAW_STRING@233..244 "\"\"\"hello\"\"\""
-            Comment@244..245
-              WHITESPACE@244..245 " "
-          EQUAL@245..246 "="
-          Comment@246..247
-            WHITESPACE@246..247 " "
-          INTEGER@247..248 "0"
-          Comment@248..250
-            WHITESPACE@248..250 "\n\n"
-        LAYOUT_SEPARATOR@250..250 ""
-        ValueEquation@250..264
-          LOWER@250..254 "char"
-          Comment@254..255
-            WHITESPACE@254..255 " "
-          BinderChar@255..259
-            CHAR@255..258 "'a'"
-            Comment@258..259
-              WHITESPACE@258..259 " "
-          EQUAL@259..260 "="
-          Comment@260..261
-            WHITESPACE@260..261 " "
-          INTEGER@261..262 "0"
-          Comment@262..264
-            WHITESPACE@262..264 "\n\n"
-        LAYOUT_SEPARATOR@264..264 ""
-        ValueEquation@264..281
-          LOWER@264..271 "boolean"
-          Comment@271..272
-            WHITESPACE@271..272 " "
-          BinderTrue@272..277
-            TRUE@272..276 "true"
-            Comment@276..277
-              WHITESPACE@276..277 " "
-          EQUAL@277..278 "="
-          Comment@278..279
-            WHITESPACE@278..279 " "
-          INTEGER@279..280 "0"
-          Comment@280..281
-            WHITESPACE@280..281 "\n"
-        LAYOUT_SEPARATOR@281..281 ""
-        ValueEquation@281..300
-          LOWER@281..288 "boolean"
-          Comment@288..289
-            WHITESPACE@288..289 " "
-          BinderFalse@289..295
-            FALSE@289..294 "false"
-            Comment@294..295
-              WHITESPACE@294..295 " "
-          EQUAL@295..296 "="
-          Comment@296..297
-            WHITESPACE@296..297 " "
-          INTEGER@297..298 "0"
-          Comment@298..300
-            WHITESPACE@298..300 "\n\n"
-        LAYOUT_SEPARATOR@300..300 ""
-        ValueEquation@300..314
-          LOWER@300..307 "integer"
-          Comment@307..308
-            WHITESPACE@307..308 " "
-          BinderInteger@308..310
-            INTEGER@308..309 "1"
-            Comment@309..310
-              WHITESPACE@309..310 " "
-          EQUAL@310..311 "="
+          EquationBinders@204..206
+            BinderWildcard@204..206
+              UNDERSCORE@204..205 "_"
+              Comment@205..206
+                WHITESPACE@205..206 " "
+          EquationUnguarded@206..211
+            EQUAL@206..207 "="
+            Comment@207..208
+              WHITESPACE@207..208 " "
+            ExpressionTyped@208..211
+              ExpressionInteger@208..211
+                INTEGER@208..209 "0"
+                Comment@209..211
+                  WHITESPACE@209..211 "\n\n"
+        LAYOUT_SEPARATOR@211..211 ""
+        ValueEquation@211..230
+          LOWER@211..217 "string"
+          Comment@217..218
+            WHITESPACE@217..218 " "
+          EquationBinders@218..226
+            BinderString@218..226
+              STRING@218..225 "\"hello\""
+              Comment@225..226
+                WHITESPACE@225..226 " "
+          EquationUnguarded@226..230
+            EQUAL@226..227 "="
+            Comment@227..228
+              WHITESPACE@227..228 " "
+            ExpressionTyped@228..230
+              ExpressionInteger@228..230
+                INTEGER@228..229 "0"
+                Comment@229..230
+                  WHITESPACE@229..230 "\n"
+        LAYOUT_SEPARATOR@230..230 ""
+        ValueEquation@230..254
+          LOWER@230..236 "string"
+          Comment@236..237
+            WHITESPACE@236..237 " "
+          EquationBinders@237..249
+            BinderString@237..249
+              RAW_STRING@237..248 "\"\"\"hello\"\"\""
+              Comment@248..249
+                WHITESPACE@248..249 " "
+          EquationUnguarded@249..254
+            EQUAL@249..250 "="
+            Comment@250..251
+              WHITESPACE@250..251 " "
+            ExpressionTyped@251..254
+              ExpressionInteger@251..254
+                INTEGER@251..252 "0"
+                Comment@252..254
+                  WHITESPACE@252..254 "\n\n"
+        LAYOUT_SEPARATOR@254..254 ""
+        ValueEquation@254..268
+          LOWER@254..258 "char"
+          Comment@258..259
+            WHITESPACE@258..259 " "
+          EquationBinders@259..263
+            BinderChar@259..263
+              CHAR@259..262 "'a'"
+              Comment@262..263
+                WHITESPACE@262..263 " "
+          EquationUnguarded@263..268
+            EQUAL@263..264 "="
+            Comment@264..265
+              WHITESPACE@264..265 " "
+            ExpressionTyped@265..268
+              ExpressionInteger@265..268
+                INTEGER@265..266 "0"
+                Comment@266..268
+                  WHITESPACE@266..268 "\n\n"
+        LAYOUT_SEPARATOR@268..268 ""
+        ValueEquation@268..285
+          LOWER@268..275 "boolean"
+          Comment@275..276
+            WHITESPACE@275..276 " "
+          EquationBinders@276..281
+            BinderTrue@276..281
+              TRUE@276..280 "true"
+              Comment@280..281
+                WHITESPACE@280..281 " "
+          EquationUnguarded@281..285
+            EQUAL@281..282 "="
+            Comment@282..283
+              WHITESPACE@282..283 " "
+            ExpressionTyped@283..285
+              ExpressionInteger@283..285
+                INTEGER@283..284 "0"
+                Comment@284..285
+                  WHITESPACE@284..285 "\n"
+        LAYOUT_SEPARATOR@285..285 ""
+        ValueEquation@285..304
+          LOWER@285..292 "boolean"
+          Comment@292..293
+            WHITESPACE@292..293 " "
+          EquationBinders@293..299
+            BinderFalse@293..299
+              FALSE@293..298 "false"
+              Comment@298..299
+                WHITESPACE@298..299 " "
+          EquationUnguarded@299..304
+            EQUAL@299..300 "="
+            Comment@300..301
+              WHITESPACE@300..301 " "
+            ExpressionTyped@301..304
+              ExpressionInteger@301..304
+                INTEGER@301..302 "0"
+                Comment@302..304
+                  WHITESPACE@302..304 "\n\n"
+        LAYOUT_SEPARATOR@304..304 ""
+        ValueEquation@304..318
+          LOWER@304..311 "integer"
           Comment@311..312
             WHITESPACE@311..312 " "
-          INTEGER@312..313 "0"
-          Comment@313..314
-            WHITESPACE@313..314 "\n"
-        LAYOUT_SEPARATOR@314..314 ""
-        ValueEquation@314..330
-          LOWER@314..320 "number"
-          Comment@320..321
-            WHITESPACE@320..321 " "
-          BinderNumber@321..325
-            NUMBER@321..324 "1.0"
-            Comment@324..325
-              WHITESPACE@324..325 " "
-          EQUAL@325..326 "="
-          Comment@326..327
-            WHITESPACE@326..327 " "
-          INTEGER@327..328 "0"
-          Comment@328..330
-            WHITESPACE@328..330 "\n\n"
-        LAYOUT_SEPARATOR@330..330 ""
-        ValueEquation@330..343
-          LOWER@330..335 "array"
-          Comment@335..336
-            WHITESPACE@335..336 " "
-          BinderArray@336..339
-            LEFT_SQUARE@336..337 "["
-            RIGHT_SQUARE@337..338 "]"
-            Comment@338..339
-              WHITESPACE@338..339 " "
-          EQUAL@339..340 "="
-          Comment@340..341
-            WHITESPACE@340..341 " "
-          INTEGER@341..342 "0"
-          Comment@342..343
-            WHITESPACE@342..343 "\n"
-        LAYOUT_SEPARATOR@343..343 ""
-        ValueEquation@343..357
-          LOWER@343..348 "array"
-          Comment@348..349
-            WHITESPACE@348..349 " "
-          BinderArray@349..353
-            LEFT_SQUARE@349..350 "["
-            BinderVariable@350..351
-              LOWER@350..351 "x"
-            RIGHT_SQUARE@351..352 "]"
-            Comment@352..353
-              WHITESPACE@352..353 " "
-          EQUAL@353..354 "="
-          Comment@354..355
-            WHITESPACE@354..355 " "
-          INTEGER@355..356 "0"
-          Comment@356..357
-            WHITESPACE@356..357 "\n"
-        LAYOUT_SEPARATOR@357..357 ""
-        ValueEquation@357..375
-          LOWER@357..362 "array"
-          Comment@362..363
-            WHITESPACE@362..363 " "
-          BinderArray@363..370
-            LEFT_SQUARE@363..364 "["
-            BinderVariable@364..365
-              LOWER@364..365 "x"
-            COMMA@365..366 ","
-            Comment@366..367
-              WHITESPACE@366..367 " "
-            BinderVariable@367..368
-              LOWER@367..368 "y"
-            RIGHT_SQUARE@368..369 "]"
-            Comment@369..370
-              WHITESPACE@369..370 " "
-          EQUAL@370..371 "="
-          Comment@371..372
-            WHITESPACE@371..372 " "
-          INTEGER@372..373 "0"
-          Comment@373..375
-            WHITESPACE@373..375 "\n\n"
-        LAYOUT_SEPARATOR@375..375 ""
-        ValueEquation@375..389
-          LOWER@375..381 "record"
-          Comment@381..382
-            WHITESPACE@381..382 " "
-          BinderRecord@382..385
-            LEFT_CURLY@382..383 "{"
-            RIGHT_CURLY@383..384 "}"
-            Comment@384..385
-              WHITESPACE@384..385 " "
-          EQUAL@385..386 "="
-          Comment@386..387
-            WHITESPACE@386..387 " "
-          INTEGER@387..388 "0"
-          Comment@388..389
-            WHITESPACE@388..389 "\n"
-        LAYOUT_SEPARATOR@389..389 ""
-        ValueEquation@389..404
-          LOWER@389..395 "record"
-          Comment@395..396
-            WHITESPACE@395..396 " "
-          BinderRecord@396..400
-            LEFT_CURLY@396..397 "{"
-            RecordPun@397..398
-              LOWER@397..398 "x"
-            RIGHT_CURLY@398..399 "}"
-            Comment@399..400
-              WHITESPACE@399..400 " "
-          EQUAL@400..401 "="
-          Comment@401..402
-            WHITESPACE@401..402 " "
-          INTEGER@402..403 "0"
-          Comment@403..404
-            WHITESPACE@403..404 "\n"
-        LAYOUT_SEPARATOR@404..404 ""
-        ValueEquation@404..422
-          LOWER@404..410 "record"
-          Comment@410..411
-            WHITESPACE@410..411 " "
-          BinderRecord@411..418
-            LEFT_CURLY@411..412 "{"
-            RecordPun@412..413
-              LOWER@412..413 "x"
-            COMMA@413..414 ","
-            Comment@414..415
-              WHITESPACE@414..415 " "
-            RecordPun@415..416
-              LOWER@415..416 "y"
-            RIGHT_CURLY@416..417 "}"
-            Comment@417..418
-              WHITESPACE@417..418 " "
-          EQUAL@418..419 "="
-          Comment@419..420
-            WHITESPACE@419..420 " "
-          INTEGER@420..421 "0"
-          Comment@421..422
-            WHITESPACE@421..422 "\n"
-        LAYOUT_SEPARATOR@422..422 ""
-        ValueEquation@422..446
-          LOWER@422..428 "record"
-          Comment@428..429
-            WHITESPACE@428..429 " "
-          BinderRecord@429..442
-            LEFT_CURLY@429..430 "{"
-            RecordField@430..434
-              LOWER@430..431 "x"
-              COLON@431..432 ":"
-              Comment@432..433
-                WHITESPACE@432..433 " "
-              BinderVariable@433..434
-                LOWER@433..434 "y"
-            COMMA@434..435 ","
-            Comment@435..436
-              WHITESPACE@435..436 " "
-            RecordField@436..440
-              LOWER@436..437 "y"
-              COLON@437..438 ":"
-              Comment@438..439
-                WHITESPACE@438..439 " "
-              BinderVariable@439..440
-                LOWER@439..440 "x"
-            RIGHT_CURLY@440..441 "}"
-            Comment@441..442
-              WHITESPACE@441..442 " "
-          EQUAL@442..443 "="
-          Comment@443..444
-            WHITESPACE@443..444 " "
-          INTEGER@444..445 "0"
-          Comment@445..446
-            WHITESPACE@445..446 "\n"
-        LAYOUT_SEPARATOR@446..446 ""
-        ValueEquation@446..477
-          LOWER@446..452 "record"
-          Comment@452..453
-            WHITESPACE@452..453 " "
-          BinderRecord@453..472
-            LEFT_CURLY@453..454 "{"
-            RecordPun@454..455
-              LOWER@454..455 "a"
-            COMMA@455..456 ","
-            Comment@456..457
-              WHITESPACE@456..457 " "
-            RecordField@457..461
-              LOWER@457..458 "b"
-              COLON@458..459 ":"
-              Comment@459..460
-                WHITESPACE@459..460 " "
-              BinderVariable@460..461
-                LOWER@460..461 "c"
-            COMMA@461..462 ","
-            Comment@462..463
-              WHITESPACE@462..463 " "
-            RecordPun@463..464
-              LOWER@463..464 "d"
-            COMMA@464..465 ","
-            Comment@465..466
-              WHITESPACE@465..466 " "
-            RecordField@466..470
-              LOWER@466..467 "e"
-              COLON@467..468 ":"
-              Comment@468..469
-                WHITESPACE@468..469 " "
-              BinderVariable@469..470
-                LOWER@469..470 "f"
-            RIGHT_CURLY@470..471 "}"
-            Comment@471..472
-              WHITESPACE@471..472 " "
-          EQUAL@472..473 "="
-          Comment@473..474
-            WHITESPACE@473..474 " "
-          INTEGER@474..475 "0"
-          Comment@475..477
-            WHITESPACE@475..477 "\n\n"
-        LAYOUT_SEPARATOR@477..477 ""
-        ValueEquation@477..499
-          LOWER@477..490 "parenthesized"
-          Comment@490..491
-            WHITESPACE@490..491 " "
-          BinderParenthesized@491..495
-            LEFT_PARENTHESIS@491..492 "("
-            BinderVariable@492..493
-              LOWER@492..493 "x"
-            RIGHT_PARENTHESIS@493..494 ")"
-            Comment@494..495
-              WHITESPACE@494..495 " "
-          EQUAL@495..496 "="
-          Comment@496..497
-            WHITESPACE@496..497 " "
-          INTEGER@497..498 "0"
-          Comment@498..499
-            WHITESPACE@498..499 "\n"
-        LAYOUT_SEPARATOR@499..499 ""
-        ValueEquation@499..525
-          LOWER@499..512 "parenthesized"
-          Comment@512..513
-            WHITESPACE@512..513 " "
-          BinderParenthesized@513..521
-            LEFT_PARENTHESIS@513..514 "("
-            BinderOperatorChain@514..519
-              BinderVariable@514..516
-                LOWER@514..515 "x"
-                Comment@515..516
-                  WHITESPACE@515..516 " "
-              OPERATOR@516..517 "+"
-              Comment@517..518
-                WHITESPACE@517..518 " "
-              BinderVariable@518..519
-                LOWER@518..519 "y"
-            RIGHT_PARENTHESIS@519..520 ")"
-            Comment@520..521
-              WHITESPACE@520..521 " "
-          EQUAL@521..522 "="
-          Comment@522..523
-            WHITESPACE@522..523 " "
-          INTEGER@523..524 "0"
-          Comment@524..525
-            WHITESPACE@524..525 "\n"
-        LAYOUT_SEPARATOR@525..525 ""
-        ValueEquation@525..551
-          LOWER@525..538 "parenthesized"
-          Comment@538..539
-            WHITESPACE@538..539 " "
-          BinderParenthesized@539..547
-            LEFT_PARENTHESIS@539..540 "("
-            BinderParenthesized@540..545
-              LEFT_PARENTHESIS@540..541 "("
-              BinderParenthesized@541..544
-                LEFT_PARENTHESIS@541..542 "("
-                BinderVariable@542..543
-                  LOWER@542..543 "x"
-                RIGHT_PARENTHESIS@543..544 ")"
-              RIGHT_PARENTHESIS@544..545 ")"
-            RIGHT_PARENTHESIS@545..546 ")"
-            Comment@546..547
-              WHITESPACE@546..547 " "
-          EQUAL@547..548 "="
-          Comment@548..549
-            WHITESPACE@548..549 " "
-          INTEGER@549..550 "0"
-          Comment@550..551
-            WHITESPACE@550..551 "\n"
-      LAYOUT_END@551..551 ""
-      END_OF_FILE@551..551 ""
+          EquationBinders@312..314
+            BinderInteger@312..314
+              INTEGER@312..313 "1"
+              Comment@313..314
+                WHITESPACE@313..314 " "
+          EquationUnguarded@314..318
+            EQUAL@314..315 "="
+            Comment@315..316
+              WHITESPACE@315..316 " "
+            ExpressionTyped@316..318
+              ExpressionInteger@316..318
+                INTEGER@316..317 "0"
+                Comment@317..318
+                  WHITESPACE@317..318 "\n"
+        LAYOUT_SEPARATOR@318..318 ""
+        ValueEquation@318..334
+          LOWER@318..324 "number"
+          Comment@324..325
+            WHITESPACE@324..325 " "
+          EquationBinders@325..329
+            BinderNumber@325..329
+              NUMBER@325..328 "1.0"
+              Comment@328..329
+                WHITESPACE@328..329 " "
+          EquationUnguarded@329..334
+            EQUAL@329..330 "="
+            Comment@330..331
+              WHITESPACE@330..331 " "
+            ExpressionTyped@331..334
+              ExpressionInteger@331..334
+                INTEGER@331..332 "0"
+                Comment@332..334
+                  WHITESPACE@332..334 "\n\n"
+        LAYOUT_SEPARATOR@334..334 ""
+        ValueEquation@334..347
+          LOWER@334..339 "array"
+          Comment@339..340
+            WHITESPACE@339..340 " "
+          EquationBinders@340..343
+            BinderArray@340..343
+              LEFT_SQUARE@340..341 "["
+              RIGHT_SQUARE@341..342 "]"
+              Comment@342..343
+                WHITESPACE@342..343 " "
+          EquationUnguarded@343..347
+            EQUAL@343..344 "="
+            Comment@344..345
+              WHITESPACE@344..345 " "
+            ExpressionTyped@345..347
+              ExpressionInteger@345..347
+                INTEGER@345..346 "0"
+                Comment@346..347
+                  WHITESPACE@346..347 "\n"
+        LAYOUT_SEPARATOR@347..347 ""
+        ValueEquation@347..361
+          LOWER@347..352 "array"
+          Comment@352..353
+            WHITESPACE@352..353 " "
+          EquationBinders@353..357
+            BinderArray@353..357
+              LEFT_SQUARE@353..354 "["
+              BinderVariable@354..355
+                LOWER@354..355 "x"
+              RIGHT_SQUARE@355..356 "]"
+              Comment@356..357
+                WHITESPACE@356..357 " "
+          EquationUnguarded@357..361
+            EQUAL@357..358 "="
+            Comment@358..359
+              WHITESPACE@358..359 " "
+            ExpressionTyped@359..361
+              ExpressionInteger@359..361
+                INTEGER@359..360 "0"
+                Comment@360..361
+                  WHITESPACE@360..361 "\n"
+        LAYOUT_SEPARATOR@361..361 ""
+        ValueEquation@361..379
+          LOWER@361..366 "array"
+          Comment@366..367
+            WHITESPACE@366..367 " "
+          EquationBinders@367..374
+            BinderArray@367..374
+              LEFT_SQUARE@367..368 "["
+              BinderVariable@368..369
+                LOWER@368..369 "x"
+              COMMA@369..370 ","
+              Comment@370..371
+                WHITESPACE@370..371 " "
+              BinderVariable@371..372
+                LOWER@371..372 "y"
+              RIGHT_SQUARE@372..373 "]"
+              Comment@373..374
+                WHITESPACE@373..374 " "
+          EquationUnguarded@374..379
+            EQUAL@374..375 "="
+            Comment@375..376
+              WHITESPACE@375..376 " "
+            ExpressionTyped@376..379
+              ExpressionInteger@376..379
+                INTEGER@376..377 "0"
+                Comment@377..379
+                  WHITESPACE@377..379 "\n\n"
+        LAYOUT_SEPARATOR@379..379 ""
+        ValueEquation@379..393
+          LOWER@379..385 "record"
+          Comment@385..386
+            WHITESPACE@385..386 " "
+          EquationBinders@386..389
+            BinderRecord@386..389
+              LEFT_CURLY@386..387 "{"
+              RIGHT_CURLY@387..388 "}"
+              Comment@388..389
+                WHITESPACE@388..389 " "
+          EquationUnguarded@389..393
+            EQUAL@389..390 "="
+            Comment@390..391
+              WHITESPACE@390..391 " "
+            ExpressionTyped@391..393
+              ExpressionInteger@391..393
+                INTEGER@391..392 "0"
+                Comment@392..393
+                  WHITESPACE@392..393 "\n"
+        LAYOUT_SEPARATOR@393..393 ""
+        ValueEquation@393..408
+          LOWER@393..399 "record"
+          Comment@399..400
+            WHITESPACE@399..400 " "
+          EquationBinders@400..404
+            BinderRecord@400..404
+              LEFT_CURLY@400..401 "{"
+              RecordPun@401..402
+                LOWER@401..402 "x"
+              RIGHT_CURLY@402..403 "}"
+              Comment@403..404
+                WHITESPACE@403..404 " "
+          EquationUnguarded@404..408
+            EQUAL@404..405 "="
+            Comment@405..406
+              WHITESPACE@405..406 " "
+            ExpressionTyped@406..408
+              ExpressionInteger@406..408
+                INTEGER@406..407 "0"
+                Comment@407..408
+                  WHITESPACE@407..408 "\n"
+        LAYOUT_SEPARATOR@408..408 ""
+        ValueEquation@408..426
+          LOWER@408..414 "record"
+          Comment@414..415
+            WHITESPACE@414..415 " "
+          EquationBinders@415..422
+            BinderRecord@415..422
+              LEFT_CURLY@415..416 "{"
+              RecordPun@416..417
+                LOWER@416..417 "x"
+              COMMA@417..418 ","
+              Comment@418..419
+                WHITESPACE@418..419 " "
+              RecordPun@419..420
+                LOWER@419..420 "y"
+              RIGHT_CURLY@420..421 "}"
+              Comment@421..422
+                WHITESPACE@421..422 " "
+          EquationUnguarded@422..426
+            EQUAL@422..423 "="
+            Comment@423..424
+              WHITESPACE@423..424 " "
+            ExpressionTyped@424..426
+              ExpressionInteger@424..426
+                INTEGER@424..425 "0"
+                Comment@425..426
+                  WHITESPACE@425..426 "\n"
+        LAYOUT_SEPARATOR@426..426 ""
+        ValueEquation@426..450
+          LOWER@426..432 "record"
+          Comment@432..433
+            WHITESPACE@432..433 " "
+          EquationBinders@433..446
+            BinderRecord@433..446
+              LEFT_CURLY@433..434 "{"
+              RecordField@434..438
+                LOWER@434..435 "x"
+                COLON@435..436 ":"
+                Comment@436..437
+                  WHITESPACE@436..437 " "
+                BinderVariable@437..438
+                  LOWER@437..438 "y"
+              COMMA@438..439 ","
+              Comment@439..440
+                WHITESPACE@439..440 " "
+              RecordField@440..444
+                LOWER@440..441 "y"
+                COLON@441..442 ":"
+                Comment@442..443
+                  WHITESPACE@442..443 " "
+                BinderVariable@443..444
+                  LOWER@443..444 "x"
+              RIGHT_CURLY@444..445 "}"
+              Comment@445..446
+                WHITESPACE@445..446 " "
+          EquationUnguarded@446..450
+            EQUAL@446..447 "="
+            Comment@447..448
+              WHITESPACE@447..448 " "
+            ExpressionTyped@448..450
+              ExpressionInteger@448..450
+                INTEGER@448..449 "0"
+                Comment@449..450
+                  WHITESPACE@449..450 "\n"
+        LAYOUT_SEPARATOR@450..450 ""
+        ValueEquation@450..481
+          LOWER@450..456 "record"
+          Comment@456..457
+            WHITESPACE@456..457 " "
+          EquationBinders@457..476
+            BinderRecord@457..476
+              LEFT_CURLY@457..458 "{"
+              RecordPun@458..459
+                LOWER@458..459 "a"
+              COMMA@459..460 ","
+              Comment@460..461
+                WHITESPACE@460..461 " "
+              RecordField@461..465
+                LOWER@461..462 "b"
+                COLON@462..463 ":"
+                Comment@463..464
+                  WHITESPACE@463..464 " "
+                BinderVariable@464..465
+                  LOWER@464..465 "c"
+              COMMA@465..466 ","
+              Comment@466..467
+                WHITESPACE@466..467 " "
+              RecordPun@467..468
+                LOWER@467..468 "d"
+              COMMA@468..469 ","
+              Comment@469..470
+                WHITESPACE@469..470 " "
+              RecordField@470..474
+                LOWER@470..471 "e"
+                COLON@471..472 ":"
+                Comment@472..473
+                  WHITESPACE@472..473 " "
+                BinderVariable@473..474
+                  LOWER@473..474 "f"
+              RIGHT_CURLY@474..475 "}"
+              Comment@475..476
+                WHITESPACE@475..476 " "
+          EquationUnguarded@476..481
+            EQUAL@476..477 "="
+            Comment@477..478
+              WHITESPACE@477..478 " "
+            ExpressionTyped@478..481
+              ExpressionInteger@478..481
+                INTEGER@478..479 "0"
+                Comment@479..481
+                  WHITESPACE@479..481 "\n\n"
+        LAYOUT_SEPARATOR@481..481 ""
+        ValueEquation@481..503
+          LOWER@481..494 "parenthesized"
+          Comment@494..495
+            WHITESPACE@494..495 " "
+          EquationBinders@495..499
+            BinderParenthesized@495..499
+              LEFT_PARENTHESIS@495..496 "("
+              BinderVariable@496..497
+                LOWER@496..497 "x"
+              RIGHT_PARENTHESIS@497..498 ")"
+              Comment@498..499
+                WHITESPACE@498..499 " "
+          EquationUnguarded@499..503
+            EQUAL@499..500 "="
+            Comment@500..501
+              WHITESPACE@500..501 " "
+            ExpressionTyped@501..503
+              ExpressionInteger@501..503
+                INTEGER@501..502 "0"
+                Comment@502..503
+                  WHITESPACE@502..503 "\n"
+        LAYOUT_SEPARATOR@503..503 ""
+        ValueEquation@503..529
+          LOWER@503..516 "parenthesized"
+          Comment@516..517
+            WHITESPACE@516..517 " "
+          EquationBinders@517..525
+            BinderParenthesized@517..525
+              LEFT_PARENTHESIS@517..518 "("
+              BinderOperatorChain@518..523
+                BinderVariable@518..520
+                  LOWER@518..519 "x"
+                  Comment@519..520
+                    WHITESPACE@519..520 " "
+                OPERATOR@520..521 "+"
+                Comment@521..522
+                  WHITESPACE@521..522 " "
+                BinderVariable@522..523
+                  LOWER@522..523 "y"
+              RIGHT_PARENTHESIS@523..524 ")"
+              Comment@524..525
+                WHITESPACE@524..525 " "
+          EquationUnguarded@525..529
+            EQUAL@525..526 "="
+            Comment@526..527
+              WHITESPACE@526..527 " "
+            ExpressionTyped@527..529
+              ExpressionInteger@527..529
+                INTEGER@527..528 "0"
+                Comment@528..529
+                  WHITESPACE@528..529 "\n"
+        LAYOUT_SEPARATOR@529..529 ""
+        ValueEquation@529..555
+          LOWER@529..542 "parenthesized"
+          Comment@542..543
+            WHITESPACE@542..543 " "
+          EquationBinders@543..551
+            BinderParenthesized@543..551
+              LEFT_PARENTHESIS@543..544 "("
+              BinderParenthesized@544..549
+                LEFT_PARENTHESIS@544..545 "("
+                BinderParenthesized@545..548
+                  LEFT_PARENTHESIS@545..546 "("
+                  BinderVariable@546..547
+                    LOWER@546..547 "x"
+                  RIGHT_PARENTHESIS@547..548 ")"
+                RIGHT_PARENTHESIS@548..549 ")"
+              RIGHT_PARENTHESIS@549..550 ")"
+              Comment@550..551
+                WHITESPACE@550..551 " "
+          EquationUnguarded@551..555
+            EQUAL@551..552 "="
+            Comment@552..553
+              WHITESPACE@552..553 " "
+            ExpressionTyped@553..555
+              ExpressionInteger@553..555
+                INTEGER@553..554 "0"
+                Comment@554..555
+                  WHITESPACE@554..555 "\n"
+      LAYOUT_END@555..555 ""
+      END_OF_FILE@555..555 ""
     ,
     [],
 )

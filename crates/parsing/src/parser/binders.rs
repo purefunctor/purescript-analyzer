@@ -2,7 +2,7 @@ use syntax::{SyntaxKind, TokenSet};
 
 use super::{generic::record_item, names, types, NodeMarker, Parser};
 
-pub fn binder(p: &mut Parser) {
+pub(super) fn binder(p: &mut Parser) {
     let mut m = p.start();
 
     binder_1(p);
@@ -55,7 +55,7 @@ fn binder_2(p: &mut Parser) {
     }
 }
 
-const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
+pub(super) const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::PREFIX,
     SyntaxKind::UPPER,
     SyntaxKind::UNDERSCORE,
@@ -74,7 +74,7 @@ const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
 
 const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 
-fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
+pub(super) fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
     if p.at_in(names::LOWER_NON_RESERVED) {
         binder_named_or_variable(p, &mut m);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {

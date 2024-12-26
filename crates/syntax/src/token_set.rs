@@ -2,6 +2,7 @@ use crate::SyntaxKind;
 
 const LAST_TOKEN: usize = SyntaxKind::ERROR as usize;
 
+#[derive(Clone, Copy)]
 pub struct TokenSet([u64; 3]);
 
 impl TokenSet {

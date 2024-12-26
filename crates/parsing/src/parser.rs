@@ -406,24 +406,10 @@ fn module_statement(p: &mut Parser) {
 }
 
 fn value_annotation_or_equation(p: &mut Parser) {
-    let m = p.start();
-    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected names::LOWER_NON_RESERVED");
-    if p.at(SyntaxKind::DOUBLE_COLON) {
-        type_annotation(p, m);
-    } else {
-        value_equation(p, m);
-    };
-}
-
-fn type_annotation(p: &mut Parser, mut m: NodeMarker) {
-    p.expect(SyntaxKind::DOUBLE_COLON);
-    types::ty(p);
-    m.end(p, SyntaxKind::ValueAnnotation);
-}
-
-fn value_equation(p: &mut Parser, mut m: NodeMarker) {
-    binders::binder(p);
-    p.expect(SyntaxKind::EQUAL);
-    p.expect(SyntaxKind::INTEGER);
-    m.end(p, SyntaxKind::ValueEquation);
+    generic::annotation_or_equation(
+        p,
+        SyntaxKind::ValueAnnotation,
+        SyntaxKind::ValueEquation,
+        SyntaxKind::EQUAL,
+    );
 }

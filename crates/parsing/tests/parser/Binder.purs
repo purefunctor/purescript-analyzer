@@ -1,7 +1,7 @@
 module Binder where
 
-minus -1 = 0
-minus -1.0 = 0
+minus (-1) = 0
+minus (-1.0) = 0
 
 constructor (Cons x xs) = 0
 constructor Nil = 0

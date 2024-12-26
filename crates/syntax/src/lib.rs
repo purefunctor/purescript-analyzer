@@ -114,11 +114,16 @@ pub enum SyntaxKind {
     ImportTypeOperator,
     ImportAlias,
     ModuleStatements,
-    ValueAnnotation,
-    ValueEquation,
 
     TypeItemsAll,
     TypeItemsList,
+
+    ValueAnnotation,
+    ValueEquation,
+    EquationBinders,
+    EquationUnguarded,
+    EquationGuarded,
+    EquationWhere,
 
     TypeApplicationChain,
     TypeArrow,
