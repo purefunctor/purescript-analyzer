@@ -1,4 +1,5 @@
 mod binders;
+mod expressions;
 mod types;
 
 use std::sync::Arc;
