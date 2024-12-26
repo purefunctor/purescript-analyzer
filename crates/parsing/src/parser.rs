@@ -1,5 +1,7 @@
 mod binders;
 mod expressions;
+mod generic;
+mod names;
 mod types;
 
 use std::sync::Arc;
@@ -136,20 +138,6 @@ impl NodeMarker {
     }
 }
 
-const LOWER_NON_RESERVED: TokenSet =
-    TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING]);
-
-fn module_name(p: &mut Parser) {
-    let mut m = p.start();
-
-    if p.at(SyntaxKind::PREFIX) {
-        p.consume();
-    }
-    p.expect(SyntaxKind::UPPER);
-
-    m.end(p, SyntaxKind::ModuleName);
-}
-
 pub(crate) fn module(p: &mut Parser) {
     let mut m = p.start();
 
@@ -166,7 +154,7 @@ fn module_header(p: &mut Parser) {
     let mut m = p.start();
 
     p.expect(SyntaxKind::MODULE);
-    module_name(p);
+    names::module_name(p);
     module_export_list(p);
     p.expect(SyntaxKind::WHERE);
 
@@ -212,14 +200,14 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::TYPE,
     SyntaxKind::UPPER,
 ])
-.union(LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED);
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 
 fn module_export_item(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ModuleExportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
@@ -233,7 +221,7 @@ fn module_export_item(p: &mut Parser) {
     } else if p.eat(SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::ModuleExportOperator);
     } else if p.eat(SyntaxKind::MODULE) {
-        module_name(p);
+        names::module_name(p);
         m.end(p, SyntaxKind::ModuleExportModule);
     } else {
         m.cancel(p);
@@ -323,13 +311,13 @@ const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::NEWTYPE,
     SyntaxKind::FOREIGN,
 ])
-.union(LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED);
 
 fn import_statement(p: &mut Parser) {
     let mut m = p.start();
 
     p.expect(SyntaxKind::IMPORT);
-    module_name(p);
+    names::module_name(p);
     import_list(p);
     import_alias(p);
 
@@ -375,7 +363,7 @@ const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::TYPE,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
-.union(LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED);
 
 const IMPORT_LIST_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -383,7 +371,7 @@ const IMPORT_LIST_RECOVERY: TokenSet =
 fn import_item(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ImportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
@@ -405,21 +393,21 @@ fn import_alias(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat(SyntaxKind::AS) {
-        module_name(p);
+        names::module_name(p);
     }
 
     m.end(p, SyntaxKind::ImportAlias);
 }
 
 fn module_statement(p: &mut Parser) {
-    if p.at_in(LOWER_NON_RESERVED) {
+    if p.at_in(names::LOWER_NON_RESERVED) {
         value_annotation_or_equation(p);
     }
 }
 
 fn value_annotation_or_equation(p: &mut Parser) {
     let m = p.start();
-    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected names::LOWER_NON_RESERVED");
     if p.at(SyntaxKind::DOUBLE_COLON) {
         type_annotation(p, m);
     } else {
@@ -438,17 +426,4 @@ fn value_equation(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::EQUAL);
     p.expect(SyntaxKind::INTEGER);
     m.end(p, SyntaxKind::ValueEquation);
-}
-
-fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
-    let mut m = p.start();
-
-    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
-    if p.at(SyntaxKind::COMMA) || p.at(SyntaxKind::RIGHT_CURLY) {
-        return m.end(p, SyntaxKind::RecordPun);
-    }
-
-    p.expect(SyntaxKind::COLON);
-    k(p);
-    m.end(p, SyntaxKind::RecordField);
 }

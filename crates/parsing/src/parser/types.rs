@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{NodeMarker, Parser, LOWER_NON_RESERVED};
+use super::{names, NodeMarker, Parser};
 
 pub fn ty(p: &mut Parser) {
     let mut m = p.start();
@@ -90,7 +90,7 @@ fn ty_5(p: &mut Parser) {
 
 pub fn ty_atom(p: &mut Parser) {
     let mut m = p.start();
-    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
         let mut n = p.start();
@@ -131,7 +131,7 @@ const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::UNDERSCORE,
 ])
-.union(LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED);
 
 fn ty_variable_bindings(p: &mut Parser) {
     while !p.at(SyntaxKind::PERIOD) && !p.at_eof() {
@@ -152,7 +152,7 @@ fn ty_variable_binding(p: &mut Parser) {
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
 
     p.eat(SyntaxKind::AT);
-    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected names::LOWER_NON_RESERVED");
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         ty(p);
@@ -166,7 +166,7 @@ fn ty_variable_binding(p: &mut Parser) {
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(LOWER_NON_RESERVED);
+    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER_NON_RESERVED);
 
 fn ty_parentheses(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_PARENTHESIS);

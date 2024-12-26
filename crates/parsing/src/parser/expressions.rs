@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{types, NodeMarker, Parser, LOWER_NON_RESERVED};
+use super::{names, types, NodeMarker, Parser};
 
 pub fn expression(p: &mut Parser) {
     let mut m = p.start();
@@ -215,7 +215,7 @@ fn expression_atom(p: &mut Parser) {
 fn expression_prefixed(p: &mut Parser, mut m: NodeMarker) {
     let mut n = p.start();
     p.eat(SyntaxKind::PREFIX);
-    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER)
+    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER)
         || p.eat(SyntaxKind::UPPER)
         || p.eat(SyntaxKind::OPERATOR_NAME)
     {
@@ -243,7 +243,7 @@ const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
-.union(LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED);
 
 const EXPRESSION_START: TokenSet = TokenSet::new(&[
     SyntaxKind::IF,
