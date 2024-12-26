@@ -38,19 +38,18 @@ snapshot_kind: text
             Comment@35..36
               WHITESPACE@35..36 " "
             EquationWhere@36..78
-              ExpressionTyped@36..46
-                ExpressionOperatorChain@36..46
-                  ExpressionVariable@36..39
-                    LOWER@36..38 "a2"
-                    Comment@38..39
-                      WHITESPACE@38..39 " "
-                  OPERATOR@39..40 "+"
-                  Comment@40..41
-                    WHITESPACE@40..41 " "
-                  ExpressionVariable@41..46
-                    LOWER@41..43 "b2"
-                    Comment@43..46
-                      WHITESPACE@43..46 "\n  "
+              ExpressionOperatorChain@36..46
+                ExpressionVariable@36..39
+                  LOWER@36..38 "a2"
+                  Comment@38..39
+                    WHITESPACE@38..39 " "
+                OPERATOR@39..40 "+"
+                Comment@40..41
+                  WHITESPACE@40..41 " "
+                ExpressionVariable@41..46
+                  LOWER@41..43 "b2"
+                  Comment@43..46
+                    WHITESPACE@43..46 "\n  "
               WHERE@46..51 "where"
               Comment@51..54
                 WHITESPACE@51..54 "\n  "
@@ -66,19 +65,18 @@ snapshot_kind: text
                     Comment@58..59
                       WHITESPACE@58..59 " "
                     EquationWhere@59..67
-                      ExpressionTyped@59..67
-                        ExpressionOperatorChain@59..67
-                          ExpressionVariable@59..61
-                            LOWER@59..60 "a"
-                            Comment@60..61
-                              WHITESPACE@60..61 " "
-                          OPERATOR@61..62 "*"
-                          Comment@62..63
-                            WHITESPACE@62..63 " "
-                          ExpressionVariable@63..67
-                            LOWER@63..64 "a"
-                            Comment@64..67
-                              WHITESPACE@64..67 "\n  "
+                      ExpressionOperatorChain@59..67
+                        ExpressionVariable@59..61
+                          LOWER@59..60 "a"
+                          Comment@60..61
+                            WHITESPACE@60..61 " "
+                        OPERATOR@61..62 "*"
+                        Comment@62..63
+                          WHITESPACE@62..63 " "
+                        ExpressionVariable@63..67
+                          LOWER@63..64 "a"
+                          Comment@64..67
+                            WHITESPACE@64..67 "\n  "
                 LAYOUT_SEPARATOR@67..67 ""
                 LetBindingEquation@67..78
                   LOWER@67..69 "b2"
@@ -90,19 +88,18 @@ snapshot_kind: text
                     Comment@71..72
                       WHITESPACE@71..72 " "
                     EquationWhere@72..78
-                      ExpressionTyped@72..78
-                        ExpressionOperatorChain@72..78
-                          ExpressionVariable@72..74
-                            LOWER@72..73 "b"
-                            Comment@73..74
-                              WHITESPACE@73..74 " "
-                          OPERATOR@74..75 "*"
-                          Comment@75..76
-                            WHITESPACE@75..76 " "
-                          ExpressionVariable@76..78
-                            LOWER@76..77 "b"
-                            Comment@77..78
-                              WHITESPACE@77..78 "\n"
+                      ExpressionOperatorChain@72..78
+                        ExpressionVariable@72..74
+                          LOWER@72..73 "b"
+                          Comment@73..74
+                            WHITESPACE@73..74 " "
+                        OPERATOR@74..75 "*"
+                        Comment@75..76
+                          WHITESPACE@75..76 " "
+                        ExpressionVariable@76..78
+                          LOWER@76..77 "b"
+                          Comment@77..78
+                            WHITESPACE@77..78 "\n"
                 LAYOUT_END@78..78 ""
       LAYOUT_END@78..78 ""
       END_OF_FILE@78..78 ""

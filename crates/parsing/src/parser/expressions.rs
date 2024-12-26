@@ -11,9 +11,10 @@ pub fn expression(p: &mut Parser) {
     expression_1(p);
     if p.at(SyntaxKind::DOUBLE_COLON) {
         types::ty(p);
+        m.end(p, SyntaxKind::ExpressionTyped);
+    } else {
+        m.cancel(p);
     }
-
-    m.end(p, SyntaxKind::ExpressionTyped);
 }
 
 fn expression_1(p: &mut Parser) {
