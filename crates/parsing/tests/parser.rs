@@ -41,4 +41,5 @@ parser_tests!(
     type_parenthesized => include_str!("parser/TypeParenthesized.purs"),
     type_record => include_str!("parser/TypeRecord.purs"),
     value_annotation => include_str!("parser/ValueAnnotation.purs"),
+    value_equation => include_str!("parser/ValueEquation.purs"),
 );

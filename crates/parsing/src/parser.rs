@@ -1,10 +1,11 @@
 mod binders;
+mod binding;
 mod expressions;
 mod generic;
 mod names;
 mod types;
 
-use std::sync::Arc;
+use std::{cell::Cell, sync::Arc};
 
 use drop_bomb::DropBomb;
 use syntax::{SyntaxKind, TokenSet};
@@ -15,13 +16,15 @@ pub(crate) struct Parser<'t> {
     index: usize,
     tokens: &'t [SyntaxKind],
     output: Vec<Output>,
+    fuel: Cell<u8>,
 }
 
 impl<'t> Parser<'t> {
     pub(crate) fn new(tokens: &'t [SyntaxKind]) -> Parser<'t> {
         let index = 0;
         let output = vec![];
-        Parser { index, tokens, output }
+        let fuel = Cell::new(u8::MAX);
+        Parser { index, tokens, output, fuel }
     }
 
     pub(crate) fn finish(self) -> Vec<Output> {
@@ -29,10 +32,15 @@ impl<'t> Parser<'t> {
     }
 
     fn nth(&self, index: usize) -> SyntaxKind {
+        if self.fuel.get() == 0 {
+            panic!("invariant violated: fuel exhausted");
+        }
+        self.fuel.set(self.fuel.get().saturating_sub(1));
         self.tokens.get(self.index + index).copied().unwrap_or(SyntaxKind::END_OF_FILE)
     }
 
     fn consume(&mut self) {
+        self.fuel.set(u8::MAX);
         let kind = self.tokens[self.index];
         self.index += 1;
         self.output.push(Output::Token { kind });

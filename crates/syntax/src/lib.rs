@@ -124,6 +124,9 @@ pub enum SyntaxKind {
     EquationUnguarded,
     EquationGuarded,
     EquationWhere,
+    LetBindingAnnotation,
+    LetBindingEquation,
+    LetBindingStatements,
 
     TypeApplicationChain,
     TypeArrow,
@@ -177,6 +180,7 @@ pub enum SyntaxKind {
     ExpressionAdo,
     ExpressionConstructor,
     ExpressionVariable,
+    ExpressionOperatorName,
     ExpressionSection,
     ExpressionHole,
     ExpressionString,

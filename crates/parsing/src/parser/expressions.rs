@@ -1,6 +1,9 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{names, types, NodeMarker, Parser};
+use super::{
+    names::{self, LOWER_NON_RESERVED},
+    types, NodeMarker, Parser,
+};
 
 pub fn expression(p: &mut Parser) {
     let mut m = p.start();
@@ -38,6 +41,7 @@ fn expression_2(p: &mut Parser) {
     while p.at(SyntaxKind::TICK) && !p.at_eof() {
         tick_expression(p);
         expression_3(p);
+        i += 1;
     }
 
     if i > 0 {
@@ -183,8 +187,27 @@ fn expression_7(p: &mut Parser) {
 fn expression_atom(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.at(SyntaxKind::PREFIX) {
-        expression_prefixed(p, m);
+    let mut n = p.start();
+    if p.eat(SyntaxKind::PREFIX) {
+        if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+            m.end(p, SyntaxKind::ExpressionVariable);
+        } else if p.eat(SyntaxKind::UPPER) {
+            m.end(p, SyntaxKind::ExpressionConstructor);
+        } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+            m.end(p, SyntaxKind::ExpressionOperatorName);
+        } else {
+            m.cancel(p);
+        }
+        return n.end(p, SyntaxKind::QualifiedName);
+    };
+    n.cancel(p);
+
+    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+        m.end(p, SyntaxKind::ExpressionVariable);
+    } else if p.eat(SyntaxKind::UPPER) {
+        m.end(p, SyntaxKind::ExpressionConstructor);
+    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+        m.end(p, SyntaxKind::ExpressionOperatorName);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::ExpressionSection);
     } else if p.eat(SyntaxKind::HOLE) {
@@ -208,21 +231,6 @@ fn expression_atom(p: &mut Parser) {
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
         todo!()
     } else {
-        m.cancel(p);
-    }
-}
-
-fn expression_prefixed(p: &mut Parser, mut m: NodeMarker) {
-    let mut n = p.start();
-    p.eat(SyntaxKind::PREFIX);
-    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER)
-        || p.eat(SyntaxKind::UPPER)
-        || p.eat(SyntaxKind::OPERATOR_NAME)
-    {
-        n.end(p, SyntaxKind::QualifiedName);
-        m.end(p, SyntaxKind::ExpressionVariable);
-    } else {
-        n.cancel(p);
         m.cancel(p);
     }
 }

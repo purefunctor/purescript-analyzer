@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{binders, expressions, names, types, Parser};
+use super::{binders, binding, expressions, names, types, Parser};
 
 pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
     let mut m = p.start();
@@ -64,8 +64,8 @@ fn equation_where(p: &mut Parser) {
     let mut m = p.start();
     expressions::expression(p);
     if p.eat(SyntaxKind::WHERE) {
+        binding::bindings(p);
         m.end(p, SyntaxKind::EquationWhere);
-        todo!("EquationWhere");
     } else {
         m.cancel(p);
     }
