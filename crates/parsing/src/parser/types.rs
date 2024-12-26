@@ -110,8 +110,7 @@ pub fn ty_atom(p: &mut Parser) {
         ty_parentheses(p, m);
     } else if p.at(SyntaxKind::LEFT_CURLY) {
         ty_record(p, m);
-    } else if p.eat(SyntaxKind::QUESTION) {
-        p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    } else if p.eat(SyntaxKind::HOLE) {
         m.end(p, SyntaxKind::TypeHole);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::TypeWildcard);
@@ -130,7 +129,6 @@ const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::OPERATOR_NAME,
     SyntaxKind::LEFT_PARENTHESIS,
     SyntaxKind::LEFT_CURLY,
-    SyntaxKind::QUESTION,
     SyntaxKind::UNDERSCORE,
 ])
 .union(LOWER_NON_RESERVED);

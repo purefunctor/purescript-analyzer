@@ -100,15 +100,17 @@ impl<'a> Lexer<'a> {
 
             '`' => self.take_single(SyntaxKind::TICK),
             ',' => self.take_single(SyntaxKind::COMMA),
-            '?' => self.take_single(SyntaxKind::QUESTION),
-            '_' if !is_lower(self.second()) => self.take_single(SyntaxKind::UNDERSCORE),
+            '?' if !is_name(self.second()) => self.take_single(SyntaxKind::OPERATOR),
+            '_' if !is_name(self.second()) => self.take_single(SyntaxKind::UNDERSCORE),
 
             '\'' => self.take_char(),
             '"' => self.take_string(),
 
             i => {
-                if is_lower_start(i) {
-                    self.take_lower()
+                if i == '?' {
+                    self.take_hole();
+                } else if is_lower_start(i) {
+                    self.take_lower();
                 } else if i.is_letter_uppercase() {
                     self.take_prefix_or_upper()
                 } else if is_operator(i) {
@@ -132,9 +134,17 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline]
+    fn take_hole(&mut self) {
+        let position = self.position();
+        assert_eq!(self.take(), '?');
+        self.take_while(is_name);
+        self.lexed.push(SyntaxKind::HOLE, position, None)
+    }
+
+    #[inline]
     fn take_lower(&mut self) {
         let position @ Position { offset, .. } = self.position();
-        self.take_while(is_lower);
+        self.take_while(is_name);
         let end_offset = self.consumed();
         let kind = match &self.source[offset..end_offset] {
             // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
@@ -205,7 +215,7 @@ impl<'a> Lexer<'a> {
 
             // (A)
             let proper = self.position();
-            self.take_while(is_upper);
+            self.take_while(is_name);
 
             // (B)
             if self.first() == '.' {
@@ -252,30 +262,7 @@ impl<'a> Lexer<'a> {
 
     #[inline]
     fn take_operator(&mut self) {
-        let position @ Position { offset, .. } = self.position();
-        self.take_while(is_operator);
-        let offset_end = self.consumed();
-        let kind = match &self.source[offset..offset_end] {
-            "∷" => SyntaxKind::DOUBLE_COLON,
-            "←" => SyntaxKind::LEFT_ARROW,
-            "→" => SyntaxKind::RIGHT_ARROW,
-            "⇒" => SyntaxKind::RIGHT_THICK_ARROW,
-            "∀" => SyntaxKind::FORALL,
-            "=" => SyntaxKind::EQUAL,
-            ":" => SyntaxKind::COLON,
-            "::" => SyntaxKind::DOUBLE_COLON,
-            "." => SyntaxKind::PERIOD,
-            ".." => SyntaxKind::DOUBLE_PERIOD,
-            "<-" => SyntaxKind::LEFT_ARROW,
-            "->" => SyntaxKind::RIGHT_ARROW,
-            "<=" => SyntaxKind::LEFT_THICK_ARROW,
-            "=>" => SyntaxKind::RIGHT_THICK_ARROW,
-            "|" => SyntaxKind::PIPE,
-            "@" => SyntaxKind::AT,
-            "-" => SyntaxKind::MINUS,
-            "\\" => SyntaxKind::BACKSLASH,
-            _ => SyntaxKind::OPERATOR,
-        };
+        let (kind, position) = self.take_operator_kind();
         self.lexed.push(kind, position, None)
     }
 
@@ -460,18 +447,14 @@ fn is_operator(c: char) -> bool {
     }
 }
 
-fn is_lower(c: char) -> bool {
-    c.is_alphanumeric() || c == '_' || c == '\''
-}
-
 fn is_lower_start(c: char) -> bool {
     c.is_letter_lowercase() || c == '_'
 }
 
-fn is_upper(c: char) -> bool {
-    c.is_letter() || c == '_' || c == '\''
-}
-
 fn is_upper_start(c: char) -> bool {
     c.is_letter_uppercase()
+}
+
+fn is_name(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == '\''
 }

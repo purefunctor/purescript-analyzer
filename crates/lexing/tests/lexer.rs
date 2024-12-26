@@ -59,3 +59,8 @@ lexer_tests!(
     operator_name_non_glue_type_int => "(-1)",
     operator_name_non_glue_export_all => "(..)",
 );
+
+lexer_tests!(
+    hole_glued => "?hole ?Hole ?_hole ?_Hole ?'hole ?'Hole ?hole' ?Hole' ?_hole' ?_Hole'",
+    hole_unglued => "? hole",
+);

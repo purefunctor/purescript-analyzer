@@ -12,6 +12,7 @@ pub enum SyntaxKind {
     BLOCK_COMMENT,
 
     // Names
+    HOLE,
     PREFIX,
     UPPER,
     LOWER,
@@ -29,7 +30,6 @@ pub enum SyntaxKind {
     PERIOD,
     DOUBLE_PERIOD,
     PIPE,
-    QUESTION,
     TICK,
     UNDERSCORE,
     LEFT_ARROW,

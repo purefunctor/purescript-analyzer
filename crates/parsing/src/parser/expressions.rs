@@ -187,8 +187,7 @@ fn expression_atom(p: &mut Parser) {
         expression_prefixed(p, m);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::ExpressionSection);
-    } else if p.eat(SyntaxKind::QUESTION) {
-        p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    } else if p.eat(SyntaxKind::HOLE) {
         m.end(p, SyntaxKind::ExpressionHole);
     } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
         m.end(p, SyntaxKind::ExpressionString);
