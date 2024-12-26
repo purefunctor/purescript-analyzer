@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@25..27 "\n\n"
       LAYOUT_START@27..27 ""
       ModuleImports@27..232
-        ModuleImportStatement@27..42
+        ImportStatement@27..42
           IMPORT@27..33 "import"
           Comment@33..34
             WHITESPACE@33..34 " "
@@ -27,10 +27,10 @@ snapshot_kind: text
             UPPER@34..41 "Prelude"
             Comment@41..42
               WHITESPACE@41..42 "\n"
-          ModuleImportList@42..42
-          ModuleImportAlias@42..42
+          ImportList@42..42
+          ImportAlias@42..42
         LAYOUT_SEPARATOR@42..42 ""
-        ModuleImportStatement@42..59
+        ImportStatement@42..59
           IMPORT@42..48 "import"
           Comment@48..49
             WHITESPACE@48..49 " "
@@ -39,10 +39,10 @@ snapshot_kind: text
             UPPER@54..58 "List"
             Comment@58..59
               WHITESPACE@58..59 "\n"
-          ModuleImportList@59..59
-          ModuleImportAlias@59..59
+          ImportList@59..59
+          ImportAlias@59..59
         LAYOUT_SEPARATOR@59..59 ""
-        ModuleImportStatement@59..80
+        ImportStatement@59..80
           IMPORT@59..65 "import"
           Comment@65..66
             WHITESPACE@65..66 " "
@@ -50,16 +50,16 @@ snapshot_kind: text
             UPPER@66..71 "Value"
             Comment@71..72
               WHITESPACE@71..72 " "
-          ModuleImportList@72..80
+          ImportList@72..80
             LEFT_PARENTHESIS@72..73 "("
-            ModuleImportValue@73..78
+            ImportValue@73..78
               LOWER@73..78 "value"
             RIGHT_PARENTHESIS@78..79 ")"
             Comment@79..80
               WHITESPACE@79..80 "\n"
-          ModuleImportAlias@80..80
+          ImportAlias@80..80
         LAYOUT_SEPARATOR@80..80 ""
-        ModuleImportStatement@80..107
+        ImportStatement@80..107
           IMPORT@80..86 "import"
           Comment@86..87
             WHITESPACE@86..87 " "
@@ -67,9 +67,9 @@ snapshot_kind: text
             UPPER@87..92 "Class"
             Comment@92..93
               WHITESPACE@92..93 " "
-          ModuleImportList@93..107
+          ImportList@93..107
             LEFT_PARENTHESIS@93..94 "("
-            ModuleImportClass@94..105
+            ImportClass@94..105
               CLASS@94..99 "class"
               Comment@99..100
                 WHITESPACE@99..100 " "
@@ -77,9 +77,9 @@ snapshot_kind: text
             RIGHT_PARENTHESIS@105..106 ")"
             Comment@106..107
               WHITESPACE@106..107 "\n"
-          ModuleImportAlias@107..107
+          ImportAlias@107..107
         LAYOUT_SEPARATOR@107..107 ""
-        ModuleImportStatement@107..126
+        ImportStatement@107..126
           IMPORT@107..113 "import"
           Comment@113..114
             WHITESPACE@113..114 " "
@@ -87,17 +87,17 @@ snapshot_kind: text
             UPPER@114..118 "Type"
             Comment@118..119
               WHITESPACE@118..119 " "
-          ModuleImportList@119..126
+          ImportList@119..126
             LEFT_PARENTHESIS@119..120 "("
-            ModuleImportType@120..124
+            ImportType@120..124
               UPPER@120..124 "List"
-              ModuleExportTypeItemsList@124..124
+              TypeItemsList@124..124
             RIGHT_PARENTHESIS@124..125 ")"
             Comment@125..126
               WHITESPACE@125..126 "\n"
-          ModuleImportAlias@126..126
+          ImportAlias@126..126
         LAYOUT_SEPARATOR@126..126 ""
-        ModuleImportStatement@126..155
+        ImportStatement@126..155
           IMPORT@126..132 "import"
           Comment@132..133
             WHITESPACE@132..133 " "
@@ -105,11 +105,11 @@ snapshot_kind: text
             UPPER@133..141 "DataList"
             Comment@141..142
               WHITESPACE@141..142 " "
-          ModuleImportList@142..155
+          ImportList@142..155
             LEFT_PARENTHESIS@142..143 "("
-            ModuleImportType@143..153
+            ImportType@143..153
               UPPER@143..147 "Data"
-              ModuleExportTypeItemsList@147..153
+              TypeItemsList@147..153
                 LEFT_PARENTHESIS@147..148 "("
                 UPPER@148..149 "A"
                 COMMA@149..150 ","
@@ -120,9 +120,9 @@ snapshot_kind: text
             RIGHT_PARENTHESIS@153..154 ")"
             Comment@154..155
               WHITESPACE@154..155 "\n"
-          ModuleImportAlias@155..155
+          ImportAlias@155..155
         LAYOUT_SEPARATOR@155..155 ""
-        ModuleImportStatement@155..181
+        ImportStatement@155..181
           IMPORT@155..161 "import"
           Comment@161..162
             WHITESPACE@161..162 " "
@@ -130,20 +130,20 @@ snapshot_kind: text
             UPPER@162..169 "DataAll"
             Comment@169..170
               WHITESPACE@169..170 " "
-          ModuleImportList@170..181
+          ImportList@170..181
             LEFT_PARENTHESIS@170..171 "("
-            ModuleImportType@171..179
+            ImportType@171..179
               UPPER@171..175 "Data"
-              ModuleExportTypeItemsAll@175..179
+              TypeItemsAll@175..179
                 LEFT_PARENTHESIS@175..176 "("
                 DOUBLE_PERIOD@176..178 ".."
                 RIGHT_PARENTHESIS@178..179 ")"
             RIGHT_PARENTHESIS@179..180 ")"
             Comment@180..181
               WHITESPACE@180..181 "\n"
-          ModuleImportAlias@181..181
+          ImportAlias@181..181
         LAYOUT_SEPARATOR@181..181 ""
-        ModuleImportStatement@181..201
+        ImportStatement@181..201
           IMPORT@181..187 "import"
           Comment@187..188
             WHITESPACE@187..188 " "
@@ -151,8 +151,8 @@ snapshot_kind: text
             UPPER@188..192 "Prim"
             Comment@192..193
               WHITESPACE@192..193 " "
-          ModuleImportList@193..193
-          ModuleImportAlias@193..201
+          ImportList@193..193
+          ImportAlias@193..201
             AS@193..195 "as"
             Comment@195..196
               WHITESPACE@195..196 " "
@@ -161,7 +161,7 @@ snapshot_kind: text
               Comment@200..201
                 WHITESPACE@200..201 "\n"
         LAYOUT_SEPARATOR@201..201 ""
-        ModuleImportStatement@201..232
+        ImportStatement@201..232
           IMPORT@201..207 "import"
           Comment@207..208
             WHITESPACE@207..208 " "
@@ -170,17 +170,17 @@ snapshot_kind: text
             UPPER@213..217 "List"
             Comment@217..218
               WHITESPACE@217..218 " "
-          ModuleImportList@218..232
+          ImportList@218..232
             HIDING@218..224 "hiding"
             Comment@224..225
               WHITESPACE@224..225 " "
             LEFT_PARENTHESIS@225..226 "("
-            ModuleImportValue@226..230
+            ImportValue@226..230
               LOWER@226..230 "cons"
             RIGHT_PARENTHESIS@230..231 ")"
             Comment@231..232
               WHITESPACE@231..232 "\n"
-          ModuleImportAlias@232..232
+          ImportAlias@232..232
       ModuleStatements@232..232
       LAYOUT_END@232..232 ""
       END_OF_FILE@232..232 ""

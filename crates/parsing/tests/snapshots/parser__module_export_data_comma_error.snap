@@ -17,7 +17,7 @@ snapshot_kind: text
           LEFT_PARENTHESIS@34..35 "("
           ModuleExportType@35..55
             UPPER@35..41 "Either"
-            ModuleExportTypeItemsList@41..55
+            TypeItemsList@41..55
               LEFT_PARENTHESIS@41..42 "("
               UPPER@42..46 "Left"
               COMMA@46..47 ","

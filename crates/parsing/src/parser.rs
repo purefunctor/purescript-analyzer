@@ -243,7 +243,7 @@ fn module_export_item(p: &mut Parser) {
 fn type_items(p: &mut Parser) {
     let mut m = p.start();
 
-    let mut kind = SyntaxKind::ModuleExportTypeItemsList;
+    let mut kind = SyntaxKind::TypeItemsList;
     'list: {
         if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
             if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
@@ -252,7 +252,7 @@ fn type_items(p: &mut Parser) {
                 break 'list;
             }
             if p.eat(SyntaxKind::DOUBLE_PERIOD) {
-                kind = SyntaxKind::ModuleExportTypeItemsAll;
+                kind = SyntaxKind::TypeItemsAll;
                 while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
                     if p.at_in(EXPORT_LIST_RECOVERY) {
                         break;
@@ -333,7 +333,7 @@ fn import_statement(p: &mut Parser) {
     import_list(p);
     import_alias(p);
 
-    m.end(p, SyntaxKind::ModuleImportStatement);
+    m.end(p, SyntaxKind::ImportStatement);
 }
 
 fn import_list(p: &mut Parser) {
@@ -366,7 +366,7 @@ fn import_list(p: &mut Parser) {
         }
     }
 
-    m.end(p, SyntaxKind::ModuleImportList);
+    m.end(p, SyntaxKind::ImportList);
 }
 
 const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
@@ -384,18 +384,18 @@ fn import_item(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
-        m.end(p, SyntaxKind::ModuleImportValue);
+        m.end(p, SyntaxKind::ImportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
-        m.end(p, SyntaxKind::ModuleImportType);
+        m.end(p, SyntaxKind::ImportType);
     } else if p.eat(SyntaxKind::CLASS) {
         p.expect(SyntaxKind::UPPER);
-        m.end(p, SyntaxKind::ModuleImportClass);
+        m.end(p, SyntaxKind::ImportClass);
     } else if p.eat(SyntaxKind::TYPE) {
         p.expect(SyntaxKind::OPERATOR_NAME);
-        m.end(p, SyntaxKind::ModuleImportTypeOperator);
+        m.end(p, SyntaxKind::ImportTypeOperator);
     } else if p.eat(SyntaxKind::OPERATOR_NAME) {
-        m.end(p, SyntaxKind::ModuleImportTypeOperator);
+        m.end(p, SyntaxKind::ImportTypeOperator);
     } else {
         m.cancel(p);
     }
@@ -408,7 +408,7 @@ fn import_alias(p: &mut Parser) {
         module_name(p);
     }
 
-    m.end(p, SyntaxKind::ModuleImportAlias);
+    m.end(p, SyntaxKind::ImportAlias);
 }
 
 fn module_statement(p: &mut Parser) {

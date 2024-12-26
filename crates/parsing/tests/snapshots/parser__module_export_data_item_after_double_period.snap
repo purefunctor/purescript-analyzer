@@ -17,7 +17,7 @@ snapshot_kind: text
           LEFT_PARENTHESIS@45..46 "("
           ModuleExportType@46..62
             UPPER@46..50 "List"
-            ModuleExportTypeItemsAll@50..62
+            TypeItemsAll@50..62
               LEFT_PARENTHESIS@50..51 "("
               DOUBLE_PERIOD@51..53 ".."
               ERROR@53..55

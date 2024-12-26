@@ -17,13 +17,13 @@ snapshot_kind: text
           LEFT_PARENTHESIS@24..25 "("
           ModuleExportType@25..29
             UPPER@25..29 "Void"
-            ModuleExportTypeItemsList@29..29
+            TypeItemsList@29..29
           COMMA@29..30 ","
           Comment@30..31
             WHITESPACE@30..31 " "
           ModuleExportType@31..39
             UPPER@31..35 "List"
-            ModuleExportTypeItemsAll@35..39
+            TypeItemsAll@35..39
               LEFT_PARENTHESIS@35..36 "("
               DOUBLE_PERIOD@36..38 ".."
               RIGHT_PARENTHESIS@38..39 ")"
@@ -32,7 +32,7 @@ snapshot_kind: text
             WHITESPACE@40..41 " "
           ModuleExportType@41..60
             UPPER@41..47 "Either"
-            ModuleExportTypeItemsList@47..60
+            TypeItemsList@47..60
               LEFT_PARENTHESIS@47..48 "("
               UPPER@48..52 "Left"
               COMMA@52..53 ","

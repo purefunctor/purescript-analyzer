@@ -17,7 +17,7 @@ snapshot_kind: text
           LEFT_PARENTHESIS@33..34 "("
           ModuleExportType@34..40
             UPPER@34..38 "List"
-            ModuleExportTypeItemsList@38..40
+            TypeItemsList@38..40
               LEFT_PARENTHESIS@38..39 "("
               ERROR@39..39 ""
               RIGHT_PARENTHESIS@39..40 ")"
