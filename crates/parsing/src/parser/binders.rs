@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{generic::record_item, names::LOWER_NON_RESERVED, types, NodeMarker, Parser};
+use super::{generic::record_item, names, types, NodeMarker, Parser};
 
 pub fn binder(p: &mut Parser) {
     let mut m = p.start();
@@ -19,7 +19,7 @@ fn binder_1(p: &mut Parser) {
     let mut i = 0;
 
     binder_2(p);
-    while p.eat(SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
         binder_2(p);
         i += 1;
     }
@@ -70,12 +70,12 @@ const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
-.union(LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED);
 
 const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 
 fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
-    if p.at_in(LOWER_NON_RESERVED) {
+    if p.at_in(names::LOWER_NON_RESERVED) {
         binder_named_or_variable(p, &mut m);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
         binder_constructor(p, m);
@@ -160,7 +160,7 @@ fn binder_array(p: &mut Parser, mut m: NodeMarker) {
 
 fn binder_record(p: &mut Parser, mut m: NodeMarker) {
     while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
-        if p.at_in(LOWER_NON_RESERVED) {
+        if p.at_in(names::LOWER_NON_RESERVED) {
             record_item(p, binder);
             if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
                 p.error_recover("Trailing comma");

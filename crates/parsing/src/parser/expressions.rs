@@ -18,7 +18,7 @@ fn expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_2(p);
-    while p.eat(SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
         expression_2(p);
         i += 1;
     }
@@ -63,7 +63,7 @@ fn tick_expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_3(p);
-    while p.eat(SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
         expression_3(p);
         i += 1;
     }

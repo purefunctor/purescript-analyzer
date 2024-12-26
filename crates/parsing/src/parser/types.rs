@@ -47,7 +47,7 @@ fn ty_3(p: &mut Parser) {
     let mut i = 0;
 
     ty_4(p);
-    while p.eat(SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
         ty_4(p);
         i += 1;
     }
