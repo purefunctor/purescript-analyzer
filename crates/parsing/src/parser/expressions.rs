@@ -80,7 +80,7 @@ fn tick_expression_1(p: &mut Parser) {
 fn expression_3(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.at(SyntaxKind::MINUS) {
+    if p.eat(SyntaxKind::MINUS) {
         expression_3(p);
         m.end(p, SyntaxKind::ExpressionNegate);
     } else {
@@ -238,6 +238,7 @@ const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::OPERATOR_NAME,
     SyntaxKind::UNDERSCORE,
+    SyntaxKind::HOLE,
     SyntaxKind::STRING,
     SyntaxKind::RAW_STRING,
     SyntaxKind::CHAR,
