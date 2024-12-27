@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..68
+    Module@0..98
       ModuleHeader@0..25
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@23..25 "\n\n"
       LAYOUT_START@25..25 ""
       ModuleImports@25..25
-      ModuleStatements@25..68
+      ModuleStatements@25..98
         ValueEquation@25..41
           LOWER@25..30 "typed"
           Comment@30..31
@@ -44,17 +44,17 @@ snapshot_kind: text
                     Comment@39..41
                       WHITESPACE@39..41 "\n\n"
         LAYOUT_SEPARATOR@41..41 ""
-        ValueEquation@41..68
+        ValueEquation@41..69
           LOWER@41..45 "tick"
           Comment@45..46
             WHITESPACE@45..46 " "
           EquationBinders@46..46
-          EquationUnguarded@46..68
+          EquationUnguarded@46..69
             EQUAL@46..47 "="
             Comment@47..48
               WHITESPACE@47..48 " "
-            EquationWhere@48..68
-              ExpressionInfixChain@48..68
+            EquationWhere@48..69
+              ExpressionInfixChain@48..69
                 ExpressionInteger@48..50
                   INTEGER@48..49 "1"
                   Comment@49..50
@@ -77,12 +77,66 @@ snapshot_kind: text
                   TICK@64..65 "`"
                   Comment@65..66
                     WHITESPACE@65..66 " "
-                ExpressionInteger@66..68
+                ExpressionInteger@66..69
                   INTEGER@66..67 "3"
-                  Comment@67..68
-                    WHITESPACE@67..68 "\n"
-      LAYOUT_END@68..68 ""
-      END_OF_FILE@68..68 ""
+                  Comment@67..69
+                    WHITESPACE@67..69 "\n\n"
+        LAYOUT_SEPARATOR@69..69 ""
+        ValueEquation@69..98
+          LOWER@69..73 "tick"
+          Comment@73..74
+            WHITESPACE@73..74 " "
+          EquationBinders@74..74
+          EquationUnguarded@74..98
+            EQUAL@74..75 "="
+            Comment@75..76
+              WHITESPACE@75..76 " "
+            EquationWhere@76..98
+              ExpressionInfixChain@76..98
+                ExpressionInteger@76..78
+                  INTEGER@76..77 "1"
+                  Comment@77..78
+                    WHITESPACE@77..78 " "
+                ExpressionTick@78..86
+                  TICK@78..79 "`"
+                  ExpressionOperatorChain@79..84
+                    ExpressionInteger@79..81
+                      INTEGER@79..80 "2"
+                      Comment@80..81
+                        WHITESPACE@80..81 " "
+                    OPERATOR@81..82 "+"
+                    Comment@82..83
+                      WHITESPACE@82..83 " "
+                    ExpressionInteger@83..84
+                      INTEGER@83..84 "3"
+                  TICK@84..85 "`"
+                  Comment@85..86
+                    WHITESPACE@85..86 " "
+                ExpressionInteger@86..88
+                  INTEGER@86..87 "4"
+                  Comment@87..88
+                    WHITESPACE@87..88 " "
+                ExpressionTick@88..96
+                  TICK@88..89 "`"
+                  ExpressionOperatorChain@89..94
+                    ExpressionInteger@89..91
+                      INTEGER@89..90 "5"
+                      Comment@90..91
+                        WHITESPACE@90..91 " "
+                    OPERATOR@91..92 "+"
+                    Comment@92..93
+                      WHITESPACE@92..93 " "
+                    ExpressionInteger@93..94
+                      INTEGER@93..94 "6"
+                  TICK@94..95 "`"
+                  Comment@95..96
+                    WHITESPACE@95..96 " "
+                ExpressionInteger@96..98
+                  INTEGER@96..97 "7"
+                  Comment@97..98
+                    WHITESPACE@97..98 "\n"
+      LAYOUT_END@98..98 ""
+      END_OF_FILE@98..98 ""
     ,
     [],
 )
