@@ -1,0 +1,155 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..133
+      ModuleHeader@0..36
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..29
+          UPPER@7..28 "ValueEquationRecovery"
+          Comment@28..29
+            WHITESPACE@28..29 " "
+        ModuleExportList@29..29
+        WHERE@29..34 "where"
+        Comment@34..36
+          WHITESPACE@34..36 "\n\n"
+      LAYOUT_START@36..36 ""
+      ModuleImports@36..36
+      ModuleStatements@36..133
+        ValueEquation@36..46
+          LOWER@36..40 "pass"
+          Comment@40..41
+            WHITESPACE@40..41 " "
+          EquationBinders@41..41
+          EquationUnguarded@41..46
+            EQUAL@41..42 "="
+            Comment@42..43
+              WHITESPACE@42..43 " "
+            EquationWhere@43..46
+              ExpressionInteger@43..46
+                INTEGER@43..45 "21"
+                Comment@45..46
+                  WHITESPACE@45..46 "\n"
+        LAYOUT_SEPARATOR@46..46 ""
+        ValueEquation@46..53
+          LOWER@46..50 "fail"
+          Comment@50..51
+            WHITESPACE@50..51 " "
+          EquationBinders@51..51
+          EquationUnguarded@51..53
+            EQUAL@51..52 "="
+            Comment@52..53
+              WHITESPACE@52..53 " "
+            EquationWhere@53..53
+        ERROR@53..60
+          ERROR@53..53 ""
+          MODULE@53..59 "module"
+          Comment@59..60
+            WHITESPACE@59..60 "\n"
+        LAYOUT_SEPARATOR@60..60 ""
+        ValueEquation@60..71
+          LOWER@60..64 "pass"
+          Comment@64..65
+            WHITESPACE@64..65 " "
+          EquationBinders@65..65
+          EquationUnguarded@65..71
+            EQUAL@65..66 "="
+            Comment@66..67
+              WHITESPACE@66..67 " "
+            EquationWhere@67..71
+              ExpressionInteger@67..71
+                INTEGER@67..69 "42"
+                Comment@69..71
+                  WHITESPACE@69..71 "\n\n"
+        LAYOUT_SEPARATOR@71..71 ""
+        ValueEquation@71..133
+          LOWER@71..79 "bindings"
+          Comment@79..80
+            WHITESPACE@79..80 " "
+          EquationBinders@80..80
+          EquationUnguarded@80..133
+            EQUAL@80..81 "="
+            Comment@81..82
+              WHITESPACE@81..82 " "
+            EquationWhere@82..133
+              ExpressionInteger@82..87
+                INTEGER@82..84 "42"
+                Comment@84..87
+                  WHITESPACE@84..87 "\n  "
+              WHERE@87..92 "where"
+              Comment@92..95
+                WHITESPACE@92..95 "\n  "
+              LetBindingStatements@95..133
+                LAYOUT_START@95..95 ""
+                LetBindingEquation@95..107
+                  LOWER@95..99 "pass"
+                  Comment@99..100
+                    WHITESPACE@99..100 " "
+                  EquationBinders@100..100
+                  EquationUnguarded@100..107
+                    EQUAL@100..101 "="
+                    Comment@101..102
+                      WHITESPACE@101..102 " "
+                    EquationWhere@102..107
+                      ExpressionInteger@102..107
+                        INTEGER@102..104 "21"
+                        Comment@104..107
+                          WHITESPACE@104..107 "\n  "
+                LAYOUT_SEPARATOR@107..107 ""
+                LetBindingEquation@107..114
+                  LOWER@107..111 "fail"
+                  Comment@111..112
+                    WHITESPACE@111..112 " "
+                  EquationBinders@112..112
+                  EquationUnguarded@112..114
+                    EQUAL@112..113 "="
+                    Comment@113..114
+                      WHITESPACE@113..114 " "
+                    EquationWhere@114..114
+                ERROR@114..123
+                  ERROR@114..114 ""
+                  MODULE@114..120 "module"
+                  Comment@120..123
+                    WHITESPACE@120..123 "\n  "
+                LAYOUT_SEPARATOR@123..123 ""
+                LetBindingEquation@123..133
+                  LOWER@123..127 "pass"
+                  Comment@127..128
+                    WHITESPACE@127..128 " "
+                  EquationBinders@128..128
+                  EquationUnguarded@128..133
+                    EQUAL@128..129 "="
+                    Comment@129..130
+                      WHITESPACE@129..130 " "
+                    EquationWhere@130..133
+                      ExpressionInteger@130..133
+                        INTEGER@130..132 "42"
+                        Comment@132..133
+                          WHITESPACE@132..133 "\n"
+                LAYOUT_END@133..133 ""
+      LAYOUT_END@133..133 ""
+      END_OF_FILE@133..133 ""
+    ,
+    [
+        ParseError {
+            position: Position {
+                offset: 53,
+                line: 4,
+                column: 8,
+            },
+            message: "Invalid token",
+        },
+        ParseError {
+            position: Position {
+                offset: 114,
+                line: 10,
+                column: 10,
+            },
+            message: "Invalid token",
+        },
+    ],
+)

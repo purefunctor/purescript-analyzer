@@ -42,4 +42,5 @@ parser_tests!(
     type_record => include_str!("parser/TypeRecord.purs"),
     value_annotation => include_str!("parser/ValueAnnotation.purs"),
     value_equation => include_str!("parser/ValueEquation.purs"),
+    value_equation_recovery => include_str!("parser/ValueEquationRecovery.purs"),
 );
