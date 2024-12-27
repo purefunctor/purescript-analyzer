@@ -1,0 +1,54 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..90
+      ModuleHeader@0..27
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..20
+          UPPER@7..19 "TypePrefixed"
+          Comment@19..20
+            WHITESPACE@19..20 " "
+        ModuleExportList@20..20
+        WHERE@20..25 "where"
+        Comment@25..27
+          WHITESPACE@25..27 "\n\n"
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..90
+        ValueAnnotation@27..56
+          LOWER@27..35 "prefixed"
+          Comment@35..36
+            WHITESPACE@35..36 " "
+          DOUBLE_COLON@36..38 "::"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          TypeConstructor@39..56
+            QualifiedName@39..56
+              PREFIX@39..50 "Data.Tuple."
+              UPPER@50..55 "Tuple"
+              Comment@55..56
+                WHITESPACE@55..56 "\n"
+        LAYOUT_SEPARATOR@56..56 ""
+        ValueAnnotation@56..90
+          LOWER@56..64 "prefixed"
+          Comment@64..65
+            WHITESPACE@64..65 " "
+          DOUBLE_COLON@65..67 "::"
+          Comment@67..68
+            WHITESPACE@67..68 " "
+          TypeOperator@68..90
+            QualifiedName@68..90
+              PREFIX@68..86 "Data.Tuple.Nested."
+              OPERATOR_NAME@86..89 "(/)"
+              Comment@89..90
+                WHITESPACE@89..90 "\n"
+      LAYOUT_END@90..90 ""
+      END_OF_FILE@90..90 ""
+    ,
+    [],
+)

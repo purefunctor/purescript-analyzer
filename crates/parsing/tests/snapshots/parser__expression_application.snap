@@ -1,0 +1,54 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..58
+      ModuleHeader@0..37
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..30
+          UPPER@7..28 "ExpressionApplication"
+          Comment@28..30
+            WHITESPACE@28..30 "  "
+        ModuleExportList@30..30
+        WHERE@30..35 "where"
+        Comment@35..37
+          WHITESPACE@35..37 "\n\n"
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..58
+        ValueEquation@37..58
+          LOWER@37..48 "application"
+          Comment@48..49
+            WHITESPACE@48..49 " "
+          EquationBinders@49..49
+          EquationUnguarded@49..58
+            EQUAL@49..50 "="
+            Comment@50..51
+              WHITESPACE@50..51 " "
+            EquationWhere@51..58
+              ExpressionApplicationChain@51..58
+                ExpressionVariable@51..53
+                  LOWER@51..52 "f"
+                  Comment@52..53
+                    WHITESPACE@52..53 " "
+                ExpressionTypeArgument@53..56
+                  AT@53..54 "@"
+                  TypeConstructor@54..56
+                    QualifiedName@54..56
+                      UPPER@54..55 "T"
+                      Comment@55..56
+                        WHITESPACE@55..56 " "
+                ExpressionTermArgument@56..58
+                  ExpressionVariable@56..58
+                    LOWER@56..57 "t"
+                    Comment@57..58
+                      WHITESPACE@57..58 "\n"
+      LAYOUT_END@58..58 ""
+      END_OF_FILE@58..58 ""
+    ,
+    [],
+)

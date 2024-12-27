@@ -1,0 +1,38 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..37
+      ModuleHeader@0..23
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..16
+          UPPER@7..15 "TypeHole"
+          Comment@15..16
+            WHITESPACE@15..16 " "
+        ModuleExportList@16..16
+        WHERE@16..21 "where"
+        Comment@21..23
+          WHITESPACE@21..23 "\n\n"
+      LAYOUT_START@23..23 ""
+      ModuleImports@23..23
+      ModuleStatements@23..37
+        ValueAnnotation@23..37
+          LOWER@23..27 "hole"
+          Comment@27..28
+            WHITESPACE@27..28 " "
+          DOUBLE_COLON@28..30 "::"
+          Comment@30..31
+            WHITESPACE@30..31 " "
+          TypeHole@31..37
+            HOLE@31..36 "?hole"
+            Comment@36..37
+              WHITESPACE@36..37 "\n"
+      LAYOUT_END@37..37 ""
+      END_OF_FILE@37..37 ""
+    ,
+    [],
+)

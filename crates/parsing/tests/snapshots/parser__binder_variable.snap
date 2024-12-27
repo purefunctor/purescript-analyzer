@@ -1,0 +1,67 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..61
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..22
+          UPPER@7..21 "BinderVariable"
+          Comment@21..22
+            WHITESPACE@21..22 " "
+        ModuleExportList@22..22
+        WHERE@22..27 "where"
+        Comment@27..29
+          WHITESPACE@27..29 "\n\n"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..61
+        ValueEquation@29..44
+          LOWER@29..37 "identity"
+          Comment@37..38
+            WHITESPACE@37..38 " "
+          EquationBinders@38..40
+            BinderVariable@38..40
+              LOWER@38..39 "x"
+              Comment@39..40
+                WHITESPACE@39..40 " "
+          EquationUnguarded@40..44
+            EQUAL@40..41 "="
+            Comment@41..42
+              WHITESPACE@41..42 " "
+            EquationWhere@42..44
+              ExpressionInteger@42..44
+                INTEGER@42..43 "0"
+                Comment@43..44
+                  WHITESPACE@43..44 "\n"
+        LAYOUT_SEPARATOR@44..44 ""
+        ValueEquation@44..61
+          LOWER@44..52 "identity"
+          Comment@52..53
+            WHITESPACE@52..53 " "
+          EquationBinders@53..57
+            BinderNamed@53..57
+              LOWER@53..54 "x"
+              AT@54..55 "@"
+              BinderVariable@55..57
+                LOWER@55..56 "y"
+                Comment@56..57
+                  WHITESPACE@56..57 " "
+          EquationUnguarded@57..61
+            EQUAL@57..58 "="
+            Comment@58..59
+              WHITESPACE@58..59 " "
+            EquationWhere@59..61
+              ExpressionInteger@59..61
+                INTEGER@59..60 "0"
+                Comment@60..61
+                  WHITESPACE@60..61 "\n"
+      LAYOUT_END@61..61 ""
+      END_OF_FILE@61..61 ""
+    ,
+    [],
+)

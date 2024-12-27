@@ -1,0 +1,64 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..63
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..21
+          UPPER@7..20 "BinderBoolean"
+          Comment@20..21
+            WHITESPACE@20..21 " "
+        ModuleExportList@21..21
+        WHERE@21..26 "where"
+        Comment@26..28
+          WHITESPACE@26..28 "\n\n"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..63
+        ValueEquation@28..45
+          LOWER@28..35 "boolean"
+          Comment@35..36
+            WHITESPACE@35..36 " "
+          EquationBinders@36..41
+            BinderTrue@36..41
+              TRUE@36..40 "true"
+              Comment@40..41
+                WHITESPACE@40..41 " "
+          EquationUnguarded@41..45
+            EQUAL@41..42 "="
+            Comment@42..43
+              WHITESPACE@42..43 " "
+            EquationWhere@43..45
+              ExpressionInteger@43..45
+                INTEGER@43..44 "0"
+                Comment@44..45
+                  WHITESPACE@44..45 "\n"
+        LAYOUT_SEPARATOR@45..45 ""
+        ValueEquation@45..63
+          LOWER@45..52 "boolean"
+          Comment@52..53
+            WHITESPACE@52..53 " "
+          EquationBinders@53..59
+            BinderFalse@53..59
+              FALSE@53..58 "false"
+              Comment@58..59
+                WHITESPACE@58..59 " "
+          EquationUnguarded@59..63
+            EQUAL@59..60 "="
+            Comment@60..61
+              WHITESPACE@60..61 " "
+            EquationWhere@61..63
+              ExpressionInteger@61..63
+                INTEGER@61..62 "0"
+                Comment@62..63
+                  WHITESPACE@62..63 "\n"
+      LAYOUT_END@63..63 ""
+      END_OF_FILE@63..63 ""
+    ,
+    [],
+)

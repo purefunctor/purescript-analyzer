@@ -1,0 +1,195 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..180
+      ModuleHeader@0..30
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..23
+          UPPER@7..22 "ExpressionLetIn"
+          Comment@22..23
+            WHITESPACE@22..23 " "
+        ModuleExportList@23..23
+        WHERE@23..28 "where"
+        Comment@28..30
+          WHITESPACE@28..30 "\n\n"
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..30
+      ModuleStatements@30..180
+        ValueEquation@30..55
+          LOWER@30..36 "let_in"
+          Comment@36..37
+            WHITESPACE@36..37 " "
+          EquationBinders@37..37
+          EquationUnguarded@37..55
+            EQUAL@37..38 "="
+            Comment@38..39
+              WHITESPACE@38..39 " "
+            EquationWhere@39..55
+              ExpressionLetIn@39..55
+                LET@39..42 "let"
+                Comment@42..43
+                  WHITESPACE@42..43 " "
+                LetBindingStatements@43..49
+                  LAYOUT_START@43..43 ""
+                  LetBindingEquation@43..49
+                    LOWER@43..44 "x"
+                    Comment@44..45
+                      WHITESPACE@44..45 " "
+                    EquationBinders@45..45
+                    EquationUnguarded@45..49
+                      EQUAL@45..46 "="
+                      Comment@46..47
+                        WHITESPACE@46..47 " "
+                      EquationWhere@47..49
+                        ExpressionVariable@47..49
+                          LOWER@47..48 "y"
+                          Comment@48..49
+                            WHITESPACE@48..49 " "
+                  LAYOUT_END@49..49 ""
+                IN@49..51 "in"
+                Comment@51..52
+                  WHITESPACE@51..52 " "
+                ExpressionVariable@52..55
+                  LOWER@52..53 "z"
+                  Comment@53..55
+                    WHITESPACE@53..55 "\n\n"
+        LAYOUT_SEPARATOR@55..55 ""
+        ValueEquation@55..84
+          LOWER@55..61 "let_in"
+          Comment@61..62
+            WHITESPACE@61..62 " "
+          EquationBinders@62..62
+          EquationUnguarded@62..84
+            EQUAL@62..63 "="
+            Comment@63..66
+              WHITESPACE@63..66 "\n  "
+            EquationWhere@66..84
+              ExpressionLetIn@66..84
+                LET@66..69 "let"
+                Comment@69..70
+                  WHITESPACE@69..70 " "
+                LetBindingStatements@70..78
+                  LAYOUT_START@70..70 ""
+                  LetBindingEquation@70..78
+                    LOWER@70..71 "x"
+                    Comment@71..72
+                      WHITESPACE@71..72 " "
+                    EquationBinders@72..72
+                    EquationUnguarded@72..78
+                      EQUAL@72..73 "="
+                      Comment@73..74
+                        WHITESPACE@73..74 " "
+                      EquationWhere@74..78
+                        ExpressionVariable@74..78
+                          LOWER@74..75 "y"
+                          Comment@75..78
+                            WHITESPACE@75..78 "\n  "
+                  LAYOUT_END@78..78 ""
+                IN@78..80 "in"
+                Comment@80..81
+                  WHITESPACE@80..81 " "
+                ExpressionVariable@81..84
+                  LOWER@81..82 "z"
+                  Comment@82..84
+                    WHITESPACE@82..84 "\n\n"
+        LAYOUT_SEPARATOR@84..84 ""
+        ValueEquation@84..121
+          LOWER@84..90 "let_in"
+          Comment@90..91
+            WHITESPACE@90..91 " "
+          EquationBinders@91..91
+          EquationUnguarded@91..121
+            EQUAL@91..92 "="
+            Comment@92..95
+              WHITESPACE@92..95 "\n  "
+            EquationWhere@95..121
+              ExpressionLetIn@95..121
+                LET@95..98 "let"
+                Comment@98..103
+                  WHITESPACE@98..103 "\n    "
+                LetBindingStatements@103..111
+                  LAYOUT_START@103..103 ""
+                  LetBindingEquation@103..111
+                    LOWER@103..104 "x"
+                    Comment@104..105
+                      WHITESPACE@104..105 " "
+                    EquationBinders@105..105
+                    EquationUnguarded@105..111
+                      EQUAL@105..106 "="
+                      Comment@106..107
+                        WHITESPACE@106..107 " "
+                      EquationWhere@107..111
+                        ExpressionVariable@107..111
+                          LOWER@107..108 "y"
+                          Comment@108..111
+                            WHITESPACE@108..111 "\n  "
+                  LAYOUT_END@111..111 ""
+                IN@111..113 "in"
+                Comment@113..118
+                  WHITESPACE@113..118 "\n    "
+                ExpressionVariable@118..121
+                  LOWER@118..119 "z"
+                  Comment@119..121
+                    WHITESPACE@119..121 "\n\n"
+        LAYOUT_SEPARATOR@121..121 ""
+        ValueEquation@121..180
+          LOWER@121..127 "let_in"
+          Comment@127..128
+            WHITESPACE@127..128 " "
+          EquationBinders@128..128
+          EquationUnguarded@128..180
+            EQUAL@128..129 "="
+            Comment@129..132
+              WHITESPACE@129..132 "\n  "
+            EquationWhere@132..180
+              ExpressionLetIn@132..180
+                LET@132..135 "let"
+                Comment@135..140
+                  WHITESPACE@135..140 "\n    "
+                LetBindingStatements@140..168
+                  LAYOUT_START@140..140 ""
+                  LetBindingAnnotation@140..156
+                    LOWER@140..144 "life"
+                    Comment@144..145
+                      WHITESPACE@144..145 " "
+                    DOUBLE_COLON@145..147 "::"
+                    Comment@147..148
+                      WHITESPACE@147..148 " "
+                    TypeConstructor@148..156
+                      QualifiedName@148..156
+                        UPPER@148..151 "Int"
+                        Comment@151..156
+                          WHITESPACE@151..156 "\n    "
+                  LAYOUT_SEPARATOR@156..156 ""
+                  LetBindingEquation@156..168
+                    LOWER@156..160 "life"
+                    Comment@160..161
+                      WHITESPACE@160..161 " "
+                    EquationBinders@161..161
+                    EquationUnguarded@161..168
+                      EQUAL@161..162 "="
+                      Comment@162..163
+                        WHITESPACE@162..163 " "
+                      EquationWhere@163..168
+                        ExpressionInteger@163..168
+                          INTEGER@163..165 "42"
+                          Comment@165..168
+                            WHITESPACE@165..168 "\n  "
+                  LAYOUT_END@168..168 ""
+                IN@168..170 "in"
+                Comment@170..175
+                  WHITESPACE@170..175 "\n    "
+                ExpressionVariable@175..180
+                  LOWER@175..179 "life"
+                  Comment@179..180
+                    WHITESPACE@179..180 "\n"
+      LAYOUT_END@180..180 ""
+      END_OF_FILE@180..180 ""
+    ,
+    [],
+)

@@ -1,0 +1,71 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..64
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..22
+          UPPER@7..21 "ExpressionName"
+          Comment@21..22
+            WHITESPACE@21..22 " "
+        ModuleExportList@22..22
+        WHERE@22..27 "where"
+        Comment@27..29
+          WHITESPACE@27..29 "\n\n"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..64
+        ValueEquation@29..41
+          LOWER@29..33 "name"
+          Comment@33..34
+            WHITESPACE@33..34 " "
+          EquationBinders@34..34
+          EquationUnguarded@34..41
+            EQUAL@34..35 "="
+            Comment@35..36
+              WHITESPACE@35..36 " "
+            EquationWhere@36..41
+              ExpressionVariable@36..41
+                LOWER@36..40 "head"
+                Comment@40..41
+                  WHITESPACE@40..41 "\n"
+        LAYOUT_SEPARATOR@41..41 ""
+        ValueEquation@41..53
+          LOWER@41..45 "name"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+          EquationBinders@46..46
+          EquationUnguarded@46..53
+            EQUAL@46..47 "="
+            Comment@47..48
+              WHITESPACE@47..48 " "
+            EquationWhere@48..53
+              ExpressionConstructor@48..53
+                UPPER@48..52 "Cons"
+                Comment@52..53
+                  WHITESPACE@52..53 "\n"
+        LAYOUT_SEPARATOR@53..53 ""
+        ValueEquation@53..64
+          LOWER@53..57 "name"
+          Comment@57..58
+            WHITESPACE@57..58 " "
+          EquationBinders@58..58
+          EquationUnguarded@58..64
+            EQUAL@58..59 "="
+            Comment@59..60
+              WHITESPACE@59..60 " "
+            EquationWhere@60..64
+              ExpressionOperatorName@60..64
+                OPERATOR_NAME@60..63 "(:)"
+                Comment@63..64
+                  WHITESPACE@63..64 "\n"
+      LAYOUT_END@64..64 ""
+      END_OF_FILE@64..64 ""
+    ,
+    [],
+)

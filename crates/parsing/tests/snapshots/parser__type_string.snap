@@ -1,0 +1,50 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..65
+      ModuleHeader@0..25
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..18
+          UPPER@7..17 "TypeString"
+          Comment@17..18
+            WHITESPACE@17..18 " "
+        ModuleExportList@18..18
+        WHERE@18..23 "where"
+        Comment@23..25
+          WHITESPACE@23..25 "\n\n"
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..65
+        ValueAnnotation@25..43
+          LOWER@25..31 "string"
+          Comment@31..32
+            WHITESPACE@31..32 " "
+          DOUBLE_COLON@32..34 "::"
+          Comment@34..35
+            WHITESPACE@34..35 " "
+          TypeString@35..43
+            STRING@35..42 "\"hello\""
+            Comment@42..43
+              WHITESPACE@42..43 "\n"
+        LAYOUT_SEPARATOR@43..43 ""
+        ValueAnnotation@43..65
+          LOWER@43..49 "string"
+          Comment@49..50
+            WHITESPACE@49..50 " "
+          DOUBLE_COLON@50..52 "::"
+          Comment@52..53
+            WHITESPACE@52..53 " "
+          TypeString@53..65
+            RAW_STRING@53..64 "\"\"\"hello\"\"\""
+            Comment@64..65
+              WHITESPACE@64..65 "\n"
+      LAYOUT_END@65..65 ""
+      END_OF_FILE@65..65 ""
+    ,
+    [],
+)

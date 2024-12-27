@@ -1,0 +1,106 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..108
+      ModuleHeader@0..34
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..27
+          UPPER@7..26 "BinderParenthesized"
+          Comment@26..27
+            WHITESPACE@26..27 " "
+        ModuleExportList@27..27
+        WHERE@27..32 "where"
+        Comment@32..34
+          WHITESPACE@32..34 "\n\n"
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..108
+        ValueEquation@34..56
+          LOWER@34..47 "parenthesized"
+          Comment@47..48
+            WHITESPACE@47..48 " "
+          EquationBinders@48..52
+            BinderParenthesized@48..52
+              LEFT_PARENTHESIS@48..49 "("
+              BinderVariable@49..50
+                LOWER@49..50 "x"
+              RIGHT_PARENTHESIS@50..51 ")"
+              Comment@51..52
+                WHITESPACE@51..52 " "
+          EquationUnguarded@52..56
+            EQUAL@52..53 "="
+            Comment@53..54
+              WHITESPACE@53..54 " "
+            EquationWhere@54..56
+              ExpressionInteger@54..56
+                INTEGER@54..55 "0"
+                Comment@55..56
+                  WHITESPACE@55..56 "\n"
+        LAYOUT_SEPARATOR@56..56 ""
+        ValueEquation@56..82
+          LOWER@56..69 "parenthesized"
+          Comment@69..70
+            WHITESPACE@69..70 " "
+          EquationBinders@70..78
+            BinderParenthesized@70..78
+              LEFT_PARENTHESIS@70..71 "("
+              BinderOperatorChain@71..76
+                BinderVariable@71..73
+                  LOWER@71..72 "x"
+                  Comment@72..73
+                    WHITESPACE@72..73 " "
+                OPERATOR@73..74 "+"
+                Comment@74..75
+                  WHITESPACE@74..75 " "
+                BinderVariable@75..76
+                  LOWER@75..76 "y"
+              RIGHT_PARENTHESIS@76..77 ")"
+              Comment@77..78
+                WHITESPACE@77..78 " "
+          EquationUnguarded@78..82
+            EQUAL@78..79 "="
+            Comment@79..80
+              WHITESPACE@79..80 " "
+            EquationWhere@80..82
+              ExpressionInteger@80..82
+                INTEGER@80..81 "0"
+                Comment@81..82
+                  WHITESPACE@81..82 "\n"
+        LAYOUT_SEPARATOR@82..82 ""
+        ValueEquation@82..108
+          LOWER@82..95 "parenthesized"
+          Comment@95..96
+            WHITESPACE@95..96 " "
+          EquationBinders@96..104
+            BinderParenthesized@96..104
+              LEFT_PARENTHESIS@96..97 "("
+              BinderParenthesized@97..102
+                LEFT_PARENTHESIS@97..98 "("
+                BinderParenthesized@98..101
+                  LEFT_PARENTHESIS@98..99 "("
+                  BinderVariable@99..100
+                    LOWER@99..100 "x"
+                  RIGHT_PARENTHESIS@100..101 ")"
+                RIGHT_PARENTHESIS@101..102 ")"
+              RIGHT_PARENTHESIS@102..103 ")"
+              Comment@103..104
+                WHITESPACE@103..104 " "
+          EquationUnguarded@104..108
+            EQUAL@104..105 "="
+            Comment@105..106
+              WHITESPACE@105..106 " "
+            EquationWhere@106..108
+              ExpressionInteger@106..108
+                INTEGER@106..107 "0"
+                Comment@107..108
+                  WHITESPACE@107..108 "\n"
+      LAYOUT_END@108..108 ""
+      END_OF_FILE@108..108 ""
+    ,
+    [],
+)

@@ -1,0 +1,118 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..85
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..22
+          UPPER@7..21 "ExpressionTick"
+          Comment@21..22
+            WHITESPACE@21..22 " "
+        ModuleExportList@22..22
+        WHERE@22..27 "where"
+        Comment@27..29
+          WHITESPACE@27..29 "\n\n"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..85
+        ValueEquation@29..56
+          LOWER@29..33 "tick"
+          Comment@33..34
+            WHITESPACE@33..34 " "
+          EquationBinders@34..34
+          EquationUnguarded@34..56
+            EQUAL@34..35 "="
+            Comment@35..36
+              WHITESPACE@35..36 " "
+            EquationWhere@36..56
+              ExpressionInfixChain@36..56
+                ExpressionInteger@36..38
+                  INTEGER@36..37 "1"
+                  Comment@37..38
+                    WHITESPACE@37..38 " "
+                ExpressionTick@38..45
+                  TICK@38..39 "`"
+                  ExpressionVariable@39..43
+                    LOWER@39..43 "plus"
+                  TICK@43..44 "`"
+                  Comment@44..45
+                    WHITESPACE@44..45 " "
+                ExpressionInteger@45..47
+                  INTEGER@45..46 "2"
+                  Comment@46..47
+                    WHITESPACE@46..47 " "
+                ExpressionTick@47..54
+                  TICK@47..48 "`"
+                  ExpressionVariable@48..52
+                    LOWER@48..52 "plus"
+                  TICK@52..53 "`"
+                  Comment@53..54
+                    WHITESPACE@53..54 " "
+                ExpressionInteger@54..56
+                  INTEGER@54..55 "3"
+                  Comment@55..56
+                    WHITESPACE@55..56 "\n"
+        LAYOUT_SEPARATOR@56..56 ""
+        ValueEquation@56..85
+          LOWER@56..60 "tick"
+          Comment@60..61
+            WHITESPACE@60..61 " "
+          EquationBinders@61..61
+          EquationUnguarded@61..85
+            EQUAL@61..62 "="
+            Comment@62..63
+              WHITESPACE@62..63 " "
+            EquationWhere@63..85
+              ExpressionInfixChain@63..85
+                ExpressionInteger@63..65
+                  INTEGER@63..64 "1"
+                  Comment@64..65
+                    WHITESPACE@64..65 " "
+                ExpressionTick@65..73
+                  TICK@65..66 "`"
+                  ExpressionOperatorChain@66..71
+                    ExpressionInteger@66..68
+                      INTEGER@66..67 "2"
+                      Comment@67..68
+                        WHITESPACE@67..68 " "
+                    OPERATOR@68..69 "+"
+                    Comment@69..70
+                      WHITESPACE@69..70 " "
+                    ExpressionInteger@70..71
+                      INTEGER@70..71 "3"
+                  TICK@71..72 "`"
+                  Comment@72..73
+                    WHITESPACE@72..73 " "
+                ExpressionInteger@73..75
+                  INTEGER@73..74 "4"
+                  Comment@74..75
+                    WHITESPACE@74..75 " "
+                ExpressionTick@75..83
+                  TICK@75..76 "`"
+                  ExpressionOperatorChain@76..81
+                    ExpressionInteger@76..78
+                      INTEGER@76..77 "5"
+                      Comment@77..78
+                        WHITESPACE@77..78 " "
+                    OPERATOR@78..79 "+"
+                    Comment@79..80
+                      WHITESPACE@79..80 " "
+                    ExpressionInteger@80..81
+                      INTEGER@80..81 "6"
+                  TICK@81..82 "`"
+                  Comment@82..83
+                    WHITESPACE@82..83 " "
+                ExpressionInteger@83..85
+                  INTEGER@83..84 "7"
+                  Comment@84..85
+                    WHITESPACE@84..85 "\n"
+      LAYOUT_END@85..85 ""
+      END_OF_FILE@85..85 ""
+    ,
+    [],
+)

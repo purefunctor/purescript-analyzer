@@ -1,0 +1,51 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..55
+      ModuleHeader@0..26
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..19
+          UPPER@7..18 "TypeInteger"
+          Comment@18..19
+            WHITESPACE@18..19 " "
+        ModuleExportList@19..19
+        WHERE@19..24 "where"
+        Comment@24..26
+          WHITESPACE@24..26 "\n\n"
+      LAYOUT_START@26..26 ""
+      ModuleImports@26..26
+      ModuleStatements@26..55
+        ValueAnnotation@26..41
+          LOWER@26..33 "integer"
+          Comment@33..34
+            WHITESPACE@33..34 " "
+          DOUBLE_COLON@34..36 "::"
+          Comment@36..37
+            WHITESPACE@36..37 " "
+          TypeInteger@37..41
+            INTEGER@37..40 "123"
+            Comment@40..41
+              WHITESPACE@40..41 "\n"
+        LAYOUT_SEPARATOR@41..41 ""
+        ValueAnnotation@41..55
+          LOWER@41..48 "negated"
+          Comment@48..49
+            WHITESPACE@48..49 " "
+          DOUBLE_COLON@49..51 "::"
+          Comment@51..52
+            WHITESPACE@51..52 " "
+          TypeInteger@52..55
+            MINUS@52..53 "-"
+            INTEGER@53..54 "1"
+            Comment@54..55
+              WHITESPACE@54..55 "\n"
+      LAYOUT_END@55..55 ""
+      END_OF_FILE@55..55 ""
+    ,
+    [],
+)

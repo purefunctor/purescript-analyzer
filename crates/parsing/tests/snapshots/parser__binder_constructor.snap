@@ -1,0 +1,130 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..139
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..25
+          UPPER@7..24 "BinderConstructor"
+          Comment@24..25
+            WHITESPACE@24..25 " "
+        ModuleExportList@25..25
+        WHERE@25..30 "where"
+        Comment@30..32
+          WHITESPACE@30..32 "\n\n"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..139
+        ValueEquation@32..60
+          LOWER@32..43 "constructor"
+          Comment@43..44
+            WHITESPACE@43..44 " "
+          EquationBinders@44..56
+            BinderParenthesized@44..56
+              LEFT_PARENTHESIS@44..45 "("
+              BinderConstructor@45..54
+                QualifiedName@45..50
+                  UPPER@45..49 "Cons"
+                  Comment@49..50
+                    WHITESPACE@49..50 " "
+                BinderVariable@50..52
+                  LOWER@50..51 "x"
+                  Comment@51..52
+                    WHITESPACE@51..52 " "
+                BinderVariable@52..54
+                  LOWER@52..54 "xs"
+              RIGHT_PARENTHESIS@54..55 ")"
+              Comment@55..56
+                WHITESPACE@55..56 " "
+          EquationUnguarded@56..60
+            EQUAL@56..57 "="
+            Comment@57..58
+              WHITESPACE@57..58 " "
+            EquationWhere@58..60
+              ExpressionInteger@58..60
+                INTEGER@58..59 "0"
+                Comment@59..60
+                  WHITESPACE@59..60 "\n"
+        LAYOUT_SEPARATOR@60..60 ""
+        ValueEquation@60..81
+          LOWER@60..71 "constructor"
+          Comment@71..72
+            WHITESPACE@71..72 " "
+          EquationBinders@72..76
+            BinderConstructor@72..76
+              QualifiedName@72..76
+                UPPER@72..75 "Nil"
+                Comment@75..76
+                  WHITESPACE@75..76 " "
+          EquationUnguarded@76..81
+            EQUAL@76..77 "="
+            Comment@77..78
+              WHITESPACE@77..78 " "
+            EquationWhere@78..81
+              ExpressionInteger@78..81
+                INTEGER@78..79 "0"
+                Comment@79..81
+                  WHITESPACE@79..81 "\n\n"
+        LAYOUT_SEPARATOR@81..81 ""
+        ValueEquation@81..114
+          LOWER@81..92 "constructor"
+          Comment@92..93
+            WHITESPACE@92..93 " "
+          EquationBinders@93..110
+            BinderParenthesized@93..110
+              LEFT_PARENTHESIS@93..94 "("
+              BinderConstructor@94..108
+                QualifiedName@94..104
+                  PREFIX@94..99 "List."
+                  UPPER@99..103 "Cons"
+                  Comment@103..104
+                    WHITESPACE@103..104 " "
+                BinderVariable@104..106
+                  LOWER@104..105 "x"
+                  Comment@105..106
+                    WHITESPACE@105..106 " "
+                BinderVariable@106..108
+                  LOWER@106..108 "xs"
+              RIGHT_PARENTHESIS@108..109 ")"
+              Comment@109..110
+                WHITESPACE@109..110 " "
+          EquationUnguarded@110..114
+            EQUAL@110..111 "="
+            Comment@111..112
+              WHITESPACE@111..112 " "
+            EquationWhere@112..114
+              ExpressionInteger@112..114
+                INTEGER@112..113 "0"
+                Comment@113..114
+                  WHITESPACE@113..114 "\n"
+        LAYOUT_SEPARATOR@114..114 ""
+        ValueEquation@114..139
+          LOWER@114..125 "constructor"
+          Comment@125..126
+            WHITESPACE@125..126 " "
+          EquationBinders@126..135
+            BinderConstructor@126..135
+              QualifiedName@126..135
+                PREFIX@126..131 "List."
+                UPPER@131..134 "Nil"
+                Comment@134..135
+                  WHITESPACE@134..135 " "
+          EquationUnguarded@135..139
+            EQUAL@135..136 "="
+            Comment@136..137
+              WHITESPACE@136..137 " "
+            EquationWhere@137..139
+              ExpressionInteger@137..139
+                INTEGER@137..138 "0"
+                Comment@138..139
+                  WHITESPACE@138..139 "\n"
+      LAYOUT_END@139..139 ""
+      END_OF_FILE@139..139 ""
+    ,
+    [],
+)

@@ -1,0 +1,79 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..61
+      ModuleHeader@0..24
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..17
+          UPPER@7..16 "TypeArrow"
+          Comment@16..17
+            WHITESPACE@16..17 " "
+        ModuleExportList@17..17
+        WHERE@17..22 "where"
+        Comment@22..24
+          WHITESPACE@22..24 "\n\n"
+      LAYOUT_START@24..24 ""
+      ModuleImports@24..24
+      ModuleStatements@24..61
+        ValueAnnotation@24..40
+          LOWER@24..29 "arrow"
+          Comment@29..30
+            WHITESPACE@29..30 " "
+          DOUBLE_COLON@30..32 "::"
+          Comment@32..33
+            WHITESPACE@32..33 " "
+          TypeArrow@33..40
+            TypeConstructor@33..35
+              QualifiedName@33..35
+                UPPER@33..34 "A"
+                Comment@34..35
+                  WHITESPACE@34..35 " "
+            RIGHT_ARROW@35..37 "->"
+            Comment@37..38
+              WHITESPACE@37..38 " "
+            TypeConstructor@38..40
+              QualifiedName@38..40
+                UPPER@38..39 "B"
+                Comment@39..40
+                  WHITESPACE@39..40 "\n"
+        LAYOUT_SEPARATOR@40..40 ""
+        ValueAnnotation@40..61
+          LOWER@40..45 "arrow"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+          DOUBLE_COLON@46..48 "::"
+          Comment@48..49
+            WHITESPACE@48..49 " "
+          TypeArrow@49..61
+            TypeConstructor@49..51
+              QualifiedName@49..51
+                UPPER@49..50 "A"
+                Comment@50..51
+                  WHITESPACE@50..51 " "
+            RIGHT_ARROW@51..53 "->"
+            Comment@53..54
+              WHITESPACE@53..54 " "
+            TypeArrow@54..61
+              TypeConstructor@54..56
+                QualifiedName@54..56
+                  UPPER@54..55 "B"
+                  Comment@55..56
+                    WHITESPACE@55..56 " "
+              RIGHT_ARROW@56..58 "->"
+              Comment@58..59
+                WHITESPACE@58..59 " "
+              TypeConstructor@59..61
+                QualifiedName@59..61
+                  UPPER@59..60 "C"
+                  Comment@60..61
+                    WHITESPACE@60..61 "\n"
+      LAYOUT_END@61..61 ""
+      END_OF_FILE@61..61 ""
+    ,
+    [],
+)

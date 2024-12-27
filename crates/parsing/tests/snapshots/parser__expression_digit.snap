@@ -1,0 +1,56 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..56
+      ModuleHeader@0..30
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..23
+          UPPER@7..22 "ExpressionDigit"
+          Comment@22..23
+            WHITESPACE@22..23 " "
+        ModuleExportList@23..23
+        WHERE@23..28 "where"
+        Comment@28..30
+          WHITESPACE@28..30 "\n\n"
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..30
+      ModuleStatements@30..56
+        ValueEquation@30..43
+          LOWER@30..37 "integer"
+          Comment@37..38
+            WHITESPACE@37..38 " "
+          EquationBinders@38..38
+          EquationUnguarded@38..43
+            EQUAL@38..39 "="
+            Comment@39..40
+              WHITESPACE@39..40 " "
+            EquationWhere@40..43
+              ExpressionInteger@40..43
+                INTEGER@40..42 "42"
+                Comment@42..43
+                  WHITESPACE@42..43 "\n"
+        LAYOUT_SEPARATOR@43..43 ""
+        ValueEquation@43..56
+          LOWER@43..49 "number"
+          Comment@49..50
+            WHITESPACE@49..50 " "
+          EquationBinders@50..50
+          EquationUnguarded@50..56
+            EQUAL@50..51 "="
+            Comment@51..52
+              WHITESPACE@51..52 " "
+            EquationWhere@52..56
+              ExpressionNumber@52..56
+                NUMBER@52..55 "1.0"
+                Comment@55..56
+                  WHITESPACE@55..56 "\n"
+      LAYOUT_END@56..56 ""
+      END_OF_FILE@56..56 ""
+    ,
+    [],
+)

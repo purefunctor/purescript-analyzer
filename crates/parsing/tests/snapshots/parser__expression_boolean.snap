@@ -1,0 +1,56 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..63
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..25
+          UPPER@7..24 "ExpressionBoolean"
+          Comment@24..25
+            WHITESPACE@24..25 " "
+        ModuleExportList@25..25
+        WHERE@25..30 "where"
+        Comment@30..32
+          WHITESPACE@30..32 "\n\n"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..63
+        ValueEquation@32..47
+          LOWER@32..39 "boolean"
+          Comment@39..40
+            WHITESPACE@39..40 " "
+          EquationBinders@40..40
+          EquationUnguarded@40..47
+            EQUAL@40..41 "="
+            Comment@41..42
+              WHITESPACE@41..42 " "
+            EquationWhere@42..47
+              ExpressionTrue@42..47
+                TRUE@42..46 "true"
+                Comment@46..47
+                  WHITESPACE@46..47 "\n"
+        LAYOUT_SEPARATOR@47..47 ""
+        ValueEquation@47..63
+          LOWER@47..54 "boolean"
+          Comment@54..55
+            WHITESPACE@54..55 " "
+          EquationBinders@55..55
+          EquationUnguarded@55..63
+            EQUAL@55..56 "="
+            Comment@56..57
+              WHITESPACE@56..57 " "
+            EquationWhere@57..63
+              ExpressionFalse@57..63
+                FALSE@57..62 "false"
+                Comment@62..63
+                  WHITESPACE@62..63 "\n"
+      LAYOUT_END@63..63 ""
+      END_OF_FILE@63..63 ""
+    ,
+    [],
+)

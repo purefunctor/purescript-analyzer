@@ -1,0 +1,48 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..42
+      ModuleHeader@0..25
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..18
+          UPPER@7..17 "TypeKinded"
+          Comment@17..18
+            WHITESPACE@17..18 " "
+        ModuleExportList@18..18
+        WHERE@18..23 "where"
+        Comment@23..25
+          WHITESPACE@23..25 "\n\n"
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..42
+        ValueAnnotation@25..42
+          LOWER@25..31 "kinded"
+          Comment@31..32
+            WHITESPACE@31..32 " "
+          DOUBLE_COLON@32..34 "::"
+          Comment@34..35
+            WHITESPACE@34..35 " "
+          TypeKinded@35..42
+            TypeConstructor@35..37
+              QualifiedName@35..37
+                UPPER@35..36 "T"
+                Comment@36..37
+                  WHITESPACE@36..37 " "
+            DOUBLE_COLON@37..39 "::"
+            Comment@39..40
+              WHITESPACE@39..40 " "
+            TypeConstructor@40..42
+              QualifiedName@40..42
+                UPPER@40..41 "T"
+                Comment@41..42
+                  WHITESPACE@41..42 "\n"
+      LAYOUT_END@42..42 ""
+      END_OF_FILE@42..42 ""
+    ,
+    [],
+)
