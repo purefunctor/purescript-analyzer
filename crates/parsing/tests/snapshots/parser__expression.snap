@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..40
+    Module@0..68
       ModuleHeader@0..25
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,18 +19,18 @@ snapshot_kind: text
           WHITESPACE@23..25 "\n\n"
       LAYOUT_START@25..25 ""
       ModuleImports@25..25
-      ModuleStatements@25..40
-        ValueEquation@25..40
+      ModuleStatements@25..68
+        ValueEquation@25..41
           LOWER@25..30 "typed"
           Comment@30..31
             WHITESPACE@30..31 " "
           EquationBinders@31..31
-          EquationUnguarded@31..40
+          EquationUnguarded@31..41
             EQUAL@31..32 "="
             Comment@32..33
               WHITESPACE@32..33 " "
-            EquationWhere@33..40
-              ExpressionTyped@33..40
+            EquationWhere@33..41
+              ExpressionTyped@33..41
                 ExpressionInteger@33..35
                   INTEGER@33..34 "1"
                   Comment@34..35
@@ -38,13 +38,51 @@ snapshot_kind: text
                 DOUBLE_COLON@35..37 "::"
                 Comment@37..38
                   WHITESPACE@37..38 " "
-                TypeConstructor@38..40
-                  QualifiedName@38..40
+                TypeConstructor@38..41
+                  QualifiedName@38..41
                     UPPER@38..39 "T"
-                    Comment@39..40
-                      WHITESPACE@39..40 "\n"
-      LAYOUT_END@40..40 ""
-      END_OF_FILE@40..40 ""
+                    Comment@39..41
+                      WHITESPACE@39..41 "\n\n"
+        LAYOUT_SEPARATOR@41..41 ""
+        ValueEquation@41..68
+          LOWER@41..45 "tick"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+          EquationBinders@46..46
+          EquationUnguarded@46..68
+            EQUAL@46..47 "="
+            Comment@47..48
+              WHITESPACE@47..48 " "
+            EquationWhere@48..68
+              ExpressionInfixChain@48..68
+                ExpressionInteger@48..50
+                  INTEGER@48..49 "1"
+                  Comment@49..50
+                    WHITESPACE@49..50 " "
+                ExpressionTick@50..57
+                  TICK@50..51 "`"
+                  ExpressionVariable@51..55
+                    LOWER@51..55 "plus"
+                  TICK@55..56 "`"
+                  Comment@56..57
+                    WHITESPACE@56..57 " "
+                ExpressionInteger@57..59
+                  INTEGER@57..58 "2"
+                  Comment@58..59
+                    WHITESPACE@58..59 " "
+                ExpressionTick@59..66
+                  TICK@59..60 "`"
+                  ExpressionVariable@60..64
+                    LOWER@60..64 "plus"
+                  TICK@64..65 "`"
+                  Comment@65..66
+                    WHITESPACE@65..66 " "
+                ExpressionInteger@66..68
+                  INTEGER@66..67 "3"
+                  Comment@67..68
+                    WHITESPACE@67..68 "\n"
+      LAYOUT_END@68..68 ""
+      END_OF_FILE@68..68 ""
     ,
     [],
 )

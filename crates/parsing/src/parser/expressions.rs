@@ -54,13 +54,10 @@ fn expression_2(p: &mut Parser) {
 
 fn tick_expression(p: &mut Parser) {
     let mut m = p.start();
-    if p.eat(SyntaxKind::TICK) {
-        tick_expression_1(p);
-        p.expect(SyntaxKind::TICK);
-        m.end(p, SyntaxKind::ExpressionTick);
-    } else {
-        m.cancel(p);
-    }
+    p.expect(SyntaxKind::TICK);
+    tick_expression_1(p);
+    p.expect(SyntaxKind::TICK);
+    m.end(p, SyntaxKind::ExpressionTick);
 }
 
 fn tick_expression_1(p: &mut Parser) {
