@@ -9,7 +9,7 @@ pub fn expression(p: &mut Parser) {
     let mut m = p.start();
 
     expression_1(p);
-    if p.at(SyntaxKind::DOUBLE_COLON) {
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
         types::ty(p);
         m.end(p, SyntaxKind::ExpressionTyped);
     } else {
