@@ -39,6 +39,7 @@ parser_tests!(
     module_import => include_str!("parser/ModuleImport.purs"),
     module_import_error => include_str!("parser/ModuleImportError.purs"),
     non_reserved => include_str!("parser/NonReserved.purs"),
+    types => include_str!("parser/Types.purs"),
     type_parenthesized => include_str!("parser/TypeParenthesized.purs"),
     type_record => include_str!("parser/TypeRecord.purs"),
     value_annotation => include_str!("parser/ValueAnnotation.purs"),

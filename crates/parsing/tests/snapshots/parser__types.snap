@@ -1,0 +1,319 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..356
+      ModuleHeader@0..19
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..12
+          UPPER@7..11 "Type"
+          Comment@11..12
+            WHITESPACE@11..12 " "
+        ModuleExportList@12..12
+        WHERE@12..17 "where"
+        Comment@17..19
+          WHITESPACE@17..19 "\n\n"
+      LAYOUT_START@19..19 ""
+      ModuleImports@19..19
+      ModuleStatements@19..356
+        ValueAnnotation@19..37
+          LOWER@19..25 "kinded"
+          Comment@25..26
+            WHITESPACE@25..26 " "
+          DOUBLE_COLON@26..28 "::"
+          Comment@28..29
+            WHITESPACE@28..29 " "
+          TypeKinded@29..37
+            TypeConstructor@29..31
+              QualifiedName@29..31
+                UPPER@29..30 "T"
+                Comment@30..31
+                  WHITESPACE@30..31 " "
+            DOUBLE_COLON@31..33 "::"
+            Comment@33..34
+              WHITESPACE@33..34 " "
+            TypeConstructor@34..37
+              QualifiedName@34..37
+                UPPER@34..35 "T"
+                Comment@35..37
+                  WHITESPACE@35..37 "\n\n"
+        LAYOUT_SEPARATOR@37..37 ""
+        ValueAnnotation@37..53
+          LOWER@37..42 "arrow"
+          Comment@42..43
+            WHITESPACE@42..43 " "
+          DOUBLE_COLON@43..45 "::"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+          TypeArrow@46..53
+            TypeConstructor@46..48
+              QualifiedName@46..48
+                UPPER@46..47 "A"
+                Comment@47..48
+                  WHITESPACE@47..48 " "
+            RIGHT_ARROW@48..50 "->"
+            Comment@50..51
+              WHITESPACE@50..51 " "
+            TypeConstructor@51..53
+              QualifiedName@51..53
+                UPPER@51..52 "B"
+                Comment@52..53
+                  WHITESPACE@52..53 "\n"
+        LAYOUT_SEPARATOR@53..53 ""
+        ValueAnnotation@53..75
+          LOWER@53..58 "arrow"
+          Comment@58..59
+            WHITESPACE@58..59 " "
+          DOUBLE_COLON@59..61 "::"
+          Comment@61..62
+            WHITESPACE@61..62 " "
+          TypeArrow@62..75
+            TypeConstructor@62..64
+              QualifiedName@62..64
+                UPPER@62..63 "A"
+                Comment@63..64
+                  WHITESPACE@63..64 " "
+            RIGHT_ARROW@64..66 "->"
+            Comment@66..67
+              WHITESPACE@66..67 " "
+            TypeArrow@67..75
+              TypeConstructor@67..69
+                QualifiedName@67..69
+                  UPPER@67..68 "B"
+                  Comment@68..69
+                    WHITESPACE@68..69 " "
+              RIGHT_ARROW@69..71 "->"
+              Comment@71..72
+                WHITESPACE@71..72 " "
+              TypeConstructor@72..75
+                QualifiedName@72..75
+                  UPPER@72..73 "C"
+                  Comment@73..75
+                    WHITESPACE@73..75 "\n\n"
+        LAYOUT_SEPARATOR@75..75 ""
+        ValueAnnotation@75..97
+          LOWER@75..86 "constrained"
+          Comment@86..87
+            WHITESPACE@86..87 " "
+          DOUBLE_COLON@87..89 "::"
+          Comment@89..90
+            WHITESPACE@89..90 " "
+          TypeConstrained@90..97
+            TypeConstructor@90..92
+              QualifiedName@90..92
+                UPPER@90..91 "A"
+                Comment@91..92
+                  WHITESPACE@91..92 " "
+            RIGHT_THICK_ARROW@92..94 "=>"
+            Comment@94..95
+              WHITESPACE@94..95 " "
+            TypeConstructor@95..97
+              QualifiedName@95..97
+                UPPER@95..96 "B"
+                Comment@96..97
+                  WHITESPACE@96..97 "\n"
+        LAYOUT_SEPARATOR@97..97 ""
+        ValueAnnotation@97..125
+          LOWER@97..108 "constrained"
+          Comment@108..109
+            WHITESPACE@108..109 " "
+          DOUBLE_COLON@109..111 "::"
+          Comment@111..112
+            WHITESPACE@111..112 " "
+          TypeConstrained@112..125
+            TypeConstructor@112..114
+              QualifiedName@112..114
+                UPPER@112..113 "A"
+                Comment@113..114
+                  WHITESPACE@113..114 " "
+            RIGHT_THICK_ARROW@114..116 "=>"
+            Comment@116..117
+              WHITESPACE@116..117 " "
+            TypeConstrained@117..125
+              TypeConstructor@117..119
+                QualifiedName@117..119
+                  UPPER@117..118 "B"
+                  Comment@118..119
+                    WHITESPACE@118..119 " "
+              RIGHT_THICK_ARROW@119..121 "=>"
+              Comment@121..122
+                WHITESPACE@121..122 " "
+              TypeConstructor@122..125
+                QualifiedName@122..125
+                  UPPER@122..123 "C"
+                  Comment@123..125
+                    WHITESPACE@123..125 "\n\n"
+        LAYOUT_SEPARATOR@125..125 ""
+        ValueAnnotation@125..148
+          LOWER@125..133 "operator"
+          Comment@133..134
+            WHITESPACE@133..134 " "
+          DOUBLE_COLON@134..136 "::"
+          Comment@136..137
+            WHITESPACE@136..137 " "
+          TypeOperatorChain@137..148
+            TypeConstructor@137..139
+              QualifiedName@137..139
+                UPPER@137..138 "A"
+                Comment@138..139
+                  WHITESPACE@138..139 " "
+            OPERATOR@139..140 "+"
+            Comment@140..141
+              WHITESPACE@140..141 " "
+            TypeConstructor@141..143
+              QualifiedName@141..143
+                UPPER@141..142 "B"
+                Comment@142..143
+                  WHITESPACE@142..143 " "
+            OPERATOR@143..144 "+"
+            Comment@144..145
+              WHITESPACE@144..145 " "
+            TypeConstructor@145..148
+              QualifiedName@145..148
+                UPPER@145..146 "C"
+                Comment@146..148
+                  WHITESPACE@146..148 "\n\n"
+        LAYOUT_SEPARATOR@148..148 ""
+        ValueAnnotation@148..170
+          LOWER@148..159 "application"
+          Comment@159..160
+            WHITESPACE@159..160 " "
+          DOUBLE_COLON@160..162 "::"
+          Comment@162..163
+            WHITESPACE@162..163 " "
+          TypeApplicationChain@163..170
+            TypeConstructor@163..165
+              QualifiedName@163..165
+                UPPER@163..164 "F"
+                Comment@164..165
+                  WHITESPACE@164..165 " "
+            TypeVariable@165..167
+              LOWER@165..166 "a"
+              Comment@166..167
+                WHITESPACE@166..167 " "
+            TypeVariable@167..170
+              LOWER@167..168 "b"
+              Comment@168..170
+                WHITESPACE@168..170 "\n\n"
+        LAYOUT_SEPARATOR@170..170 ""
+        ValueAnnotation@170..188
+          LOWER@170..176 "string"
+          Comment@176..177
+            WHITESPACE@176..177 " "
+          DOUBLE_COLON@177..179 "::"
+          Comment@179..180
+            WHITESPACE@179..180 " "
+          TypeString@180..188
+            STRING@180..187 "\"hello\""
+            Comment@187..188
+              WHITESPACE@187..188 "\n"
+        LAYOUT_SEPARATOR@188..188 ""
+        ValueAnnotation@188..211
+          LOWER@188..194 "string"
+          Comment@194..195
+            WHITESPACE@194..195 " "
+          DOUBLE_COLON@195..197 "::"
+          Comment@197..198
+            WHITESPACE@197..198 " "
+          TypeString@198..211
+            RAW_STRING@198..209 "\"\"\"hello\"\"\""
+            Comment@209..211
+              WHITESPACE@209..211 "\n\n"
+        LAYOUT_SEPARATOR@211..211 ""
+        ValueAnnotation@211..226
+          LOWER@211..218 "integer"
+          Comment@218..219
+            WHITESPACE@218..219 " "
+          DOUBLE_COLON@219..221 "::"
+          Comment@221..222
+            WHITESPACE@221..222 " "
+          TypeInteger@222..226
+            INTEGER@222..225 "123"
+            Comment@225..226
+              WHITESPACE@225..226 "\n"
+        LAYOUT_SEPARATOR@226..226 ""
+        ValueAnnotation@226..241
+          LOWER@226..233 "negated"
+          Comment@233..234
+            WHITESPACE@233..234 " "
+          DOUBLE_COLON@234..236 "::"
+          Comment@236..237
+            WHITESPACE@236..237 " "
+          TypeInteger@237..241
+            MINUS@237..238 "-"
+            INTEGER@238..239 "1"
+            Comment@239..241
+              WHITESPACE@239..241 "\n\n"
+        LAYOUT_SEPARATOR@241..241 ""
+        ValueAnnotation@241..263
+          LOWER@241..254 "operator_name"
+          Comment@254..255
+            WHITESPACE@254..255 " "
+          DOUBLE_COLON@255..257 "::"
+          Comment@257..258
+            WHITESPACE@257..258 " "
+          TypeOperator@258..263
+            OPERATOR_NAME@258..261 "(+)"
+            Comment@261..263
+              WHITESPACE@261..263 "\n\n"
+        LAYOUT_SEPARATOR@263..263 ""
+        ValueAnnotation@263..278
+          LOWER@263..267 "hole"
+          Comment@267..268
+            WHITESPACE@267..268 " "
+          DOUBLE_COLON@268..270 "::"
+          Comment@270..271
+            WHITESPACE@270..271 " "
+          TypeHole@271..278
+            HOLE@271..276 "?hole"
+            Comment@276..278
+              WHITESPACE@276..278 "\n\n"
+        LAYOUT_SEPARATOR@278..278 ""
+        ValueAnnotation@278..293
+          LOWER@278..286 "wildcard"
+          Comment@286..287
+            WHITESPACE@286..287 " "
+          DOUBLE_COLON@287..289 "::"
+          Comment@289..290
+            WHITESPACE@289..290 " "
+          TypeWildcard@290..293
+            UNDERSCORE@290..291 "_"
+            Comment@291..293
+              WHITESPACE@291..293 "\n\n"
+        LAYOUT_SEPARATOR@293..293 ""
+        ValueAnnotation@293..322
+          LOWER@293..301 "prefixed"
+          Comment@301..302
+            WHITESPACE@301..302 " "
+          DOUBLE_COLON@302..304 "::"
+          Comment@304..305
+            WHITESPACE@304..305 " "
+          TypeConstructor@305..322
+            QualifiedName@305..322
+              PREFIX@305..316 "Data.Tuple."
+              UPPER@316..321 "Tuple"
+              Comment@321..322
+                WHITESPACE@321..322 "\n"
+        LAYOUT_SEPARATOR@322..322 ""
+        ValueAnnotation@322..356
+          LOWER@322..330 "prefixed"
+          Comment@330..331
+            WHITESPACE@330..331 " "
+          DOUBLE_COLON@331..333 "::"
+          Comment@333..334
+            WHITESPACE@333..334 " "
+          TypeOperator@334..356
+            QualifiedName@334..356
+              PREFIX@334..352 "Data.Tuple.Nested."
+              OPERATOR_NAME@352..355 "(/)"
+              Comment@355..356
+                WHITESPACE@355..356 "\n"
+      LAYOUT_END@356..356 ""
+      END_OF_FILE@356..356 ""
+    ,
+    [],
+)

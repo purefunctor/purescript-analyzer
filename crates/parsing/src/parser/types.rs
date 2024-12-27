@@ -6,7 +6,7 @@ pub fn ty(p: &mut Parser) {
     let mut m = p.start();
 
     ty_1(p);
-    if p.at(SyntaxKind::DOUBLE_COLON) {
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
         ty(p);
         m.end(p, SyntaxKind::TypeKinded);
     } else {
@@ -36,6 +36,7 @@ fn ty_2(p: &mut Parser) {
         ty_1(p);
         m.end(p, SyntaxKind::TypeArrow);
     } else if p.eat(SyntaxKind::RIGHT_THICK_ARROW) {
+        ty_1(p);
         m.end(p, SyntaxKind::TypeConstrained);
     } else {
         m.cancel(p);
@@ -90,6 +91,21 @@ fn ty_5(p: &mut Parser) {
 
 pub fn ty_atom(p: &mut Parser) {
     let mut m = p.start();
+
+    let mut n = p.start();
+    if p.eat(SyntaxKind::PREFIX) {
+        if p.eat(SyntaxKind::UPPER) {
+            m.end(p, SyntaxKind::TypeConstructor);
+        } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+            m.end(p, SyntaxKind::TypeOperator);
+        } else {
+            n.cancel(p);
+            m.cancel(p);
+        }
+        return n.end(p, SyntaxKind::QualifiedName);
+    }
+    n.cancel(p);
+
     if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
