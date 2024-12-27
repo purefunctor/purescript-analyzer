@@ -1,6 +1,7 @@
 use syntax::{SyntaxKind, TokenSet};
 
 use super::{
+    binding,
     names::{self, LOWER_NON_RESERVED},
     types, NodeMarker, Parser,
 };
@@ -155,6 +156,10 @@ fn expression_if_then_else(p: &mut Parser, mut m: NodeMarker) {
 }
 
 fn expression_let(p: &mut Parser, mut m: NodeMarker) {
+    p.expect(SyntaxKind::LET);
+    binding::bindings(p);
+    p.expect(SyntaxKind::IN);
+    expression(p);
     m.end(p, SyntaxKind::ExpressionLetIn);
 }
 

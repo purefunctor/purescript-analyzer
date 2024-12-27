@@ -29,3 +29,22 @@ char = 'c'
 boolean = true
 boolean = false
 number = 1.0
+
+let_in = let x = y in z
+
+let_in =
+  let x = y
+  in z
+
+let_in =
+  let
+    x = y
+  in
+    z
+
+let_in =
+  let
+    life :: Int
+    life = 42
+  in
+    life

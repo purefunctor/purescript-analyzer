@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..393
+    Module@0..544
       ModuleHeader@0..25
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@23..25 "\n\n"
       LAYOUT_START@25..25 ""
       ModuleImports@25..25
-      ModuleStatements@25..393
+      ModuleStatements@25..544
         ValueEquation@25..41
           LOWER@25..30 "typed"
           Comment@30..31
@@ -417,22 +417,191 @@ snapshot_kind: text
                 Comment@379..380
                   WHITESPACE@379..380 "\n"
         LAYOUT_SEPARATOR@380..380 ""
-        ValueEquation@380..393
+        ValueEquation@380..394
           LOWER@380..386 "number"
           Comment@386..387
             WHITESPACE@386..387 " "
           EquationBinders@387..387
-          EquationUnguarded@387..393
+          EquationUnguarded@387..394
             EQUAL@387..388 "="
             Comment@388..389
               WHITESPACE@388..389 " "
-            EquationWhere@389..393
-              ExpressionNumber@389..393
+            EquationWhere@389..394
+              ExpressionNumber@389..394
                 NUMBER@389..392 "1.0"
-                Comment@392..393
-                  WHITESPACE@392..393 "\n"
-      LAYOUT_END@393..393 ""
-      END_OF_FILE@393..393 ""
+                Comment@392..394
+                  WHITESPACE@392..394 "\n\n"
+        LAYOUT_SEPARATOR@394..394 ""
+        ValueEquation@394..419
+          LOWER@394..400 "let_in"
+          Comment@400..401
+            WHITESPACE@400..401 " "
+          EquationBinders@401..401
+          EquationUnguarded@401..419
+            EQUAL@401..402 "="
+            Comment@402..403
+              WHITESPACE@402..403 " "
+            EquationWhere@403..419
+              ExpressionLetIn@403..419
+                LET@403..406 "let"
+                Comment@406..407
+                  WHITESPACE@406..407 " "
+                LetBindingStatements@407..413
+                  LAYOUT_START@407..407 ""
+                  LetBindingEquation@407..413
+                    LOWER@407..408 "x"
+                    Comment@408..409
+                      WHITESPACE@408..409 " "
+                    EquationBinders@409..409
+                    EquationUnguarded@409..413
+                      EQUAL@409..410 "="
+                      Comment@410..411
+                        WHITESPACE@410..411 " "
+                      EquationWhere@411..413
+                        ExpressionVariable@411..413
+                          LOWER@411..412 "y"
+                          Comment@412..413
+                            WHITESPACE@412..413 " "
+                  LAYOUT_END@413..413 ""
+                IN@413..415 "in"
+                Comment@415..416
+                  WHITESPACE@415..416 " "
+                ExpressionVariable@416..419
+                  LOWER@416..417 "z"
+                  Comment@417..419
+                    WHITESPACE@417..419 "\n\n"
+        LAYOUT_SEPARATOR@419..419 ""
+        ValueEquation@419..448
+          LOWER@419..425 "let_in"
+          Comment@425..426
+            WHITESPACE@425..426 " "
+          EquationBinders@426..426
+          EquationUnguarded@426..448
+            EQUAL@426..427 "="
+            Comment@427..430
+              WHITESPACE@427..430 "\n  "
+            EquationWhere@430..448
+              ExpressionLetIn@430..448
+                LET@430..433 "let"
+                Comment@433..434
+                  WHITESPACE@433..434 " "
+                LetBindingStatements@434..442
+                  LAYOUT_START@434..434 ""
+                  LetBindingEquation@434..442
+                    LOWER@434..435 "x"
+                    Comment@435..436
+                      WHITESPACE@435..436 " "
+                    EquationBinders@436..436
+                    EquationUnguarded@436..442
+                      EQUAL@436..437 "="
+                      Comment@437..438
+                        WHITESPACE@437..438 " "
+                      EquationWhere@438..442
+                        ExpressionVariable@438..442
+                          LOWER@438..439 "y"
+                          Comment@439..442
+                            WHITESPACE@439..442 "\n  "
+                  LAYOUT_END@442..442 ""
+                IN@442..444 "in"
+                Comment@444..445
+                  WHITESPACE@444..445 " "
+                ExpressionVariable@445..448
+                  LOWER@445..446 "z"
+                  Comment@446..448
+                    WHITESPACE@446..448 "\n\n"
+        LAYOUT_SEPARATOR@448..448 ""
+        ValueEquation@448..485
+          LOWER@448..454 "let_in"
+          Comment@454..455
+            WHITESPACE@454..455 " "
+          EquationBinders@455..455
+          EquationUnguarded@455..485
+            EQUAL@455..456 "="
+            Comment@456..459
+              WHITESPACE@456..459 "\n  "
+            EquationWhere@459..485
+              ExpressionLetIn@459..485
+                LET@459..462 "let"
+                Comment@462..467
+                  WHITESPACE@462..467 "\n    "
+                LetBindingStatements@467..475
+                  LAYOUT_START@467..467 ""
+                  LetBindingEquation@467..475
+                    LOWER@467..468 "x"
+                    Comment@468..469
+                      WHITESPACE@468..469 " "
+                    EquationBinders@469..469
+                    EquationUnguarded@469..475
+                      EQUAL@469..470 "="
+                      Comment@470..471
+                        WHITESPACE@470..471 " "
+                      EquationWhere@471..475
+                        ExpressionVariable@471..475
+                          LOWER@471..472 "y"
+                          Comment@472..475
+                            WHITESPACE@472..475 "\n  "
+                  LAYOUT_END@475..475 ""
+                IN@475..477 "in"
+                Comment@477..482
+                  WHITESPACE@477..482 "\n    "
+                ExpressionVariable@482..485
+                  LOWER@482..483 "z"
+                  Comment@483..485
+                    WHITESPACE@483..485 "\n\n"
+        LAYOUT_SEPARATOR@485..485 ""
+        ValueEquation@485..544
+          LOWER@485..491 "let_in"
+          Comment@491..492
+            WHITESPACE@491..492 " "
+          EquationBinders@492..492
+          EquationUnguarded@492..544
+            EQUAL@492..493 "="
+            Comment@493..496
+              WHITESPACE@493..496 "\n  "
+            EquationWhere@496..544
+              ExpressionLetIn@496..544
+                LET@496..499 "let"
+                Comment@499..504
+                  WHITESPACE@499..504 "\n    "
+                LetBindingStatements@504..532
+                  LAYOUT_START@504..504 ""
+                  LetBindingAnnotation@504..520
+                    LOWER@504..508 "life"
+                    Comment@508..509
+                      WHITESPACE@508..509 " "
+                    DOUBLE_COLON@509..511 "::"
+                    Comment@511..512
+                      WHITESPACE@511..512 " "
+                    TypeConstructor@512..520
+                      QualifiedName@512..520
+                        UPPER@512..515 "Int"
+                        Comment@515..520
+                          WHITESPACE@515..520 "\n    "
+                  LAYOUT_SEPARATOR@520..520 ""
+                  LetBindingEquation@520..532
+                    LOWER@520..524 "life"
+                    Comment@524..525
+                      WHITESPACE@524..525 " "
+                    EquationBinders@525..525
+                    EquationUnguarded@525..532
+                      EQUAL@525..526 "="
+                      Comment@526..527
+                        WHITESPACE@526..527 " "
+                      EquationWhere@527..532
+                        ExpressionInteger@527..532
+                          INTEGER@527..529 "42"
+                          Comment@529..532
+                            WHITESPACE@529..532 "\n  "
+                  LAYOUT_END@532..532 ""
+                IN@532..534 "in"
+                Comment@534..539
+                  WHITESPACE@534..539 "\n    "
+                ExpressionVariable@539..544
+                  LOWER@539..543 "life"
+                  Comment@543..544
+                    WHITESPACE@543..544 "\n"
+      LAYOUT_END@544..544 ""
+      END_OF_FILE@544..544 ""
     ,
     [],
 )
