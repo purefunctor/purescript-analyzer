@@ -425,6 +425,7 @@ const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::CLASS,
     SyntaxKind::TYPE,
+    SyntaxKind::OPERATOR_NAME,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
 .union(names::LOWER_NON_RESERVED);
@@ -447,7 +448,7 @@ fn import_item(p: &mut Parser) {
         p.expect(SyntaxKind::OPERATOR_NAME);
         m.end(p, SyntaxKind::ImportTypeOperator);
     } else if p.eat(SyntaxKind::OPERATOR_NAME) {
-        m.end(p, SyntaxKind::ImportTypeOperator);
+        m.end(p, SyntaxKind::ImportOperator);
     } else {
         m.cancel(p);
     }
