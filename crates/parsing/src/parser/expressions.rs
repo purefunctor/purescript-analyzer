@@ -289,7 +289,7 @@ fn expression_atom(p: &mut Parser) {
     } else if p.eat(SyntaxKind::NUMBER) {
         m.end(p, SyntaxKind::ExpressionNumber);
     } else if p.eat(SyntaxKind::LEFT_SQUARE) {
-        todo!()
+        expression_array(p, m);
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
         todo!()
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
@@ -297,6 +297,26 @@ fn expression_atom(p: &mut Parser) {
     } else {
         m.cancel(p);
     }
+}
+
+fn expression_array(p: &mut Parser, mut m: NodeMarker) {
+    while !p.at(SyntaxKind::RIGHT_SQUARE) && !p.at_eof() {
+        if p.at_in(EXPRESSION_START) {
+            expression(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_SQUARE) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_SQUARE) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(EXPRESSION_ATOM_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    p.expect(SyntaxKind::RIGHT_SQUARE);
+    m.end(p, SyntaxKind::ExpressionArray);
 }
 
 const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
@@ -327,3 +347,6 @@ const EXPRESSION_START: TokenSet = TokenSet::new(&[
     SyntaxKind::ADO,
 ])
 .union(EXPRESSION_ATOM_START);
+
+const EXPRESSION_ATOM_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
