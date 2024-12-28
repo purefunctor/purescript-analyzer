@@ -59,7 +59,7 @@ impl<'t> Parser<'t> {
     fn decide(&mut self, mut branches: impl AsMut<[CheckpointBranch]>) {
         let branch = branches
             .as_mut()
-            .into_iter()
+            .iter_mut()
             .filter(|branch| branch.finished)
             .max_by_key(|branch| branch.index);
         if let Some(branch) = branch {
@@ -68,7 +68,7 @@ impl<'t> Parser<'t> {
         } else {
             let branch = branches
                 .as_mut()
-                .into_iter()
+                .iter_mut()
                 .max_by_key(|branch| branch.index)
                 .expect("invariant violated: at least one branch");
             self.index = branch.index;
@@ -197,10 +197,7 @@ struct CheckpointBranch {
 
 impl CheckpointBranch {
     fn new(index: usize, output: Vec<Output>) -> CheckpointBranch {
-        let finished = output.iter().all(|event| match event {
-            Output::Error { .. } => false,
-            _ => true,
-        });
+        let finished = output.iter().all(|event| !matches!(event, Output::Error { .. }));
         CheckpointBranch { index, output, finished }
     }
 }

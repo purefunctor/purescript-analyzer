@@ -2,12 +2,7 @@ use syntax::{SyntaxKind, TokenSet};
 
 use super::{binders, binding, expressions, names, types, Parser};
 
-pub(super) enum RecordItemKind {
-    Binder,
-    Expression,
-}
-
-pub(super) fn record_item(p: &mut Parser, k: RecordItemKind) {
+pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
     let mut m = p.start();
 
     if (p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING)) && !p.at_next(SyntaxKind::COLON) {
@@ -25,10 +20,7 @@ pub(super) fn record_item(p: &mut Parser, k: RecordItemKind) {
     }
 
     p.expect(SyntaxKind::COLON);
-    match k {
-        RecordItemKind::Binder => binders::binder(p),
-        RecordItemKind::Expression => expressions::expression(p),
-    }
+    k(p);
 
     m.end(p, SyntaxKind::RecordField);
 }

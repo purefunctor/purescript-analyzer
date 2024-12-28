@@ -1,12 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{
-    binders::{self, binder_atom},
-    binding,
-    generic::{self, record_item, RecordItemKind},
-    names::{self, LOWER_NON_RESERVED},
-    types, NodeMarker, Parser,
-};
+use super::{binders, binding, generic, names, types, NodeMarker, Parser};
 
 pub fn expression(p: &mut Parser) {
     let mut m = p.start();
@@ -225,7 +219,7 @@ fn do_statement_let(p: &mut Parser) {
 fn do_statement_bind(p: &mut Parser) {
     let mut m = p.start();
     let n = p.start();
-    binder_atom(p, n);
+    binders::binder_atom(p, n);
     p.expect(SyntaxKind::LEFT_ARROW);
     expression(p);
     m.end(p, SyntaxKind::DoStatementBind);
@@ -276,7 +270,7 @@ fn expression_atom(p: &mut Parser) {
 
     let mut n = p.start();
     if p.eat(SyntaxKind::PREFIX) {
-        if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+        if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
             m.end(p, SyntaxKind::ExpressionVariable);
         } else if p.eat(SyntaxKind::UPPER) {
             m.end(p, SyntaxKind::ExpressionConstructor);
@@ -289,7 +283,7 @@ fn expression_atom(p: &mut Parser) {
     };
     n.cancel(p);
 
-    if p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ExpressionVariable);
     } else if p.eat(SyntaxKind::UPPER) {
         m.end(p, SyntaxKind::ExpressionConstructor);
@@ -347,7 +341,7 @@ fn expression_array(p: &mut Parser, mut m: NodeMarker) {
 fn expression_record(p: &mut Parser, mut m: NodeMarker) {
     while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
         if p.at_in(names::RECORD_LABEL) {
-            record_item(p, RecordItemKind::Expression);
+            generic::record_item(p, expression);
             if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
                 p.error_recover("Trailing comma");
             } else if !p.at(SyntaxKind::RIGHT_CURLY) {

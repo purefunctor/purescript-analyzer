@@ -60,9 +60,7 @@ pub(super) fn label(p: &mut Parser) {
 
     // Unlike parsing for `LOWER_NON_RESERVED`, which consumes tokens as
     // the `LOWER` token, we use a `LabelName` node to represent labels.
-    if p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING) {
-        p.consume();
-    } else if p.at_in(RECORD_LABEL) {
+    if p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING) || p.at_in(RECORD_LABEL) {
         p.consume();
     } else {
         p.error("Expected STRING, RAW_STRING or KEYWORD_LABEL");
