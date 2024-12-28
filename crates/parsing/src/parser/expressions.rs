@@ -246,23 +246,19 @@ fn expression_6(p: &mut Parser) {
 
 fn expression_7(p: &mut Parser) {
     let mut m = p.start();
-    expression_atom(p);
+    let mut i = 0;
 
-    if p.at(SyntaxKind::PERIOD) {
-        while p.at(SyntaxKind::PERIOD) && !p.at_eof() {
-            record_access_field(p);
-        }
+    expression_atom(p);
+    while p.eat(SyntaxKind::PERIOD) && !p.at_eof() {
+        names::label(p);
+        i += 1;
+    }
+
+    if i > 0 {
         m.end(p, SyntaxKind::ExpressionRecordAccess);
     } else {
         m.cancel(p);
     }
-}
-
-fn record_access_field(p: &mut Parser) {
-    let mut m = p.start();
-    p.expect(SyntaxKind::PERIOD);
-    names::label(p);
-    m.end(p, SyntaxKind::RecordAccessField);
 }
 
 fn expression_atom(p: &mut Parser) {

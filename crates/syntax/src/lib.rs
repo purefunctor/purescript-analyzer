@@ -202,7 +202,6 @@ pub enum SyntaxKind {
 
     RecordField,
     RecordPun,
-    RecordAccessField,
 
     #[doc(hidden)]
     __LAST,
