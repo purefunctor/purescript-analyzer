@@ -63,7 +63,7 @@ pub(super) fn label(p: &mut Parser) {
     if p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING) || p.at_in(RECORD_LABEL) {
         p.consume();
     } else {
-        p.error("Expected STRING, RAW_STRING or KEYWORD_LABEL");
+        p.error("Expected STRING, RAW_STRING or RECORD_LABEL");
     };
 
     m.end(p, SyntaxKind::LabelName);

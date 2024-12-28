@@ -1,0 +1,73 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..70
+      ModuleHeader@0..43
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..36
+          UPPER@7..35 "ExpressionRecordUpdat ..."
+          Comment@35..36
+            WHITESPACE@35..36 " "
+        ModuleExportList@36..36
+        WHERE@36..41 "where"
+        Comment@41..43
+          WHITESPACE@41..43 "\n\n"
+      LAYOUT_START@43..43 ""
+      ModuleImports@43..43
+      ModuleStatements@43..70
+        ValueEquation@43..70
+          LOWER@43..49 "branch"
+          Comment@49..50
+            WHITESPACE@49..50 " "
+          BindersList@50..50
+          EquationUnguarded@50..70
+            EQUAL@50..51 "="
+            Comment@51..52
+              WHITESPACE@51..52 " "
+            EquationWhere@52..70
+              ExpressionRecordUpdate@52..70
+                ExpressionVariable@52..54
+                  LOWER@52..53 "a"
+                  Comment@53..54
+                    WHITESPACE@53..54 " "
+                RecordUpdates@54..70
+                  LEFT_CURLY@54..55 "{"
+                  Comment@55..56
+                    WHITESPACE@55..56 " "
+                  RecordUpdateBranch@56..68
+                    LabelName@56..58
+                      LOWER@56..57 "b"
+                      Comment@57..58
+                        WHITESPACE@57..58 " "
+                    RecordUpdates@58..68
+                      LEFT_CURLY@58..59 "{"
+                      Comment@59..60
+                        WHITESPACE@59..60 " "
+                      RecordUpdateLeaf@60..66
+                        LabelName@60..62
+                          LOWER@60..61 "c"
+                          Comment@61..62
+                            WHITESPACE@61..62 " "
+                        EQUAL@62..63 "="
+                        Comment@63..64
+                          WHITESPACE@63..64 " "
+                        ExpressionVariable@64..66
+                          LOWER@64..65 "d"
+                          Comment@65..66
+                            WHITESPACE@65..66 " "
+                      RIGHT_CURLY@66..67 "}"
+                      Comment@67..68
+                        WHITESPACE@67..68 " "
+                  RIGHT_CURLY@68..69 "}"
+                  Comment@69..70
+                    WHITESPACE@69..70 "\n"
+      LAYOUT_END@70..70 ""
+      END_OF_FILE@70..70 ""
+    ,
+    [],
+)

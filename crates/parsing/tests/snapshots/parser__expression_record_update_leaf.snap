@@ -1,0 +1,61 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..60
+      ModuleHeader@0..41
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..34
+          UPPER@7..33 "ExpressionRecordUpdat ..."
+          Comment@33..34
+            WHITESPACE@33..34 " "
+        ModuleExportList@34..34
+        WHERE@34..39 "where"
+        Comment@39..41
+          WHITESPACE@39..41 "\n\n"
+      LAYOUT_START@41..41 ""
+      ModuleImports@41..41
+      ModuleStatements@41..60
+        ValueEquation@41..60
+          LOWER@41..45 "leaf"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+          BindersList@46..46
+          EquationUnguarded@46..60
+            EQUAL@46..47 "="
+            Comment@47..48
+              WHITESPACE@47..48 " "
+            EquationWhere@48..60
+              ExpressionRecordUpdate@48..60
+                ExpressionVariable@48..50
+                  LOWER@48..49 "x"
+                  Comment@49..50
+                    WHITESPACE@49..50 " "
+                RecordUpdates@50..60
+                  LEFT_CURLY@50..51 "{"
+                  Comment@51..52
+                    WHITESPACE@51..52 " "
+                  RecordUpdateLeaf@52..58
+                    LabelName@52..54
+                      LOWER@52..53 "a"
+                      Comment@53..54
+                        WHITESPACE@53..54 " "
+                    EQUAL@54..55 "="
+                    Comment@55..56
+                      WHITESPACE@55..56 " "
+                    ExpressionVariable@56..58
+                      LOWER@56..57 "b"
+                      Comment@57..58
+                        WHITESPACE@57..58 " "
+                  RIGHT_CURLY@58..59 "}"
+                  Comment@59..60
+                    WHITESPACE@59..60 "\n"
+      LAYOUT_END@60..60 ""
+      END_OF_FILE@60..60 ""
+    ,
+    [],
+)

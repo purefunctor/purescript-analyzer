@@ -194,6 +194,7 @@ pub enum SyntaxKind {
     ExpressionRecord,
     ExpressionParenthesized,
     ExpressionRecordAccess,
+    ExpressionRecordUpdate,
 
     DoStatements,
     DoStatementBind,
@@ -202,6 +203,9 @@ pub enum SyntaxKind {
 
     RecordField,
     RecordPun,
+    RecordUpdates,
+    RecordUpdateLeaf,
+    RecordUpdateBranch,
 
     #[doc(hidden)]
     __LAST,

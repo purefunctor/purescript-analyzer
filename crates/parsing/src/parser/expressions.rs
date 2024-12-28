@@ -241,7 +241,50 @@ fn expression_ado(p: &mut Parser, mut m: NodeMarker) {
 }
 
 fn expression_6(p: &mut Parser) {
+    let mut m = p.start();
     expression_7(p);
+    if p.at(SyntaxKind::LEFT_CURLY) {
+        record_updates(p);
+        m.end(p, SyntaxKind::ExpressionRecordUpdate);
+    } else {
+        m.cancel(p);
+    }
+}
+
+fn record_updates(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LEFT_CURLY);
+    while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
+        if p.at_in(names::RECORD_LABEL) {
+            record_update(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_CURLY) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(EXPRESSION_ATOM_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    p.expect(SyntaxKind::RIGHT_CURLY);
+    m.end(p, SyntaxKind::RecordUpdates);
+}
+
+fn record_update(p: &mut Parser) {
+    let mut m = p.start();
+    names::label(p);
+    if p.eat(SyntaxKind::EQUAL) {
+        expression(p);
+        m.end(p, SyntaxKind::RecordUpdateLeaf);
+    } else if p.at(SyntaxKind::LEFT_CURLY) {
+        record_updates(p);
+        m.end(p, SyntaxKind::RecordUpdateBranch);
+    } else {
+        m.cancel(p);
+    }
 }
 
 fn expression_7(p: &mut Parser) {
