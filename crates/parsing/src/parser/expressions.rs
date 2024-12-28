@@ -2,7 +2,8 @@ use syntax::{SyntaxKind, TokenSet};
 
 use super::{
     binders::{self, binder_atom},
-    binding, generic,
+    binding,
+    generic::{self, record_item},
     names::{self, LOWER_NON_RESERVED},
     types, NodeMarker, Parser,
 };
@@ -291,7 +292,7 @@ fn expression_atom(p: &mut Parser) {
     } else if p.eat(SyntaxKind::LEFT_SQUARE) {
         expression_array(p, m);
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
-        todo!()
+        expression_record(p, m);
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
         expression(p);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
@@ -319,6 +320,26 @@ fn expression_array(p: &mut Parser, mut m: NodeMarker) {
     }
     p.expect(SyntaxKind::RIGHT_SQUARE);
     m.end(p, SyntaxKind::ExpressionArray);
+}
+
+fn expression_record(p: &mut Parser, mut m: NodeMarker) {
+    while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
+        if p.at_in(names::LOWER_NON_RESERVED) {
+            record_item(p, expression);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_CURLY) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(EXPRESSION_ATOM_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    p.expect(SyntaxKind::RIGHT_CURLY);
+    m.end(p, SyntaxKind::BinderRecord);
 }
 
 const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
