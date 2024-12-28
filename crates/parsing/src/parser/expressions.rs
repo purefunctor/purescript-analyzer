@@ -351,7 +351,7 @@ fn expression_record(p: &mut Parser, mut m: NodeMarker) {
         }
     }
     p.expect(SyntaxKind::RIGHT_CURLY);
-    m.end(p, SyntaxKind::BinderRecord);
+    m.end(p, SyntaxKind::ExpressionRecord);
 }
 
 const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[

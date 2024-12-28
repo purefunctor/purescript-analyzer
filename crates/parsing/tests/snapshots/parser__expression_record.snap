@@ -30,7 +30,7 @@ snapshot_kind: text
             Comment@39..40
               WHITESPACE@39..40 " "
             EquationWhere@40..43
-              BinderRecord@40..43
+              ExpressionRecord@40..43
                 LEFT_CURLY@40..41 "{"
                 RIGHT_CURLY@41..42 "}"
                 Comment@42..43
@@ -46,7 +46,7 @@ snapshot_kind: text
             Comment@51..52
               WHITESPACE@51..52 " "
             EquationWhere@52..56
-              BinderRecord@52..56
+              ExpressionRecord@52..56
                 LEFT_CURLY@52..53 "{"
                 RecordPun@53..54
                   LabelName@53..54
@@ -65,7 +65,7 @@ snapshot_kind: text
             Comment@64..65
               WHITESPACE@64..65 " "
             EquationWhere@65..72
-              BinderRecord@65..72
+              ExpressionRecord@65..72
                 LEFT_CURLY@65..66 "{"
                 RecordPun@66..67
                   LabelName@66..67
@@ -90,7 +90,7 @@ snapshot_kind: text
             Comment@80..81
               WHITESPACE@80..81 " "
             EquationWhere@81..94
-              BinderRecord@81..94
+              ExpressionRecord@81..94
                 LEFT_CURLY@81..82 "{"
                 RecordField@82..86
                   LabelName@82..83
@@ -125,7 +125,7 @@ snapshot_kind: text
             Comment@102..103
               WHITESPACE@102..103 " "
             EquationWhere@103..122
-              BinderRecord@103..122
+              ExpressionRecord@103..122
                 LEFT_CURLY@103..104 "{"
                 RecordPun@104..105
                   LabelName@104..105

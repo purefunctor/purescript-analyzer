@@ -43,7 +43,7 @@ snapshot_kind: text
             Comment@52..53
               WHITESPACE@52..53 " "
             EquationWhere@53..65
-              BinderRecord@53..65
+              ExpressionRecord@53..65
                 LEFT_CURLY@53..54 "{"
                 Comment@54..55
                   WHITESPACE@54..55 " "
@@ -80,7 +80,7 @@ snapshot_kind: text
             Comment@85..86
               WHITESPACE@85..86 " "
             EquationWhere@86..97
-              BinderRecord@86..97
+              ExpressionRecord@86..97
                 LEFT_CURLY@86..87 "{"
                 Comment@87..88
                   WHITESPACE@87..88 " "
