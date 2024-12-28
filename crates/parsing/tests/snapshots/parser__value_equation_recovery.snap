@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@36..40 "pass"
           Comment@40..41
             WHITESPACE@40..41 " "
-          EquationBinders@41..41
+          BindersList@41..41
           EquationUnguarded@41..46
             EQUAL@41..42 "="
             Comment@42..43
@@ -39,7 +39,7 @@ snapshot_kind: text
           LOWER@46..50 "fail"
           Comment@50..51
             WHITESPACE@50..51 " "
-          EquationBinders@51..51
+          BindersList@51..51
           EquationUnguarded@51..53
             EQUAL@51..52 "="
             Comment@52..53
@@ -55,7 +55,7 @@ snapshot_kind: text
           LOWER@60..64 "pass"
           Comment@64..65
             WHITESPACE@64..65 " "
-          EquationBinders@65..65
+          BindersList@65..65
           EquationUnguarded@65..71
             EQUAL@65..66 "="
             Comment@66..67
@@ -70,7 +70,7 @@ snapshot_kind: text
           LOWER@71..79 "bindings"
           Comment@79..80
             WHITESPACE@79..80 " "
-          EquationBinders@80..80
+          BindersList@80..80
           EquationUnguarded@80..133
             EQUAL@80..81 "="
             Comment@81..82
@@ -89,7 +89,7 @@ snapshot_kind: text
                   LOWER@95..99 "pass"
                   Comment@99..100
                     WHITESPACE@99..100 " "
-                  EquationBinders@100..100
+                  BindersList@100..100
                   EquationUnguarded@100..107
                     EQUAL@100..101 "="
                     Comment@101..102
@@ -104,7 +104,7 @@ snapshot_kind: text
                   LOWER@107..111 "fail"
                   Comment@111..112
                     WHITESPACE@111..112 " "
-                  EquationBinders@112..112
+                  BindersList@112..112
                   EquationUnguarded@112..114
                     EQUAL@112..113 "="
                     Comment@113..114
@@ -120,7 +120,7 @@ snapshot_kind: text
                   LOWER@123..127 "pass"
                   Comment@127..128
                     WHITESPACE@127..128 " "
-                  EquationBinders@128..128
+                  BindersList@128..128
                   EquationUnguarded@128..133
                     EQUAL@128..129 "="
                     Comment@129..130

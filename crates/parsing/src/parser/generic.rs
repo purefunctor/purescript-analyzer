@@ -22,7 +22,7 @@ pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKin
         types::ty(p);
         m.end(p, a);
     } else {
-        equation_binders(p, s);
+        binders_list(p, s);
         equation_guarded(p, s);
         m.end(p, e);
     }
@@ -31,7 +31,7 @@ pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKin
 const EQUATION_BINDERS_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
-fn equation_binders(p: &mut Parser, s: SyntaxKind) {
+pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     while !p.at(s) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
         if p.at_in(binders::BINDER_ATOM_START) {
@@ -44,7 +44,7 @@ fn equation_binders(p: &mut Parser, s: SyntaxKind) {
             p.error_recover("Invalid token");
         }
     }
-    m.end(p, SyntaxKind::EquationBinders);
+    m.end(p, SyntaxKind::BindersList);
 }
 
 fn equation_guarded(p: &mut Parser, s: SyntaxKind) {

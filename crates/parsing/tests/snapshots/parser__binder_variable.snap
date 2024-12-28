@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@29..37 "identity"
           Comment@37..38
             WHITESPACE@37..38 " "
-          EquationBinders@38..40
+          BindersList@38..40
             BinderVariable@38..40
               LOWER@38..39 "x"
               Comment@39..40
@@ -43,7 +43,7 @@ snapshot_kind: text
           LOWER@44..52 "identity"
           Comment@52..53
             WHITESPACE@52..53 " "
-          EquationBinders@53..57
+          BindersList@53..57
             BinderNamed@53..57
               LOWER@53..54 "x"
               AT@54..55 "@"

@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@33..41 "prefixed"
           Comment@41..42
             WHITESPACE@41..42 " "
-          EquationBinders@42..42
+          BindersList@42..42
           EquationUnguarded@42..59
             EQUAL@42..43 "="
             Comment@43..44
@@ -41,7 +41,7 @@ snapshot_kind: text
           LOWER@59..67 "prefixed"
           Comment@67..68
             WHITESPACE@67..68 " "
-          EquationBinders@68..68
+          BindersList@68..68
           EquationUnguarded@68..85
             EQUAL@68..69 "="
             Comment@69..70
@@ -58,7 +58,7 @@ snapshot_kind: text
           LOWER@85..93 "prefixed"
           Comment@93..94
             WHITESPACE@93..94 " "
-          EquationBinders@94..94
+          BindersList@94..94
           EquationUnguarded@94..110
             EQUAL@94..95 "="
             Comment@95..96

@@ -120,7 +120,7 @@ pub enum SyntaxKind {
 
     ValueAnnotation,
     ValueEquation,
-    EquationBinders,
+    BindersList,
     EquationUnguarded,
     EquationGuarded,
     EquationWhere,

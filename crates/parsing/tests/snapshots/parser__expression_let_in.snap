@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@30..36 "let_in"
           Comment@36..37
             WHITESPACE@36..37 " "
-          EquationBinders@37..37
+          BindersList@37..37
           EquationUnguarded@37..55
             EQUAL@37..38 "="
             Comment@38..39
@@ -40,7 +40,7 @@ snapshot_kind: text
                     LOWER@43..44 "x"
                     Comment@44..45
                       WHITESPACE@44..45 " "
-                    EquationBinders@45..45
+                    BindersList@45..45
                     EquationUnguarded@45..49
                       EQUAL@45..46 "="
                       Comment@46..47
@@ -63,7 +63,7 @@ snapshot_kind: text
           LOWER@55..61 "let_in"
           Comment@61..62
             WHITESPACE@61..62 " "
-          EquationBinders@62..62
+          BindersList@62..62
           EquationUnguarded@62..84
             EQUAL@62..63 "="
             Comment@63..66
@@ -79,7 +79,7 @@ snapshot_kind: text
                     LOWER@70..71 "x"
                     Comment@71..72
                       WHITESPACE@71..72 " "
-                    EquationBinders@72..72
+                    BindersList@72..72
                     EquationUnguarded@72..78
                       EQUAL@72..73 "="
                       Comment@73..74
@@ -102,7 +102,7 @@ snapshot_kind: text
           LOWER@84..90 "let_in"
           Comment@90..91
             WHITESPACE@90..91 " "
-          EquationBinders@91..91
+          BindersList@91..91
           EquationUnguarded@91..121
             EQUAL@91..92 "="
             Comment@92..95
@@ -118,7 +118,7 @@ snapshot_kind: text
                     LOWER@103..104 "x"
                     Comment@104..105
                       WHITESPACE@104..105 " "
-                    EquationBinders@105..105
+                    BindersList@105..105
                     EquationUnguarded@105..111
                       EQUAL@105..106 "="
                       Comment@106..107
@@ -141,7 +141,7 @@ snapshot_kind: text
           LOWER@121..127 "let_in"
           Comment@127..128
             WHITESPACE@127..128 " "
-          EquationBinders@128..128
+          BindersList@128..128
           EquationUnguarded@128..180
             EQUAL@128..129 "="
             Comment@129..132
@@ -170,7 +170,7 @@ snapshot_kind: text
                     LOWER@156..160 "life"
                     Comment@160..161
                       WHITESPACE@160..161 " "
-                    EquationBinders@161..161
+                    BindersList@161..161
                     EquationUnguarded@161..168
                       EQUAL@161..162 "="
                       Comment@162..163

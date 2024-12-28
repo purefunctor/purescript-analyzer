@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@26..31 "array"
           Comment@31..32
             WHITESPACE@31..32 " "
-          EquationBinders@32..35
+          BindersList@32..35
             BinderArray@32..35
               LEFT_SQUARE@32..33 "["
               RIGHT_SQUARE@33..34 "]"
@@ -44,7 +44,7 @@ snapshot_kind: text
           LOWER@39..44 "array"
           Comment@44..45
             WHITESPACE@44..45 " "
-          EquationBinders@45..49
+          BindersList@45..49
             BinderArray@45..49
               LEFT_SQUARE@45..46 "["
               BinderVariable@46..47
@@ -66,7 +66,7 @@ snapshot_kind: text
           LOWER@53..58 "array"
           Comment@58..59
             WHITESPACE@58..59 " "
-          EquationBinders@59..66
+          BindersList@59..66
             BinderArray@59..66
               LEFT_SQUARE@59..60 "["
               BinderVariable@60..61

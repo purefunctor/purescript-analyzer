@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@26..33 "integer"
           Comment@33..34
             WHITESPACE@33..34 " "
-          EquationBinders@34..36
+          BindersList@34..36
             BinderInteger@34..36
               INTEGER@34..35 "1"
               Comment@35..36
@@ -43,7 +43,7 @@ snapshot_kind: text
           LOWER@40..46 "number"
           Comment@46..47
             WHITESPACE@46..47 " "
-          EquationBinders@47..51
+          BindersList@47..51
             BinderNumber@47..51
               NUMBER@47..50 "1.0"
               Comment@50..51
