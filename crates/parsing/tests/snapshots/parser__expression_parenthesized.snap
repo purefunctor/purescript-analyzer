@@ -1,0 +1,68 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..82
+      ModuleHeader@0..38
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..31
+          UPPER@7..30 "ExpressionParenthesized"
+          Comment@30..31
+            WHITESPACE@30..31 " "
+        ModuleExportList@31..31
+        WHERE@31..36 "where"
+        Comment@36..38
+          WHITESPACE@36..38 "\n\n"
+      LAYOUT_START@38..38 ""
+      ModuleImports@38..38
+      ModuleStatements@38..82
+        ValueEquation@38..58
+          LOWER@38..51 "parenthesized"
+          Comment@51..52
+            WHITESPACE@51..52 " "
+          BindersList@52..52
+          EquationUnguarded@52..58
+            EQUAL@52..53 "="
+            Comment@53..54
+              WHITESPACE@53..54 " "
+            EquationWhere@54..58
+              ExpressionParenthesized@54..58
+                LEFT_PARENTHESIS@54..55 "("
+                ExpressionInteger@55..56
+                  INTEGER@55..56 "1"
+                RIGHT_PARENTHESIS@56..57 ")"
+                Comment@57..58
+                  WHITESPACE@57..58 "\n"
+        LAYOUT_SEPARATOR@58..58 ""
+        ValueEquation@58..82
+          LOWER@58..71 "parenthesized"
+          Comment@71..72
+            WHITESPACE@71..72 " "
+          BindersList@72..72
+          EquationUnguarded@72..82
+            EQUAL@72..73 "="
+            Comment@73..74
+              WHITESPACE@73..74 " "
+            EquationWhere@74..82
+              ExpressionParenthesized@74..82
+                LEFT_PARENTHESIS@74..75 "("
+                ExpressionParenthesized@75..80
+                  LEFT_PARENTHESIS@75..76 "("
+                  ExpressionParenthesized@76..79
+                    LEFT_PARENTHESIS@76..77 "("
+                    ExpressionInteger@77..78
+                      INTEGER@77..78 "1"
+                    RIGHT_PARENTHESIS@78..79 ")"
+                  RIGHT_PARENTHESIS@79..80 ")"
+                RIGHT_PARENTHESIS@80..81 ")"
+                Comment@81..82
+                  WHITESPACE@81..82 "\n"
+      LAYOUT_END@82..82 ""
+      END_OF_FILE@82..82 ""
+    ,
+    [],
+)

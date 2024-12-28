@@ -293,7 +293,9 @@ fn expression_atom(p: &mut Parser) {
     } else if p.eat(SyntaxKind::LEFT_CURLY) {
         todo!()
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        todo!()
+        expression(p);
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        m.end(p, SyntaxKind::ExpressionParenthesized);
     } else {
         m.cancel(p);
     }
