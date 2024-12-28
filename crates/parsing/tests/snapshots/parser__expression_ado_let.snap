@@ -1,0 +1,72 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..31
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "ExpressionAdoLet"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..24
+        WHERE@24..29 "where"
+        Comment@29..31
+          WHITESPACE@29..31 "\n\n"
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..68
+        ValueEquation@31..68
+          LOWER@31..35 "main"
+          Comment@35..36
+            WHITESPACE@35..36 " "
+          BindersList@36..36
+          EquationUnguarded@36..68
+            EQUAL@36..37 "="
+            Comment@37..38
+              WHITESPACE@37..38 " "
+            EquationWhere@38..68
+              ExpressionAdo@38..68
+                ADO@38..41 "ado"
+                Comment@41..44
+                  WHITESPACE@41..44 "\n  "
+                DoStatements@44..60
+                  LAYOUT_START@44..44 ""
+                  DoStatementLet@44..60
+                    LET@44..47 "let"
+                    Comment@47..48
+                      WHITESPACE@47..48 " "
+                    LetBindingStatements@48..60
+                      LAYOUT_START@48..48 ""
+                      LetBindingEquation@48..60
+                        LOWER@48..52 "life"
+                        Comment@52..53
+                          WHITESPACE@52..53 " "
+                        BindersList@53..53
+                        EquationUnguarded@53..60
+                          EQUAL@53..54 "="
+                          Comment@54..55
+                            WHITESPACE@54..55 " "
+                          EquationWhere@55..60
+                            ExpressionInteger@55..60
+                              INTEGER@55..57 "42"
+                              Comment@57..60
+                                WHITESPACE@57..60 "\n  "
+                      LAYOUT_END@60..60 ""
+                  LAYOUT_END@60..60 ""
+                IN@60..62 "in"
+                Comment@62..63
+                  WHITESPACE@62..63 " "
+                ExpressionVariable@63..68
+                  LOWER@63..67 "life"
+                  Comment@67..68
+                    WHITESPACE@67..68 "\n"
+      LAYOUT_END@68..68 ""
+      END_OF_FILE@68..68 ""
+    ,
+    [],
+)

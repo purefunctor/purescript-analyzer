@@ -1,0 +1,62 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..66
+      ModuleHeader@0..35
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..28
+          UPPER@7..27 "ExpressionAdoDiscard"
+          Comment@27..28
+            WHITESPACE@27..28 " "
+        ModuleExportList@28..28
+        WHERE@28..33 "where"
+        Comment@33..35
+          WHITESPACE@33..35 "\n\n"
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..66
+        ValueEquation@35..66
+          LOWER@35..39 "main"
+          Comment@39..40
+            WHITESPACE@39..40 " "
+          BindersList@40..40
+          EquationUnguarded@40..66
+            EQUAL@40..41 "="
+            Comment@41..42
+              WHITESPACE@41..42 " "
+            EquationWhere@42..66
+              ExpressionAdo@42..66
+                ADO@42..45 "ado"
+                Comment@45..48
+                  WHITESPACE@45..48 "\n  "
+                DoStatements@48..60
+                  LAYOUT_START@48..48 ""
+                  DoStatementDiscard@48..60
+                    ExpressionApplicationChain@48..60
+                      ExpressionVariable@48..53
+                        LOWER@48..52 "pure"
+                        Comment@52..53
+                          WHITESPACE@52..53 " "
+                      ExpressionTermArgument@53..60
+                        ExpressionVariable@53..60
+                          LOWER@53..57 "unit"
+                          Comment@57..60
+                            WHITESPACE@57..60 "\n  "
+                  LAYOUT_END@60..60 ""
+                IN@60..62 "in"
+                Comment@62..63
+                  WHITESPACE@62..63 " "
+                ExpressionInteger@63..66
+                  INTEGER@63..65 "42"
+                  Comment@65..66
+                    WHITESPACE@65..66 "\n"
+      LAYOUT_END@66..66 ""
+      END_OF_FILE@66..66 ""
+    ,
+    [],
+)

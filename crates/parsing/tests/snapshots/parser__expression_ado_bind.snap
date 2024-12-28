@@ -1,0 +1,69 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..71
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..25
+          UPPER@7..24 "ExpressionAdoBind"
+          Comment@24..25
+            WHITESPACE@24..25 " "
+        ModuleExportList@25..25
+        WHERE@25..30 "where"
+        Comment@30..32
+          WHITESPACE@30..32 "\n\n"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..71
+        ValueEquation@32..71
+          LOWER@32..36 "main"
+          Comment@36..37
+            WHITESPACE@36..37 " "
+          BindersList@37..37
+          EquationUnguarded@37..71
+            EQUAL@37..38 "="
+            Comment@38..39
+              WHITESPACE@38..39 " "
+            EquationWhere@39..71
+              ExpressionAdo@39..71
+                ADO@39..42 "ado"
+                Comment@42..45
+                  WHITESPACE@42..45 "\n  "
+                DoStatements@45..63
+                  LAYOUT_START@45..45 ""
+                  DoStatementBind@45..63
+                    BinderVariable@45..50
+                      LOWER@45..49 "life"
+                      Comment@49..50
+                        WHITESPACE@49..50 " "
+                    LEFT_ARROW@50..52 "<-"
+                    Comment@52..53
+                      WHITESPACE@52..53 " "
+                    ExpressionApplicationChain@53..63
+                      ExpressionVariable@53..58
+                        LOWER@53..57 "pure"
+                        Comment@57..58
+                          WHITESPACE@57..58 " "
+                      ExpressionTermArgument@58..63
+                        ExpressionInteger@58..63
+                          INTEGER@58..60 "42"
+                          Comment@60..63
+                            WHITESPACE@60..63 "\n  "
+                  LAYOUT_END@63..63 ""
+                IN@63..65 "in"
+                Comment@65..66
+                  WHITESPACE@65..66 " "
+                ExpressionVariable@66..71
+                  LOWER@66..70 "life"
+                  Comment@70..71
+                    WHITESPACE@70..71 "\n"
+      LAYOUT_END@71..71 ""
+      END_OF_FILE@71..71 ""
+    ,
+    [],
+)

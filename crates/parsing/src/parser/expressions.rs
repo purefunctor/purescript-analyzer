@@ -238,6 +238,11 @@ fn do_statement_discard(p: &mut Parser) {
 }
 
 fn expression_ado(p: &mut Parser, mut m: NodeMarker) {
+    p.eat(SyntaxKind::PREFIX);
+    p.expect(SyntaxKind::ADO);
+    do_statements(p);
+    p.expect(SyntaxKind::IN);
+    expression(p);
     m.end(p, SyntaxKind::ExpressionAdo);
 }
 
