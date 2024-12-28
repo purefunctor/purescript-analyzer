@@ -1,7 +1,7 @@
 use syntax::{SyntaxKind, TokenSet};
 
 use super::{
-    binding,
+    binding, generic,
     names::{self, LOWER_NON_RESERVED},
     types, NodeMarker, Parser,
 };
@@ -164,6 +164,10 @@ fn expression_let(p: &mut Parser, mut m: NodeMarker) {
 }
 
 fn expression_lambda(p: &mut Parser, mut m: NodeMarker) {
+    p.expect(SyntaxKind::BACKSLASH);
+    generic::binders_list(p, SyntaxKind::RIGHT_ARROW);
+    p.expect(SyntaxKind::RIGHT_ARROW);
+    expression(p);
     m.end(p, SyntaxKind::ExpressionLambda);
 }
 

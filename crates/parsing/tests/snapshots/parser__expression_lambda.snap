@@ -1,0 +1,86 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..69
+      ModuleHeader@0..31
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "ExpressionLambda"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..24
+        WHERE@24..29 "where"
+        Comment@29..31
+          WHITESPACE@29..31 "\n\n"
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..69
+        ValueEquation@31..48
+          LOWER@31..37 "lambda"
+          Comment@37..38
+            WHITESPACE@37..38 " "
+          BindersList@38..38
+          EquationUnguarded@38..48
+            EQUAL@38..39 "="
+            Comment@39..40
+              WHITESPACE@39..40 " "
+            EquationWhere@40..48
+              ExpressionLambda@40..48
+                BACKSLASH@40..41 "\\"
+                BindersList@41..43
+                  BinderVariable@41..43
+                    LOWER@41..42 "x"
+                    Comment@42..43
+                      WHITESPACE@42..43 " "
+                RIGHT_ARROW@43..45 "->"
+                Comment@45..46
+                  WHITESPACE@45..46 " "
+                ExpressionVariable@46..48
+                  LOWER@46..47 "x"
+                  Comment@47..48
+                    WHITESPACE@47..48 "\n"
+        LAYOUT_SEPARATOR@48..48 ""
+        ValueEquation@48..69
+          LOWER@48..54 "lambda"
+          Comment@54..55
+            WHITESPACE@54..55 " "
+          BindersList@55..55
+          EquationUnguarded@55..69
+            EQUAL@55..56 "="
+            Comment@56..57
+              WHITESPACE@56..57 " "
+            EquationWhere@57..69
+              ExpressionLambda@57..69
+                BACKSLASH@57..58 "\\"
+                BindersList@58..62
+                  BinderVariable@58..60
+                    LOWER@58..59 "f"
+                    Comment@59..60
+                      WHITESPACE@59..60 " "
+                  BinderVariable@60..62
+                    LOWER@60..61 "a"
+                    Comment@61..62
+                      WHITESPACE@61..62 " "
+                RIGHT_ARROW@62..64 "->"
+                Comment@64..65
+                  WHITESPACE@64..65 " "
+                ExpressionApplicationChain@65..69
+                  ExpressionVariable@65..67
+                    LOWER@65..66 "f"
+                    Comment@66..67
+                      WHITESPACE@66..67 " "
+                  ExpressionTermArgument@67..69
+                    ExpressionVariable@67..69
+                      LOWER@67..68 "a"
+                      Comment@68..69
+                        WHITESPACE@68..69 "\n"
+      LAYOUT_END@69..69 ""
+      END_OF_FILE@69..69 ""
+    ,
+    [],
+)
