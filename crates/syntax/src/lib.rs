@@ -193,6 +193,11 @@ pub enum SyntaxKind {
     ExpressionRecord,
     ExpressionParenthesized,
 
+    DoStatements,
+    DoStatementBind,
+    DoStatementLet,
+    DoStatementDiscard,
+
     RecordField,
     RecordPun,
 

@@ -1,6 +1,7 @@
 use syntax::{SyntaxKind, TokenSet};
 
 use super::{
+    binders::{self, binder_atom},
     binding, generic,
     names::{self, LOWER_NON_RESERVED},
     types, NodeMarker, Parser,
@@ -175,8 +176,64 @@ fn expression_case(p: &mut Parser, mut m: NodeMarker) {
     m.end(p, SyntaxKind::ExpressionCaseOf);
 }
 
+const DO_STATEMENT_START: TokenSet =
+    TokenSet::new(&[SyntaxKind::LET]).union(EXPRESSION_START).union(binders::BINDER_ATOM_START);
+
 fn expression_do(p: &mut Parser, mut m: NodeMarker) {
+    p.eat(SyntaxKind::PREFIX);
+    p.expect(SyntaxKind::DO);
+    do_statements(p);
     m.end(p, SyntaxKind::ExpressionDo);
+}
+
+fn do_statements(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LAYOUT_START);
+    while p.at_in(DO_STATEMENT_START) && !p.at_eof() {
+        do_statement(p);
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            p.error_recover("Invalid token");
+        }
+        if !p.at(SyntaxKind::LAYOUT_END) {
+            p.expect(SyntaxKind::LAYOUT_SEPARATOR);
+        }
+    }
+    p.expect(SyntaxKind::LAYOUT_END);
+    m.end(p, SyntaxKind::DoStatements);
+}
+
+fn do_statement(p: &mut Parser) {
+    if p.at(SyntaxKind::LET) {
+        do_statement_let(p);
+    } else {
+        let c = p.checkpoint();
+        let bind = c.branch(p, do_statement_bind);
+        let discard = c.branch(p, do_statement_discard);
+        p.decide([bind, discard]);
+    }
+}
+
+fn do_statement_let(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LET);
+    binding::bindings(p);
+    expression(p);
+    m.end(p, SyntaxKind::DoStatementLet);
+}
+
+fn do_statement_bind(p: &mut Parser) {
+    let mut m = p.start();
+    let n = p.start();
+    binder_atom(p, n);
+    p.expect(SyntaxKind::LEFT_ARROW);
+    expression(p);
+    m.end(p, SyntaxKind::DoStatementBind);
+}
+
+fn do_statement_discard(p: &mut Parser) {
+    let mut m = p.start();
+    expression(p);
+    m.end(p, SyntaxKind::DoStatementDiscard);
 }
 
 fn expression_ado(p: &mut Parser, mut m: NodeMarker) {

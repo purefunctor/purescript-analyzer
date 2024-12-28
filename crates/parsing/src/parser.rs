@@ -5,7 +5,7 @@ mod generic;
 mod names;
 mod types;
 
-use std::{cell::Cell, sync::Arc};
+use std::{cell::Cell, mem, sync::Arc};
 
 use drop_bomb::DropBomb;
 use syntax::{SyntaxKind, TokenSet};
@@ -50,6 +50,30 @@ impl<'t> Parser<'t> {
         let index = self.output.len();
         self.output.push(Output::Start { kind: SyntaxKind::Node });
         NodeMarker::new(index)
+    }
+
+    fn checkpoint(&self) -> NodeCheckpoint {
+        NodeCheckpoint::new(self.index)
+    }
+
+    fn decide(&mut self, mut branches: impl AsMut<[CheckpointBranch]>) {
+        let branch = branches
+            .as_mut()
+            .into_iter()
+            .filter(|branch| branch.finished)
+            .max_by_key(|branch| branch.index);
+        if let Some(branch) = branch {
+            self.index = branch.index;
+            self.output.append(&mut branch.output);
+        } else {
+            let branch = branches
+                .as_mut()
+                .into_iter()
+                .max_by_key(|branch| branch.index)
+                .expect("invariant violated: at least one branch");
+            self.index = branch.index;
+            self.output.append(&mut branch.output);
+        }
     }
 
     fn error(&mut self, message: impl Into<Arc<str>>) {
@@ -143,6 +167,41 @@ impl NodeMarker {
                 _ => unreachable!(),
             }
         }
+    }
+}
+
+struct NodeCheckpoint {
+    index: usize,
+}
+
+impl NodeCheckpoint {
+    fn new(index: usize) -> NodeCheckpoint {
+        NodeCheckpoint { index }
+    }
+
+    fn branch(&self, p: &mut Parser, f: impl FnOnce(&mut Parser)) -> CheckpointBranch {
+        p.index = self.index;
+        let before = mem::take(&mut p.output);
+        f(p);
+        let index = p.index;
+        let output = mem::replace(&mut p.output, before);
+        CheckpointBranch::new(index, output)
+    }
+}
+
+struct CheckpointBranch {
+    index: usize,
+    output: Vec<Output>,
+    finished: bool,
+}
+
+impl CheckpointBranch {
+    fn new(index: usize, output: Vec<Output>) -> CheckpointBranch {
+        let finished = output.iter().all(|event| match event {
+            Output::Error { .. } => false,
+            _ => true,
+        });
+        CheckpointBranch { index, output, finished }
     }
 }
 
