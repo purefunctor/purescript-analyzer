@@ -24,8 +24,8 @@ snapshot_kind: text
           LOWER@35..47 "if_then_else"
           Comment@47..48
             WHITESPACE@47..48 " "
-          BindersList@48..48
-          EquationUnguarded@48..69
+          EquationBinders@48..48
+          EquationUnconditional@48..69
             EQUAL@48..49 "="
             Comment@49..50
               WHITESPACE@49..50 " "

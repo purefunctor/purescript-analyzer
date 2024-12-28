@@ -24,13 +24,13 @@ snapshot_kind: text
           LOWER@27..33 "record"
           Comment@33..34
             WHITESPACE@33..34 " "
-          BindersList@34..37
+          EquationBinders@34..37
             BinderRecord@34..37
               LEFT_CURLY@34..35 "{"
               RIGHT_CURLY@35..36 "}"
               Comment@36..37
                 WHITESPACE@36..37 " "
-          EquationUnguarded@37..41
+          EquationUnconditional@37..41
             EQUAL@37..38 "="
             Comment@38..39
               WHITESPACE@38..39 " "
@@ -44,7 +44,7 @@ snapshot_kind: text
           LOWER@41..47 "record"
           Comment@47..48
             WHITESPACE@47..48 " "
-          BindersList@48..52
+          EquationBinders@48..52
             BinderRecord@48..52
               LEFT_CURLY@48..49 "{"
               RecordPun@49..50
@@ -53,7 +53,7 @@ snapshot_kind: text
               RIGHT_CURLY@50..51 "}"
               Comment@51..52
                 WHITESPACE@51..52 " "
-          EquationUnguarded@52..56
+          EquationUnconditional@52..56
             EQUAL@52..53 "="
             Comment@53..54
               WHITESPACE@53..54 " "
@@ -67,7 +67,7 @@ snapshot_kind: text
           LOWER@56..62 "record"
           Comment@62..63
             WHITESPACE@62..63 " "
-          BindersList@63..70
+          EquationBinders@63..70
             BinderRecord@63..70
               LEFT_CURLY@63..64 "{"
               RecordPun@64..65
@@ -82,7 +82,7 @@ snapshot_kind: text
               RIGHT_CURLY@68..69 "}"
               Comment@69..70
                 WHITESPACE@69..70 " "
-          EquationUnguarded@70..74
+          EquationUnconditional@70..74
             EQUAL@70..71 "="
             Comment@71..72
               WHITESPACE@71..72 " "
@@ -96,7 +96,7 @@ snapshot_kind: text
           LOWER@74..80 "record"
           Comment@80..81
             WHITESPACE@80..81 " "
-          BindersList@81..94
+          EquationBinders@81..94
             BinderRecord@81..94
               LEFT_CURLY@81..82 "{"
               RecordField@82..86
@@ -121,7 +121,7 @@ snapshot_kind: text
               RIGHT_CURLY@92..93 "}"
               Comment@93..94
                 WHITESPACE@93..94 " "
-          EquationUnguarded@94..98
+          EquationUnconditional@94..98
             EQUAL@94..95 "="
             Comment@95..96
               WHITESPACE@95..96 " "
@@ -135,7 +135,7 @@ snapshot_kind: text
           LOWER@98..104 "record"
           Comment@104..105
             WHITESPACE@104..105 " "
-          BindersList@105..124
+          EquationBinders@105..124
             BinderRecord@105..124
               LEFT_CURLY@105..106 "{"
               RecordPun@106..107
@@ -172,7 +172,7 @@ snapshot_kind: text
               RIGHT_CURLY@122..123 "}"
               Comment@123..124
                 WHITESPACE@123..124 " "
-          EquationUnguarded@124..128
+          EquationUnconditional@124..128
             EQUAL@124..125 "="
             Comment@125..126
               WHITESPACE@125..126 " "

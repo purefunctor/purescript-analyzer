@@ -24,8 +24,8 @@ snapshot_kind: text
           LOWER@29..33 "tick"
           Comment@33..34
             WHITESPACE@33..34 " "
-          BindersList@34..34
-          EquationUnguarded@34..56
+          EquationBinders@34..34
+          EquationUnconditional@34..56
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
@@ -62,8 +62,8 @@ snapshot_kind: text
           LOWER@56..60 "tick"
           Comment@60..61
             WHITESPACE@60..61 " "
-          BindersList@61..61
-          EquationUnguarded@61..85
+          EquationBinders@61..61
+          EquationUnconditional@61..85
             EQUAL@61..62 "="
             Comment@62..63
               WHITESPACE@62..63 " "

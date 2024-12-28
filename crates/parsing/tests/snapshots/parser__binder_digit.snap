@@ -24,12 +24,12 @@ snapshot_kind: text
           LOWER@26..33 "integer"
           Comment@33..34
             WHITESPACE@33..34 " "
-          BindersList@34..36
+          EquationBinders@34..36
             BinderInteger@34..36
               INTEGER@34..35 "1"
               Comment@35..36
                 WHITESPACE@35..36 " "
-          EquationUnguarded@36..40
+          EquationUnconditional@36..40
             EQUAL@36..37 "="
             Comment@37..38
               WHITESPACE@37..38 " "
@@ -43,12 +43,12 @@ snapshot_kind: text
           LOWER@40..46 "number"
           Comment@46..47
             WHITESPACE@46..47 " "
-          BindersList@47..51
+          EquationBinders@47..51
             BinderNumber@47..51
               NUMBER@47..50 "1.0"
               Comment@50..51
                 WHITESPACE@50..51 " "
-          EquationUnguarded@51..55
+          EquationUnconditional@51..55
             EQUAL@51..52 "="
             Comment@52..53
               WHITESPACE@52..53 " "

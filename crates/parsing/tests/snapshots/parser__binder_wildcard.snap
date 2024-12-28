@@ -24,12 +24,12 @@ snapshot_kind: text
           LOWER@29..37 "wildcard"
           Comment@37..38
             WHITESPACE@37..38 " "
-          BindersList@38..40
+          EquationBinders@38..40
             BinderWildcard@38..40
               UNDERSCORE@38..39 "_"
               Comment@39..40
                 WHITESPACE@39..40 " "
-          EquationUnguarded@40..44
+          EquationUnconditional@40..44
             EQUAL@40..41 "="
             Comment@41..42
               WHITESPACE@41..42 " "

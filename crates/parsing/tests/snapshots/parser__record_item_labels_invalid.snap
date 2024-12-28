@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@31..38 "invalid"
           Comment@38..39
             WHITESPACE@38..39 " "
-          BindersList@39..51
+          EquationBinders@39..51
             BinderRecord@39..51
               LEFT_CURLY@39..40 "{"
               Comment@40..41
@@ -38,7 +38,7 @@ snapshot_kind: text
               RIGHT_CURLY@49..50 "}"
               Comment@50..51
                 WHITESPACE@50..51 " "
-          EquationUnguarded@51..65
+          EquationUnconditional@51..65
             EQUAL@51..52 "="
             Comment@52..53
               WHITESPACE@52..53 " "
@@ -61,7 +61,7 @@ snapshot_kind: text
           LOWER@65..72 "invalid"
           Comment@72..73
             WHITESPACE@72..73 " "
-          BindersList@73..84
+          EquationBinders@73..84
             BinderRecord@73..84
               LEFT_CURLY@73..74 "{"
               Comment@74..75
@@ -75,7 +75,7 @@ snapshot_kind: text
               RIGHT_CURLY@82..83 "}"
               Comment@83..84
                 WHITESPACE@83..84 " "
-          EquationUnguarded@84..97
+          EquationUnconditional@84..97
             EQUAL@84..85 "="
             Comment@85..86
               WHITESPACE@85..86 " "

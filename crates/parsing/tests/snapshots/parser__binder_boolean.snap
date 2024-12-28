@@ -24,12 +24,12 @@ snapshot_kind: text
           LOWER@28..35 "boolean"
           Comment@35..36
             WHITESPACE@35..36 " "
-          BindersList@36..41
+          EquationBinders@36..41
             BinderTrue@36..41
               TRUE@36..40 "true"
               Comment@40..41
                 WHITESPACE@40..41 " "
-          EquationUnguarded@41..45
+          EquationUnconditional@41..45
             EQUAL@41..42 "="
             Comment@42..43
               WHITESPACE@42..43 " "
@@ -43,12 +43,12 @@ snapshot_kind: text
           LOWER@45..52 "boolean"
           Comment@52..53
             WHITESPACE@52..53 " "
-          BindersList@53..59
+          EquationBinders@53..59
             BinderFalse@53..59
               FALSE@53..58 "false"
               Comment@58..59
                 WHITESPACE@58..59 " "
-          EquationUnguarded@59..63
+          EquationUnconditional@59..63
             EQUAL@59..60 "="
             Comment@60..61
               WHITESPACE@60..61 " "

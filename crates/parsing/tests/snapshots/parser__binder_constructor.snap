@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@32..43 "constructor"
           Comment@43..44
             WHITESPACE@43..44 " "
-          BindersList@44..56
+          EquationBinders@44..56
             BinderParenthesized@44..56
               LEFT_PARENTHESIS@44..45 "("
               BinderConstructor@45..54
@@ -41,7 +41,7 @@ snapshot_kind: text
               RIGHT_PARENTHESIS@54..55 ")"
               Comment@55..56
                 WHITESPACE@55..56 " "
-          EquationUnguarded@56..60
+          EquationUnconditional@56..60
             EQUAL@56..57 "="
             Comment@57..58
               WHITESPACE@57..58 " "
@@ -55,13 +55,13 @@ snapshot_kind: text
           LOWER@60..71 "constructor"
           Comment@71..72
             WHITESPACE@71..72 " "
-          BindersList@72..76
+          EquationBinders@72..76
             BinderConstructor@72..76
               QualifiedName@72..76
                 UPPER@72..75 "Nil"
                 Comment@75..76
                   WHITESPACE@75..76 " "
-          EquationUnguarded@76..81
+          EquationUnconditional@76..81
             EQUAL@76..77 "="
             Comment@77..78
               WHITESPACE@77..78 " "
@@ -75,7 +75,7 @@ snapshot_kind: text
           LOWER@81..92 "constructor"
           Comment@92..93
             WHITESPACE@92..93 " "
-          BindersList@93..110
+          EquationBinders@93..110
             BinderParenthesized@93..110
               LEFT_PARENTHESIS@93..94 "("
               BinderConstructor@94..108
@@ -93,7 +93,7 @@ snapshot_kind: text
               RIGHT_PARENTHESIS@108..109 ")"
               Comment@109..110
                 WHITESPACE@109..110 " "
-          EquationUnguarded@110..114
+          EquationUnconditional@110..114
             EQUAL@110..111 "="
             Comment@111..112
               WHITESPACE@111..112 " "
@@ -107,14 +107,14 @@ snapshot_kind: text
           LOWER@114..125 "constructor"
           Comment@125..126
             WHITESPACE@125..126 " "
-          BindersList@126..135
+          EquationBinders@126..135
             BinderConstructor@126..135
               QualifiedName@126..135
                 PREFIX@126..131 "List."
                 UPPER@131..134 "Nil"
                 Comment@134..135
                   WHITESPACE@134..135 " "
-          EquationUnguarded@135..139
+          EquationUnconditional@135..139
             EQUAL@135..136 "="
             Comment@136..137
               WHITESPACE@136..137 " "

@@ -24,8 +24,8 @@ snapshot_kind: text
           LOWER@38..51 "parenthesized"
           Comment@51..52
             WHITESPACE@51..52 " "
-          BindersList@52..52
-          EquationUnguarded@52..58
+          EquationBinders@52..52
+          EquationUnconditional@52..58
             EQUAL@52..53 "="
             Comment@53..54
               WHITESPACE@53..54 " "
@@ -42,8 +42,8 @@ snapshot_kind: text
           LOWER@58..71 "parenthesized"
           Comment@71..72
             WHITESPACE@71..72 " "
-          BindersList@72..72
-          EquationUnguarded@72..82
+          EquationBinders@72..72
+          EquationUnconditional@72..82
             EQUAL@72..73 "="
             Comment@73..74
               WHITESPACE@73..74 " "

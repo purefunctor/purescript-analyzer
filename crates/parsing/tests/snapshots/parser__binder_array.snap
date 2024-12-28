@@ -24,13 +24,13 @@ snapshot_kind: text
           LOWER@26..31 "array"
           Comment@31..32
             WHITESPACE@31..32 " "
-          BindersList@32..35
+          EquationBinders@32..35
             BinderArray@32..35
               LEFT_SQUARE@32..33 "["
               RIGHT_SQUARE@33..34 "]"
               Comment@34..35
                 WHITESPACE@34..35 " "
-          EquationUnguarded@35..39
+          EquationUnconditional@35..39
             EQUAL@35..36 "="
             Comment@36..37
               WHITESPACE@36..37 " "
@@ -44,7 +44,7 @@ snapshot_kind: text
           LOWER@39..44 "array"
           Comment@44..45
             WHITESPACE@44..45 " "
-          BindersList@45..49
+          EquationBinders@45..49
             BinderArray@45..49
               LEFT_SQUARE@45..46 "["
               BinderVariable@46..47
@@ -52,7 +52,7 @@ snapshot_kind: text
               RIGHT_SQUARE@47..48 "]"
               Comment@48..49
                 WHITESPACE@48..49 " "
-          EquationUnguarded@49..53
+          EquationUnconditional@49..53
             EQUAL@49..50 "="
             Comment@50..51
               WHITESPACE@50..51 " "
@@ -66,7 +66,7 @@ snapshot_kind: text
           LOWER@53..58 "array"
           Comment@58..59
             WHITESPACE@58..59 " "
-          BindersList@59..66
+          EquationBinders@59..66
             BinderArray@59..66
               LEFT_SQUARE@59..60 "["
               BinderVariable@60..61
@@ -79,7 +79,7 @@ snapshot_kind: text
               RIGHT_SQUARE@64..65 "]"
               Comment@65..66
                 WHITESPACE@65..66 " "
-          EquationUnguarded@66..70
+          EquationUnconditional@66..70
             EQUAL@66..67 "="
             Comment@67..68
               WHITESPACE@67..68 " "

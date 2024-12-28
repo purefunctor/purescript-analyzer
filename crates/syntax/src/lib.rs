@@ -121,10 +121,17 @@ pub enum SyntaxKind {
 
     ValueAnnotation,
     ValueEquation,
-    BindersList,
-    EquationUnguarded,
-    EquationGuarded,
+    EquationBinders,
+
+    EquationUnconditional,
     EquationWhere,
+
+    EquationConditionals,
+    EquationGuarded,
+    PatternGuards,
+    PatternGuardBinder,
+    PatternGuardExpression,
+
     LetBindingAnnotation,
     LetBindingEquation,
     LetBindingStatements,

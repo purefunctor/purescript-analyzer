@@ -33,7 +33,7 @@ pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKin
         m.end(p, a);
     } else {
         binders_list(p, s);
-        equation_guarded(p, s);
+        equation_unconditional_or_conditionals(p, s);
         m.end(p, e);
     }
 }
@@ -53,17 +53,17 @@ pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
             p.error_recover("Invalid token");
         }
     }
-    m.end(p, SyntaxKind::BindersList);
+    m.end(p, SyntaxKind::EquationBinders);
 }
 
-fn equation_guarded(p: &mut Parser, s: SyntaxKind) {
+fn equation_unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     if p.eat(s) {
         equation_where(p);
-        m.end(p, SyntaxKind::EquationUnguarded);
+        m.end(p, SyntaxKind::EquationUnconditional);
     } else if p.at(SyntaxKind::PIPE) {
-        m.end(p, SyntaxKind::EquationGuarded);
-        todo!("EquationGuarded");
+        equation_conditionals(p, s);
+        m.end(p, SyntaxKind::EquationConditionals);
     } else {
         m.cancel(p);
     }
@@ -76,4 +76,64 @@ fn equation_where(p: &mut Parser) {
         binding::bindings(p);
     }
     m.end(p, SyntaxKind::EquationWhere);
+}
+
+fn equation_conditionals(p: &mut Parser, s: SyntaxKind) {
+    while p.at(SyntaxKind::PIPE) && !p.at_eof() {
+        equation_guarded(p, s);
+    }
+}
+
+fn equation_guarded(p: &mut Parser, s: SyntaxKind) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::PIPE);
+    pattern_guards(p, s);
+    p.expect(s);
+    equation_where(p);
+    m.end(p, SyntaxKind::EquationGuarded);
+}
+
+fn pattern_guards(p: &mut Parser, s: SyntaxKind) {
+    while !p.at(s) && !p.at_eof() {
+        if p.at_in(PATTERN_GUARD_START) {
+            pattern_guard(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(s) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(s) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at(s) || p.at_in(PATTERN_GUARD_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+}
+
+const PATTERN_GUARD_START: TokenSet =
+    binders::BINDER_ATOM_START.union(expressions::EXPRESSION_START);
+
+const PATTERN_GUARD_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn pattern_guard(p: &mut Parser) {
+    let c = p.checkpoint();
+    let binder = c.branch(p, pattern_guard_binder);
+    let expression = c.branch(p, pattern_guard_expression);
+    p.decide([binder, expression]);
+}
+
+fn pattern_guard_binder(p: &mut Parser) {
+    let mut m = p.start();
+    binders::binder_atom(p);
+    p.expect(SyntaxKind::LEFT_ARROW);
+    expressions::expression(p);
+    m.end(p, SyntaxKind::PatternGuardBinder);
+}
+
+fn pattern_guard_expression(p: &mut Parser) {
+    let mut m = p.start();
+    expressions::expression(p);
+    m.end(p, SyntaxKind::PatternGuardExpression);
 }

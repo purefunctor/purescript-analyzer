@@ -24,8 +24,8 @@ snapshot_kind: text
           LOWER@31..37 "record"
           Comment@37..38
             WHITESPACE@37..38 " "
-          BindersList@38..38
-          EquationUnguarded@38..43
+          EquationBinders@38..38
+          EquationUnconditional@38..43
             EQUAL@38..39 "="
             Comment@39..40
               WHITESPACE@39..40 " "
@@ -40,8 +40,8 @@ snapshot_kind: text
           LOWER@43..49 "record"
           Comment@49..50
             WHITESPACE@49..50 " "
-          BindersList@50..50
-          EquationUnguarded@50..56
+          EquationBinders@50..50
+          EquationUnconditional@50..56
             EQUAL@50..51 "="
             Comment@51..52
               WHITESPACE@51..52 " "
@@ -59,8 +59,8 @@ snapshot_kind: text
           LOWER@56..62 "record"
           Comment@62..63
             WHITESPACE@62..63 " "
-          BindersList@63..63
-          EquationUnguarded@63..72
+          EquationBinders@63..63
+          EquationUnconditional@63..72
             EQUAL@63..64 "="
             Comment@64..65
               WHITESPACE@64..65 " "
@@ -84,8 +84,8 @@ snapshot_kind: text
           LOWER@72..78 "record"
           Comment@78..79
             WHITESPACE@78..79 " "
-          BindersList@79..79
-          EquationUnguarded@79..94
+          EquationBinders@79..79
+          EquationUnconditional@79..94
             EQUAL@79..80 "="
             Comment@80..81
               WHITESPACE@80..81 " "
@@ -119,8 +119,8 @@ snapshot_kind: text
           LOWER@94..100 "record"
           Comment@100..101
             WHITESPACE@100..101 " "
-          BindersList@101..101
-          EquationUnguarded@101..122
+          EquationBinders@101..101
+          EquationUnconditional@101..122
             EQUAL@101..102 "="
             Comment@102..103
               WHITESPACE@102..103 " "

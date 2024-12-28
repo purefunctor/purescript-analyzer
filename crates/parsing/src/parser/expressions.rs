@@ -415,7 +415,7 @@ const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
 ])
 .union(names::LOWER_NON_RESERVED);
 
-const EXPRESSION_START: TokenSet = TokenSet::new(&[
+pub(super) const EXPRESSION_START: TokenSet = TokenSet::new(&[
     SyntaxKind::IF,
     SyntaxKind::LET,
     SyntaxKind::BACKSLASH,

@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@28..29 "p"
           Comment@29..30
             WHITESPACE@29..30 " "
-          BindersList@30..34
+          EquationBinders@30..34
             BinderVariable@30..32
               LOWER@30..31 "a"
               Comment@31..32
@@ -33,7 +33,7 @@ snapshot_kind: text
               LOWER@32..33 "b"
               Comment@33..34
                 WHITESPACE@33..34 " "
-          EquationUnguarded@34..78
+          EquationUnconditional@34..78
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
@@ -59,8 +59,8 @@ snapshot_kind: text
                   LOWER@54..56 "a2"
                   Comment@56..57
                     WHITESPACE@56..57 " "
-                  BindersList@57..57
-                  EquationUnguarded@57..67
+                  EquationBinders@57..57
+                  EquationUnconditional@57..67
                     EQUAL@57..58 "="
                     Comment@58..59
                       WHITESPACE@58..59 " "
@@ -82,8 +82,8 @@ snapshot_kind: text
                   LOWER@67..69 "b2"
                   Comment@69..70
                     WHITESPACE@69..70 " "
-                  BindersList@70..70
-                  EquationUnguarded@70..78
+                  EquationBinders@70..70
+                  EquationUnconditional@70..78
                     EQUAL@70..71 "="
                     Comment@71..72
                       WHITESPACE@71..72 " "

@@ -24,12 +24,12 @@ snapshot_kind: text
           LOWER@25..29 "char"
           Comment@29..30
             WHITESPACE@29..30 " "
-          BindersList@30..34
+          EquationBinders@30..34
             BinderChar@30..34
               CHAR@30..33 "'a'"
               Comment@33..34
                 WHITESPACE@33..34 " "
-          EquationUnguarded@34..38
+          EquationUnconditional@34..38
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
