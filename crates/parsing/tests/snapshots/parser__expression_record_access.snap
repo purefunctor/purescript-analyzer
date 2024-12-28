@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..81
+    Module@0..273
       ModuleHeader@0..37
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@35..37 "\n\n"
       LAYOUT_START@37..37 ""
       ModuleImports@37..37
-      ModuleStatements@37..81
+      ModuleStatements@37..273
         ValueEquation@37..57
           LOWER@37..43 "access"
           Comment@43..44
@@ -35,33 +35,168 @@ snapshot_kind: text
                   LOWER@46..52 "record"
                 RecordAccessField@52..57
                   PERIOD@52..53 "."
-                  LOWER@53..56 "foo"
-                  Comment@56..57
-                    WHITESPACE@56..57 "\n"
+                  LabelName@53..57
+                    LOWER@53..56 "foo"
+                    Comment@56..57
+                      WHITESPACE@56..57 "\n"
         LAYOUT_SEPARATOR@57..57 ""
-        ValueEquation@57..81
+        ValueEquation@57..82
           LOWER@57..63 "access"
           Comment@63..64
             WHITESPACE@63..64 " "
           BindersList@64..64
-          EquationUnguarded@64..81
+          EquationUnguarded@64..82
             EQUAL@64..65 "="
             Comment@65..66
               WHITESPACE@65..66 " "
-            EquationWhere@66..81
-              ExpressionRecordAccess@66..81
+            EquationWhere@66..82
+              ExpressionRecordAccess@66..82
                 ExpressionVariable@66..72
                   LOWER@66..72 "record"
                 RecordAccessField@72..76
                   PERIOD@72..73 "."
-                  LOWER@73..76 "foo"
-                RecordAccessField@76..81
+                  LabelName@73..76
+                    LOWER@73..76 "foo"
+                RecordAccessField@76..82
                   PERIOD@76..77 "."
-                  LOWER@77..80 "bar"
-                  Comment@80..81
-                    WHITESPACE@80..81 "\n"
-      LAYOUT_END@81..81 ""
-      END_OF_FILE@81..81 ""
+                  LabelName@77..82
+                    LOWER@77..80 "bar"
+                    Comment@80..82
+                      WHITESPACE@80..82 "\n\n"
+        LAYOUT_SEPARATOR@82..82 ""
+        ValueEquation@82..106
+          LOWER@82..89 "keyword"
+          Comment@89..90
+            WHITESPACE@89..90 " "
+          BindersList@90..90
+          EquationUnguarded@90..106
+            EQUAL@90..91 "="
+            Comment@91..92
+              WHITESPACE@91..92 " "
+            EquationWhere@92..106
+              ExpressionRecordAccess@92..106
+                ExpressionVariable@92..98
+                  LOWER@92..98 "record"
+                RecordAccessField@98..106
+                  PERIOD@98..99 "."
+                  LabelName@99..106
+                    FORALL@99..105 "forall"
+                    Comment@105..106
+                      WHITESPACE@105..106 "\n"
+        LAYOUT_SEPARATOR@106..106 ""
+        ValueEquation@106..138
+          LOWER@106..113 "keyword"
+          Comment@113..114
+            WHITESPACE@113..114 " "
+          BindersList@114..114
+          EquationUnguarded@114..138
+            EQUAL@114..115 "="
+            Comment@115..116
+              WHITESPACE@115..116 " "
+            EquationWhere@116..138
+              ExpressionRecordAccess@116..138
+                ExpressionVariable@116..122
+                  LOWER@116..122 "record"
+                RecordAccessField@122..129
+                  PERIOD@122..123 "."
+                  LabelName@123..129
+                    FORALL@123..129 "forall"
+                RecordAccessField@129..138
+                  PERIOD@129..130 "."
+                  LabelName@130..138
+                    FORALL@130..136 "forall"
+                    Comment@136..138
+                      WHITESPACE@136..138 "\n\n"
+        LAYOUT_SEPARATOR@138..138 ""
+        ValueEquation@138..162
+          LOWER@138..144 "string"
+          Comment@144..145
+            WHITESPACE@144..145 " "
+          BindersList@145..145
+          EquationUnguarded@145..162
+            EQUAL@145..146 "="
+            Comment@146..147
+              WHITESPACE@146..147 " "
+            EquationWhere@147..162
+              ExpressionRecordAccess@147..162
+                ExpressionVariable@147..153
+                  LOWER@147..153 "record"
+                RecordAccessField@153..162
+                  PERIOD@153..154 "."
+                  LabelName@154..162
+                    STRING@154..161 "\"error\""
+                    Comment@161..162
+                      WHITESPACE@161..162 "\n"
+        LAYOUT_SEPARATOR@162..162 ""
+        ValueEquation@162..195
+          LOWER@162..168 "string"
+          Comment@168..169
+            WHITESPACE@168..169 " "
+          BindersList@169..169
+          EquationUnguarded@169..195
+            EQUAL@169..170 "="
+            Comment@170..171
+              WHITESPACE@170..171 " "
+            EquationWhere@171..195
+              ExpressionRecordAccess@171..195
+                ExpressionVariable@171..177
+                  LOWER@171..177 "record"
+                RecordAccessField@177..185
+                  PERIOD@177..178 "."
+                  LabelName@178..185
+                    STRING@178..185 "\"error\""
+                RecordAccessField@185..195
+                  PERIOD@185..186 "."
+                  LabelName@186..195
+                    STRING@186..193 "\"error\""
+                    Comment@193..195
+                      WHITESPACE@193..195 "\n\n"
+        LAYOUT_SEPARATOR@195..195 ""
+        ValueEquation@195..227
+          LOWER@195..205 "raw_string"
+          Comment@205..206
+            WHITESPACE@205..206 " "
+          BindersList@206..206
+          EquationUnguarded@206..227
+            EQUAL@206..207 "="
+            Comment@207..208
+              WHITESPACE@207..208 " "
+            EquationWhere@208..227
+              ExpressionRecordAccess@208..227
+                ExpressionVariable@208..214
+                  LOWER@208..214 "record"
+                RecordAccessField@214..227
+                  PERIOD@214..215 "."
+                  LabelName@215..227
+                    RAW_STRING@215..226 "\"\"\"error\"\"\""
+                    Comment@226..227
+                      WHITESPACE@226..227 "\n"
+        LAYOUT_SEPARATOR@227..227 ""
+        ValueEquation@227..273
+          LOWER@227..237 "raw_string"
+          Comment@237..238
+            WHITESPACE@237..238 " "
+          BindersList@238..238
+          EquationUnguarded@238..273
+            EQUAL@238..239 "="
+            Comment@239..240
+              WHITESPACE@239..240 " "
+            EquationWhere@240..273
+              ExpressionRecordAccess@240..273
+                ExpressionVariable@240..246
+                  LOWER@240..246 "record"
+                RecordAccessField@246..258
+                  PERIOD@246..247 "."
+                  LabelName@247..258
+                    RAW_STRING@247..258 "\"\"\"error\"\"\""
+                RecordAccessField@258..273
+                  PERIOD@258..259 "."
+                  LabelName@259..273
+                    RAW_STRING@259..272 "\"\"\"\"error\"\"\"\""
+                    Comment@272..273
+                      WHITESPACE@272..273 "\n"
+      LAYOUT_END@273..273 ""
+      END_OF_FILE@273..273 ""
     ,
     [],
 )

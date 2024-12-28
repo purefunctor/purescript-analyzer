@@ -94,6 +94,7 @@ pub enum SyntaxKind {
 
     ModuleName,
     QualifiedName,
+    LabelName,
 
     Module,
     ModuleHeader,
@@ -250,43 +251,6 @@ impl SyntaxKind {
 
     pub fn is_reserved_operator(&self) -> bool {
         matches!(self, Self::RIGHT_ARROW | Self::RIGHT_THICK_ARROW)
-    }
-
-    pub fn is_lower(&self) -> bool {
-        matches!(self, Self::LOWER | Self::AS)
-    }
-
-    pub fn is_label(&self) -> bool {
-        matches!(
-            self,
-            SyntaxKind::MODULE
-                | SyntaxKind::WHERE
-                | SyntaxKind::IMPORT
-                | SyntaxKind::AS
-                | SyntaxKind::ADO
-                | SyntaxKind::DO
-                | SyntaxKind::IF
-                | SyntaxKind::THEN
-                | SyntaxKind::ELSE
-                | SyntaxKind::LET
-                | SyntaxKind::IN
-                | SyntaxKind::CASE
-                | SyntaxKind::OF
-                | SyntaxKind::DATA
-                | SyntaxKind::NEWTYPE
-                | SyntaxKind::FORALL
-                | SyntaxKind::TYPE
-                | SyntaxKind::CLASS
-                | SyntaxKind::INSTANCE
-                | SyntaxKind::DERIVE
-                | SyntaxKind::FOREIGN
-                | SyntaxKind::INFIXL
-                | SyntaxKind::INFIXR
-                | SyntaxKind::INFIX
-                | SyntaxKind::STRING
-                | SyntaxKind::RAW_STRING
-                | SyntaxKind::LOWER
-        )
     }
 
     pub fn is_end(&self) -> bool {

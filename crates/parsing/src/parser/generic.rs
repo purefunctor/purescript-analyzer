@@ -2,16 +2,34 @@ use syntax::{SyntaxKind, TokenSet};
 
 use super::{binders, binding, expressions, names, types, Parser};
 
-pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
+pub(super) enum RecordItemKind {
+    Binder,
+    Expression,
+}
+
+pub(super) fn record_item(p: &mut Parser, k: RecordItemKind) {
     let mut m = p.start();
 
-    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    if (p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING)) && !p.at_next(SyntaxKind::COLON) {
+        p.error("Invalid string label in record pun");
+    }
+
+    if p.at_in(names::RESERVED_KEYWORD) && !p.at_next(SyntaxKind::COLON) {
+        p.error("Invalid reserved keyword in record pun");
+    }
+
+    names::label(p);
+
     if p.at(SyntaxKind::COMMA) || p.at(SyntaxKind::RIGHT_CURLY) {
         return m.end(p, SyntaxKind::RecordPun);
     }
 
     p.expect(SyntaxKind::COLON);
-    k(p);
+    match k {
+        RecordItemKind::Binder => binders::binder(p),
+        RecordItemKind::Expression => expressions::expression(p),
+    }
+
     m.end(p, SyntaxKind::RecordField);
 }
 

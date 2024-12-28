@@ -3,7 +3,7 @@ use syntax::{SyntaxKind, TokenSet};
 use super::{
     binders::{self, binder_atom},
     binding,
-    generic::{self, record_item},
+    generic::{self, record_item, RecordItemKind},
     names::{self, LOWER_NON_RESERVED},
     types, NodeMarker, Parser,
 };
@@ -267,7 +267,7 @@ fn expression_7(p: &mut Parser) {
 fn record_access_field(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::PERIOD);
-    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    names::label(p);
     m.end(p, SyntaxKind::RecordAccessField);
 }
 
@@ -346,8 +346,8 @@ fn expression_array(p: &mut Parser, mut m: NodeMarker) {
 
 fn expression_record(p: &mut Parser, mut m: NodeMarker) {
     while !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
-        if p.at_in(names::LOWER_NON_RESERVED) {
-            record_item(p, expression);
+        if p.at_in(names::RECORD_LABEL) {
+            record_item(p, RecordItemKind::Expression);
             if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_CURLY) {
                 p.error_recover("Trailing comma");
             } else if !p.at(SyntaxKind::RIGHT_CURLY) {

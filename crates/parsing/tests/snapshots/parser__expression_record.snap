@@ -49,7 +49,8 @@ snapshot_kind: text
               BinderRecord@52..56
                 LEFT_CURLY@52..53 "{"
                 RecordPun@53..54
-                  LOWER@53..54 "x"
+                  LabelName@53..54
+                    LOWER@53..54 "x"
                 RIGHT_CURLY@54..55 "}"
                 Comment@55..56
                   WHITESPACE@55..56 "\n"
@@ -67,12 +68,14 @@ snapshot_kind: text
               BinderRecord@65..72
                 LEFT_CURLY@65..66 "{"
                 RecordPun@66..67
-                  LOWER@66..67 "x"
+                  LabelName@66..67
+                    LOWER@66..67 "x"
                 COMMA@67..68 ","
                 Comment@68..69
                   WHITESPACE@68..69 " "
                 RecordPun@69..70
-                  LOWER@69..70 "y"
+                  LabelName@69..70
+                    LOWER@69..70 "y"
                 RIGHT_CURLY@70..71 "}"
                 Comment@71..72
                   WHITESPACE@71..72 "\n"
@@ -90,7 +93,8 @@ snapshot_kind: text
               BinderRecord@81..94
                 LEFT_CURLY@81..82 "{"
                 RecordField@82..86
-                  LOWER@82..83 "x"
+                  LabelName@82..83
+                    LOWER@82..83 "x"
                   COLON@83..84 ":"
                   Comment@84..85
                     WHITESPACE@84..85 " "
@@ -100,7 +104,8 @@ snapshot_kind: text
                 Comment@87..88
                   WHITESPACE@87..88 " "
                 RecordField@88..92
-                  LOWER@88..89 "y"
+                  LabelName@88..89
+                    LOWER@88..89 "y"
                   COLON@89..90 ":"
                   Comment@90..91
                     WHITESPACE@90..91 " "
@@ -123,12 +128,14 @@ snapshot_kind: text
               BinderRecord@103..122
                 LEFT_CURLY@103..104 "{"
                 RecordPun@104..105
-                  LOWER@104..105 "a"
+                  LabelName@104..105
+                    LOWER@104..105 "a"
                 COMMA@105..106 ","
                 Comment@106..107
                   WHITESPACE@106..107 " "
                 RecordField@107..111
-                  LOWER@107..108 "b"
+                  LabelName@107..108
+                    LOWER@107..108 "b"
                   COLON@108..109 ":"
                   Comment@109..110
                     WHITESPACE@109..110 " "
@@ -138,12 +145,14 @@ snapshot_kind: text
                 Comment@112..113
                   WHITESPACE@112..113 " "
                 RecordPun@113..114
-                  LOWER@113..114 "d"
+                  LabelName@113..114
+                    LOWER@113..114 "d"
                 COMMA@114..115 ","
                 Comment@115..116
                   WHITESPACE@115..116 " "
                 RecordField@116..120
-                  LOWER@116..117 "e"
+                  LabelName@116..117
+                    LOWER@116..117 "e"
                   COLON@117..118 ":"
                   Comment@118..119
                     WHITESPACE@118..119 " "
