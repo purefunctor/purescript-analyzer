@@ -1,0 +1,93 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..104
+      ModuleHeader@0..36
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..29
+          UPPER@7..28 "ExpressionDoAdoPrefix"
+          Comment@28..29
+            WHITESPACE@28..29 " "
+        ModuleExportList@29..29
+        WHERE@29..34 "where"
+        Comment@34..36
+          WHITESPACE@34..36 "\n\n"
+      LAYOUT_START@36..36 ""
+      ModuleImports@36..36
+      ModuleStatements@36..104
+        ValueEquation@36..65
+          LOWER@36..40 "main"
+          Comment@40..41
+            WHITESPACE@40..41 " "
+          BindersList@41..41
+          EquationUnguarded@41..65
+            EQUAL@41..42 "="
+            Comment@42..43
+              WHITESPACE@42..43 " "
+            EquationWhere@43..65
+              ExpressionDo@43..65
+                PREFIX@43..49 "Hooks."
+                DO@49..51 "do"
+                Comment@51..54
+                  WHITESPACE@51..54 "\n  "
+                DoStatements@54..65
+                  LAYOUT_START@54..54 ""
+                  DoStatementDiscard@54..65
+                    ExpressionApplicationChain@54..65
+                      ExpressionVariable@54..59
+                        LOWER@54..58 "pure"
+                        Comment@58..59
+                          WHITESPACE@58..59 " "
+                      ExpressionTermArgument@59..65
+                        ExpressionVariable@59..65
+                          LOWER@59..63 "unit"
+                          Comment@63..65
+                            WHITESPACE@63..65 "\n\n"
+                  LAYOUT_END@65..65 ""
+        LAYOUT_SEPARATOR@65..65 ""
+        ValueEquation@65..104
+          LOWER@65..69 "main"
+          Comment@69..70
+            WHITESPACE@69..70 " "
+          BindersList@70..70
+          EquationUnguarded@70..104
+            EQUAL@70..71 "="
+            Comment@71..72
+              WHITESPACE@71..72 " "
+            EquationWhere@72..104
+              ExpressionAdo@72..104
+                PREFIX@72..78 "Hooks."
+                ADO@78..81 "ado"
+                Comment@81..84
+                  WHITESPACE@81..84 "\n  "
+                DoStatements@84..96
+                  LAYOUT_START@84..84 ""
+                  DoStatementDiscard@84..96
+                    ExpressionApplicationChain@84..96
+                      ExpressionVariable@84..89
+                        LOWER@84..88 "pure"
+                        Comment@88..89
+                          WHITESPACE@88..89 " "
+                      ExpressionTermArgument@89..96
+                        ExpressionVariable@89..96
+                          LOWER@89..93 "unit"
+                          Comment@93..96
+                            WHITESPACE@93..96 "\n  "
+                  LAYOUT_END@96..96 ""
+                IN@96..98 "in"
+                Comment@98..99
+                  WHITESPACE@98..99 " "
+                ExpressionVariable@99..104
+                  LOWER@99..103 "unit"
+                  Comment@103..104
+                    WHITESPACE@103..104 "\n"
+      LAYOUT_END@104..104 ""
+      END_OF_FILE@104..104 ""
+    ,
+    [],
+)
