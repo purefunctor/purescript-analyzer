@@ -45,8 +45,7 @@ pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     while !p.at(s) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
         if p.at_in(binders::BINDER_ATOM_START) {
-            let m = p.start();
-            binders::binder_atom(p, m);
+            binders::binder_atom(p);
         } else {
             if p.at_in(EQUATION_BINDERS_RECOVERY) {
                 break;

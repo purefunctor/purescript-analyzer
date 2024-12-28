@@ -218,8 +218,7 @@ fn do_statement_let(p: &mut Parser) {
 
 fn do_statement_bind(p: &mut Parser) {
     let mut m = p.start();
-    let n = p.start();
-    binders::binder_atom(p, n);
+    binders::binder_atom(p);
     p.expect(SyntaxKind::LEFT_ARROW);
     expression(p);
     m.end(p, SyntaxKind::DoStatementBind);

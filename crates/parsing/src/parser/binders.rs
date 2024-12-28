@@ -49,7 +49,8 @@ fn binder_2(p: &mut Parser) {
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
         binder_constructor(p, m);
     } else if p.at_in(BINDER_ATOM_START) {
-        binder_atom(p, m);
+        binder_atom(p);
+        m.cancel(p);
     } else {
         m.cancel(p);
     }
@@ -74,7 +75,8 @@ pub(super) const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
 
 const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 
-pub(super) fn binder_atom(p: &mut Parser, mut m: NodeMarker) {
+pub(super) fn binder_atom(p: &mut Parser) {
+    let mut m = p.start();
     if p.at_in(names::LOWER_NON_RESERVED) {
         binder_named_or_variable(p, &mut m);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
@@ -117,8 +119,7 @@ const BINDER_ATOM_RECOVERY: TokenSet = TokenSet::new(&[
 fn binder_named_or_variable(p: &mut Parser, m: &mut NodeMarker) {
     p.consume();
     if p.eat(SyntaxKind::AT) {
-        let n = p.start();
-        binder_atom(p, n);
+        binder_atom(p);
         m.end(p, SyntaxKind::BinderNamed);
     } else {
         m.end(p, SyntaxKind::BinderVariable);
@@ -132,8 +133,7 @@ fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
     n.end(p, SyntaxKind::QualifiedName);
 
     while p.at_in(BINDER_ATOM_START) && !p.at_eof() {
-        let n = p.start();
-        binder_atom(p, n);
+        binder_atom(p);
     }
     m.end(p, SyntaxKind::BinderConstructor);
 }
