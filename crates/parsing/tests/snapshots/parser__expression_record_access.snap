@@ -1,0 +1,67 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..81
+      ModuleHeader@0..37
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..30
+          UPPER@7..29 "ExpressionRecordAccess"
+          Comment@29..30
+            WHITESPACE@29..30 " "
+        ModuleExportList@30..30
+        WHERE@30..35 "where"
+        Comment@35..37
+          WHITESPACE@35..37 "\n\n"
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..81
+        ValueEquation@37..57
+          LOWER@37..43 "access"
+          Comment@43..44
+            WHITESPACE@43..44 " "
+          BindersList@44..44
+          EquationUnguarded@44..57
+            EQUAL@44..45 "="
+            Comment@45..46
+              WHITESPACE@45..46 " "
+            EquationWhere@46..57
+              ExpressionRecordAccess@46..57
+                ExpressionVariable@46..52
+                  LOWER@46..52 "record"
+                RecordAccessField@52..57
+                  PERIOD@52..53 "."
+                  LOWER@53..56 "foo"
+                  Comment@56..57
+                    WHITESPACE@56..57 "\n"
+        LAYOUT_SEPARATOR@57..57 ""
+        ValueEquation@57..81
+          LOWER@57..63 "access"
+          Comment@63..64
+            WHITESPACE@63..64 " "
+          BindersList@64..64
+          EquationUnguarded@64..81
+            EQUAL@64..65 "="
+            Comment@65..66
+              WHITESPACE@65..66 " "
+            EquationWhere@66..81
+              ExpressionRecordAccess@66..81
+                ExpressionVariable@66..72
+                  LOWER@66..72 "record"
+                RecordAccessField@72..76
+                  PERIOD@72..73 "."
+                  LOWER@73..76 "foo"
+                RecordAccessField@76..81
+                  PERIOD@76..77 "."
+                  LOWER@77..80 "bar"
+                  Comment@80..81
+                    WHITESPACE@80..81 "\n"
+      LAYOUT_END@81..81 ""
+      END_OF_FILE@81..81 ""
+    ,
+    [],
+)

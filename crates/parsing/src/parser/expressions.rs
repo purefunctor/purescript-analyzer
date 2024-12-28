@@ -251,7 +251,24 @@ fn expression_6(p: &mut Parser) {
 }
 
 fn expression_7(p: &mut Parser) {
+    let mut m = p.start();
     expression_atom(p);
+
+    if p.at(SyntaxKind::PERIOD) {
+        while p.at(SyntaxKind::PERIOD) && !p.at_eof() {
+            record_access_field(p);
+        }
+        m.end(p, SyntaxKind::ExpressionRecordAccess);
+    } else {
+        m.cancel(p);
+    }
+}
+
+fn record_access_field(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::PERIOD);
+    p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    m.end(p, SyntaxKind::RecordAccessField);
 }
 
 fn expression_atom(p: &mut Parser) {
