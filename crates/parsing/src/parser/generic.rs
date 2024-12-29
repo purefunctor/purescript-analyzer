@@ -38,7 +38,7 @@ pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKin
     }
 }
 
-const EQUATION_BINDERS_RECOVERY: TokenSet =
+const BINDERS_LIST_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
 pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
@@ -47,7 +47,7 @@ pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
         if p.at_in(binders::BINDER_ATOM_START) {
             binders::binder_atom(p);
         } else {
-            if p.at_in(EQUATION_BINDERS_RECOVERY) {
+            if p.at_in(BINDERS_LIST_RECOVERY) {
                 break;
             }
             p.error_recover("Invalid token");
@@ -56,7 +56,7 @@ pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
     m.end(p, SyntaxKind::EquationBinders);
 }
 
-fn equation_unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
+pub(super) fn equation_unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     if p.eat(s) {
         equation_where(p);

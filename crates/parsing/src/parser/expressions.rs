@@ -168,7 +168,79 @@ fn expression_lambda(p: &mut Parser, mut m: NodeMarker) {
 }
 
 fn expression_case(p: &mut Parser, mut m: NodeMarker) {
+    p.expect(SyntaxKind::CASE);
+    case_trunk(p);
+    p.expect(SyntaxKind::OF);
+    case_branches(p);
     m.end(p, SyntaxKind::ExpressionCaseOf);
+}
+
+fn case_trunk(p: &mut Parser) {
+    let mut m = p.start();
+    while !p.at(SyntaxKind::OF) && !p.at_eof() {
+        if p.at_in(EXPRESSION_START) {
+            expression(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::OF) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::OF) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(EXPRESSION_ATOM_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    m.end(p, SyntaxKind::CaseTrunk);
+}
+
+fn case_branches(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LAYOUT_START);
+    while !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+        case_branch(p);
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            p.error_recover("Invalid token");
+        }
+        if !p.at(SyntaxKind::LAYOUT_END) {
+            p.expect(SyntaxKind::LAYOUT_SEPARATOR);
+        }
+    }
+    p.expect(SyntaxKind::LAYOUT_END);
+    m.end(p, SyntaxKind::CaseBranches);
+}
+
+fn case_branch(p: &mut Parser) {
+    let mut m = p.start();
+    case_branch_binders(p);
+    generic::equation_unconditional_or_conditionals(p, SyntaxKind::RIGHT_ARROW);
+    m.end(p, SyntaxKind::CaseBranch);
+}
+
+const BINDERS_LIST_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn case_branch_binders(p: &mut Parser) {
+    let mut m = p.start();
+    while !p.at(SyntaxKind::RIGHT_ARROW) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
+        if p.at_in(binders::BINDER_ATOM_START) {
+            binders::binder_atom(p);
+            if p.at(SyntaxKind::COMMA)
+                && (p.at_next(SyntaxKind::RIGHT_ARROW) || p.at_next(SyntaxKind::PIPE))
+            {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_ARROW) && !p.at(SyntaxKind::PIPE) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(BINDERS_LIST_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    m.end(p, SyntaxKind::CaseBranchBinders);
 }
 
 const DO_STATEMENT_START: TokenSet =

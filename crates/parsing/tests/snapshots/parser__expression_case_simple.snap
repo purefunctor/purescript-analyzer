@@ -1,0 +1,83 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..77
+      ModuleHeader@0..35
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..28
+          UPPER@7..27 "ExpressionCaseSimple"
+          Comment@27..28
+            WHITESPACE@27..28 " "
+        ModuleExportList@28..28
+        WHERE@28..33 "where"
+        Comment@33..35
+          WHITESPACE@33..35 "\n\n"
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..77
+        ValueEquation@35..77
+          LOWER@35..39 "main"
+          Comment@39..40
+            WHITESPACE@39..40 " "
+          EquationBinders@40..40
+          EquationUnconditional@40..77
+            EQUAL@40..41 "="
+            Comment@41..42
+              WHITESPACE@41..42 " "
+            EquationWhere@42..77
+              ExpressionCaseOf@42..77
+                CASE@42..46 "case"
+                Comment@46..47
+                  WHITESPACE@46..47 " "
+                CaseTrunk@47..49
+                  ExpressionVariable@47..49
+                    LOWER@47..48 "n"
+                    Comment@48..49
+                      WHITESPACE@48..49 " "
+                OF@49..51 "of"
+                Comment@51..54
+                  WHITESPACE@51..54 "\n  "
+                CaseBranches@54..77
+                  LAYOUT_START@54..54 ""
+                  CaseBranch@54..66
+                    CaseBranchBinders@54..56
+                      BinderInteger@54..56
+                        INTEGER@54..55 "0"
+                        Comment@55..56
+                          WHITESPACE@55..56 " "
+                    EquationUnconditional@56..66
+                      RIGHT_ARROW@56..58 "->"
+                      Comment@58..59
+                        WHITESPACE@58..59 " "
+                      EquationWhere@59..66
+                        ExpressionTrue@59..66
+                          TRUE@59..63 "true"
+                          Comment@63..66
+                            WHITESPACE@63..66 "\n  "
+                  LAYOUT_SEPARATOR@66..66 ""
+                  CaseBranch@66..77
+                    CaseBranchBinders@66..68
+                      BinderWildcard@66..68
+                        UNDERSCORE@66..67 "_"
+                        Comment@67..68
+                          WHITESPACE@67..68 " "
+                    EquationUnconditional@68..77
+                      RIGHT_ARROW@68..70 "->"
+                      Comment@70..71
+                        WHITESPACE@70..71 " "
+                      EquationWhere@71..77
+                        ExpressionFalse@71..77
+                          FALSE@71..76 "false"
+                          Comment@76..77
+                            WHITESPACE@76..77 "\n"
+                  LAYOUT_END@77..77 ""
+      LAYOUT_END@77..77 ""
+      END_OF_FILE@77..77 ""
+    ,
+    [],
+)

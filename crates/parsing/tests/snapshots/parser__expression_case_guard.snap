@@ -1,0 +1,132 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..107
+      ModuleHeader@0..34
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..27
+          UPPER@7..26 "ExpressionCaseGuard"
+          Comment@26..27
+            WHITESPACE@26..27 " "
+        ModuleExportList@27..27
+        WHERE@27..32 "where"
+        Comment@32..34
+          WHITESPACE@32..34 "\n\n"
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..107
+        ValueEquation@34..107
+          LOWER@34..38 "main"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          EquationBinders@39..39
+          EquationUnconditional@39..107
+            EQUAL@39..40 "="
+            Comment@40..41
+              WHITESPACE@40..41 " "
+            EquationWhere@41..107
+              ExpressionCaseOf@41..107
+                CASE@41..45 "case"
+                Comment@45..46
+                  WHITESPACE@45..46 " "
+                CaseTrunk@46..48
+                  ExpressionVariable@46..48
+                    LOWER@46..47 "n"
+                    Comment@47..48
+                      WHITESPACE@47..48 " "
+                OF@48..50 "of"
+                Comment@50..53
+                  WHITESPACE@50..53 "\n  "
+                CaseBranches@53..107
+                  LAYOUT_START@53..53 ""
+                  CaseBranch@53..74
+                    CaseBranchBinders@53..55
+                      BinderInteger@53..55
+                        INTEGER@53..54 "0"
+                        Comment@54..55
+                          WHITESPACE@54..55 " "
+                    EquationConditionals@55..74
+                      EquationGuarded@55..74
+                        PIPE@55..56 "|"
+                        Comment@56..57
+                          WHITESPACE@56..57 " "
+                        PatternGuardExpression@57..64
+                          ExpressionOperatorChain@57..64
+                            ExpressionVariable@57..59
+                              LOWER@57..58 "n"
+                              Comment@58..59
+                                WHITESPACE@58..59 " "
+                            OPERATOR@59..61 "=="
+                            Comment@61..62
+                              WHITESPACE@61..62 " "
+                            ExpressionInteger@62..64
+                              INTEGER@62..63 "0"
+                              Comment@63..64
+                                WHITESPACE@63..64 " "
+                        RIGHT_ARROW@64..66 "->"
+                        Comment@66..67
+                          WHITESPACE@66..67 " "
+                        EquationWhere@67..74
+                          ExpressionTrue@67..74
+                            TRUE@67..71 "true"
+                            Comment@71..74
+                              WHITESPACE@71..74 "\n  "
+                  LAYOUT_SEPARATOR@74..74 ""
+                  CaseBranch@74..107
+                    CaseBranchBinders@74..76
+                      BinderWildcard@74..76
+                        UNDERSCORE@74..75 "_"
+                        Comment@75..76
+                          WHITESPACE@75..76 " "
+                    EquationConditionals@76..107
+                      EquationGuarded@76..107
+                        PIPE@76..77 "|"
+                        Comment@77..78
+                          WHITESPACE@77..78 " "
+                        PatternGuardBinder@78..89
+                          BinderVariable@78..80
+                            LOWER@78..79 "m"
+                            Comment@79..80
+                              WHITESPACE@79..80 " "
+                          LEFT_ARROW@80..82 "<-"
+                          Comment@82..83
+                            WHITESPACE@82..83 " "
+                          ExpressionVariable@83..89
+                            LOWER@83..84 "n"
+                            Comment@84..89
+                              WHITESPACE@84..89 "\n    "
+                        COMMA@89..90 ","
+                        Comment@90..91
+                          WHITESPACE@90..91 " "
+                        PatternGuardExpression@91..98
+                          ExpressionOperatorChain@91..98
+                            ExpressionVariable@91..93
+                              LOWER@91..92 "m"
+                              Comment@92..93
+                                WHITESPACE@92..93 " "
+                            OPERATOR@93..95 "=="
+                            Comment@95..96
+                              WHITESPACE@95..96 " "
+                            ExpressionVariable@96..98
+                              LOWER@96..97 "n"
+                              Comment@97..98
+                                WHITESPACE@97..98 " "
+                        RIGHT_ARROW@98..100 "->"
+                        Comment@100..101
+                          WHITESPACE@100..101 " "
+                        EquationWhere@101..107
+                          ExpressionFalse@101..107
+                            FALSE@101..106 "false"
+                            Comment@106..107
+                              WHITESPACE@106..107 "\n"
+                  LAYOUT_END@107..107 ""
+      LAYOUT_END@107..107 ""
+      END_OF_FILE@107..107 ""
+    ,
+    [],
+)

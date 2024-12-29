@@ -203,6 +203,11 @@ pub enum SyntaxKind {
     ExpressionRecordAccess,
     ExpressionRecordUpdate,
 
+    CaseTrunk,
+    CaseBranches,
+    CaseBranchBinders,
+    CaseBranch,
+
     DoStatements,
     DoStatementBind,
     DoStatementLet,
