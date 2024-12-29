@@ -1,0 +1,180 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..171
+      ModuleHeader@0..34
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..27
+          UPPER@7..26 "InstanceDeclaration"
+          Comment@26..27
+            WHITESPACE@26..27 " "
+        ModuleExportList@27..27
+        WHERE@27..32 "where"
+        Comment@32..34
+          WHITESPACE@32..34 "\n\n"
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..171
+        InstanceChain@34..171
+          InstanceDeclaration@34..171
+            INSTANCE@34..42 "instance"
+            Comment@42..43
+              WHITESPACE@42..43 " "
+            InstanceHead@43..57
+              UPPER@43..50 "Functor"
+              Comment@50..51
+                WHITESPACE@50..51 " "
+              TypeConstructor@51..57
+                QualifiedName@51..57
+                  UPPER@51..56 "Maybe"
+                  Comment@56..57
+                    WHITESPACE@56..57 " "
+            WHERE@57..62 "where"
+            Comment@62..65
+              WHITESPACE@62..65 "\n  "
+            InstanceStatements@65..171
+              LAYOUT_START@65..65 ""
+              InstanceSignatureStatement@65..117
+                LOWER@65..68 "map"
+                Comment@68..69
+                  WHITESPACE@68..69 " "
+                DOUBLE_COLON@69..71 "::"
+                Comment@71..72
+                  WHITESPACE@71..72 " "
+                TypeForall@72..117
+                  FORALL@72..78 "forall"
+                  Comment@78..79
+                    WHITESPACE@78..79 " "
+                  TypeVariableBinding@79..81
+                    LOWER@79..80 "a"
+                    Comment@80..81
+                      WHITESPACE@80..81 " "
+                  TypeVariableBinding@81..82
+                    LOWER@81..82 "b"
+                  PERIOD@82..83 "."
+                  Comment@83..84
+                    WHITESPACE@83..84 " "
+                  TypeArrow@84..117
+                    TypeParenthesized@84..93
+                      LEFT_PARENTHESIS@84..85 "("
+                      TypeArrow@85..91
+                        TypeVariable@85..87
+                          LOWER@85..86 "a"
+                          Comment@86..87
+                            WHITESPACE@86..87 " "
+                        RIGHT_ARROW@87..89 "->"
+                        Comment@89..90
+                          WHITESPACE@89..90 " "
+                        TypeVariable@90..91
+                          LOWER@90..91 "b"
+                      RIGHT_PARENTHESIS@91..92 ")"
+                      Comment@92..93
+                        WHITESPACE@92..93 " "
+                    RIGHT_ARROW@93..95 "->"
+                    Comment@95..96
+                      WHITESPACE@95..96 " "
+                    TypeArrow@96..117
+                      TypeApplicationChain@96..104
+                        TypeConstructor@96..102
+                          QualifiedName@96..102
+                            UPPER@96..101 "Maybe"
+                            Comment@101..102
+                              WHITESPACE@101..102 " "
+                        TypeVariable@102..104
+                          LOWER@102..103 "a"
+                          Comment@103..104
+                            WHITESPACE@103..104 " "
+                      RIGHT_ARROW@104..106 "->"
+                      Comment@106..107
+                        WHITESPACE@106..107 " "
+                      TypeApplicationChain@107..117
+                        TypeConstructor@107..113
+                          QualifiedName@107..113
+                            UPPER@107..112 "Maybe"
+                            Comment@112..113
+                              WHITESPACE@112..113 " "
+                        TypeVariable@113..117
+                          LOWER@113..114 "b"
+                          Comment@114..117
+                            WHITESPACE@114..117 "\n  "
+              LAYOUT_SEPARATOR@117..117 ""
+              InstanceEquationStatement@117..147
+                LOWER@117..120 "map"
+                Comment@120..121
+                  WHITESPACE@120..121 " "
+                EquationBinders@121..132
+                  BinderVariable@121..123
+                    LOWER@121..122 "f"
+                    Comment@122..123
+                      WHITESPACE@122..123 " "
+                  BinderParenthesized@123..132
+                    LEFT_PARENTHESIS@123..124 "("
+                    BinderConstructor@124..130
+                      QualifiedName@124..129
+                        UPPER@124..128 "Just"
+                        Comment@128..129
+                          WHITESPACE@128..129 " "
+                      BinderVariable@129..130
+                        LOWER@129..130 "a"
+                    RIGHT_PARENTHESIS@130..131 ")"
+                    Comment@131..132
+                      WHITESPACE@131..132 " "
+                Unconditional@132..147
+                  EQUAL@132..133 "="
+                  Comment@133..134
+                    WHITESPACE@133..134 " "
+                  WhereExpression@134..147
+                    ExpressionApplicationChain@134..147
+                      ExpressionConstructor@134..139
+                        UPPER@134..138 "Just"
+                        Comment@138..139
+                          WHITESPACE@138..139 " "
+                      ExpressionTermArgument@139..147
+                        ExpressionParenthesized@139..147
+                          LEFT_PARENTHESIS@139..140 "("
+                          ExpressionApplicationChain@140..143
+                            ExpressionVariable@140..142
+                              LOWER@140..141 "f"
+                              Comment@141..142
+                                WHITESPACE@141..142 " "
+                            ExpressionTermArgument@142..143
+                              ExpressionVariable@142..143
+                                LOWER@142..143 "a"
+                          RIGHT_PARENTHESIS@143..144 ")"
+                          Comment@144..147
+                            WHITESPACE@144..147 "\n  "
+              LAYOUT_SEPARATOR@147..147 ""
+              InstanceEquationStatement@147..171
+                LOWER@147..150 "map"
+                Comment@150..151
+                  WHITESPACE@150..151 " "
+                EquationBinders@151..161
+                  BinderVariable@151..153
+                    LOWER@151..152 "f"
+                    Comment@152..153
+                      WHITESPACE@152..153 " "
+                  BinderConstructor@153..161
+                    QualifiedName@153..161
+                      UPPER@153..160 "Nothing"
+                      Comment@160..161
+                        WHITESPACE@160..161 " "
+                Unconditional@161..171
+                  EQUAL@161..162 "="
+                  Comment@162..163
+                    WHITESPACE@162..163 " "
+                  WhereExpression@163..171
+                    ExpressionConstructor@163..171
+                      UPPER@163..170 "Nothing"
+                      Comment@170..171
+                        WHITESPACE@170..171 "\n"
+              LAYOUT_END@171..171 ""
+      LAYOUT_END@171..171 ""
+      END_OF_FILE@171..171 ""
+    ,
+    [],
+)

@@ -484,6 +484,8 @@ fn module_statement(p: &mut Parser) {
         class_annotation_or_equation(p);
     } else if p.at(SyntaxKind::FOREIGN) {
         foreign_import(p);
+    } else if p.at(SyntaxKind::INSTANCE) {
+        instance_chain(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -684,6 +686,94 @@ fn class_statement(p: &mut Parser) {
     p.expect(SyntaxKind::DOUBLE_COLON);
     types::type_(p);
     m.end(p, SyntaxKind::ClassMemberStatement);
+}
+
+fn instance_chain(p: &mut Parser) {
+    let mut m = p.start();
+    instance_declaration(p);
+    while p.at(SyntaxKind::ELSE) && !p.at_eof() {
+        instance_declaration(p);
+    }
+    m.end(p, SyntaxKind::InstanceChain);
+}
+
+fn instance_declaration(p: &mut Parser) {
+    let mut m = p.start();
+    p.eat(SyntaxKind::ELSE);
+    p.expect(SyntaxKind::INSTANCE);
+    p.optional(instance_constraints);
+    instance_head(p);
+    if p.eat(SyntaxKind::WHERE) {
+        instance_statements(p);
+    }
+    m.end(p, SyntaxKind::InstanceDeclaration);
+}
+
+const INSTANCE_CONSTRAINTS_RECOVERY: TokenSet = TokenSet::new(&[
+    SyntaxKind::RIGHT_THICK_ARROW,
+    SyntaxKind::WHERE,
+    SyntaxKind::LAYOUT_SEPARATOR,
+    SyntaxKind::LAYOUT_END,
+]);
+
+fn instance_constraints(p: &mut Parser) {
+    let mut m = p.start();
+    if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+            if p.at_in(types::TYPE_ATOM_START) {
+                types::type_5(p);
+                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.error_recover("Trailing comma");
+                } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.expect(SyntaxKind::COMMA);
+                }
+            } else {
+                if p.at_in(INSTANCE_CONSTRAINTS_RECOVERY) {
+                    break;
+                }
+                p.error_recover("Invalid token");
+            }
+        }
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    } else {
+        types::type_5(p);
+    }
+    p.expect(SyntaxKind::RIGHT_THICK_ARROW);
+    m.end(p, SyntaxKind::InstanceConstraints);
+}
+
+fn instance_head(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::UPPER);
+    while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
+        types::type_atom(p);
+    }
+    m.end(p, SyntaxKind::InstanceHead);
+}
+
+fn instance_statements(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LAYOUT_START);
+    while p.at_in(names::LOWER_NON_RESERVED) && !p.at_eof() {
+        instance_statement(p);
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            p.error_recover("Invalid token");
+        }
+        if !p.at(SyntaxKind::LAYOUT_END) {
+            p.expect(SyntaxKind::LAYOUT_SEPARATOR);
+        }
+    }
+    p.expect(SyntaxKind::LAYOUT_END);
+    m.end(p, SyntaxKind::InstanceStatements);
+}
+
+fn instance_statement(p: &mut Parser) {
+    generic::annotation_or_equation(
+        p,
+        SyntaxKind::InstanceSignatureStatement,
+        SyntaxKind::InstanceEquationStatement,
+        SyntaxKind::EQUAL,
+    );
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =

@@ -233,6 +233,14 @@ pub enum SyntaxKind {
     ClassStatements,
     ClassMemberStatement,
 
+    InstanceChain,
+    InstanceDeclaration,
+    InstanceConstraints,
+    InstanceHead,
+    InstanceStatements,
+    InstanceSignatureStatement,
+    InstanceEquationStatement,
+
     ForeignImportDataDeclaration,
     ForeignImportValueDeclaration,
 

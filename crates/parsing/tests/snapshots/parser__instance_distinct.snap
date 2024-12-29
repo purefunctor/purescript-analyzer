@@ -1,0 +1,64 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..84
+      ModuleHeader@0..31
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "InstanceDistinct"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..24
+        WHERE@24..29 "where"
+        Comment@29..31
+          WHITESPACE@29..31 "\n\n"
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..84
+        InstanceChain@31..56
+          InstanceDeclaration@31..56
+            INSTANCE@31..39 "instance"
+            Comment@39..40
+              WHITESPACE@39..40 " "
+            InstanceHead@40..56
+              UPPER@40..49 "Serialise"
+              Comment@49..50
+                WHITESPACE@49..50 " "
+              TypeVariable@50..52
+                LOWER@50..51 "s"
+                Comment@51..52
+                  WHITESPACE@51..52 " "
+              TypeConstructor@52..56
+                QualifiedName@52..56
+                  UPPER@52..55 "Int"
+                  Comment@55..56
+                    WHITESPACE@55..56 "\n"
+        LAYOUT_SEPARATOR@56..56 ""
+        InstanceChain@56..84
+          InstanceDeclaration@56..84
+            INSTANCE@56..64 "instance"
+            Comment@64..65
+              WHITESPACE@64..65 " "
+            InstanceHead@65..84
+              UPPER@65..74 "Serialise"
+              Comment@74..75
+                WHITESPACE@74..75 " "
+              TypeVariable@75..77
+                LOWER@75..76 "s"
+                Comment@76..77
+                  WHITESPACE@76..77 " "
+              TypeConstructor@77..84
+                QualifiedName@77..84
+                  UPPER@77..83 "Number"
+                  Comment@83..84
+                    WHITESPACE@83..84 "\n"
+      LAYOUT_END@84..84 ""
+      END_OF_FILE@84..84 ""
+    ,
+    [],
+)
