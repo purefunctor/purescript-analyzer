@@ -523,28 +523,28 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
     p.expect(SyntaxKind::UPPER);
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
-        types::ty(p);
+        types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymAnnotation);
     } else {
         type_variable_bindings(p);
         p.expect(SyntaxKind::EQUAL);
-        types::ty(p);
+        types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymEquation);
     }
 }
 
-const TYPE_VARIABLES_START: TokenSet =
+const TYPE_VARIABLE_BINDING_START: TokenSet =
     TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(LOWER_NON_RESERVED);
 
-const TYPE_VARIABLES_RECOVERY: TokenSet =
+const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
 fn type_variable_bindings(p: &mut Parser) {
     while !p.at(SyntaxKind::EQUAL) && !p.at_eof() {
-        if p.at_in(TYPE_VARIABLES_START) {
+        if p.at_in(TYPE_VARIABLE_BINDING_START) {
             type_variable_binding(p);
         } else {
-            if p.at_in(TYPE_VARIABLES_RECOVERY) {
+            if p.at_in(TYPE_VARIABLE_BINDING_RECOVERY) {
                 break;
             }
             p.error_recover("Invalid token");

@@ -29,7 +29,7 @@ pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKin
     let mut m = p.start();
     p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
     if p.eat(SyntaxKind::DOUBLE_COLON) {
-        types::ty(p);
+        types::type_(p);
         m.end(p, a);
     } else {
         equation_binders(p, s);

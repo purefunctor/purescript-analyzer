@@ -2,54 +2,54 @@ use syntax::{SyntaxKind, TokenSet};
 
 use super::{names, NodeMarker, Parser};
 
-pub fn ty(p: &mut Parser) {
+pub(super) fn type_(p: &mut Parser) {
     let mut m = p.start();
 
-    ty_1(p);
+    type_1(p);
     if p.eat(SyntaxKind::DOUBLE_COLON) {
-        ty(p);
+        type_(p);
         m.end(p, SyntaxKind::TypeKinded);
     } else {
         m.cancel(p);
     }
 }
 
-fn ty_1(p: &mut Parser) {
+fn type_1(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat(SyntaxKind::FORALL) {
-        ty_variable_bindings(p);
+        type_variable_bindings(p);
         p.expect(SyntaxKind::PERIOD);
-        ty_1(p);
+        type_1(p);
         m.end(p, SyntaxKind::TypeForall);
     } else {
-        ty_2(p);
+        type_2(p);
         m.cancel(p);
     }
 }
 
-fn ty_2(p: &mut Parser) {
+fn type_2(p: &mut Parser) {
     let mut m = p.start();
 
-    ty_3(p);
+    type_3(p);
     if p.eat(SyntaxKind::RIGHT_ARROW) {
-        ty_1(p);
+        type_1(p);
         m.end(p, SyntaxKind::TypeArrow);
     } else if p.eat(SyntaxKind::RIGHT_THICK_ARROW) {
-        ty_1(p);
+        type_1(p);
         m.end(p, SyntaxKind::TypeConstrained);
     } else {
         m.cancel(p);
     }
 }
 
-fn ty_3(p: &mut Parser) {
+fn type_3(p: &mut Parser) {
     let mut m = p.start();
     let mut i = 0;
 
-    ty_4(p);
+    type_4(p);
     while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
-        ty_4(p);
+        type_4(p);
         i += 1;
     }
 
@@ -60,25 +60,25 @@ fn ty_3(p: &mut Parser) {
     }
 }
 
-fn ty_4(p: &mut Parser) {
+fn type_4(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat(SyntaxKind::MINUS) {
         p.expect(SyntaxKind::INTEGER);
         m.end(p, SyntaxKind::TypeInteger);
     } else {
-        ty_5(p);
+        type_5(p);
         m.cancel(p);
     }
 }
 
-fn ty_5(p: &mut Parser) {
+fn type_5(p: &mut Parser) {
     let mut m = p.start();
     let mut i = 0;
 
-    ty_atom(p);
+    type_atom(p);
     while p.at_in(TYPE_ATOM_START) && !p.at_eof() {
-        ty_atom(p);
+        type_atom(p);
         i += 1;
     }
 
@@ -89,7 +89,7 @@ fn ty_5(p: &mut Parser) {
     }
 }
 
-pub fn ty_atom(p: &mut Parser) {
+pub(super) fn type_atom(p: &mut Parser) {
     let mut m = p.start();
 
     let mut n = p.start();
@@ -123,9 +123,9 @@ pub fn ty_atom(p: &mut Parser) {
     } else if p.eat(SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::TypeOperator);
     } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
-        ty_parentheses(p, m);
+        type_parenthesis(p, m);
     } else if p.at(SyntaxKind::LEFT_CURLY) {
-        ty_record(p, m);
+        type_record(p, m);
     } else if p.eat(SyntaxKind::HOLE) {
         m.end(p, SyntaxKind::TypeHole);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
@@ -149,12 +149,18 @@ const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
 ])
 .union(names::LOWER_NON_RESERVED);
 
-fn ty_variable_bindings(p: &mut Parser) {
+const TYPE_VARIABLE_BINDING_START: TokenSet =
+    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER_NON_RESERVED);
+
+const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn type_variable_bindings(p: &mut Parser) {
     while !p.at(SyntaxKind::PERIOD) && !p.at_eof() {
         if p.at_in(TYPE_VARIABLE_BINDING_START) {
-            ty_variable_binding(p);
+            type_variable_binding(p);
         } else {
-            if p.at(SyntaxKind::PERIOD) {
+            if p.at_in(TYPE_VARIABLE_BINDING_RECOVERY) {
                 break;
             }
             p.error_recover("Invalid token");
@@ -162,7 +168,7 @@ fn ty_variable_bindings(p: &mut Parser) {
     }
 }
 
-fn ty_variable_binding(p: &mut Parser) {
+fn type_variable_binding(p: &mut Parser) {
     let mut m = p.start();
 
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
@@ -171,7 +177,7 @@ fn ty_variable_binding(p: &mut Parser) {
     p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
-        ty(p);
+        type_(p);
     }
 
     if closing {
@@ -181,10 +187,7 @@ fn ty_variable_binding(p: &mut Parser) {
     m.end(p, SyntaxKind::TypeVariableBinding);
 }
 
-const TYPE_VARIABLE_BINDING_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER_NON_RESERVED);
-
-fn ty_parentheses(p: &mut Parser, mut m: NodeMarker) {
+fn type_parenthesis(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_PARENTHESIS);
 
     if p.at(SyntaxKind::LEFT_PARENTHESIS) && p.at_next(SyntaxKind::LOWER) {
@@ -192,7 +195,7 @@ fn ty_parentheses(p: &mut Parser, mut m: NodeMarker) {
         p.expect(SyntaxKind::LOWER);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
         p.expect(SyntaxKind::DOUBLE_COLON);
-        ty(p);
+        type_(p);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
         return m.end(p, SyntaxKind::TypeKinded);
     }
@@ -201,7 +204,7 @@ fn ty_parentheses(p: &mut Parser, mut m: NodeMarker) {
         && !p.at(SyntaxKind::RIGHT_PARENTHESIS)
         && !p.at_next(SyntaxKind::DOUBLE_COLON)
     {
-        ty_1(p);
+        type_1(p);
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
         return m.end(p, SyntaxKind::TypeParenthesized);
     }
@@ -243,7 +246,7 @@ fn row_item(p: &mut Parser) {
 
     p.expect(SyntaxKind::LOWER);
     p.expect(SyntaxKind::DOUBLE_COLON);
-    ty(p);
+    type_(p);
 
     m.end(p, SyntaxKind::TypeRowItem);
 }
@@ -252,12 +255,12 @@ fn row_tail(p: &mut Parser) {
     let mut m = p.start();
 
     p.expect(SyntaxKind::PIPE);
-    ty(p);
+    type_(p);
 
     m.end(p, SyntaxKind::TypeRowTail);
 }
 
-fn ty_record(p: &mut Parser, mut m: NodeMarker) {
+fn type_record(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_CURLY);
 
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {

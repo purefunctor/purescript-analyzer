@@ -7,7 +7,7 @@ pub(super) fn binder(p: &mut Parser) {
 
     binder_1(p);
     if p.at(SyntaxKind::DOUBLE_COLON) {
-        types::ty(p);
+        types::type_(p);
         m.end(p, SyntaxKind::BinderTyped);
     } else {
         m.cancel(p);

@@ -7,7 +7,7 @@ pub fn expression(p: &mut Parser) {
 
     expression_1(p);
     if p.eat(SyntaxKind::DOUBLE_COLON) {
-        types::ty(p);
+        types::type_(p);
         m.end(p, SyntaxKind::ExpressionTyped);
     } else {
         m.cancel(p);
@@ -106,7 +106,7 @@ fn expression_4(p: &mut Parser) {
 fn expression_argument(p: &mut Parser) {
     let mut m = p.start();
     if p.eat(SyntaxKind::AT) {
-        types::ty_atom(p);
+        types::type_atom(p);
         m.end(p, SyntaxKind::ExpressionTypeArgument);
     } else {
         expression_5(p);
