@@ -10,7 +10,6 @@ pub(super) fn bindings(p: &mut Parser) {
             p,
             SyntaxKind::LetBindingAnnotation,
             SyntaxKind::LetBindingEquation,
-            SyntaxKind::EQUAL,
         );
         while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
             p.error_recover("Invalid token");

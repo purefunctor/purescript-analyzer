@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@27..27 ""
       ModuleImports@27..27
       ModuleStatements@27..41
-        ValueAnnotation@27..41
+        ValueSignature@27..41
           LOWER@27..35 "wildcard"
           Comment@35..36
             WHITESPACE@35..36 " "

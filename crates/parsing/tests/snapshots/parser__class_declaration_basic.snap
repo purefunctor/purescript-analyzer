@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@31..31 ""
       ModuleImports@31..31
       ModuleStatements@31..196
-        ClassEquation@31..98
+        ClassDeclaration@31..98
           CLASS@31..36 "class"
           Comment@36..37
             WHITESPACE@36..37 " "
@@ -100,7 +100,7 @@ snapshot_kind: text
                           WHITESPACE@96..98 "\n\n"
             LAYOUT_END@98..98 ""
         LAYOUT_SEPARATOR@98..98 ""
-        ClassEquation@98..196
+        ClassDeclaration@98..196
           CLASS@98..103 "class"
           Comment@103..104
             WHITESPACE@103..104 " "

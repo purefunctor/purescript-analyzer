@@ -25,15 +25,15 @@ pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
     m.end(p, SyntaxKind::RecordField);
 }
 
-pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKind, s: SyntaxKind) {
+pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKind) {
     let mut m = p.start();
     p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         types::type_(p);
         m.end(p, a);
     } else {
-        equation_binders(p, s);
-        unconditional_or_conditionals(p, s);
+        equation_binders(p, SyntaxKind::EQUAL);
+        unconditional_or_conditionals(p, SyntaxKind::EQUAL);
         m.end(p, e);
     }
 }

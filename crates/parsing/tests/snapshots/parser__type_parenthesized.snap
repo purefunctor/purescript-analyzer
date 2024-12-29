@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@32..32 ""
       ModuleImports@32..32
       ModuleStatements@32..242
-        ValueAnnotation@32..57
+        ValueSignature@32..57
           LOWER@32..38 "kinded"
           Comment@38..39
             WHITESPACE@38..39 " "
@@ -44,7 +44,7 @@ snapshot_kind: text
             Comment@55..57
               WHITESPACE@55..57 "\n\n"
         LAYOUT_SEPARATOR@57..57 ""
-        ValueAnnotation@57..70
+        ValueSignature@57..70
           LOWER@57..62 "empty"
           Comment@62..63
             WHITESPACE@62..63 " "
@@ -57,7 +57,7 @@ snapshot_kind: text
             Comment@68..70
               WHITESPACE@68..70 "\n\n"
         LAYOUT_SEPARATOR@70..70 ""
-        ValueAnnotation@70..87
+        ValueSignature@70..87
           LOWER@70..74 "tail"
           Comment@74..75
             WHITESPACE@74..75 " "
@@ -80,7 +80,7 @@ snapshot_kind: text
             Comment@85..87
               WHITESPACE@85..87 "\n\n"
         LAYOUT_SEPARATOR@87..87 ""
-        ValueAnnotation@87..110
+        ValueSignature@87..110
           LOWER@87..91 "item"
           Comment@91..92
             WHITESPACE@91..92 " "
@@ -107,7 +107,7 @@ snapshot_kind: text
             Comment@108..110
               WHITESPACE@108..110 "\n\n"
         LAYOUT_SEPARATOR@110..110 ""
-        ValueAnnotation@110..141
+        ValueSignature@110..141
           LOWER@110..118 "itemTail"
           Comment@118..119
             WHITESPACE@118..119 " "
@@ -142,7 +142,7 @@ snapshot_kind: text
             Comment@139..141
               WHITESPACE@139..141 "\n\n"
         LAYOUT_SEPARATOR@141..141 ""
-        ValueAnnotation@141..176
+        ValueSignature@141..176
           LOWER@141..146 "items"
           Comment@146..147
             WHITESPACE@146..147 " "
@@ -182,7 +182,7 @@ snapshot_kind: text
             Comment@174..176
               WHITESPACE@174..176 "\n\n"
         LAYOUT_SEPARATOR@176..176 ""
-        ValueAnnotation@176..219
+        ValueSignature@176..219
           LOWER@176..185 "itemsTail"
           Comment@185..186
             WHITESPACE@185..186 " "
@@ -230,7 +230,7 @@ snapshot_kind: text
             Comment@217..219
               WHITESPACE@217..219 "\n\n"
         LAYOUT_SEPARATOR@219..219 ""
-        ValueAnnotation@219..242
+        ValueSignature@219..242
           LOWER@219..232 "parenthesized"
           Comment@232..233
             WHITESPACE@232..233 " "

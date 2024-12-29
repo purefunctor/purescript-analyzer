@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@26..26 ""
       ModuleImports@26..26
       ModuleStatements@26..111
-        TypeSynonymAnnotation@26..44
+        TypeSynonymSignature@26..44
           TYPE@26..30 "type"
           Comment@30..31
             WHITESPACE@30..31 " "
@@ -52,7 +52,7 @@ snapshot_kind: text
               Comment@59..61
                 WHITESPACE@59..61 "\n\n"
         LAYOUT_SEPARATOR@61..61 ""
-        TypeSynonymAnnotation@61..91
+        TypeSynonymSignature@61..91
           TYPE@61..65 "type"
           Comment@65..66
             WHITESPACE@65..66 " "

@@ -31,7 +31,7 @@ snapshot_kind: text
       LAYOUT_START@39..39 ""
       ModuleImports@39..39
       ModuleStatements@39..66
-        ValueAnnotation@39..57
+        ValueSignature@39..57
           LOWER@39..45 "hiding"
           Comment@45..46
             WHITESPACE@45..46 " "
@@ -44,7 +44,7 @@ snapshot_kind: text
               Comment@55..57
                 WHITESPACE@55..57 "\n\n"
         LAYOUT_SEPARATOR@57..57 ""
-        ValueAnnotation@57..66
+        ValueSignature@57..66
           LOWER@57..59 "as"
           Comment@59..60
             WHITESPACE@59..60 " "

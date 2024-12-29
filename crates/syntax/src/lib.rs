@@ -119,7 +119,7 @@ pub enum SyntaxKind {
     TypeItemsAll,
     TypeItemsList,
 
-    ValueAnnotation,
+    ValueSignature,
     ValueEquation,
     EquationBinders,
 
@@ -220,11 +220,11 @@ pub enum SyntaxKind {
     RecordUpdateBranch,
 
     InfixDeclaration,
-    TypeSynonymAnnotation,
+    TypeSynonymSignature,
     TypeSynonymEquation,
 
-    ClassAnnotation,
-    ClassEquation,
+    ClassSignature,
+    ClassDeclaration,
     ClassConstraints,
     ClassHead,
     ClassFunctionalDependencies,

@@ -492,12 +492,7 @@ fn module_statement(p: &mut Parser) {
 }
 
 fn value_annotation_or_equation(p: &mut Parser) {
-    generic::annotation_or_equation(
-        p,
-        SyntaxKind::ValueAnnotation,
-        SyntaxKind::ValueEquation,
-        SyntaxKind::EQUAL,
-    );
+    generic::annotation_or_equation(p, SyntaxKind::ValueSignature, SyntaxKind::ValueEquation);
 }
 
 const INFIX_KEYWORD: TokenSet =
@@ -542,7 +537,7 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         types::type_(p);
-        m.end(p, SyntaxKind::TypeSynonymAnnotation);
+        m.end(p, SyntaxKind::TypeSynonymSignature);
     } else {
         type_variable_bindings(p, SYNONYM_VARAIABLE_BINDINGS_END);
         p.expect(SyntaxKind::EQUAL);
@@ -564,7 +559,7 @@ fn class_annotation(p: &mut Parser) {
     p.expect(SyntaxKind::UPPER);
     p.expect(SyntaxKind::DOUBLE_COLON);
     types::type_(p);
-    m.end(p, SyntaxKind::ClassAnnotation);
+    m.end(p, SyntaxKind::ClassSignature);
 }
 
 fn class_equation(p: &mut Parser) {
@@ -578,7 +573,7 @@ fn class_equation(p: &mut Parser) {
     if p.eat(SyntaxKind::WHERE) {
         class_statements(p);
     }
-    m.end(p, SyntaxKind::ClassEquation);
+    m.end(p, SyntaxKind::ClassDeclaration);
 }
 
 const CLASS_CONSTRAINTS_RECOVERY: TokenSet = TokenSet::new(&[
@@ -772,7 +767,6 @@ fn instance_statement(p: &mut Parser) {
         p,
         SyntaxKind::InstanceSignatureStatement,
         SyntaxKind::InstanceEquationStatement,
-        SyntaxKind::EQUAL,
     );
 }
 

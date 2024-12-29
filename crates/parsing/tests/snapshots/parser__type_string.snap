@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@25..25 ""
       ModuleImports@25..25
       ModuleStatements@25..65
-        ValueAnnotation@25..43
+        ValueSignature@25..43
           LOWER@25..31 "string"
           Comment@31..32
             WHITESPACE@31..32 " "
@@ -32,7 +32,7 @@ snapshot_kind: text
             Comment@42..43
               WHITESPACE@42..43 "\n"
         LAYOUT_SEPARATOR@43..43 ""
-        ValueAnnotation@43..65
+        ValueSignature@43..65
           LOWER@43..49 "string"
           Comment@49..50
             WHITESPACE@49..50 " "

@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@23..23 ""
       ModuleImports@23..23
       ModuleStatements@23..37
-        ValueAnnotation@23..37
+        ValueSignature@23..37
           LOWER@23..27 "hole"
           Comment@27..28
             WHITESPACE@27..28 " "

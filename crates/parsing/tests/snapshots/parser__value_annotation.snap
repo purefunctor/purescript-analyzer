@@ -20,7 +20,7 @@ snapshot_kind: text
       LAYOUT_START@32..32 ""
       ModuleImports@32..32
       ModuleStatements@32..349
-        ValueAnnotation@32..61
+        ValueSignature@32..61
           LOWER@32..40 "identity"
           Comment@40..41
             WHITESPACE@40..41 " "
@@ -49,7 +49,7 @@ snapshot_kind: text
                 Comment@60..61
                   WHITESPACE@60..61 "\n"
         LAYOUT_SEPARATOR@61..61 ""
-        ValueAnnotation@61..95
+        ValueSignature@61..95
           LOWER@61..66 "const"
           Comment@66..67
             WHITESPACE@66..67 " "
@@ -90,7 +90,7 @@ snapshot_kind: text
                   Comment@93..95
                     WHITESPACE@93..95 "\n\n"
         LAYOUT_SEPARATOR@95..95 ""
-        ValueAnnotation@95..134
+        ValueSignature@95..134
           LOWER@95..103 "identity"
           Comment@103..104
             WHITESPACE@103..104 " "
@@ -129,7 +129,7 @@ snapshot_kind: text
                 Comment@133..134
                   WHITESPACE@133..134 "\n"
         LAYOUT_SEPARATOR@134..134 ""
-        ValueAnnotation@134..188
+        ValueSignature@134..188
           LOWER@134..139 "const"
           Comment@139..140
             WHITESPACE@139..140 " "
@@ -190,7 +190,7 @@ snapshot_kind: text
                   Comment@186..188
                     WHITESPACE@186..188 "\n\n"
         LAYOUT_SEPARATOR@188..188 ""
-        ValueAnnotation@188..218
+        ValueSignature@188..218
           LOWER@188..196 "identity"
           Comment@196..197
             WHITESPACE@196..197 " "
@@ -220,7 +220,7 @@ snapshot_kind: text
                 Comment@217..218
                   WHITESPACE@217..218 "\n"
         LAYOUT_SEPARATOR@218..218 ""
-        ValueAnnotation@218..254
+        ValueSignature@218..254
           LOWER@218..223 "const"
           Comment@223..224
             WHITESPACE@223..224 " "
@@ -263,7 +263,7 @@ snapshot_kind: text
                   Comment@252..254
                     WHITESPACE@252..254 "\n\n"
         LAYOUT_SEPARATOR@254..254 ""
-        ValueAnnotation@254..294
+        ValueSignature@254..294
           LOWER@254..262 "identity"
           Comment@262..263
             WHITESPACE@262..263 " "
@@ -303,7 +303,7 @@ snapshot_kind: text
                 Comment@293..294
                   WHITESPACE@293..294 "\n"
         LAYOUT_SEPARATOR@294..294 ""
-        ValueAnnotation@294..349
+        ValueSignature@294..349
           LOWER@294..299 "const"
           Comment@299..300
             WHITESPACE@299..300 " "
