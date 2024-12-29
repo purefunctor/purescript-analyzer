@@ -220,6 +220,8 @@ pub enum SyntaxKind {
     RecordUpdateBranch,
 
     InfixDeclaration,
+    TypeSynonymAnnotation,
+    TypeSynonymEquation,
 
     #[doc(hidden)]
     __LAST,

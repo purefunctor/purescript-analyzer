@@ -8,6 +8,7 @@ mod types;
 use std::{cell::Cell, mem, sync::Arc};
 
 use drop_bomb::DropBomb;
+use names::LOWER_NON_RESERVED;
 use syntax::{SyntaxKind, TokenSet};
 
 use crate::builder::Output;
@@ -467,6 +468,8 @@ fn import_alias(p: &mut Parser) {
 fn module_statement(p: &mut Parser) {
     if p.at_in(names::LOWER_NON_RESERVED) {
         value_annotation_or_equation(p);
+    } else if p.at(SyntaxKind::TYPE) {
+        synonym_annotation_or_equation(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -511,4 +514,52 @@ fn infix_declaration(p: &mut Parser) {
     );
 
     m.end(p, SyntaxKind::InfixDeclaration);
+}
+
+fn synonym_annotation_or_equation(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::TYPE);
+    p.expect(SyntaxKind::UPPER);
+
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
+        types::ty(p);
+        m.end(p, SyntaxKind::TypeSynonymAnnotation);
+    } else {
+        type_variable_bindings(p);
+        p.expect(SyntaxKind::EQUAL);
+        types::ty(p);
+        m.end(p, SyntaxKind::TypeSynonymEquation);
+    }
+}
+
+const TYPE_VARIABLES_START: TokenSet =
+    TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(LOWER_NON_RESERVED);
+
+const TYPE_VARIABLES_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn type_variable_bindings(p: &mut Parser) {
+    while !p.at(SyntaxKind::EQUAL) && !p.at_eof() {
+        if p.at_in(TYPE_VARIABLES_START) {
+            type_variable_binding(p);
+        } else {
+            if p.at_in(TYPE_VARIABLES_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+}
+
+fn type_variable_binding(p: &mut Parser) {
+    let mut m = p.start();
+
+    let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
+    p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER);
+    if closing {
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    }
+
+    m.end(p, SyntaxKind::TypeVariableBinding);
 }

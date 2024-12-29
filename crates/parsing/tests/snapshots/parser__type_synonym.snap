@@ -1,0 +1,102 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..111
+      ModuleHeader@0..26
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..19
+          UPPER@7..18 "TypeSynonym"
+          Comment@18..19
+            WHITESPACE@18..19 " "
+        ModuleExportList@19..19
+        WHERE@19..24 "where"
+        Comment@24..26
+          WHITESPACE@24..26 "\n\n"
+      LAYOUT_START@26..26 ""
+      ModuleImports@26..26
+      ModuleStatements@26..111
+        TypeSynonymAnnotation@26..44
+          TYPE@26..30 "type"
+          Comment@30..31
+            WHITESPACE@30..31 " "
+          UPPER@31..35 "Year"
+          Comment@35..36
+            WHITESPACE@35..36 " "
+          DOUBLE_COLON@36..38 "::"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          TypeConstructor@39..44
+            QualifiedName@39..44
+              UPPER@39..43 "Type"
+              Comment@43..44
+                WHITESPACE@43..44 "\n"
+        LAYOUT_SEPARATOR@44..44 ""
+        TypeSynonymEquation@44..61
+          TYPE@44..48 "type"
+          Comment@48..49
+            WHITESPACE@48..49 " "
+          UPPER@49..53 "Year"
+          Comment@53..54
+            WHITESPACE@53..54 " "
+          EQUAL@54..55 "="
+          Comment@55..56
+            WHITESPACE@55..56 " "
+          TypeConstructor@56..61
+            QualifiedName@56..61
+              UPPER@56..59 "Int"
+              Comment@59..61
+                WHITESPACE@59..61 "\n\n"
+        LAYOUT_SEPARATOR@61..61 ""
+        TypeSynonymAnnotation@61..91
+          TYPE@61..65 "type"
+          Comment@65..66
+            WHITESPACE@65..66 " "
+          UPPER@66..74 "Identity"
+          Comment@74..75
+            WHITESPACE@74..75 " "
+          DOUBLE_COLON@75..77 "::"
+          Comment@77..78
+            WHITESPACE@77..78 " "
+          TypeArrow@78..91
+            TypeConstructor@78..83
+              QualifiedName@78..83
+                UPPER@78..82 "Type"
+                Comment@82..83
+                  WHITESPACE@82..83 " "
+            RIGHT_ARROW@83..85 "->"
+            Comment@85..86
+              WHITESPACE@85..86 " "
+            TypeConstructor@86..91
+              QualifiedName@86..91
+                UPPER@86..90 "Type"
+                Comment@90..91
+                  WHITESPACE@90..91 "\n"
+        LAYOUT_SEPARATOR@91..91 ""
+        TypeSynonymEquation@91..111
+          TYPE@91..95 "type"
+          Comment@95..96
+            WHITESPACE@95..96 " "
+          UPPER@96..104 "Identity"
+          Comment@104..105
+            WHITESPACE@104..105 " "
+          TypeVariableBinding@105..107
+            LOWER@105..106 "a"
+            Comment@106..107
+              WHITESPACE@106..107 " "
+          EQUAL@107..108 "="
+          Comment@108..109
+            WHITESPACE@108..109 " "
+          TypeVariable@109..111
+            LOWER@109..110 "a"
+            Comment@110..111
+              WHITESPACE@110..111 "\n"
+      LAYOUT_END@111..111 ""
+      END_OF_FILE@111..111 ""
+    ,
+    [],
+)
