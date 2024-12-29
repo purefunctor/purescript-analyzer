@@ -1,0 +1,223 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..196
+      ModuleHeader@0..31
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "ClassDeclaration"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..24
+        WHERE@24..29 "where"
+        Comment@29..31
+          WHITESPACE@29..31 "\n\n"
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..196
+        ClassEquation@31..98
+          CLASS@31..36 "class"
+          Comment@36..37
+            WHITESPACE@36..37 " "
+          UPPER@37..44 "Functor"
+          Comment@44..45
+            WHITESPACE@44..45 " "
+          TypeVariableBinding@45..47
+            LOWER@45..46 "f"
+            Comment@46..47
+              WHITESPACE@46..47 " "
+          WHERE@47..52 "where"
+          Comment@52..55
+            WHITESPACE@52..55 "\n  "
+          ClassStatements@55..98
+            LAYOUT_START@55..55 ""
+            ClassMemberStatement@55..98
+              LOWER@55..58 "map"
+              Comment@58..59
+                WHITESPACE@58..59 " "
+              DOUBLE_COLON@59..61 "::"
+              Comment@61..62
+                WHITESPACE@61..62 " "
+              TypeForall@62..98
+                FORALL@62..68 "forall"
+                Comment@68..69
+                  WHITESPACE@68..69 " "
+                TypeVariableBinding@69..71
+                  LOWER@69..70 "a"
+                  Comment@70..71
+                    WHITESPACE@70..71 " "
+                TypeVariableBinding@71..72
+                  LOWER@71..72 "b"
+                PERIOD@72..73 "."
+                Comment@73..74
+                  WHITESPACE@73..74 " "
+                TypeArrow@74..98
+                  TypeParenthesized@74..83
+                    LEFT_PARENTHESIS@74..75 "("
+                    TypeArrow@75..81
+                      TypeVariable@75..77
+                        LOWER@75..76 "a"
+                        Comment@76..77
+                          WHITESPACE@76..77 " "
+                      RIGHT_ARROW@77..79 "->"
+                      Comment@79..80
+                        WHITESPACE@79..80 " "
+                      TypeVariable@80..81
+                        LOWER@80..81 "b"
+                    RIGHT_PARENTHESIS@81..82 ")"
+                    Comment@82..83
+                      WHITESPACE@82..83 " "
+                  RIGHT_ARROW@83..85 "->"
+                  Comment@85..86
+                    WHITESPACE@85..86 " "
+                  TypeArrow@86..98
+                    TypeApplicationChain@86..90
+                      TypeVariable@86..88
+                        LOWER@86..87 "f"
+                        Comment@87..88
+                          WHITESPACE@87..88 " "
+                      TypeVariable@88..90
+                        LOWER@88..89 "a"
+                        Comment@89..90
+                          WHITESPACE@89..90 " "
+                    RIGHT_ARROW@90..92 "->"
+                    Comment@92..93
+                      WHITESPACE@92..93 " "
+                    TypeApplicationChain@93..98
+                      TypeVariable@93..95
+                        LOWER@93..94 "f"
+                        Comment@94..95
+                          WHITESPACE@94..95 " "
+                      TypeVariable@95..98
+                        LOWER@95..96 "b"
+                        Comment@96..98
+                          WHITESPACE@96..98 "\n\n"
+            LAYOUT_END@98..98 ""
+        LAYOUT_SEPARATOR@98..98 ""
+        ClassEquation@98..196
+          CLASS@98..103 "class"
+          Comment@103..104
+            WHITESPACE@103..104 " "
+          UPPER@104..109 "Monad"
+          Comment@109..110
+            WHITESPACE@109..110 " "
+          TypeVariableBinding@110..112
+            LOWER@110..111 "m"
+            Comment@111..112
+              WHITESPACE@111..112 " "
+          WHERE@112..117 "where"
+          Comment@117..120
+            WHITESPACE@117..120 "\n  "
+          ClassStatements@120..196
+            LAYOUT_START@120..120 ""
+            ClassMemberStatement@120..167
+              LOWER@120..124 "bind"
+              Comment@124..125
+                WHITESPACE@124..125 " "
+              DOUBLE_COLON@125..127 "::"
+              Comment@127..128
+                WHITESPACE@127..128 " "
+              TypeForall@128..167
+                FORALL@128..134 "forall"
+                Comment@134..135
+                  WHITESPACE@134..135 " "
+                TypeVariableBinding@135..137
+                  LOWER@135..136 "a"
+                  Comment@136..137
+                    WHITESPACE@136..137 " "
+                TypeVariableBinding@137..138
+                  LOWER@137..138 "b"
+                PERIOD@138..139 "."
+                Comment@139..140
+                  WHITESPACE@139..140 " "
+                TypeArrow@140..167
+                  TypeApplicationChain@140..144
+                    TypeVariable@140..142
+                      LOWER@140..141 "m"
+                      Comment@141..142
+                        WHITESPACE@141..142 " "
+                    TypeVariable@142..144
+                      LOWER@142..143 "a"
+                      Comment@143..144
+                        WHITESPACE@143..144 " "
+                  RIGHT_ARROW@144..146 "->"
+                  Comment@146..147
+                    WHITESPACE@146..147 " "
+                  TypeArrow@147..167
+                    TypeParenthesized@147..158
+                      LEFT_PARENTHESIS@147..148 "("
+                      TypeArrow@148..156
+                        TypeVariable@148..150
+                          LOWER@148..149 "a"
+                          Comment@149..150
+                            WHITESPACE@149..150 " "
+                        RIGHT_ARROW@150..152 "->"
+                        Comment@152..153
+                          WHITESPACE@152..153 " "
+                        TypeApplicationChain@153..156
+                          TypeVariable@153..155
+                            LOWER@153..154 "m"
+                            Comment@154..155
+                              WHITESPACE@154..155 " "
+                          TypeVariable@155..156
+                            LOWER@155..156 "b"
+                      RIGHT_PARENTHESIS@156..157 ")"
+                      Comment@157..158
+                        WHITESPACE@157..158 " "
+                    RIGHT_ARROW@158..160 "->"
+                    Comment@160..161
+                      WHITESPACE@160..161 " "
+                    TypeApplicationChain@161..167
+                      TypeVariable@161..163
+                        LOWER@161..162 "m"
+                        Comment@162..163
+                          WHITESPACE@162..163 " "
+                      TypeVariable@163..167
+                        LOWER@163..164 "b"
+                        Comment@164..167
+                          WHITESPACE@164..167 "\n  "
+            LAYOUT_SEPARATOR@167..167 ""
+            ClassMemberStatement@167..196
+              LOWER@167..173 "return"
+              Comment@173..174
+                WHITESPACE@173..174 " "
+              DOUBLE_COLON@174..176 "::"
+              Comment@176..177
+                WHITESPACE@176..177 " "
+              TypeForall@177..196
+                FORALL@177..183 "forall"
+                Comment@183..184
+                  WHITESPACE@183..184 " "
+                TypeVariableBinding@184..185
+                  LOWER@184..185 "a"
+                PERIOD@185..186 "."
+                Comment@186..187
+                  WHITESPACE@186..187 " "
+                TypeArrow@187..196
+                  TypeVariable@187..189
+                    LOWER@187..188 "a"
+                    Comment@188..189
+                      WHITESPACE@188..189 " "
+                  RIGHT_ARROW@189..191 "->"
+                  Comment@191..192
+                    WHITESPACE@191..192 " "
+                  TypeApplicationChain@192..196
+                    TypeVariable@192..194
+                      LOWER@192..193 "m"
+                      Comment@193..194
+                        WHITESPACE@193..194 " "
+                    TypeVariable@194..196
+                      LOWER@194..195 "a"
+                      Comment@195..196
+                        WHITESPACE@195..196 "\n"
+            LAYOUT_END@196..196 ""
+      LAYOUT_END@196..196 ""
+      END_OF_FILE@196..196 ""
+    ,
+    [],
+)

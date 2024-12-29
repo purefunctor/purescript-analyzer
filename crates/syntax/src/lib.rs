@@ -222,6 +222,10 @@ pub enum SyntaxKind {
     InfixDeclaration,
     TypeSynonymAnnotation,
     TypeSynonymEquation,
+    ClassAnnotation,
+    ClassEquation,
+    ClassStatements,
+    ClassMemberStatement,
 
     #[doc(hidden)]
     __LAST,

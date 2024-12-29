@@ -8,7 +8,6 @@ mod types;
 use std::{cell::Cell, mem, sync::Arc};
 
 use drop_bomb::DropBomb;
-use names::LOWER_NON_RESERVED;
 use syntax::{SyntaxKind, TokenSet};
 
 use crate::builder::Output;
@@ -470,6 +469,8 @@ fn module_statement(p: &mut Parser) {
         value_annotation_or_equation(p);
     } else if p.at(SyntaxKind::TYPE) {
         synonym_annotation_or_equation(p);
+    } else if p.at(SyntaxKind::CLASS) {
+        class_annotation_or_equation(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -526,21 +527,62 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
         types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymAnnotation);
     } else {
-        type_variable_bindings(p);
+        type_variable_bindings(p, SyntaxKind::EQUAL);
         p.expect(SyntaxKind::EQUAL);
         types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymEquation);
     }
 }
 
+fn class_annotation_or_equation(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::CLASS);
+    p.expect(SyntaxKind::UPPER);
+
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
+        types::type_(p);
+        m.end(p, SyntaxKind::ClassAnnotation);
+    } else {
+        type_variable_bindings(p, SyntaxKind::WHERE);
+        p.expect(SyntaxKind::WHERE);
+        class_statements(p);
+        m.end(p, SyntaxKind::ClassEquation);
+    }
+}
+
+fn class_statements(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LAYOUT_START);
+    while p.at_in(names::LOWER_NON_RESERVED) && !p.at_eof() {
+        class_statement(p);
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            p.error_recover("Invalid token");
+        }
+        if !p.at(SyntaxKind::LAYOUT_END) {
+            p.expect(SyntaxKind::LAYOUT_SEPARATOR);
+        }
+    }
+    p.expect(SyntaxKind::LAYOUT_END);
+    m.end(p, SyntaxKind::ClassStatements);
+}
+
+fn class_statement(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    types::type_(p);
+    m.end(p, SyntaxKind::ClassMemberStatement);
+}
+
 const TYPE_VARIABLE_BINDING_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(LOWER_NON_RESERVED);
+    TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER_NON_RESERVED);
 
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
-fn type_variable_bindings(p: &mut Parser) {
-    while !p.at(SyntaxKind::EQUAL) && !p.at_eof() {
+fn type_variable_bindings(p: &mut Parser, s: SyntaxKind) {
+    while !p.at(s) && !p.at_eof() {
         if p.at_in(TYPE_VARIABLE_BINDING_START) {
             type_variable_binding(p);
         } else {
@@ -556,7 +598,7 @@ fn type_variable_binding(p: &mut Parser) {
     let mut m = p.start();
 
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
-    p.eat_in(LOWER_NON_RESERVED, SyntaxKind::LOWER);
+    p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER);
     if closing {
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
     }
