@@ -184,7 +184,8 @@ impl NodeCheckpoint {
         let before = mem::take(&mut p.output);
         f(p);
         let index = p.index;
-        let output = mem::replace(&mut p.output, before);
+        let output = mem::replace(&mut p.output, before);  
+        p.index = self.index;
         CheckpointBranch::new(index, output)
     }
 }
