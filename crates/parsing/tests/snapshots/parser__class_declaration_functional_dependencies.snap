@@ -1,0 +1,134 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..166
+      ModuleHeader@0..53
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..46
+          UPPER@7..45 "ClassDeclarationFunct ..."
+          Comment@45..46
+            WHITESPACE@45..46 " "
+        ModuleExportList@46..46
+        WHERE@46..51 "where"
+        Comment@51..53
+          WHITESPACE@51..53 "\n\n"
+      LAYOUT_START@53..53 ""
+      ModuleImports@53..53
+      ModuleStatements@53..166
+        ClassEquation@53..116
+          CLASS@53..58 "class"
+          Comment@58..59
+            WHITESPACE@58..59 " "
+          ClassHead@59..74
+            UPPER@59..69 "TypeEquals"
+            Comment@69..70
+              WHITESPACE@69..70 " "
+            TypeVariableBinding@70..72
+              LOWER@70..71 "a"
+              Comment@71..72
+                WHITESPACE@71..72 " "
+            TypeVariableBinding@72..74
+              LOWER@72..73 "b"
+              Comment@73..74
+                WHITESPACE@73..74 " "
+          ClassFunctionalDependencies@74..91
+            PIPE@74..75 "|"
+            Comment@75..76
+              WHITESPACE@75..76 " "
+            FunctionalDependencyDetermines@76..82
+              LOWER@76..77 "a"
+              Comment@77..78
+                WHITESPACE@77..78 " "
+              RIGHT_ARROW@78..80 "->"
+              Comment@80..81
+                WHITESPACE@80..81 " "
+              LOWER@81..82 "b"
+            COMMA@82..83 ","
+            Comment@83..84
+              WHITESPACE@83..84 " "
+            FunctionalDependencyDetermines@84..91
+              LOWER@84..85 "b"
+              Comment@85..86
+                WHITESPACE@85..86 " "
+              RIGHT_ARROW@86..88 "->"
+              Comment@88..89
+                WHITESPACE@88..89 " "
+              LOWER@89..90 "a"
+              Comment@90..91
+                WHITESPACE@90..91 " "
+          WHERE@91..96 "where"
+          Comment@96..99
+            WHITESPACE@96..99 "\n  "
+          ClassStatements@99..116
+            LAYOUT_START@99..99 ""
+            ClassMemberStatement@99..116
+              LOWER@99..104 "proof"
+              Comment@104..105
+                WHITESPACE@104..105 " "
+              DOUBLE_COLON@105..107 "::"
+              Comment@107..108
+                WHITESPACE@107..108 " "
+              TypeArrow@108..116
+                TypeVariable@108..110
+                  LOWER@108..109 "a"
+                  Comment@109..110
+                    WHITESPACE@109..110 " "
+                RIGHT_ARROW@110..112 "->"
+                Comment@112..113
+                  WHITESPACE@112..113 " "
+                TypeVariable@113..116
+                  LOWER@113..114 "b"
+                  Comment@114..116
+                    WHITESPACE@114..116 "\n\n"
+            LAYOUT_END@116..116 ""
+        LAYOUT_SEPARATOR@116..116 ""
+        ClassEquation@116..166
+          CLASS@116..121 "class"
+          Comment@121..122
+            WHITESPACE@121..122 " "
+          ClassHead@122..135
+            UPPER@122..132 "Determined"
+            Comment@132..133
+              WHITESPACE@132..133 " "
+            TypeVariableBinding@133..135
+              LOWER@133..134 "a"
+              Comment@134..135
+                WHITESPACE@134..135 " "
+          ClassFunctionalDependencies@135..142
+            PIPE@135..136 "|"
+            Comment@136..137
+              WHITESPACE@136..137 " "
+            FunctionalDependencyDetermined@137..142
+              RIGHT_ARROW@137..139 "->"
+              Comment@139..140
+                WHITESPACE@139..140 " "
+              LOWER@140..141 "a"
+              Comment@141..142
+                WHITESPACE@141..142 " "
+          WHERE@142..147 "where"
+          Comment@147..150
+            WHITESPACE@147..150 "\n  "
+          ClassStatements@150..166
+            LAYOUT_START@150..150 ""
+            ClassMemberStatement@150..166
+              LOWER@150..160 "determined"
+              Comment@160..161
+                WHITESPACE@160..161 " "
+              DOUBLE_COLON@161..163 "::"
+              Comment@163..164
+                WHITESPACE@163..164 " "
+              TypeVariable@164..166
+                LOWER@164..165 "a"
+                Comment@165..166
+                  WHITESPACE@165..166 "\n"
+            LAYOUT_END@166..166 ""
+      LAYOUT_END@166..166 ""
+      END_OF_FILE@166..166 ""
+    ,
+    [],
+)

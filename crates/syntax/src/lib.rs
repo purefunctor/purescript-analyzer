@@ -222,8 +222,14 @@ pub enum SyntaxKind {
     InfixDeclaration,
     TypeSynonymAnnotation,
     TypeSynonymEquation,
+
     ClassAnnotation,
     ClassEquation,
+    ClassConstraints,
+    ClassHead,
+    ClassFunctionalDependencies,
+    FunctionalDependencyDetermined,
+    FunctionalDependencyDetermines,
     ClassStatements,
     ClassMemberStatement,
 

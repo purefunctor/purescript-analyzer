@@ -72,7 +72,7 @@ fn type_4(p: &mut Parser) {
     }
 }
 
-fn type_5(p: &mut Parser) {
+pub(super) fn type_5(p: &mut Parser) {
     let mut m = p.start();
     let mut i = 0;
 
@@ -135,7 +135,7 @@ pub(super) fn type_atom(p: &mut Parser) {
     }
 }
 
-const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
+pub(super) const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::PREFIX,
     SyntaxKind::STRING,

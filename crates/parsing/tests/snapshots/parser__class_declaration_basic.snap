@@ -24,13 +24,14 @@ snapshot_kind: text
           CLASS@31..36 "class"
           Comment@36..37
             WHITESPACE@36..37 " "
-          UPPER@37..44 "Functor"
-          Comment@44..45
-            WHITESPACE@44..45 " "
-          TypeVariableBinding@45..47
-            LOWER@45..46 "f"
-            Comment@46..47
-              WHITESPACE@46..47 " "
+          ClassHead@37..47
+            UPPER@37..44 "Functor"
+            Comment@44..45
+              WHITESPACE@44..45 " "
+            TypeVariableBinding@45..47
+              LOWER@45..46 "f"
+              Comment@46..47
+                WHITESPACE@46..47 " "
           WHERE@47..52 "where"
           Comment@52..55
             WHITESPACE@52..55 "\n  "
@@ -103,13 +104,14 @@ snapshot_kind: text
           CLASS@98..103 "class"
           Comment@103..104
             WHITESPACE@103..104 " "
-          UPPER@104..109 "Monad"
-          Comment@109..110
-            WHITESPACE@109..110 " "
-          TypeVariableBinding@110..112
-            LOWER@110..111 "m"
-            Comment@111..112
-              WHITESPACE@111..112 " "
+          ClassHead@104..112
+            UPPER@104..109 "Monad"
+            Comment@109..110
+              WHITESPACE@109..110 " "
+            TypeVariableBinding@110..112
+              LOWER@110..111 "m"
+              Comment@111..112
+                WHITESPACE@111..112 " "
           WHERE@112..117 "where"
           Comment@117..120
             WHITESPACE@117..120 "\n  "

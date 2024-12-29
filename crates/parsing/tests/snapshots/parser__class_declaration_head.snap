@@ -1,0 +1,79 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..92
+      ModuleHeader@0..35
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..28
+          UPPER@7..27 "ClassDeclarationHead"
+          Comment@27..28
+            WHITESPACE@27..28 " "
+        ModuleExportList@28..28
+        WHERE@28..33 "where"
+        Comment@33..35
+          WHITESPACE@33..35 "\n\n"
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..92
+        ClassEquation@35..51
+          CLASS@35..40 "class"
+          Comment@40..41
+            WHITESPACE@40..41 " "
+          ClassHead@41..51
+            UPPER@41..48 "Functor"
+            Comment@48..49
+              WHITESPACE@48..49 " "
+            TypeVariableBinding@49..51
+              LOWER@49..50 "f"
+              Comment@50..51
+                WHITESPACE@50..51 "\n"
+        LAYOUT_SEPARATOR@51..51 ""
+        ClassEquation@51..65
+          CLASS@51..56 "class"
+          Comment@56..57
+            WHITESPACE@56..57 " "
+          ClassHead@57..65
+            UPPER@57..62 "Apply"
+            Comment@62..63
+              WHITESPACE@62..63 " "
+            TypeVariableBinding@63..65
+              LOWER@63..64 "f"
+              Comment@64..65
+                WHITESPACE@64..65 "\n"
+        LAYOUT_SEPARATOR@65..65 ""
+        ClassEquation@65..92
+          CLASS@65..70 "class"
+          Comment@70..71
+            WHITESPACE@70..71 " "
+          ClassConstraints@71..84
+            TypeApplicationChain@71..81
+              TypeConstructor@71..79
+                QualifiedName@71..79
+                  UPPER@71..78 "Functor"
+                  Comment@78..79
+                    WHITESPACE@78..79 " "
+              TypeVariable@79..81
+                LOWER@79..80 "f"
+                Comment@80..81
+                  WHITESPACE@80..81 " "
+            LEFT_THICK_ARROW@81..83 "<="
+            Comment@83..84
+              WHITESPACE@83..84 " "
+          ClassHead@84..92
+            UPPER@84..89 "Monad"
+            Comment@89..90
+              WHITESPACE@89..90 " "
+            TypeVariableBinding@90..92
+              LOWER@90..91 "f"
+              Comment@91..92
+                WHITESPACE@91..92 "\n"
+      LAYOUT_END@92..92 ""
+      END_OF_FILE@92..92 ""
+    ,
+    [],
+)

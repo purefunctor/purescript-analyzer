@@ -76,6 +76,15 @@ impl<'t> Parser<'t> {
         }
     }
 
+    fn optional(&mut self, f: impl FnOnce(&mut Parser)) {
+        let checkpoint = self.checkpoint();
+        let mut branch = checkpoint.branch(self, f);
+        if branch.finished {
+            self.index = branch.index;
+            self.output.append(&mut branch.output);
+        }
+    }
+
     fn error(&mut self, message: impl Into<Arc<str>>) {
         self.output.push(Output::Error { message: message.into() });
     }
@@ -184,7 +193,7 @@ impl NodeCheckpoint {
         let before = mem::take(&mut p.output);
         f(p);
         let index = p.index;
-        let output = mem::replace(&mut p.output, before);  
+        let output = mem::replace(&mut p.output, before);
         p.index = self.index;
         CheckpointBranch::new(index, output)
     }
@@ -518,6 +527,8 @@ fn infix_declaration(p: &mut Parser) {
     m.end(p, SyntaxKind::InfixDeclaration);
 }
 
+const SYNONYM_VARAIABLE_BINDINGS_END: TokenSet = TokenSet::new(&[SyntaxKind::EQUAL]);
+
 fn synonym_annotation_or_equation(p: &mut Parser) {
     let mut m = p.start();
 
@@ -528,7 +539,7 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
         types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymAnnotation);
     } else {
-        type_variable_bindings(p, SyntaxKind::EQUAL);
+        type_variable_bindings(p, SYNONYM_VARAIABLE_BINDINGS_END);
         p.expect(SyntaxKind::EQUAL);
         types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymEquation);
@@ -536,19 +547,115 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
 }
 
 fn class_annotation_or_equation(p: &mut Parser) {
-    let mut m = p.start();
+    let c = p.checkpoint();
+    let annotation = c.branch(p, class_annotation);
+    let equation = c.branch(p, class_equation);
+    p.decide([annotation, equation]);
+}
 
+fn class_annotation(p: &mut Parser) {
+    let mut m = p.start();
     p.expect(SyntaxKind::CLASS);
     p.expect(SyntaxKind::UPPER);
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    types::type_(p);
+    m.end(p, SyntaxKind::ClassAnnotation);
+}
 
-    if p.eat(SyntaxKind::DOUBLE_COLON) {
-        types::type_(p);
-        m.end(p, SyntaxKind::ClassAnnotation);
-    } else {
-        type_variable_bindings(p, SyntaxKind::WHERE);
-        p.expect(SyntaxKind::WHERE);
+fn class_equation(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::CLASS);
+    p.optional(class_constraints);
+    class_head(p);
+    if p.at(SyntaxKind::PIPE) {
+        class_functional_dependencies(p);
+    }
+    if p.eat(SyntaxKind::WHERE) {
         class_statements(p);
-        m.end(p, SyntaxKind::ClassEquation);
+    }
+    m.end(p, SyntaxKind::ClassEquation);
+}
+
+const CLASS_CONSTRAINTS_RECOVERY: TokenSet = TokenSet::new(&[
+    SyntaxKind::LEFT_THICK_ARROW,
+    SyntaxKind::PIPE,
+    SyntaxKind::WHERE,
+    SyntaxKind::LAYOUT_SEPARATOR,
+    SyntaxKind::LAYOUT_END,
+]);
+
+fn class_constraints(p: &mut Parser) {
+    let mut m = p.start();
+    if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+            if p.at_in(types::TYPE_ATOM_START) {
+                types::type_5(p);
+                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.error_recover("Trailing comma");
+                } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.expect(SyntaxKind::COMMA);
+                }
+            } else {
+                if p.at_in(CLASS_CONSTRAINTS_RECOVERY) {
+                    break;
+                }
+                p.error_recover("Invalid token");
+            }
+        }
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    } else {
+        types::type_5(p);
+    }
+    p.expect(SyntaxKind::LEFT_THICK_ARROW);
+    m.end(p, SyntaxKind::ClassConstraints);
+}
+
+const CLASS_VARIABLE_BINDINGS_END: TokenSet = TokenSet::new(&[SyntaxKind::WHERE, SyntaxKind::PIPE]);
+
+fn class_head(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::UPPER);
+    type_variable_bindings(p, CLASS_VARIABLE_BINDINGS_END);
+    m.end(p, SyntaxKind::ClassHead);
+}
+
+const FUNCTIONAL_DEPENDENCY_START: TokenSet =
+    TokenSet::new(&[SyntaxKind::RIGHT_ARROW]).union(names::LOWER_NON_RESERVED);
+
+const FUNCTIONAL_DEPENDENCY_RECOVERY: TokenSet =
+    TokenSet::new(&[SyntaxKind::WHERE, SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn class_functional_dependencies(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::PIPE);
+    while !p.at(SyntaxKind::WHERE) && !p.at_eof() {
+        if p.at_in(FUNCTIONAL_DEPENDENCY_START) {
+            class_functional_dependency(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::WHERE) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::WHERE) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at_in(FUNCTIONAL_DEPENDENCY_RECOVERY) {
+                break;
+            }
+            p.error_recover("Invalid token");
+        }
+    }
+    m.end(p, SyntaxKind::ClassFunctionalDependencies);
+}
+
+fn class_functional_dependency(p: &mut Parser) {
+    let mut m = p.start();
+    if p.eat(SyntaxKind::RIGHT_ARROW) {
+        p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER);
+        m.end(p, SyntaxKind::FunctionalDependencyDetermined);
+    } else {
+        while p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {}
+        p.expect(SyntaxKind::RIGHT_ARROW);
+        while p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {}
+        m.end(p, SyntaxKind::FunctionalDependencyDetermines);
     }
 }
 
@@ -582,8 +689,8 @@ const TYPE_VARIABLE_BINDING_START: TokenSet =
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
-fn type_variable_bindings(p: &mut Parser, s: SyntaxKind) {
-    while !p.at(s) && !p.at_eof() {
+fn type_variable_bindings(p: &mut Parser, s: TokenSet) {
+    while !p.at_in(s) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
         if p.at_in(TYPE_VARIABLE_BINDING_START) {
             type_variable_binding(p);
         } else {
