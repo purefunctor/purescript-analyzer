@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@37..38
             WHITESPACE@37..38 " "
           EquationBinders@38..38
-          EquationUnconditional@38..43
+          Unconditional@38..43
             EQUAL@38..39 "="
             Comment@39..40
               WHITESPACE@39..40 " "
-            EquationWhere@40..43
+            WhereExpression@40..43
               ExpressionRecord@40..43
                 LEFT_CURLY@40..41 "{"
                 RIGHT_CURLY@41..42 "}"
@@ -41,11 +41,11 @@ snapshot_kind: text
           Comment@49..50
             WHITESPACE@49..50 " "
           EquationBinders@50..50
-          EquationUnconditional@50..56
+          Unconditional@50..56
             EQUAL@50..51 "="
             Comment@51..52
               WHITESPACE@51..52 " "
-            EquationWhere@52..56
+            WhereExpression@52..56
               ExpressionRecord@52..56
                 LEFT_CURLY@52..53 "{"
                 RecordPun@53..54
@@ -60,11 +60,11 @@ snapshot_kind: text
           Comment@62..63
             WHITESPACE@62..63 " "
           EquationBinders@63..63
-          EquationUnconditional@63..72
+          Unconditional@63..72
             EQUAL@63..64 "="
             Comment@64..65
               WHITESPACE@64..65 " "
-            EquationWhere@65..72
+            WhereExpression@65..72
               ExpressionRecord@65..72
                 LEFT_CURLY@65..66 "{"
                 RecordPun@66..67
@@ -85,11 +85,11 @@ snapshot_kind: text
           Comment@78..79
             WHITESPACE@78..79 " "
           EquationBinders@79..79
-          EquationUnconditional@79..94
+          Unconditional@79..94
             EQUAL@79..80 "="
             Comment@80..81
               WHITESPACE@80..81 " "
-            EquationWhere@81..94
+            WhereExpression@81..94
               ExpressionRecord@81..94
                 LEFT_CURLY@81..82 "{"
                 RecordField@82..86
@@ -120,11 +120,11 @@ snapshot_kind: text
           Comment@100..101
             WHITESPACE@100..101 " "
           EquationBinders@101..101
-          EquationUnconditional@101..122
+          Unconditional@101..122
             EQUAL@101..102 "="
             Comment@102..103
               WHITESPACE@102..103 " "
-            EquationWhere@103..122
+            WhereExpression@103..122
               ExpressionRecord@103..122
                 LEFT_CURLY@103..104 "{"
                 RecordPun@104..105

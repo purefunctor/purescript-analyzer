@@ -30,11 +30,11 @@ snapshot_kind: text
               RIGHT_CURLY@35..36 "}"
               Comment@36..37
                 WHITESPACE@36..37 " "
-          EquationUnconditional@37..41
+          Unconditional@37..41
             EQUAL@37..38 "="
             Comment@38..39
               WHITESPACE@38..39 " "
-            EquationWhere@39..41
+            WhereExpression@39..41
               ExpressionInteger@39..41
                 INTEGER@39..40 "0"
                 Comment@40..41
@@ -53,11 +53,11 @@ snapshot_kind: text
               RIGHT_CURLY@50..51 "}"
               Comment@51..52
                 WHITESPACE@51..52 " "
-          EquationUnconditional@52..56
+          Unconditional@52..56
             EQUAL@52..53 "="
             Comment@53..54
               WHITESPACE@53..54 " "
-            EquationWhere@54..56
+            WhereExpression@54..56
               ExpressionInteger@54..56
                 INTEGER@54..55 "0"
                 Comment@55..56
@@ -82,11 +82,11 @@ snapshot_kind: text
               RIGHT_CURLY@68..69 "}"
               Comment@69..70
                 WHITESPACE@69..70 " "
-          EquationUnconditional@70..74
+          Unconditional@70..74
             EQUAL@70..71 "="
             Comment@71..72
               WHITESPACE@71..72 " "
-            EquationWhere@72..74
+            WhereExpression@72..74
               ExpressionInteger@72..74
                 INTEGER@72..73 "0"
                 Comment@73..74
@@ -121,11 +121,11 @@ snapshot_kind: text
               RIGHT_CURLY@92..93 "}"
               Comment@93..94
                 WHITESPACE@93..94 " "
-          EquationUnconditional@94..98
+          Unconditional@94..98
             EQUAL@94..95 "="
             Comment@95..96
               WHITESPACE@95..96 " "
-            EquationWhere@96..98
+            WhereExpression@96..98
               ExpressionInteger@96..98
                 INTEGER@96..97 "0"
                 Comment@97..98
@@ -172,11 +172,11 @@ snapshot_kind: text
               RIGHT_CURLY@122..123 "}"
               Comment@123..124
                 WHITESPACE@123..124 " "
-          EquationUnconditional@124..128
+          Unconditional@124..128
             EQUAL@124..125 "="
             Comment@125..126
               WHITESPACE@125..126 " "
-            EquationWhere@126..128
+            WhereExpression@126..128
               ExpressionInteger@126..128
                 INTEGER@126..127 "0"
                 Comment@127..128

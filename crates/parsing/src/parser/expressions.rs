@@ -161,7 +161,7 @@ fn expression_let(p: &mut Parser, mut m: NodeMarker) {
 
 fn expression_lambda(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::BACKSLASH);
-    generic::binders_list(p, SyntaxKind::RIGHT_ARROW);
+    generic::equation_binders(p, SyntaxKind::RIGHT_ARROW);
     p.expect(SyntaxKind::RIGHT_ARROW);
     expression(p);
     m.end(p, SyntaxKind::ExpressionLambda);
@@ -214,7 +214,7 @@ fn case_branches(p: &mut Parser) {
 fn case_branch(p: &mut Parser) {
     let mut m = p.start();
     case_branch_binders(p);
-    generic::equation_unconditional_or_conditionals(p, SyntaxKind::RIGHT_ARROW);
+    generic::unconditional_or_conditionals(p, SyntaxKind::RIGHT_ARROW);
     m.end(p, SyntaxKind::CaseBranch);
 }
 

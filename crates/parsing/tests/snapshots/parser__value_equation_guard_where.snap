@@ -33,8 +33,8 @@ snapshot_kind: text
               LOWER@42..43 "b"
               Comment@43..46
                 WHITESPACE@43..46 "\n  "
-          EquationConditionals@46..102
-            EquationGuarded@46..102
+          Conditionals@46..102
+            PatternGuarded@46..102
               PIPE@46..47 "|"
               Comment@47..48
                 WHITESPACE@47..48 " "
@@ -84,7 +84,7 @@ snapshot_kind: text
               EQUAL@78..79 "="
               Comment@79..80
                 WHITESPACE@79..80 " "
-              EquationWhere@80..102
+              WhereExpression@80..102
                 ExpressionVariable@80..84
                   LOWER@80..81 "e"
                   Comment@81..84
@@ -99,11 +99,11 @@ snapshot_kind: text
                     Comment@93..94
                       WHITESPACE@93..94 " "
                     EquationBinders@94..94
-                    EquationUnconditional@94..102
+                    Unconditional@94..102
                       EQUAL@94..95 "="
                       Comment@95..96
                         WHITESPACE@95..96 " "
-                      EquationWhere@96..102
+                      WhereExpression@96..102
                         ExpressionOperatorChain@96..102
                           ExpressionVariable@96..98
                             LOWER@96..97 "c"

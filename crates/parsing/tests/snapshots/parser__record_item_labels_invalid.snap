@@ -38,11 +38,11 @@ snapshot_kind: text
               RIGHT_CURLY@49..50 "}"
               Comment@50..51
                 WHITESPACE@50..51 " "
-          EquationUnconditional@51..65
+          Unconditional@51..65
             EQUAL@51..52 "="
             Comment@52..53
               WHITESPACE@52..53 " "
-            EquationWhere@53..65
+            WhereExpression@53..65
               ExpressionRecord@53..65
                 LEFT_CURLY@53..54 "{"
                 Comment@54..55
@@ -75,11 +75,11 @@ snapshot_kind: text
               RIGHT_CURLY@82..83 "}"
               Comment@83..84
                 WHITESPACE@83..84 " "
-          EquationUnconditional@84..97
+          Unconditional@84..97
             EQUAL@84..85 "="
             Comment@85..86
               WHITESPACE@85..86 " "
-            EquationWhere@86..97
+            WhereExpression@86..97
               ExpressionRecord@86..97
                 LEFT_CURLY@86..87 "{"
                 Comment@87..88

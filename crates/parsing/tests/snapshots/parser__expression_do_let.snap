@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@34..35
             WHITESPACE@34..35 " "
           EquationBinders@35..35
-          EquationUnconditional@35..56
+          Unconditional@35..56
             EQUAL@35..36 "="
             Comment@36..37
               WHITESPACE@36..37 " "
-            EquationWhere@37..56
+            WhereExpression@37..56
               ExpressionDo@37..56
                 DO@37..39 "do"
                 Comment@39..42
@@ -47,11 +47,11 @@ snapshot_kind: text
                         Comment@50..51
                           WHITESPACE@50..51 " "
                         EquationBinders@51..51
-                        EquationUnconditional@51..56
+                        Unconditional@51..56
                           EQUAL@51..52 "="
                           Comment@52..53
                             WHITESPACE@52..53 " "
-                          EquationWhere@53..56
+                          WhereExpression@53..56
                             ExpressionInteger@53..56
                               INTEGER@53..55 "42"
                               Comment@55..56

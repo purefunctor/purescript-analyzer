@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@35..36
             WHITESPACE@35..36 " "
           EquationBinders@36..36
-          EquationUnconditional@36..41
+          Unconditional@36..41
             EQUAL@36..37 "="
             Comment@37..38
               WHITESPACE@37..38 " "
-            EquationWhere@38..41
+            WhereExpression@38..41
               ExpressionArray@38..41
                 LEFT_SQUARE@38..39 "["
                 RIGHT_SQUARE@39..40 "]"
@@ -41,11 +41,11 @@ snapshot_kind: text
           Comment@46..47
             WHITESPACE@46..47 " "
           EquationBinders@47..47
-          EquationUnconditional@47..53
+          Unconditional@47..53
             EQUAL@47..48 "="
             Comment@48..49
               WHITESPACE@48..49 " "
-            EquationWhere@49..53
+            WhereExpression@49..53
               ExpressionArray@49..53
                 LEFT_SQUARE@49..50 "["
                 ExpressionInteger@50..51
@@ -59,11 +59,11 @@ snapshot_kind: text
           Comment@58..59
             WHITESPACE@58..59 " "
           EquationBinders@59..59
-          EquationUnconditional@59..71
+          Unconditional@59..71
             EQUAL@59..60 "="
             Comment@60..61
               WHITESPACE@60..61 " "
-            EquationWhere@61..71
+            WhereExpression@61..71
               ExpressionArray@61..71
                 LEFT_SQUARE@61..62 "["
                 ExpressionInteger@62..63

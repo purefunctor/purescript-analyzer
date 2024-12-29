@@ -29,11 +29,11 @@ snapshot_kind: text
               CHAR@30..33 "'a'"
               Comment@33..34
                 WHITESPACE@33..34 " "
-          EquationUnconditional@34..38
+          Unconditional@34..38
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
-            EquationWhere@36..38
+            WhereExpression@36..38
               ExpressionInteger@36..38
                 INTEGER@36..37 "0"
                 Comment@37..38

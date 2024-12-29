@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@40..41
             WHITESPACE@40..41 " "
           EquationBinders@41..41
-          EquationUnconditional@41..87
+          Unconditional@41..87
             EQUAL@41..42 "="
             Comment@42..43
               WHITESPACE@42..43 " "
-            EquationWhere@43..87
+            WhereExpression@43..87
               ExpressionCaseOf@43..87
                 CASE@43..47 "case"
                 Comment@47..48
@@ -60,11 +60,11 @@ snapshot_kind: text
                         INTEGER@61..62 "1"
                         Comment@62..63
                           WHITESPACE@62..63 " "
-                    EquationUnconditional@63..73
+                    Unconditional@63..73
                       RIGHT_ARROW@63..65 "->"
                       Comment@65..66
                         WHITESPACE@65..66 " "
-                      EquationWhere@66..73
+                      WhereExpression@66..73
                         ExpressionTrue@66..73
                           TRUE@66..70 "true"
                           Comment@70..73
@@ -81,11 +81,11 @@ snapshot_kind: text
                         UNDERSCORE@76..77 "_"
                         Comment@77..78
                           WHITESPACE@77..78 " "
-                    EquationUnconditional@78..87
+                    Unconditional@78..87
                       RIGHT_ARROW@78..80 "->"
                       Comment@80..81
                         WHITESPACE@80..81 " "
-                      EquationWhere@81..87
+                      WhereExpression@81..87
                         ExpressionFalse@81..87
                           FALSE@81..86 "false"
                           Comment@86..87

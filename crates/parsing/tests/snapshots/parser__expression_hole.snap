@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@33..34
             WHITESPACE@33..34 " "
           EquationBinders@34..34
-          EquationUnconditional@34..42
+          Unconditional@34..42
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
-            EquationWhere@36..42
+            WhereExpression@36..42
               ExpressionHole@36..42
                 HOLE@36..41 "?hole"
                 Comment@41..42

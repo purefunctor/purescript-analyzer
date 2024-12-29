@@ -33,11 +33,11 @@ snapshot_kind: text
               LOWER@32..33 "b"
               Comment@33..34
                 WHITESPACE@33..34 " "
-          EquationUnconditional@34..78
+          Unconditional@34..78
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
-            EquationWhere@36..78
+            WhereExpression@36..78
               ExpressionOperatorChain@36..46
                 ExpressionVariable@36..39
                   LOWER@36..38 "a2"
@@ -60,11 +60,11 @@ snapshot_kind: text
                   Comment@56..57
                     WHITESPACE@56..57 " "
                   EquationBinders@57..57
-                  EquationUnconditional@57..67
+                  Unconditional@57..67
                     EQUAL@57..58 "="
                     Comment@58..59
                       WHITESPACE@58..59 " "
-                    EquationWhere@59..67
+                    WhereExpression@59..67
                       ExpressionOperatorChain@59..67
                         ExpressionVariable@59..61
                           LOWER@59..60 "a"
@@ -83,11 +83,11 @@ snapshot_kind: text
                   Comment@69..70
                     WHITESPACE@69..70 " "
                   EquationBinders@70..70
-                  EquationUnconditional@70..78
+                  Unconditional@70..78
                     EQUAL@70..71 "="
                     Comment@71..72
                       WHITESPACE@71..72 " "
-                    EquationWhere@72..78
+                    WhereExpression@72..78
                       ExpressionOperatorChain@72..78
                         ExpressionVariable@72..74
                           LOWER@72..73 "b"

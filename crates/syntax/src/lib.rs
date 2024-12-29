@@ -123,11 +123,11 @@ pub enum SyntaxKind {
     ValueEquation,
     EquationBinders,
 
-    EquationUnconditional,
-    EquationWhere,
+    Unconditional,
+    WhereExpression,
 
-    EquationConditionals,
-    EquationGuarded,
+    Conditionals,
+    PatternGuarded,
     PatternGuards,
     PatternGuardBinder,
     PatternGuardExpression,

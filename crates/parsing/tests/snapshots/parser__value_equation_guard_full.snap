@@ -33,8 +33,8 @@ snapshot_kind: text
               LOWER@41..42 "b"
               Comment@42..45
                 WHITESPACE@42..45 "\n  "
-          EquationConditionals@45..158
-            EquationGuarded@45..103
+          Conditionals@45..158
+            PatternGuarded@45..103
               PIPE@45..46 "|"
               Comment@46..47
                 WHITESPACE@46..47 " "
@@ -84,7 +84,7 @@ snapshot_kind: text
               EQUAL@76..77 "="
               Comment@77..78
                 WHITESPACE@77..78 " "
-              EquationWhere@78..103
+              WhereExpression@78..103
                 ExpressionVariable@78..82
                   LOWER@78..79 "e"
                   Comment@79..82
@@ -99,11 +99,11 @@ snapshot_kind: text
                     Comment@91..92
                       WHITESPACE@91..92 " "
                     EquationBinders@92..92
-                    EquationUnconditional@92..103
+                    Unconditional@92..103
                       EQUAL@92..93 "="
                       Comment@93..94
                         WHITESPACE@93..94 " "
-                      EquationWhere@94..103
+                      WhereExpression@94..103
                         ExpressionOperatorChain@94..103
                           ExpressionVariable@94..96
                             LOWER@94..95 "c"
@@ -117,7 +117,7 @@ snapshot_kind: text
                             Comment@99..103
                               WHITESPACE@99..103 "\n\n  "
                   LAYOUT_END@103..103 ""
-            EquationGuarded@103..158
+            PatternGuarded@103..158
               PIPE@103..104 "|"
               Comment@104..105
                 WHITESPACE@104..105 " "
@@ -167,7 +167,7 @@ snapshot_kind: text
               EQUAL@134..135 "="
               Comment@135..136
                 WHITESPACE@135..136 " "
-              EquationWhere@136..158
+              WhereExpression@136..158
                 ExpressionVariable@136..140
                   LOWER@136..137 "l"
                   Comment@137..140
@@ -182,11 +182,11 @@ snapshot_kind: text
                     Comment@149..150
                       WHITESPACE@149..150 " "
                     EquationBinders@150..150
-                    EquationUnconditional@150..158
+                    Unconditional@150..158
                       EQUAL@150..151 "="
                       Comment@151..152
                         WHITESPACE@151..152 " "
-                      EquationWhere@152..158
+                      WhereExpression@152..158
                         ExpressionOperatorChain@152..158
                           ExpressionVariable@152..154
                             LOWER@152..153 "j"

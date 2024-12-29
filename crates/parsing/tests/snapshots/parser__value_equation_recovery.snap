@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@40..41
             WHITESPACE@40..41 " "
           EquationBinders@41..41
-          EquationUnconditional@41..46
+          Unconditional@41..46
             EQUAL@41..42 "="
             Comment@42..43
               WHITESPACE@42..43 " "
-            EquationWhere@43..46
+            WhereExpression@43..46
               ExpressionInteger@43..46
                 INTEGER@43..45 "21"
                 Comment@45..46
@@ -40,11 +40,11 @@ snapshot_kind: text
           Comment@50..51
             WHITESPACE@50..51 " "
           EquationBinders@51..51
-          EquationUnconditional@51..53
+          Unconditional@51..53
             EQUAL@51..52 "="
             Comment@52..53
               WHITESPACE@52..53 " "
-            EquationWhere@53..53
+            WhereExpression@53..53
         ERROR@53..60
           ERROR@53..53 ""
           MODULE@53..59 "module"
@@ -56,11 +56,11 @@ snapshot_kind: text
           Comment@64..65
             WHITESPACE@64..65 " "
           EquationBinders@65..65
-          EquationUnconditional@65..71
+          Unconditional@65..71
             EQUAL@65..66 "="
             Comment@66..67
               WHITESPACE@66..67 " "
-            EquationWhere@67..71
+            WhereExpression@67..71
               ExpressionInteger@67..71
                 INTEGER@67..69 "42"
                 Comment@69..71
@@ -71,11 +71,11 @@ snapshot_kind: text
           Comment@79..80
             WHITESPACE@79..80 " "
           EquationBinders@80..80
-          EquationUnconditional@80..133
+          Unconditional@80..133
             EQUAL@80..81 "="
             Comment@81..82
               WHITESPACE@81..82 " "
-            EquationWhere@82..133
+            WhereExpression@82..133
               ExpressionInteger@82..87
                 INTEGER@82..84 "42"
                 Comment@84..87
@@ -90,11 +90,11 @@ snapshot_kind: text
                   Comment@99..100
                     WHITESPACE@99..100 " "
                   EquationBinders@100..100
-                  EquationUnconditional@100..107
+                  Unconditional@100..107
                     EQUAL@100..101 "="
                     Comment@101..102
                       WHITESPACE@101..102 " "
-                    EquationWhere@102..107
+                    WhereExpression@102..107
                       ExpressionInteger@102..107
                         INTEGER@102..104 "21"
                         Comment@104..107
@@ -105,11 +105,11 @@ snapshot_kind: text
                   Comment@111..112
                     WHITESPACE@111..112 " "
                   EquationBinders@112..112
-                  EquationUnconditional@112..114
+                  Unconditional@112..114
                     EQUAL@112..113 "="
                     Comment@113..114
                       WHITESPACE@113..114 " "
-                    EquationWhere@114..114
+                    WhereExpression@114..114
                 ERROR@114..123
                   ERROR@114..114 ""
                   MODULE@114..120 "module"
@@ -121,11 +121,11 @@ snapshot_kind: text
                   Comment@127..128
                     WHITESPACE@127..128 " "
                   EquationBinders@128..128
-                  EquationUnconditional@128..133
+                  Unconditional@128..133
                     EQUAL@128..129 "="
                     Comment@129..130
                       WHITESPACE@129..130 " "
-                    EquationWhere@130..133
+                    WhereExpression@130..133
                       ExpressionInteger@130..133
                         INTEGER@130..132 "42"
                         Comment@132..133

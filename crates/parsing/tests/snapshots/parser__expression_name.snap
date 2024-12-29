@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@33..34
             WHITESPACE@33..34 " "
           EquationBinders@34..34
-          EquationUnconditional@34..41
+          Unconditional@34..41
             EQUAL@34..35 "="
             Comment@35..36
               WHITESPACE@35..36 " "
-            EquationWhere@36..41
+            WhereExpression@36..41
               ExpressionVariable@36..41
                 LOWER@36..40 "head"
                 Comment@40..41
@@ -40,11 +40,11 @@ snapshot_kind: text
           Comment@45..46
             WHITESPACE@45..46 " "
           EquationBinders@46..46
-          EquationUnconditional@46..53
+          Unconditional@46..53
             EQUAL@46..47 "="
             Comment@47..48
               WHITESPACE@47..48 " "
-            EquationWhere@48..53
+            WhereExpression@48..53
               ExpressionConstructor@48..53
                 UPPER@48..52 "Cons"
                 Comment@52..53
@@ -55,11 +55,11 @@ snapshot_kind: text
           Comment@57..58
             WHITESPACE@57..58 " "
           EquationBinders@58..58
-          EquationUnconditional@58..64
+          Unconditional@58..64
             EQUAL@58..59 "="
             Comment@59..60
               WHITESPACE@59..60 " "
-            EquationWhere@60..64
+            WhereExpression@60..64
               ExpressionOperatorName@60..64
                 OPERATOR_NAME@60..63 "(:)"
                 Comment@63..64

@@ -25,11 +25,11 @@ snapshot_kind: text
           Comment@41..42
             WHITESPACE@41..42 " "
           EquationBinders@42..42
-          EquationUnconditional@42..59
+          Unconditional@42..59
             EQUAL@42..43 "="
             Comment@43..44
               WHITESPACE@43..44 " "
-            EquationWhere@44..59
+            WhereExpression@44..59
               ExpressionVariable@44..59
                 QualifiedName@44..59
                   PREFIX@44..54 "Data.List."
@@ -42,11 +42,11 @@ snapshot_kind: text
           Comment@67..68
             WHITESPACE@67..68 " "
           EquationBinders@68..68
-          EquationUnconditional@68..85
+          Unconditional@68..85
             EQUAL@68..69 "="
             Comment@69..70
               WHITESPACE@69..70 " "
-            EquationWhere@70..85
+            WhereExpression@70..85
               ExpressionConstructor@70..85
                 QualifiedName@70..85
                   PREFIX@70..80 "Data.List."
@@ -59,11 +59,11 @@ snapshot_kind: text
           Comment@93..94
             WHITESPACE@93..94 " "
           EquationBinders@94..94
-          EquationUnconditional@94..110
+          Unconditional@94..110
             EQUAL@94..95 "="
             Comment@95..96
               WHITESPACE@95..96 " "
-            EquationWhere@96..110
+            WhereExpression@96..110
               ExpressionOperatorName@96..110
                 QualifiedName@96..110
                   PREFIX@96..106 "Data.List."

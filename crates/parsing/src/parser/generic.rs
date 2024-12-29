@@ -32,22 +32,22 @@ pub(super) fn annotation_or_equation(p: &mut Parser, a: SyntaxKind, e: SyntaxKin
         types::ty(p);
         m.end(p, a);
     } else {
-        binders_list(p, s);
-        equation_unconditional_or_conditionals(p, s);
+        equation_binders(p, s);
+        unconditional_or_conditionals(p, s);
         m.end(p, e);
     }
 }
 
-const BINDERS_LIST_RECOVERY: TokenSet =
+const EQUATION_BINDERS_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
-pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
+pub(super) fn equation_binders(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     while !p.at(s) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
         if p.at_in(binders::BINDER_ATOM_START) {
             binders::binder_atom(p);
         } else {
-            if p.at_in(BINDERS_LIST_RECOVERY) {
+            if p.at_in(EQUATION_BINDERS_RECOVERY) {
                 break;
             }
             p.error_recover("Invalid token");
@@ -56,41 +56,41 @@ pub(super) fn binders_list(p: &mut Parser, s: SyntaxKind) {
     m.end(p, SyntaxKind::EquationBinders);
 }
 
-pub(super) fn equation_unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
+pub(super) fn unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     if p.eat(s) {
-        equation_where(p);
-        m.end(p, SyntaxKind::EquationUnconditional);
+        where_expression(p);
+        m.end(p, SyntaxKind::Unconditional);
     } else if p.at(SyntaxKind::PIPE) {
-        equation_conditionals(p, s);
-        m.end(p, SyntaxKind::EquationConditionals);
+        conditionals(p, s);
+        m.end(p, SyntaxKind::Conditionals);
     } else {
         m.cancel(p);
     }
 }
 
-fn equation_where(p: &mut Parser) {
+fn where_expression(p: &mut Parser) {
     let mut m = p.start();
     expressions::expression(p);
     if p.eat(SyntaxKind::WHERE) {
         binding::bindings(p);
     }
-    m.end(p, SyntaxKind::EquationWhere);
+    m.end(p, SyntaxKind::WhereExpression);
 }
 
-fn equation_conditionals(p: &mut Parser, s: SyntaxKind) {
+fn conditionals(p: &mut Parser, s: SyntaxKind) {
     while p.at(SyntaxKind::PIPE) && !p.at_eof() {
-        equation_guarded(p, s);
+        pattern_guarded(p, s);
     }
 }
 
-fn equation_guarded(p: &mut Parser, s: SyntaxKind) {
+fn pattern_guarded(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
     p.expect(SyntaxKind::PIPE);
     pattern_guards(p, s);
     p.expect(s);
-    equation_where(p);
-    m.end(p, SyntaxKind::EquationGuarded);
+    where_expression(p);
+    m.end(p, SyntaxKind::PatternGuarded);
 }
 
 fn pattern_guards(p: &mut Parser, s: SyntaxKind) {

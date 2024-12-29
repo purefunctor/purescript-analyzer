@@ -29,11 +29,11 @@ snapshot_kind: text
               TRUE@36..40 "true"
               Comment@40..41
                 WHITESPACE@40..41 " "
-          EquationUnconditional@41..45
+          Unconditional@41..45
             EQUAL@41..42 "="
             Comment@42..43
               WHITESPACE@42..43 " "
-            EquationWhere@43..45
+            WhereExpression@43..45
               ExpressionInteger@43..45
                 INTEGER@43..44 "0"
                 Comment@44..45
@@ -48,11 +48,11 @@ snapshot_kind: text
               FALSE@53..58 "false"
               Comment@58..59
                 WHITESPACE@58..59 " "
-          EquationUnconditional@59..63
+          Unconditional@59..63
             EQUAL@59..60 "="
             Comment@60..61
               WHITESPACE@60..61 " "
-            EquationWhere@61..63
+            WhereExpression@61..63
               ExpressionInteger@61..63
                 INTEGER@61..62 "0"
                 Comment@62..63

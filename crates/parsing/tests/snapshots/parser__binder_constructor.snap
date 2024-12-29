@@ -41,11 +41,11 @@ snapshot_kind: text
               RIGHT_PARENTHESIS@54..55 ")"
               Comment@55..56
                 WHITESPACE@55..56 " "
-          EquationUnconditional@56..60
+          Unconditional@56..60
             EQUAL@56..57 "="
             Comment@57..58
               WHITESPACE@57..58 " "
-            EquationWhere@58..60
+            WhereExpression@58..60
               ExpressionInteger@58..60
                 INTEGER@58..59 "0"
                 Comment@59..60
@@ -61,11 +61,11 @@ snapshot_kind: text
                 UPPER@72..75 "Nil"
                 Comment@75..76
                   WHITESPACE@75..76 " "
-          EquationUnconditional@76..81
+          Unconditional@76..81
             EQUAL@76..77 "="
             Comment@77..78
               WHITESPACE@77..78 " "
-            EquationWhere@78..81
+            WhereExpression@78..81
               ExpressionInteger@78..81
                 INTEGER@78..79 "0"
                 Comment@79..81
@@ -93,11 +93,11 @@ snapshot_kind: text
               RIGHT_PARENTHESIS@108..109 ")"
               Comment@109..110
                 WHITESPACE@109..110 " "
-          EquationUnconditional@110..114
+          Unconditional@110..114
             EQUAL@110..111 "="
             Comment@111..112
               WHITESPACE@111..112 " "
-            EquationWhere@112..114
+            WhereExpression@112..114
               ExpressionInteger@112..114
                 INTEGER@112..113 "0"
                 Comment@113..114
@@ -114,11 +114,11 @@ snapshot_kind: text
                 UPPER@131..134 "Nil"
                 Comment@134..135
                   WHITESPACE@134..135 " "
-          EquationUnconditional@135..139
+          Unconditional@135..139
             EQUAL@135..136 "="
             Comment@136..137
               WHITESPACE@136..137 " "
-            EquationWhere@137..139
+            WhereExpression@137..139
               ExpressionInteger@137..139
                 INTEGER@137..138 "0"
                 Comment@138..139
