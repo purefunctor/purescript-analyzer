@@ -233,6 +233,9 @@ pub enum SyntaxKind {
     ClassStatements,
     ClassMemberStatement,
 
+    ForeignImportDataDeclaration,
+    ForeignImportValueDeclaration,
+
     #[doc(hidden)]
     __LAST,
 }

@@ -1,0 +1,76 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..96
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..21
+          UPPER@7..20 "ForeignImport"
+          Comment@20..21
+            WHITESPACE@20..21 " "
+        ModuleExportList@21..21
+        WHERE@21..26 "where"
+        Comment@26..28
+          WHITESPACE@26..28 "\n\n"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..96
+        ForeignImportDataDeclaration@28..61
+          FOREIGN@28..35 "foreign"
+          Comment@35..36
+            WHITESPACE@35..36 " "
+          IMPORT@36..42 "import"
+          Comment@42..43
+            WHITESPACE@42..43 " "
+          DATA@43..47 "data"
+          Comment@47..48
+            WHITESPACE@47..48 " "
+          UPPER@48..52 "Type"
+          Comment@52..53
+            WHITESPACE@52..53 " "
+          DOUBLE_COLON@53..55 "::"
+          Comment@55..56
+            WHITESPACE@55..56 " "
+          TypeConstructor@56..61
+            QualifiedName@56..61
+              UPPER@56..60 "Type"
+              Comment@60..61
+                WHITESPACE@60..61 "\n"
+        LAYOUT_SEPARATOR@61..61 ""
+        ForeignImportValueDeclaration@61..96
+          FOREIGN@61..68 "foreign"
+          Comment@68..69
+            WHITESPACE@68..69 " "
+          IMPORT@69..75 "import"
+          Comment@75..76
+            WHITESPACE@75..76 " "
+          LOWER@76..81 "value"
+          Comment@81..82
+            WHITESPACE@81..82 " "
+          DOUBLE_COLON@82..84 "::"
+          Comment@84..85
+            WHITESPACE@84..85 " "
+          TypeArrow@85..96
+            TypeConstructor@85..89
+              QualifiedName@85..89
+                UPPER@85..88 "Int"
+                Comment@88..89
+                  WHITESPACE@88..89 " "
+            RIGHT_ARROW@89..91 "->"
+            Comment@91..92
+              WHITESPACE@91..92 " "
+            TypeConstructor@92..96
+              QualifiedName@92..96
+                UPPER@92..95 "Int"
+                Comment@95..96
+                  WHITESPACE@95..96 "\n"
+      LAYOUT_END@96..96 ""
+      END_OF_FILE@96..96 ""
+    ,
+    [],
+)

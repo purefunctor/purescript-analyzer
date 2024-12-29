@@ -8,6 +8,7 @@ mod types;
 use std::{cell::Cell, mem, sync::Arc};
 
 use drop_bomb::DropBomb;
+use names::LOWER_NON_RESERVED;
 use syntax::{SyntaxKind, TokenSet};
 
 use crate::builder::Output;
@@ -481,6 +482,8 @@ fn module_statement(p: &mut Parser) {
         synonym_annotation_or_equation(p);
     } else if p.at(SyntaxKind::CLASS) {
         class_annotation_or_equation(p);
+    } else if p.at(SyntaxKind::FOREIGN) {
+        foreign_import(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -712,4 +715,20 @@ fn type_variable_binding(p: &mut Parser) {
     }
 
     m.end(p, SyntaxKind::TypeVariableBinding);
+}
+
+fn foreign_import(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::FOREIGN);
+    p.expect(SyntaxKind::IMPORT);
+    let k = if p.eat(SyntaxKind::DATA) {
+        p.expect(SyntaxKind::UPPER);
+        SyntaxKind::ForeignImportDataDeclaration
+    } else {
+        p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+        SyntaxKind::ForeignImportValueDeclaration
+    };
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    types::type_(p);
+    m.end(p, k);
 }
