@@ -168,7 +168,7 @@ fn ty_variable_binding(p: &mut Parser) {
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
 
     p.eat(SyntaxKind::AT);
-    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected names::LOWER_NON_RESERVED");
+    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         ty(p);

@@ -1,0 +1,100 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..108
+      ModuleHeader@0..31
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "InfixDeclaration"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..24
+        WHERE@24..29 "where"
+        Comment@29..31
+          WHITESPACE@29..31 "\n\n"
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..108
+        InfixDeclaration@31..48
+          INFIX@31..36 "infix"
+          Comment@36..37
+            WHITESPACE@36..37 " "
+          INTEGER@37..38 "5"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          QualifiedName@39..43
+            LOWER@39..42 "add"
+            Comment@42..43
+              WHITESPACE@42..43 " "
+          AS@43..45 "as"
+          Comment@45..46
+            WHITESPACE@45..46 " "
+          OPERATOR@46..47 "+"
+          Comment@47..48
+            WHITESPACE@47..48 "\n"
+        LAYOUT_SEPARATOR@48..48 ""
+        InfixDeclaration@48..66
+          INFIX@48..53 "infix"
+          Comment@53..54
+            WHITESPACE@53..54 " "
+          INTEGER@54..55 "5"
+          Comment@55..56
+            WHITESPACE@55..56 " "
+          QualifiedName@56..60
+            UPPER@56..59 "Add"
+            Comment@59..60
+              WHITESPACE@59..60 " "
+          AS@60..62 "as"
+          Comment@62..63
+            WHITESPACE@62..63 " "
+          OPERATOR@63..64 "+"
+          Comment@64..66
+            WHITESPACE@64..66 "\n\n"
+        LAYOUT_SEPARATOR@66..66 ""
+        InfixDeclaration@66..87
+          INFIX@66..71 "infix"
+          Comment@71..72
+            WHITESPACE@71..72 " "
+          INTEGER@72..73 "5"
+          Comment@73..74
+            WHITESPACE@73..74 " "
+          QualifiedName@74..82
+            PREFIX@74..78 "Add."
+            LOWER@78..81 "add"
+            Comment@81..82
+              WHITESPACE@81..82 " "
+          AS@82..84 "as"
+          Comment@84..85
+            WHITESPACE@84..85 " "
+          OPERATOR@85..86 "+"
+          Comment@86..87
+            WHITESPACE@86..87 "\n"
+        LAYOUT_SEPARATOR@87..87 ""
+        InfixDeclaration@87..108
+          INFIX@87..92 "infix"
+          Comment@92..93
+            WHITESPACE@92..93 " "
+          INTEGER@93..94 "5"
+          Comment@94..95
+            WHITESPACE@94..95 " "
+          QualifiedName@95..103
+            PREFIX@95..99 "Add."
+            UPPER@99..102 "Add"
+            Comment@102..103
+              WHITESPACE@102..103 " "
+          AS@103..105 "as"
+          Comment@105..106
+            WHITESPACE@105..106 " "
+          OPERATOR@106..107 "+"
+          Comment@107..108
+            WHITESPACE@107..108 "\n"
+      LAYOUT_END@108..108 ""
+      END_OF_FILE@108..108 ""
+    ,
+    [],
+)

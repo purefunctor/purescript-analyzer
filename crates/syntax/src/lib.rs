@@ -219,6 +219,8 @@ pub enum SyntaxKind {
     RecordUpdateLeaf,
     RecordUpdateBranch,
 
+    InfixDeclaration,
+
     #[doc(hidden)]
     __LAST,
 }

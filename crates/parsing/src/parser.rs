@@ -467,6 +467,8 @@ fn import_alias(p: &mut Parser) {
 fn module_statement(p: &mut Parser) {
     if p.at_in(names::LOWER_NON_RESERVED) {
         value_annotation_or_equation(p);
+    } else if p.at_in(INFIX_KEYWORD) {
+        infix_declaration(p);
     }
 }
 
@@ -477,4 +479,36 @@ fn value_annotation_or_equation(p: &mut Parser) {
         SyntaxKind::ValueEquation,
         SyntaxKind::EQUAL,
     );
+}
+
+const INFIX_KEYWORD: TokenSet =
+    TokenSet::new(&[SyntaxKind::INFIX, SyntaxKind::INFIXL, SyntaxKind::INFIXR]);
+
+fn infix_declaration(p: &mut Parser) {
+    let mut m = p.start();
+
+    if p.at_in(INFIX_KEYWORD) {
+        p.consume();
+    } else {
+        p.error("Expected INFIX_KEYWORD");
+    }
+
+    p.expect(SyntaxKind::INTEGER);
+
+    let mut n = p.start();
+    p.eat(SyntaxKind::PREFIX);
+    if !(p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) || p.eat(SyntaxKind::UPPER)) {
+        p.error("Expected LOWER_NON_RESERVED or UPPER");
+    }
+    n.end(p, SyntaxKind::QualifiedName);
+
+    p.expect(SyntaxKind::AS);
+
+    p.expect_in(
+        names::OPERATOR_NON_RESERVED,
+        SyntaxKind::OPERATOR,
+        "Expected OPERATOR_NON_RESERVED",
+    );
+
+    m.end(p, SyntaxKind::InfixDeclaration);
 }
