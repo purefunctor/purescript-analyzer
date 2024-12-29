@@ -273,10 +273,7 @@ fn do_statement(p: &mut Parser) {
     if p.at(SyntaxKind::LET) {
         do_statement_let(p);
     } else {
-        let c = p.checkpoint();
-        let bind = c.branch(p, do_statement_bind);
-        let discard = c.branch(p, do_statement_discard);
-        p.decide([bind, discard]);
+        p.alternative([do_statement_bind, do_statement_discard]);
     }
 }
 

@@ -118,10 +118,7 @@ const PATTERN_GUARD_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
 fn pattern_guard(p: &mut Parser) {
-    let c = p.checkpoint();
-    let binder = c.branch(p, pattern_guard_binder);
-    let expression = c.branch(p, pattern_guard_expression);
-    p.decide([binder, expression]);
+    p.alternative([pattern_guard_binder, pattern_guard_expression]);
 }
 
 fn pattern_guard_binder(p: &mut Parser) {

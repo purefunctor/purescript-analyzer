@@ -20,6 +20,8 @@ pub(crate) struct Parser<'t> {
     fuel: Cell<u8>,
 }
 
+type Rule = fn(&mut Parser);
+
 impl<'t> Parser<'t> {
     pub(crate) fn new(tokens: &'t [SyntaxKind]) -> Parser<'t> {
         let index = 0;
@@ -53,37 +55,49 @@ impl<'t> Parser<'t> {
         NodeMarker::new(index)
     }
 
-    fn checkpoint(&self) -> NodeCheckpoint {
-        NodeCheckpoint::new(self.index)
-    }
+    fn optional(&mut self, rule: Rule) {
+        let initial_index = self.index;
+        let initial_output = mem::take(&mut self.output);
 
-    fn decide(&mut self, mut branches: impl AsMut<[CheckpointBranch]>) {
-        let branch = branches
-            .as_mut()
-            .iter_mut()
-            .filter(|branch| branch.finished)
-            .max_by_key(|branch| branch.index);
-        if let Some(branch) = branch {
-            self.index = branch.index;
-            self.output.append(&mut branch.output);
-        } else {
-            let branch = branches
-                .as_mut()
-                .iter_mut()
-                .max_by_key(|branch| branch.index)
-                .expect("invariant violated: at least one branch");
-            self.index = branch.index;
-            self.output.append(&mut branch.output);
+        rule(self);
+
+        let index = mem::replace(&mut self.index, initial_index);
+        let mut output = mem::replace(&mut self.output, initial_output);
+
+        if output.iter().all(|event| !matches!(event, Output::Error { .. })) {
+            self.index = index;
+            self.output.append(&mut output);
         }
     }
 
-    fn optional(&mut self, f: impl FnOnce(&mut Parser)) {
-        let checkpoint = self.checkpoint();
-        let mut branch = checkpoint.branch(self, f);
-        if branch.finished {
-            self.index = branch.index;
-            self.output.append(&mut branch.output);
+    fn alternative(&mut self, rules: impl IntoIterator<Item = Rule>) {
+        let initial_index = self.index;
+        let initial_output = mem::take(&mut self.output);
+
+        let mut fallback = None;
+        let mut selected = None;
+
+        for rule in rules.into_iter() {
+            rule(self);
+
+            let index = mem::replace(&mut self.index, initial_index);
+            let output = mem::take(&mut self.output);
+
+            if output.iter().all(|event| !matches!(event, Output::Error { .. })) {
+                selected = Some((index, output));
+                break;
+            } else if fallback.is_none() {
+                fallback = Some((index, output));
+                continue;
+            }
         }
+
+        let (index, mut output) =
+            selected.or(fallback).expect("invariant violated: at least one branch");
+
+        self.index = index;
+        self.output = initial_output;
+        self.output.append(&mut output);
     }
 
     fn error(&mut self, message: impl Into<Arc<str>>) {
@@ -177,39 +191,6 @@ impl NodeMarker {
                 _ => unreachable!(),
             }
         }
-    }
-}
-
-struct NodeCheckpoint {
-    index: usize,
-}
-
-impl NodeCheckpoint {
-    fn new(index: usize) -> NodeCheckpoint {
-        NodeCheckpoint { index }
-    }
-
-    fn branch(&self, p: &mut Parser, f: impl FnOnce(&mut Parser)) -> CheckpointBranch {
-        p.index = self.index;
-        let before = mem::take(&mut p.output);
-        f(p);
-        let index = p.index;
-        let output = mem::replace(&mut p.output, before);
-        p.index = self.index;
-        CheckpointBranch::new(index, output)
-    }
-}
-
-struct CheckpointBranch {
-    index: usize,
-    output: Vec<Output>,
-    finished: bool,
-}
-
-impl CheckpointBranch {
-    fn new(index: usize, output: Vec<Output>) -> CheckpointBranch {
-        let finished = output.iter().all(|event| !matches!(event, Output::Error { .. }));
-        CheckpointBranch { index, output, finished }
     }
 }
 
@@ -547,10 +528,7 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
 }
 
 fn class_annotation_or_equation(p: &mut Parser) {
-    let c = p.checkpoint();
-    let annotation = c.branch(p, class_annotation);
-    let equation = c.branch(p, class_equation);
-    p.decide([annotation, equation]);
+    p.alternative([class_annotation, class_equation]);
 }
 
 fn class_annotation(p: &mut Parser) {
