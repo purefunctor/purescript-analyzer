@@ -819,11 +819,14 @@ fn data_constructor(p: &mut Parser) {
 const TYPE_VARIABLE_BINDING_START: TokenSet =
     TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER);
 
+const TYPE_VARIABLE_BINDING_END: TokenSet =
+    TokenSet::new(&[SyntaxKind::EQUAL, SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
 fn type_variable_bindings(p: &mut Parser) {
-    while !p.at(SyntaxKind::EQUAL) && !p.at_eof() {
+    while !p.at_in(TYPE_VARIABLE_BINDING_END) && !p.at_eof() {
         if p.at_in(TYPE_VARIABLE_BINDING_START) {
             type_variable_binding(p);
         } else {

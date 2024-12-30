@@ -1,0 +1,58 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..73
+      ModuleHeader@0..44
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..37
+          UPPER@7..36 "DataDeclarationEmptyV ..."
+          Comment@36..37
+            WHITESPACE@36..37 " "
+        ModuleExportList@37..37
+        WHERE@37..42 "where"
+        Comment@42..44
+          WHITESPACE@42..44 "\n\n"
+      LAYOUT_START@44..44 ""
+      ModuleImports@44..44
+      ModuleStatements@44..73
+        DataEquation@44..58
+          DATA@44..48 "data"
+          Comment@48..49
+            WHITESPACE@48..49 " "
+          UPPER@49..53 "Left"
+          Comment@53..54
+            WHITESPACE@53..54 " "
+          TypeVariableBinding@54..56
+            LOWER@54..55 "a"
+            Comment@55..56
+              WHITESPACE@55..56 " "
+          TypeVariableBinding@56..58
+            LOWER@56..57 "b"
+            Comment@57..58
+              WHITESPACE@57..58 "\n"
+        LAYOUT_SEPARATOR@58..58 ""
+        DataEquation@58..73
+          DATA@58..62 "data"
+          Comment@62..63
+            WHITESPACE@62..63 " "
+          UPPER@63..68 "Right"
+          Comment@68..69
+            WHITESPACE@68..69 " "
+          TypeVariableBinding@69..71
+            LOWER@69..70 "a"
+            Comment@70..71
+              WHITESPACE@70..71 " "
+          TypeVariableBinding@71..73
+            LOWER@71..72 "b"
+            Comment@72..73
+              WHITESPACE@72..73 "\n"
+      LAYOUT_END@73..73 ""
+      END_OF_FILE@73..73 ""
+    ,
+    [],
+)
