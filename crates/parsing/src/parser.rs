@@ -793,8 +793,9 @@ fn data_signature_or_equation(p: &mut Parser) {
         m.end(p, SyntaxKind::DataSignature);
     } else {
         type_variable_bindings(p);
-        p.expect(SyntaxKind::EQUAL);
-        data_constructors(p);
+        if p.eat(SyntaxKind::EQUAL) {
+            data_constructors(p);
+        }
         m.end(p, SyntaxKind::DataEquation);
     }
 }
