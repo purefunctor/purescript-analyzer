@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@30..34 "main"
           Comment@34..35
             WHITESPACE@34..35 " "
-          EquationBinders@35..35
+          FunctionBinders@35..35
           Unconditional@35..56
             EQUAL@35..36 "="
             Comment@36..37
@@ -46,7 +46,7 @@ snapshot_kind: text
                         LOWER@46..50 "life"
                         Comment@50..51
                           WHITESPACE@50..51 " "
-                        EquationBinders@51..51
+                        FunctionBinders@51..51
                         Unconditional@51..56
                           EQUAL@51..52 "="
                           Comment@52..53

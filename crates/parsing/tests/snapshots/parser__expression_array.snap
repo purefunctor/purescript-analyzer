@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@30..35 "array"
           Comment@35..36
             WHITESPACE@35..36 " "
-          EquationBinders@36..36
+          FunctionBinders@36..36
           Unconditional@36..41
             EQUAL@36..37 "="
             Comment@37..38
@@ -40,7 +40,7 @@ snapshot_kind: text
           LOWER@41..46 "array"
           Comment@46..47
             WHITESPACE@46..47 " "
-          EquationBinders@47..47
+          FunctionBinders@47..47
           Unconditional@47..53
             EQUAL@47..48 "="
             Comment@48..49
@@ -58,7 +58,7 @@ snapshot_kind: text
           LOWER@53..58 "array"
           Comment@58..59
             WHITESPACE@58..59 " "
-          EquationBinders@59..59
+          FunctionBinders@59..59
           Unconditional@59..71
             EQUAL@59..60 "="
             Comment@60..61

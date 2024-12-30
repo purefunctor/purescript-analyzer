@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@27..33 "record"
           Comment@33..34
             WHITESPACE@33..34 " "
-          EquationBinders@34..37
+          FunctionBinders@34..37
             BinderRecord@34..37
               LEFT_CURLY@34..35 "{"
               RIGHT_CURLY@35..36 "}"
@@ -44,7 +44,7 @@ snapshot_kind: text
           LOWER@41..47 "record"
           Comment@47..48
             WHITESPACE@47..48 " "
-          EquationBinders@48..52
+          FunctionBinders@48..52
             BinderRecord@48..52
               LEFT_CURLY@48..49 "{"
               RecordPun@49..50
@@ -67,7 +67,7 @@ snapshot_kind: text
           LOWER@56..62 "record"
           Comment@62..63
             WHITESPACE@62..63 " "
-          EquationBinders@63..70
+          FunctionBinders@63..70
             BinderRecord@63..70
               LEFT_CURLY@63..64 "{"
               RecordPun@64..65
@@ -96,7 +96,7 @@ snapshot_kind: text
           LOWER@74..80 "record"
           Comment@80..81
             WHITESPACE@80..81 " "
-          EquationBinders@81..94
+          FunctionBinders@81..94
             BinderRecord@81..94
               LEFT_CURLY@81..82 "{"
               RecordField@82..86
@@ -135,7 +135,7 @@ snapshot_kind: text
           LOWER@98..104 "record"
           Comment@104..105
             WHITESPACE@104..105 " "
-          EquationBinders@105..124
+          FunctionBinders@105..124
             BinderRecord@105..124
               LEFT_CURLY@105..106 "{"
               RecordPun@106..107

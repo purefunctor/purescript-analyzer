@@ -63,7 +63,7 @@ snapshot_kind: text
           LOWER@90..94 "name"
           Comment@94..95
             WHITESPACE@94..95 " "
-          EquationBinders@95..95
+          FunctionBinders@95..95
           Unconditional@95..102
             EQUAL@95..96 "="
             Comment@96..97
@@ -78,7 +78,7 @@ snapshot_kind: text
           LOWER@102..110 "operator"
           Comment@110..111
             WHITESPACE@110..111 " "
-          EquationBinders@111..111
+          FunctionBinders@111..111
           Unconditional@111..120
             EQUAL@111..112 "="
             Comment@112..113

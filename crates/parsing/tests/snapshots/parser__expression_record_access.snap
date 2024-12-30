@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@37..43 "access"
           Comment@43..44
             WHITESPACE@43..44 " "
-          EquationBinders@44..44
+          FunctionBinders@44..44
           Unconditional@44..57
             EQUAL@44..45 "="
             Comment@45..46
@@ -43,7 +43,7 @@ snapshot_kind: text
           LOWER@57..63 "access"
           Comment@63..64
             WHITESPACE@63..64 " "
-          EquationBinders@64..64
+          FunctionBinders@64..64
           Unconditional@64..82
             EQUAL@64..65 "="
             Comment@65..66
@@ -65,7 +65,7 @@ snapshot_kind: text
           LOWER@82..89 "keyword"
           Comment@89..90
             WHITESPACE@89..90 " "
-          EquationBinders@90..90
+          FunctionBinders@90..90
           Unconditional@90..106
             EQUAL@90..91 "="
             Comment@91..92
@@ -84,7 +84,7 @@ snapshot_kind: text
           LOWER@106..113 "keyword"
           Comment@113..114
             WHITESPACE@113..114 " "
-          EquationBinders@114..114
+          FunctionBinders@114..114
           Unconditional@114..138
             EQUAL@114..115 "="
             Comment@115..116
@@ -106,7 +106,7 @@ snapshot_kind: text
           LOWER@138..144 "string"
           Comment@144..145
             WHITESPACE@144..145 " "
-          EquationBinders@145..145
+          FunctionBinders@145..145
           Unconditional@145..162
             EQUAL@145..146 "="
             Comment@146..147
@@ -125,7 +125,7 @@ snapshot_kind: text
           LOWER@162..168 "string"
           Comment@168..169
             WHITESPACE@168..169 " "
-          EquationBinders@169..169
+          FunctionBinders@169..169
           Unconditional@169..195
             EQUAL@169..170 "="
             Comment@170..171
@@ -147,7 +147,7 @@ snapshot_kind: text
           LOWER@195..205 "raw_string"
           Comment@205..206
             WHITESPACE@205..206 " "
-          EquationBinders@206..206
+          FunctionBinders@206..206
           Unconditional@206..227
             EQUAL@206..207 "="
             Comment@207..208
@@ -166,7 +166,7 @@ snapshot_kind: text
           LOWER@227..237 "raw_string"
           Comment@237..238
             WHITESPACE@237..238 " "
-          EquationBinders@238..238
+          FunctionBinders@238..238
           Unconditional@238..273
             EQUAL@238..239 "="
             Comment@239..240

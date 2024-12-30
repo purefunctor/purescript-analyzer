@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@25..29 "char"
           Comment@29..30
             WHITESPACE@29..30 " "
-          EquationBinders@30..34
+          FunctionBinders@30..34
             BinderChar@30..34
               CHAR@30..33 "'a'"
               Comment@33..34

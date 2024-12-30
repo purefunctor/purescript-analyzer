@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@29..37 "wildcard"
           Comment@37..38
             WHITESPACE@37..38 " "
-          EquationBinders@38..40
+          FunctionBinders@38..40
             BinderWildcard@38..40
               UNDERSCORE@38..39 "_"
               Comment@39..40

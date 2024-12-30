@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@32..39 "section"
           Comment@39..40
             WHITESPACE@39..40 " "
-          EquationBinders@40..40
+          FunctionBinders@40..40
           Unconditional@40..44
             EQUAL@40..41 "="
             Comment@41..42

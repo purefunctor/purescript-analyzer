@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@27..33 "string"
           Comment@33..34
             WHITESPACE@33..34 " "
-          EquationBinders@34..42
+          FunctionBinders@34..42
             BinderString@34..42
               STRING@34..41 "\"hello\""
               Comment@41..42
@@ -43,7 +43,7 @@ snapshot_kind: text
           LOWER@46..52 "string"
           Comment@52..53
             WHITESPACE@52..53 " "
-          EquationBinders@53..65
+          FunctionBinders@53..65
             BinderString@53..65
               RAW_STRING@53..64 "\"\"\"hello\"\"\""
               Comment@64..65

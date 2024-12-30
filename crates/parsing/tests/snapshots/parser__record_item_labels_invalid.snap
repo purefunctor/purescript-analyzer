@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@31..38 "invalid"
           Comment@38..39
             WHITESPACE@38..39 " "
-          EquationBinders@39..51
+          FunctionBinders@39..51
             BinderRecord@39..51
               LEFT_CURLY@39..40 "{"
               Comment@40..41
@@ -61,7 +61,7 @@ snapshot_kind: text
           LOWER@65..72 "invalid"
           Comment@72..73
             WHITESPACE@72..73 " "
-          EquationBinders@73..84
+          FunctionBinders@73..84
             BinderRecord@73..84
               LEFT_CURLY@73..74 "{"
               Comment@74..75
@@ -98,7 +98,7 @@ snapshot_kind: text
           LOWER@97..104 "invalid"
           Comment@104..105
             WHITESPACE@104..105 " "
-          EquationBinders@105..121
+          FunctionBinders@105..121
             BinderRecord@105..121
               LEFT_CURLY@105..106 "{"
               Comment@106..107

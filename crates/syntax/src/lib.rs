@@ -122,7 +122,7 @@ pub enum SyntaxKind {
 
     ValueSignature,
     ValueEquation,
-    EquationBinders,
+    FunctionBinders,
 
     Unconditional,
     WhereExpression,

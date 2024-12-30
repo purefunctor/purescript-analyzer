@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@39..40 "f"
           Comment@40..41
             WHITESPACE@40..41 " "
-          EquationBinders@41..47
+          FunctionBinders@41..47
             BinderVariable@41..43
               LOWER@41..42 "a"
               Comment@42..43

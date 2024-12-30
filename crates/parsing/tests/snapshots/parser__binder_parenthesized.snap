@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@34..47 "parenthesized"
           Comment@47..48
             WHITESPACE@47..48 " "
-          EquationBinders@48..52
+          FunctionBinders@48..52
             BinderParenthesized@48..52
               LEFT_PARENTHESIS@48..49 "("
               BinderVariable@49..50
@@ -46,7 +46,7 @@ snapshot_kind: text
           LOWER@56..69 "parenthesized"
           Comment@69..70
             WHITESPACE@69..70 " "
-          EquationBinders@70..78
+          FunctionBinders@70..78
             BinderParenthesized@70..78
               LEFT_PARENTHESIS@70..71 "("
               BinderOperatorChain@71..76
@@ -76,7 +76,7 @@ snapshot_kind: text
           LOWER@82..95 "parenthesized"
           Comment@95..96
             WHITESPACE@95..96 " "
-          EquationBinders@96..104
+          FunctionBinders@96..104
             BinderParenthesized@96..104
               LEFT_PARENTHESIS@96..97 "("
               BinderParenthesized@97..102

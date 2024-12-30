@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@32..43 "constructor"
           Comment@43..44
             WHITESPACE@43..44 " "
-          EquationBinders@44..56
+          FunctionBinders@44..56
             BinderParenthesized@44..56
               LEFT_PARENTHESIS@44..45 "("
               BinderConstructor@45..54
@@ -55,7 +55,7 @@ snapshot_kind: text
           LOWER@60..71 "constructor"
           Comment@71..72
             WHITESPACE@71..72 " "
-          EquationBinders@72..76
+          FunctionBinders@72..76
             BinderConstructor@72..76
               QualifiedName@72..76
                 UPPER@72..75 "Nil"
@@ -75,7 +75,7 @@ snapshot_kind: text
           LOWER@81..92 "constructor"
           Comment@92..93
             WHITESPACE@92..93 " "
-          EquationBinders@93..110
+          FunctionBinders@93..110
             BinderParenthesized@93..110
               LEFT_PARENTHESIS@93..94 "("
               BinderConstructor@94..108
@@ -107,7 +107,7 @@ snapshot_kind: text
           LOWER@114..125 "constructor"
           Comment@125..126
             WHITESPACE@125..126 " "
-          EquationBinders@126..135
+          FunctionBinders@126..135
             BinderConstructor@126..135
               QualifiedName@126..135
                 PREFIX@126..131 "List."

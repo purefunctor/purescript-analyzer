@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@28..29 "p"
           Comment@29..30
             WHITESPACE@29..30 " "
-          EquationBinders@30..34
+          FunctionBinders@30..34
             BinderVariable@30..32
               LOWER@30..31 "a"
               Comment@31..32
@@ -59,7 +59,7 @@ snapshot_kind: text
                   LOWER@54..56 "a2"
                   Comment@56..57
                     WHITESPACE@56..57 " "
-                  EquationBinders@57..57
+                  FunctionBinders@57..57
                   Unconditional@57..67
                     EQUAL@57..58 "="
                     Comment@58..59
@@ -82,7 +82,7 @@ snapshot_kind: text
                   LOWER@67..69 "b2"
                   Comment@69..70
                     WHITESPACE@69..70 " "
-                  EquationBinders@70..70
+                  FunctionBinders@70..70
                   Unconditional@70..78
                     EQUAL@70..71 "="
                     Comment@71..72

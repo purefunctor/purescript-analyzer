@@ -159,9 +159,11 @@ fn expression_let(p: &mut Parser, mut m: NodeMarker) {
     m.end(p, SyntaxKind::ExpressionLetIn);
 }
 
+const LAMBDA_BINDERS_END: TokenSet = TokenSet::new(&[SyntaxKind::RIGHT_ARROW]);
+
 fn expression_lambda(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::BACKSLASH);
-    generic::equation_binders(p, SyntaxKind::RIGHT_ARROW);
+    generic::function_binders(p, LAMBDA_BINDERS_END);
     p.expect(SyntaxKind::RIGHT_ARROW);
     expression(p);
     m.end(p, SyntaxKind::ExpressionLambda);

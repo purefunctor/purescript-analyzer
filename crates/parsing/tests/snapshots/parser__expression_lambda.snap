@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@31..37 "lambda"
           Comment@37..38
             WHITESPACE@37..38 " "
-          EquationBinders@38..38
+          FunctionBinders@38..38
           Unconditional@38..48
             EQUAL@38..39 "="
             Comment@39..40
@@ -32,7 +32,7 @@ snapshot_kind: text
             WhereExpression@40..48
               ExpressionLambda@40..48
                 BACKSLASH@40..41 "\\"
-                EquationBinders@41..43
+                FunctionBinders@41..43
                   BinderVariable@41..43
                     LOWER@41..42 "x"
                     Comment@42..43
@@ -49,7 +49,7 @@ snapshot_kind: text
           LOWER@48..54 "lambda"
           Comment@54..55
             WHITESPACE@54..55 " "
-          EquationBinders@55..55
+          FunctionBinders@55..55
           Unconditional@55..69
             EQUAL@55..56 "="
             Comment@56..57
@@ -57,7 +57,7 @@ snapshot_kind: text
             WhereExpression@57..69
               ExpressionLambda@57..69
                 BACKSLASH@57..58 "\\"
-                EquationBinders@58..62
+                FunctionBinders@58..62
                   BinderVariable@58..60
                     LOWER@58..59 "f"
                     Comment@59..60

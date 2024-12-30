@@ -25,6 +25,8 @@ pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
     m.end(p, SyntaxKind::RecordField);
 }
 
+const EQUATION_BINDERS_END: TokenSet = TokenSet::new(&[SyntaxKind::EQUAL, SyntaxKind::PIPE]);
+
 pub(super) fn signature_or_equation(p: &mut Parser, s: SyntaxKind, e: SyntaxKind) {
     let mut m = p.start();
     p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
@@ -32,28 +34,28 @@ pub(super) fn signature_or_equation(p: &mut Parser, s: SyntaxKind, e: SyntaxKind
         types::type_(p);
         m.end(p, s);
     } else {
-        equation_binders(p, SyntaxKind::EQUAL);
+        function_binders(p, EQUATION_BINDERS_END);
         unconditional_or_conditionals(p, SyntaxKind::EQUAL);
         m.end(p, e);
     }
 }
 
-const EQUATION_BINDERS_RECOVERY: TokenSet =
+const FUNCTION_BINDERS_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
-pub(super) fn equation_binders(p: &mut Parser, s: SyntaxKind) {
+pub(super) fn function_binders(p: &mut Parser, s: TokenSet) {
     let mut m = p.start();
-    while !p.at(s) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
+    while !p.at_in(s) && !p.at_eof() {
         if p.at_in(binders::BINDER_ATOM_START) {
             binders::binder_atom(p);
         } else {
-            if p.at_in(EQUATION_BINDERS_RECOVERY) {
+            if p.at_in(FUNCTION_BINDERS_RECOVERY) {
                 break;
             }
             p.error_recover("Invalid token");
         }
     }
-    m.end(p, SyntaxKind::EquationBinders);
+    m.end(p, SyntaxKind::FunctionBinders);
 }
 
 pub(super) fn unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {

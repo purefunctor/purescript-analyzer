@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@28..35 "boolean"
           Comment@35..36
             WHITESPACE@35..36 " "
-          EquationBinders@36..41
+          FunctionBinders@36..41
             BinderTrue@36..41
               TRUE@36..40 "true"
               Comment@40..41
@@ -43,7 +43,7 @@ snapshot_kind: text
           LOWER@45..52 "boolean"
           Comment@52..53
             WHITESPACE@52..53 " "
-          EquationBinders@53..59
+          FunctionBinders@53..59
             BinderFalse@53..59
               FALSE@53..58 "false"
               Comment@58..59

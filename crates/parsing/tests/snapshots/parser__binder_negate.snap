@@ -24,7 +24,7 @@ snapshot_kind: text
           LOWER@27..32 "minus"
           Comment@32..33
             WHITESPACE@32..33 " "
-          EquationBinders@33..38
+          FunctionBinders@33..38
             BinderParenthesized@33..38
               LEFT_PARENTHESIS@33..34 "("
               BinderInteger@34..36
@@ -47,7 +47,7 @@ snapshot_kind: text
           LOWER@42..47 "minus"
           Comment@47..48
             WHITESPACE@47..48 " "
-          EquationBinders@48..55
+          FunctionBinders@48..55
             BinderParenthesized@48..55
               LEFT_PARENTHESIS@48..49 "("
               BinderNumber@49..53
