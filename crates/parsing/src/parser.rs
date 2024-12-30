@@ -84,8 +84,9 @@ impl<'t> Parser<'t> {
 
             let index = mem::replace(&mut self.index, initial_index);
             let output = mem::take(&mut self.output);
+            let finished = output.iter().all(|event| !matches!(event, Output::Error { .. }));
 
-            if output.iter().all(|event| !matches!(event, Output::Error { .. })) {
+            if finished {
                 selected = Some((index, output));
                 break;
             } else if fallback.is_none() {
@@ -492,11 +493,7 @@ fn infix_declaration(p: &mut Parser) {
 
     p.expect(SyntaxKind::AS);
 
-    p.expect_in(
-        names::OPERATOR,
-        SyntaxKind::OPERATOR,
-        "Expected OPERATOR",
-    );
+    p.expect_in(names::OPERATOR, SyntaxKind::OPERATOR, "Expected OPERATOR");
 
     m.end(p, SyntaxKind::InfixDeclaration);
 }
