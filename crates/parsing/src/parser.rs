@@ -458,11 +458,11 @@ fn import_alias(p: &mut Parser) {
 
 fn module_statement(p: &mut Parser) {
     if p.at_in(names::LOWER_NON_RESERVED) {
-        value_annotation_or_equation(p);
+        value_signature_or_equation(p);
     } else if p.at(SyntaxKind::TYPE) {
-        synonym_annotation_or_equation(p);
+        synonym_signature_or_equation(p);
     } else if p.at(SyntaxKind::CLASS) {
-        class_annotation_or_equation(p);
+        class_signature_or_declaration(p);
     } else if p.at(SyntaxKind::FOREIGN) {
         foreign_import(p);
     } else if p.at(SyntaxKind::INSTANCE) {
@@ -472,8 +472,8 @@ fn module_statement(p: &mut Parser) {
     }
 }
 
-fn value_annotation_or_equation(p: &mut Parser) {
-    generic::annotation_or_equation(p, SyntaxKind::ValueSignature, SyntaxKind::ValueEquation);
+fn value_signature_or_equation(p: &mut Parser) {
+    generic::signature_or_equation(p, SyntaxKind::ValueSignature, SyntaxKind::ValueEquation);
 }
 
 const INFIX_KEYWORD: TokenSet =
@@ -510,7 +510,7 @@ fn infix_declaration(p: &mut Parser) {
 
 const SYNONYM_VARAIABLE_BINDINGS_END: TokenSet = TokenSet::new(&[SyntaxKind::EQUAL]);
 
-fn synonym_annotation_or_equation(p: &mut Parser) {
+fn synonym_signature_or_equation(p: &mut Parser) {
     let mut m = p.start();
 
     p.expect(SyntaxKind::TYPE);
@@ -527,11 +527,11 @@ fn synonym_annotation_or_equation(p: &mut Parser) {
     }
 }
 
-fn class_annotation_or_equation(p: &mut Parser) {
-    p.alternative([class_annotation, class_equation]);
+fn class_signature_or_declaration(p: &mut Parser) {
+    p.alternative([class_signature, class_declaration]);
 }
 
-fn class_annotation(p: &mut Parser) {
+fn class_signature(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::CLASS);
     p.expect(SyntaxKind::UPPER);
@@ -540,7 +540,7 @@ fn class_annotation(p: &mut Parser) {
     m.end(p, SyntaxKind::ClassSignature);
 }
 
-fn class_equation(p: &mut Parser) {
+fn class_declaration(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::CLASS);
     p.optional(class_constraints);
@@ -741,7 +741,7 @@ fn instance_statements(p: &mut Parser) {
 }
 
 fn instance_statement(p: &mut Parser) {
-    generic::annotation_or_equation(
+    generic::signature_or_equation(
         p,
         SyntaxKind::InstanceSignatureStatement,
         SyntaxKind::InstanceEquationStatement,

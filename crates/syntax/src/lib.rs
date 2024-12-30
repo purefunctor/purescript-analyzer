@@ -132,7 +132,7 @@ pub enum SyntaxKind {
     PatternGuardBinder,
     PatternGuardExpression,
 
-    LetBindingAnnotation,
+    LetBindingSignature,
     LetBindingEquation,
     LetBindingStatements,
 

@@ -6,9 +6,9 @@ pub(super) fn bindings(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
     while p.at_in(names::LOWER_NON_RESERVED) && !p.at_eof() {
-        generic::annotation_or_equation(
+        generic::signature_or_equation(
             p,
-            SyntaxKind::LetBindingAnnotation,
+            SyntaxKind::LetBindingSignature,
             SyntaxKind::LetBindingEquation,
         );
         while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
