@@ -43,7 +43,7 @@ fn type_2(p: &mut Parser) {
     }
 }
 
-fn type_3(p: &mut Parser) {
+pub(super) fn type_3(p: &mut Parser) {
     let mut m = p.start();
     let mut i = 0;
 

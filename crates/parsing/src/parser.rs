@@ -358,6 +358,7 @@ const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::INFIXL,
     SyntaxKind::INFIXR,
     SyntaxKind::INSTANCE,
+    SyntaxKind::DERIVE,
     SyntaxKind::NEWTYPE,
     SyntaxKind::FOREIGN,
 ])
@@ -461,6 +462,8 @@ fn module_statement(p: &mut Parser) {
         newtype_signature_or_equation(p);
     } else if p.at(SyntaxKind::DATA) {
         data_signature_or_equation(p);
+    } else if p.at(SyntaxKind::DERIVE) {
+        derive_declaration(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -662,6 +665,7 @@ fn instance_declaration(p: &mut Parser) {
     let mut m = p.start();
     p.eat(SyntaxKind::ELSE);
     p.expect(SyntaxKind::INSTANCE);
+    p.optional(instance_name);
     p.optional(instance_constraints);
     instance_head(p);
     if p.eat(SyntaxKind::WHERE) {
@@ -677,12 +681,19 @@ const INSTANCE_CONSTRAINTS_RECOVERY: TokenSet = TokenSet::new(&[
     SyntaxKind::LAYOUT_END,
 ]);
 
+fn instance_name(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    m.end(p, SyntaxKind::InstanceName);
+}
+
 fn instance_constraints(p: &mut Parser) {
     let mut m = p.start();
     if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
         while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
             if p.at_in(types::TYPE_ATOM_START) {
-                types::type_5(p);
+                types::type_3(p);
                 if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
                     p.error_recover("Trailing comma");
                 } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
@@ -697,7 +708,7 @@ fn instance_constraints(p: &mut Parser) {
         }
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
     } else {
-        types::type_5(p);
+        types::type_3(p);
     }
     p.expect(SyntaxKind::RIGHT_THICK_ARROW);
     m.end(p, SyntaxKind::InstanceConstraints);
@@ -734,6 +745,20 @@ fn instance_statement(p: &mut Parser) {
         SyntaxKind::InstanceSignatureStatement,
         SyntaxKind::InstanceEquationStatement,
     );
+}
+
+fn derive_declaration(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::DERIVE);
+    p.eat(SyntaxKind::NEWTYPE);
+    p.expect(SyntaxKind::INSTANCE);
+    p.optional(instance_name);
+    p.optional(instance_constraints);
+    instance_head(p);
+    while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
+        types::type_atom(p);
+    }
+    m.end(p, SyntaxKind::DeriveDeclaration);
 }
 
 fn newtype_signature_or_equation(p: &mut Parser) {

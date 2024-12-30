@@ -1,0 +1,48 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..27
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..20
+          UPPER@7..19 "InstanceName"
+          Comment@19..20
+            WHITESPACE@19..20 " "
+        ModuleExportList@20..20
+        WHERE@20..25 "where"
+        Comment@25..27
+          WHITESPACE@25..27 "\n\n"
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..68
+        InstanceChain@27..68
+          InstanceDeclaration@27..68
+            INSTANCE@27..35 "instance"
+            Comment@35..36
+              WHITESPACE@35..36 " "
+            InstanceName@36..53
+              LOWER@36..49 "functorParser"
+              Comment@49..50
+                WHITESPACE@49..50 " "
+              DOUBLE_COLON@50..52 "::"
+              Comment@52..53
+                WHITESPACE@52..53 " "
+            InstanceHead@53..68
+              UPPER@53..60 "Functor"
+              Comment@60..61
+                WHITESPACE@60..61 " "
+              TypeConstructor@61..68
+                QualifiedName@61..68
+                  UPPER@61..67 "Parser"
+                  Comment@67..68
+                    WHITESPACE@67..68 "\n"
+      LAYOUT_END@68..68 ""
+      END_OF_FILE@68..68 ""
+    ,
+    [],
+)

@@ -237,6 +237,7 @@ pub enum SyntaxKind {
 
     InstanceChain,
     InstanceDeclaration,
+    InstanceName,
     InstanceConstraints,
     InstanceHead,
     InstanceStatements,
@@ -252,6 +253,8 @@ pub enum SyntaxKind {
     DataSignature,
     DataEquation,
     DataConstructor,
+
+    DeriveDeclaration,
 
     #[doc(hidden)]
     __LAST,

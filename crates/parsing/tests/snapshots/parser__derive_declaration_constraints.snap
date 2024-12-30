@@ -1,0 +1,208 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..274
+      ModuleHeader@0..43
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..36
+          UPPER@7..35 "DeriveDeclarationCons ..."
+          Comment@35..36
+            WHITESPACE@35..36 " "
+        ModuleExportList@36..36
+        WHERE@36..41 "where"
+        Comment@41..43
+          WHITESPACE@41..43 "\n\n"
+      LAYOUT_START@43..43 ""
+      ModuleImports@43..43
+      ModuleStatements@43..274
+        DeriveDeclaration@43..91
+          DERIVE@43..49 "derive"
+          Comment@49..50
+            WHITESPACE@49..50 " "
+          INSTANCE@50..58 "instance"
+          Comment@58..59
+            WHITESPACE@58..59 " "
+          InstanceConstraints@59..76
+            TypeApplicationChain@59..73
+              TypeConstructor@59..66
+                QualifiedName@59..66
+                  UPPER@59..65 "Monoid"
+                  Comment@65..66
+                    WHITESPACE@65..66 " "
+              TypeConstructor@66..73
+                QualifiedName@66..73
+                  UPPER@66..72 "Parser"
+                  Comment@72..73
+                    WHITESPACE@72..73 " "
+            RIGHT_THICK_ARROW@73..75 "=>"
+            Comment@75..76
+              WHITESPACE@75..76 " "
+          InstanceHead@76..91
+            UPPER@76..83 "Functor"
+            Comment@83..84
+              WHITESPACE@83..84 " "
+            TypeConstructor@84..91
+              QualifiedName@84..91
+                UPPER@84..90 "Parser"
+                Comment@90..91
+                  WHITESPACE@90..91 "\n"
+        LAYOUT_SEPARATOR@91..91 ""
+        DeriveDeclaration@91..148
+          DERIVE@91..97 "derive"
+          Comment@97..98
+            WHITESPACE@97..98 " "
+          NEWTYPE@98..105 "newtype"
+          Comment@105..106
+            WHITESPACE@105..106 " "
+          INSTANCE@106..114 "instance"
+          Comment@114..115
+            WHITESPACE@114..115 " "
+          InstanceConstraints@115..132
+            TypeApplicationChain@115..129
+              TypeConstructor@115..122
+                QualifiedName@115..122
+                  UPPER@115..121 "Monoid"
+                  Comment@121..122
+                    WHITESPACE@121..122 " "
+              TypeConstructor@122..129
+                QualifiedName@122..129
+                  UPPER@122..128 "Parser"
+                  Comment@128..129
+                    WHITESPACE@128..129 " "
+            RIGHT_THICK_ARROW@129..131 "=>"
+            Comment@131..132
+              WHITESPACE@131..132 " "
+          InstanceHead@132..148
+            UPPER@132..139 "Functor"
+            Comment@139..140
+              WHITESPACE@139..140 " "
+            TypeConstructor@140..148
+              QualifiedName@140..148
+                UPPER@140..146 "Parser"
+                Comment@146..148
+                  WHITESPACE@146..148 "\n\n"
+        LAYOUT_SEPARATOR@148..148 ""
+        DeriveDeclaration@148..207
+          DERIVE@148..154 "derive"
+          Comment@154..155
+            WHITESPACE@154..155 " "
+          INSTANCE@155..163 "instance"
+          Comment@163..164
+            WHITESPACE@163..164 " "
+          InstanceConstraints@164..188
+            LEFT_PARENTHESIS@164..165 "("
+            TypeApplicationChain@165..173
+              TypeConstructor@165..172
+                QualifiedName@165..172
+                  UPPER@165..171 "Monoid"
+                  Comment@171..172
+                    WHITESPACE@171..172 " "
+              TypeVariable@172..173
+                LOWER@172..173 "a"
+            COMMA@173..174 ","
+            Comment@174..175
+              WHITESPACE@174..175 " "
+            TypeApplicationChain@175..183
+              TypeConstructor@175..182
+                QualifiedName@175..182
+                  UPPER@175..181 "Monoid"
+                  Comment@181..182
+                    WHITESPACE@181..182 " "
+              TypeVariable@182..183
+                LOWER@182..183 "b"
+            RIGHT_PARENTHESIS@183..184 ")"
+            Comment@184..185
+              WHITESPACE@184..185 " "
+            RIGHT_THICK_ARROW@185..187 "=>"
+            Comment@187..188
+              WHITESPACE@187..188 " "
+          InstanceHead@188..207
+            UPPER@188..194 "Monoid"
+            Comment@194..195
+              WHITESPACE@194..195 " "
+            TypeParenthesized@195..207
+              LEFT_PARENTHESIS@195..196 "("
+              TypeApplicationChain@196..205
+                TypeConstructor@196..202
+                  QualifiedName@196..202
+                    UPPER@196..201 "Tuple"
+                    Comment@201..202
+                      WHITESPACE@201..202 " "
+                TypeVariable@202..204
+                  LOWER@202..203 "a"
+                  Comment@203..204
+                    WHITESPACE@203..204 " "
+                TypeVariable@204..205
+                  LOWER@204..205 "b"
+              RIGHT_PARENTHESIS@205..206 ")"
+              Comment@206..207
+                WHITESPACE@206..207 "\n"
+        LAYOUT_SEPARATOR@207..207 ""
+        DeriveDeclaration@207..274
+          DERIVE@207..213 "derive"
+          Comment@213..214
+            WHITESPACE@213..214 " "
+          NEWTYPE@214..221 "newtype"
+          Comment@221..222
+            WHITESPACE@221..222 " "
+          INSTANCE@222..230 "instance"
+          Comment@230..231
+            WHITESPACE@230..231 " "
+          InstanceConstraints@231..255
+            LEFT_PARENTHESIS@231..232 "("
+            TypeApplicationChain@232..240
+              TypeConstructor@232..239
+                QualifiedName@232..239
+                  UPPER@232..238 "Monoid"
+                  Comment@238..239
+                    WHITESPACE@238..239 " "
+              TypeVariable@239..240
+                LOWER@239..240 "a"
+            COMMA@240..241 ","
+            Comment@241..242
+              WHITESPACE@241..242 " "
+            TypeApplicationChain@242..250
+              TypeConstructor@242..249
+                QualifiedName@242..249
+                  UPPER@242..248 "Monoid"
+                  Comment@248..249
+                    WHITESPACE@248..249 " "
+              TypeVariable@249..250
+                LOWER@249..250 "b"
+            RIGHT_PARENTHESIS@250..251 ")"
+            Comment@251..252
+              WHITESPACE@251..252 " "
+            RIGHT_THICK_ARROW@252..254 "=>"
+            Comment@254..255
+              WHITESPACE@254..255 " "
+          InstanceHead@255..274
+            UPPER@255..261 "Monoid"
+            Comment@261..262
+              WHITESPACE@261..262 " "
+            TypeParenthesized@262..274
+              LEFT_PARENTHESIS@262..263 "("
+              TypeApplicationChain@263..272
+                TypeConstructor@263..269
+                  QualifiedName@263..269
+                    UPPER@263..268 "Tuple"
+                    Comment@268..269
+                      WHITESPACE@268..269 " "
+                TypeVariable@269..271
+                  LOWER@269..270 "a"
+                  Comment@270..271
+                    WHITESPACE@270..271 " "
+                TypeVariable@271..272
+                  LOWER@271..272 "b"
+              RIGHT_PARENTHESIS@272..273 ")"
+              Comment@273..274
+                WHITESPACE@273..274 "\n"
+      LAYOUT_END@274..274 ""
+      END_OF_FILE@274..274 ""
+    ,
+    [],
+)
