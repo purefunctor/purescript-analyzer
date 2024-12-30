@@ -202,7 +202,7 @@ pub(crate) fn module(p: &mut Parser) {
 
     module_header(p);
     p.expect(SyntaxKind::LAYOUT_START);
-    module_statements(p);
+    imports_and_statements(p);
     p.expect(SyntaxKind::LAYOUT_END);
     p.expect(SyntaxKind::END_OF_FILE);
 
@@ -320,7 +320,7 @@ fn type_items(p: &mut Parser) {
     }
 }
 
-fn module_statements(p: &mut Parser) {
+fn imports_and_statements(p: &mut Parser) {
     let mut imports = p.start();
 
     while p.at(SyntaxKind::IMPORT) && !p.at_eof() {
@@ -349,20 +349,6 @@ fn module_statements(p: &mut Parser) {
 
     statements.end(p, SyntaxKind::ModuleStatements);
 }
-
-const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::CLASS,
-    SyntaxKind::DATA,
-    SyntaxKind::TYPE,
-    SyntaxKind::INFIX,
-    SyntaxKind::INFIXL,
-    SyntaxKind::INFIXR,
-    SyntaxKind::INSTANCE,
-    SyntaxKind::DERIVE,
-    SyntaxKind::NEWTYPE,
-    SyntaxKind::FOREIGN,
-])
-.union(names::LOWER);
 
 fn import_statement(p: &mut Parser) {
     let mut m = p.start();
@@ -447,21 +433,35 @@ fn import_alias(p: &mut Parser) {
     m.end(p, SyntaxKind::ImportAlias);
 }
 
+const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
+    SyntaxKind::FOREIGN,
+    SyntaxKind::CLASS,
+    SyntaxKind::DATA,
+    SyntaxKind::NEWTYPE,
+    SyntaxKind::TYPE,
+    SyntaxKind::INSTANCE,
+    SyntaxKind::DERIVE,
+    SyntaxKind::INFIX,
+    SyntaxKind::INFIXL,
+    SyntaxKind::INFIXR,
+])
+.union(names::LOWER);
+
 fn module_statement(p: &mut Parser) {
     if p.at_in(names::LOWER) {
         value_signature_or_equation(p);
+    } else if p.at(SyntaxKind::DATA) {
+        data_signature_or_equation(p);
     } else if p.at(SyntaxKind::TYPE) {
         synonym_signature_or_equation(p);
+    } else if p.at(SyntaxKind::NEWTYPE) {
+        newtype_signature_or_equation(p);
     } else if p.at(SyntaxKind::CLASS) {
         class_signature_or_declaration(p);
     } else if p.at(SyntaxKind::FOREIGN) {
         foreign_import(p);
     } else if p.at(SyntaxKind::INSTANCE) {
         instance_chain(p);
-    } else if p.at(SyntaxKind::NEWTYPE) {
-        newtype_signature_or_equation(p);
-    } else if p.at(SyntaxKind::DATA) {
-        data_signature_or_equation(p);
     } else if p.at(SyntaxKind::DERIVE) {
         derive_declaration(p);
     } else if p.at_in(INFIX_KEYWORD) {
