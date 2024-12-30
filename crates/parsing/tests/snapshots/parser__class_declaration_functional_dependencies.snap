@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..166
+    Module@0..188
       ModuleHeader@0..53
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@51..53 "\n\n"
       LAYOUT_START@53..53 ""
       ModuleImports@53..53
-      ModuleStatements@53..166
+      ModuleStatements@53..188
         ClassDeclaration@53..116
           CLASS@53..58 "class"
           Comment@58..59
@@ -87,7 +87,7 @@ snapshot_kind: text
                     WHITESPACE@114..116 "\n\n"
             LAYOUT_END@116..116 ""
         LAYOUT_SEPARATOR@116..116 ""
-        ClassDeclaration@116..166
+        ClassDeclaration@116..167
           CLASS@116..121 "class"
           Comment@121..122
             WHITESPACE@121..122 " "
@@ -113,22 +113,46 @@ snapshot_kind: text
           WHERE@142..147 "where"
           Comment@147..150
             WHITESPACE@147..150 "\n  "
-          ClassStatements@150..166
+          ClassStatements@150..167
             LAYOUT_START@150..150 ""
-            ClassMemberStatement@150..166
+            ClassMemberStatement@150..167
               LOWER@150..160 "determined"
               Comment@160..161
                 WHITESPACE@160..161 " "
               DOUBLE_COLON@161..163 "::"
               Comment@163..164
                 WHITESPACE@163..164 " "
-              TypeVariable@164..166
+              TypeVariable@164..167
                 LOWER@164..165 "a"
-                Comment@165..166
-                  WHITESPACE@165..166 "\n"
-            LAYOUT_END@166..166 ""
-      LAYOUT_END@166..166 ""
-      END_OF_FILE@166..166 ""
+                Comment@165..167
+                  WHITESPACE@165..167 "\n\n"
+            LAYOUT_END@167..167 ""
+        LAYOUT_SEPARATOR@167..167 ""
+        ClassDeclaration@167..188
+          CLASS@167..172 "class"
+          Comment@172..173
+            WHITESPACE@172..173 " "
+          ClassHead@173..181
+            UPPER@173..178 "Empty"
+            Comment@178..179
+              WHITESPACE@178..179 " "
+            TypeVariable@179..181
+              LOWER@179..180 "a"
+              Comment@180..181
+                WHITESPACE@180..181 " "
+          ClassFunctionalDependencies@181..188
+            PIPE@181..182 "|"
+            Comment@182..183
+              WHITESPACE@182..183 " "
+            FunctionalDependencyDetermined@183..188
+              RIGHT_ARROW@183..185 "->"
+              Comment@185..186
+                WHITESPACE@185..186 " "
+              LOWER@186..187 "a"
+              Comment@187..188
+                WHITESPACE@187..188 "\n"
+      LAYOUT_END@188..188 ""
+      END_OF_FILE@188..188 ""
     ,
     [],
 )

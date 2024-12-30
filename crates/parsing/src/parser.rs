@@ -591,18 +591,21 @@ fn class_head(p: &mut Parser) {
 const FUNCTIONAL_DEPENDENCY_START: TokenSet =
     TokenSet::new(&[SyntaxKind::RIGHT_ARROW]).union(names::LOWER);
 
+const FUNCTIONAL_DEPENDENCY_END: TokenSet =
+    TokenSet::new(&[SyntaxKind::WHERE, SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
 const FUNCTIONAL_DEPENDENCY_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::WHERE, SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
 fn class_functional_dependencies(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::PIPE);
-    while !p.at(SyntaxKind::WHERE) && !p.at_eof() {
+    while !p.at_in(FUNCTIONAL_DEPENDENCY_END) && !p.at_eof() {
         if p.at_in(FUNCTIONAL_DEPENDENCY_START) {
             class_functional_dependency(p);
             if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::WHERE) {
                 p.error_recover("Trailing comma");
-            } else if !p.at(SyntaxKind::WHERE) {
+            } else if !p.at_in(FUNCTIONAL_DEPENDENCY_END) {
                 p.expect(SyntaxKind::COMMA);
             }
         } else {

@@ -5,3 +5,5 @@ class TypeEquals a b | a -> b, b -> a where
 
 class Determined a | -> a where
   determined :: a
+
+class Empty a | -> a
