@@ -244,6 +244,9 @@ pub enum SyntaxKind {
     ForeignImportDataDeclaration,
     ForeignImportValueDeclaration,
 
+    NewtypeSignature,
+    NewtypeEquation,
+
     #[doc(hidden)]
     __LAST,
 }

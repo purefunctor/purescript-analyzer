@@ -1,0 +1,42 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..52
+      ModuleHeader@0..31
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..24
+          UPPER@7..23 "NewtypeSignature"
+          Comment@23..24
+            WHITESPACE@23..24 " "
+        ModuleExportList@24..24
+        WHERE@24..29 "where"
+        Comment@29..31
+          WHITESPACE@29..31 "\n\n"
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..52
+        NewtypeSignature@31..52
+          NEWTYPE@31..38 "newtype"
+          Comment@38..39
+            WHITESPACE@38..39 " "
+          UPPER@39..43 "Year"
+          Comment@43..44
+            WHITESPACE@43..44 " "
+          DOUBLE_COLON@44..46 "::"
+          Comment@46..47
+            WHITESPACE@46..47 " "
+          TypeConstructor@47..52
+            QualifiedName@47..52
+              UPPER@47..51 "Type"
+              Comment@51..52
+                WHITESPACE@51..52 "\n"
+      LAYOUT_END@52..52 ""
+      END_OF_FILE@52..52 ""
+    ,
+    [],
+)

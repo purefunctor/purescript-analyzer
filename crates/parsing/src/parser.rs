@@ -467,6 +467,8 @@ fn module_statement(p: &mut Parser) {
         foreign_import(p);
     } else if p.at(SyntaxKind::INSTANCE) {
         instance_chain(p);
+    } else if p.at(SyntaxKind::NEWTYPE) {
+        newtype_signature_or_equation(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -746,6 +748,24 @@ fn instance_statement(p: &mut Parser) {
         SyntaxKind::InstanceSignatureStatement,
         SyntaxKind::InstanceEquationStatement,
     );
+}
+
+fn newtype_signature_or_equation(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::NEWTYPE);
+    p.expect(SyntaxKind::UPPER);
+
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
+        types::type_(p);
+        m.end(p, SyntaxKind::NewtypeSignature);
+    } else {
+        type_variable_bindings(p, SYNONYM_VARAIABLE_BINDINGS_END);
+        p.expect(SyntaxKind::EQUAL);
+        p.expect(SyntaxKind::UPPER);
+        types::type_atom(p);
+        m.end(p, SyntaxKind::NewtypeEquation);
+    }
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
