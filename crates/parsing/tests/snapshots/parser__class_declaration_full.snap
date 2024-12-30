@@ -46,11 +46,11 @@ snapshot_kind: text
             UPPER@59..69 "TypeEquals"
             Comment@69..70
               WHITESPACE@69..70 " "
-            TypeVariableBinding@70..72
+            TypeVariable@70..72
               LOWER@70..71 "a"
               Comment@71..72
                 WHITESPACE@71..72 " "
-            TypeVariableBinding@72..74
+            TypeVariable@72..74
               LOWER@72..73 "b"
               Comment@73..74
                 WHITESPACE@73..74 " "
@@ -148,11 +148,11 @@ snapshot_kind: text
             UPPER@158..168 "TypeEquals"
             Comment@168..169
               WHITESPACE@168..169 " "
-            TypeVariableBinding@169..171
+            TypeVariable@169..171
               LOWER@169..170 "a"
               Comment@170..171
                 WHITESPACE@170..171 " "
-            TypeVariableBinding@171..173
+            TypeVariable@171..173
               LOWER@171..172 "c"
               Comment@172..173
                 WHITESPACE@172..173 " "

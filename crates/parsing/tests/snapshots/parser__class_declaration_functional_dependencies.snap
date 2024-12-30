@@ -28,11 +28,11 @@ snapshot_kind: text
             UPPER@59..69 "TypeEquals"
             Comment@69..70
               WHITESPACE@69..70 " "
-            TypeVariableBinding@70..72
+            TypeVariable@70..72
               LOWER@70..71 "a"
               Comment@71..72
                 WHITESPACE@71..72 " "
-            TypeVariableBinding@72..74
+            TypeVariable@72..74
               LOWER@72..73 "b"
               Comment@73..74
                 WHITESPACE@73..74 " "
@@ -95,7 +95,7 @@ snapshot_kind: text
             UPPER@122..132 "Determined"
             Comment@132..133
               WHITESPACE@132..133 " "
-            TypeVariableBinding@133..135
+            TypeVariable@133..135
               LOWER@133..134 "a"
               Comment@134..135
                 WHITESPACE@134..135 " "

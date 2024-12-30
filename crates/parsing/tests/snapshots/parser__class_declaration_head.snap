@@ -28,7 +28,7 @@ snapshot_kind: text
             UPPER@41..48 "Functor"
             Comment@48..49
               WHITESPACE@48..49 " "
-            TypeVariableBinding@49..51
+            TypeVariable@49..51
               LOWER@49..50 "f"
               Comment@50..51
                 WHITESPACE@50..51 "\n"
@@ -41,7 +41,7 @@ snapshot_kind: text
             UPPER@57..62 "Apply"
             Comment@62..63
               WHITESPACE@62..63 " "
-            TypeVariableBinding@63..65
+            TypeVariable@63..65
               LOWER@63..64 "f"
               Comment@64..65
                 WHITESPACE@64..65 "\n"
@@ -68,7 +68,7 @@ snapshot_kind: text
             UPPER@84..89 "Monad"
             Comment@89..90
               WHITESPACE@89..90 " "
-            TypeVariableBinding@90..92
+            TypeVariable@90..92
               LOWER@90..91 "f"
               Comment@91..92
                 WHITESPACE@91..92 "\n"

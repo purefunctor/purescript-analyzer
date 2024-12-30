@@ -42,7 +42,7 @@ snapshot_kind: text
             UPPER@59..70 "Applicative"
             Comment@70..71
               WHITESPACE@70..71 " "
-            TypeVariableBinding@71..73
+            TypeVariable@71..73
               LOWER@71..72 "f"
               Comment@72..73
                 WHITESPACE@72..73 " "
@@ -121,7 +121,7 @@ snapshot_kind: text
             UPPER@145..150 "Monad"
             Comment@150..151
               WHITESPACE@150..151 " "
-            TypeVariableBinding@151..153
+            TypeVariable@151..153
               LOWER@151..152 "f"
               Comment@152..153
                 WHITESPACE@152..153 " "

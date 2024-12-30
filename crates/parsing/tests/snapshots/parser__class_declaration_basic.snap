@@ -28,7 +28,7 @@ snapshot_kind: text
             UPPER@37..44 "Functor"
             Comment@44..45
               WHITESPACE@44..45 " "
-            TypeVariableBinding@45..47
+            TypeVariable@45..47
               LOWER@45..46 "f"
               Comment@46..47
                 WHITESPACE@46..47 " "
@@ -108,7 +108,7 @@ snapshot_kind: text
             UPPER@104..109 "Monad"
             Comment@109..110
               WHITESPACE@109..110 " "
-            TypeVariableBinding@110..112
+            TypeVariable@110..112
               LOWER@110..111 "m"
               Comment@111..112
                 WHITESPACE@111..112 " "

@@ -510,8 +510,6 @@ fn infix_declaration(p: &mut Parser) {
     m.end(p, SyntaxKind::InfixDeclaration);
 }
 
-const SYNONYM_VARAIABLE_BINDINGS_END: TokenSet = TokenSet::new(&[SyntaxKind::EQUAL]);
-
 fn synonym_signature_or_equation(p: &mut Parser) {
     let mut m = p.start();
 
@@ -522,7 +520,7 @@ fn synonym_signature_or_equation(p: &mut Parser) {
         types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymSignature);
     } else {
-        type_variable_bindings(p, SYNONYM_VARAIABLE_BINDINGS_END);
+        type_variable_bindings(p);
         p.expect(SyntaxKind::EQUAL);
         types::type_(p);
         m.end(p, SyntaxKind::TypeSynonymEquation);
@@ -590,12 +588,12 @@ fn class_constraints(p: &mut Parser) {
     m.end(p, SyntaxKind::ClassConstraints);
 }
 
-const CLASS_VARIABLE_BINDINGS_END: TokenSet = TokenSet::new(&[SyntaxKind::WHERE, SyntaxKind::PIPE]);
-
 fn class_head(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::UPPER);
-    type_variable_bindings(p, CLASS_VARIABLE_BINDINGS_END);
+    while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
+        types::type_atom(p);
+    }
     m.end(p, SyntaxKind::ClassHead);
 }
 
@@ -760,7 +758,7 @@ fn newtype_signature_or_equation(p: &mut Parser) {
         types::type_(p);
         m.end(p, SyntaxKind::NewtypeSignature);
     } else {
-        type_variable_bindings(p, SYNONYM_VARAIABLE_BINDINGS_END);
+        type_variable_bindings(p);
         p.expect(SyntaxKind::EQUAL);
         p.expect(SyntaxKind::UPPER);
         types::type_atom(p);
@@ -774,8 +772,8 @@ const TYPE_VARIABLE_BINDING_START: TokenSet =
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
-fn type_variable_bindings(p: &mut Parser, s: TokenSet) {
-    while !p.at_in(s) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
+fn type_variable_bindings(p: &mut Parser) {
+    while !p.at(SyntaxKind::EQUAL) && !p.at_eof() {
         if p.at_in(TYPE_VARIABLE_BINDING_START) {
             type_variable_binding(p);
         } else {
