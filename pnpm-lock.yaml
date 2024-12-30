@@ -17,6 +17,9 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^4.0.0
         version: 4.0.4(svelte@5.16.0)(vite@5.4.11)
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2
       docs-lib:
         specifier: workspace:*
         version: link:src/wasm/pkg
@@ -355,6 +358,9 @@ packages:
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
+
+  comlink@4.4.2:
+    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
   cookie@0.6.0:
     resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
@@ -751,6 +757,8 @@ snapshots:
       readdirp: 4.0.2
 
   clsx@2.1.1: {}
+
+  comlink@4.4.2: {}
 
   cookie@0.6.0: {}
 

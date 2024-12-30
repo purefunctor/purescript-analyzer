@@ -1,18 +1,25 @@
-<script>
+<script lang="ts">
   import { writable } from "svelte/store";
-  import init, { parse } from "../wasm/pkg/docs_lib";
+  import { createDocsLib } from "$lib";
+  import { onMount } from "svelte";
+  import type { Remote } from "comlink";
+  import type { Lib } from "$lib/worker/docs-lib";
+
+  let docsLib: Remote<Lib> | null = null;
 
   let source = writable("");
   let time = $state(0);
   let output = $state("");
 
-  $effect(() => {
-    init().then(() => {
-      source.subscribe((value) => {
-        const start = performance.now();
-        output = parse(value);
-        time = performance.now() - start;
-      });
+  onMount(async () => {
+    docsLib = await createDocsLib();
+  });
+
+  onMount(() => {
+    return source.subscribe(async (source) => {
+      const start = performance.now();
+      output = await docsLib!.parse(source);
+      time = performance.now() - start;
     });
   });
 </script>
