@@ -1,0 +1,71 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..37
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..30
+          UPPER@7..29 "ExpressionRecordUpdate"
+          Comment@29..30
+            WHITESPACE@29..30 " "
+        ModuleExportList@30..30
+        WHERE@30..35 "where"
+        Comment@35..37
+          WHITESPACE@35..37 "\n\n"
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..68
+        ValueEquation@37..68
+          LOWER@37..44 "example"
+          Comment@44..45
+            WHITESPACE@44..45 " "
+          EquationBinders@45..45
+          Unconditional@45..68
+            EQUAL@45..46 "="
+            Comment@46..47
+              WHITESPACE@46..47 " "
+            WhereExpression@47..68
+              ExpressionApplicationChain@47..68
+                ExpressionConstructor@47..53
+                  UPPER@47..52 "Point"
+                  Comment@52..53
+                    WHITESPACE@52..53 " "
+                ExpressionTermArgument@53..68
+                  ExpressionRecord@53..68
+                    LEFT_CURLY@53..54 "{"
+                    Comment@54..55
+                      WHITESPACE@54..55 " "
+                    RecordField@55..59
+                      LabelName@55..56
+                        LOWER@55..56 "x"
+                      COLON@56..57 ":"
+                      Comment@57..58
+                        WHITESPACE@57..58 " "
+                      ExpressionInteger@58..59
+                        INTEGER@58..59 "0"
+                    COMMA@59..60 ","
+                    Comment@60..61
+                      WHITESPACE@60..61 " "
+                    RecordField@61..66
+                      LabelName@61..62
+                        LOWER@61..62 "y"
+                      COLON@62..63 ":"
+                      Comment@63..64
+                        WHITESPACE@63..64 " "
+                      ExpressionInteger@64..66
+                        INTEGER@64..65 "1"
+                        Comment@65..66
+                          WHITESPACE@65..66 " "
+                    RIGHT_CURLY@66..67 "}"
+                    Comment@67..68
+                      WHITESPACE@67..68 "\n"
+      LAYOUT_END@68..68 ""
+      END_OF_FILE@68..68 ""
+    ,
+    [],
+)

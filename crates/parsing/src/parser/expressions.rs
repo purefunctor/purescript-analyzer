@@ -311,8 +311,7 @@ fn expression_ado(p: &mut Parser, mut m: NodeMarker) {
 fn expression_6(p: &mut Parser) {
     let mut m = p.start();
     expression_7(p);
-    if p.at(SyntaxKind::LEFT_CURLY) {
-        record_updates(p);
+    if p.optional(record_updates) {
         m.end(p, SyntaxKind::ExpressionRecordUpdate);
     } else {
         m.cancel(p);

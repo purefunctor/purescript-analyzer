@@ -55,7 +55,7 @@ impl<'t> Parser<'t> {
         NodeMarker::new(index)
     }
 
-    fn optional(&mut self, rule: Rule) {
+    fn optional(&mut self, rule: Rule) -> bool {
         let initial_index = self.index;
         let initial_output = mem::take(&mut self.output);
 
@@ -63,11 +63,14 @@ impl<'t> Parser<'t> {
 
         let index = mem::replace(&mut self.index, initial_index);
         let mut output = mem::replace(&mut self.output, initial_output);
+        let finished = output.iter().all(|event| !matches!(event, Output::Error { .. }));
 
-        if output.iter().all(|event| !matches!(event, Output::Error { .. })) {
+        if finished {
             self.index = index;
             self.output.append(&mut output);
         }
+
+        finished
     }
 
     fn alternative(&mut self, rules: impl IntoIterator<Item = Rule>) {
