@@ -135,6 +135,7 @@ pub enum SyntaxKind {
 
     LetBindingSignature,
     LetBindingEquation,
+    LetBindingPattern,
     LetBindingStatements,
 
     TypeApplicationChain,

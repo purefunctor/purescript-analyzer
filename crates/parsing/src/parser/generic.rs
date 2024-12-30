@@ -73,7 +73,7 @@ fn where_expression(p: &mut Parser) {
     let mut m = p.start();
     expressions::expression(p);
     if p.eat(SyntaxKind::WHERE) {
-        binding::bindings(p);
+        binding::let_binding_statements(p);
     }
     m.end(p, SyntaxKind::WhereExpression);
 }

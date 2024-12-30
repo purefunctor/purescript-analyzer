@@ -153,7 +153,7 @@ fn expression_if_then_else(p: &mut Parser, mut m: NodeMarker) {
 
 fn expression_let(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LET);
-    binding::bindings(p);
+    binding::let_binding_statements(p);
     p.expect(SyntaxKind::IN);
     expression(p);
     m.end(p, SyntaxKind::ExpressionLetIn);
@@ -280,7 +280,7 @@ fn do_statement(p: &mut Parser) {
 fn do_statement_let(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LET);
-    binding::bindings(p);
+    binding::let_binding_statements(p);
     expression(p);
     m.end(p, SyntaxKind::DoStatementLet);
 }

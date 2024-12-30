@@ -1,0 +1,85 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..77
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..25
+          UPPER@7..24 "LetBindingPattern"
+          Comment@24..25
+            WHITESPACE@24..25 " "
+        ModuleExportList@25..25
+        WHERE@25..30 "where"
+        Comment@30..32
+          WHITESPACE@30..32 "\n\n"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..77
+        ValueEquation@32..77
+          LOWER@32..36 "main"
+          Comment@36..37
+            WHITESPACE@36..37 " "
+          EquationBinders@37..37
+          Unconditional@37..77
+            EQUAL@37..38 "="
+            Comment@38..41
+              WHITESPACE@38..41 "\n  "
+            WhereExpression@41..77
+              ExpressionLetIn@41..77
+                LET@41..44 "let"
+                Comment@44..49
+                  WHITESPACE@44..49 "\n    "
+                LetBindingStatements@49..64
+                  LAYOUT_START@49..49 ""
+                  LetBindingPattern@49..64
+                    BinderRecord@49..58
+                      LEFT_CURLY@49..50 "{"
+                      Comment@50..51
+                        WHITESPACE@50..51 " "
+                      RecordPun@51..52
+                        LabelName@51..52
+                          LOWER@51..52 "x"
+                      COMMA@52..53 ","
+                      Comment@53..54
+                        WHITESPACE@53..54 " "
+                      RecordPun@54..56
+                        LabelName@54..56
+                          LOWER@54..55 "y"
+                          Comment@55..56
+                            WHITESPACE@55..56 " "
+                      RIGHT_CURLY@56..57 "}"
+                      Comment@57..58
+                        WHITESPACE@57..58 " "
+                    EQUAL@58..59 "="
+                    Comment@59..60
+                      WHITESPACE@59..60 " "
+                    ExpressionVariable@60..64
+                      LOWER@60..61 "z"
+                      Comment@61..64
+                        WHITESPACE@61..64 "\n  "
+                  LAYOUT_END@64..64 ""
+                IN@64..66 "in"
+                Comment@66..71
+                  WHITESPACE@66..71 "\n    "
+                ExpressionOperatorChain@71..77
+                  ExpressionVariable@71..73
+                    LOWER@71..72 "x"
+                    Comment@72..73
+                      WHITESPACE@72..73 " "
+                  OPERATOR@73..74 "+"
+                  Comment@74..75
+                    WHITESPACE@74..75 " "
+                  ExpressionVariable@75..77
+                    LOWER@75..76 "y"
+                    Comment@76..77
+                      WHITESPACE@76..77 "\n"
+      LAYOUT_END@77..77 ""
+      END_OF_FILE@77..77 ""
+    ,
+    [],
+)

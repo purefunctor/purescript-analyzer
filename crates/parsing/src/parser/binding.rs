@@ -1,16 +1,16 @@
-use syntax::SyntaxKind;
+use syntax::{SyntaxKind, TokenSet};
 
-use super::{generic, names, Parser};
+use super::{binders, expressions, generic, Parser};
 
-pub(super) fn bindings(p: &mut Parser) {
+const LET_BINDING_START: TokenSet = TokenSet::new(&[SyntaxKind::LOWER])
+    .union(expressions::EXPRESSION_START)
+    .union(binders::BINDER_ATOM_START);
+
+pub(super) fn let_binding_statements(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
-    while p.at_in(names::LOWER) && !p.at_eof() {
-        generic::signature_or_equation(
-            p,
-            SyntaxKind::LetBindingSignature,
-            SyntaxKind::LetBindingEquation,
-        );
+    while p.at_in(LET_BINDING_START) && !p.at_eof() {
+        p.alternative([let_binding_signature_or_equation, let_binding_pattern]);
         while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
             p.error_recover("Invalid token");
         }
@@ -20,4 +20,20 @@ pub(super) fn bindings(p: &mut Parser) {
     }
     p.expect(SyntaxKind::LAYOUT_END);
     m.end(p, SyntaxKind::LetBindingStatements);
+}
+
+fn let_binding_signature_or_equation(p: &mut Parser) {
+    generic::signature_or_equation(
+        p,
+        SyntaxKind::LetBindingSignature,
+        SyntaxKind::LetBindingEquation,
+    );
+}
+
+fn let_binding_pattern(p: &mut Parser) {
+    let mut m = p.start();
+    binders::binder_atom(p);
+    p.expect(SyntaxKind::EQUAL);
+    expressions::expression(p);
+    m.end(p, SyntaxKind::LetBindingPattern);
 }
