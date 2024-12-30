@@ -421,7 +421,6 @@ const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::CLASS,
     SyntaxKind::TYPE,
     SyntaxKind::OPERATOR_NAME,
-    SyntaxKind::LEFT_PARENTHESIS,
 ])
 .union(names::LOWER_NON_RESERVED);
 
