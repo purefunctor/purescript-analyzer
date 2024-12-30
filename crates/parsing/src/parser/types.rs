@@ -96,7 +96,7 @@ pub(super) fn type_atom(p: &mut Parser) {
     if p.eat(SyntaxKind::PREFIX) {
         if p.eat(SyntaxKind::UPPER) {
             m.end(p, SyntaxKind::TypeConstructor);
-        } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+        } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
             m.end(p, SyntaxKind::TypeOperator);
         } else {
             n.cancel(p);
@@ -120,7 +120,7 @@ pub(super) fn type_atom(p: &mut Parser) {
         p.eat(SyntaxKind::MINUS);
         p.eat(SyntaxKind::INTEGER);
         m.end(p, SyntaxKind::TypeInteger);
-    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+    } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::TypeOperator);
     } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
         type_parenthesis(p, m);

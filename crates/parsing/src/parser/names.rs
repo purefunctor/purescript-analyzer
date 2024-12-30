@@ -13,6 +13,9 @@ pub(super) const OPERATOR_NON_RESERVED: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_THICK_ARROW,
 ]);
 
+pub(super) const OPERATOR_NAME: TokenSet =
+    TokenSet::new(&[SyntaxKind::OPERATOR_NAME, SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME]);
+
 pub(super) fn module_name(p: &mut Parser) {
     let mut m = p.start();
 

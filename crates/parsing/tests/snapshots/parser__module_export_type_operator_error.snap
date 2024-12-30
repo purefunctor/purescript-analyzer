@@ -61,7 +61,7 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "expected OPERATOR_NAME",
+            message: "Expected OPERATOR_NAME",
         },
         ParseError {
             position: Position {

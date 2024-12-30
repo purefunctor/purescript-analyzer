@@ -17,17 +17,17 @@ snapshot_kind: text
           LEFT_PARENTHESIS@45..46 "("
           ModuleExportType@46..62
             UPPER@46..50 "List"
-            TypeItemsAll@50..62
+            TypeItemsList@50..62
               LEFT_PARENTHESIS@50..51 "("
-              DOUBLE_PERIOD@51..53 ".."
+              ERROR@51..53
+                ERROR@51..51 ""
+                DOUBLE_PERIOD@51..53 ".."
               ERROR@53..55
                 ERROR@53..53 ""
                 COMMA@53..54 ","
                 Comment@54..55
                   WHITESPACE@54..55 " "
-              ERROR@55..61
-                ERROR@55..55 ""
-                UPPER@55..61 "Period"
+              UPPER@55..61 "Period"
               RIGHT_PARENTHESIS@61..62 ")"
           RIGHT_PARENTHESIS@62..63 ")"
           Comment@63..64
@@ -44,17 +44,17 @@ snapshot_kind: text
     [
         ParseError {
             position: Position {
-                offset: 53,
+                offset: 51,
                 line: 1,
-                column: 54,
+                column: 52,
             },
             message: "Invalid token",
         },
         ParseError {
             position: Position {
-                offset: 55,
+                offset: 53,
                 line: 1,
-                column: 56,
+                column: 54,
             },
             message: "Invalid token",
         },

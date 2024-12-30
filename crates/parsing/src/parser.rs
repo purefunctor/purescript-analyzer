@@ -259,7 +259,8 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::TYPE,
     SyntaxKind::UPPER,
 ])
-.union(names::LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED)
+.union(names::OPERATOR_NAME);
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 
@@ -275,9 +276,9 @@ fn module_export_item(p: &mut Parser) {
         p.expect(SyntaxKind::UPPER);
         m.end(p, SyntaxKind::ModuleExportClass);
     } else if p.eat(SyntaxKind::TYPE) {
-        p.expect(SyntaxKind::OPERATOR_NAME);
+        p.expect_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME, "Expected OPERATOR_NAME");
         m.end(p, SyntaxKind::ModuleExportTypeOperator);
-    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+    } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::ModuleExportOperator);
     } else if p.eat(SyntaxKind::MODULE) {
         names::module_name(p);
@@ -290,43 +291,33 @@ fn module_export_item(p: &mut Parser) {
 fn type_items(p: &mut Parser) {
     let mut m = p.start();
 
-    let mut kind = SyntaxKind::TypeItemsList;
-    'list: {
-        if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-            if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                p.error("Empty item list");
-                p.consume();
-                break 'list;
-            }
-            if p.eat(SyntaxKind::DOUBLE_PERIOD) {
-                kind = SyntaxKind::TypeItemsAll;
-                while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+    if p.eat(SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME) {
+        m.end(p, SyntaxKind::TypeItemsAll);
+    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+            p.error("Empty item list");
+            p.consume();
+        } else {
+            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+                if p.eat(SyntaxKind::UPPER) {
+                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.error_recover("Trailing comma");
+                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                        p.expect(SyntaxKind::COMMA);
+                    }
+                } else {
                     if p.at_in(EXPORT_LIST_RECOVERY) {
                         break;
                     }
                     p.error_recover("Invalid token");
                 }
-            } else {
-                while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-                    if p.eat(SyntaxKind::UPPER) {
-                        if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                            p.error_recover("Trailing comma");
-                        } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                            p.expect(SyntaxKind::COMMA);
-                        }
-                    } else {
-                        if p.at_in(EXPORT_LIST_RECOVERY) {
-                            break;
-                        }
-                        p.error_recover("Invalid token");
-                    }
-                }
             }
-            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        };
+        }
+        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+        m.end(p, SyntaxKind::TypeItemsList);
+    } else {
+        m.cancel(p);
     }
-
-    m.end(p, kind);
 }
 
 fn module_statements(p: &mut Parser) {
@@ -416,13 +407,10 @@ fn import_list(p: &mut Parser) {
     m.end(p, SyntaxKind::ImportList);
 }
 
-const IMPORT_ITEM_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::UPPER,
-    SyntaxKind::CLASS,
-    SyntaxKind::TYPE,
-    SyntaxKind::OPERATOR_NAME,
-])
-.union(names::LOWER_NON_RESERVED);
+const IMPORT_ITEM_START: TokenSet =
+    TokenSet::new(&[SyntaxKind::UPPER, SyntaxKind::CLASS, SyntaxKind::TYPE])
+        .union(names::LOWER_NON_RESERVED)
+        .union(names::OPERATOR_NAME);
 
 const IMPORT_LIST_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -439,9 +427,9 @@ fn import_item(p: &mut Parser) {
         p.expect(SyntaxKind::UPPER);
         m.end(p, SyntaxKind::ImportClass);
     } else if p.eat(SyntaxKind::TYPE) {
-        p.expect(SyntaxKind::OPERATOR_NAME);
+        p.expect_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME, "Expected OPERATOR_NAME");
         m.end(p, SyntaxKind::ImportTypeOperator);
-    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+    } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::ImportOperator);
     } else {
         m.cancel(p);

@@ -15,15 +15,17 @@ snapshot_kind: text
             WHITESPACE@32..33 " "
         ModuleExportList@33..42
           LEFT_PARENTHESIS@33..34 "("
-          ModuleExportType@34..40
+          ModuleExportType@34..42
             UPPER@34..38 "List"
-            TypeItemsList@38..40
+            TypeItemsList@38..42
               LEFT_PARENTHESIS@38..39 "("
               ERROR@39..39 ""
               RIGHT_PARENTHESIS@39..40 ")"
-          RIGHT_PARENTHESIS@40..41 ")"
-          Comment@41..42
-            WHITESPACE@41..42 " "
+              RIGHT_PARENTHESIS@40..41 ")"
+              Comment@41..42
+                WHITESPACE@41..42 " "
+          ERROR@42..42 ""
+          ERROR@42..42 ""
         WHERE@42..47 "where"
         Comment@47..48
           WHITESPACE@47..48 "\n"
@@ -41,6 +43,22 @@ snapshot_kind: text
                 column: 40,
             },
             message: "Empty item list",
+        },
+        ParseError {
+            position: Position {
+                offset: 42,
+                line: 1,
+                column: 43,
+            },
+            message: "expected COMMA",
+        },
+        ParseError {
+            position: Position {
+                offset: 42,
+                line: 1,
+                column: 43,
+            },
+            message: "expected RIGHT_PARENTHESIS",
         },
     ],
 )

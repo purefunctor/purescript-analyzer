@@ -91,7 +91,6 @@ snapshot_kind: text
             LEFT_PARENTHESIS@119..120 "("
             ImportType@120..124
               UPPER@120..124 "List"
-              TypeItemsList@124..124
             RIGHT_PARENTHESIS@124..125 ")"
             Comment@125..126
               WHITESPACE@125..126 "\n"
@@ -135,9 +134,7 @@ snapshot_kind: text
             ImportType@171..179
               UPPER@171..175 "Data"
               TypeItemsAll@175..179
-                LEFT_PARENTHESIS@175..176 "("
-                DOUBLE_PERIOD@176..178 ".."
-                RIGHT_PARENTHESIS@178..179 ")"
+                DOUBLE_PERIOD_OPERATOR_NAME@175..179 "(..)"
             RIGHT_PARENTHESIS@179..180 ")"
             Comment@180..181
               WHITESPACE@180..181 "\n"

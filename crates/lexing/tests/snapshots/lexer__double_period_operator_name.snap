@@ -4,6 +4,8 @@ expression: tokens
 snapshot_kind: text
 ---
 [
+    DOUBLE_PERIOD,
+    WHITESPACE,
     DOUBLE_PERIOD_OPERATOR_NAME,
     END_OF_FILE,
 ]

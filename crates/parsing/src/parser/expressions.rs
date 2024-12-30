@@ -380,7 +380,7 @@ fn expression_atom(p: &mut Parser) {
             m.end(p, SyntaxKind::ExpressionVariable);
         } else if p.eat(SyntaxKind::UPPER) {
             m.end(p, SyntaxKind::ExpressionConstructor);
-        } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+        } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
             m.end(p, SyntaxKind::ExpressionOperatorName);
         } else {
             m.cancel(p);
@@ -393,7 +393,7 @@ fn expression_atom(p: &mut Parser) {
         m.end(p, SyntaxKind::ExpressionVariable);
     } else if p.eat(SyntaxKind::UPPER) {
         m.end(p, SyntaxKind::ExpressionConstructor);
-    } else if p.eat(SyntaxKind::OPERATOR_NAME) {
+    } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::ExpressionOperatorName);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::ExpressionSection);
@@ -467,7 +467,6 @@ fn expression_record(p: &mut Parser, mut m: NodeMarker) {
 const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::PREFIX,
     SyntaxKind::UPPER,
-    SyntaxKind::OPERATOR_NAME,
     SyntaxKind::UNDERSCORE,
     SyntaxKind::HOLE,
     SyntaxKind::STRING,
@@ -481,7 +480,8 @@ const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
-.union(names::LOWER_NON_RESERVED);
+.union(names::LOWER_NON_RESERVED)
+.union(names::OPERATOR_NAME);
 
 pub(super) const EXPRESSION_START: TokenSet = TokenSet::new(&[
     SyntaxKind::IF,

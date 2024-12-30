@@ -29,6 +29,7 @@ pub enum SyntaxKind {
     MINUS,
     PERIOD,
     DOUBLE_PERIOD,
+    DOUBLE_PERIOD_OPERATOR_NAME,
     PIPE,
     TICK,
     UNDERSCORE,

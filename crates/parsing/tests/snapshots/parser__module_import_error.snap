@@ -118,17 +118,17 @@ snapshot_kind: text
             LEFT_PARENTHESIS@150..151 "("
             ImportType@151..165
               UPPER@151..155 "List"
-              TypeItemsAll@155..165
+              TypeItemsList@155..165
                 LEFT_PARENTHESIS@155..156 "("
-                DOUBLE_PERIOD@156..158 ".."
+                ERROR@156..158
+                  ERROR@156..156 ""
+                  DOUBLE_PERIOD@156..158 ".."
                 ERROR@158..160
                   ERROR@158..158 ""
                   COMMA@158..159 ","
                   Comment@159..160
                     WHITESPACE@159..160 " "
-                ERROR@160..164
-                  ERROR@160..160 ""
-                  UPPER@160..164 "Cons"
+                UPPER@160..164 "Cons"
                 RIGHT_PARENTHESIS@164..165 ")"
             RIGHT_PARENTHESIS@165..166 ")"
             Comment@166..167
@@ -245,17 +245,17 @@ snapshot_kind: text
         },
         ParseError {
             position: Position {
-                offset: 158,
+                offset: 156,
                 line: 7,
-                column: 26,
+                column: 24,
             },
             message: "Invalid token",
         },
         ParseError {
             position: Position {
-                offset: 160,
+                offset: 158,
                 line: 7,
-                column: 28,
+                column: 26,
             },
             message: "Invalid token",
         },

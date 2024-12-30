@@ -57,7 +57,7 @@ lexer_tests!(
     operator_name_glued => "(->) (=>) (::)",
     operator_name_non_glue_type_var => "(@a :: Type)",
     operator_name_non_glue_type_int => "(-1)",
-    operator_name_non_glue_export_all => "(..)",
+    double_period_operator_name => ".. (..)"
 );
 
 lexer_tests!(

@@ -272,9 +272,13 @@ impl<'a> Lexer<'a> {
         assert_eq!(self.take(), '(');
         if is_operator(self.first()) {
             let (op_kind, op_position) = self.take_operator_kind();
-            if op_kind != SyntaxKind::DOUBLE_PERIOD && self.first() == ')' {
+            if self.first() == ')' {
                 self.take();
-                self.lexed.push(SyntaxKind::OPERATOR_NAME, lp_position, None);
+                let op_kind = match op_kind {
+                    SyntaxKind::DOUBLE_PERIOD => SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME,
+                    _ => SyntaxKind::OPERATOR_NAME,
+                };
+                self.lexed.push(op_kind, lp_position, None);
             } else {
                 self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_position, None);
                 self.lexed.push(op_kind, op_position, None);
