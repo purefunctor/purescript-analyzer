@@ -210,7 +210,7 @@ fn type_parenthesis(p: &mut Parser, mut m: NodeMarker) {
     }
 
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-        if p.at(SyntaxKind::LOWER) {
+        if p.at_in(names::RECORD_LABEL) {
             row_item(p);
             let ending = p.at_next(SyntaxKind::PIPE) || p.at_next(SyntaxKind::RIGHT_PARENTHESIS);
             if p.at(SyntaxKind::COMMA) && ending {
@@ -244,7 +244,7 @@ const TYPE_ROW_RECOVERY: TokenSet = TokenSet::new(&[
 fn row_item(p: &mut Parser) {
     let mut m = p.start();
 
-    p.expect(SyntaxKind::LOWER);
+    names::label(p);
     p.expect(SyntaxKind::DOUBLE_COLON);
     type_(p);
 
@@ -264,7 +264,7 @@ fn type_record(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::LEFT_CURLY);
 
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
-        if p.at(SyntaxKind::LOWER) {
+        if p.at_in(names::RECORD_LABEL) {
             row_item(p);
             let ending = p.at_next(SyntaxKind::PIPE) || p.at_next(SyntaxKind::RIGHT_CURLY);
             if p.at(SyntaxKind::COMMA) && ending {

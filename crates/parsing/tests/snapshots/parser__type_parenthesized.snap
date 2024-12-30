@@ -92,9 +92,10 @@ snapshot_kind: text
             Comment@96..97
               WHITESPACE@96..97 " "
             TypeRowItem@97..107
-              LOWER@97..98 "a"
-              Comment@98..99
-                WHITESPACE@98..99 " "
+              LabelName@97..99
+                LOWER@97..98 "a"
+                Comment@98..99
+                  WHITESPACE@98..99 " "
               DOUBLE_COLON@99..101 "::"
               Comment@101..102
                 WHITESPACE@101..102 " "
@@ -119,9 +120,10 @@ snapshot_kind: text
             Comment@123..124
               WHITESPACE@123..124 " "
             TypeRowItem@124..134
-              LOWER@124..125 "a"
-              Comment@125..126
-                WHITESPACE@125..126 " "
+              LabelName@124..126
+                LOWER@124..125 "a"
+                Comment@125..126
+                  WHITESPACE@125..126 " "
               DOUBLE_COLON@126..128 "::"
               Comment@128..129
                 WHITESPACE@128..129 " "
@@ -154,9 +156,10 @@ snapshot_kind: text
             Comment@151..152
               WHITESPACE@151..152 " "
             TypeRowItem@152..161
-              LOWER@152..153 "a"
-              Comment@153..154
-                WHITESPACE@153..154 " "
+              LabelName@152..154
+                LOWER@152..153 "a"
+                Comment@153..154
+                  WHITESPACE@153..154 " "
               DOUBLE_COLON@154..156 "::"
               Comment@156..157
                 WHITESPACE@156..157 " "
@@ -167,9 +170,10 @@ snapshot_kind: text
             Comment@162..163
               WHITESPACE@162..163 " "
             TypeRowItem@163..173
-              LOWER@163..164 "b"
-              Comment@164..165
-                WHITESPACE@164..165 " "
+              LabelName@163..165
+                LOWER@163..164 "b"
+                Comment@164..165
+                  WHITESPACE@164..165 " "
               DOUBLE_COLON@165..167 "::"
               Comment@167..168
                 WHITESPACE@167..168 " "
@@ -194,9 +198,10 @@ snapshot_kind: text
             Comment@190..191
               WHITESPACE@190..191 " "
             TypeRowItem@191..200
-              LOWER@191..192 "a"
-              Comment@192..193
-                WHITESPACE@192..193 " "
+              LabelName@191..193
+                LOWER@191..192 "a"
+                Comment@192..193
+                  WHITESPACE@192..193 " "
               DOUBLE_COLON@193..195 "::"
               Comment@195..196
                 WHITESPACE@195..196 " "
@@ -207,9 +212,10 @@ snapshot_kind: text
             Comment@201..202
               WHITESPACE@201..202 " "
             TypeRowItem@202..212
-              LOWER@202..203 "b"
-              Comment@203..204
-                WHITESPACE@203..204 " "
+              LabelName@202..204
+                LOWER@202..203 "b"
+                Comment@203..204
+                  WHITESPACE@203..204 " "
               DOUBLE_COLON@204..206 "::"
               Comment@206..207
                 WHITESPACE@206..207 " "

@@ -1,0 +1,88 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..96
+      ModuleHeader@0..33
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..26
+          UPPER@7..25 "KeywordInRowRecord"
+          Comment@25..26
+            WHITESPACE@25..26 " "
+        ModuleExportList@26..26
+        WHERE@26..31 "where"
+        Comment@31..33
+          WHITESPACE@31..33 "\n\n"
+      LAYOUT_START@33..33 ""
+      ModuleImports@33..33
+      ModuleStatements@33..96
+        TypeSynonymEquation@33..63
+          TYPE@33..37 "type"
+          Comment@37..38
+            WHITESPACE@37..38 " "
+          UPPER@38..41 "Row"
+          Comment@41..42
+            WHITESPACE@41..42 " "
+          EQUAL@42..43 "="
+          Comment@43..44
+            WHITESPACE@43..44 " "
+          TypeRow@44..63
+            LEFT_PARENTHESIS@44..45 "("
+            Comment@45..46
+              WHITESPACE@45..46 " "
+            TypeRowItem@46..61
+              LabelName@46..51
+                TYPE@46..50 "type"
+                Comment@50..51
+                  WHITESPACE@50..51 " "
+              DOUBLE_COLON@51..53 "::"
+              Comment@53..54
+                WHITESPACE@53..54 " "
+              TypeConstructor@54..61
+                QualifiedName@54..61
+                  UPPER@54..60 "String"
+                  Comment@60..61
+                    WHITESPACE@60..61 " "
+            RIGHT_PARENTHESIS@61..62 ")"
+            Comment@62..63
+              WHITESPACE@62..63 "\n"
+        LAYOUT_SEPARATOR@63..63 ""
+        TypeSynonymEquation@63..96
+          TYPE@63..67 "type"
+          Comment@67..68
+            WHITESPACE@67..68 " "
+          UPPER@68..74 "Record"
+          Comment@74..75
+            WHITESPACE@74..75 " "
+          EQUAL@75..76 "="
+          Comment@76..77
+            WHITESPACE@76..77 " "
+          TypeRecord@77..96
+            LEFT_CURLY@77..78 "{"
+            Comment@78..79
+              WHITESPACE@78..79 " "
+            TypeRowItem@79..94
+              LabelName@79..84
+                TYPE@79..83 "type"
+                Comment@83..84
+                  WHITESPACE@83..84 " "
+              DOUBLE_COLON@84..86 "::"
+              Comment@86..87
+                WHITESPACE@86..87 " "
+              TypeConstructor@87..94
+                QualifiedName@87..94
+                  UPPER@87..93 "String"
+                  Comment@93..94
+                    WHITESPACE@93..94 " "
+            RIGHT_CURLY@94..95 "}"
+            Comment@95..96
+              WHITESPACE@95..96 "\n"
+      LAYOUT_END@96..96 ""
+      END_OF_FILE@96..96 ""
+    ,
+    [],
+)
