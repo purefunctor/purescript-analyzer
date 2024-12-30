@@ -51,6 +51,8 @@ pub(super) const KEYWORD: TokenSet = TokenSet::new(&[
     SyntaxKind::INFIXL,
     SyntaxKind::INFIXR,
     SyntaxKind::INFIX,
+    SyntaxKind::TRUE,
+    SyntaxKind::FALSE,
 ]);
 
 pub(super) const RECORD_LABEL: TokenSet =

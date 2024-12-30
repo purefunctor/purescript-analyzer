@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..97
+    Module@0..139
       ModuleHeader@0..31
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@29..31 "\n\n"
       LAYOUT_START@31..31 ""
       ModuleImports@31..31
-      ModuleStatements@31..97
+      ModuleStatements@31..139
         ValueEquation@31..65
           LOWER@31..38 "invalid"
           Comment@38..39
@@ -93,8 +93,59 @@ snapshot_kind: text
                 RIGHT_CURLY@95..96 "}"
                 Comment@96..97
                   WHITESPACE@96..97 "\n"
-      LAYOUT_END@97..97 ""
-      END_OF_FILE@97..97 ""
+        LAYOUT_SEPARATOR@97..97 ""
+        ValueEquation@97..139
+          LOWER@97..104 "invalid"
+          Comment@104..105
+            WHITESPACE@104..105 " "
+          EquationBinders@105..121
+            BinderRecord@105..121
+              LEFT_CURLY@105..106 "{"
+              Comment@106..107
+                WHITESPACE@106..107 " "
+              RecordPun@107..111
+                ERROR@107..107 ""
+                LabelName@107..111
+                  TRUE@107..111 "true"
+              COMMA@111..112 ","
+              Comment@112..113
+                WHITESPACE@112..113 " "
+              RecordPun@113..119
+                ERROR@113..113 ""
+                LabelName@113..119
+                  FALSE@113..118 "false"
+                  Comment@118..119
+                    WHITESPACE@118..119 " "
+              RIGHT_CURLY@119..120 "}"
+              Comment@120..121
+                WHITESPACE@120..121 " "
+          Unconditional@121..139
+            EQUAL@121..122 "="
+            Comment@122..123
+              WHITESPACE@122..123 " "
+            WhereExpression@123..139
+              ExpressionRecord@123..139
+                LEFT_CURLY@123..124 "{"
+                Comment@124..125
+                  WHITESPACE@124..125 " "
+                RecordPun@125..129
+                  ERROR@125..125 ""
+                  LabelName@125..129
+                    TRUE@125..129 "true"
+                COMMA@129..130 ","
+                Comment@130..131
+                  WHITESPACE@130..131 " "
+                RecordPun@131..137
+                  ERROR@131..131 ""
+                  LabelName@131..137
+                    FALSE@131..136 "false"
+                    Comment@136..137
+                      WHITESPACE@136..137 " "
+                RIGHT_CURLY@137..138 "}"
+                Comment@138..139
+                  WHITESPACE@138..139 "\n"
+      LAYOUT_END@139..139 ""
+      END_OF_FILE@139..139 ""
     ,
     [
         ParseError {
@@ -126,6 +177,38 @@ snapshot_kind: text
                 offset: 88,
                 line: 4,
                 column: 24,
+            },
+            message: "Invalid reserved keyword in record pun",
+        },
+        ParseError {
+            position: Position {
+                offset: 107,
+                line: 5,
+                column: 11,
+            },
+            message: "Invalid reserved keyword in record pun",
+        },
+        ParseError {
+            position: Position {
+                offset: 113,
+                line: 5,
+                column: 17,
+            },
+            message: "Invalid reserved keyword in record pun",
+        },
+        ParseError {
+            position: Position {
+                offset: 125,
+                line: 5,
+                column: 29,
+            },
+            message: "Invalid reserved keyword in record pun",
+        },
+        ParseError {
+            position: Position {
+                offset: 131,
+                line: 5,
+                column: 35,
             },
             message: "Invalid reserved keyword in record pun",
         },

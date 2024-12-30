@@ -1,0 +1,65 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..64
+      ModuleHeader@0..27
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..20
+          UPPER@7..19 "BooleanField"
+          Comment@19..20
+            WHITESPACE@19..20 " "
+        ModuleExportList@20..20
+        WHERE@20..25 "where"
+        Comment@25..27
+          WHITESPACE@25..27 "\n\n"
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..64
+        ValueEquation@27..64
+          LOWER@27..32 "field"
+          Comment@32..33
+            WHITESPACE@32..33 " "
+          EquationBinders@33..33
+          Unconditional@33..64
+            EQUAL@33..34 "="
+            Comment@34..35
+              WHITESPACE@34..35 " "
+            WhereExpression@35..64
+              ExpressionRecord@35..64
+                LEFT_CURLY@35..36 "{"
+                Comment@36..37
+                  WHITESPACE@36..37 " "
+                RecordField@37..48
+                  LabelName@37..41
+                    TRUE@37..41 "true"
+                  COLON@41..42 ":"
+                  Comment@42..43
+                    WHITESPACE@42..43 " "
+                  ExpressionFalse@43..48
+                    FALSE@43..48 "false"
+                COMMA@48..49 ","
+                Comment@49..50
+                  WHITESPACE@49..50 " "
+                RecordField@50..62
+                  LabelName@50..55
+                    FALSE@50..55 "false"
+                  COLON@55..56 ":"
+                  Comment@56..57
+                    WHITESPACE@56..57 " "
+                  ExpressionTrue@57..62
+                    TRUE@57..61 "true"
+                    Comment@61..62
+                      WHITESPACE@61..62 " "
+                RIGHT_CURLY@62..63 "}"
+                Comment@63..64
+                  WHITESPACE@63..64 "\n"
+      LAYOUT_END@64..64 ""
+      END_OF_FILE@64..64 ""
+    ,
+    [],
+)
