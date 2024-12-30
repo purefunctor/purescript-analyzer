@@ -8,7 +8,6 @@ mod types;
 use std::{cell::Cell, mem, sync::Arc};
 
 use drop_bomb::DropBomb;
-use names::LOWER_NON_RESERVED;
 use syntax::{SyntaxKind, TokenSet};
 
 use crate::builder::Output;
@@ -259,7 +258,7 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::TYPE,
     SyntaxKind::UPPER,
 ])
-.union(names::LOWER_NON_RESERVED)
+.union(names::LOWER)
 .union(names::OPERATOR_NAME);
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
@@ -267,7 +266,7 @@ const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 fn module_export_item(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ModuleExportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
@@ -361,7 +360,7 @@ const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::NEWTYPE,
     SyntaxKind::FOREIGN,
 ])
-.union(names::LOWER_NON_RESERVED);
+.union(names::LOWER);
 
 fn import_statement(p: &mut Parser) {
     let mut m = p.start();
@@ -409,7 +408,7 @@ fn import_list(p: &mut Parser) {
 
 const IMPORT_ITEM_START: TokenSet =
     TokenSet::new(&[SyntaxKind::UPPER, SyntaxKind::CLASS, SyntaxKind::TYPE])
-        .union(names::LOWER_NON_RESERVED)
+        .union(names::LOWER)
         .union(names::OPERATOR_NAME);
 
 const IMPORT_LIST_RECOVERY: TokenSet =
@@ -418,7 +417,7 @@ const IMPORT_LIST_RECOVERY: TokenSet =
 fn import_item(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ImportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
@@ -447,7 +446,7 @@ fn import_alias(p: &mut Parser) {
 }
 
 fn module_statement(p: &mut Parser) {
-    if p.at_in(names::LOWER_NON_RESERVED) {
+    if p.at_in(names::LOWER) {
         value_signature_or_equation(p);
     } else if p.at(SyntaxKind::TYPE) {
         synonym_signature_or_equation(p);
@@ -486,17 +485,17 @@ fn infix_declaration(p: &mut Parser) {
 
     let mut n = p.start();
     p.eat(SyntaxKind::PREFIX);
-    if !(p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) || p.eat(SyntaxKind::UPPER)) {
-        p.error("Expected LOWER_NON_RESERVED or UPPER");
+    if !(p.eat_in(names::LOWER, SyntaxKind::LOWER) || p.eat(SyntaxKind::UPPER)) {
+        p.error("Expected LOWER or UPPER");
     }
     n.end(p, SyntaxKind::QualifiedName);
 
     p.expect(SyntaxKind::AS);
 
     p.expect_in(
-        names::OPERATOR_NON_RESERVED,
+        names::OPERATOR,
         SyntaxKind::OPERATOR,
-        "Expected OPERATOR_NON_RESERVED",
+        "Expected OPERATOR",
     );
 
     m.end(p, SyntaxKind::InfixDeclaration);
@@ -590,7 +589,7 @@ fn class_head(p: &mut Parser) {
 }
 
 const FUNCTIONAL_DEPENDENCY_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::RIGHT_ARROW]).union(names::LOWER_NON_RESERVED);
+    TokenSet::new(&[SyntaxKind::RIGHT_ARROW]).union(names::LOWER);
 
 const FUNCTIONAL_DEPENDENCY_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::WHERE, SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -619,12 +618,12 @@ fn class_functional_dependencies(p: &mut Parser) {
 fn class_functional_dependency(p: &mut Parser) {
     let mut m = p.start();
     if p.eat(SyntaxKind::RIGHT_ARROW) {
-        p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER);
+        p.eat_in(names::LOWER, SyntaxKind::LOWER);
         m.end(p, SyntaxKind::FunctionalDependencyDetermined);
     } else {
-        while p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {}
+        while p.eat_in(names::LOWER, SyntaxKind::LOWER) {}
         p.expect(SyntaxKind::RIGHT_ARROW);
-        while p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {}
+        while p.eat_in(names::LOWER, SyntaxKind::LOWER) {}
         m.end(p, SyntaxKind::FunctionalDependencyDetermines);
     }
 }
@@ -632,7 +631,7 @@ fn class_functional_dependency(p: &mut Parser) {
 fn class_statements(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
-    while p.at_in(names::LOWER_NON_RESERVED) && !p.at_eof() {
+    while p.at_in(names::LOWER) && !p.at_eof() {
         class_statement(p);
         while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
             p.error_recover("Invalid token");
@@ -647,7 +646,7 @@ fn class_statements(p: &mut Parser) {
 
 fn class_statement(p: &mut Parser) {
     let mut m = p.start();
-    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
     p.expect(SyntaxKind::DOUBLE_COLON);
     types::type_(p);
     m.end(p, SyntaxKind::ClassMemberStatement);
@@ -719,7 +718,7 @@ fn instance_head(p: &mut Parser) {
 fn instance_statements(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
-    while p.at_in(names::LOWER_NON_RESERVED) && !p.at_eof() {
+    while p.at_in(names::LOWER) && !p.at_eof() {
         instance_statement(p);
         while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
             p.error_recover("Invalid token");
@@ -792,7 +791,7 @@ fn data_constructor(p: &mut Parser) {
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER_NON_RESERVED);
+    TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER);
 
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -814,7 +813,7 @@ fn type_variable_binding(p: &mut Parser) {
     let mut m = p.start();
 
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
-    p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER);
+    p.eat_in(names::LOWER, SyntaxKind::LOWER);
     if closing {
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
     }
@@ -830,7 +829,7 @@ fn foreign_import(p: &mut Parser) {
         p.expect(SyntaxKind::UPPER);
         SyntaxKind::ForeignImportDataDeclaration
     } else {
-        p.expect_in(LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+        p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
         SyntaxKind::ForeignImportValueDeclaration
     };
     p.expect(SyntaxKind::DOUBLE_COLON);

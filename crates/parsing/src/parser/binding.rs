@@ -5,7 +5,7 @@ use super::{generic, names, Parser};
 pub(super) fn bindings(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
-    while p.at_in(names::LOWER_NON_RESERVED) && !p.at_eof() {
+    while p.at_in(names::LOWER) && !p.at_eof() {
         generic::signature_or_equation(
             p,
             SyntaxKind::LetBindingSignature,

@@ -19,7 +19,7 @@ fn expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_2(p);
-    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR, SyntaxKind::OPERATOR) && !p.at_eof() {
         expression_2(p);
         i += 1;
     }
@@ -62,7 +62,7 @@ fn tick_expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_3(p);
-    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR, SyntaxKind::OPERATOR) && !p.at_eof() {
         expression_3(p);
         i += 1;
     }
@@ -376,7 +376,7 @@ fn expression_atom(p: &mut Parser) {
 
     let mut n = p.start();
     if p.eat(SyntaxKind::PREFIX) {
-        if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+        if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
             m.end(p, SyntaxKind::ExpressionVariable);
         } else if p.eat(SyntaxKind::UPPER) {
             m.end(p, SyntaxKind::ExpressionConstructor);
@@ -389,7 +389,7 @@ fn expression_atom(p: &mut Parser) {
     };
     n.cancel(p);
 
-    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::ExpressionVariable);
     } else if p.eat(SyntaxKind::UPPER) {
         m.end(p, SyntaxKind::ExpressionConstructor);
@@ -480,7 +480,7 @@ const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
-.union(names::LOWER_NON_RESERVED)
+.union(names::LOWER)
 .union(names::OPERATOR_NAME);
 
 pub(super) const EXPRESSION_START: TokenSet = TokenSet::new(&[

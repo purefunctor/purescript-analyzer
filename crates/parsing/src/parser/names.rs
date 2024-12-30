@@ -2,10 +2,10 @@ use syntax::{SyntaxKind, TokenSet};
 
 use super::Parser;
 
-pub(super) const LOWER_NON_RESERVED: TokenSet =
+pub(super) const LOWER: TokenSet =
     TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING]);
 
-pub(super) const OPERATOR_NON_RESERVED: TokenSet = TokenSet::new(&[
+pub(super) const OPERATOR: TokenSet = TokenSet::new(&[
     SyntaxKind::OPERATOR,
     SyntaxKind::COLON,
     SyntaxKind::MINUS,
@@ -27,7 +27,7 @@ pub(super) fn module_name(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleName);
 }
 
-pub(super) const RESERVED_KEYWORD: TokenSet = TokenSet::new(&[
+pub(super) const KEYWORD: TokenSet = TokenSet::new(&[
     SyntaxKind::MODULE,
     SyntaxKind::WHERE,
     SyntaxKind::IMPORT,
@@ -54,14 +54,12 @@ pub(super) const RESERVED_KEYWORD: TokenSet = TokenSet::new(&[
 ]);
 
 pub(super) const RECORD_LABEL: TokenSet =
-    TokenSet::new(&[SyntaxKind::STRING, SyntaxKind::RAW_STRING])
-        .union(LOWER_NON_RESERVED)
-        .union(RESERVED_KEYWORD);
+    TokenSet::new(&[SyntaxKind::STRING, SyntaxKind::RAW_STRING]).union(LOWER).union(KEYWORD);
 
 pub(super) fn label(p: &mut Parser) {
     let mut m = p.start();
 
-    // Unlike parsing for `LOWER_NON_RESERVED`, which consumes tokens as
+    // Unlike parsing for `LOWER`, which consumes tokens as
     // the `LOWER` token, we use a `LabelName` node to represent labels.
     if p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING) || p.at_in(RECORD_LABEL) {
         p.consume();

@@ -9,7 +9,7 @@ pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
         p.error("Invalid string label in record pun");
     }
 
-    if p.at_in(names::RESERVED_KEYWORD) && !p.at_next(SyntaxKind::COLON) {
+    if p.at_in(names::KEYWORD) && !p.at_next(SyntaxKind::COLON) {
         p.error("Invalid reserved keyword in record pun");
     }
 
@@ -27,7 +27,7 @@ pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
 
 pub(super) fn signature_or_equation(p: &mut Parser, s: SyntaxKind, e: SyntaxKind) {
     let mut m = p.start();
-    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         types::type_(p);
         m.end(p, s);

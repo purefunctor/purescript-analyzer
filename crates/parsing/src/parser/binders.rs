@@ -19,7 +19,7 @@ fn binder_1(p: &mut Parser) {
     let mut i = 0;
 
     binder_2(p);
-    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR, SyntaxKind::OPERATOR) && !p.at_eof() {
         binder_2(p);
         i += 1;
     }
@@ -71,13 +71,13 @@ pub(super) const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::LEFT_PARENTHESIS,
 ])
-.union(names::LOWER_NON_RESERVED);
+.union(names::LOWER);
 
 const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 
 pub(super) fn binder_atom(p: &mut Parser) {
     let mut m = p.start();
-    if p.at_in(names::LOWER_NON_RESERVED) {
+    if p.at_in(names::LOWER) {
         binder_named_or_variable(p, &mut m);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
         binder_constructor(p, m);

@@ -48,7 +48,7 @@ fn type_3(p: &mut Parser) {
     let mut i = 0;
 
     type_4(p);
-    while p.eat_in(names::OPERATOR_NON_RESERVED, SyntaxKind::OPERATOR) && !p.at_eof() {
+    while p.eat_in(names::OPERATOR, SyntaxKind::OPERATOR) && !p.at_eof() {
         type_4(p);
         i += 1;
     }
@@ -106,7 +106,7 @@ pub(super) fn type_atom(p: &mut Parser) {
     }
     n.cancel(p);
 
-    if p.eat_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER) {
+    if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
     } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
         let mut n = p.start();
@@ -147,10 +147,10 @@ pub(super) const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::LEFT_CURLY,
     SyntaxKind::UNDERSCORE,
 ])
-.union(names::LOWER_NON_RESERVED);
+.union(names::LOWER);
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER_NON_RESERVED);
+    TokenSet::new(&[SyntaxKind::AT, SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER);
 
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -174,7 +174,7 @@ fn type_variable_binding(p: &mut Parser) {
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
 
     p.eat(SyntaxKind::AT);
-    p.expect_in(names::LOWER_NON_RESERVED, SyntaxKind::LOWER, "Expected LOWER_NON_RESERVED");
+    p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {
         type_(p);
