@@ -17,6 +17,7 @@
 
   onMount(() => {
     return source.subscribe(async (source) => {
+      if (!docsLib) return;
       const start = performance.now();
       output = await docsLib!.parse(source);
       time = performance.now() - start;
