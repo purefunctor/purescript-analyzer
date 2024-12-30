@@ -1,0 +1,56 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..59
+      ModuleHeader@0..27
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..20
+          UPPER@7..19 "DataEquation"
+          Comment@19..20
+            WHITESPACE@19..20 " "
+        ModuleExportList@20..20
+        WHERE@20..25 "where"
+        Comment@25..27
+          WHITESPACE@25..27 "\n\n"
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..59
+        DataEquation@27..59
+          DATA@27..31 "data"
+          Comment@31..32
+            WHITESPACE@31..32 " "
+          UPPER@32..37 "Maybe"
+          Comment@37..38
+            WHITESPACE@37..38 " "
+          TypeVariableBinding@38..40
+            LOWER@38..39 "a"
+            Comment@39..40
+              WHITESPACE@39..40 " "
+          EQUAL@40..41 "="
+          Comment@41..42
+            WHITESPACE@41..42 " "
+          DataConstructor@42..49
+            UPPER@42..46 "Just"
+            Comment@46..47
+              WHITESPACE@46..47 " "
+            TypeVariable@47..49
+              LOWER@47..48 "a"
+              Comment@48..49
+                WHITESPACE@48..49 " "
+          PIPE@49..50 "|"
+          Comment@50..51
+            WHITESPACE@50..51 " "
+          DataConstructor@51..59
+            UPPER@51..58 "Nothing"
+            Comment@58..59
+              WHITESPACE@58..59 "\n"
+      LAYOUT_END@59..59 ""
+      END_OF_FILE@59..59 ""
+    ,
+    [],
+)

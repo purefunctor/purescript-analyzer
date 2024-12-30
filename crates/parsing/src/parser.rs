@@ -469,6 +469,8 @@ fn module_statement(p: &mut Parser) {
         instance_chain(p);
     } else if p.at(SyntaxKind::NEWTYPE) {
         newtype_signature_or_equation(p);
+    } else if p.at(SyntaxKind::DATA) {
+        data_signature_or_equation(p);
     } else if p.at_in(INFIX_KEYWORD) {
         infix_declaration(p);
     }
@@ -764,6 +766,39 @@ fn newtype_signature_or_equation(p: &mut Parser) {
         types::type_atom(p);
         m.end(p, SyntaxKind::NewtypeEquation);
     }
+}
+
+fn data_signature_or_equation(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.expect(SyntaxKind::DATA);
+    p.expect(SyntaxKind::UPPER);
+
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
+        types::type_(p);
+        m.end(p, SyntaxKind::DataSignature);
+    } else {
+        type_variable_bindings(p);
+        p.expect(SyntaxKind::EQUAL);
+        data_constructors(p);
+        m.end(p, SyntaxKind::DataEquation);
+    }
+}
+
+fn data_constructors(p: &mut Parser) {
+    data_constructor(p);
+    while p.eat(SyntaxKind::PIPE) && !p.at_eof() {
+        data_constructor(p);
+    }
+}
+
+fn data_constructor(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::UPPER);
+    while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
+        types::type_atom(p);
+    }
+    m.end(p, SyntaxKind::DataConstructor);
 }
 
 const TYPE_VARIABLE_BINDING_START: TokenSet =

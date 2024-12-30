@@ -247,6 +247,10 @@ pub enum SyntaxKind {
     NewtypeSignature,
     NewtypeEquation,
 
+    DataSignature,
+    DataEquation,
+    DataConstructor,
+
     #[doc(hidden)]
     __LAST,
 }
