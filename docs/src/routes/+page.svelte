@@ -3,19 +3,25 @@
   import init, { parse } from "../wasm/pkg/docs_lib";
 
   let source = writable("");
+  let time = $state(0);
   let output = $state("");
 
   $effect(() => {
     init().then(() => {
       source.subscribe((value) => {
+        const start = performance.now();
         output = parse(value);
+        time = performance.now() - start;
       });
     });
   });
 </script>
 
 <div class="container">
-  <h1>PureScript Analyzer</h1>
+  <div>
+    <h1>PureScript Analyzer</h1>
+    <p>Finished: {time}ms</p>
+  </div>
   <div class="grid">
     <div class="editor">
       <textarea bind:value={$source}></textarea>
