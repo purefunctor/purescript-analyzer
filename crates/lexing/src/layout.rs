@@ -404,7 +404,12 @@ impl<'a, 'b> Insert<'a, 'b> {
                 self.insert_token(self.token);
             }
 
-            SyntaxKind::STRING | SyntaxKind::RAW_STRING | SyntaxKind::LOWER => {
+            SyntaxKind::STRING | SyntaxKind::RAW_STRING => {
+                self.insert_default();
+                self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
+            }
+
+            k if k.is_lower() => {
                 self.insert_default();
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
             }

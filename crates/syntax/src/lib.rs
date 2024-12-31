@@ -305,12 +305,51 @@ impl SyntaxKind {
         matches!(self, Self::WHITESPACE)
     }
 
-    pub fn is_operator(&self) -> bool {
-        matches!(self, Self::OPERATOR | Self::MINUS | Self::COLON)
+    pub fn is_lower(&self) -> bool {
+        matches!(
+            self,
+            Self::LOWER
+                | Self::ADO
+                | Self::AS
+                | Self::CASE
+                | Self::CLASS
+                | Self::DATA
+                | Self::DERIVE
+                | Self::DO
+                | Self::ELSE
+                | Self::FORALL
+                | Self::FOREIGN
+                | Self::HIDING
+                | Self::IF
+                | Self::IMPORT
+                | Self::IN
+                | Self::INFIX
+                | Self::INFIXL
+                | Self::INFIXR
+                | Self::INSTANCE
+                | Self::LET
+                | Self::MODULE
+                | Self::NEWTYPE
+                | Self::NOMINAL
+                | Self::OF
+                | Self::PHANTOM
+                | Self::REPRESENTATIONAL
+                | Self::ROLE
+                | Self::THEN
+                | Self::TYPE
+                | Self::WHERE
+        )
     }
 
-    pub fn is_reserved_operator(&self) -> bool {
-        matches!(self, Self::RIGHT_ARROW | Self::RIGHT_THICK_ARROW)
+    pub fn is_operator(&self) -> bool {
+        matches!(
+            self,
+            Self::OPERATOR
+                | Self::MINUS
+                | Self::COLON
+                | Self::DOUBLE_PERIOD
+                | Self::LEFT_THICK_ARROW
+        )
     }
 
     pub fn is_end(&self) -> bool {
