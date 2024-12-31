@@ -843,6 +843,9 @@ fn type_variable_binding(p: &mut Parser) {
 
     let closing = p.eat(SyntaxKind::LEFT_PARENTHESIS);
     p.eat_in(names::LOWER, SyntaxKind::LOWER);
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
+        types::type_(p);
+    }
     if closing {
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
     }
