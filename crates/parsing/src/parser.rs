@@ -54,7 +54,7 @@ impl<'t> Parser<'t> {
         NodeMarker::new(index)
     }
 
-    fn optional(&mut self, rule: Rule) -> bool {
+    fn optional(&mut self, rule: Rule) {
         let initial_index = self.index;
         let initial_output = mem::take(&mut self.output);
 
@@ -68,8 +68,18 @@ impl<'t> Parser<'t> {
             self.index = index;
             self.output.append(&mut output);
         }
+    }
 
-        finished
+    fn lookahead(&mut self, rule: Rule) -> bool {
+        let initial_index = self.index;
+        let initial_output = mem::take(&mut self.output);
+
+        rule(self);
+
+        let _ = mem::replace(&mut self.index, initial_index);
+        let output = mem::replace(&mut self.output, initial_output);
+
+        output.iter().all(|event| !matches!(event, Output::Error { .. }))
     }
 
     fn alternative(&mut self, rules: impl IntoIterator<Item = Rule>) {

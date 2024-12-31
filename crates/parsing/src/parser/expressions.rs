@@ -313,10 +313,19 @@ fn expression_ado(p: &mut Parser, mut m: NodeMarker) {
 fn expression_6(p: &mut Parser) {
     let mut m = p.start();
     expression_7(p);
-    if p.optional(record_updates) {
+    if p.lookahead(is_record_update) {
+        record_updates(p);
         m.end(p, SyntaxKind::ExpressionRecordUpdate);
     } else {
         m.cancel(p);
+    }
+}
+
+fn is_record_update(p: &mut Parser) {
+    p.expect(SyntaxKind::LEFT_CURLY);
+    names::label(p);
+    if !p.eat(SyntaxKind::EQUAL) && !p.eat(SyntaxKind::LEFT_CURLY) {
+        p.error("Invalid token");
     }
 }
 
