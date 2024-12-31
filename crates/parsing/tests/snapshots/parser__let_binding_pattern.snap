@@ -60,26 +60,29 @@ snapshot_kind: text
                       WHITESPACE@59..60 " "
                     WhereExpression@60..64
                       ExpressionVariable@60..64
-                        LOWER@60..61 "z"
-                        Comment@61..64
-                          WHITESPACE@61..64 "\n  "
+                        QualifiedName@60..64
+                          LOWER@60..61 "z"
+                          Comment@61..64
+                            WHITESPACE@61..64 "\n  "
                   LAYOUT_END@64..64 ""
                 IN@64..66 "in"
                 Comment@66..71
                   WHITESPACE@66..71 "\n    "
                 ExpressionOperatorChain@71..77
                   ExpressionVariable@71..73
-                    LOWER@71..72 "x"
-                    Comment@72..73
-                      WHITESPACE@72..73 " "
+                    QualifiedName@71..73
+                      LOWER@71..72 "x"
+                      Comment@72..73
+                        WHITESPACE@72..73 " "
                   QualifiedName@73..75
                     OPERATOR@73..74 "+"
                     Comment@74..75
                       WHITESPACE@74..75 " "
                   ExpressionVariable@75..77
-                    LOWER@75..76 "y"
-                    Comment@76..77
-                      WHITESPACE@76..77 "\n"
+                    QualifiedName@75..77
+                      LOWER@75..76 "y"
+                      Comment@76..77
+                        WHITESPACE@76..77 "\n"
       LAYOUT_END@77..77 ""
       END_OF_FILE@77..77 ""
     ,

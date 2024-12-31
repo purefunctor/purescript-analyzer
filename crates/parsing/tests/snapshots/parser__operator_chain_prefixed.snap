@@ -31,27 +31,21 @@ snapshot_kind: text
               WHITESPACE@48..49 " "
             WhereExpression@49..68
               ExpressionOperatorChain@49..68
-                ExpressionApplicationChain@49..53
-                  ExpressionInteger@49..51
-                    INTEGER@49..50 "1"
-                    Comment@50..51
-                      WHITESPACE@50..51 " "
-                  ExpressionTermArgument@51..53
-                    QualifiedName@51..53
-                      PREFIX@51..53 "L."
-                QualifiedName@53..55
+                ExpressionInteger@49..51
+                  INTEGER@49..50 "1"
+                  Comment@50..51
+                    WHITESPACE@50..51 " "
+                QualifiedName@51..55
+                  PREFIX@51..53 "L."
                   OPERATOR@53..54 ":"
                   Comment@54..55
                     WHITESPACE@54..55 " "
-                ExpressionApplicationChain@55..59
-                  ExpressionInteger@55..57
-                    INTEGER@55..56 "2"
-                    Comment@56..57
-                      WHITESPACE@56..57 " "
-                  ExpressionTermArgument@57..59
-                    QualifiedName@57..59
-                      PREFIX@57..59 "L."
-                QualifiedName@59..61
+                ExpressionInteger@55..57
+                  INTEGER@55..56 "2"
+                  Comment@56..57
+                    WHITESPACE@56..57 " "
+                QualifiedName@57..61
+                  PREFIX@57..59 "L."
                   OPERATOR@59..60 ":"
                   Comment@60..61
                     WHITESPACE@60..61 " "
@@ -101,22 +95,21 @@ snapshot_kind: text
               WHITESPACE@96..97 " "
             WhereExpression@97..106
               ExpressionOperatorChain@97..106
-                ExpressionApplicationChain@97..101
-                  ExpressionVariable@97..99
+                ExpressionVariable@97..99
+                  QualifiedName@97..99
                     LOWER@97..98 "a"
                     Comment@98..99
                       WHITESPACE@98..99 " "
-                  ExpressionTermArgument@99..101
-                    QualifiedName@99..101
-                      PREFIX@99..101 "S."
-                QualifiedName@101..103
+                QualifiedName@99..103
+                  PREFIX@99..101 "S."
                   OPERATOR@101..102 "+"
                   Comment@102..103
                     WHITESPACE@102..103 " "
                 ExpressionVariable@103..106
-                  LOWER@103..104 "b"
-                  Comment@104..106
-                    WHITESPACE@104..106 "\n\n"
+                  QualifiedName@103..106
+                    LOWER@103..104 "b"
+                    Comment@104..106
+                      WHITESPACE@104..106 "\n\n"
         LAYOUT_SEPARATOR@106..106 ""
         TypeSynonymEquation@106..148
           TYPE@106..110 "type"
@@ -129,27 +122,23 @@ snapshot_kind: text
           Comment@117..118
             WHITESPACE@117..118 " "
           TypeOperatorChain@118..148
-            TypeApplicationChain@118..128
-              TypeConstructor@118..126
-                QualifiedName@118..126
-                  UPPER@118..125 "Integer"
-                  Comment@125..126
-                    WHITESPACE@125..126 " "
-              QualifiedName@126..128
-                PREFIX@126..128 "L."
-            QualifiedName@128..130
+            TypeConstructor@118..126
+              QualifiedName@118..126
+                UPPER@118..125 "Integer"
+                Comment@125..126
+                  WHITESPACE@125..126 " "
+            QualifiedName@126..130
+              PREFIX@126..128 "L."
               OPERATOR@128..129 ":"
               Comment@129..130
                 WHITESPACE@129..130 " "
-            TypeApplicationChain@130..140
-              TypeConstructor@130..138
-                QualifiedName@130..138
-                  UPPER@130..137 "Integer"
-                  Comment@137..138
-                    WHITESPACE@137..138 " "
-              QualifiedName@138..140
-                PREFIX@138..140 "L."
-            QualifiedName@140..142
+            TypeConstructor@130..138
+              QualifiedName@130..138
+                UPPER@130..137 "Integer"
+                Comment@137..138
+                  WHITESPACE@137..138 " "
+            QualifiedName@138..142
+              PREFIX@138..140 "L."
               OPERATOR@140..141 ":"
               Comment@141..142
                 WHITESPACE@141..142 " "

@@ -46,9 +46,10 @@ snapshot_kind: text
                       WHITESPACE@52..53 " "
                     ExpressionApplicationChain@53..63
                       ExpressionVariable@53..58
-                        LOWER@53..57 "pure"
-                        Comment@57..58
-                          WHITESPACE@57..58 " "
+                        QualifiedName@53..58
+                          LOWER@53..57 "pure"
+                          Comment@57..58
+                            WHITESPACE@57..58 " "
                       ExpressionTermArgument@58..63
                         ExpressionInteger@58..63
                           INTEGER@58..60 "42"
@@ -59,9 +60,10 @@ snapshot_kind: text
                 Comment@65..66
                   WHITESPACE@65..66 " "
                 ExpressionVariable@66..71
-                  LOWER@66..70 "life"
-                  Comment@70..71
-                    WHITESPACE@70..71 "\n"
+                  QualifiedName@66..71
+                    LOWER@66..70 "life"
+                    Comment@70..71
+                      WHITESPACE@70..71 "\n"
       LAYOUT_END@71..71 ""
       END_OF_FILE@71..71 ""
     ,

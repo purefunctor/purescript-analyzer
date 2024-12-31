@@ -32,7 +32,8 @@ snapshot_kind: text
             WhereExpression@46..57
               ExpressionRecordAccess@46..57
                 ExpressionVariable@46..52
-                  LOWER@46..52 "record"
+                  QualifiedName@46..52
+                    LOWER@46..52 "record"
                 PERIOD@52..53 "."
                 LabelName@53..57
                   LOWER@53..56 "foo"
@@ -51,7 +52,8 @@ snapshot_kind: text
             WhereExpression@66..82
               ExpressionRecordAccess@66..82
                 ExpressionVariable@66..72
-                  LOWER@66..72 "record"
+                  QualifiedName@66..72
+                    LOWER@66..72 "record"
                 PERIOD@72..73 "."
                 LabelName@73..76
                   LOWER@73..76 "foo"
@@ -73,7 +75,8 @@ snapshot_kind: text
             WhereExpression@92..106
               ExpressionRecordAccess@92..106
                 ExpressionVariable@92..98
-                  LOWER@92..98 "record"
+                  QualifiedName@92..98
+                    LOWER@92..98 "record"
                 PERIOD@98..99 "."
                 LabelName@99..106
                   FORALL@99..105 "forall"
@@ -92,7 +95,8 @@ snapshot_kind: text
             WhereExpression@116..138
               ExpressionRecordAccess@116..138
                 ExpressionVariable@116..122
-                  LOWER@116..122 "record"
+                  QualifiedName@116..122
+                    LOWER@116..122 "record"
                 PERIOD@122..123 "."
                 LabelName@123..129
                   FORALL@123..129 "forall"
@@ -114,7 +118,8 @@ snapshot_kind: text
             WhereExpression@147..162
               ExpressionRecordAccess@147..162
                 ExpressionVariable@147..153
-                  LOWER@147..153 "record"
+                  QualifiedName@147..153
+                    LOWER@147..153 "record"
                 PERIOD@153..154 "."
                 LabelName@154..162
                   STRING@154..161 "\"error\""
@@ -133,7 +138,8 @@ snapshot_kind: text
             WhereExpression@171..195
               ExpressionRecordAccess@171..195
                 ExpressionVariable@171..177
-                  LOWER@171..177 "record"
+                  QualifiedName@171..177
+                    LOWER@171..177 "record"
                 PERIOD@177..178 "."
                 LabelName@178..185
                   STRING@178..185 "\"error\""
@@ -155,7 +161,8 @@ snapshot_kind: text
             WhereExpression@208..227
               ExpressionRecordAccess@208..227
                 ExpressionVariable@208..214
-                  LOWER@208..214 "record"
+                  QualifiedName@208..214
+                    LOWER@208..214 "record"
                 PERIOD@214..215 "."
                 LabelName@215..227
                   RAW_STRING@215..226 "\"\"\"error\"\"\""
@@ -174,7 +181,8 @@ snapshot_kind: text
             WhereExpression@240..273
               ExpressionRecordAccess@240..273
                 ExpressionVariable@240..246
-                  LOWER@240..246 "record"
+                  QualifiedName@240..246
+                    LOWER@240..246 "record"
                 PERIOD@246..247 "."
                 LabelName@247..258
                   RAW_STRING@247..258 "\"\"\"error\"\"\""

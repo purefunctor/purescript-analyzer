@@ -47,17 +47,19 @@ snapshot_kind: text
                 Comment@53..54
                   WHITESPACE@53..54 " "
                 ExpressionVariable@54..56
-                  LOWER@54..55 "a"
-                  Comment@55..56
-                    WHITESPACE@55..56 " "
+                  QualifiedName@54..56
+                    LOWER@54..55 "a"
+                    Comment@55..56
+                      WHITESPACE@55..56 " "
               EQUAL@56..57 "="
               Comment@57..58
                 WHITESPACE@57..58 " "
               WhereExpression@58..62
                 ExpressionVariable@58..62
-                  LOWER@58..59 "c"
-                  Comment@59..62
-                    WHITESPACE@59..62 "\n  "
+                  QualifiedName@58..62
+                    LOWER@58..59 "c"
+                    Comment@59..62
+                      WHITESPACE@59..62 "\n  "
             PatternGuarded@62..75
               PIPE@62..63 "|"
               Comment@63..64
@@ -71,17 +73,19 @@ snapshot_kind: text
                 Comment@68..69
                   WHITESPACE@68..69 " "
                 ExpressionVariable@69..71
-                  LOWER@69..70 "b"
-                  Comment@70..71
-                    WHITESPACE@70..71 " "
+                  QualifiedName@69..71
+                    LOWER@69..70 "b"
+                    Comment@70..71
+                      WHITESPACE@70..71 " "
               EQUAL@71..72 "="
               Comment@72..73
                 WHITESPACE@72..73 " "
               WhereExpression@73..75
                 ExpressionVariable@73..75
-                  LOWER@73..74 "d"
-                  Comment@74..75
-                    WHITESPACE@74..75 "\n"
+                  QualifiedName@73..75
+                    LOWER@73..74 "d"
+                    Comment@74..75
+                      WHITESPACE@74..75 "\n"
       LAYOUT_END@75..75 ""
       END_OF_FILE@75..75 ""
     ,

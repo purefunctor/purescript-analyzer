@@ -62,9 +62,10 @@ snapshot_kind: text
                 Comment@62..63
                   WHITESPACE@62..63 " "
                 ExpressionVariable@63..68
-                  LOWER@63..67 "life"
-                  Comment@67..68
-                    WHITESPACE@67..68 "\n"
+                  QualifiedName@63..68
+                    LOWER@63..67 "life"
+                    Comment@67..68
+                      WHITESPACE@67..68 "\n"
       LAYOUT_END@68..68 ""
       END_OF_FILE@68..68 ""
     ,

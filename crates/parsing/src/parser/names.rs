@@ -29,6 +29,28 @@ pub(super) fn module_name(p: &mut Parser) {
     m.end(p, SyntaxKind::ModuleName);
 }
 
+pub(super) fn lower(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.eat(SyntaxKind::PREFIX);
+    p.expect(SyntaxKind::LOWER);
+
+    m.end(p, SyntaxKind::QualifiedName);
+}
+
+pub(super) fn upper(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.eat(SyntaxKind::PREFIX);
+    p.expect(SyntaxKind::UPPER);
+
+    m.end(p, SyntaxKind::QualifiedName);
+}
+
+pub(super) fn at_operator(p: &Parser) -> bool {
+    p.at_in(OPERATOR) || p.at(SyntaxKind::PREFIX) && OPERATOR.contains(p.nth(1))
+}
+
 pub(super) fn operator(p: &mut Parser) -> bool {
     let mut m = p.start();
 
@@ -40,6 +62,15 @@ pub(super) fn operator(p: &mut Parser) -> bool {
         m.cancel(p);
         false
     }
+}
+
+pub(super) fn operator_name(p: &mut Parser) {
+    let mut m = p.start();
+
+    p.eat(SyntaxKind::PREFIX);
+    p.expect_in(OPERATOR_NAME, SyntaxKind::OPERATOR_NAME, "Expected OPERATOR_NAME");
+
+    m.end(p, SyntaxKind::QualifiedName);
 }
 
 pub(super) const KEYWORD: TokenSet = TokenSet::new(&[

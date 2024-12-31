@@ -47,17 +47,19 @@ snapshot_kind: text
                         WHITESPACE@46..47 " "
                       WhereExpression@47..49
                         ExpressionVariable@47..49
-                          LOWER@47..48 "y"
-                          Comment@48..49
-                            WHITESPACE@48..49 " "
+                          QualifiedName@47..49
+                            LOWER@47..48 "y"
+                            Comment@48..49
+                              WHITESPACE@48..49 " "
                   LAYOUT_END@49..49 ""
                 IN@49..51 "in"
                 Comment@51..52
                   WHITESPACE@51..52 " "
                 ExpressionVariable@52..55
-                  LOWER@52..53 "z"
-                  Comment@53..55
-                    WHITESPACE@53..55 "\n\n"
+                  QualifiedName@52..55
+                    LOWER@52..53 "z"
+                    Comment@53..55
+                      WHITESPACE@53..55 "\n\n"
         LAYOUT_SEPARATOR@55..55 ""
         ValueEquation@55..84
           LOWER@55..61 "let_in"
@@ -86,17 +88,19 @@ snapshot_kind: text
                         WHITESPACE@73..74 " "
                       WhereExpression@74..78
                         ExpressionVariable@74..78
-                          LOWER@74..75 "y"
-                          Comment@75..78
-                            WHITESPACE@75..78 "\n  "
+                          QualifiedName@74..78
+                            LOWER@74..75 "y"
+                            Comment@75..78
+                              WHITESPACE@75..78 "\n  "
                   LAYOUT_END@78..78 ""
                 IN@78..80 "in"
                 Comment@80..81
                   WHITESPACE@80..81 " "
                 ExpressionVariable@81..84
-                  LOWER@81..82 "z"
-                  Comment@82..84
-                    WHITESPACE@82..84 "\n\n"
+                  QualifiedName@81..84
+                    LOWER@81..82 "z"
+                    Comment@82..84
+                      WHITESPACE@82..84 "\n\n"
         LAYOUT_SEPARATOR@84..84 ""
         ValueEquation@84..121
           LOWER@84..90 "let_in"
@@ -125,17 +129,19 @@ snapshot_kind: text
                         WHITESPACE@106..107 " "
                       WhereExpression@107..111
                         ExpressionVariable@107..111
-                          LOWER@107..108 "y"
-                          Comment@108..111
-                            WHITESPACE@108..111 "\n  "
+                          QualifiedName@107..111
+                            LOWER@107..108 "y"
+                            Comment@108..111
+                              WHITESPACE@108..111 "\n  "
                   LAYOUT_END@111..111 ""
                 IN@111..113 "in"
                 Comment@113..118
                   WHITESPACE@113..118 "\n    "
                 ExpressionVariable@118..121
-                  LOWER@118..119 "z"
-                  Comment@119..121
-                    WHITESPACE@119..121 "\n\n"
+                  QualifiedName@118..121
+                    LOWER@118..119 "z"
+                    Comment@119..121
+                      WHITESPACE@119..121 "\n\n"
         LAYOUT_SEPARATOR@121..121 ""
         ValueEquation@121..180
           LOWER@121..127 "let_in"
@@ -185,9 +191,10 @@ snapshot_kind: text
                 Comment@170..175
                   WHITESPACE@170..175 "\n    "
                 ExpressionVariable@175..180
-                  LOWER@175..179 "life"
-                  Comment@179..180
-                    WHITESPACE@179..180 "\n"
+                  QualifiedName@175..180
+                    LOWER@175..179 "life"
+                    Comment@179..180
+                      WHITESPACE@179..180 "\n"
       LAYOUT_END@180..180 ""
       END_OF_FILE@180..180 ""
     ,

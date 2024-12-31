@@ -99,7 +99,8 @@ snapshot_kind: text
                   Comment@84..85
                     WHITESPACE@84..85 " "
                   ExpressionVariable@85..86
-                    LOWER@85..86 "y"
+                    QualifiedName@85..86
+                      LOWER@85..86 "y"
                 COMMA@86..87 ","
                 Comment@87..88
                   WHITESPACE@87..88 " "
@@ -110,7 +111,8 @@ snapshot_kind: text
                   Comment@90..91
                     WHITESPACE@90..91 " "
                   ExpressionVariable@91..92
-                    LOWER@91..92 "x"
+                    QualifiedName@91..92
+                      LOWER@91..92 "x"
                 RIGHT_CURLY@92..93 "}"
                 Comment@93..94
                   WHITESPACE@93..94 "\n"
@@ -140,7 +142,8 @@ snapshot_kind: text
                   Comment@109..110
                     WHITESPACE@109..110 " "
                   ExpressionVariable@110..111
-                    LOWER@110..111 "c"
+                    QualifiedName@110..111
+                      LOWER@110..111 "c"
                 COMMA@111..112 ","
                 Comment@112..113
                   WHITESPACE@112..113 " "
@@ -157,7 +160,8 @@ snapshot_kind: text
                   Comment@118..119
                     WHITESPACE@118..119 " "
                   ExpressionVariable@119..120
-                    LOWER@119..120 "f"
+                    QualifiedName@119..120
+                      LOWER@119..120 "f"
                 RIGHT_CURLY@120..121 "}"
                 Comment@121..122
                   WHITESPACE@121..122 "\n"

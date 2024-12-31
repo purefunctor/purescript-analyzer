@@ -32,9 +32,10 @@ snapshot_kind: text
             WhereExpression@51..58
               ExpressionApplicationChain@51..58
                 ExpressionVariable@51..53
-                  LOWER@51..52 "f"
-                  Comment@52..53
-                    WHITESPACE@52..53 " "
+                  QualifiedName@51..53
+                    LOWER@51..52 "f"
+                    Comment@52..53
+                      WHITESPACE@52..53 " "
                 ExpressionTypeArgument@53..56
                   AT@53..54 "@"
                   TypeConstructor@54..56
@@ -44,9 +45,10 @@ snapshot_kind: text
                         WHITESPACE@55..56 " "
                 ExpressionTermArgument@56..58
                   ExpressionVariable@56..58
-                    LOWER@56..57 "t"
-                    Comment@57..58
-                      WHITESPACE@57..58 "\n"
+                    QualifiedName@56..58
+                      LOWER@56..57 "t"
+                      Comment@57..58
+                        WHITESPACE@57..58 "\n"
       LAYOUT_END@58..58 ""
       END_OF_FILE@58..58 ""
     ,

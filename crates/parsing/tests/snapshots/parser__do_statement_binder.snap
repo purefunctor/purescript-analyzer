@@ -73,19 +73,22 @@ snapshot_kind: text
                       WHITESPACE@71..72 " "
                     ExpressionApplicationChain@72..84
                       ExpressionConstructor@72..78
-                        UPPER@72..77 "Tuple"
-                        Comment@77..78
-                          WHITESPACE@77..78 " "
+                        QualifiedName@72..78
+                          UPPER@72..77 "Tuple"
+                          Comment@77..78
+                            WHITESPACE@77..78 " "
                       ExpressionTermArgument@78..80
                         ExpressionVariable@78..80
-                          LOWER@78..79 "a"
-                          Comment@79..80
-                            WHITESPACE@79..80 " "
+                          QualifiedName@78..80
+                            LOWER@78..79 "a"
+                            Comment@79..80
+                              WHITESPACE@79..80 " "
                       ExpressionTermArgument@80..84
                         ExpressionVariable@80..84
-                          LOWER@80..81 "b"
-                          Comment@81..84
-                            WHITESPACE@81..84 "\n  "
+                          QualifiedName@80..84
+                            LOWER@80..81 "b"
+                            Comment@81..84
+                              WHITESPACE@81..84 "\n  "
                   LAYOUT_SEPARATOR@84..84 ""
                   DoStatementLet@84..114
                     LET@84..87 "let"
@@ -113,27 +116,31 @@ snapshot_kind: text
                         WhereExpression@102..114
                           ExpressionApplicationChain@102..114
                             ExpressionConstructor@102..108
-                              UPPER@102..107 "Tuple"
-                              Comment@107..108
-                                WHITESPACE@107..108 " "
+                              QualifiedName@102..108
+                                UPPER@102..107 "Tuple"
+                                Comment@107..108
+                                  WHITESPACE@107..108 " "
                             ExpressionTermArgument@108..110
                               ExpressionVariable@108..110
-                                LOWER@108..109 "a"
-                                Comment@109..110
-                                  WHITESPACE@109..110 " "
+                                QualifiedName@108..110
+                                  LOWER@108..109 "a"
+                                  Comment@109..110
+                                    WHITESPACE@109..110 " "
                             ExpressionTermArgument@110..114
                               ExpressionVariable@110..114
-                                LOWER@110..111 "b"
-                                Comment@111..114
-                                  WHITESPACE@111..114 "\n  "
+                                QualifiedName@110..114
+                                  LOWER@110..111 "b"
+                                  Comment@111..114
+                                    WHITESPACE@111..114 "\n  "
                       LAYOUT_END@114..114 ""
                   LAYOUT_SEPARATOR@114..114 ""
                   DoStatementDiscard@114..128
                     ExpressionApplicationChain@114..128
                       ExpressionVariable@114..119
-                        LOWER@114..118 "pure"
-                        Comment@118..119
-                          WHITESPACE@118..119 " "
+                        QualifiedName@114..119
+                          LOWER@114..118 "pure"
+                          Comment@118..119
+                            WHITESPACE@118..119 " "
                       ExpressionTermArgument@119..128
                         ExpressionRecord@119..128
                           LEFT_CURLY@119..120 "{"

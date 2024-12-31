@@ -31,9 +31,10 @@ snapshot_kind: text
               WHITESPACE@35..36 " "
             WhereExpression@36..41
               ExpressionVariable@36..41
-                LOWER@36..40 "head"
-                Comment@40..41
-                  WHITESPACE@40..41 "\n"
+                QualifiedName@36..41
+                  LOWER@36..40 "head"
+                  Comment@40..41
+                    WHITESPACE@40..41 "\n"
         LAYOUT_SEPARATOR@41..41 ""
         ValueEquation@41..53
           LOWER@41..45 "name"
@@ -46,9 +47,10 @@ snapshot_kind: text
               WHITESPACE@47..48 " "
             WhereExpression@48..53
               ExpressionConstructor@48..53
-                UPPER@48..52 "Cons"
-                Comment@52..53
-                  WHITESPACE@52..53 "\n"
+                QualifiedName@48..53
+                  UPPER@48..52 "Cons"
+                  Comment@52..53
+                    WHITESPACE@52..53 "\n"
         LAYOUT_SEPARATOR@53..53 ""
         ValueEquation@53..64
           LOWER@53..57 "name"
@@ -61,9 +63,10 @@ snapshot_kind: text
               WHITESPACE@59..60 " "
             WhereExpression@60..64
               ExpressionOperatorName@60..64
-                OPERATOR_NAME@60..63 "(:)"
-                Comment@63..64
-                  WHITESPACE@63..64 "\n"
+                QualifiedName@60..64
+                  OPERATOR_NAME@60..63 "(:)"
+                  Comment@63..64
+                    WHITESPACE@63..64 "\n"
       LAYOUT_END@64..64 ""
       END_OF_FILE@64..64 ""
     ,

@@ -40,14 +40,16 @@ snapshot_kind: text
                   DoStatementDiscard@54..65
                     ExpressionApplicationChain@54..65
                       ExpressionVariable@54..59
-                        LOWER@54..58 "pure"
-                        Comment@58..59
-                          WHITESPACE@58..59 " "
+                        QualifiedName@54..59
+                          LOWER@54..58 "pure"
+                          Comment@58..59
+                            WHITESPACE@58..59 " "
                       ExpressionTermArgument@59..65
                         ExpressionVariable@59..65
-                          LOWER@59..63 "unit"
-                          Comment@63..65
-                            WHITESPACE@63..65 "\n\n"
+                          QualifiedName@59..65
+                            LOWER@59..63 "unit"
+                            Comment@63..65
+                              WHITESPACE@63..65 "\n\n"
                   LAYOUT_END@65..65 ""
         LAYOUT_SEPARATOR@65..65 ""
         ValueEquation@65..104
@@ -70,22 +72,25 @@ snapshot_kind: text
                   DoStatementDiscard@84..96
                     ExpressionApplicationChain@84..96
                       ExpressionVariable@84..89
-                        LOWER@84..88 "pure"
-                        Comment@88..89
-                          WHITESPACE@88..89 " "
+                        QualifiedName@84..89
+                          LOWER@84..88 "pure"
+                          Comment@88..89
+                            WHITESPACE@88..89 " "
                       ExpressionTermArgument@89..96
                         ExpressionVariable@89..96
-                          LOWER@89..93 "unit"
-                          Comment@93..96
-                            WHITESPACE@93..96 "\n  "
+                          QualifiedName@89..96
+                            LOWER@89..93 "unit"
+                            Comment@93..96
+                              WHITESPACE@93..96 "\n  "
                   LAYOUT_END@96..96 ""
                 IN@96..98 "in"
                 Comment@98..99
                   WHITESPACE@98..99 " "
                 ExpressionVariable@99..104
-                  LOWER@99..103 "unit"
-                  Comment@103..104
-                    WHITESPACE@103..104 "\n"
+                  QualifiedName@99..104
+                    LOWER@99..103 "unit"
+                    Comment@103..104
+                      WHITESPACE@103..104 "\n"
       LAYOUT_END@104..104 ""
       END_OF_FILE@104..104 ""
     ,

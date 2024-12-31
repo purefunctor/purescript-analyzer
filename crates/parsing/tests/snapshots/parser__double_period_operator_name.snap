@@ -70,9 +70,10 @@ snapshot_kind: text
               WHITESPACE@96..97 " "
             WhereExpression@97..102
               ExpressionOperatorName@97..102
-                OPERATOR_NAME@97..101 "(..)"
-                Comment@101..102
-                  WHITESPACE@101..102 "\n"
+                QualifiedName@97..102
+                  OPERATOR_NAME@97..101 "(..)"
+                  Comment@101..102
+                    WHITESPACE@101..102 "\n"
         LAYOUT_SEPARATOR@102..102 ""
         ValueEquation@102..120
           LOWER@102..110 "operator"

@@ -50,9 +50,10 @@ snapshot_kind: text
               ExpressionNegate@52..55
                 MINUS@52..53 "-"
                 ExpressionVariable@53..55
-                  LOWER@53..54 "x"
-                  Comment@54..55
-                    WHITESPACE@54..55 "\n"
+                  QualifiedName@53..55
+                    LOWER@53..54 "x"
+                    Comment@54..55
+                      WHITESPACE@54..55 "\n"
       LAYOUT_END@55..55 ""
       END_OF_FILE@55..55 ""
     ,

@@ -131,20 +131,23 @@ snapshot_kind: text
                   WhereExpression@134..147
                     ExpressionApplicationChain@134..147
                       ExpressionConstructor@134..139
-                        UPPER@134..138 "Just"
-                        Comment@138..139
-                          WHITESPACE@138..139 " "
+                        QualifiedName@134..139
+                          UPPER@134..138 "Just"
+                          Comment@138..139
+                            WHITESPACE@138..139 " "
                       ExpressionTermArgument@139..147
                         ExpressionParenthesized@139..147
                           LEFT_PARENTHESIS@139..140 "("
                           ExpressionApplicationChain@140..143
                             ExpressionVariable@140..142
-                              LOWER@140..141 "f"
-                              Comment@141..142
-                                WHITESPACE@141..142 " "
+                              QualifiedName@140..142
+                                LOWER@140..141 "f"
+                                Comment@141..142
+                                  WHITESPACE@141..142 " "
                             ExpressionTermArgument@142..143
                               ExpressionVariable@142..143
-                                LOWER@142..143 "a"
+                                QualifiedName@142..143
+                                  LOWER@142..143 "a"
                           RIGHT_PARENTHESIS@143..144 ")"
                           Comment@144..147
                             WHITESPACE@144..147 "\n  "
@@ -169,9 +172,10 @@ snapshot_kind: text
                     WHITESPACE@162..163 " "
                   WhereExpression@163..171
                     ExpressionConstructor@163..171
-                      UPPER@163..170 "Nothing"
-                      Comment@170..171
-                        WHITESPACE@170..171 "\n"
+                      QualifiedName@163..171
+                        UPPER@163..170 "Nothing"
+                        Comment@170..171
+                          WHITESPACE@170..171 "\n"
               LAYOUT_END@171..171 ""
       LAYOUT_END@171..171 ""
       END_OF_FILE@171..171 ""

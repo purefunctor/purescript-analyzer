@@ -39,14 +39,16 @@ snapshot_kind: text
                   DoStatementDiscard@46..56
                     ExpressionApplicationChain@46..56
                       ExpressionVariable@46..51
-                        LOWER@46..50 "pure"
-                        Comment@50..51
-                          WHITESPACE@50..51 " "
+                        QualifiedName@46..51
+                          LOWER@46..50 "pure"
+                          Comment@50..51
+                            WHITESPACE@50..51 " "
                       ExpressionTermArgument@51..56
                         ExpressionVariable@51..56
-                          LOWER@51..55 "unit"
-                          Comment@55..56
-                            WHITESPACE@55..56 "\n"
+                          QualifiedName@51..56
+                            LOWER@51..55 "unit"
+                            Comment@55..56
+                              WHITESPACE@55..56 "\n"
                   LAYOUT_END@56..56 ""
       LAYOUT_END@56..56 ""
       END_OF_FILE@56..56 ""

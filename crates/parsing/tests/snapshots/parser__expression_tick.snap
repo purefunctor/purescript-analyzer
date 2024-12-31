@@ -38,7 +38,8 @@ snapshot_kind: text
                 ExpressionTick@38..45
                   TICK@38..39 "`"
                   ExpressionVariable@39..43
-                    LOWER@39..43 "plus"
+                    QualifiedName@39..43
+                      LOWER@39..43 "plus"
                   TICK@43..44 "`"
                   Comment@44..45
                     WHITESPACE@44..45 " "
@@ -49,7 +50,8 @@ snapshot_kind: text
                 ExpressionTick@47..54
                   TICK@47..48 "`"
                   ExpressionVariable@48..52
-                    LOWER@48..52 "plus"
+                    QualifiedName@48..52
+                      LOWER@48..52 "plus"
                   TICK@52..53 "`"
                   Comment@53..54
                     WHITESPACE@53..54 " "

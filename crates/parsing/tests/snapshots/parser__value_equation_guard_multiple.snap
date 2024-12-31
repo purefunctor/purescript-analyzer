@@ -47,9 +47,10 @@ snapshot_kind: text
                 Comment@55..56
                   WHITESPACE@55..56 " "
                 ExpressionVariable@56..60
-                  LOWER@56..57 "a"
-                  Comment@57..60
-                    WHITESPACE@57..60 "\n  "
+                  QualifiedName@56..60
+                    LOWER@56..57 "a"
+                    Comment@57..60
+                      WHITESPACE@57..60 "\n  "
               COMMA@60..61 ","
               Comment@61..62
                 WHITESPACE@61..62 " "
@@ -62,34 +63,38 @@ snapshot_kind: text
                 Comment@66..67
                   WHITESPACE@66..67 " "
                 ExpressionVariable@67..72
-                  LOWER@67..68 "b"
-                  Comment@68..72
-                    WHITESPACE@68..72 " \n  "
+                  QualifiedName@67..72
+                    LOWER@67..68 "b"
+                    Comment@68..72
+                      WHITESPACE@68..72 " \n  "
               COMMA@72..73 ","
               Comment@73..74
                 WHITESPACE@73..74 " "
               PatternGuardExpression@74..81
                 ExpressionOperatorChain@74..81
                   ExpressionVariable@74..76
-                    LOWER@74..75 "c"
-                    Comment@75..76
-                      WHITESPACE@75..76 " "
+                    QualifiedName@74..76
+                      LOWER@74..75 "c"
+                      Comment@75..76
+                        WHITESPACE@75..76 " "
                   QualifiedName@76..79
                     OPERATOR@76..78 "<<"
                     Comment@78..79
                       WHITESPACE@78..79 " "
                   ExpressionVariable@79..81
-                    LOWER@79..80 "d"
-                    Comment@80..81
-                      WHITESPACE@80..81 " "
+                    QualifiedName@79..81
+                      LOWER@79..80 "d"
+                      Comment@80..81
+                        WHITESPACE@80..81 " "
               EQUAL@81..82 "="
               Comment@82..83
                 WHITESPACE@82..83 " "
               WhereExpression@83..85
                 ExpressionVariable@83..85
-                  LOWER@83..84 "e"
-                  Comment@84..85
-                    WHITESPACE@84..85 "\n"
+                  QualifiedName@83..85
+                    LOWER@83..84 "e"
+                    Comment@84..85
+                      WHITESPACE@84..85 "\n"
       LAYOUT_END@85..85 ""
       END_OF_FILE@85..85 ""
     ,

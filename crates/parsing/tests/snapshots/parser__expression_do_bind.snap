@@ -46,9 +46,10 @@ snapshot_kind: text
                       WHITESPACE@46..47 " "
                     ExpressionApplicationChain@47..55
                       ExpressionVariable@47..52
-                        LOWER@47..51 "pure"
-                        Comment@51..52
-                          WHITESPACE@51..52 " "
+                        QualifiedName@47..52
+                          LOWER@47..51 "pure"
+                          Comment@51..52
+                            WHITESPACE@51..52 " "
                       ExpressionTermArgument@52..55
                         ExpressionInteger@52..55
                           INTEGER@52..54 "42"

@@ -48,7 +48,8 @@ pub(super) fn type_3(p: &mut Parser) {
     let mut i = 0;
 
     type_4(p);
-    while names::operator(p) && !p.at_eof() {
+    while names::at_operator(p) && !p.at_eof() {
+        names::operator(p);
         type_4(p);
         i += 1;
     }
@@ -77,7 +78,7 @@ pub(super) fn type_5(p: &mut Parser) {
     let mut i = 0;
 
     type_atom(p);
-    while p.at_in(TYPE_ATOM_START) && !p.at_eof() {
+    while at_type_argument(p) && !p.at_eof() {
         type_atom(p);
         i += 1;
     }
@@ -86,6 +87,14 @@ pub(super) fn type_5(p: &mut Parser) {
         m.end(p, SyntaxKind::TypeApplicationChain);
     } else {
         m.cancel(p);
+    }
+}
+
+fn at_type_argument(p: &Parser) -> bool {
+    if p.at(SyntaxKind::PREFIX) {
+        TYPE_ATOM_START.contains(p.nth(1))
+    } else {
+        TYPE_ATOM_START.contains(p.nth(0))
     }
 }
 
@@ -99,7 +108,6 @@ pub(super) fn type_atom(p: &mut Parser) {
         } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
             m.end(p, SyntaxKind::TypeOperator);
         } else {
-            n.cancel(p);
             m.cancel(p);
         }
         return n.end(p, SyntaxKind::QualifiedName);
@@ -108,20 +116,18 @@ pub(super) fn type_atom(p: &mut Parser) {
 
     if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
-    } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
-        let mut n = p.start();
-        p.eat(SyntaxKind::PREFIX);
-        p.expect(SyntaxKind::UPPER);
-        n.end(p, SyntaxKind::QualifiedName);
+    } else if p.at(SyntaxKind::UPPER) {
+        names::upper(p);
         m.end(p, SyntaxKind::TypeConstructor);
+    } else if p.at_in(names::OPERATOR_NAME) {
+        names::operator_name(p);
+        m.end(p, SyntaxKind::TypeOperator);
     } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
         m.end(p, SyntaxKind::TypeString);
     } else if p.at(SyntaxKind::MINUS) || p.at(SyntaxKind::INTEGER) {
         p.eat(SyntaxKind::MINUS);
         p.eat(SyntaxKind::INTEGER);
         m.end(p, SyntaxKind::TypeInteger);
-    } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
-        m.end(p, SyntaxKind::TypeOperator);
     } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
         type_parenthesis(p);
         m.cancel(p);

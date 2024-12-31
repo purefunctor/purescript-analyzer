@@ -36,9 +36,10 @@ snapshot_kind: text
                   WHITESPACE@46..47 " "
                 CaseTrunk@47..49
                   ExpressionVariable@47..49
-                    LOWER@47..48 "n"
-                    Comment@48..49
-                      WHITESPACE@48..49 " "
+                    QualifiedName@47..49
+                      LOWER@47..48 "n"
+                      Comment@48..49
+                        WHITESPACE@48..49 " "
                 OF@49..51 "of"
                 Comment@51..54
                   WHITESPACE@51..54 "\n  "

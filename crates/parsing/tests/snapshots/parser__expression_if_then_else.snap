@@ -35,23 +35,26 @@ snapshot_kind: text
                 Comment@52..53
                   WHITESPACE@52..53 " "
                 ExpressionVariable@53..55
-                  LOWER@53..54 "x"
-                  Comment@54..55
-                    WHITESPACE@54..55 " "
+                  QualifiedName@53..55
+                    LOWER@53..54 "x"
+                    Comment@54..55
+                      WHITESPACE@54..55 " "
                 THEN@55..59 "then"
                 Comment@59..60
                   WHITESPACE@59..60 " "
                 ExpressionVariable@60..62
-                  LOWER@60..61 "y"
-                  Comment@61..62
-                    WHITESPACE@61..62 " "
+                  QualifiedName@60..62
+                    LOWER@60..61 "y"
+                    Comment@61..62
+                      WHITESPACE@61..62 " "
                 ELSE@62..66 "else"
                 Comment@66..67
                   WHITESPACE@66..67 " "
                 ExpressionVariable@67..69
-                  LOWER@67..68 "z"
-                  Comment@68..69
-                    WHITESPACE@68..69 "\n"
+                  QualifiedName@67..69
+                    LOWER@67..68 "z"
+                    Comment@68..69
+                      WHITESPACE@68..69 "\n"
       LAYOUT_END@69..69 ""
       END_OF_FILE@69..69 ""
     ,

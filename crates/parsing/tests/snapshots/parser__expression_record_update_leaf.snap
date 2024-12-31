@@ -32,9 +32,10 @@ snapshot_kind: text
             WhereExpression@48..60
               ExpressionRecordUpdate@48..60
                 ExpressionVariable@48..50
-                  LOWER@48..49 "x"
-                  Comment@49..50
-                    WHITESPACE@49..50 " "
+                  QualifiedName@48..50
+                    LOWER@48..49 "x"
+                    Comment@49..50
+                      WHITESPACE@49..50 " "
                 RecordUpdates@50..60
                   LEFT_CURLY@50..51 "{"
                   Comment@51..52
@@ -48,9 +49,10 @@ snapshot_kind: text
                     Comment@55..56
                       WHITESPACE@55..56 " "
                     ExpressionVariable@56..58
-                      LOWER@56..57 "b"
-                      Comment@57..58
-                        WHITESPACE@57..58 " "
+                      QualifiedName@56..58
+                        LOWER@56..57 "b"
+                        Comment@57..58
+                          WHITESPACE@57..58 " "
                   RIGHT_CURLY@58..59 "}"
                   Comment@59..60
                     WHITESPACE@59..60 "\n"

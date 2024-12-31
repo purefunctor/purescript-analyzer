@@ -32,9 +32,10 @@ snapshot_kind: text
             WhereExpression@47..68
               ExpressionApplicationChain@47..68
                 ExpressionConstructor@47..53
-                  UPPER@47..52 "Point"
-                  Comment@52..53
-                    WHITESPACE@52..53 " "
+                  QualifiedName@47..53
+                    UPPER@47..52 "Point"
+                    Comment@52..53
+                      WHITESPACE@52..53 " "
                 ExpressionTermArgument@53..68
                   ExpressionRecord@53..68
                     LEFT_CURLY@53..54 "{"

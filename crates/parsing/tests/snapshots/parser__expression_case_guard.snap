@@ -36,9 +36,10 @@ snapshot_kind: text
                   WHITESPACE@45..46 " "
                 CaseTrunk@46..48
                   ExpressionVariable@46..48
-                    LOWER@46..47 "n"
-                    Comment@47..48
-                      WHITESPACE@47..48 " "
+                    QualifiedName@46..48
+                      LOWER@46..47 "n"
+                      Comment@47..48
+                        WHITESPACE@47..48 " "
                 OF@48..50 "of"
                 Comment@50..53
                   WHITESPACE@50..53 "\n  "
@@ -58,9 +59,10 @@ snapshot_kind: text
                         PatternGuardExpression@57..64
                           ExpressionOperatorChain@57..64
                             ExpressionVariable@57..59
-                              LOWER@57..58 "n"
-                              Comment@58..59
-                                WHITESPACE@58..59 " "
+                              QualifiedName@57..59
+                                LOWER@57..58 "n"
+                                Comment@58..59
+                                  WHITESPACE@58..59 " "
                             QualifiedName@59..62
                               OPERATOR@59..61 "=="
                               Comment@61..62
@@ -98,26 +100,29 @@ snapshot_kind: text
                           Comment@82..83
                             WHITESPACE@82..83 " "
                           ExpressionVariable@83..89
-                            LOWER@83..84 "n"
-                            Comment@84..89
-                              WHITESPACE@84..89 "\n    "
+                            QualifiedName@83..89
+                              LOWER@83..84 "n"
+                              Comment@84..89
+                                WHITESPACE@84..89 "\n    "
                         COMMA@89..90 ","
                         Comment@90..91
                           WHITESPACE@90..91 " "
                         PatternGuardExpression@91..98
                           ExpressionOperatorChain@91..98
                             ExpressionVariable@91..93
-                              LOWER@91..92 "m"
-                              Comment@92..93
-                                WHITESPACE@92..93 " "
+                              QualifiedName@91..93
+                                LOWER@91..92 "m"
+                                Comment@92..93
+                                  WHITESPACE@92..93 " "
                             QualifiedName@93..96
                               OPERATOR@93..95 "=="
                               Comment@95..96
                                 WHITESPACE@95..96 " "
                             ExpressionVariable@96..98
-                              LOWER@96..97 "n"
-                              Comment@97..98
-                                WHITESPACE@97..98 " "
+                              QualifiedName@96..98
+                                LOWER@96..97 "n"
+                                Comment@97..98
+                                  WHITESPACE@97..98 " "
                         RIGHT_ARROW@98..100 "->"
                         Comment@100..101
                           WHITESPACE@100..101 " "

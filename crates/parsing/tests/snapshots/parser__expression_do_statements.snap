@@ -68,37 +68,42 @@ snapshot_kind: text
                       WHITESPACE@76..77 " "
                     ExpressionApplicationChain@77..89
                       ExpressionVariable@77..82
-                        LOWER@77..81 "pure"
-                        Comment@81..82
-                          WHITESPACE@81..82 " "
+                        QualifiedName@77..82
+                          LOWER@77..81 "pure"
+                          Comment@81..82
+                            WHITESPACE@81..82 " "
                       ExpressionTermArgument@82..89
                         ExpressionVariable@82..89
-                          LOWER@82..86 "life"
-                          Comment@86..89
-                            WHITESPACE@86..89 "\n  "
+                          QualifiedName@82..89
+                            LOWER@82..86 "life"
+                            Comment@86..89
+                              WHITESPACE@86..89 "\n  "
                   LAYOUT_SEPARATOR@89..89 ""
                   DoStatementDiscard@89..112
                     ExpressionOperatorChain@89..112
                       ExpressionVariable@89..94
-                        LOWER@89..93 "pure"
-                        Comment@93..94
-                          WHITESPACE@93..94 " "
+                        QualifiedName@89..94
+                          LOWER@89..93 "pure"
+                          Comment@93..94
+                            WHITESPACE@93..94 " "
                       QualifiedName@94..96
                         OPERATOR@94..95 "$"
                         Comment@95..96
                           WHITESPACE@95..96 " "
                       ExpressionVariable@96..101
-                        LOWER@96..100 "life"
-                        Comment@100..101
-                          WHITESPACE@100..101 " "
+                        QualifiedName@96..101
+                          LOWER@96..100 "life"
+                          Comment@100..101
+                            WHITESPACE@100..101 " "
                       QualifiedName@101..103
                         OPERATOR@101..102 "+"
                         Comment@102..103
                           WHITESPACE@102..103 " "
                       ExpressionVariable@103..112
-                        LOWER@103..111 "universe"
-                        Comment@111..112
-                          WHITESPACE@111..112 "\n"
+                        QualifiedName@103..112
+                          LOWER@103..111 "universe"
+                          Comment@111..112
+                            WHITESPACE@111..112 "\n"
                   LAYOUT_END@112..112 ""
       LAYOUT_END@112..112 ""
       END_OF_FILE@112..112 ""

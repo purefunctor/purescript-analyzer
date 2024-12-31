@@ -41,9 +41,10 @@ snapshot_kind: text
                 Comment@45..46
                   WHITESPACE@45..46 " "
                 ExpressionVariable@46..48
-                  LOWER@46..47 "x"
-                  Comment@47..48
-                    WHITESPACE@47..48 "\n"
+                  QualifiedName@46..48
+                    LOWER@46..47 "x"
+                    Comment@47..48
+                      WHITESPACE@47..48 "\n"
         LAYOUT_SEPARATOR@48..48 ""
         ValueEquation@48..69
           LOWER@48..54 "lambda"
@@ -71,14 +72,16 @@ snapshot_kind: text
                   WHITESPACE@64..65 " "
                 ExpressionApplicationChain@65..69
                   ExpressionVariable@65..67
-                    LOWER@65..66 "f"
-                    Comment@66..67
-                      WHITESPACE@66..67 " "
+                    QualifiedName@65..67
+                      LOWER@65..66 "f"
+                      Comment@66..67
+                        WHITESPACE@66..67 " "
                   ExpressionTermArgument@67..69
                     ExpressionVariable@67..69
-                      LOWER@67..68 "a"
-                      Comment@68..69
-                        WHITESPACE@68..69 "\n"
+                      QualifiedName@67..69
+                        LOWER@67..68 "a"
+                        Comment@68..69
+                          WHITESPACE@68..69 "\n"
       LAYOUT_END@69..69 ""
       END_OF_FILE@69..69 ""
     ,

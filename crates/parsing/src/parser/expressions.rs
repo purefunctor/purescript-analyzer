@@ -19,7 +19,8 @@ fn expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_2(p);
-    while names::operator(p) && !p.at_eof() {
+    while names::at_operator(p) && !p.at_eof() {
+        names::operator(p);
         expression_2(p);
         i += 1;
     }
@@ -62,7 +63,8 @@ fn tick_expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_3(p);
-    while names::operator(p) && !p.at_eof() {
+    while names::at_operator(p) && !p.at_eof() {
+        names::operator(p);
         expression_3(p);
         i += 1;
     }
@@ -91,7 +93,7 @@ fn expression_4(p: &mut Parser) {
     let mut i = 0;
 
     expression_5(p);
-    while (p.at(SyntaxKind::AT) || p.at_in(EXPRESSION_START)) && !p.at_eof() {
+    while at_argument(p) && !p.at_eof() {
         expression_argument(p);
         i += 1;
     }
@@ -100,6 +102,16 @@ fn expression_4(p: &mut Parser) {
         m.end(p, SyntaxKind::ExpressionApplicationChain);
     } else {
         m.cancel(p);
+    }
+}
+
+fn at_argument(p: &Parser) -> bool {
+    if p.at(SyntaxKind::AT) {
+        true
+    } else if p.at(SyntaxKind::PREFIX) {
+        EXPRESSION_START.contains(p.nth(1))
+    } else {
+        EXPRESSION_START.contains(p.nth(0))
     }
 }
 
@@ -400,11 +412,14 @@ fn expression_atom(p: &mut Parser) {
     };
     n.cancel(p);
 
-    if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
+    if p.at_in(names::LOWER) {
+        names::lower(p);
         m.end(p, SyntaxKind::ExpressionVariable);
-    } else if p.eat(SyntaxKind::UPPER) {
+    } else if p.at(SyntaxKind::UPPER) {
+        names::upper(p);
         m.end(p, SyntaxKind::ExpressionConstructor);
-    } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
+    } else if p.at_in(names::OPERATOR_NAME) {
+        names::operator_name(p);
         m.end(p, SyntaxKind::ExpressionOperatorName);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::ExpressionSection);

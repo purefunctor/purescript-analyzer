@@ -28,9 +28,10 @@ snapshot_kind: text
           Comment@47..48
             WHITESPACE@47..48 " "
           TypeOperator@48..52
-            OPERATOR_NAME@48..51 "(+)"
-            Comment@51..52
-              WHITESPACE@51..52 "\n"
+            QualifiedName@48..52
+              OPERATOR_NAME@48..51 "(+)"
+              Comment@51..52
+                WHITESPACE@51..52 "\n"
       LAYOUT_END@52..52 ""
       END_OF_FILE@52..52 ""
     ,

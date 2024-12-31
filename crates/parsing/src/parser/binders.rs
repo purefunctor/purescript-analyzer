@@ -80,7 +80,7 @@ pub(super) fn binder_atom(p: &mut Parser) {
     let mut m = p.start();
     if p.at_in(names::LOWER) {
         binder_named_or_variable(p, &mut m);
-    } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
+    } else if at_binder_constructor(p) {
         binder_constructor(p, m);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::BinderWildcard);
@@ -127,12 +127,12 @@ fn binder_named_or_variable(p: &mut Parser, m: &mut NodeMarker) {
     }
 }
 
-fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
-    let mut n = p.start();
-    p.eat(SyntaxKind::PREFIX);
-    p.eat(SyntaxKind::UPPER);
-    n.end(p, SyntaxKind::QualifiedName);
+fn at_binder_constructor(p: &Parser) -> bool {
+    p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER)
+}
 
+fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
+    names::upper(p);
     while p.at_in(BINDER_ATOM_START) && !p.at_eof() {
         binder_atom(p);
     }
