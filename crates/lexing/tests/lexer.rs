@@ -18,6 +18,8 @@ lexer_tests!(
     operator_source => "=>> >>= >=> && || : ++",
     integer_leading_zero => "0",
     integer_underscores => "1_000_000",
+    integer_hex => "0xFF",
+    integer_hex_detached => "0xFF_FF",
     number => "42.0",
     number_exponent => "42e10",
     number_exponent_negative => "42e-10",

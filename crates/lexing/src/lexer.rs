@@ -402,6 +402,12 @@ impl<'a> Lexer<'a> {
         let mut kind = SyntaxKind::INTEGER;
         self.take_while(|c| c.is_ascii_digit() || c == '_');
 
+        if self.first() == 'x' {
+            self.take();
+            self.take_while(|c| c.is_ascii_hexdigit());
+            return self.lexed.push(SyntaxKind::INTEGER, position, error);
+        }
+
         // lex(1..2) = [INTEGER, DOUBLE_PERIOD, INTEGER]
         if self.first() == '.' && self.second() == '.' {
             return self.lexed.push(SyntaxKind::INTEGER, position, error);
