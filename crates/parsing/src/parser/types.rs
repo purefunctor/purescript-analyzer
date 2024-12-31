@@ -48,7 +48,7 @@ pub(super) fn type_3(p: &mut Parser) {
     let mut i = 0;
 
     type_4(p);
-    while p.eat_in(names::OPERATOR, SyntaxKind::OPERATOR) && !p.at_eof() {
+    while names::operator(p) && !p.at_eof() {
         type_4(p);
         i += 1;
     }

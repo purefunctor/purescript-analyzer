@@ -33,17 +33,19 @@ snapshot_kind: text
                 UPPER@39..40 "A"
                 Comment@40..41
                   WHITESPACE@40..41 " "
-            OPERATOR@41..42 "+"
-            Comment@42..43
-              WHITESPACE@42..43 " "
+            QualifiedName@41..43
+              OPERATOR@41..42 "+"
+              Comment@42..43
+                WHITESPACE@42..43 " "
             TypeConstructor@43..45
               QualifiedName@43..45
                 UPPER@43..44 "B"
                 Comment@44..45
                   WHITESPACE@44..45 " "
-            OPERATOR@45..46 "+"
-            Comment@46..47
-              WHITESPACE@46..47 " "
+            QualifiedName@45..47
+              OPERATOR@45..46 "+"
+              Comment@46..47
+                WHITESPACE@46..47 " "
             TypeConstructor@47..49
               QualifiedName@47..49
                 UPPER@47..48 "C"

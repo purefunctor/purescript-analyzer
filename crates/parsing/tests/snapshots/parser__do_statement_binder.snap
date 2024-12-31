@@ -43,9 +43,10 @@ snapshot_kind: text
                           LOWER@49..50 "a"
                           Comment@50..51
                             WHITESPACE@50..51 " "
-                        OPERATOR@51..53 "/\\"
-                        Comment@53..54
-                          WHITESPACE@53..54 " "
+                        QualifiedName@51..54
+                          OPERATOR@51..53 "/\\"
+                          Comment@53..54
+                            WHITESPACE@53..54 " "
                         BinderVariable@54..56
                           LOWER@54..55 "b"
                           Comment@55..56
@@ -98,9 +99,10 @@ snapshot_kind: text
                             LOWER@93..94 "a"
                             Comment@94..95
                               WHITESPACE@94..95 " "
-                          OPERATOR@95..97 "/\\"
-                          Comment@97..98
-                            WHITESPACE@97..98 " "
+                          QualifiedName@95..98
+                            OPERATOR@95..97 "/\\"
+                            Comment@97..98
+                              WHITESPACE@97..98 " "
                           BinderVariable@98..100
                             LOWER@98..99 "b"
                             Comment@99..100

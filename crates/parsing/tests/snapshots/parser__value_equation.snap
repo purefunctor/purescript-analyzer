@@ -43,9 +43,10 @@ snapshot_kind: text
                   LOWER@36..38 "a2"
                   Comment@38..39
                     WHITESPACE@38..39 " "
-                OPERATOR@39..40 "+"
-                Comment@40..41
-                  WHITESPACE@40..41 " "
+                QualifiedName@39..41
+                  OPERATOR@39..40 "+"
+                  Comment@40..41
+                    WHITESPACE@40..41 " "
                 ExpressionVariable@41..46
                   LOWER@41..43 "b2"
                   Comment@43..46
@@ -70,9 +71,10 @@ snapshot_kind: text
                           LOWER@59..60 "a"
                           Comment@60..61
                             WHITESPACE@60..61 " "
-                        OPERATOR@61..62 "*"
-                        Comment@62..63
-                          WHITESPACE@62..63 " "
+                        QualifiedName@61..63
+                          OPERATOR@61..62 "*"
+                          Comment@62..63
+                            WHITESPACE@62..63 " "
                         ExpressionVariable@63..67
                           LOWER@63..64 "a"
                           Comment@64..67
@@ -93,9 +95,10 @@ snapshot_kind: text
                           LOWER@72..73 "b"
                           Comment@73..74
                             WHITESPACE@73..74 " "
-                        OPERATOR@74..75 "*"
-                        Comment@75..76
-                          WHITESPACE@75..76 " "
+                        QualifiedName@74..76
+                          OPERATOR@74..75 "*"
+                          Comment@75..76
+                            WHITESPACE@75..76 " "
                         ExpressionVariable@76..78
                           LOWER@76..77 "b"
                           Comment@77..78

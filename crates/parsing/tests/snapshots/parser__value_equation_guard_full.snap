@@ -74,9 +74,10 @@ snapshot_kind: text
                     LOWER@69..70 "c"
                     Comment@70..71
                       WHITESPACE@70..71 " "
-                  OPERATOR@71..73 "<<"
-                  Comment@73..74
-                    WHITESPACE@73..74 " "
+                  QualifiedName@71..74
+                    OPERATOR@71..73 "<<"
+                    Comment@73..74
+                      WHITESPACE@73..74 " "
                   ExpressionVariable@74..76
                     LOWER@74..75 "d"
                     Comment@75..76
@@ -109,9 +110,10 @@ snapshot_kind: text
                             LOWER@94..95 "c"
                             Comment@95..96
                               WHITESPACE@95..96 " "
-                          OPERATOR@96..97 "+"
-                          Comment@97..98
-                            WHITESPACE@97..98 " "
+                          QualifiedName@96..98
+                            OPERATOR@96..97 "+"
+                            Comment@97..98
+                              WHITESPACE@97..98 " "
                           ExpressionVariable@98..103
                             LOWER@98..99 "d"
                             Comment@99..103
@@ -157,9 +159,10 @@ snapshot_kind: text
                     LOWER@127..128 "j"
                     Comment@128..129
                       WHITESPACE@128..129 " "
-                  OPERATOR@129..131 "<<"
-                  Comment@131..132
-                    WHITESPACE@131..132 " "
+                  QualifiedName@129..132
+                    OPERATOR@129..131 "<<"
+                    Comment@131..132
+                      WHITESPACE@131..132 " "
                   ExpressionVariable@132..134
                     LOWER@132..133 "k"
                     Comment@133..134
@@ -192,9 +195,10 @@ snapshot_kind: text
                             LOWER@152..153 "j"
                             Comment@153..154
                               WHITESPACE@153..154 " "
-                          OPERATOR@154..155 "+"
-                          Comment@155..156
-                            WHITESPACE@155..156 " "
+                          QualifiedName@154..156
+                            OPERATOR@154..155 "+"
+                            Comment@155..156
+                              WHITESPACE@155..156 " "
                           ExpressionVariable@156..158
                             LOWER@156..157 "k"
                             Comment@157..158

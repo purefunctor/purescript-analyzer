@@ -23,12 +23,23 @@ pub(super) const OPERATOR_NAME: TokenSet =
 pub(super) fn module_name(p: &mut Parser) {
     let mut m = p.start();
 
-    if p.at(SyntaxKind::PREFIX) {
-        p.consume();
-    }
+    p.eat(SyntaxKind::PREFIX);
     p.expect(SyntaxKind::UPPER);
 
     m.end(p, SyntaxKind::ModuleName);
+}
+
+pub(super) fn operator(p: &mut Parser) -> bool {
+    let mut m = p.start();
+
+    p.eat(SyntaxKind::PREFIX);
+    if p.eat_in(OPERATOR, SyntaxKind::OPERATOR) {
+        m.end(p, SyntaxKind::QualifiedName);
+        true
+    } else {
+        m.cancel(p);
+        false
+    }
 }
 
 pub(super) const KEYWORD: TokenSet = TokenSet::new(&[

@@ -19,7 +19,7 @@ pub(super) fn binder_1(p: &mut Parser) {
     let mut i = 0;
 
     binder_2(p);
-    while p.eat_in(names::OPERATOR, SyntaxKind::OPERATOR) && !p.at_eof() {
+    while names::operator(p) && !p.at_eof() {
         binder_2(p);
         i += 1;
     }

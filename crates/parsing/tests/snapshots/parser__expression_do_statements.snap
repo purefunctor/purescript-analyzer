@@ -83,16 +83,18 @@ snapshot_kind: text
                         LOWER@89..93 "pure"
                         Comment@93..94
                           WHITESPACE@93..94 " "
-                      OPERATOR@94..95 "$"
-                      Comment@95..96
-                        WHITESPACE@95..96 " "
+                      QualifiedName@94..96
+                        OPERATOR@94..95 "$"
+                        Comment@95..96
+                          WHITESPACE@95..96 " "
                       ExpressionVariable@96..101
                         LOWER@96..100 "life"
                         Comment@100..101
                           WHITESPACE@100..101 " "
-                      OPERATOR@101..102 "+"
-                      Comment@102..103
-                        WHITESPACE@102..103 " "
+                      QualifiedName@101..103
+                        OPERATOR@101..102 "+"
+                        Comment@102..103
+                          WHITESPACE@102..103 " "
                       ExpressionVariable@103..112
                         LOWER@103..111 "universe"
                         Comment@111..112

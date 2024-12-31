@@ -44,9 +44,10 @@ snapshot_kind: text
                     LOWER@43..44 "a"
                     Comment@44..45
                       WHITESPACE@44..45 " "
-                  OPERATOR@45..46 "<"
-                  Comment@46..47
-                    WHITESPACE@46..47 " "
+                  QualifiedName@45..47
+                    OPERATOR@45..46 "<"
+                    Comment@46..47
+                      WHITESPACE@46..47 " "
                   ExpressionVariable@47..49
                     LOWER@47..48 "b"
                     Comment@48..49
@@ -69,9 +70,10 @@ snapshot_kind: text
                     LOWER@57..58 "b"
                     Comment@58..59
                       WHITESPACE@58..59 " "
-                  OPERATOR@59..60 "<"
-                  Comment@60..61
-                    WHITESPACE@60..61 " "
+                  QualifiedName@59..61
+                    OPERATOR@59..60 "<"
+                    Comment@60..61
+                      WHITESPACE@60..61 " "
                   ExpressionVariable@61..63
                     LOWER@61..62 "a"
                     Comment@62..63

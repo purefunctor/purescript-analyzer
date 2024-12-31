@@ -72,9 +72,10 @@ snapshot_kind: text
                     LOWER@71..72 "x"
                     Comment@72..73
                       WHITESPACE@72..73 " "
-                  OPERATOR@73..74 "+"
-                  Comment@74..75
-                    WHITESPACE@74..75 " "
+                  QualifiedName@73..75
+                    OPERATOR@73..74 "+"
+                    Comment@74..75
+                      WHITESPACE@74..75 " "
                   ExpressionVariable@75..77
                     LOWER@75..76 "y"
                     Comment@76..77

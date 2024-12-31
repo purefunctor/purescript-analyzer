@@ -89,9 +89,10 @@ snapshot_kind: text
                   INTEGER@113..114 "1"
                   Comment@114..115
                     WHITESPACE@114..115 " "
-                OPERATOR@115..117 ".."
-                Comment@117..118
-                  WHITESPACE@117..118 " "
+                QualifiedName@115..118
+                  OPERATOR@115..117 ".."
+                  Comment@117..118
+                    WHITESPACE@117..118 " "
                 ExpressionInteger@118..120
                   INTEGER@118..119 "2"
                   Comment@119..120

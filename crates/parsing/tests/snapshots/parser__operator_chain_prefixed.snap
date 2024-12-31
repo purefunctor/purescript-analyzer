@@ -1,0 +1,166 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..148
+      ModuleHeader@0..36
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..29
+          UPPER@7..28 "OperatorChainPrefixed"
+          Comment@28..29
+            WHITESPACE@28..29 " "
+        ModuleExportList@29..29
+        WHERE@29..34 "where"
+        Comment@34..36
+          WHITESPACE@34..36 "\n\n"
+      LAYOUT_START@36..36 ""
+      ModuleImports@36..36
+      ModuleStatements@36..148
+        ValueEquation@36..68
+          LOWER@36..46 "expression"
+          Comment@46..47
+            WHITESPACE@46..47 " "
+          FunctionBinders@47..47
+          Unconditional@47..68
+            EQUAL@47..48 "="
+            Comment@48..49
+              WHITESPACE@48..49 " "
+            WhereExpression@49..68
+              ExpressionOperatorChain@49..68
+                ExpressionApplicationChain@49..53
+                  ExpressionInteger@49..51
+                    INTEGER@49..50 "1"
+                    Comment@50..51
+                      WHITESPACE@50..51 " "
+                  ExpressionTermArgument@51..53
+                    QualifiedName@51..53
+                      PREFIX@51..53 "L."
+                QualifiedName@53..55
+                  OPERATOR@53..54 ":"
+                  Comment@54..55
+                    WHITESPACE@54..55 " "
+                ExpressionApplicationChain@55..59
+                  ExpressionInteger@55..57
+                    INTEGER@55..56 "2"
+                    Comment@56..57
+                      WHITESPACE@56..57 " "
+                  ExpressionTermArgument@57..59
+                    QualifiedName@57..59
+                      PREFIX@57..59 "L."
+                QualifiedName@59..61
+                  OPERATOR@59..60 ":"
+                  Comment@60..61
+                    WHITESPACE@60..61 " "
+                ExpressionConstructor@61..68
+                  QualifiedName@61..68
+                    PREFIX@61..63 "L."
+                    UPPER@63..66 "Nil"
+                    Comment@66..68
+                      WHITESPACE@66..68 "\n\n"
+        LAYOUT_SEPARATOR@68..68 ""
+        ValueEquation@68..106
+          LOWER@68..74 "binder"
+          Comment@74..75
+            WHITESPACE@74..75 " "
+          FunctionBinders@75..95
+            BinderParenthesized@75..95
+              LEFT_PARENTHESIS@75..76 "("
+              BinderOperatorChain@76..93
+                BinderVariable@76..78
+                  LOWER@76..77 "a"
+                  Comment@77..78
+                    WHITESPACE@77..78 " "
+                QualifiedName@78..82
+                  PREFIX@78..80 "L."
+                  OPERATOR@80..81 ":"
+                  Comment@81..82
+                    WHITESPACE@81..82 " "
+                BinderVariable@82..84
+                  LOWER@82..83 "b"
+                  Comment@83..84
+                    WHITESPACE@83..84 " "
+                QualifiedName@84..88
+                  PREFIX@84..86 "L."
+                  OPERATOR@86..87 ":"
+                  Comment@87..88
+                    WHITESPACE@87..88 " "
+                BinderConstructor@88..93
+                  QualifiedName@88..93
+                    PREFIX@88..90 "L."
+                    UPPER@90..93 "Nil"
+              RIGHT_PARENTHESIS@93..94 ")"
+              Comment@94..95
+                WHITESPACE@94..95 " "
+          Unconditional@95..106
+            EQUAL@95..96 "="
+            Comment@96..97
+              WHITESPACE@96..97 " "
+            WhereExpression@97..106
+              ExpressionOperatorChain@97..106
+                ExpressionApplicationChain@97..101
+                  ExpressionVariable@97..99
+                    LOWER@97..98 "a"
+                    Comment@98..99
+                      WHITESPACE@98..99 " "
+                  ExpressionTermArgument@99..101
+                    QualifiedName@99..101
+                      PREFIX@99..101 "S."
+                QualifiedName@101..103
+                  OPERATOR@101..102 "+"
+                  Comment@102..103
+                    WHITESPACE@102..103 " "
+                ExpressionVariable@103..106
+                  LOWER@103..104 "b"
+                  Comment@104..106
+                    WHITESPACE@104..106 "\n\n"
+        LAYOUT_SEPARATOR@106..106 ""
+        TypeSynonymEquation@106..148
+          TYPE@106..110 "type"
+          Comment@110..111
+            WHITESPACE@110..111 " "
+          UPPER@111..115 "Type"
+          Comment@115..116
+            WHITESPACE@115..116 " "
+          EQUAL@116..117 "="
+          Comment@117..118
+            WHITESPACE@117..118 " "
+          TypeOperatorChain@118..148
+            TypeApplicationChain@118..128
+              TypeConstructor@118..126
+                QualifiedName@118..126
+                  UPPER@118..125 "Integer"
+                  Comment@125..126
+                    WHITESPACE@125..126 " "
+              QualifiedName@126..128
+                PREFIX@126..128 "L."
+            QualifiedName@128..130
+              OPERATOR@128..129 ":"
+              Comment@129..130
+                WHITESPACE@129..130 " "
+            TypeApplicationChain@130..140
+              TypeConstructor@130..138
+                QualifiedName@130..138
+                  UPPER@130..137 "Integer"
+                  Comment@137..138
+                    WHITESPACE@137..138 " "
+              QualifiedName@138..140
+                PREFIX@138..140 "L."
+            QualifiedName@140..142
+              OPERATOR@140..141 ":"
+              Comment@141..142
+                WHITESPACE@141..142 " "
+            TypeConstructor@142..148
+              QualifiedName@142..148
+                PREFIX@142..144 "L."
+                UPPER@144..147 "Nil"
+                Comment@147..148
+                  WHITESPACE@147..148 "\n"
+      LAYOUT_END@148..148 ""
+      END_OF_FILE@148..148 ""
+    ,
+    [],
+)

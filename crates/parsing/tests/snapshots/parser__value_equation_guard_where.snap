@@ -74,9 +74,10 @@ snapshot_kind: text
                     LOWER@71..72 "c"
                     Comment@72..73
                       WHITESPACE@72..73 " "
-                  OPERATOR@73..75 "<<"
-                  Comment@75..76
-                    WHITESPACE@75..76 " "
+                  QualifiedName@73..76
+                    OPERATOR@73..75 "<<"
+                    Comment@75..76
+                      WHITESPACE@75..76 " "
                   ExpressionVariable@76..78
                     LOWER@76..77 "d"
                     Comment@77..78
@@ -109,9 +110,10 @@ snapshot_kind: text
                             LOWER@96..97 "c"
                             Comment@97..98
                               WHITESPACE@97..98 " "
-                          OPERATOR@98..99 "+"
-                          Comment@99..100
-                            WHITESPACE@99..100 " "
+                          QualifiedName@98..100
+                            OPERATOR@98..99 "+"
+                            Comment@99..100
+                              WHITESPACE@99..100 " "
                           ExpressionVariable@100..102
                             LOWER@100..101 "d"
                             Comment@101..102

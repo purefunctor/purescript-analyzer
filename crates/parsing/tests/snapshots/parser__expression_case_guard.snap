@@ -61,9 +61,10 @@ snapshot_kind: text
                               LOWER@57..58 "n"
                               Comment@58..59
                                 WHITESPACE@58..59 " "
-                            OPERATOR@59..61 "=="
-                            Comment@61..62
-                              WHITESPACE@61..62 " "
+                            QualifiedName@59..62
+                              OPERATOR@59..61 "=="
+                              Comment@61..62
+                                WHITESPACE@61..62 " "
                             ExpressionInteger@62..64
                               INTEGER@62..63 "0"
                               Comment@63..64
@@ -109,9 +110,10 @@ snapshot_kind: text
                               LOWER@91..92 "m"
                               Comment@92..93
                                 WHITESPACE@92..93 " "
-                            OPERATOR@93..95 "=="
-                            Comment@95..96
-                              WHITESPACE@95..96 " "
+                            QualifiedName@93..96
+                              OPERATOR@93..95 "=="
+                              Comment@95..96
+                                WHITESPACE@95..96 " "
                             ExpressionVariable@96..98
                               LOWER@96..97 "n"
                               Comment@97..98

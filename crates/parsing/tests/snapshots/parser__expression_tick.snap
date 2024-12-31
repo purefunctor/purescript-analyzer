@@ -80,9 +80,10 @@ snapshot_kind: text
                       INTEGER@66..67 "2"
                       Comment@67..68
                         WHITESPACE@67..68 " "
-                    OPERATOR@68..69 "+"
-                    Comment@69..70
-                      WHITESPACE@69..70 " "
+                    QualifiedName@68..70
+                      OPERATOR@68..69 "+"
+                      Comment@69..70
+                        WHITESPACE@69..70 " "
                     ExpressionInteger@70..71
                       INTEGER@70..71 "3"
                   TICK@71..72 "`"
@@ -99,9 +100,10 @@ snapshot_kind: text
                       INTEGER@76..77 "5"
                       Comment@77..78
                         WHITESPACE@77..78 " "
-                    OPERATOR@78..79 "+"
-                    Comment@79..80
-                      WHITESPACE@79..80 " "
+                    QualifiedName@78..80
+                      OPERATOR@78..79 "+"
+                      Comment@79..80
+                        WHITESPACE@79..80 " "
                     ExpressionInteger@80..81
                       INTEGER@80..81 "6"
                   TICK@81..82 "`"
