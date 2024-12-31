@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*", "docs/src/wasm"]
+members = ["compat", "crates/*", "docs/src/wasm"]
 default-members = ["crates/*"]
 resolver = "1"
 
