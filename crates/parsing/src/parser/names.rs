@@ -3,7 +3,8 @@ use syntax::{SyntaxKind, TokenSet};
 use super::Parser;
 
 pub(super) const LOWER: TokenSet =
-    TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING]).union(ROLE);
+    TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING, SyntaxKind::ROLE])
+        .union(ROLE);
 
 pub(super) const ROLE: TokenSet =
     TokenSet::new(&[SyntaxKind::NOMINAL, SyntaxKind::PHANTOM, SyntaxKind::REPRESENTATIONAL]);
@@ -56,7 +57,6 @@ pub(super) const KEYWORD: TokenSet = TokenSet::new(&[
     SyntaxKind::INFIX,
     SyntaxKind::TRUE,
     SyntaxKind::FALSE,
-    SyntaxKind::ROLE,
 ]);
 
 pub(super) const RECORD_LABEL: TokenSet =
