@@ -226,8 +226,8 @@ const BINDERS_LIST_RECOVERY: TokenSet =
 fn case_branch_binders(p: &mut Parser) {
     let mut m = p.start();
     while !p.at(SyntaxKind::RIGHT_ARROW) && !p.at(SyntaxKind::PIPE) && !p.at_eof() {
-        if p.at_in(binders::BINDER_ATOM_START) {
-            binders::binder_atom(p);
+        if p.at_in(binders::BINDER_START) {
+            binders::binder_1(p);
             if p.at(SyntaxKind::COMMA)
                 && (p.at_next(SyntaxKind::RIGHT_ARROW) || p.at_next(SyntaxKind::PIPE))
             {
