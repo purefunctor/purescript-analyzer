@@ -304,23 +304,18 @@ fn type_items(p: &mut Parser) {
     if p.eat(SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME) {
         m.end(p, SyntaxKind::TypeItemsAll);
     } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-            p.error("Empty item list");
-            p.consume();
-        } else {
-            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-                if p.eat(SyntaxKind::UPPER) {
-                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.error_recover("Trailing comma");
-                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.expect(SyntaxKind::COMMA);
-                    }
-                } else {
-                    if p.at_in(EXPORT_LIST_RECOVERY) {
-                        break;
-                    }
-                    p.error_recover("Invalid token");
+        while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+            if p.eat(SyntaxKind::UPPER) {
+                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.error_recover("Trailing comma");
+                } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                    p.expect(SyntaxKind::COMMA);
                 }
+            } else {
+                if p.at_in(EXPORT_LIST_RECOVERY) {
+                    break;
+                }
+                p.error_recover("Invalid token");
             }
         }
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
