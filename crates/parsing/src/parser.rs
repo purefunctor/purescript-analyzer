@@ -16,7 +16,7 @@ pub(crate) struct Parser<'t> {
     index: usize,
     tokens: &'t [SyntaxKind],
     output: Vec<Output>,
-    fuel: Cell<u8>,
+    fuel: Cell<u16>,
 }
 
 type Rule = fn(&mut Parser);
@@ -25,7 +25,7 @@ impl<'t> Parser<'t> {
     pub(crate) fn new(tokens: &'t [SyntaxKind]) -> Parser<'t> {
         let index = 0;
         let output = vec![];
-        let fuel = Cell::new(u8::MAX);
+        let fuel = Cell::new(u16::MAX);
         Parser { index, tokens, output, fuel }
     }
 
@@ -42,7 +42,7 @@ impl<'t> Parser<'t> {
     }
 
     fn consume(&mut self) {
-        self.fuel.set(u8::MAX);
+        self.fuel.set(u16::MAX);
         let kind = self.tokens[self.index];
         self.index += 1;
         self.output.push(Output::Token { kind });
