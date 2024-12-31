@@ -317,6 +317,7 @@ impl SyntaxKind {
                 | Self::DERIVE
                 | Self::DO
                 | Self::ELSE
+                | Self::FALSE
                 | Self::FORALL
                 | Self::FOREIGN
                 | Self::HIDING
@@ -336,6 +337,7 @@ impl SyntaxKind {
                 | Self::REPRESENTATIONAL
                 | Self::ROLE
                 | Self::THEN
+                | Self::TRUE
                 | Self::TYPE
                 | Self::WHERE
         )
