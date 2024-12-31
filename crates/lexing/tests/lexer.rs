@@ -63,4 +63,5 @@ lexer_tests!(
 lexer_tests!(
     hole_glued => "?hole ?Hole ?_hole ?_Hole ?'hole ?'Hole ?hole' ?Hole' ?_hole' ?_Hole'",
     hole_unglued => "? hole",
+    hole_operator => "?-> ?=> ?~",
 );

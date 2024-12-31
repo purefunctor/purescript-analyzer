@@ -101,7 +101,7 @@ impl<'a> Lexer<'a> {
 
             '`' => self.take_single(SyntaxKind::TICK),
             ',' => self.take_single(SyntaxKind::COMMA),
-            '?' if !is_name(self.second()) => self.take_single(SyntaxKind::OPERATOR),
+            '?' if !is_name(self.second()) => self.take_operator(),
             '_' if !is_name(self.second()) => self.take_single(SyntaxKind::UNDERSCORE),
 
             '\'' => self.take_char(),

@@ -1,0 +1,13 @@
+---
+source: crates/lexing/tests/lexer.rs
+expression: tokens
+snapshot_kind: text
+---
+[
+    OPERATOR,
+    WHITESPACE,
+    OPERATOR,
+    WHITESPACE,
+    OPERATOR,
+    END_OF_FILE,
+]
