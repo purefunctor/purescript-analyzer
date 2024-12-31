@@ -691,6 +691,7 @@ fn instance_chain(p: &mut Parser) {
 fn instance_declaration(p: &mut Parser) {
     let mut m = p.start();
     p.eat(SyntaxKind::ELSE);
+    p.eat(SyntaxKind::LAYOUT_SEPARATOR);
     p.expect(SyntaxKind::INSTANCE);
     p.optional(instance_name);
     p.optional(instance_constraints);

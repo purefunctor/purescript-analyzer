@@ -1,0 +1,61 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..150
+      ModuleHeader@0..39
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..32
+          UPPER@7..31 "InstanceChainElseNewline"
+          Comment@31..32
+            WHITESPACE@31..32 " "
+        ModuleExportList@32..32
+        WHERE@32..37 "where"
+        Comment@37..39
+          WHITESPACE@37..39 "\n\n"
+      Comment@39..111
+        LINE_COMMENT@39..109 "-- Instance chains ar ..."
+        WHITESPACE@109..111 "\n\n"
+      LAYOUT_START@111..111 ""
+      ModuleImports@111..111
+      ModuleStatements@111..150
+        InstanceChain@111..150
+          InstanceDeclaration@111..128
+            INSTANCE@111..119 "instance"
+            Comment@119..120
+              WHITESPACE@119..120 " "
+            InstanceHead@120..128
+              UPPER@120..123 "Foo"
+              Comment@123..124
+                WHITESPACE@123..124 " "
+              TypeConstructor@124..128
+                QualifiedName@124..128
+                  UPPER@124..127 "Bar"
+                  Comment@127..128
+                    WHITESPACE@127..128 "\n"
+          InstanceDeclaration@128..150
+            ELSE@128..132 "else"
+            Comment@132..133
+              WHITESPACE@132..133 "\n"
+            LAYOUT_SEPARATOR@133..133 ""
+            INSTANCE@133..141 "instance"
+            Comment@141..142
+              WHITESPACE@141..142 " "
+            InstanceHead@142..150
+              UPPER@142..145 "Foo"
+              Comment@145..146
+                WHITESPACE@145..146 " "
+              TypeConstructor@146..150
+                QualifiedName@146..150
+                  UPPER@146..149 "Baz"
+                  Comment@149..150
+                    WHITESPACE@149..150 "\n"
+      LAYOUT_END@150..150 ""
+      END_OF_FILE@150..150 ""
+    ,
+    [],
+)

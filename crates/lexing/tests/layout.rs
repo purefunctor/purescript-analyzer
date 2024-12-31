@@ -66,6 +66,7 @@ layout_tests!(
     do_where => include_str!("layout/DoWhere.purs"),
     if_then_else_do => include_str!("layout/IfThenElseDo.purs"),
     instance_chain_else => include_str!("layout/InstanceChainElse.purs"),
+    instance_chain_else_newline => include_str!("layout/InstanceChainElseNewline.purs"),
     int_type => include_str!("layout/IntType.purs"),
     let_guards => include_str!("layout/LetGuards.purs"),
     // shebang => include_str!("layout/Shebang.purs"),
