@@ -245,6 +245,7 @@ impl<'a> Lexer<'a> {
             "∷" => SyntaxKind::DOUBLE_COLON,
             "←" => SyntaxKind::LEFT_ARROW,
             "→" => SyntaxKind::RIGHT_ARROW,
+            "⇐" => SyntaxKind::LEFT_THICK_ARROW,
             "⇒" => SyntaxKind::RIGHT_THICK_ARROW,
             "∀" => SyntaxKind::FORALL,
             "=" => SyntaxKind::EQUAL,
