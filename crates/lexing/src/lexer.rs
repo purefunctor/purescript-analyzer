@@ -87,6 +87,7 @@ impl<'a> Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub(crate) fn take_token(&mut self) {
+        let p = self.position();
         match self.first() {
             '-' if self.second() == '-' => self.take_line_comment(),
             '{' if self.second() == '-' => self.take_block_comment(),
@@ -120,7 +121,7 @@ impl<'a> Lexer<'a> {
                 } else if i.is_ascii_digit() {
                     self.take_integer_or_number()
                 } else {
-                    panic!("Unknown token!")
+                    panic!("Unknown token! '{}' at {:?}", i, p)
                 }
             }
         }
@@ -293,10 +294,24 @@ impl<'a> Lexer<'a> {
         let position = self.position();
 
         assert_eq!(self.take(), '\'');
-        self.take_while(|c| c != '\'');
+        let error = 'outer: {
+            while !self.is_eof() {
+                match self.take() {
+                    '\'' => {
+                        break 'outer None;
+                    }
+                    '\\' if self.first() == '\\' || self.first() == '\'' => {
+                        self.take();
+                    }
+                    _ => {
+                        continue;
+                    }
+                }
+            }
+            Some("Unexpected end of file")
+        };
 
-        let error = if self.take() != '\'' { Some("unexpected end of file") } else { None };
-        self.lexed.push(SyntaxKind::CHAR, position, error);
+        self.lexed.push(SyntaxKind::CHAR, position, error)
     }
 
     #[inline]
@@ -330,12 +345,20 @@ impl<'a> Lexer<'a> {
     }
 
     fn take_normal_string(&mut self) -> Option<&'static str> {
-        self.take_while(|c| c != '"');
-        if self.take() != '"' {
-            Some("unexpected end of file")
-        } else {
-            None
+        while !self.is_eof() {
+            match self.take() {
+                '"' => {
+                    return None;
+                }
+                '\\' if self.first() == '\\' || self.first() == '"' => {
+                    self.take();
+                }
+                _ => {
+                    continue;
+                }
+            }
         }
+        Some("Unexpected end of file")
     }
 
     fn take_raw_string(&mut self) -> Option<&'static str> {
@@ -346,7 +369,7 @@ impl<'a> Lexer<'a> {
             let end = self.consumed();
             match end - start {
                 0 => {
-                    return Some("unexpected end of file");
+                    return Some("Unexpected end of file");
                 }
                 1 | 2 => {
                     continue;
