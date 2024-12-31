@@ -5,3 +5,5 @@ infix 5 Add as +
 
 infix 5 Add.add as +
 infix 5 Add.Add as +
+
+infix 5 type Add.add as +

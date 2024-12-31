@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..108
+    Module@0..135
       ModuleHeader@0..31
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@29..31 "\n\n"
       LAYOUT_START@31..31 ""
       ModuleImports@31..31
-      ModuleStatements@31..108
+      ModuleStatements@31..135
         InfixDeclaration@31..48
           INFIX@31..36 "infix"
           Comment@36..37
@@ -75,7 +75,7 @@ snapshot_kind: text
           Comment@86..87
             WHITESPACE@86..87 "\n"
         LAYOUT_SEPARATOR@87..87 ""
-        InfixDeclaration@87..108
+        InfixDeclaration@87..109
           INFIX@87..92 "infix"
           Comment@92..93
             WHITESPACE@92..93 " "
@@ -91,10 +91,32 @@ snapshot_kind: text
           Comment@105..106
             WHITESPACE@105..106 " "
           OPERATOR@106..107 "+"
-          Comment@107..108
-            WHITESPACE@107..108 "\n"
-      LAYOUT_END@108..108 ""
-      END_OF_FILE@108..108 ""
+          Comment@107..109
+            WHITESPACE@107..109 "\n\n"
+        LAYOUT_SEPARATOR@109..109 ""
+        InfixDeclaration@109..135
+          INFIX@109..114 "infix"
+          Comment@114..115
+            WHITESPACE@114..115 " "
+          INTEGER@115..116 "5"
+          Comment@116..117
+            WHITESPACE@116..117 " "
+          TYPE@117..121 "type"
+          Comment@121..122
+            WHITESPACE@121..122 " "
+          QualifiedName@122..130
+            PREFIX@122..126 "Add."
+            LOWER@126..129 "add"
+            Comment@129..130
+              WHITESPACE@129..130 " "
+          AS@130..132 "as"
+          Comment@132..133
+            WHITESPACE@132..133 " "
+          OPERATOR@133..134 "+"
+          Comment@134..135
+            WHITESPACE@134..135 "\n"
+      LAYOUT_END@135..135 ""
+      END_OF_FILE@135..135 ""
     ,
     [],
 )

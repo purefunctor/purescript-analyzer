@@ -491,6 +491,7 @@ fn infix_declaration(p: &mut Parser) {
     }
 
     p.expect(SyntaxKind::INTEGER);
+    p.eat(SyntaxKind::TYPE);
 
     let mut n = p.start();
     p.eat(SyntaxKind::PREFIX);
