@@ -246,7 +246,7 @@ fn case_branch_binders(p: &mut Parser) {
 }
 
 const DO_STATEMENT_START: TokenSet =
-    TokenSet::new(&[SyntaxKind::LET]).union(EXPRESSION_START).union(binders::BINDER_ATOM_START);
+    TokenSet::new(&[SyntaxKind::LET]).union(EXPRESSION_START).union(binders::BINDER_START);
 
 fn expression_do(p: &mut Parser, mut m: NodeMarker) {
     p.eat(SyntaxKind::PREFIX);
@@ -289,7 +289,7 @@ fn do_statement_let(p: &mut Parser) {
 
 fn do_statement_bind(p: &mut Parser) {
     let mut m = p.start();
-    binders::binder_atom(p);
+    binders::binder(p);
     p.expect(SyntaxKind::LEFT_ARROW);
     expression(p);
     m.end(p, SyntaxKind::DoStatementBind);

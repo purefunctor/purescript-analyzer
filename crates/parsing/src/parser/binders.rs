@@ -73,7 +73,8 @@ pub(super) const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
 ])
 .union(names::LOWER);
 
-const BINDER_START: TokenSet = BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
+pub(super) const BINDER_START: TokenSet =
+    BINDER_ATOM_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 
 pub(super) fn binder_atom(p: &mut Parser) {
     let mut m = p.start();
