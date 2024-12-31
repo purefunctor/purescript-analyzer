@@ -458,7 +458,7 @@ fn module_statement(p: &mut Parser) {
     } else if p.at(SyntaxKind::DATA) {
         data_signature_or_equation(p);
     } else if p.at(SyntaxKind::TYPE) {
-        synonym_signature_or_equation(p);
+        role_or_synonym_signature_or_equation(p);
     } else if p.at(SyntaxKind::NEWTYPE) {
         newtype_signature_or_equation(p);
     } else if p.at(SyntaxKind::CLASS) {
@@ -506,10 +506,28 @@ fn infix_declaration(p: &mut Parser) {
     m.end(p, SyntaxKind::InfixDeclaration);
 }
 
-fn synonym_signature_or_equation(p: &mut Parser) {
+const TYPE_ROLE_END: TokenSet =
+    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+
+fn role_or_synonym_signature_or_equation(p: &mut Parser) {
     let mut m = p.start();
 
     p.expect(SyntaxKind::TYPE);
+
+    if p.eat(SyntaxKind::ROLE) {
+        p.expect(SyntaxKind::UPPER);
+        while !p.at_in(TYPE_ROLE_END) && !p.at_eof() {
+            if p.at_in(names::ROLE) {
+                let mut n = p.start();
+                p.consume();
+                n.end(p, SyntaxKind::TypeRole);
+            } else {
+                p.error_recover("Invalid token");
+            }
+        }
+        return m.end(p, SyntaxKind::TypeRoleDeclaration);
+    }
+
     p.expect(SyntaxKind::UPPER);
 
     if p.eat(SyntaxKind::DOUBLE_COLON) {

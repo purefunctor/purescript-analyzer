@@ -4,7 +4,7 @@ expression: "(node, errors)"
 snapshot_kind: text
 ---
 (
-    Module@0..96
+    Module@0..147
       ModuleHeader@0..33
         MODULE@0..6 "module"
         Comment@6..7
@@ -19,7 +19,7 @@ snapshot_kind: text
           WHITESPACE@31..33 "\n\n"
       LAYOUT_START@33..33 ""
       ModuleImports@33..33
-      ModuleStatements@33..96
+      ModuleStatements@33..147
         TypeSynonymEquation@33..63
           TYPE@33..37 "type"
           Comment@37..38
@@ -51,7 +51,7 @@ snapshot_kind: text
             Comment@62..63
               WHITESPACE@62..63 "\n"
         LAYOUT_SEPARATOR@63..63 ""
-        TypeSynonymEquation@63..96
+        TypeSynonymEquation@63..97
           TYPE@63..67 "type"
           Comment@67..68
             WHITESPACE@67..68 " "
@@ -61,7 +61,7 @@ snapshot_kind: text
           EQUAL@75..76 "="
           Comment@76..77
             WHITESPACE@76..77 " "
-          TypeRecord@77..96
+          TypeRecord@77..97
             LEFT_CURLY@77..78 "{"
             Comment@78..79
               WHITESPACE@78..79 " "
@@ -79,10 +79,55 @@ snapshot_kind: text
                   Comment@93..94
                     WHITESPACE@93..94 " "
             RIGHT_CURLY@94..95 "}"
-            Comment@95..96
-              WHITESPACE@95..96 "\n"
-      LAYOUT_END@96..96 ""
-      END_OF_FILE@96..96 ""
+            Comment@95..97
+              WHITESPACE@95..97 "\n\n"
+        LAYOUT_SEPARATOR@97..97 ""
+        TypeSynonymEquation@97..147
+          TYPE@97..101 "type"
+          Comment@101..102
+            WHITESPACE@101..102 " "
+          UPPER@102..106 "Role"
+          Comment@106..107
+            WHITESPACE@106..107 " "
+          EQUAL@107..108 "="
+          Comment@108..109
+            WHITESPACE@108..109 " "
+          TypeRow@109..147
+            LEFT_PARENTHESIS@109..110 "("
+            Comment@110..111
+              WHITESPACE@110..111 " "
+            TypeRowItem@111..125
+              LabelName@111..116
+                ROLE@111..115 "role"
+                Comment@115..116
+                  WHITESPACE@115..116 " "
+              DOUBLE_COLON@116..118 "::"
+              Comment@118..119
+                WHITESPACE@118..119 " "
+              TypeConstructor@119..125
+                QualifiedName@119..125
+                  UPPER@119..125 "String"
+            COMMA@125..126 ","
+            Comment@126..127
+              WHITESPACE@126..127 " "
+            TypeRowItem@127..145
+              LabelName@127..135
+                NOMINAL@127..134 "nominal"
+                Comment@134..135
+                  WHITESPACE@134..135 " "
+              DOUBLE_COLON@135..137 "::"
+              Comment@137..138
+                WHITESPACE@137..138 " "
+              TypeConstructor@138..145
+                QualifiedName@138..145
+                  UPPER@138..144 "String"
+                  Comment@144..145
+                    WHITESPACE@144..145 " "
+            RIGHT_PARENTHESIS@145..146 ")"
+            Comment@146..147
+              WHITESPACE@146..147 "\n"
+      LAYOUT_END@147..147 ""
+      END_OF_FILE@147..147 ""
     ,
     [],
 )

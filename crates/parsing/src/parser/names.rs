@@ -3,7 +3,10 @@ use syntax::{SyntaxKind, TokenSet};
 use super::Parser;
 
 pub(super) const LOWER: TokenSet =
-    TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING]);
+    TokenSet::new(&[SyntaxKind::LOWER, SyntaxKind::AS, SyntaxKind::HIDING]).union(ROLE);
+
+pub(super) const ROLE: TokenSet =
+    TokenSet::new(&[SyntaxKind::NOMINAL, SyntaxKind::PHANTOM, SyntaxKind::REPRESENTATIONAL]);
 
 pub(super) const OPERATOR: TokenSet = TokenSet::new(&[
     SyntaxKind::OPERATOR,
@@ -53,6 +56,7 @@ pub(super) const KEYWORD: TokenSet = TokenSet::new(&[
     SyntaxKind::INFIX,
     SyntaxKind::TRUE,
     SyntaxKind::FALSE,
+    SyntaxKind::ROLE,
 ]);
 
 pub(super) const RECORD_LABEL: TokenSet =

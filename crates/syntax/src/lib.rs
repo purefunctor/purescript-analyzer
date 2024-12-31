@@ -66,7 +66,11 @@ pub enum SyntaxKind {
     LET,
     MODULE,
     NEWTYPE,
+    NOMINAL,
     OF,
+    PHANTOM,
+    REPRESENTATIONAL,
+    ROLE,
     THEN,
     TYPE,
     WHERE,
@@ -222,6 +226,10 @@ pub enum SyntaxKind {
     RecordUpdateBranch,
 
     InfixDeclaration,
+
+    TypeRoleDeclaration,
+    TypeRole,
+
     TypeSynonymSignature,
     TypeSynonymEquation,
 
