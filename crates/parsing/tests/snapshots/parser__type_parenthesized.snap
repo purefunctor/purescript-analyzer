@@ -29,11 +29,13 @@ snapshot_kind: text
             WHITESPACE@41..42 " "
           TypeKinded@42..57
             LEFT_PARENTHESIS@42..43 "("
-            LEFT_PARENTHESIS@43..44 "("
-            LOWER@44..45 "a"
-            RIGHT_PARENTHESIS@45..46 ")"
-            Comment@46..47
-              WHITESPACE@46..47 " "
+            TypeParenthesized@43..47
+              LEFT_PARENTHESIS@43..44 "("
+              TypeVariable@44..45
+                LOWER@44..45 "a"
+              RIGHT_PARENTHESIS@45..46 ")"
+              Comment@46..47
+                WHITESPACE@46..47 " "
             DOUBLE_COLON@47..49 "::"
             Comment@49..50
               WHITESPACE@49..50 " "

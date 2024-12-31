@@ -1,0 +1,84 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..87
+      ModuleHeader@0..40
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..33
+          UPPER@7..32 "TypeParenthesizedFunc ..."
+          Comment@32..33
+            WHITESPACE@32..33 " "
+        ModuleExportList@33..33
+        WHERE@33..38 "where"
+        Comment@38..40
+          WHITESPACE@38..40 "\n\n"
+      LAYOUT_START@40..40 ""
+      ModuleImports@40..40
+      ModuleStatements@40..87
+        ValueSignature@40..87
+          LOWER@40..48 "function"
+          Comment@48..49
+            WHITESPACE@48..49 " "
+          DOUBLE_COLON@49..51 "::"
+          Comment@51..52
+            WHITESPACE@51..52 " "
+          TypeForall@52..87
+            FORALL@52..58 "forall"
+            Comment@58..59
+              WHITESPACE@58..59 " "
+            TypeVariableBinding@59..61
+              LOWER@59..60 "a"
+              Comment@60..61
+                WHITESPACE@60..61 " "
+            TypeVariableBinding@61..62
+              LOWER@61..62 "b"
+            PERIOD@62..63 "."
+            Comment@63..64
+              WHITESPACE@63..64 " "
+            TypeParenthesized@64..87
+              LEFT_PARENTHESIS@64..65 "("
+              TypeArrow@65..85
+                TypeParenthesized@65..74
+                  LEFT_PARENTHESIS@65..66 "("
+                  TypeArrow@66..72
+                    TypeVariable@66..68
+                      LOWER@66..67 "a"
+                      Comment@67..68
+                        WHITESPACE@67..68 " "
+                    RIGHT_ARROW@68..70 "->"
+                    Comment@70..71
+                      WHITESPACE@70..71 " "
+                    TypeVariable@71..72
+                      LOWER@71..72 "b"
+                  RIGHT_PARENTHESIS@72..73 ")"
+                  Comment@73..74
+                    WHITESPACE@73..74 " "
+                RIGHT_ARROW@74..76 "->"
+                Comment@76..77
+                  WHITESPACE@76..77 " "
+                TypeParenthesized@77..85
+                  LEFT_PARENTHESIS@77..78 "("
+                  TypeArrow@78..84
+                    TypeVariable@78..80
+                      LOWER@78..79 "a"
+                      Comment@79..80
+                        WHITESPACE@79..80 " "
+                    RIGHT_ARROW@80..82 "->"
+                    Comment@82..83
+                      WHITESPACE@82..83 " "
+                    TypeVariable@83..84
+                      LOWER@83..84 "b"
+                  RIGHT_PARENTHESIS@84..85 ")"
+              RIGHT_PARENTHESIS@85..86 ")"
+              Comment@86..87
+                WHITESPACE@86..87 "\n"
+      LAYOUT_END@87..87 ""
+      END_OF_FILE@87..87 ""
+    ,
+    [],
+)

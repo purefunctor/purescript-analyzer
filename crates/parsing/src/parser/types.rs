@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{names, NodeMarker, Parser};
+use super::{names, Parser};
 
 pub(super) fn type_(p: &mut Parser) {
     let mut m = p.start();
@@ -123,9 +123,11 @@ pub(super) fn type_atom(p: &mut Parser) {
     } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
         m.end(p, SyntaxKind::TypeOperator);
     } else if p.at(SyntaxKind::LEFT_PARENTHESIS) {
-        type_parenthesis(p, m);
+        type_parenthesis(p);
+        m.cancel(p);
     } else if p.at(SyntaxKind::LEFT_CURLY) {
-        type_record(p, m);
+        type_record(p);
+        m.cancel(p);
     } else if p.eat(SyntaxKind::HOLE) {
         m.end(p, SyntaxKind::TypeHole);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
@@ -187,28 +189,38 @@ fn type_variable_binding(p: &mut Parser) {
     m.end(p, SyntaxKind::TypeVariableBinding);
 }
 
-fn type_parenthesis(p: &mut Parser, mut m: NodeMarker) {
+fn type_parenthesis(p: &mut Parser) {
+    p.alternative([type_kinded_variable, type_row, type_parenthesized]);
+}
+
+fn type_kinded_variable(p: &mut Parser) {
+    let mut m = p.start();
     p.expect(SyntaxKind::LEFT_PARENTHESIS);
+    let mut n = p.start();
+    p.expect(SyntaxKind::LEFT_PARENTHESIS);
+    let mut o = p.start();
+    p.expect_in(names::LOWER, SyntaxKind::LOWER, "Expected LOWER");
+    o.end(p, SyntaxKind::TypeVariable);
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    n.end(p, SyntaxKind::TypeParenthesized);
+    p.expect(SyntaxKind::DOUBLE_COLON);
+    type_(p);
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    m.end(p, SyntaxKind::TypeKinded);
+}
 
-    if p.at(SyntaxKind::LEFT_PARENTHESIS) && p.at_next(SyntaxKind::LOWER) {
-        p.expect(SyntaxKind::LEFT_PARENTHESIS);
-        p.expect(SyntaxKind::LOWER);
-        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        p.expect(SyntaxKind::DOUBLE_COLON);
-        type_(p);
-        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        return m.end(p, SyntaxKind::TypeKinded);
-    }
+fn type_parenthesized(p: &mut Parser) {
+    let mut m = p.start();
+    p.expect(SyntaxKind::LEFT_PARENTHESIS);
+    type_(p);
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+    m.end(p, SyntaxKind::TypeParenthesized);
+}
 
-    if !p.at(SyntaxKind::PIPE)
-        && !p.at(SyntaxKind::RIGHT_PARENTHESIS)
-        && !p.at_next(SyntaxKind::DOUBLE_COLON)
-    {
-        type_1(p);
-        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        return m.end(p, SyntaxKind::TypeParenthesized);
-    }
+fn type_row(p: &mut Parser) {
+    let mut m = p.start();
 
+    p.expect(SyntaxKind::LEFT_PARENTHESIS);
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
         if p.at_in(names::RECORD_LABEL) {
             row_item(p);
@@ -260,7 +272,9 @@ fn row_tail(p: &mut Parser) {
     m.end(p, SyntaxKind::TypeRowTail);
 }
 
-fn type_record(p: &mut Parser, mut m: NodeMarker) {
+fn type_record(p: &mut Parser) {
+    let mut m = p.start();
+
     p.expect(SyntaxKind::LEFT_CURLY);
 
     while !p.at(SyntaxKind::PIPE) && !p.at(SyntaxKind::RIGHT_CURLY) && !p.at_eof() {
