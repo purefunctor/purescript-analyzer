@@ -4,7 +4,7 @@ use super::{binders, expressions, generic, Parser};
 
 const LET_BINDING_START: TokenSet = TokenSet::new(&[SyntaxKind::LOWER])
     .union(expressions::EXPRESSION_START)
-    .union(binders::BINDER_ATOM_START);
+    .union(binders::BINDER_START);
 
 pub(super) fn let_binding_statements(p: &mut Parser) {
     let mut m = p.start();
@@ -32,7 +32,7 @@ fn let_binding_signature_or_equation(p: &mut Parser) {
 
 fn let_binding_pattern(p: &mut Parser) {
     let mut m = p.start();
-    binders::binder_atom(p);
+    binders::binder_1(p);
     p.expect(SyntaxKind::EQUAL);
     expressions::expression(p);
     m.end(p, SyntaxKind::LetBindingPattern);

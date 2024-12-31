@@ -1,0 +1,158 @@
+---
+source: crates/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..128
+      ModuleHeader@0..37
+        MODULE@0..6 "module"
+        Comment@6..7
+          WHITESPACE@6..7 " "
+        ModuleName@7..30
+          UPPER@7..29 "DoStatementTupleBinder"
+          Comment@29..30
+            WHITESPACE@29..30 " "
+        ModuleExportList@30..30
+        WHERE@30..35 "where"
+        Comment@35..37
+          WHITESPACE@35..37 "\n\n"
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..128
+        ValueEquation@37..128
+          LOWER@37..41 "main"
+          Comment@41..42
+            WHITESPACE@41..42 " "
+          FunctionBinders@42..42
+          Unconditional@42..128
+            EQUAL@42..43 "="
+            Comment@43..44
+              WHITESPACE@43..44 " "
+            WhereExpression@44..128
+              ExpressionDo@44..128
+                DO@44..46 "do"
+                Comment@46..49
+                  WHITESPACE@46..49 "\n  "
+                DoStatements@49..128
+                  LAYOUT_START@49..49 ""
+                  DoStatementBind@49..84
+                    BinderTyped@49..69
+                      BinderOperatorChain@49..56
+                        BinderVariable@49..51
+                          LOWER@49..50 "a"
+                          Comment@50..51
+                            WHITESPACE@50..51 " "
+                        OPERATOR@51..53 "/\\"
+                        Comment@53..54
+                          WHITESPACE@53..54 " "
+                        BinderVariable@54..56
+                          LOWER@54..55 "b"
+                          Comment@55..56
+                            WHITESPACE@55..56 " "
+                      DOUBLE_COLON@56..58 "::"
+                      Comment@58..59
+                        WHITESPACE@58..59 " "
+                      TypeApplicationChain@59..69
+                        TypeConstructor@59..65
+                          QualifiedName@59..65
+                            UPPER@59..64 "Tuple"
+                            Comment@64..65
+                              WHITESPACE@64..65 " "
+                        TypeVariable@65..67
+                          LOWER@65..66 "a"
+                          Comment@66..67
+                            WHITESPACE@66..67 " "
+                        TypeVariable@67..69
+                          LOWER@67..68 "b"
+                          Comment@68..69
+                            WHITESPACE@68..69 " "
+                    LEFT_ARROW@69..71 "<-"
+                    Comment@71..72
+                      WHITESPACE@71..72 " "
+                    ExpressionApplicationChain@72..84
+                      ExpressionConstructor@72..78
+                        UPPER@72..77 "Tuple"
+                        Comment@77..78
+                          WHITESPACE@77..78 " "
+                      ExpressionTermArgument@78..80
+                        ExpressionVariable@78..80
+                          LOWER@78..79 "a"
+                          Comment@79..80
+                            WHITESPACE@79..80 " "
+                      ExpressionTermArgument@80..84
+                        ExpressionVariable@80..84
+                          LOWER@80..81 "b"
+                          Comment@81..84
+                            WHITESPACE@81..84 "\n  "
+                  LAYOUT_SEPARATOR@84..84 ""
+                  DoStatementLet@84..114
+                    LET@84..87 "let"
+                    Comment@87..93
+                      WHITESPACE@87..93 " \n    "
+                    LetBindingStatements@93..114
+                      LAYOUT_START@93..93 ""
+                      LetBindingPattern@93..114
+                        BinderOperatorChain@93..100
+                          BinderVariable@93..95
+                            LOWER@93..94 "a"
+                            Comment@94..95
+                              WHITESPACE@94..95 " "
+                          OPERATOR@95..97 "/\\"
+                          Comment@97..98
+                            WHITESPACE@97..98 " "
+                          BinderVariable@98..100
+                            LOWER@98..99 "b"
+                            Comment@99..100
+                              WHITESPACE@99..100 " "
+                        EQUAL@100..101 "="
+                        Comment@101..102
+                          WHITESPACE@101..102 " "
+                        ExpressionApplicationChain@102..114
+                          ExpressionConstructor@102..108
+                            UPPER@102..107 "Tuple"
+                            Comment@107..108
+                              WHITESPACE@107..108 " "
+                          ExpressionTermArgument@108..110
+                            ExpressionVariable@108..110
+                              LOWER@108..109 "a"
+                              Comment@109..110
+                                WHITESPACE@109..110 " "
+                          ExpressionTermArgument@110..114
+                            ExpressionVariable@110..114
+                              LOWER@110..111 "b"
+                              Comment@111..114
+                                WHITESPACE@111..114 "\n  "
+                      LAYOUT_END@114..114 ""
+                  LAYOUT_SEPARATOR@114..114 ""
+                  DoStatementDiscard@114..128
+                    ExpressionApplicationChain@114..128
+                      ExpressionVariable@114..119
+                        LOWER@114..118 "pure"
+                        Comment@118..119
+                          WHITESPACE@118..119 " "
+                      ExpressionTermArgument@119..128
+                        ExpressionRecord@119..128
+                          LEFT_CURLY@119..120 "{"
+                          Comment@120..121
+                            WHITESPACE@120..121 " "
+                          RecordPun@121..122
+                            LabelName@121..122
+                              LOWER@121..122 "a"
+                          COMMA@122..123 ","
+                          Comment@123..124
+                            WHITESPACE@123..124 " "
+                          RecordPun@124..126
+                            LabelName@124..126
+                              LOWER@124..125 "b"
+                              Comment@125..126
+                                WHITESPACE@125..126 " "
+                          RIGHT_CURLY@126..127 "}"
+                          Comment@127..128
+                            WHITESPACE@127..128 "\n"
+                  LAYOUT_END@128..128 ""
+      LAYOUT_END@128..128 ""
+      END_OF_FILE@128..128 ""
+    ,
+    [],
+)

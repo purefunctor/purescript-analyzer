@@ -6,7 +6,7 @@ pub(super) fn binder(p: &mut Parser) {
     let mut m = p.start();
 
     binder_1(p);
-    if p.at(SyntaxKind::DOUBLE_COLON) {
+    if p.eat(SyntaxKind::DOUBLE_COLON) {
         types::type_(p);
         m.end(p, SyntaxKind::BinderTyped);
     } else {
@@ -14,7 +14,7 @@ pub(super) fn binder(p: &mut Parser) {
     }
 }
 
-fn binder_1(p: &mut Parser) {
+pub(super) fn binder_1(p: &mut Parser) {
     let mut m = p.start();
     let mut i = 0;
 
