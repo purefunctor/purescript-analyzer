@@ -108,21 +108,22 @@ snapshot_kind: text
                         EQUAL@100..101 "="
                         Comment@101..102
                           WHITESPACE@101..102 " "
-                        ExpressionApplicationChain@102..114
-                          ExpressionConstructor@102..108
-                            UPPER@102..107 "Tuple"
-                            Comment@107..108
-                              WHITESPACE@107..108 " "
-                          ExpressionTermArgument@108..110
-                            ExpressionVariable@108..110
-                              LOWER@108..109 "a"
-                              Comment@109..110
-                                WHITESPACE@109..110 " "
-                          ExpressionTermArgument@110..114
-                            ExpressionVariable@110..114
-                              LOWER@110..111 "b"
-                              Comment@111..114
-                                WHITESPACE@111..114 "\n  "
+                        WhereExpression@102..114
+                          ExpressionApplicationChain@102..114
+                            ExpressionConstructor@102..108
+                              UPPER@102..107 "Tuple"
+                              Comment@107..108
+                                WHITESPACE@107..108 " "
+                            ExpressionTermArgument@108..110
+                              ExpressionVariable@108..110
+                                LOWER@108..109 "a"
+                                Comment@109..110
+                                  WHITESPACE@109..110 " "
+                            ExpressionTermArgument@110..114
+                              ExpressionVariable@110..114
+                                LOWER@110..111 "b"
+                                Comment@111..114
+                                  WHITESPACE@111..114 "\n  "
                       LAYOUT_END@114..114 ""
                   LAYOUT_SEPARATOR@114..114 ""
                   DoStatementDiscard@114..128

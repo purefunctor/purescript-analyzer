@@ -71,7 +71,7 @@ pub(super) fn unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
     }
 }
 
-fn where_expression(p: &mut Parser) {
+pub(super) fn where_expression(p: &mut Parser) {
     let mut m = p.start();
     expressions::expression(p);
     if p.eat(SyntaxKind::WHERE) {

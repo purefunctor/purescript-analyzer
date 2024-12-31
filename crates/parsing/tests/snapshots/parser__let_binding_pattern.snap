@@ -58,10 +58,11 @@ snapshot_kind: text
                     EQUAL@58..59 "="
                     Comment@59..60
                       WHITESPACE@59..60 " "
-                    ExpressionVariable@60..64
-                      LOWER@60..61 "z"
-                      Comment@61..64
-                        WHITESPACE@61..64 "\n  "
+                    WhereExpression@60..64
+                      ExpressionVariable@60..64
+                        LOWER@60..61 "z"
+                        Comment@61..64
+                          WHITESPACE@61..64 "\n  "
                   LAYOUT_END@64..64 ""
                 IN@64..66 "in"
                 Comment@66..71

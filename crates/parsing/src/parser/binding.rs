@@ -34,6 +34,6 @@ fn let_binding_pattern(p: &mut Parser) {
     let mut m = p.start();
     binders::binder_1(p);
     p.expect(SyntaxKind::EQUAL);
-    expressions::expression(p);
+    generic::where_expression(p);
     m.end(p, SyntaxKind::LetBindingPattern);
 }
