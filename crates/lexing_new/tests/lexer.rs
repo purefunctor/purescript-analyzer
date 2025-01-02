@@ -11,7 +11,7 @@ test_each_file! { in "./crates/lexing_new/tests/lexer" => |content: &str| {
         writeln!(snapshot, " qualifier : {:?}", lexed.qualifier(index).unwrap_or_default()).unwrap();
         writeln!(snapshot, "      kind : {:?}", lexed.kind(index)).unwrap();
         writeln!(snapshot, "      text : {:?}", lexed.text(index)).unwrap();
-        // writeln!(snapshot, "  position : {:?}", lexed.position(index)).unwrap();
+        writeln!(snapshot, "  position : {:?}", lexed.position(index)).unwrap();
         writeln!(snapshot, "     error : {:?}", lexed.error(index)).unwrap();
         writeln!(snapshot).unwrap();
     }

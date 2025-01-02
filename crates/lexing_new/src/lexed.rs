@@ -1,6 +1,9 @@
-use std::sync::Arc;
+use std::{iter, sync::Arc};
 
+use itertools::Itertools;
 use syntax::SyntaxKind;
+
+use crate::Position;
 
 /// Information attached to a [`SyntaxKind`].
 ///
@@ -63,19 +66,19 @@ struct LexerError {
     index: u32,
 }
 
-pub struct Lexed<'s> {
-    pub source: &'s str,
+pub(super) struct LexedBuilder<'s> {
+    source: &'s str,
     kinds: Vec<SyntaxKind>,
     infos: Vec<SyntaxKindInfo>,
     errors: Vec<LexerError>,
 }
 
-impl<'s> Lexed<'s> {
-    pub(super) fn new(source: &'s str) -> Lexed<'s> {
+impl<'s> LexedBuilder<'s> {
+    pub(super) fn new(source: &'s str) -> LexedBuilder<'s> {
         let kinds = vec![];
         let infos = vec![];
         let errors = vec![];
-        Lexed { source, kinds, infos, errors }
+        LexedBuilder { source, kinds, infos, errors }
     }
 
     pub(super) fn push(&mut self, kind: SyntaxKind, info: SyntaxKindInfo, error: Option<&str>) {
@@ -88,6 +91,51 @@ impl<'s> Lexed<'s> {
             self.errors.push(LexerError { message, index });
         }
     }
+
+    pub(super) fn build(self) -> Lexed<'s> {
+        let mut positions = Vec::with_capacity(self.kinds.len());
+        let mut token_index = 0;
+
+        let first_offset = iter::once(0);
+        let final_offset = iter::once(usize::MAX);
+
+        let line_offsets = memchr::memchr_iter(b'\n', self.source.as_bytes());
+        let line_offsets = first_offset.chain(line_offsets).chain(final_offset);
+        let line_offsets = line_offsets.tuple_windows().enumerate();
+
+        'offset: for (index, (line_offset, next_line_offset)) in line_offsets {
+            while token_index < self.kinds.len() {
+                let info = self.infos[token_index];
+                let token_start = info.annotation as usize;
+
+                if token_start > next_line_offset {
+                    continue 'offset;
+                }
+
+                let source = &self.source[line_offset..token_start];
+                let column = source.chars().skip_while(|p| *p == '\n').count();
+
+                positions.push(Position { line: index + 1, column: column + 1 });
+                token_index += 1;
+            }
+        }
+
+        Lexed {
+            source: self.source,
+            kinds: self.kinds,
+            infos: self.infos,
+            positions,
+            errors: self.errors,
+        }
+    }
+}
+
+pub struct Lexed<'s> {
+    pub source: &'s str,
+    kinds: Vec<SyntaxKind>,
+    infos: Vec<SyntaxKindInfo>,
+    positions: Vec<Position>,
+    errors: Vec<LexerError>,
 }
 
 impl<'s> Lexed<'s> {
@@ -99,6 +147,11 @@ impl<'s> Lexed<'s> {
     pub fn info(&self, index: usize) -> SyntaxKindInfo {
         assert!(index < self.infos.len());
         self.infos[index]
+    }
+
+    pub fn position(&self, index: usize) -> Position {
+        assert!(index < self.positions.len());
+        self.positions[index]
     }
 
     pub fn annotation(&self, index: usize) -> Option<&str> {

@@ -2,7 +2,11 @@ use std::str::Chars;
 
 use syntax::SyntaxKind;
 
-use crate::{categories::LexerCategories, lexed::SyntaxKindInfo, Lexed};
+use crate::{
+    categories::LexerCategories,
+    lexed::{LexedBuilder, SyntaxKindInfo},
+    Lexed,
+};
 
 const EOF_CHAR: char = '\0';
 
@@ -11,7 +15,7 @@ pub(super) struct Lexer<'s> {
     chars: Chars<'s>,
     annotation: u32,
     qualifier: u32,
-    lexed: Lexed<'s>,
+    lexed: LexedBuilder<'s>,
 }
 
 impl<'s> Lexer<'s> {
@@ -19,7 +23,7 @@ impl<'s> Lexer<'s> {
         let chars = source.chars();
         let annotation = 0;
         let qualifier = 0;
-        let lexed = Lexed::new(source);
+        let lexed = LexedBuilder::new(source);
 
         // This allows us to take the annotation and qualifier at the end
         // of `take_token` rather than at the beginning. This positioning
@@ -38,8 +42,7 @@ impl<'s> Lexer<'s> {
         } else {
             self.push(SyntaxKind::END_OF_FILE, None);
         }
-
-        self.lexed
+        self.lexed.build()
     }
 
     pub(super) fn is_eof(&self) -> bool {
