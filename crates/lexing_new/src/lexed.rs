@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use syntax::SyntaxKind;
 
-use crate::Position;
-
 /// Information attached to a [`SyntaxKind`].
 ///
 /// [`SyntaxKind`] by itself does not store metadata, as it's represented by
@@ -66,7 +64,7 @@ struct LexerError {
 }
 
 pub struct Lexed<'s> {
-    source: &'s str,
+    pub source: &'s str,
     kinds: Vec<SyntaxKind>,
     infos: Vec<SyntaxKindInfo>,
     errors: Vec<LexerError>,
@@ -127,21 +125,6 @@ impl<'s> Lexed<'s> {
         } else {
             None
         }
-    }
-
-    pub fn position(&self, index: usize) -> Position {
-        assert!(index < self.infos.len());
-
-        let info = self.infos[index];
-        let token_start = info.annotation.min(info.qualifier) as usize;
-
-        let haystack = &self.source[..token_start];
-        let search = memchr::memchr_iter(b'\n', haystack.as_bytes());
-
-        let line = search.count() + 1;
-        let column = haystack.chars().rev().take_while(|&c| c != '\n').count() + 1;
-
-        Position { line, column }
     }
 
     pub fn error(&self, index: usize) -> Option<Arc<str>> {

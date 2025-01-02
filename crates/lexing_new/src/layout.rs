@@ -1,3 +1,6 @@
+use std::iter;
+
+use itertools::Itertools;
 use syntax::SyntaxKind;
 
 use crate::{lexed::Lexed, Position};
@@ -42,20 +45,53 @@ impl Delimiter {
     }
 }
 
+fn calculate_positions(lexed: &Lexed) -> Vec<Position> {
+    let mut positions = Vec::with_capacity(lexed.len());
+    let mut token_index = 0;
+
+    let first_offset = iter::once(0);
+    let final_offset = iter::once(usize::MAX);
+
+    let line_offsets = memchr::memchr_iter(b'\n', lexed.source.as_bytes());
+    let line_offsets = first_offset.chain(line_offsets).chain(final_offset);
+    let line_offsets = line_offsets.tuple_windows().enumerate();
+
+    'offset: for (index, (line_offset, next_line_offset)) in line_offsets {
+        while token_index < lexed.len() {
+            let info = lexed.info(token_index);
+            let token_start = info.annotation as usize;
+
+            if token_start > next_line_offset {
+                continue 'offset;
+            }
+
+            let source = &lexed.source[line_offset..token_start];
+            let column = source.chars().skip_while(|p| *p == '\n').count();
+
+            positions.push(Position { line: index + 1, column: column + 1 });
+            token_index += 1;
+        }
+    }
+
+    positions
+}
+
 pub(super) struct Layout<'s> {
     lexed: &'s Lexed<'s>,
-    index: usize,
+    positions: Vec<Position>,
 
+    index: usize,
     stack: Vec<(Position, Delimiter)>,
     output: Vec<SyntaxKind>,
 }
 
 impl<'s> Layout<'s> {
     pub(super) fn new(lexed: &'s Lexed<'s>) -> Layout<'s> {
+        let positions = calculate_positions(lexed);
         let index = 0;
         let stack = vec![(Position { line: 1, column: 1 }, Delimiter::Root)];
         let output = vec![];
-        Layout { lexed, index, stack, output }
+        Layout { lexed, positions, index, stack, output }
     }
 
     pub(super) fn is_eof(&self) -> bool {
@@ -64,8 +100,8 @@ impl<'s> Layout<'s> {
 
     pub(super) fn take_token(&mut self) {
         let token = self.lexed.kind(self.index);
-        let position = self.lexed.position(self.index);
-        let next = self.lexed.position(self.index + 1);
+        let position = self.positions[self.index];
+        let next = self.positions[self.index + 1];
         self.insert(token, position, next);
         self.index += 1;
     }

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+itertools = "0.14.0"
 memchr = "2.7.4"
 syntax = { version = "0.1.0", path = "../syntax" }
 unicode_categories = "0.1.1"
