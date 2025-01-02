@@ -73,14 +73,14 @@ pub struct Lexed<'s> {
 }
 
 impl<'s> Lexed<'s> {
-    pub(crate) fn new(source: &'s str) -> Lexed<'s> {
+    pub(super) fn new(source: &'s str) -> Lexed<'s> {
         let kinds = vec![];
         let infos = vec![];
         let errors = vec![];
         Lexed { source, kinds, infos, errors }
     }
 
-    pub(crate) fn push(&mut self, kind: SyntaxKind, info: SyntaxKindInfo, error: Option<&str>) {
+    pub(super) fn push(&mut self, kind: SyntaxKind, info: SyntaxKindInfo, error: Option<&str>) {
         self.kinds.push(kind);
         self.infos.push(info);
 
