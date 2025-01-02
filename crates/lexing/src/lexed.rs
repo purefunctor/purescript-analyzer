@@ -1,4 +1,4 @@
-use std::{iter, sync::Arc};
+use std::{iter, ops::Range, sync::Arc};
 
 use itertools::Itertools;
 use syntax::SyntaxKind;
@@ -192,6 +192,15 @@ impl<'s> Lexed<'s> {
 
         let low = self.infos[index].qualifier as usize;
         let high = self.infos[index].token as usize;
+
+        &self.source[low..high]
+    }
+
+    pub fn text_in_range(&self, range: Range<usize>) -> &str {
+        assert!(range.start < range.end && range.end < self.infos.len());
+
+        let low = if range.start > 0 { self.infos[range.start].qualifier as usize } else { 0 };
+        let high = self.infos[range.end].token as usize;
 
         &self.source[low..high]
     }

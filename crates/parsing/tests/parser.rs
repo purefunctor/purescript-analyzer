@@ -14,13 +14,13 @@ test_each_file! { in "./crates/parsing/tests/parser" as lossless => |content: &s
     assert_eq!(node.to_string(), content);
 }}
 
-// test_each_file! { in "./crates/parsing/tests/parser" as stability => |content: &str| {
-//     let lexed = lexing::lex(content);
-//     for index in 0..lexed.kinds().len() - 1 {
-//         let partial = lexed.text_in_range(0..index + 1);
-//         let lexed = lexing::lex(partial);
-//         let tokens = lexing::layout(&lexed);
-//         let (node, _) = parsing::parse(&lexed, &tokens);
-//         assert_eq!(node.to_string(), partial);
-//     }
-// }}
+test_each_file! { in "./crates/parsing/tests/parser" as stability => |content: &str| {
+    let lexed = lexing::lex(content);
+    for index in 0..lexed.len() - 1 {
+        let partial = lexed.text_in_range(0..index + 1);
+        let lexed = lexing::lex(partial);
+        let tokens = lexing::layout(&lexed);
+        let (node, _) = parsing::parse(&lexed, &tokens);
+        assert_eq!(node.to_string(), partial);
+    }
+}}
