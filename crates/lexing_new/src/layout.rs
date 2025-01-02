@@ -1,4 +1,4 @@
-use syntax::SyntaxKind;
+use syntax::{SyntaxKind, TokenSet};
 
 use crate::{lexed::Lexed, Position};
 
@@ -63,9 +63,10 @@ impl<'s> Layout<'s> {
 
     pub(super) fn take_token(&mut self) {
         let token = self.lexed.kind(self.index);
+        let qualifier = self.lexed.qualifier(self.index);
         let position = self.lexed.position(self.index);
         let next = self.lexed.position(self.index + 1);
-        self.insert(token, position, next);
+        self.insert(token, qualifier, position, next);
         self.index += 1;
     }
 
@@ -80,32 +81,40 @@ impl<'s> Layout<'s> {
     }
 }
 
-impl Layout<'_> {
-    fn insert(&mut self, token: SyntaxKind, position: Position, next: Position) {
-        Insert::new(self, token, position, next).invoke();
+impl<'s> Layout<'s> {
+    fn insert(
+        &mut self,
+        token: SyntaxKind,
+        qualifier: Option<&'s str>,
+        position: Position,
+        next: Position,
+    ) {
+        Insert::new(self, token, qualifier, position, next).invoke();
     }
 }
 
-struct Insert<'s, 'b> {
-    layout: &'s mut Layout<'b>,
+struct Insert<'l, 's> {
+    layout: &'l mut Layout<'s>,
     token: SyntaxKind,
+    qualifier: Option<&'s str>,
     position: Position,
     next: Position,
 }
 
-impl<'s, 'b> Insert<'s, 'b> {
+impl<'l, 's> Insert<'l, 's> {
     fn new(
-        layout: &'s mut Layout<'b>,
+        layout: &'l mut Layout<'s>,
         token: SyntaxKind,
+        qualifier: Option<&'s str>,
         position: Position,
         next: Position,
-    ) -> Insert<'s, 'b> {
-        Insert { layout, token, position, next }
+    ) -> Insert<'l, 's> {
+        Insert { layout, token, qualifier, position, next }
     }
 
     fn invoke(&mut self) {
         match self.token {
-            SyntaxKind::DATA => {
+            SyntaxKind::DATA if self.qualifier.is_none() => {
                 self.insert_default();
                 if self.is_top_declaration(self.position) {
                     self.push_stack(self.position, Delimiter::TopDecl);
@@ -114,7 +123,7 @@ impl<'s, 'b> Insert<'s, 'b> {
                 }
             }
 
-            SyntaxKind::CLASS => {
+            SyntaxKind::CLASS if self.qualifier.is_none() => {
                 self.insert_default();
                 if self.is_top_declaration(self.position) {
                     self.push_stack(self.position, Delimiter::TopDeclHead);
@@ -123,7 +132,7 @@ impl<'s, 'b> Insert<'s, 'b> {
                 }
             }
 
-            SyntaxKind::WHERE => match &self.layout.stack[..] {
+            SyntaxKind::WHERE if self.qualifier.is_none() => match &self.layout.stack[..] {
                 [.., (_, Delimiter::TopDeclHead)] => {
                     self.pop_stack();
                     self.insert_token(self.token);
@@ -140,7 +149,7 @@ impl<'s, 'b> Insert<'s, 'b> {
                 }
             },
 
-            SyntaxKind::IN => {
+            SyntaxKind::IN if self.qualifier.is_none() => {
                 let collapse = self.collapse(Insert::in_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Ado), (_, Delimiter::LetStmt)] => {
@@ -164,7 +173,7 @@ impl<'s, 'b> Insert<'s, 'b> {
                 }
             }
 
-            SyntaxKind::LET => {
+            SyntaxKind::LET if self.qualifier.is_none() => {
                 self.insert_keyword_property(|this| match &this.layout.stack[..] {
                     [.., (position, Delimiter::Do)] if position.column == this.position.column => {
                         this.insert_start(Delimiter::LetStmt);
@@ -190,13 +199,13 @@ impl<'s, 'b> Insert<'s, 'b> {
                 });
             }
 
-            SyntaxKind::CASE => {
+            SyntaxKind::CASE if self.qualifier.is_none() => {
                 self.insert_keyword_property(|this| {
                     this.push_stack(this.position, Delimiter::Case);
                 });
             }
 
-            SyntaxKind::OF => {
+            SyntaxKind::OF if self.qualifier.is_none() => {
                 let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Case)] => {
@@ -213,13 +222,13 @@ impl<'s, 'b> Insert<'s, 'b> {
                 }
             }
 
-            SyntaxKind::IF => {
+            SyntaxKind::IF if self.qualifier.is_none() => {
                 self.insert_keyword_property(|this| {
                     this.push_stack(this.position, Delimiter::If);
                 });
             }
 
-            SyntaxKind::THEN => {
+            SyntaxKind::THEN if self.qualifier.is_none() => {
                 let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::If)] => {
@@ -235,7 +244,7 @@ impl<'s, 'b> Insert<'s, 'b> {
                 }
             }
 
-            SyntaxKind::ELSE => {
+            SyntaxKind::ELSE if self.qualifier.is_none() => {
                 let collapse = self.collapse(Insert::indented_p);
                 match collapse.preview(self.layout) {
                     [.., (_, Delimiter::Then)] => {
@@ -387,12 +396,12 @@ impl<'s, 'b> Insert<'s, 'b> {
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
             }
 
-            k if k.is_lower() => {
+            _ if LOWER.contains(self.token) && self.qualifier.is_none() => {
                 self.insert_default();
                 self.pop_stack_if(|delimiter| delimiter == Delimiter::Property);
             }
 
-            k if k.is_operator() => {
+            _ if OPERATOR.contains(self.token) => {
                 self.collapse_and_commit(Insert::offside_end_p);
                 self.insert_sep();
                 self.insert_token(self.token);
@@ -581,3 +590,46 @@ impl Collapse {
         }
     }
 }
+
+const LOWER: TokenSet = TokenSet::new(&[
+    SyntaxKind::ADO,
+    SyntaxKind::AS,
+    SyntaxKind::CASE,
+    SyntaxKind::CLASS,
+    SyntaxKind::DATA,
+    SyntaxKind::DERIVE,
+    SyntaxKind::DO,
+    SyntaxKind::ELSE,
+    SyntaxKind::FALSE,
+    SyntaxKind::FORALL,
+    SyntaxKind::FOREIGN,
+    SyntaxKind::HIDING,
+    SyntaxKind::IF,
+    SyntaxKind::IMPORT,
+    SyntaxKind::IN,
+    SyntaxKind::INFIX,
+    SyntaxKind::INFIXL,
+    SyntaxKind::INFIXR,
+    SyntaxKind::INSTANCE,
+    SyntaxKind::LET,
+    SyntaxKind::LOWER,
+    SyntaxKind::MODULE,
+    SyntaxKind::NEWTYPE,
+    SyntaxKind::NOMINAL,
+    SyntaxKind::OF,
+    SyntaxKind::PHANTOM,
+    SyntaxKind::REPRESENTATIONAL,
+    SyntaxKind::ROLE,
+    SyntaxKind::THEN,
+    SyntaxKind::TRUE,
+    SyntaxKind::TYPE,
+    SyntaxKind::WHERE,
+]);
+
+const OPERATOR: TokenSet = TokenSet::new(&[
+    SyntaxKind::OPERATOR,
+    SyntaxKind::MINUS,
+    SyntaxKind::COLON,
+    SyntaxKind::DOUBLE_PERIOD,
+    SyntaxKind::LEFT_THICK_ARROW,
+]);
