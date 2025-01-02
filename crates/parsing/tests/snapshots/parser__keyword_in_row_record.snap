@@ -36,7 +36,7 @@ snapshot_kind: text
               LabelName@45..50
                 Annotation@45..46
                   TEXT@45..46 " "
-                TYPE@46..50 "type"
+                TEXT@46..50 "type"
               Annotation@50..51
                 TEXT@50..51 " "
               DOUBLE_COLON@51..53 "::"
@@ -67,7 +67,7 @@ snapshot_kind: text
               LabelName@78..83
                 Annotation@78..79
                   TEXT@78..79 " "
-                TYPE@79..83 "type"
+                TEXT@79..83 "type"
               Annotation@83..84
                 TEXT@83..84 " "
               DOUBLE_COLON@84..86 "::"
@@ -98,7 +98,7 @@ snapshot_kind: text
               LabelName@110..115
                 Annotation@110..111
                   TEXT@110..111 " "
-                ROLE@111..115 "role"
+                TEXT@111..115 "role"
               Annotation@115..116
                 TEXT@115..116 " "
               DOUBLE_COLON@116..118 "::"
@@ -112,7 +112,7 @@ snapshot_kind: text
               LabelName@126..134
                 Annotation@126..127
                   TEXT@126..127 " "
-                NOMINAL@127..134 "nominal"
+                TEXT@127..134 "nominal"
               Annotation@134..135
                 TEXT@134..135 " "
               DOUBLE_COLON@135..137 "::"

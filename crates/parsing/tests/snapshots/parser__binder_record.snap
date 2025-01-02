@@ -49,7 +49,7 @@ snapshot_kind: text
               LEFT_CURLY@48..49 "{"
               RecordPun@49..50
                 LabelName@49..50
-                  LOWER@49..50 "x"
+                  TEXT@49..50 "x"
               RIGHT_CURLY@50..51 "}"
           Unconditional@51..55
             Annotation@51..52
@@ -72,13 +72,13 @@ snapshot_kind: text
               LEFT_CURLY@63..64 "{"
               RecordPun@64..65
                 LabelName@64..65
-                  LOWER@64..65 "x"
+                  TEXT@64..65 "x"
               COMMA@65..66 ","
               RecordPun@66..68
                 LabelName@66..68
                   Annotation@66..67
                     TEXT@66..67 " "
-                  LOWER@67..68 "y"
+                  TEXT@67..68 "y"
               RIGHT_CURLY@68..69 "}"
           Unconditional@69..73
             Annotation@69..70
@@ -101,7 +101,7 @@ snapshot_kind: text
               LEFT_CURLY@81..82 "{"
               RecordField@82..86
                 LabelName@82..83
-                  LOWER@82..83 "x"
+                  TEXT@82..83 "x"
                 COLON@83..84 ":"
                 BinderVariable@84..86
                   Annotation@84..85
@@ -112,7 +112,7 @@ snapshot_kind: text
                 LabelName@87..89
                   Annotation@87..88
                     TEXT@87..88 " "
-                  LOWER@88..89 "y"
+                  TEXT@88..89 "y"
                 COLON@89..90 ":"
                 BinderVariable@90..92
                   Annotation@90..91
@@ -140,13 +140,13 @@ snapshot_kind: text
               LEFT_CURLY@105..106 "{"
               RecordPun@106..107
                 LabelName@106..107
-                  LOWER@106..107 "a"
+                  TEXT@106..107 "a"
               COMMA@107..108 ","
               RecordField@108..113
                 LabelName@108..110
                   Annotation@108..109
                     TEXT@108..109 " "
-                  LOWER@109..110 "b"
+                  TEXT@109..110 "b"
                 COLON@110..111 ":"
                 BinderVariable@111..113
                   Annotation@111..112
@@ -157,13 +157,13 @@ snapshot_kind: text
                 LabelName@114..116
                   Annotation@114..115
                     TEXT@114..115 " "
-                  LOWER@115..116 "d"
+                  TEXT@115..116 "d"
               COMMA@116..117 ","
               RecordField@117..122
                 LabelName@117..119
                   Annotation@117..118
                     TEXT@117..118 " "
-                  LOWER@118..119 "e"
+                  TEXT@118..119 "e"
                 COLON@119..120 ":"
                 BinderVariable@120..122
                   Annotation@120..121

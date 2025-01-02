@@ -42,7 +42,7 @@ snapshot_kind: text
                     LabelName@55..57
                       Annotation@55..56
                         TEXT@55..56 " "
-                      LOWER@56..57 "b"
+                      TEXT@56..57 "b"
                     RecordUpdates@57..67
                       Annotation@57..58
                         TEXT@57..58 " "
@@ -51,7 +51,7 @@ snapshot_kind: text
                         LabelName@59..61
                           Annotation@59..60
                             TEXT@59..60 " "
-                          LOWER@60..61 "c"
+                          TEXT@60..61 "c"
                         Annotation@61..62
                           TEXT@61..62 " "
                         EQUAL@62..63 "="

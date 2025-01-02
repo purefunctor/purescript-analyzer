@@ -43,13 +43,13 @@ snapshot_kind: text
                         LabelName@50..52
                           Annotation@50..51
                             TEXT@50..51 " "
-                          LOWER@51..52 "x"
+                          TEXT@51..52 "x"
                       COMMA@52..53 ","
                       RecordPun@53..55
                         LabelName@53..55
                           Annotation@53..54
                             TEXT@53..54 " "
-                          LOWER@54..55 "y"
+                          TEXT@54..55 "y"
                       Annotation@55..56
                         TEXT@55..56 " "
                       RIGHT_CURLY@56..57 "}"

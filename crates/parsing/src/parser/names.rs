@@ -83,14 +83,6 @@ pub(super) const RECORD_LABEL: TokenSet =
 
 pub(super) fn label(p: &mut Parser) {
     let mut m = p.start();
-
-    // Unlike parsing for `LOWER`, which consumes tokens as
-    // the `LOWER` token, we use a `LabelName` node to represent labels.
-    if p.at(SyntaxKind::STRING) || p.at(SyntaxKind::RAW_STRING) || p.at_in(RECORD_LABEL) {
-        p.consume();
-    } else {
-        p.error("Expected STRING, RAW_STRING or RECORD_LABEL");
-    };
-
+    p.expect_in(RECORD_LABEL, SyntaxKind::TEXT, "Expected RECORD_LABEL");
     m.end(p, SyntaxKind::LabelName);
 }

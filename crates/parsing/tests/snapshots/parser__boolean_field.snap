@@ -36,7 +36,7 @@ snapshot_kind: text
                   LabelName@36..41
                     Annotation@36..37
                       TEXT@36..37 " "
-                    TRUE@37..41 "true"
+                    TEXT@37..41 "true"
                   COLON@41..42 ":"
                   ExpressionFalse@42..48
                     Annotation@42..43
@@ -47,7 +47,7 @@ snapshot_kind: text
                   LabelName@49..55
                     Annotation@49..50
                       TEXT@49..50 " "
-                    FALSE@50..55 "false"
+                    TEXT@50..55 "false"
                   COLON@55..56 ":"
                   ExpressionTrue@56..61
                     Annotation@56..57

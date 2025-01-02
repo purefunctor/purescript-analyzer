@@ -43,7 +43,7 @@ snapshot_kind: text
                       LabelName@54..56
                         Annotation@54..55
                           TEXT@54..55 " "
-                        LOWER@55..56 "x"
+                        TEXT@55..56 "x"
                       COLON@56..57 ":"
                       ExpressionInteger@57..59
                         Annotation@57..58
@@ -54,7 +54,7 @@ snapshot_kind: text
                       LabelName@60..62
                         Annotation@60..61
                           TEXT@60..61 " "
-                        LOWER@61..62 "y"
+                        TEXT@61..62 "y"
                       COLON@62..63 ":"
                       ExpressionInteger@63..65
                         Annotation@63..64

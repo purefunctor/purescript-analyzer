@@ -148,13 +148,13 @@ snapshot_kind: text
                             LabelName@120..122
                               Annotation@120..121
                                 TEXT@120..121 " "
-                              LOWER@121..122 "a"
+                              TEXT@121..122 "a"
                           COMMA@122..123 ","
                           RecordPun@123..125
                             LabelName@123..125
                               Annotation@123..124
                                 TEXT@123..124 " "
-                              LOWER@124..125 "b"
+                              TEXT@124..125 "b"
                           Annotation@125..126
                             TEXT@125..126 " "
                           RIGHT_CURLY@126..127 "}"

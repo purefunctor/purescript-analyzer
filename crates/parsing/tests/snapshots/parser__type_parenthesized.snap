@@ -95,7 +95,7 @@ snapshot_kind: text
               LabelName@96..98
                 Annotation@96..97
                   TEXT@96..97 " "
-                LOWER@97..98 "a"
+                TEXT@97..98 "a"
               Annotation@98..99
                 TEXT@98..99 " "
               DOUBLE_COLON@99..101 "::"
@@ -123,7 +123,7 @@ snapshot_kind: text
               LabelName@123..125
                 Annotation@123..124
                   TEXT@123..124 " "
-                LOWER@124..125 "a"
+                TEXT@124..125 "a"
               Annotation@125..126
                 TEXT@125..126 " "
               DOUBLE_COLON@126..128 "::"
@@ -159,7 +159,7 @@ snapshot_kind: text
               LabelName@151..153
                 Annotation@151..152
                   TEXT@151..152 " "
-                LOWER@152..153 "a"
+                TEXT@152..153 "a"
               Annotation@153..154
                 TEXT@153..154 " "
               DOUBLE_COLON@154..156 "::"
@@ -173,7 +173,7 @@ snapshot_kind: text
               LabelName@162..164
                 Annotation@162..163
                   TEXT@162..163 " "
-                LOWER@163..164 "b"
+                TEXT@163..164 "b"
               Annotation@164..165
                 TEXT@164..165 " "
               DOUBLE_COLON@165..167 "::"
@@ -201,7 +201,7 @@ snapshot_kind: text
               LabelName@190..192
                 Annotation@190..191
                   TEXT@190..191 " "
-                LOWER@191..192 "a"
+                TEXT@191..192 "a"
               Annotation@192..193
                 TEXT@192..193 " "
               DOUBLE_COLON@193..195 "::"
@@ -215,7 +215,7 @@ snapshot_kind: text
               LabelName@201..203
                 Annotation@201..202
                   TEXT@201..202 " "
-                LOWER@202..203 "b"
+                TEXT@202..203 "b"
               Annotation@203..204
                 TEXT@203..204 " "
               DOUBLE_COLON@204..206 "::"

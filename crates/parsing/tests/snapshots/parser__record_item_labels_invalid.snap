@@ -32,7 +32,7 @@ snapshot_kind: text
                 LabelName@40..48
                   Annotation@40..41
                     TEXT@40..41 " "
-                  STRING@41..48 "\"error\""
+                  TEXT@41..48 "\"error\""
               Annotation@48..49
                 TEXT@48..49 " "
               RIGHT_CURLY@49..50 "}"
@@ -50,7 +50,7 @@ snapshot_kind: text
                   LabelName@54..62
                     Annotation@54..55
                       TEXT@54..55 " "
-                    STRING@55..62 "\"error\""
+                    TEXT@55..62 "\"error\""
                 Annotation@62..63
                   TEXT@62..63 " "
                 RIGHT_CURLY@63..64 "}"
@@ -69,7 +69,7 @@ snapshot_kind: text
                 LabelName@74..81
                   Annotation@74..75
                     TEXT@74..75 " "
-                  FORALL@75..81 "forall"
+                  TEXT@75..81 "forall"
               Annotation@81..82
                 TEXT@81..82 " "
               RIGHT_CURLY@82..83 "}"
@@ -87,7 +87,7 @@ snapshot_kind: text
                   LabelName@87..94
                     Annotation@87..88
                       TEXT@87..88 " "
-                    FORALL@88..94 "forall"
+                    TEXT@88..94 "forall"
                 Annotation@94..95
                   TEXT@94..95 " "
                 RIGHT_CURLY@95..96 "}"
@@ -106,14 +106,14 @@ snapshot_kind: text
                 LabelName@106..111
                   Annotation@106..107
                     TEXT@106..107 " "
-                  TRUE@107..111 "true"
+                  TEXT@107..111 "true"
               COMMA@111..112 ","
               RecordPun@112..118
                 ERROR@112..112 ""
                 LabelName@112..118
                   Annotation@112..113
                     TEXT@112..113 " "
-                  FALSE@113..118 "false"
+                  TEXT@113..118 "false"
               Annotation@118..119
                 TEXT@118..119 " "
               RIGHT_CURLY@119..120 "}"
@@ -131,14 +131,14 @@ snapshot_kind: text
                   LabelName@124..129
                     Annotation@124..125
                       TEXT@124..125 " "
-                    TRUE@125..129 "true"
+                    TEXT@125..129 "true"
                 COMMA@129..130 ","
                 RecordPun@130..136
                   ERROR@130..130 ""
                   LabelName@130..136
                     Annotation@130..131
                       TEXT@130..131 " "
-                    FALSE@131..136 "false"
+                    TEXT@131..136 "false"
                 Annotation@136..137
                   TEXT@136..137 " "
                 RIGHT_CURLY@137..138 "}"

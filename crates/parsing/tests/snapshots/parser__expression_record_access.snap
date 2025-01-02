@@ -36,7 +36,7 @@ snapshot_kind: text
                     LOWER@46..52 "record"
                 PERIOD@52..53 "."
                 LabelName@53..56
-                  LOWER@53..56 "foo"
+                  TEXT@53..56 "foo"
         LAYOUT_SEPARATOR@56..56 ""
         ValueEquation@56..80
           Annotation@56..57
@@ -56,10 +56,10 @@ snapshot_kind: text
                     LOWER@66..72 "record"
                 PERIOD@72..73 "."
                 LabelName@73..76
-                  LOWER@73..76 "foo"
+                  TEXT@73..76 "foo"
                 PERIOD@76..77 "."
                 LabelName@77..80
-                  LOWER@77..80 "bar"
+                  TEXT@77..80 "bar"
         LAYOUT_SEPARATOR@80..80 ""
         ValueEquation@80..105
           Annotation@80..82
@@ -79,7 +79,7 @@ snapshot_kind: text
                     LOWER@92..98 "record"
                 PERIOD@98..99 "."
                 LabelName@99..105
-                  FORALL@99..105 "forall"
+                  TEXT@99..105 "forall"
         LAYOUT_SEPARATOR@105..105 ""
         ValueEquation@105..136
           Annotation@105..106
@@ -99,10 +99,10 @@ snapshot_kind: text
                     LOWER@116..122 "record"
                 PERIOD@122..123 "."
                 LabelName@123..129
-                  FORALL@123..129 "forall"
+                  TEXT@123..129 "forall"
                 PERIOD@129..130 "."
                 LabelName@130..136
-                  FORALL@130..136 "forall"
+                  TEXT@130..136 "forall"
         LAYOUT_SEPARATOR@136..136 ""
         ValueEquation@136..161
           Annotation@136..138
@@ -122,7 +122,7 @@ snapshot_kind: text
                     LOWER@147..153 "record"
                 PERIOD@153..154 "."
                 LabelName@154..161
-                  STRING@154..161 "\"error\""
+                  TEXT@154..161 "\"error\""
         LAYOUT_SEPARATOR@161..161 ""
         ValueEquation@161..193
           Annotation@161..162
@@ -142,10 +142,10 @@ snapshot_kind: text
                     LOWER@171..177 "record"
                 PERIOD@177..178 "."
                 LabelName@178..185
-                  STRING@178..185 "\"error\""
+                  TEXT@178..185 "\"error\""
                 PERIOD@185..186 "."
                 LabelName@186..193
-                  STRING@186..193 "\"error\""
+                  TEXT@186..193 "\"error\""
         LAYOUT_SEPARATOR@193..193 ""
         ValueEquation@193..226
           Annotation@193..195
@@ -165,7 +165,7 @@ snapshot_kind: text
                     LOWER@208..214 "record"
                 PERIOD@214..215 "."
                 LabelName@215..226
-                  RAW_STRING@215..226 "\"\"\"error\"\"\""
+                  TEXT@215..226 "\"\"\"error\"\"\""
         LAYOUT_SEPARATOR@226..226 ""
         ValueEquation@226..272
           Annotation@226..227
@@ -185,10 +185,10 @@ snapshot_kind: text
                     LOWER@240..246 "record"
                 PERIOD@246..247 "."
                 LabelName@247..258
-                  RAW_STRING@247..258 "\"\"\"error\"\"\""
+                  TEXT@247..258 "\"\"\"error\"\"\""
                 PERIOD@258..259 "."
                 LabelName@259..272
-                  RAW_STRING@259..272 "\"\"\"\"error\"\"\"\""
+                  TEXT@259..272 "\"\"\"\"error\"\"\"\""
       LAYOUT_END@272..272 ""
       Annotation@272..273
         TEXT@272..273 "\n"
