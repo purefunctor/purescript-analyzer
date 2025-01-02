@@ -1,81 +1,202 @@
-//! The lexer's output type.
+use std::{iter, sync::Arc};
 
-use std::{ops::Range, sync::Arc};
-
-use position::Position;
+use itertools::Itertools;
 use syntax::SyntaxKind;
 
-/// A sequence of tokens with metadata.
+use crate::Position;
+
+/// Information attached to a [`SyntaxKind`].
 ///
-/// Information such as token position and error messages are stored alongside
-/// the sequence of tokens. While the parser only consumes the latter, we want
-/// to keep this around such that we can intersperse whitespace and comments,
-/// among other things.
-pub struct Lexed<'a> {
-    source: &'a str,
-    kinds: Vec<SyntaxKind>,
-    positions: Vec<Position>,
-    errors: Vec<LexError>,
+/// [`SyntaxKind`] by itself does not store metadata, as it's represented by
+/// a [`u16`]. In particular, this data type encapsulates offset information
+/// used in post-lexing and parsing.
+///
+/// ## Invariants
+///
+/// The following invariants must hold for a [`SyntaxKindInfo`]:
+///
+/// * [`annotation`] is less than or equal to [`qualifier`].
+/// * [`qualifier`] is less than or equal to [`token`].
+/// * [`annotation`] is less than or equal to [`token`].
+///
+/// Refer to the documentation of each field for more invariants.
+///
+/// [`annotation`]: SyntaxKindInfo::annotation
+/// [`qualifier`]: SyntaxKindInfo::qualifier
+/// [`token`]: SyntaxKindInfo::token
+#[derive(Debug, Clone, Copy)]
+pub struct SyntaxKindInfo {
+    /// The ending offset of a token's annotation.
+    ///
+    /// Annotations are either whitespace or comments attached as a prefix to a
+    /// specific token. Rather than storing them as separate tokens, we simply
+    /// attach them as metadata to a token to greatly simplify parsing.
+    ///
+    /// To obtain the textual content of an annotation, we use the [`token`]
+    /// field of the previous token as the start offset and this field as the
+    /// end offset.
+    ///
+    /// [`token`]: SyntaxKindInfo::token
+    pub annotation: u32,
+    /// The ending offset of a token's qualifier.
+    ///
+    /// Qualifiers are module names that identify the namespace of a token.
+    /// They are usually present for name tokens such as [`SyntaxKind::LOWER`],
+    /// and in special features such as qualified [`SyntaxKind::DO`].
+    ///
+    /// To obtain the textual content of a qualifier, we use the [`annotation`]
+    /// as the start offset and this field as the end offset. Consequently, if
+    /// the [`annotation`] is equal to this field, then there is no qualifier.
+    ///
+    /// [`annotation`]: SyntaxKindInfo::annotation
+    pub qualifier: u32,
+    /// The ending offset of a token's annotation.
+    ///
+    /// To obtain the textual content of a token, we use the [`qualifier`]
+    /// as the start offset and this field as the end offset. Consequently, if
+    /// the [`qualifier`] is equal to this field, then the token is zero-width.
+    ///
+    /// [`qualifier`]: SyntaxKindInfo::qualifier
+    pub token: u32,
 }
 
 #[derive(Debug)]
-struct LexError {
+struct LexerError {
     message: Arc<str>,
     index: u32,
 }
 
-impl<'a> Lexed<'a> {
-    pub(crate) fn new(source: &'a str) -> Lexed<'a> {
+pub(super) struct LexedBuilder<'s> {
+    source: &'s str,
+    kinds: Vec<SyntaxKind>,
+    infos: Vec<SyntaxKindInfo>,
+    errors: Vec<LexerError>,
+}
+
+impl<'s> LexedBuilder<'s> {
+    pub(super) fn new(source: &'s str) -> LexedBuilder<'s> {
         let kinds = vec![];
-        let positions = vec![];
+        let infos = vec![];
         let errors = vec![];
-        Lexed { source, kinds, positions, errors }
+        LexedBuilder { source, kinds, infos, errors }
     }
 
-    pub(crate) fn push(&mut self, kind: SyntaxKind, position: Position, error: Option<&str>) {
+    pub(super) fn push(&mut self, kind: SyntaxKind, info: SyntaxKindInfo, error: Option<&str>) {
         self.kinds.push(kind);
-        self.positions.push(position);
+        self.infos.push(info);
 
         if let Some(error) = error {
             let message = error.into();
             let index = self.kinds.len() as u32 - 1;
-            self.errors.push(LexError { message, index });
+            self.errors.push(LexerError { message, index });
         }
     }
 
-    /// Returns the kind for an index.
+    pub(super) fn build(self) -> Lexed<'s> {
+        let mut positions = Vec::with_capacity(self.kinds.len());
+        let mut token_index = 0;
+
+        let first_offset = iter::once(0);
+        let final_offset = iter::once(usize::MAX);
+
+        let line_offsets = memchr::memchr_iter(b'\n', self.source.as_bytes());
+        let line_offsets = first_offset.chain(line_offsets).chain(final_offset);
+        let line_offsets = line_offsets.tuple_windows().enumerate();
+
+        'offset: for (index, (line_offset, next_line_offset)) in line_offsets {
+            while token_index < self.kinds.len() {
+                let info = self.infos[token_index];
+                let token_start = info.annotation as usize;
+
+                if token_start > next_line_offset {
+                    continue 'offset;
+                }
+
+                let source = &self.source[line_offset..token_start];
+                let column = source.chars().skip_while(|p| *p == '\n').count();
+
+                positions.push(Position { line: index + 1, column: column + 1 });
+                token_index += 1;
+            }
+        }
+
+        Lexed {
+            source: self.source,
+            kinds: self.kinds,
+            infos: self.infos,
+            positions,
+            errors: self.errors,
+        }
+    }
+}
+
+pub struct Lexed<'s> {
+    pub source: &'s str,
+    kinds: Vec<SyntaxKind>,
+    infos: Vec<SyntaxKindInfo>,
+    positions: Vec<Position>,
+    errors: Vec<LexerError>,
+}
+
+impl<'s> Lexed<'s> {
     pub fn kind(&self, index: usize) -> SyntaxKind {
         assert!(index < self.kinds.len());
         self.kinds[index]
     }
 
-    /// Returns the position for an index.
+    pub fn info(&self, index: usize) -> SyntaxKindInfo {
+        assert!(index < self.infos.len());
+        self.infos[index]
+    }
+
     pub fn position(&self, index: usize) -> Position {
-        assert!(index <= self.positions.len());
+        assert!(index < self.positions.len());
         self.positions[index]
     }
 
-    /// Returns the text for an index.
-    pub fn text(&self, index: usize) -> &str {
-        self.text_in_range(index..index + 1)
+    pub fn annotation(&self, index: usize) -> Option<&str> {
+        assert!(index < self.infos.len());
+
+        let low = if index > 0 { self.infos[index - 1].token as usize } else { 0 };
+        let high = self.infos[index].annotation as usize;
+
+        if low < high {
+            Some(&self.source[low..high])
+        } else {
+            None
+        }
     }
 
-    /// Returns the text for a range.
-    pub fn text_in_range(&self, range: Range<usize>) -> &str {
-        assert!(range.start < range.end && range.end < self.kinds.len());
-        let low = self.positions[range.start].offset;
-        let high = self.positions[range.end].offset;
-        &self.source[low..high]
+    pub fn qualifier(&self, index: usize) -> Option<&str> {
+        assert!(index < self.infos.len());
+
+        let low = self.infos[index].annotation as usize;
+        let high = self.infos[index].qualifier as usize;
+
+        if low < high {
+            Some(&self.source[low..high])
+        } else {
+            None
+        }
     }
 
-    /// Returns the error for an index.
     pub fn error(&self, index: usize) -> Option<Arc<str>> {
         assert!(index < self.kinds.len());
-        let error_index = self.errors.binary_search_by_key(&(index as u32), |v| v.index).ok()?;
+        let token_index = index as u32;
+        let error_index = self.errors.binary_search_by_key(&token_index, |v| v.index).ok()?;
         Some(Arc::clone(&self.errors[error_index].message))
     }
 
-    pub fn kinds(&self) -> &[SyntaxKind] {
-        &self.kinds
+    pub fn text(&self, index: usize) -> &str {
+        assert!(index < self.infos.len());
+
+        let low = self.infos[index].qualifier as usize;
+        let high = self.infos[index].token as usize;
+
+        &self.source[low..high]
+    }
+
+    pub fn len(&self) -> usize {
+        self.kinds.len()
     }
 }

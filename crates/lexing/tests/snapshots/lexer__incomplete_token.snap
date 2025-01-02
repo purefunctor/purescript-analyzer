@@ -1,0 +1,54 @@
+---
+source: crates/lexing/tests/lexer.rs
+description: "{- Annotation -} Qualifier. nextToken\n\n{- Annotation -} Qualifier.{- nextToken -}\n\n{- Annotation -} Qualifier.-- nextToken\n\n{- Annotation -} Qualifier. {- nextToken -}\n\n{- Annotation -} Qualifier. -- nextToken\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : "{- Annotation -} "
+ qualifier : "Qualifier."
+      kind : ERROR
+      text : ""
+  position : Position { line: 1, column: 18 }
+     error : Some("Expected a token")
+
+annotation : " "
+ qualifier : ""
+      kind : LOWER
+      text : "nextToken"
+  position : Position { line: 1, column: 29 }
+     error : None
+
+annotation : "\n\n{- Annotation -} "
+ qualifier : "Qualifier."
+      kind : ERROR
+      text : ""
+  position : Position { line: 3, column: 18 }
+     error : Some("Expected a token")
+
+annotation : "{- nextToken -}\n\n{- Annotation -} "
+ qualifier : "Qualifier."
+      kind : ERROR
+      text : ""
+  position : Position { line: 5, column: 18 }
+     error : Some("Expected a token")
+
+annotation : "-- nextToken\n\n{- Annotation -} "
+ qualifier : "Qualifier."
+      kind : ERROR
+      text : ""
+  position : Position { line: 7, column: 18 }
+     error : Some("Expected a token")
+
+annotation : " {- nextToken -}\n\n{- Annotation -} "
+ qualifier : "Qualifier."
+      kind : ERROR
+      text : ""
+  position : Position { line: 9, column: 18 }
+     error : Some("Expected a token")
+
+annotation : " -- nextToken\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : Position { line: 10, column: 1 }
+     error : None

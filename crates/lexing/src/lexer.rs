@@ -1,54 +1,65 @@
-//! The core character-based lexer, inspired by `rustc_lexer`.
-
 use std::str::Chars;
 
-use position::Position;
 use syntax::SyntaxKind;
-use unicode_categories::UnicodeCategories;
 
-use crate::lexed::Lexed;
+use crate::{
+    categories::LexerCategories,
+    lexed::{LexedBuilder, SyntaxKindInfo},
+    Lexed,
+};
 
 const EOF_CHAR: char = '\0';
 
-pub(crate) struct Lexer<'a> {
-    source: &'a str,
-    chars: Chars<'a>,
-    line: u32,
-    column: u32,
-    lexed: Lexed<'a>,
+pub(super) struct Lexer<'s> {
+    source: &'s str,
+    chars: Chars<'s>,
+    annotation: u32,
+    qualifier: u32,
+    lexed: LexedBuilder<'s>,
 }
 
-impl<'a> Lexer<'a> {
-    pub(crate) fn new(source: &'a str) -> Lexer<'a> {
+impl<'s> Lexer<'s> {
+    pub(super) fn new(source: &'s str) -> Lexer<'s> {
         let chars = source.chars();
-        let line = 1;
-        let column = 1;
-        let lexed = Lexed::new(source);
-        Lexer { source, chars, line, column, lexed }
+        let annotation = 0;
+        let qualifier = 0;
+        let lexed = LexedBuilder::new(source);
+
+        // This allows us to take the annotation and qualifier at the end
+        // of `take_token` rather than at the beginning. This positioning
+        // is important for handling "hanging" annotations and qualifiers.
+        let mut lexer = Lexer { source, chars, annotation, qualifier, lexed };
+        lexer.take_annotation();
+        lexer.take_qualifier();
+
+        lexer
     }
 
-    pub(crate) fn finish(mut self) -> Lexed<'a> {
-        self.lexed.push(SyntaxKind::END_OF_FILE, self.position(), None);
-        self.lexed
+    pub(super) fn finish(mut self) -> Lexed<'s> {
+        // If take_qualifier advanced before finishing:
+        if self.qualifier > self.annotation {
+            self.push(SyntaxKind::END_OF_FILE, Some("Unexpected end of file"));
+        } else {
+            self.push(SyntaxKind::END_OF_FILE, None);
+        }
+        self.lexed.build()
     }
 
-    pub(crate) fn is_eof(&self) -> bool {
+    pub(super) fn is_eof(&self) -> bool {
         self.chars.as_str().is_empty()
     }
 
-    fn consumed(&self) -> usize {
-        self.source.len() - self.chars.as_str().len()
+    pub(super) fn take_token(&mut self) {
+        self.take_token_impl();
+        self.take_annotation();
+        self.take_qualifier();
     }
+}
 
-    fn position(&self) -> Position {
-        let offset = self.consumed();
-        let line = self.line;
-        let column = self.column;
-        Position { offset, line, column }
-    }
-
+impl<'s> Lexer<'s> {
     fn first(&self) -> char {
-        self.chars.clone().next().unwrap_or(EOF_CHAR)
+        let mut chars = self.chars.clone();
+        chars.next().unwrap_or(EOF_CHAR)
     }
 
     fn second(&self) -> char {
@@ -57,15 +68,12 @@ impl<'a> Lexer<'a> {
         chars.next().unwrap_or(EOF_CHAR)
     }
 
+    fn consumed(&self) -> usize {
+        self.source.len() - self.chars.as_str().len()
+    }
+
     fn take(&mut self) -> char {
-        let result = self.chars.next().unwrap_or(EOF_CHAR);
-        if result == '\n' {
-            self.line += 1;
-            self.column = 1;
-        } else {
-            self.column += 1;
-        }
-        result
+        self.chars.next().unwrap_or(EOF_CHAR)
     }
 
     fn take_while(&mut self, predicate: impl Fn(char) -> bool) {
@@ -74,35 +82,116 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn take_while_max(&mut self, predicate: impl Fn(char) -> bool, max: u8) {
-        for _ in 0..max {
+    fn take_while_maximum(&mut self, predicate: impl Fn(char) -> bool, maximum: usize) {
+        for _ in 0..maximum {
             if predicate(self.first()) && !self.is_eof() {
                 self.take();
             } else {
-                return;
+                break;
             }
         }
     }
+
+    fn take_annotation(&mut self) {
+        loop {
+            match self.first() {
+                i if i.is_whitespace() => self.take_annotation_whitespace(),
+                '-' if self.second() == '-' => self.take_annotation_line_comment(),
+                '{' if self.second() == '-' => self.take_annotation_block_comment(),
+                _ => break,
+            }
+        }
+        self.annotation = self.consumed() as u32;
+    }
+
+    fn take_annotation_whitespace(&mut self) {
+        self.take_while(char::is_whitespace);
+    }
+
+    fn take_annotation_line_comment(&mut self) {
+        self.take();
+        self.take();
+        self.take_while(|c| c != '\n');
+    }
+
+    fn take_annotation_block_comment(&mut self) {
+        self.take();
+        self.take();
+        let mut level = 1;
+        loop {
+            match (self.first(), self.second()) {
+                ('{', '-') => {
+                    level += 1;
+                    self.take();
+                    self.take();
+                }
+                ('-', '}') => {
+                    level -= 1;
+                    self.take();
+                    self.take();
+                }
+                _ => (),
+            }
+            if level == 0 {
+                break;
+            }
+            self.take();
+        }
+    }
+
+    fn take_qualifier(&mut self) {
+        while self.first().is_upper_start() {
+            let checkpoint = self.chars.clone();
+            let annotation = self.annotation;
+            let qualifier = self.qualifier;
+
+            self.take_while(char::is_name);
+            if self.first() == '.' {
+                self.take();
+            } else {
+                self.chars = checkpoint;
+                self.annotation = annotation;
+                self.qualifier = qualifier;
+                break;
+            }
+        }
+        self.qualifier = self.consumed() as u32;
+    }
 }
 
-impl<'a> Lexer<'a> {
-    pub(crate) fn take_token(&mut self) {
-        let p = self.position();
+impl<'s> Lexer<'s> {
+    fn push(&mut self, kind: SyntaxKind, error: Option<&str>) {
+        let info = SyntaxKindInfo {
+            annotation: self.annotation,
+            qualifier: self.qualifier,
+            token: self.consumed() as u32,
+        };
+        self.lexed.push(kind, info, error);
+    }
+
+    fn take_token_impl(&mut self) {
         match self.first() {
-            '-' if self.second() == '-' => self.take_line_comment(),
-            '{' if self.second() == '-' => self.take_block_comment(),
+            i if i.is_whitespace() => {
+                self.push(SyntaxKind::ERROR, Some("Expected a token"));
+            }
+            '-' if self.second() == '-' => {
+                self.push(SyntaxKind::ERROR, Some("Expected a token"));
+            }
+            '{' if self.second() == '-' => {
+                self.push(SyntaxKind::ERROR, Some("Expected a token"));
+            }
 
             '(' => self.take_operator_name_or_left_parenthesis(),
-            ')' => self.take_single(SyntaxKind::RIGHT_PARENTHESIS),
-            '{' => self.take_single(SyntaxKind::LEFT_CURLY),
-            '}' => self.take_single(SyntaxKind::RIGHT_CURLY),
-            '[' => self.take_single(SyntaxKind::LEFT_SQUARE),
-            ']' => self.take_single(SyntaxKind::RIGHT_SQUARE),
+            ')' => self.take_kind(SyntaxKind::RIGHT_PARENTHESIS),
+            '{' => self.take_kind(SyntaxKind::LEFT_CURLY),
+            '}' => self.take_kind(SyntaxKind::RIGHT_CURLY),
+            '[' => self.take_kind(SyntaxKind::LEFT_SQUARE),
+            ']' => self.take_kind(SyntaxKind::RIGHT_SQUARE),
 
-            '`' => self.take_single(SyntaxKind::TICK),
-            ',' => self.take_single(SyntaxKind::COMMA),
-            '?' if !is_name(self.second()) => self.take_operator(),
-            '_' if !is_name(self.second()) => self.take_single(SyntaxKind::UNDERSCORE),
+            '`' => self.take_kind(SyntaxKind::TICK),
+            ',' => self.take_kind(SyntaxKind::COMMA),
+            '?' if !self.second().is_name() => self.take_operator(),
+            '_' if !self.second().is_name() => self.take_kind(SyntaxKind::UNDERSCORE),
 
             '\'' => self.take_char(),
             '"' => self.take_string(),
@@ -110,45 +199,209 @@ impl<'a> Lexer<'a> {
             i => {
                 if i == '?' {
                     self.take_hole();
-                } else if is_lower_start(i) {
+                } else if i.is_lower_start() {
                     self.take_lower();
-                } else if i.is_letter_uppercase() {
-                    self.take_prefix_or_upper()
-                } else if is_operator(i) {
-                    self.take_operator()
-                } else if i.is_whitespace() {
-                    self.take_whitespace()
+                } else if i.is_upper_start() {
+                    self.take_upper();
+                } else if i.is_operator() {
+                    self.take_operator();
                 } else if i.is_ascii_digit() {
-                    self.take_integer_or_number()
+                    self.take_integer_or_number();
                 } else {
-                    panic!("Unknown token! '{}' at {:?}", i, p)
+                    self.take();
+                    self.push(SyntaxKind::ERROR, Some("Invalid token"));
                 }
             }
         }
     }
 
-    #[inline]
-    fn take_single(&mut self, kind: SyntaxKind) {
-        let position = self.position();
+    fn take_kind(&mut self, kind: SyntaxKind) {
         self.take();
-        self.lexed.push(kind, position, None)
+        self.push(kind, None);
     }
 
-    #[inline]
+    fn take_operator_kind(&mut self) -> SyntaxKind {
+        let start = self.consumed();
+        self.take_while(char::is_operator);
+        let end = self.consumed();
+        match &self.source[start..end] {
+            "∷" => SyntaxKind::DOUBLE_COLON,
+            "←" => SyntaxKind::LEFT_ARROW,
+            "→" => SyntaxKind::RIGHT_ARROW,
+            "⇐" => SyntaxKind::LEFT_THICK_ARROW,
+            "⇒" => SyntaxKind::RIGHT_THICK_ARROW,
+            "∀" => SyntaxKind::FORALL,
+            "=" => SyntaxKind::EQUAL,
+            ":" => SyntaxKind::COLON,
+            "::" => SyntaxKind::DOUBLE_COLON,
+            "." => SyntaxKind::PERIOD,
+            ".." => SyntaxKind::DOUBLE_PERIOD,
+            "<-" => SyntaxKind::LEFT_ARROW,
+            "->" => SyntaxKind::RIGHT_ARROW,
+            "<=" => SyntaxKind::LEFT_THICK_ARROW,
+            "=>" => SyntaxKind::RIGHT_THICK_ARROW,
+            "|" => SyntaxKind::PIPE,
+            "@" => SyntaxKind::AT,
+            "-" => SyntaxKind::MINUS,
+            "\\" => SyntaxKind::BACKSLASH,
+            _ => SyntaxKind::OPERATOR,
+        }
+    }
+
+    fn take_operator_name_or_left_parenthesis(&mut self) {
+        self.take();
+
+        let lp_token = self.consumed() as u32;
+        let lp_info = SyntaxKindInfo {
+            annotation: self.annotation,
+            qualifier: self.qualifier,
+            token: lp_token,
+        };
+
+        if !self.first().is_operator() {
+            return self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_info, None);
+        }
+
+        let op_kind = self.take_operator_kind();
+        if self.first() != ')' {
+            self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_info, None);
+            let op_info = SyntaxKindInfo {
+                // annotation/qualifier are zero-width
+                annotation: lp_info.token,
+                qualifier: lp_info.token,
+                token: self.consumed() as u32,
+            };
+            return self.lexed.push(op_kind, op_info, None);
+        }
+
+        self.take();
+
+        let rp_token = self.consumed() as u32;
+        let rp_info = SyntaxKindInfo {
+            annotation: lp_info.annotation,
+            qualifier: lp_info.qualifier,
+            token: rp_token,
+        };
+
+        let op_name_kind = match op_kind {
+            SyntaxKind::DOUBLE_PERIOD => SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME,
+            _ => SyntaxKind::OPERATOR_NAME,
+        };
+
+        self.lexed.push(op_name_kind, rp_info, None);
+    }
+
+    fn take_operator(&mut self) {
+        let kind = self.take_operator_kind();
+        self.push(kind, None);
+    }
+
+    fn take_char(&mut self) {
+        self.take();
+        while !self.is_eof() {
+            match self.first() {
+                '\'' => {
+                    break;
+                }
+                '\\' if self.second() == '\\' || self.second() == '\'' => {
+                    self.take();
+                    self.take();
+                }
+                _ => {
+                    self.take();
+                }
+            }
+        }
+        if self.first() == '\'' {
+            self.take();
+            self.push(SyntaxKind::CHAR, None);
+        } else {
+            self.push(SyntaxKind::CHAR, Some("Unterminated character literal"));
+        }
+    }
+
+    fn take_string(&mut self) {
+        let string = self.consumed();
+        self.take_while_maximum(|c| c == '"', 8);
+        let quotes = self.consumed() - string;
+
+        match quotes {
+            1 => {
+                self.take_normal_string();
+            }
+            2 => {
+                self.push(SyntaxKind::STRING, None);
+            }
+            3..=5 => {
+                self.take_raw_string();
+            }
+            6..=8 => {
+                self.push(SyntaxKind::RAW_STRING, None);
+            }
+            _ => {
+                unreachable!()
+            }
+        }
+    }
+
+    fn take_normal_string(&mut self) {
+        while !self.is_eof() {
+            match self.first() {
+                '"' => {
+                    break;
+                }
+                '\\' if self.first() == '\\' || self.first() == '"' => {
+                    self.take();
+                    self.take();
+                }
+                _ => {
+                    self.take();
+                }
+            }
+        }
+        if self.first() == '"' {
+            self.take();
+            self.push(SyntaxKind::STRING, None);
+        } else {
+            self.push(SyntaxKind::STRING, Some("Unterminated single quoted string literal"));
+        };
+    }
+
+    fn take_raw_string(&mut self) {
+        let kind = loop {
+            self.take_while(|c| c != '"');
+            let string = self.consumed();
+            self.take_while_maximum(|c| c == '"', 5);
+            let quotes = self.consumed() - string;
+            match quotes {
+                0 => {
+                    break Some("Unterminated triple quoted string literal");
+                }
+                1 | 2 => {
+                    continue;
+                }
+                3..=5 => {
+                    break None;
+                }
+                _ => {
+                    unreachable!()
+                }
+            }
+        };
+        self.push(SyntaxKind::RAW_STRING, kind);
+    }
+
     fn take_hole(&mut self) {
-        let position = self.position();
         assert_eq!(self.take(), '?');
-        self.take_while(is_name);
-        self.lexed.push(SyntaxKind::HOLE, position, None)
+        self.take_while(char::is_name);
+        self.push(SyntaxKind::HOLE, None);
     }
 
-    #[inline]
     fn take_lower(&mut self) {
-        let position @ Position { offset, .. } = self.position();
-        self.take_while(is_name);
-        let end_offset = self.consumed();
-        let kind = match &self.source[offset..end_offset] {
-            // NOTE: Not all of these are treated as keywords by PureScript. e.g. `f as = as` is valid
+        let start = self.consumed();
+        self.take_while(char::is_name);
+        let end = self.consumed();
+        let kind = match &self.source[start..end] {
             "ado" => SyntaxKind::ADO,
             "as" => SyntaxKind::AS,
             "case" => SyntaxKind::CASE,
@@ -182,216 +435,17 @@ impl<'a> Lexer<'a> {
             "where" => SyntaxKind::WHERE,
             _ => SyntaxKind::LOWER,
         };
-        self.lexed.push(kind, position, None)
+        self.push(kind, None);
     }
 
-    #[inline]
-    fn take_prefix_or_upper(&mut self) {
-        let prefix = self.position();
-        let mut has_prefix = false;
-
-        // It's best to follow through this block with a few examples:
-        //
-        //>================================================================
-        //
-        // Hooks.do => [PREFIX, LOWER]
-        // Main.main => [UPPER, LOWER]
-        //
-        // 1. (A) takes 'Hooks'
-        // 2. (B) takes '.'
-        // 3. (D) pushes [PREFIX] and finishes
-        //
-        //>================================================================
-        //
-        // List.Cons => [PREFIX, UPPER]
-        //
-        // 1. (A) takes 'List'
-        // 2. (B) takes '.'
-        // 3. (A) takes 'Cons'
-        // 4. (B) takes nothing
-        // 5. (C) pushes [PREFIX, UPPER] and finishes
-        //
-        //>================================================================
-        loop {
-            // (D)
-            if !is_upper_start(self.first()) && has_prefix {
-                return self.lexed.push(SyntaxKind::PREFIX, prefix, None);
-            }
-
-            // (A)
-            let proper = self.position();
-            self.take_while(is_name);
-
-            // (B)
-            if self.first() == '.' {
-                self.take();
-                has_prefix = true;
-            } else {
-                // (C)
-                if has_prefix {
-                    self.lexed.push(SyntaxKind::PREFIX, prefix, None);
-                }
-                return self.lexed.push(SyntaxKind::UPPER, proper, None);
-            }
-        }
+    fn take_upper(&mut self) {
+        self.take();
+        self.take_while(char::is_name);
+        self.push(SyntaxKind::UPPER, None);
     }
 
-    #[inline]
-    fn take_operator_kind(&mut self) -> (SyntaxKind, Position) {
-        let position @ Position { offset, .. } = self.position();
-        self.take_while(is_operator);
-        let offset_end = self.consumed();
-        let kind = match &self.source[offset..offset_end] {
-            "∷" => SyntaxKind::DOUBLE_COLON,
-            "←" => SyntaxKind::LEFT_ARROW,
-            "→" => SyntaxKind::RIGHT_ARROW,
-            "⇐" => SyntaxKind::LEFT_THICK_ARROW,
-            "⇒" => SyntaxKind::RIGHT_THICK_ARROW,
-            "∀" => SyntaxKind::FORALL,
-            "=" => SyntaxKind::EQUAL,
-            ":" => SyntaxKind::COLON,
-            "::" => SyntaxKind::DOUBLE_COLON,
-            "." => SyntaxKind::PERIOD,
-            ".." => SyntaxKind::DOUBLE_PERIOD,
-            "<-" => SyntaxKind::LEFT_ARROW,
-            "->" => SyntaxKind::RIGHT_ARROW,
-            "<=" => SyntaxKind::LEFT_THICK_ARROW,
-            "=>" => SyntaxKind::RIGHT_THICK_ARROW,
-            "|" => SyntaxKind::PIPE,
-            "@" => SyntaxKind::AT,
-            "-" => SyntaxKind::MINUS,
-            "\\" => SyntaxKind::BACKSLASH,
-            _ => SyntaxKind::OPERATOR,
-        };
-        (kind, position)
-    }
-
-    #[inline]
-    fn take_operator(&mut self) {
-        let (kind, position) = self.take_operator_kind();
-        self.lexed.push(kind, position, None)
-    }
-
-    #[inline]
-    fn take_operator_name_or_left_parenthesis(&mut self) {
-        let lp_position = self.position();
-        assert_eq!(self.take(), '(');
-        if is_operator(self.first()) {
-            let (op_kind, op_position) = self.take_operator_kind();
-            if self.first() == ')' {
-                self.take();
-                let op_kind = match op_kind {
-                    SyntaxKind::DOUBLE_PERIOD => SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME,
-                    _ => SyntaxKind::OPERATOR_NAME,
-                };
-                self.lexed.push(op_kind, lp_position, None);
-            } else {
-                self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_position, None);
-                self.lexed.push(op_kind, op_position, None);
-            }
-        } else {
-            self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_position, None);
-        }
-    }
-
-    #[inline]
-    fn take_char(&mut self) {
-        let position = self.position();
-
-        assert_eq!(self.take(), '\'');
-        let error = 'outer: {
-            while !self.is_eof() {
-                match self.take() {
-                    '\'' => {
-                        break 'outer None;
-                    }
-                    '\\' if self.first() == '\\' || self.first() == '\'' => {
-                        self.take();
-                    }
-                    _ => {
-                        continue;
-                    }
-                }
-            }
-            Some("Unexpected end of file")
-        };
-
-        self.lexed.push(SyntaxKind::CHAR, position, error)
-    }
-
-    #[inline]
-    fn take_string(&mut self) {
-        let position @ Position { offset, .. } = self.position();
-        self.take_while_max(|c| c == '"', 8);
-        let leading_quotes = self.consumed() - offset;
-        match leading_quotes {
-            // "..." => a string
-            1 => {
-                let error = self.take_normal_string();
-                self.lexed.push(SyntaxKind::STRING, position, error);
-            }
-            // "" => an empty string
-            2 => {
-                self.lexed.push(SyntaxKind::STRING, position, None);
-            }
-            // """...""" => a raw string with leading quotes
-            3..=5 => {
-                let error = self.take_raw_string();
-                self.lexed.push(SyntaxKind::RAW_STRING, position, error);
-            }
-            // """"""" => Trailing and leading quotes in a raw string
-            6..=8 => {
-                self.lexed.push(SyntaxKind::RAW_STRING, position, None);
-            }
-            _ => {
-                unreachable!();
-            }
-        }
-    }
-
-    fn take_normal_string(&mut self) -> Option<&'static str> {
-        while !self.is_eof() {
-            match self.take() {
-                '"' => {
-                    return None;
-                }
-                '\\' if self.first() == '\\' || self.first() == '"' => {
-                    self.take();
-                }
-                _ => {
-                    continue;
-                }
-            }
-        }
-        Some("Unexpected end of file")
-    }
-
-    fn take_raw_string(&mut self) -> Option<&'static str> {
-        loop {
-            self.take_while(|c| c != '"');
-            let start = self.consumed();
-            self.take_while_max(|c| c == '"', 5);
-            let end = self.consumed();
-            match end - start {
-                0 => {
-                    return Some("Unexpected end of file");
-                }
-                1 | 2 => {
-                    continue;
-                }
-                3..=5 => {
-                    return None;
-                }
-                _ => {
-                    unreachable!();
-                }
-            }
-        }
-    }
-
-    #[inline]
     fn take_integer_or_number(&mut self) {
-        let position = self.position();
+        let mut kind = SyntaxKind::INTEGER;
 
         let error = if self.first() == '0' && self.second() == '0' {
             Some("Too many leading zeros")
@@ -399,27 +453,26 @@ impl<'a> Lexer<'a> {
             None
         };
 
-        let mut kind = SyntaxKind::INTEGER;
         self.take_while(|c| c.is_ascii_digit() || c == '_');
 
         if self.first() == 'x' {
             self.take();
             self.take_while(|c| c.is_ascii_hexdigit());
-            return self.lexed.push(SyntaxKind::INTEGER, position, error);
+            return self.push(SyntaxKind::INTEGER, error);
         }
 
         // lex(1..2) = [INTEGER, DOUBLE_PERIOD, INTEGER]
         if self.first() == '.' && self.second() == '.' {
-            return self.lexed.push(SyntaxKind::INTEGER, position, error);
+            return self.push(SyntaxKind::INTEGER, error);
         }
 
-        if self.first() == '.' && self.second().is_ascii_digit() {
+        if self.first() == '.' {
             self.take();
             self.take_while(|c| c.is_ascii_digit() || c == '_');
             kind = SyntaxKind::NUMBER;
         }
 
-        if self.first() == 'e' {
+        if self.first() == 'e' || self.first() == 'E' {
             self.take();
             if self.first() == '+' || self.first() == '-' {
                 self.take();
@@ -428,71 +481,6 @@ impl<'a> Lexer<'a> {
             kind = SyntaxKind::NUMBER;
         }
 
-        self.lexed.push(kind, position, error);
+        self.push(kind, error);
     }
-
-    #[inline]
-    fn take_whitespace(&mut self) {
-        let position = self.position();
-        self.take_while(|c| c.is_whitespace());
-        self.lexed.push(SyntaxKind::WHITESPACE, position, None)
-    }
-
-    #[inline]
-    fn take_line_comment(&mut self) {
-        let position = self.position();
-        assert_eq!(self.take(), '-');
-        assert_eq!(self.take(), '-');
-        self.take_while(|c| c != '\n');
-        self.lexed.push(SyntaxKind::LINE_COMMENT, position, None)
-    }
-
-    #[inline]
-    fn take_block_comment(&mut self) {
-        let position = self.position();
-        assert_eq!(self.take(), '{');
-        assert_eq!(self.take(), '-');
-        let mut level = 1;
-        loop {
-            match (self.first(), self.second()) {
-                ('{', '-') => {
-                    level += 1;
-                    self.take();
-                    self.take();
-                }
-                ('-', '}') => {
-                    level -= 1;
-                    self.take();
-                    self.take();
-                }
-                _ => (),
-            }
-            if level == 0 {
-                break;
-            }
-            self.take();
-        }
-        self.lexed.push(SyntaxKind::BLOCK_COMMENT, position, None)
-    }
-}
-
-fn is_operator(c: char) -> bool {
-    match c {
-        // These are the only valid ASCII operators
-        '!' | '#' | '$' | '%' | '&' | '*' | '+' | '.' | '/' | '<' | '=' | '>' | '?' | '@'
-        | '\\' | '^' | '|' | '-' | '~' | ':' => true,
-        _ => c.is_symbol() && !c.is_ascii(),
-    }
-}
-
-fn is_lower_start(c: char) -> bool {
-    c.is_letter_lowercase() || c == '_'
-}
-
-fn is_upper_start(c: char) -> bool {
-    c.is_letter_uppercase()
-}
-
-fn is_name(c: char) -> bool {
-    c.is_alphanumeric() || c == '_' || c == '\''
 }

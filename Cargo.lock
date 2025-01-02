@@ -158,16 +158,6 @@ name = "lexing"
 version = "0.1.0"
 dependencies = [
  "insta",
- "position",
- "syntax",
- "unicode_categories",
-]
-
-[[package]]
-name = "lexing_new"
-version = "0.1.0"
-dependencies = [
- "insta",
  "itertools",
  "memchr",
  "syntax",

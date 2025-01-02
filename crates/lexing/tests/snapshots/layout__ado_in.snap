@@ -1,6 +1,6 @@
 ---
 source: crates/lexing/tests/layout.rs
-expression: source
+expression: "print_tokens(&lexed, &tokens)"
 snapshot_kind: text
 ---
 module Test where{

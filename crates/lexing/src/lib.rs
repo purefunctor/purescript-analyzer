@@ -1,27 +1,27 @@
-//! A lexer for PureScript source code.
-
+mod categories;
 mod layout;
 mod lexed;
 mod lexer;
 
 pub use lexed::Lexed;
-
-use layout::Layout;
-use lexer::Lexer;
 use syntax::SyntaxKind;
 
-/// Tokenizes a source string.
+#[derive(Debug, Clone, Copy)]
+pub struct Position {
+    pub line: usize,
+    pub column: usize,
+}
+
 pub fn lex(source: &str) -> Lexed {
-    let mut lexer = Lexer::new(source);
+    let mut lexer = lexer::Lexer::new(source);
     while !lexer.is_eof() {
         lexer.take_token();
     }
     lexer.finish()
 }
 
-/// Applies the layout algorithm.
 pub fn layout(lexed: &Lexed) -> Vec<SyntaxKind> {
-    let mut layout = Layout::new(lexed);
+    let mut layout = layout::Layout::new(lexed);
     while !layout.is_eof() {
         layout.take_token();
     }
