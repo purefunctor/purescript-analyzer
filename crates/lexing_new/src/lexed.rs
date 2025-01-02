@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use syntax::SyntaxKind;
 
+use crate::Position;
+
 /// Information attached to a [`SyntaxKind`].
 ///
 /// [`SyntaxKind`] by itself does not store metadata, as it's represented by
@@ -127,7 +129,7 @@ impl<'s> Lexed<'s> {
         }
     }
 
-    pub fn position(&self, index: usize) -> (usize, usize) {
+    pub fn position(&self, index: usize) -> Position {
         assert!(index < self.infos.len());
 
         let info = self.infos[index];
@@ -139,7 +141,7 @@ impl<'s> Lexed<'s> {
         let line = search.count() + 1;
         let column = haystack.chars().rev().take_while(|&c| c != '\n').count() + 1;
 
-        (line, column)
+        Position { line, column }
     }
 
     pub fn error(&self, index: usize) -> Option<Arc<str>> {

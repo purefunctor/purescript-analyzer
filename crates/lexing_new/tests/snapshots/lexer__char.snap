@@ -8,40 +8,40 @@ annotation : ""
  qualifier : ""
       kind : CHAR
       text : "'a'"
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : CHAR
       text : "'\\xFF'"
-  position : (3, 1)
+  position : Position { line: 3, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : CHAR
       text : "'abc'"
-  position : (5, 1)
+  position : Position { line: 5, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : CHAR
       text : "'\\''"
-  position : (7, 1)
+  position : Position { line: 7, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : CHAR
       text : "'\\\\'"
-  position : (9, 1)
+  position : Position { line: 9, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (10, 1)
+  position : Position { line: 10, column: 1 }
      error : None

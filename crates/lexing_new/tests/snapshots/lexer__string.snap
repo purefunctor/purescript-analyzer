@@ -8,82 +8,82 @@ annotation : ""
  qualifier : ""
       kind : STRING
       text : "\"hello\""
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : STRING
       text : "\"hello \\\" world\""
-  position : (3, 1)
+  position : Position { line: 3, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : STRING
       text : "\"hello \\\\ world\""
-  position : (5, 1)
+  position : Position { line: 5, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : STRING
       text : "\"hello \\n world\""
-  position : (7, 1)
+  position : Position { line: 7, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : STRING
       text : "\"hello\\\n\\world\""
-  position : (9, 1)
+  position : Position { line: 9, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : RAW_STRING
       text : "\"\"\"\"\"\""
-  position : (12, 1)
+  position : Position { line: 12, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : RAW_STRING
       text : "\"\"\"\"\"\"\""
-  position : (14, 1)
+  position : Position { line: 14, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : RAW_STRING
       text : "\"\"\"\"\"\"\"\""
-  position : (16, 1)
+  position : Position { line: 16, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : RAW_STRING
       text : "\"\"\"\"\"\"\"\""
-  position : (18, 1)
+  position : Position { line: 18, column: 1 }
      error : None
 
 annotation : ""
  qualifier : ""
       kind : STRING
       text : "\"\""
-  position : (18, 9)
+  position : Position { line: 18, column: 9 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : RAW_STRING
       text : "\"\"\"hello world\"\"\""
-  position : (20, 1)
+  position : Position { line: 20, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (21, 1)
+  position : Position { line: 21, column: 1 }
      error : None

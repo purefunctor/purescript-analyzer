@@ -8,12 +8,12 @@ annotation : ""
  qualifier : ""
       kind : STRING
       text : "\"hello\n"
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : Some("Unterminated single quoted string literal")
 
 annotation : ""
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (2, 1)
+  position : Position { line: 2, column: 1 }
      error : None

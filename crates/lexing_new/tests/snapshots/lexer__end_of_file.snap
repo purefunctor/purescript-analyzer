@@ -8,5 +8,5 @@ annotation : ""
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : None

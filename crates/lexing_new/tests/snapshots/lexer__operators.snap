@@ -8,152 +8,152 @@ annotation : ""
  qualifier : ""
       kind : DOUBLE_COLON
       text : "∷"
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : LEFT_ARROW
       text : "←"
-  position : (2, 1)
+  position : Position { line: 2, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : RIGHT_ARROW
       text : "→"
-  position : (3, 1)
+  position : Position { line: 3, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : LEFT_THICK_ARROW
       text : "⇐"
-  position : (4, 1)
+  position : Position { line: 4, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : RIGHT_THICK_ARROW
       text : "⇒"
-  position : (5, 1)
+  position : Position { line: 5, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : FORALL
       text : "∀"
-  position : (6, 1)
+  position : Position { line: 6, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : EQUAL
       text : "="
-  position : (7, 1)
+  position : Position { line: 7, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : COLON
       text : ":"
-  position : (8, 1)
+  position : Position { line: 8, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : DOUBLE_COLON
       text : "::"
-  position : (9, 1)
+  position : Position { line: 9, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : PERIOD
       text : "."
-  position : (10, 1)
+  position : Position { line: 10, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : DOUBLE_PERIOD
       text : ".."
-  position : (11, 1)
+  position : Position { line: 11, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : LEFT_ARROW
       text : "<-"
-  position : (12, 1)
+  position : Position { line: 12, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : RIGHT_ARROW
       text : "->"
-  position : (13, 1)
+  position : Position { line: 13, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : LEFT_THICK_ARROW
       text : "<="
-  position : (14, 1)
+  position : Position { line: 14, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : RIGHT_THICK_ARROW
       text : "=>"
-  position : (15, 1)
+  position : Position { line: 15, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : PIPE
       text : "|"
-  position : (16, 1)
+  position : Position { line: 16, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : AT
       text : "@"
-  position : (17, 1)
+  position : Position { line: 17, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : MINUS
       text : "-"
-  position : (18, 1)
+  position : Position { line: 18, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : BACKSLASH
       text : "\\"
-  position : (19, 1)
+  position : Position { line: 19, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : TICK
       text : "`"
-  position : (20, 1)
+  position : Position { line: 20, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : COMMA
       text : ","
-  position : (21, 1)
+  position : Position { line: 21, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (22, 1)
+  position : Position { line: 22, column: 1 }
      error : None

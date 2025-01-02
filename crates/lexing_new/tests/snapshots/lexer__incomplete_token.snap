@@ -8,47 +8,47 @@ annotation : "{- Annotation -} "
  qualifier : "Qualifier."
       kind : ERROR
       text : ""
-  position : (1, 18)
+  position : Position { line: 1, column: 18 }
      error : Some("Expected a token")
 
 annotation : " "
  qualifier : ""
       kind : LOWER
       text : "nextToken"
-  position : (1, 29)
+  position : Position { line: 1, column: 29 }
      error : None
 
 annotation : "\n\n{- Annotation -} "
  qualifier : "Qualifier."
       kind : ERROR
       text : ""
-  position : (3, 18)
+  position : Position { line: 3, column: 18 }
      error : Some("Expected a token")
 
 annotation : "{- nextToken -}\n\n{- Annotation -} "
  qualifier : "Qualifier."
       kind : ERROR
       text : ""
-  position : (5, 18)
+  position : Position { line: 5, column: 18 }
      error : Some("Expected a token")
 
 annotation : "-- nextToken\n\n{- Annotation -} "
  qualifier : "Qualifier."
       kind : ERROR
       text : ""
-  position : (7, 18)
+  position : Position { line: 7, column: 18 }
      error : Some("Expected a token")
 
 annotation : " {- nextToken -}\n\n{- Annotation -} "
  qualifier : "Qualifier."
       kind : ERROR
       text : ""
-  position : (9, 18)
+  position : Position { line: 9, column: 18 }
      error : Some("Expected a token")
 
 annotation : " -- nextToken\n"
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (10, 1)
+  position : Position { line: 10, column: 1 }
      error : None

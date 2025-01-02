@@ -8,40 +8,40 @@ annotation : ""
  qualifier : ""
       kind : INTEGER
       text : "1"
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : None
 
 annotation : ""
  qualifier : ""
       kind : OPERATOR
       text : "+"
-  position : (1, 2)
+  position : Position { line: 1, column: 2 }
      error : None
 
 annotation : ""
  qualifier : ""
       kind : INTEGER
       text : "2"
-  position : (1, 3)
+  position : Position { line: 1, column: 3 }
      error : None
 
 annotation : ""
  qualifier : ""
       kind : OPERATOR
       text : "+"
-  position : (1, 4)
+  position : Position { line: 1, column: 4 }
      error : None
 
 annotation : ""
  qualifier : ""
       kind : INTEGER
       text : "3"
-  position : (1, 5)
+  position : Position { line: 1, column: 5 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (2, 1)
+  position : Position { line: 2, column: 1 }
      error : None

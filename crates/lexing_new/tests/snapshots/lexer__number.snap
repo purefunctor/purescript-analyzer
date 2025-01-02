@@ -8,75 +8,75 @@ annotation : ""
  qualifier : ""
       kind : NUMBER
       text : "123.0"
-  position : (1, 1)
+  position : Position { line: 1, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "00123.0"
-  position : (3, 1)
+  position : Position { line: 3, column: 1 }
      error : Some("Too many leading zeros")
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123e"
-  position : (5, 1)
+  position : Position { line: 5, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123E"
-  position : (7, 1)
+  position : Position { line: 7, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123e10"
-  position : (9, 1)
+  position : Position { line: 9, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123e+10"
-  position : (11, 1)
+  position : Position { line: 11, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123e-10"
-  position : (13, 1)
+  position : Position { line: 13, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123.0e10"
-  position : (15, 1)
+  position : Position { line: 15, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123.0e+10"
-  position : (17, 1)
+  position : Position { line: 17, column: 1 }
      error : None
 
 annotation : "\n\n"
  qualifier : ""
       kind : NUMBER
       text : "123.0e-10"
-  position : (19, 1)
+  position : Position { line: 19, column: 1 }
      error : None
 
 annotation : "\n"
  qualifier : ""
       kind : END_OF_FILE
       text : ""
-  position : (20, 1)
+  position : Position { line: 20, column: 1 }
      error : None
