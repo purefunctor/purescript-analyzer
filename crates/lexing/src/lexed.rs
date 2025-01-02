@@ -199,7 +199,7 @@ impl<'s> Lexed<'s> {
     pub fn text_in_range(&self, range: Range<usize>) -> &str {
         assert!(range.start < range.end && range.end < self.infos.len());
 
-        let low = if range.start > 0 { self.infos[range.start].qualifier as usize } else { 0 };
+        let low = if range.start > 0 { self.infos[range.start].token as usize } else { 0 };
         let high = self.infos[range.end].token as usize;
 
         &self.source[low..high]
