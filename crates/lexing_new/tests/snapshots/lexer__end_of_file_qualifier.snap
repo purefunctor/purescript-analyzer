@@ -1,0 +1,19 @@
+---
+source: crates/lexing_new/tests/lexer.rs
+description: "Hello.\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : ""
+ qualifier : "Hello."
+      kind : ERROR
+      text : ""
+  position : (1, 1)
+     error : Some("Expected a token")
+
+annotation : "\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : (2, 1)
+     error : None

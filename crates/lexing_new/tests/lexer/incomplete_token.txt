@@ -1,0 +1,9 @@
+{- Annotation -} Qualifier. nextToken
+
+{- Annotation -} Qualifier.{- nextToken -}
+
+{- Annotation -} Qualifier.-- nextToken
+
+{- Annotation -} Qualifier. {- nextToken -}
+
+{- Annotation -} Qualifier. -- nextToken

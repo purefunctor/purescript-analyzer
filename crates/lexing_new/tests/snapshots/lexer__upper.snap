@@ -1,0 +1,26 @@
+---
+source: crates/lexing_new/tests/lexer.rs
+description: "Type\n\nPrim.Type\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : ""
+ qualifier : ""
+      kind : UPPER
+      text : "Type"
+  position : (1, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : "Prim."
+      kind : UPPER
+      text : "Type"
+  position : (3, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : (4, 1)
+     error : None

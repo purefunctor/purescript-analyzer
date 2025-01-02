@@ -1,0 +1,89 @@
+---
+source: crates/lexing_new/tests/lexer.rs
+description: "\"hello\"\n\n\"hello \\\" world\"\n\n\"hello \\\\ world\"\n\n\"hello \\n world\"\n\n\"hello\\\n\\world\"\n\n\"\"\"\"\"\"\n\n\"\"\"\"\"\"\"\n\n\"\"\"\"\"\"\"\"\n\n\"\"\"\"\"\"\"\"\"\"\n\n\"\"\"hello world\"\"\"\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : ""
+ qualifier : ""
+      kind : STRING
+      text : "\"hello\""
+  position : (1, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : STRING
+      text : "\"hello \\\" world\""
+  position : (3, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : STRING
+      text : "\"hello \\\\ world\""
+  position : (5, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : STRING
+      text : "\"hello \\n world\""
+  position : (7, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : STRING
+      text : "\"hello\\\n\\world\""
+  position : (9, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : RAW_STRING
+      text : "\"\"\"\"\"\""
+  position : (12, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : RAW_STRING
+      text : "\"\"\"\"\"\"\""
+  position : (14, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : RAW_STRING
+      text : "\"\"\"\"\"\"\"\""
+  position : (16, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : RAW_STRING
+      text : "\"\"\"\"\"\"\"\""
+  position : (18, 1)
+     error : None
+
+annotation : ""
+ qualifier : ""
+      kind : STRING
+      text : "\"\""
+  position : (18, 9)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : RAW_STRING
+      text : "\"\"\"hello world\"\"\""
+  position : (20, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : (21, 1)
+     error : None

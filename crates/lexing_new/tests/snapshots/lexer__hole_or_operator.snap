@@ -1,0 +1,33 @@
+---
+source: crates/lexing_new/tests/lexer.rs
+description: "?hole\n\n?Hole\n\n??\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : ""
+ qualifier : ""
+      kind : HOLE
+      text : "?hole"
+  position : (1, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : HOLE
+      text : "?Hole"
+  position : (3, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : OPERATOR
+      text : "??"
+  position : (5, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : (6, 1)
+     error : None

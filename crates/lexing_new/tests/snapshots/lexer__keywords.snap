@@ -1,0 +1,243 @@
+---
+source: crates/lexing_new/tests/lexer.rs
+description: "ado\nas\ncase\nclass\ndata\nderive\ndo\nelse\nfalse\nforall\nforeign\nhiding\nif\nimport\nin\ninfix\ninfixl\ninfixr\ninstance\nlet\nmodule\nnewtype\nnominal\nof\nphantom\nrepresentational\nrole\nthen\ntrue\ntype\nwhere\n\nAdo.ado\nDo.do\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : ""
+ qualifier : ""
+      kind : ADO
+      text : "ado"
+  position : (1, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : AS
+      text : "as"
+  position : (2, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : CASE
+      text : "case"
+  position : (3, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : CLASS
+      text : "class"
+  position : (4, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : DATA
+      text : "data"
+  position : (5, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : DERIVE
+      text : "derive"
+  position : (6, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : DO
+      text : "do"
+  position : (7, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : ELSE
+      text : "else"
+  position : (8, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : FALSE
+      text : "false"
+  position : (9, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : FORALL
+      text : "forall"
+  position : (10, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : FOREIGN
+      text : "foreign"
+  position : (11, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : HIDING
+      text : "hiding"
+  position : (12, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : IF
+      text : "if"
+  position : (13, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : IMPORT
+      text : "import"
+  position : (14, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : IN
+      text : "in"
+  position : (15, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : INFIX
+      text : "infix"
+  position : (16, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : INFIXL
+      text : "infixl"
+  position : (17, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : INFIXR
+      text : "infixr"
+  position : (18, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : INSTANCE
+      text : "instance"
+  position : (19, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : LET
+      text : "let"
+  position : (20, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : MODULE
+      text : "module"
+  position : (21, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : NEWTYPE
+      text : "newtype"
+  position : (22, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : NOMINAL
+      text : "nominal"
+  position : (23, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : OF
+      text : "of"
+  position : (24, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : PHANTOM
+      text : "phantom"
+  position : (25, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : REPRESENTATIONAL
+      text : "representational"
+  position : (26, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : ROLE
+      text : "role"
+  position : (27, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : THEN
+      text : "then"
+  position : (28, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : TRUE
+      text : "true"
+  position : (29, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : TYPE
+      text : "type"
+  position : (30, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : WHERE
+      text : "where"
+  position : (31, 1)
+     error : None
+
+annotation : "\n\n"
+ qualifier : "Ado."
+      kind : ADO
+      text : "ado"
+  position : (33, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : "Do."
+      kind : DO
+      text : "do"
+  position : (34, 1)
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : (35, 1)
+     error : None
