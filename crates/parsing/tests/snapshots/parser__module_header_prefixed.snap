@@ -5,23 +5,24 @@ snapshot_kind: text
 ---
 (
     Module@0..29
-      ModuleHeader@0..29
+      ModuleHeader@0..28
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..23
-          PREFIX@7..18 "PureScript."
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
+          Qualifier@7..18
+            TEXT@7..18 "PureScript."
           UPPER@18..22 "Main"
-          Comment@22..23
-            WHITESPACE@22..23 " "
-        ModuleExportList@23..23
+        ModuleExportList@22..22
+        Annotation@22..23
+          TEXT@22..23 " "
         WHERE@23..28 "where"
-        Comment@28..29
-          WHITESPACE@28..29 "\n"
-      LAYOUT_START@29..29 ""
-      ModuleImports@29..29
-      ModuleStatements@29..29
-      LAYOUT_END@29..29 ""
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..28
+      LAYOUT_END@28..28 ""
+      Annotation@28..29
+        TEXT@28..29 "\n"
       END_OF_FILE@29..29 ""
     ,
     [],

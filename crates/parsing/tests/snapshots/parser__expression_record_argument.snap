@@ -5,67 +5,67 @@ snapshot_kind: text
 ---
 (
     Module@0..68
-      ModuleHeader@0..37
+      ModuleHeader@0..35
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..30
+        ModuleName@6..29
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..29 "ExpressionRecordUpdate"
-          Comment@29..30
-            WHITESPACE@29..30 " "
-        ModuleExportList@30..30
+        ModuleExportList@29..29
+        Annotation@29..30
+          TEXT@29..30 " "
         WHERE@30..35 "where"
-        Comment@35..37
-          WHITESPACE@35..37 "\n\n"
-      LAYOUT_START@37..37 ""
-      ModuleImports@37..37
-      ModuleStatements@37..68
-        ValueEquation@37..68
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..67
+        ValueEquation@35..67
+          Annotation@35..37
+            TEXT@35..37 "\n\n"
           LOWER@37..44 "example"
-          Comment@44..45
-            WHITESPACE@44..45 " "
-          FunctionBinders@45..45
-          Unconditional@45..68
+          FunctionBinders@44..44
+          Unconditional@44..67
+            Annotation@44..45
+              TEXT@44..45 " "
             EQUAL@45..46 "="
-            Comment@46..47
-              WHITESPACE@46..47 " "
-            WhereExpression@47..68
-              ExpressionApplicationChain@47..68
-                ExpressionConstructor@47..53
-                  QualifiedName@47..53
+            WhereExpression@46..67
+              ExpressionApplicationChain@46..67
+                ExpressionConstructor@46..52
+                  QualifiedName@46..52
+                    Annotation@46..47
+                      TEXT@46..47 " "
                     UPPER@47..52 "Point"
-                    Comment@52..53
-                      WHITESPACE@52..53 " "
-                ExpressionTermArgument@53..68
-                  ExpressionRecord@53..68
+                ExpressionTermArgument@52..67
+                  ExpressionRecord@52..67
+                    Annotation@52..53
+                      TEXT@52..53 " "
                     LEFT_CURLY@53..54 "{"
-                    Comment@54..55
-                      WHITESPACE@54..55 " "
-                    RecordField@55..59
-                      LabelName@55..56
+                    RecordField@54..59
+                      LabelName@54..56
+                        Annotation@54..55
+                          TEXT@54..55 " "
                         LOWER@55..56 "x"
                       COLON@56..57 ":"
-                      Comment@57..58
-                        WHITESPACE@57..58 " "
-                      ExpressionInteger@58..59
+                      ExpressionInteger@57..59
+                        Annotation@57..58
+                          TEXT@57..58 " "
                         INTEGER@58..59 "0"
                     COMMA@59..60 ","
-                    Comment@60..61
-                      WHITESPACE@60..61 " "
-                    RecordField@61..66
-                      LabelName@61..62
+                    RecordField@60..65
+                      LabelName@60..62
+                        Annotation@60..61
+                          TEXT@60..61 " "
                         LOWER@61..62 "y"
                       COLON@62..63 ":"
-                      Comment@63..64
-                        WHITESPACE@63..64 " "
-                      ExpressionInteger@64..66
+                      ExpressionInteger@63..65
+                        Annotation@63..64
+                          TEXT@63..64 " "
                         INTEGER@64..65 "1"
-                        Comment@65..66
-                          WHITESPACE@65..66 " "
+                    Annotation@65..66
+                      TEXT@65..66 " "
                     RIGHT_CURLY@66..67 "}"
-                    Comment@67..68
-                      WHITESPACE@67..68 "\n"
-      LAYOUT_END@68..68 ""
+      LAYOUT_END@67..67 ""
+      Annotation@67..68
+        TEXT@67..68 "\n"
       END_OF_FILE@68..68 ""
     ,
     [],

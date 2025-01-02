@@ -5,36 +5,36 @@ snapshot_kind: text
 ---
 (
     Module@0..44
-      ModuleHeader@0..32
+      ModuleHeader@0..30
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..25
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..24 "ExpressionSection"
-          Comment@24..25
-            WHITESPACE@24..25 " "
-        ModuleExportList@25..25
+        ModuleExportList@24..24
+        Annotation@24..25
+          TEXT@24..25 " "
         WHERE@25..30 "where"
-        Comment@30..32
-          WHITESPACE@30..32 "\n\n"
-      LAYOUT_START@32..32 ""
-      ModuleImports@32..32
-      ModuleStatements@32..44
-        ValueEquation@32..44
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..30
+      ModuleStatements@30..43
+        ValueEquation@30..43
+          Annotation@30..32
+            TEXT@30..32 "\n\n"
           LOWER@32..39 "section"
-          Comment@39..40
-            WHITESPACE@39..40 " "
-          FunctionBinders@40..40
-          Unconditional@40..44
+          FunctionBinders@39..39
+          Unconditional@39..43
+            Annotation@39..40
+              TEXT@39..40 " "
             EQUAL@40..41 "="
-            Comment@41..42
-              WHITESPACE@41..42 " "
-            WhereExpression@42..44
-              ExpressionSection@42..44
+            WhereExpression@41..43
+              ExpressionSection@41..43
+                Annotation@41..42
+                  TEXT@41..42 " "
                 UNDERSCORE@42..43 "_"
-                Comment@43..44
-                  WHITESPACE@43..44 "\n"
-      LAYOUT_END@44..44 ""
+      LAYOUT_END@43..43 ""
+      Annotation@43..44
+        TEXT@43..44 "\n"
       END_OF_FILE@44..44 ""
     ,
     [],

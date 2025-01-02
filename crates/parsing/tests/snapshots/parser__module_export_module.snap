@@ -5,32 +5,32 @@ snapshot_kind: text
 ---
 (
     Module@0..49
-      ModuleHeader@0..49
+      ModuleHeader@0..48
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..26
+        ModuleName@6..25
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..25 "ModuleExportModule"
-          Comment@25..26
-            WHITESPACE@25..26 " "
-        ModuleExportList@26..43
+        ModuleExportList@25..42
+          Annotation@25..26
+            TEXT@25..26 " "
           LEFT_PARENTHESIS@26..27 "("
           ModuleExportModule@27..41
             MODULE@27..33 "module"
-            Comment@33..34
-              WHITESPACE@33..34 " "
-            ModuleName@34..41
+            ModuleName@33..41
+              Annotation@33..34
+                TEXT@33..34 " "
               UPPER@34..41 "Exports"
           RIGHT_PARENTHESIS@41..42 ")"
-          Comment@42..43
-            WHITESPACE@42..43 " "
+        Annotation@42..43
+          TEXT@42..43 " "
         WHERE@43..48 "where"
-        Comment@48..49
-          WHITESPACE@48..49 "\n"
-      LAYOUT_START@49..49 ""
-      ModuleImports@49..49
-      ModuleStatements@49..49
-      LAYOUT_END@49..49 ""
+      LAYOUT_START@48..48 ""
+      ModuleImports@48..48
+      ModuleStatements@48..48
+      LAYOUT_END@48..48 ""
+      Annotation@48..49
+        TEXT@48..49 "\n"
       END_OF_FILE@49..49 ""
     ,
     [],

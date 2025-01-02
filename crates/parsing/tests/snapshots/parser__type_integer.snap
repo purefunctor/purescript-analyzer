@@ -5,46 +5,46 @@ snapshot_kind: text
 ---
 (
     Module@0..55
-      ModuleHeader@0..26
+      ModuleHeader@0..24
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..19
+        ModuleName@6..18
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..18 "TypeInteger"
-          Comment@18..19
-            WHITESPACE@18..19 " "
-        ModuleExportList@19..19
+        ModuleExportList@18..18
+        Annotation@18..19
+          TEXT@18..19 " "
         WHERE@19..24 "where"
-        Comment@24..26
-          WHITESPACE@24..26 "\n\n"
-      LAYOUT_START@26..26 ""
-      ModuleImports@26..26
-      ModuleStatements@26..55
-        ValueSignature@26..41
+      LAYOUT_START@24..24 ""
+      ModuleImports@24..24
+      ModuleStatements@24..54
+        ValueSignature@24..40
+          Annotation@24..26
+            TEXT@24..26 "\n\n"
           LOWER@26..33 "integer"
-          Comment@33..34
-            WHITESPACE@33..34 " "
+          Annotation@33..34
+            TEXT@33..34 " "
           DOUBLE_COLON@34..36 "::"
-          Comment@36..37
-            WHITESPACE@36..37 " "
-          TypeInteger@37..41
+          TypeInteger@36..40
+            Annotation@36..37
+              TEXT@36..37 " "
             INTEGER@37..40 "123"
-            Comment@40..41
-              WHITESPACE@40..41 "\n"
-        LAYOUT_SEPARATOR@41..41 ""
-        ValueSignature@41..55
+        LAYOUT_SEPARATOR@40..40 ""
+        ValueSignature@40..54
+          Annotation@40..41
+            TEXT@40..41 "\n"
           LOWER@41..48 "negated"
-          Comment@48..49
-            WHITESPACE@48..49 " "
+          Annotation@48..49
+            TEXT@48..49 " "
           DOUBLE_COLON@49..51 "::"
-          Comment@51..52
-            WHITESPACE@51..52 " "
-          TypeInteger@52..55
+          TypeInteger@51..54
+            Annotation@51..52
+              TEXT@51..52 " "
             MINUS@52..53 "-"
             INTEGER@53..54 "1"
-            Comment@54..55
-              WHITESPACE@54..55 "\n"
-      LAYOUT_END@55..55 ""
+      LAYOUT_END@54..54 ""
+      Annotation@54..55
+        TEXT@54..55 "\n"
       END_OF_FILE@55..55 ""
     ,
     [],

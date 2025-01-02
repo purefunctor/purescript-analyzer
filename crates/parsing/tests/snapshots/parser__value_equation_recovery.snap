@@ -5,147 +5,147 @@ snapshot_kind: text
 ---
 (
     Module@0..133
-      ModuleHeader@0..36
+      ModuleHeader@0..34
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..29
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..28 "ValueEquationRecovery"
-          Comment@28..29
-            WHITESPACE@28..29 " "
-        ModuleExportList@29..29
+        ModuleExportList@28..28
+        Annotation@28..29
+          TEXT@28..29 " "
         WHERE@29..34 "where"
-        Comment@34..36
-          WHITESPACE@34..36 "\n\n"
-      LAYOUT_START@36..36 ""
-      ModuleImports@36..36
-      ModuleStatements@36..133
-        ValueEquation@36..46
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..132
+        ValueEquation@34..45
+          Annotation@34..36
+            TEXT@34..36 "\n\n"
           LOWER@36..40 "pass"
-          Comment@40..41
-            WHITESPACE@40..41 " "
-          FunctionBinders@41..41
-          Unconditional@41..46
+          FunctionBinders@40..40
+          Unconditional@40..45
+            Annotation@40..41
+              TEXT@40..41 " "
             EQUAL@41..42 "="
-            Comment@42..43
-              WHITESPACE@42..43 " "
-            WhereExpression@43..46
-              ExpressionInteger@43..46
+            WhereExpression@42..45
+              ExpressionInteger@42..45
+                Annotation@42..43
+                  TEXT@42..43 " "
                 INTEGER@43..45 "21"
-                Comment@45..46
-                  WHITESPACE@45..46 "\n"
-        LAYOUT_SEPARATOR@46..46 ""
-        ValueEquation@46..53
+        LAYOUT_SEPARATOR@45..45 ""
+        ValueEquation@45..52
+          Annotation@45..46
+            TEXT@45..46 "\n"
           LOWER@46..50 "fail"
-          Comment@50..51
-            WHITESPACE@50..51 " "
-          FunctionBinders@51..51
-          Unconditional@51..53
+          FunctionBinders@50..50
+          Unconditional@50..52
+            Annotation@50..51
+              TEXT@50..51 " "
             EQUAL@51..52 "="
-            Comment@52..53
-              WHITESPACE@52..53 " "
-            WhereExpression@53..53
-        ERROR@53..60
-          ERROR@53..53 ""
+            WhereExpression@52..52
+        ERROR@52..59
+          ERROR@52..52 ""
+          Annotation@52..53
+            TEXT@52..53 " "
           MODULE@53..59 "module"
-          Comment@59..60
-            WHITESPACE@59..60 "\n"
-        LAYOUT_SEPARATOR@60..60 ""
-        ValueEquation@60..71
+        LAYOUT_SEPARATOR@59..59 ""
+        ValueEquation@59..69
+          Annotation@59..60
+            TEXT@59..60 "\n"
           LOWER@60..64 "pass"
-          Comment@64..65
-            WHITESPACE@64..65 " "
-          FunctionBinders@65..65
-          Unconditional@65..71
+          FunctionBinders@64..64
+          Unconditional@64..69
+            Annotation@64..65
+              TEXT@64..65 " "
             EQUAL@65..66 "="
-            Comment@66..67
-              WHITESPACE@66..67 " "
-            WhereExpression@67..71
-              ExpressionInteger@67..71
+            WhereExpression@66..69
+              ExpressionInteger@66..69
+                Annotation@66..67
+                  TEXT@66..67 " "
                 INTEGER@67..69 "42"
-                Comment@69..71
-                  WHITESPACE@69..71 "\n\n"
-        LAYOUT_SEPARATOR@71..71 ""
-        ValueEquation@71..133
+        LAYOUT_SEPARATOR@69..69 ""
+        ValueEquation@69..132
+          Annotation@69..71
+            TEXT@69..71 "\n\n"
           LOWER@71..79 "bindings"
-          Comment@79..80
-            WHITESPACE@79..80 " "
-          FunctionBinders@80..80
-          Unconditional@80..133
+          FunctionBinders@79..79
+          Unconditional@79..132
+            Annotation@79..80
+              TEXT@79..80 " "
             EQUAL@80..81 "="
-            Comment@81..82
-              WHITESPACE@81..82 " "
-            WhereExpression@82..133
-              ExpressionInteger@82..87
+            WhereExpression@81..132
+              ExpressionInteger@81..84
+                Annotation@81..82
+                  TEXT@81..82 " "
                 INTEGER@82..84 "42"
-                Comment@84..87
-                  WHITESPACE@84..87 "\n  "
+              Annotation@84..87
+                TEXT@84..87 "\n  "
               WHERE@87..92 "where"
-              Comment@92..95
-                WHITESPACE@92..95 "\n  "
-              LetBindingStatements@95..133
-                LAYOUT_START@95..95 ""
-                LetBindingEquation@95..107
+              LetBindingStatements@92..132
+                LAYOUT_START@92..92 ""
+                LetBindingEquation@92..104
+                  Annotation@92..95
+                    TEXT@92..95 "\n  "
                   LOWER@95..99 "pass"
-                  Comment@99..100
-                    WHITESPACE@99..100 " "
-                  FunctionBinders@100..100
-                  Unconditional@100..107
+                  FunctionBinders@99..99
+                  Unconditional@99..104
+                    Annotation@99..100
+                      TEXT@99..100 " "
                     EQUAL@100..101 "="
-                    Comment@101..102
-                      WHITESPACE@101..102 " "
-                    WhereExpression@102..107
-                      ExpressionInteger@102..107
+                    WhereExpression@101..104
+                      ExpressionInteger@101..104
+                        Annotation@101..102
+                          TEXT@101..102 " "
                         INTEGER@102..104 "21"
-                        Comment@104..107
-                          WHITESPACE@104..107 "\n  "
-                LAYOUT_SEPARATOR@107..107 ""
-                LetBindingEquation@107..114
+                LAYOUT_SEPARATOR@104..104 ""
+                LetBindingEquation@104..113
+                  Annotation@104..107
+                    TEXT@104..107 "\n  "
                   LOWER@107..111 "fail"
-                  Comment@111..112
-                    WHITESPACE@111..112 " "
-                  FunctionBinders@112..112
-                  Unconditional@112..114
+                  FunctionBinders@111..111
+                  Unconditional@111..113
+                    Annotation@111..112
+                      TEXT@111..112 " "
                     EQUAL@112..113 "="
-                    Comment@113..114
-                      WHITESPACE@113..114 " "
-                    WhereExpression@114..114
-                ERROR@114..123
-                  ERROR@114..114 ""
+                    WhereExpression@113..113
+                ERROR@113..120
+                  ERROR@113..113 ""
+                  Annotation@113..114
+                    TEXT@113..114 " "
                   MODULE@114..120 "module"
-                  Comment@120..123
-                    WHITESPACE@120..123 "\n  "
-                LAYOUT_SEPARATOR@123..123 ""
-                LetBindingEquation@123..133
+                LAYOUT_SEPARATOR@120..120 ""
+                LetBindingEquation@120..132
+                  Annotation@120..123
+                    TEXT@120..123 "\n  "
                   LOWER@123..127 "pass"
-                  Comment@127..128
-                    WHITESPACE@127..128 " "
-                  FunctionBinders@128..128
-                  Unconditional@128..133
+                  FunctionBinders@127..127
+                  Unconditional@127..132
+                    Annotation@127..128
+                      TEXT@127..128 " "
                     EQUAL@128..129 "="
-                    Comment@129..130
-                      WHITESPACE@129..130 " "
-                    WhereExpression@130..133
-                      ExpressionInteger@130..133
+                    WhereExpression@129..132
+                      ExpressionInteger@129..132
+                        Annotation@129..130
+                          TEXT@129..130 " "
                         INTEGER@130..132 "42"
-                        Comment@132..133
-                          WHITESPACE@132..133 "\n"
-                LAYOUT_END@133..133 ""
-      LAYOUT_END@133..133 ""
+                LAYOUT_END@132..132 ""
+      LAYOUT_END@132..132 ""
+      Annotation@132..133
+        TEXT@132..133 "\n"
       END_OF_FILE@133..133 ""
     ,
     [
         ParseError {
+            offset: 53,
             position: Position {
-                offset: 53,
                 line: 4,
                 column: 8,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 114,
             position: Position {
-                offset: 114,
                 line: 10,
                 column: 10,
             },

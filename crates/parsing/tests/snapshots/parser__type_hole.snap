@@ -5,33 +5,33 @@ snapshot_kind: text
 ---
 (
     Module@0..37
-      ModuleHeader@0..23
+      ModuleHeader@0..21
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..16
+        ModuleName@6..15
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..15 "TypeHole"
-          Comment@15..16
-            WHITESPACE@15..16 " "
-        ModuleExportList@16..16
+        ModuleExportList@15..15
+        Annotation@15..16
+          TEXT@15..16 " "
         WHERE@16..21 "where"
-        Comment@21..23
-          WHITESPACE@21..23 "\n\n"
-      LAYOUT_START@23..23 ""
-      ModuleImports@23..23
-      ModuleStatements@23..37
-        ValueSignature@23..37
+      LAYOUT_START@21..21 ""
+      ModuleImports@21..21
+      ModuleStatements@21..36
+        ValueSignature@21..36
+          Annotation@21..23
+            TEXT@21..23 "\n\n"
           LOWER@23..27 "hole"
-          Comment@27..28
-            WHITESPACE@27..28 " "
+          Annotation@27..28
+            TEXT@27..28 " "
           DOUBLE_COLON@28..30 "::"
-          Comment@30..31
-            WHITESPACE@30..31 " "
-          TypeHole@31..37
+          TypeHole@30..36
+            Annotation@30..31
+              TEXT@30..31 " "
             HOLE@31..36 "?hole"
-            Comment@36..37
-              WHITESPACE@36..37 "\n"
-      LAYOUT_END@37..37 ""
+      LAYOUT_END@36..36 ""
+      Annotation@36..37
+        TEXT@36..37 "\n"
       END_OF_FILE@37..37 ""
     ,
     [],

@@ -5,29 +5,24 @@ snapshot_kind: text
 ---
 (
     Module@0..51
-      ModuleHeader@0..51
+      ModuleHeader@0..50
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..34
-          Comment@7..17
-            BLOCK_COMMENT@7..16 "{- Pre -}"
-            WHITESPACE@16..17 " "
-          PREFIX@17..29 "Comment.Pre."
+        ModuleName@6..33
+          Annotation@6..17
+            TEXT@6..17 " {- Pre -} "
+          Qualifier@17..29
+            TEXT@17..29 "Comment.Pre."
           UPPER@29..33 "Post"
-          Comment@33..34
-            WHITESPACE@33..34 " "
-        ModuleExportList@34..45
-          Comment@34..45
-            BLOCK_COMMENT@34..44 "{- Post -}"
-            WHITESPACE@44..45 " "
+        ModuleExportList@33..33
+        Annotation@33..45
+          TEXT@33..45 " {- Post -} "
         WHERE@45..50 "where"
-        Comment@50..51
-          WHITESPACE@50..51 "\n"
-      LAYOUT_START@51..51 ""
-      ModuleImports@51..51
-      ModuleStatements@51..51
-      LAYOUT_END@51..51 ""
+      LAYOUT_START@50..50 ""
+      ModuleImports@50..50
+      ModuleStatements@50..50
+      LAYOUT_END@50..50 ""
+      Annotation@50..51
+        TEXT@50..51 "\n"
       END_OF_FILE@51..51 ""
     ,
     [],

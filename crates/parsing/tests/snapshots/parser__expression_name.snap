@@ -5,69 +5,69 @@ snapshot_kind: text
 ---
 (
     Module@0..64
-      ModuleHeader@0..29
+      ModuleHeader@0..27
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..22
+        ModuleName@6..21
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..21 "ExpressionName"
-          Comment@21..22
-            WHITESPACE@21..22 " "
-        ModuleExportList@22..22
+        ModuleExportList@21..21
+        Annotation@21..22
+          TEXT@21..22 " "
         WHERE@22..27 "where"
-        Comment@27..29
-          WHITESPACE@27..29 "\n\n"
-      LAYOUT_START@29..29 ""
-      ModuleImports@29..29
-      ModuleStatements@29..64
-        ValueEquation@29..41
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..63
+        ValueEquation@27..40
+          Annotation@27..29
+            TEXT@27..29 "\n\n"
           LOWER@29..33 "name"
-          Comment@33..34
-            WHITESPACE@33..34 " "
-          FunctionBinders@34..34
-          Unconditional@34..41
+          FunctionBinders@33..33
+          Unconditional@33..40
+            Annotation@33..34
+              TEXT@33..34 " "
             EQUAL@34..35 "="
-            Comment@35..36
-              WHITESPACE@35..36 " "
-            WhereExpression@36..41
-              ExpressionVariable@36..41
-                QualifiedName@36..41
+            WhereExpression@35..40
+              ExpressionVariable@35..40
+                QualifiedName@35..40
+                  Annotation@35..36
+                    TEXT@35..36 " "
                   LOWER@36..40 "head"
-                  Comment@40..41
-                    WHITESPACE@40..41 "\n"
-        LAYOUT_SEPARATOR@41..41 ""
-        ValueEquation@41..53
+        LAYOUT_SEPARATOR@40..40 ""
+        ValueEquation@40..52
+          Annotation@40..41
+            TEXT@40..41 "\n"
           LOWER@41..45 "name"
-          Comment@45..46
-            WHITESPACE@45..46 " "
-          FunctionBinders@46..46
-          Unconditional@46..53
+          FunctionBinders@45..45
+          Unconditional@45..52
+            Annotation@45..46
+              TEXT@45..46 " "
             EQUAL@46..47 "="
-            Comment@47..48
-              WHITESPACE@47..48 " "
-            WhereExpression@48..53
-              ExpressionConstructor@48..53
-                QualifiedName@48..53
+            WhereExpression@47..52
+              ExpressionConstructor@47..52
+                QualifiedName@47..52
+                  Annotation@47..48
+                    TEXT@47..48 " "
                   UPPER@48..52 "Cons"
-                  Comment@52..53
-                    WHITESPACE@52..53 "\n"
-        LAYOUT_SEPARATOR@53..53 ""
-        ValueEquation@53..64
+        LAYOUT_SEPARATOR@52..52 ""
+        ValueEquation@52..63
+          Annotation@52..53
+            TEXT@52..53 "\n"
           LOWER@53..57 "name"
-          Comment@57..58
-            WHITESPACE@57..58 " "
-          FunctionBinders@58..58
-          Unconditional@58..64
+          FunctionBinders@57..57
+          Unconditional@57..63
+            Annotation@57..58
+              TEXT@57..58 " "
             EQUAL@58..59 "="
-            Comment@59..60
-              WHITESPACE@59..60 " "
-            WhereExpression@60..64
-              ExpressionOperatorName@60..64
-                QualifiedName@60..64
+            WhereExpression@59..63
+              ExpressionOperatorName@59..63
+                QualifiedName@59..63
+                  Annotation@59..60
+                    TEXT@59..60 " "
                   OPERATOR_NAME@60..63 "(:)"
-                  Comment@63..64
-                    WHITESPACE@63..64 "\n"
-      LAYOUT_END@64..64 ""
+      LAYOUT_END@63..63 ""
+      Annotation@63..64
+        TEXT@63..64 "\n"
       END_OF_FILE@64..64 ""
     ,
     [],

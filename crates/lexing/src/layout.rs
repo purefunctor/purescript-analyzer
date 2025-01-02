@@ -58,7 +58,7 @@ impl<'s> Layout<'s> {
     }
 
     pub(super) fn is_eof(&self) -> bool {
-        self.lexed.kind(self.index).is_end()
+        self.lexed.kind(self.index) == SyntaxKind::END_OF_FILE
     }
 
     pub(super) fn take_token(&mut self) {

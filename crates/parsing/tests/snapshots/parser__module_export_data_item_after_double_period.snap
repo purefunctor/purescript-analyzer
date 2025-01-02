@@ -5,15 +5,15 @@ snapshot_kind: text
 ---
 (
     Module@0..70
-      ModuleHeader@0..70
+      ModuleHeader@0..69
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..45
+        ModuleName@6..44
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..44 "ModuleExportDataItemA ..."
-          Comment@44..45
-            WHITESPACE@44..45 " "
-        ModuleExportList@45..64
+        ModuleExportList@44..63
+          Annotation@44..45
+            TEXT@44..45 " "
           LEFT_PARENTHESIS@45..46 "("
           ModuleExportType@46..62
             UPPER@46..50 "List"
@@ -22,37 +22,37 @@ snapshot_kind: text
               ERROR@51..53
                 ERROR@51..51 ""
                 DOUBLE_PERIOD@51..53 ".."
-              ERROR@53..55
+              ERROR@53..54
                 ERROR@53..53 ""
                 COMMA@53..54 ","
-                Comment@54..55
-                  WHITESPACE@54..55 " "
+              Annotation@54..55
+                TEXT@54..55 " "
               UPPER@55..61 "Period"
               RIGHT_PARENTHESIS@61..62 ")"
           RIGHT_PARENTHESIS@62..63 ")"
-          Comment@63..64
-            WHITESPACE@63..64 " "
+        Annotation@63..64
+          TEXT@63..64 " "
         WHERE@64..69 "where"
-        Comment@69..70
-          WHITESPACE@69..70 "\n"
-      LAYOUT_START@70..70 ""
-      ModuleImports@70..70
-      ModuleStatements@70..70
-      LAYOUT_END@70..70 ""
+      LAYOUT_START@69..69 ""
+      ModuleImports@69..69
+      ModuleStatements@69..69
+      LAYOUT_END@69..69 ""
+      Annotation@69..70
+        TEXT@69..70 "\n"
       END_OF_FILE@70..70 ""
     ,
     [
         ParseError {
+            offset: 51,
             position: Position {
-                offset: 51,
                 line: 1,
                 column: 52,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 53,
             position: Position {
-                offset: 53,
                 line: 1,
                 column: 54,
             },

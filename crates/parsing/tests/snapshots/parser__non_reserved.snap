@@ -5,58 +5,58 @@ snapshot_kind: text
 ---
 (
     Module@0..66
-      ModuleHeader@0..39
+      ModuleHeader@0..37
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..19
+        ModuleName@6..18
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..18 "NonReserved"
-          Comment@18..19
-            WHITESPACE@18..19 " "
-        ModuleExportList@19..32
+        ModuleExportList@18..31
+          Annotation@18..19
+            TEXT@18..19 " "
           LEFT_PARENTHESIS@19..20 "("
           ModuleExportValue@20..26
             LOWER@20..26 "hiding"
           COMMA@26..27 ","
-          Comment@27..28
-            WHITESPACE@27..28 " "
-          ModuleExportValue@28..30
+          ModuleExportValue@27..30
+            Annotation@27..28
+              TEXT@27..28 " "
             LOWER@28..30 "as"
           RIGHT_PARENTHESIS@30..31 ")"
-          Comment@31..32
-            WHITESPACE@31..32 " "
+        Annotation@31..32
+          TEXT@31..32 " "
         WHERE@32..37 "where"
-        Comment@37..39
-          WHITESPACE@37..39 "\n\n"
-      LAYOUT_START@39..39 ""
-      ModuleImports@39..39
-      ModuleStatements@39..66
-        ValueSignature@39..57
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..65
+        ValueSignature@37..55
+          Annotation@37..39
+            TEXT@37..39 "\n\n"
           LOWER@39..45 "hiding"
-          Comment@45..46
-            WHITESPACE@45..46 " "
+          Annotation@45..46
+            TEXT@45..46 " "
           DOUBLE_COLON@46..48 "::"
-          Comment@48..49
-            WHITESPACE@48..49 " "
-          TypeConstructor@49..57
-            QualifiedName@49..57
+          TypeConstructor@48..55
+            QualifiedName@48..55
+              Annotation@48..49
+                TEXT@48..49 " "
               UPPER@49..55 "Hiding"
-              Comment@55..57
-                WHITESPACE@55..57 "\n\n"
-        LAYOUT_SEPARATOR@57..57 ""
-        ValueSignature@57..66
+        LAYOUT_SEPARATOR@55..55 ""
+        ValueSignature@55..65
+          Annotation@55..57
+            TEXT@55..57 "\n\n"
           LOWER@57..59 "as"
-          Comment@59..60
-            WHITESPACE@59..60 " "
+          Annotation@59..60
+            TEXT@59..60 " "
           DOUBLE_COLON@60..62 "::"
-          Comment@62..63
-            WHITESPACE@62..63 " "
-          TypeConstructor@63..66
-            QualifiedName@63..66
+          TypeConstructor@62..65
+            QualifiedName@62..65
+              Annotation@62..63
+                TEXT@62..63 " "
               UPPER@63..65 "As"
-              Comment@65..66
-                WHITESPACE@65..66 "\n"
-      LAYOUT_END@66..66 ""
+      LAYOUT_END@65..65 ""
+      Annotation@65..66
+        TEXT@65..66 "\n"
       END_OF_FILE@66..66 ""
     ,
     [],

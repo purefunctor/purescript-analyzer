@@ -19,7 +19,7 @@ fn expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_2(p);
-    while names::at_operator(p) && !p.at_eof() {
+    while p.at_in(names::OPERATOR) && !p.at_eof() {
         names::operator(p);
         expression_2(p);
         i += 1;
@@ -63,7 +63,7 @@ fn tick_expression_1(p: &mut Parser) {
     let mut i = 0;
 
     expression_3(p);
-    while names::at_operator(p) && !p.at_eof() {
+    while p.at_in(names::OPERATOR) && !p.at_eof() {
         names::operator(p);
         expression_3(p);
         i += 1;
@@ -106,13 +106,7 @@ fn expression_4(p: &mut Parser) {
 }
 
 fn at_argument(p: &Parser) -> bool {
-    if p.at(SyntaxKind::AT) {
-        true
-    } else if p.at(SyntaxKind::PREFIX) {
-        EXPRESSION_START.contains(p.nth(1))
-    } else {
-        EXPRESSION_START.contains(p.nth(0))
-    }
+    p.at(SyntaxKind::AT) || p.at_in(EXPRESSION_START)
 }
 
 fn expression_argument(p: &mut Parser) {
@@ -140,10 +134,6 @@ fn expression_5(p: &mut Parser) {
     } else if p.at(SyntaxKind::DO) {
         expression_do(p, m);
     } else if p.at(SyntaxKind::ADO) {
-        expression_ado(p, m);
-    } else if p.at(SyntaxKind::PREFIX) && p.at_next(SyntaxKind::DO) {
-        expression_do(p, m);
-    } else if p.at(SyntaxKind::PREFIX) && p.at_next(SyntaxKind::ADO) {
         expression_ado(p, m);
     } else if p.at_in(EXPRESSION_ATOM_START) {
         expression_6(p);
@@ -261,7 +251,6 @@ const DO_STATEMENT_START: TokenSet =
     TokenSet::new(&[SyntaxKind::LET]).union(EXPRESSION_START).union(binders::BINDER_START);
 
 fn expression_do(p: &mut Parser, mut m: NodeMarker) {
-    p.eat(SyntaxKind::PREFIX);
     p.expect(SyntaxKind::DO);
     do_statements(p);
     m.end(p, SyntaxKind::ExpressionDo);
@@ -314,7 +303,6 @@ fn do_statement_discard(p: &mut Parser) {
 }
 
 fn expression_ado(p: &mut Parser, mut m: NodeMarker) {
-    p.eat(SyntaxKind::PREFIX);
     p.expect(SyntaxKind::ADO);
     do_statements(p);
     p.expect(SyntaxKind::IN);
@@ -397,21 +385,6 @@ fn expression_7(p: &mut Parser) {
 fn expression_atom(p: &mut Parser) {
     let mut m = p.start();
 
-    let mut n = p.start();
-    if p.eat(SyntaxKind::PREFIX) {
-        if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
-            m.end(p, SyntaxKind::ExpressionVariable);
-        } else if p.eat(SyntaxKind::UPPER) {
-            m.end(p, SyntaxKind::ExpressionConstructor);
-        } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
-            m.end(p, SyntaxKind::ExpressionOperatorName);
-        } else {
-            m.cancel(p);
-        }
-        return n.end(p, SyntaxKind::QualifiedName);
-    };
-    n.cancel(p);
-
     if p.at_in(names::LOWER) {
         names::lower(p);
         m.end(p, SyntaxKind::ExpressionVariable);
@@ -491,7 +464,6 @@ fn expression_record(p: &mut Parser, mut m: NodeMarker) {
 }
 
 const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::PREFIX,
     SyntaxKind::UPPER,
     SyntaxKind::UNDERSCORE,
     SyntaxKind::HOLE,

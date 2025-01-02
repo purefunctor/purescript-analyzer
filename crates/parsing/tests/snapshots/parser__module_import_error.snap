@@ -5,56 +5,58 @@ snapshot_kind: text
 ---
 (
     Module@0..243
-      ModuleHeader@0..32
+      ModuleHeader@0..30
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..25
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..24 "ModuleImportError"
-          Comment@24..25
-            WHITESPACE@24..25 " "
-        ModuleExportList@25..25
+        ModuleExportList@24..24
+        Annotation@24..25
+          TEXT@24..25 " "
         WHERE@25..30 "where"
-        Comment@30..32
-          WHITESPACE@30..32 "\n\n"
-      LAYOUT_START@32..32 ""
-      ModuleImports@32..243
-        ImportStatement@32..39
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..242
+        ImportStatement@30..38
+          Annotation@30..32
+            TEXT@30..32 "\n\n"
           IMPORT@32..38 "import"
-          Comment@38..39
-            WHITESPACE@38..39 " "
-          ModuleName@39..39
-            ERROR@39..39 ""
-          ImportList@39..39
-          ImportAlias@39..39
-        ERROR@39..47
-          ERROR@39..39 ""
+          ModuleName@38..38
+            ERROR@38..38 ""
+          ImportList@38..38
+          ImportAlias@38..38
+        ERROR@38..46
+          ERROR@38..38 ""
+          Annotation@38..39
+            TEXT@38..39 " "
           LOWER@39..46 "prelude"
-          Comment@46..47
-            WHITESPACE@46..47 "\n"
-        LAYOUT_SEPARATOR@47..47 ""
-        ImportStatement@47..64
+        LAYOUT_SEPARATOR@46..46 ""
+        ImportStatement@46..63
+          Annotation@46..47
+            TEXT@46..47 "\n"
           IMPORT@47..53 "import"
-          Comment@53..54
-            WHITESPACE@53..54 " "
-          ModuleName@54..64
-            PREFIX@54..59 "Data."
+          ModuleName@53..63
+            Annotation@53..54
+              TEXT@53..54 " "
+            Qualifier@54..59
+              TEXT@54..59 "Data."
             UPPER@59..63 "List"
-            Comment@63..64
-              WHITESPACE@63..64 "\n"
-          ImportList@64..64
-          ImportAlias@64..64
-        LAYOUT_SEPARATOR@64..64 ""
-        ImportStatement@64..99
+          ImportList@63..63
+          ImportAlias@63..63
+        LAYOUT_SEPARATOR@63..63 ""
+        ImportStatement@63..98
+          Annotation@63..64
+            TEXT@63..64 "\n"
           IMPORT@64..70 "import"
-          Comment@70..71
-            WHITESPACE@70..71 " "
-          ModuleName@71..81
-            PREFIX@71..76 "Data."
+          ModuleName@70..80
+            Annotation@70..71
+              TEXT@70..71 " "
+            Qualifier@71..76
+              TEXT@71..76 "Data."
             UPPER@76..80 "List"
-            Comment@80..81
-              WHITESPACE@80..81 " "
-          ImportList@81..99
+          ImportList@80..98
+            Annotation@80..81
+              TEXT@80..81 " "
             LEFT_PARENTHESIS@81..82 "("
             ImportType@82..97
               UPPER@82..86 "List"
@@ -63,30 +65,31 @@ snapshot_kind: text
                 ERROR@87..91
                   ERROR@87..87 ""
                   LOWER@87..91 "cons"
-                ERROR@91..93
+                ERROR@91..92
                   ERROR@91..91 ""
                   COMMA@91..92 ","
-                  Comment@92..93
-                    WHITESPACE@92..93 " "
-                ERROR@93..96
-                  ERROR@93..93 ""
+                ERROR@92..96
+                  ERROR@92..92 ""
+                  Annotation@92..93
+                    TEXT@92..93 " "
                   LOWER@93..96 "nil"
                 RIGHT_PARENTHESIS@96..97 ")"
             RIGHT_PARENTHESIS@97..98 ")"
-            Comment@98..99
-              WHITESPACE@98..99 "\n"
-          ImportAlias@99..99
-        LAYOUT_SEPARATOR@99..99 ""
-        ImportStatement@99..133
+          ImportAlias@98..98
+        LAYOUT_SEPARATOR@98..98 ""
+        ImportStatement@98..132
+          Annotation@98..99
+            TEXT@98..99 "\n"
           IMPORT@99..105 "import"
-          Comment@105..106
-            WHITESPACE@105..106 " "
-          ModuleName@106..116
-            PREFIX@106..111 "Data."
+          ModuleName@105..115
+            Annotation@105..106
+              TEXT@105..106 " "
+            Qualifier@106..111
+              TEXT@106..111 "Data."
             UPPER@111..115 "List"
-            Comment@115..116
-              WHITESPACE@115..116 " "
-          ImportList@116..133
+          ImportList@115..132
+            Annotation@115..116
+              TEXT@115..116 " "
             LEFT_PARENTHESIS@116..117 "("
             ImportType@117..131
               UPPER@117..121 "List"
@@ -94,27 +97,28 @@ snapshot_kind: text
                 LEFT_PARENTHESIS@121..122 "("
                 UPPER@122..126 "Cons"
                 COMMA@126..127 ","
-                Comment@127..128
-                  WHITESPACE@127..128 " "
-                ERROR@128..130
-                  ERROR@128..128 ""
+                ERROR@127..130
+                  ERROR@127..127 ""
+                  Annotation@127..128
+                    TEXT@127..128 " "
                   DOUBLE_PERIOD@128..130 ".."
                 RIGHT_PARENTHESIS@130..131 ")"
             RIGHT_PARENTHESIS@131..132 ")"
-            Comment@132..133
-              WHITESPACE@132..133 "\n"
-          ImportAlias@133..133
-        LAYOUT_SEPARATOR@133..133 ""
-        ImportStatement@133..167
+          ImportAlias@132..132
+        LAYOUT_SEPARATOR@132..132 ""
+        ImportStatement@132..166
+          Annotation@132..133
+            TEXT@132..133 "\n"
           IMPORT@133..139 "import"
-          Comment@139..140
-            WHITESPACE@139..140 " "
-          ModuleName@140..150
-            PREFIX@140..145 "Data."
+          ModuleName@139..149
+            Annotation@139..140
+              TEXT@139..140 " "
+            Qualifier@140..145
+              TEXT@140..145 "Data."
             UPPER@145..149 "List"
-            Comment@149..150
-              WHITESPACE@149..150 " "
-          ImportList@150..167
+          ImportList@149..166
+            Annotation@149..150
+              TEXT@149..150 " "
             LEFT_PARENTHESIS@150..151 "("
             ImportType@151..165
               UPPER@151..155 "List"
@@ -123,171 +127,165 @@ snapshot_kind: text
                 ERROR@156..158
                   ERROR@156..156 ""
                   DOUBLE_PERIOD@156..158 ".."
-                ERROR@158..160
+                ERROR@158..159
                   ERROR@158..158 ""
                   COMMA@158..159 ","
-                  Comment@159..160
-                    WHITESPACE@159..160 " "
+                Annotation@159..160
+                  TEXT@159..160 " "
                 UPPER@160..164 "Cons"
                 RIGHT_PARENTHESIS@164..165 ")"
             RIGHT_PARENTHESIS@165..166 ")"
-            Comment@166..167
-              WHITESPACE@166..167 "\n"
-          ImportAlias@167..167
-        LAYOUT_SEPARATOR@167..167 ""
-        ImportStatement@167..190
+          ImportAlias@166..166
+        LAYOUT_SEPARATOR@166..166 ""
+        ImportStatement@166..189
+          Annotation@166..167
+            TEXT@166..167 "\n"
           IMPORT@167..173 "import"
-          Comment@173..174
-            WHITESPACE@173..174 " "
-          ModuleName@174..184
-            PREFIX@174..179 "Data."
+          ModuleName@173..183
+            Annotation@173..174
+              TEXT@173..174 " "
+            Qualifier@174..179
+              TEXT@174..179 "Data."
             UPPER@179..183 "List"
-            Comment@183..184
-              WHITESPACE@183..184 " "
-          ImportList@184..190
+          ImportList@183..189
+            Annotation@183..184
+              TEXT@183..184 " "
             LEFT_PARENTHESIS@184..185 "("
             ERROR@185..188
               ERROR@185..185 ""
               INTEGER@185..188 "123"
             RIGHT_PARENTHESIS@188..189 ")"
-            Comment@189..190
-              WHITESPACE@189..190 "\n"
-          ImportAlias@190..190
-        LAYOUT_SEPARATOR@190..190 ""
-        ImportStatement@190..207
+          ImportAlias@189..189
+        LAYOUT_SEPARATOR@189..189 ""
+        ImportStatement@189..206
+          Annotation@189..190
+            TEXT@189..190 "\n"
           IMPORT@190..196 "import"
-          Comment@196..197
-            WHITESPACE@196..197 " "
-          ModuleName@197..207
-            PREFIX@197..202 "Data."
+          ModuleName@196..206
+            Annotation@196..197
+              TEXT@196..197 " "
+            Qualifier@197..202
+              TEXT@197..202 "Data."
             UPPER@202..206 "List"
-            Comment@206..207
-              WHITESPACE@206..207 " "
-          ImportList@207..207
-          ImportAlias@207..207
-        ERROR@207..209
-          ERROR@207..207 ""
+          ImportList@206..206
+          ImportAlias@206..206
+        ERROR@206..208
+          ERROR@206..206 ""
+          Annotation@206..207
+            TEXT@206..207 " "
           LOWER@207..208 "s"
-          Comment@208..209
-            WHITESPACE@208..209 " "
-        ERROR@209..214
-          ERROR@209..209 ""
-          PREFIX@209..214 "Data."
-        ERROR@214..219
-          ERROR@214..214 ""
+        ERROR@208..218
+          ERROR@208..208 ""
+          Annotation@208..209
+            TEXT@208..209 " "
+          Qualifier@209..214
+            TEXT@209..214 "Data."
           UPPER@214..218 "List"
-          Comment@218..219
-            WHITESPACE@218..219 "\n"
-        LAYOUT_SEPARATOR@219..219 ""
-        ImportStatement@219..243
+        LAYOUT_SEPARATOR@218..218 ""
+        ImportStatement@218..242
+          Annotation@218..219
+            TEXT@218..219 "\n"
           IMPORT@219..225 "import"
-          Comment@225..226
-            WHITESPACE@225..226 " "
-          ModuleName@226..243
-            PREFIX@226..236 "Recovered."
+          ModuleName@225..242
+            Annotation@225..226
+              TEXT@225..226 " "
+            Qualifier@226..236
+              TEXT@226..236 "Recovered."
             UPPER@236..242 "Import"
-            Comment@242..243
-              WHITESPACE@242..243 "\n"
-          ImportList@243..243
-          ImportAlias@243..243
-      ModuleStatements@243..243
-      LAYOUT_END@243..243 ""
+          ImportList@242..242
+          ImportAlias@242..242
+      ModuleStatements@242..242
+      LAYOUT_END@242..242 ""
+      Annotation@242..243
+        TEXT@242..243 "\n"
       END_OF_FILE@243..243 ""
     ,
     [
         ParseError {
+            offset: 39,
             position: Position {
-                offset: 39,
                 line: 3,
                 column: 8,
             },
             message: "expected UPPER",
         },
         ParseError {
+            offset: 39,
             position: Position {
-                offset: 39,
                 line: 3,
                 column: 8,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 87,
             position: Position {
-                offset: 87,
                 line: 5,
                 column: 24,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 91,
             position: Position {
-                offset: 91,
                 line: 5,
                 column: 28,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 93,
             position: Position {
-                offset: 93,
                 line: 5,
                 column: 30,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 128,
             position: Position {
-                offset: 128,
                 line: 6,
                 column: 30,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 156,
             position: Position {
-                offset: 156,
                 line: 7,
                 column: 24,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 158,
             position: Position {
-                offset: 158,
                 line: 7,
                 column: 26,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 185,
             position: Position {
-                offset: 185,
                 line: 8,
                 column: 19,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 207,
             position: Position {
-                offset: 207,
                 line: 9,
                 column: 18,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 214,
             position: Position {
-                offset: 209,
                 line: 9,
                 column: 20,
-            },
-            message: "Invalid token",
-        },
-        ParseError {
-            position: Position {
-                offset: 214,
-                line: 9,
-                column: 25,
             },
             message: "Invalid token",
         },

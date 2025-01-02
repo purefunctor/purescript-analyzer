@@ -5,37 +5,37 @@ snapshot_kind: text
 ---
 (
     Module@0..52
-      ModuleHeader@0..31
+      ModuleHeader@0..29
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..24
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..23 "NewtypeSignature"
-          Comment@23..24
-            WHITESPACE@23..24 " "
-        ModuleExportList@24..24
+        ModuleExportList@23..23
+        Annotation@23..24
+          TEXT@23..24 " "
         WHERE@24..29 "where"
-        Comment@29..31
-          WHITESPACE@29..31 "\n\n"
-      LAYOUT_START@31..31 ""
-      ModuleImports@31..31
-      ModuleStatements@31..52
-        NewtypeSignature@31..52
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..51
+        NewtypeSignature@29..51
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
           NEWTYPE@31..38 "newtype"
-          Comment@38..39
-            WHITESPACE@38..39 " "
+          Annotation@38..39
+            TEXT@38..39 " "
           UPPER@39..43 "Year"
-          Comment@43..44
-            WHITESPACE@43..44 " "
+          Annotation@43..44
+            TEXT@43..44 " "
           DOUBLE_COLON@44..46 "::"
-          Comment@46..47
-            WHITESPACE@46..47 " "
-          TypeConstructor@47..52
-            QualifiedName@47..52
+          TypeConstructor@46..51
+            QualifiedName@46..51
+              Annotation@46..47
+                TEXT@46..47 " "
               UPPER@47..51 "Type"
-              Comment@51..52
-                WHITESPACE@51..52 "\n"
-      LAYOUT_END@52..52 ""
+      LAYOUT_END@51..51 ""
+      Annotation@51..52
+        TEXT@51..52 "\n"
       END_OF_FILE@52..52 ""
     ,
     [],

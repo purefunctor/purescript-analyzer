@@ -19,7 +19,8 @@ pub(super) fn binder_1(p: &mut Parser) {
     let mut i = 0;
 
     binder_2(p);
-    while names::operator(p) && !p.at_eof() {
+    while p.at_in(names::OPERATOR) && !p.at_eof() {
+        names::operator(p);
         binder_2(p);
         i += 1;
     }
@@ -46,7 +47,7 @@ fn binder_2(p: &mut Parser) {
             p.error("Expected INTEGER or NUMBER");
             m.end(p, SyntaxKind::BinderInteger);
         }
-    } else if p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER) {
+    } else if p.at(SyntaxKind::UPPER) {
         binder_constructor(p, m);
     } else if p.at_in(BINDER_ATOM_START) {
         binder_atom(p);
@@ -57,7 +58,6 @@ fn binder_2(p: &mut Parser) {
 }
 
 pub(super) const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
-    SyntaxKind::PREFIX,
     SyntaxKind::UPPER,
     SyntaxKind::UNDERSCORE,
     SyntaxKind::STRING,
@@ -80,7 +80,7 @@ pub(super) fn binder_atom(p: &mut Parser) {
     let mut m = p.start();
     if p.at_in(names::LOWER) {
         binder_named_or_variable(p, &mut m);
-    } else if at_binder_constructor(p) {
+    } else if p.at(SyntaxKind::UPPER) {
         binder_constructor(p, m);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::BinderWildcard);
@@ -125,10 +125,6 @@ fn binder_named_or_variable(p: &mut Parser, m: &mut NodeMarker) {
     } else {
         m.end(p, SyntaxKind::BinderVariable);
     }
-}
-
-fn at_binder_constructor(p: &Parser) -> bool {
-    p.at(SyntaxKind::PREFIX) || p.at(SyntaxKind::UPPER)
 }
 
 fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {

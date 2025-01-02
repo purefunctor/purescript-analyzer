@@ -5,100 +5,100 @@ snapshot_kind: text
 ---
 (
     Module@0..120
-      ModuleHeader@0..57
+      ModuleHeader@0..55
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..32
+        ModuleName@6..31
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..31 "DoublePeriodOperatorName"
-          Comment@31..32
-            WHITESPACE@31..32 " "
-        ModuleExportList@32..50
+        ModuleExportList@31..49
+          Annotation@31..32
+            TEXT@31..32 " "
           LEFT_PARENTHESIS@32..33 "("
           ModuleExportOperator@33..37
             OPERATOR_NAME@33..37 "(..)"
           COMMA@37..38 ","
-          Comment@38..39
-            WHITESPACE@38..39 " "
-          ModuleExportTypeOperator@39..48
+          ModuleExportTypeOperator@38..48
+            Annotation@38..39
+              TEXT@38..39 " "
             TYPE@39..43 "type"
-            Comment@43..44
-              WHITESPACE@43..44 " "
+            Annotation@43..44
+              TEXT@43..44 " "
             OPERATOR_NAME@44..48 "(..)"
           RIGHT_PARENTHESIS@48..49 ")"
-          Comment@49..50
-            WHITESPACE@49..50 " "
+        Annotation@49..50
+          TEXT@49..50 " "
         WHERE@50..55 "where"
-        Comment@55..57
-          WHITESPACE@55..57 "\n\n"
-      LAYOUT_START@57..57 ""
-      ModuleImports@57..90
-        ImportStatement@57..90
+      LAYOUT_START@55..55 ""
+      ModuleImports@55..88
+        ImportStatement@55..88
+          Annotation@55..57
+            TEXT@55..57 "\n\n"
           IMPORT@57..63 "import"
-          Comment@63..64
-            WHITESPACE@63..64 " "
-          ModuleName@64..71
+          ModuleName@63..70
+            Annotation@63..64
+              TEXT@63..64 " "
             UPPER@64..70 "Import"
-            Comment@70..71
-              WHITESPACE@70..71 " "
-          ImportList@71..90
+          ImportList@70..88
+            Annotation@70..71
+              TEXT@70..71 " "
             LEFT_PARENTHESIS@71..72 "("
             ImportOperator@72..76
               OPERATOR_NAME@72..76 "(..)"
             COMMA@76..77 ","
-            Comment@77..78
-              WHITESPACE@77..78 " "
-            ImportTypeOperator@78..87
+            ImportTypeOperator@77..87
+              Annotation@77..78
+                TEXT@77..78 " "
               TYPE@78..82 "type"
-              Comment@82..83
-                WHITESPACE@82..83 " "
+              Annotation@82..83
+                TEXT@82..83 " "
               OPERATOR_NAME@83..87 "(..)"
             RIGHT_PARENTHESIS@87..88 ")"
-            Comment@88..90
-              WHITESPACE@88..90 "\n\n"
-          ImportAlias@90..90
-        LAYOUT_SEPARATOR@90..90 ""
-      ModuleStatements@90..120
-        ValueEquation@90..102
+          ImportAlias@88..88
+        LAYOUT_SEPARATOR@88..88 ""
+      ModuleStatements@88..119
+        ValueEquation@88..101
+          Annotation@88..90
+            TEXT@88..90 "\n\n"
           LOWER@90..94 "name"
-          Comment@94..95
-            WHITESPACE@94..95 " "
-          FunctionBinders@95..95
-          Unconditional@95..102
+          FunctionBinders@94..94
+          Unconditional@94..101
+            Annotation@94..95
+              TEXT@94..95 " "
             EQUAL@95..96 "="
-            Comment@96..97
-              WHITESPACE@96..97 " "
-            WhereExpression@97..102
-              ExpressionOperatorName@97..102
-                QualifiedName@97..102
+            WhereExpression@96..101
+              ExpressionOperatorName@96..101
+                QualifiedName@96..101
+                  Annotation@96..97
+                    TEXT@96..97 " "
                   OPERATOR_NAME@97..101 "(..)"
-                  Comment@101..102
-                    WHITESPACE@101..102 "\n"
-        LAYOUT_SEPARATOR@102..102 ""
-        ValueEquation@102..120
+        LAYOUT_SEPARATOR@101..101 ""
+        ValueEquation@101..119
+          Annotation@101..102
+            TEXT@101..102 "\n"
           LOWER@102..110 "operator"
-          Comment@110..111
-            WHITESPACE@110..111 " "
-          FunctionBinders@111..111
-          Unconditional@111..120
+          FunctionBinders@110..110
+          Unconditional@110..119
+            Annotation@110..111
+              TEXT@110..111 " "
             EQUAL@111..112 "="
-            Comment@112..113
-              WHITESPACE@112..113 " "
-            WhereExpression@113..120
-              ExpressionOperatorChain@113..120
-                ExpressionInteger@113..115
+            WhereExpression@112..119
+              ExpressionOperatorChain@112..119
+                ExpressionInteger@112..114
+                  Annotation@112..113
+                    TEXT@112..113 " "
                   INTEGER@113..114 "1"
-                  Comment@114..115
-                    WHITESPACE@114..115 " "
-                QualifiedName@115..118
+                QualifiedName@114..117
+                  Annotation@114..115
+                    TEXT@114..115 " "
                   OPERATOR@115..117 ".."
-                  Comment@117..118
-                    WHITESPACE@117..118 " "
-                ExpressionInteger@118..120
+                ExpressionInteger@117..119
+                  Annotation@117..118
+                    TEXT@117..118 " "
                   INTEGER@118..119 "2"
-                  Comment@119..120
-                    WHITESPACE@119..120 "\n"
-      LAYOUT_END@120..120 ""
+      LAYOUT_END@119..119 ""
+      Annotation@119..120
+        TEXT@119..120 "\n"
       END_OF_FILE@120..120 ""
     ,
     [],

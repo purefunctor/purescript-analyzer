@@ -5,64 +5,64 @@ snapshot_kind: text
 ---
 (
     Module@0..59
-      ModuleHeader@0..59
+      ModuleHeader@0..58
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..25
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..24 "ModuleExportClass"
-          Comment@24..25
-            WHITESPACE@24..25 " "
-        ModuleExportList@25..53
+        ModuleExportList@24..52
+          Annotation@24..25
+            TEXT@24..25 " "
           LEFT_PARENTHESIS@25..26 "("
           ModuleExportClass@26..33
             CLASS@26..31 "class"
-            Comment@31..32
-              WHITESPACE@31..32 " "
+            Annotation@31..32
+              TEXT@31..32 " "
             UPPER@32..33 "A"
           COMMA@33..34 ","
-          Comment@34..35
-            WHITESPACE@34..35 " "
-          ModuleExportClass@35..41
+          ModuleExportClass@34..40
+            Annotation@34..35
+              TEXT@34..35 " "
             CLASS@35..40 "class"
-            Comment@40..41
-              WHITESPACE@40..41 " "
-            ERROR@41..41 ""
-          ERROR@41..41 ""
-          ModuleExportValue@41..42
+            ERROR@40..40 ""
+          ERROR@40..40 ""
+          ModuleExportValue@40..42
+            Annotation@40..41
+              TEXT@40..41 " "
             LOWER@41..42 "b"
           COMMA@42..43 ","
-          Comment@43..44
-            WHITESPACE@43..44 " "
-          ModuleExportClass@44..51
+          ModuleExportClass@43..51
+            Annotation@43..44
+              TEXT@43..44 " "
             CLASS@44..49 "class"
-            Comment@49..50
-              WHITESPACE@49..50 " "
+            Annotation@49..50
+              TEXT@49..50 " "
             UPPER@50..51 "C"
           RIGHT_PARENTHESIS@51..52 ")"
-          Comment@52..53
-            WHITESPACE@52..53 " "
+        Annotation@52..53
+          TEXT@52..53 " "
         WHERE@53..58 "where"
-        Comment@58..59
-          WHITESPACE@58..59 "\n"
-      LAYOUT_START@59..59 ""
-      ModuleImports@59..59
-      ModuleStatements@59..59
-      LAYOUT_END@59..59 ""
+      LAYOUT_START@58..58 ""
+      ModuleImports@58..58
+      ModuleStatements@58..58
+      LAYOUT_END@58..58 ""
+      Annotation@58..59
+        TEXT@58..59 "\n"
       END_OF_FILE@59..59 ""
     ,
     [
         ParseError {
+            offset: 41,
             position: Position {
-                offset: 41,
                 line: 1,
                 column: 42,
             },
             message: "expected UPPER",
         },
         ParseError {
+            offset: 41,
             position: Position {
-                offset: 41,
                 line: 1,
                 column: 42,
             },

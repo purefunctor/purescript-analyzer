@@ -5,72 +5,75 @@ snapshot_kind: text
 ---
 (
     Module@0..110
-      ModuleHeader@0..33
+      ModuleHeader@0..31
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..26
+        ModuleName@6..25
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..25 "ExpressionPrefixed"
-          Comment@25..26
-            WHITESPACE@25..26 " "
-        ModuleExportList@26..26
+        ModuleExportList@25..25
+        Annotation@25..26
+          TEXT@25..26 " "
         WHERE@26..31 "where"
-        Comment@31..33
-          WHITESPACE@31..33 "\n\n"
-      LAYOUT_START@33..33 ""
-      ModuleImports@33..33
-      ModuleStatements@33..110
-        ValueEquation@33..59
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..109
+        ValueEquation@31..58
+          Annotation@31..33
+            TEXT@31..33 "\n\n"
           LOWER@33..41 "prefixed"
-          Comment@41..42
-            WHITESPACE@41..42 " "
-          FunctionBinders@42..42
-          Unconditional@42..59
+          FunctionBinders@41..41
+          Unconditional@41..58
+            Annotation@41..42
+              TEXT@41..42 " "
             EQUAL@42..43 "="
-            Comment@43..44
-              WHITESPACE@43..44 " "
-            WhereExpression@44..59
-              ExpressionVariable@44..59
-                QualifiedName@44..59
-                  PREFIX@44..54 "Data.List."
+            WhereExpression@43..58
+              ExpressionVariable@43..58
+                QualifiedName@43..58
+                  Annotation@43..44
+                    TEXT@43..44 " "
+                  Qualifier@44..54
+                    TEXT@44..54 "Data.List."
                   LOWER@54..58 "head"
-                  Comment@58..59
-                    WHITESPACE@58..59 "\n"
-        LAYOUT_SEPARATOR@59..59 ""
-        ValueEquation@59..85
+        LAYOUT_SEPARATOR@58..58 ""
+        ValueEquation@58..84
+          Annotation@58..59
+            TEXT@58..59 "\n"
           LOWER@59..67 "prefixed"
-          Comment@67..68
-            WHITESPACE@67..68 " "
-          FunctionBinders@68..68
-          Unconditional@68..85
+          FunctionBinders@67..67
+          Unconditional@67..84
+            Annotation@67..68
+              TEXT@67..68 " "
             EQUAL@68..69 "="
-            Comment@69..70
-              WHITESPACE@69..70 " "
-            WhereExpression@70..85
-              ExpressionConstructor@70..85
-                QualifiedName@70..85
-                  PREFIX@70..80 "Data.List."
+            WhereExpression@69..84
+              ExpressionConstructor@69..84
+                QualifiedName@69..84
+                  Annotation@69..70
+                    TEXT@69..70 " "
+                  Qualifier@70..80
+                    TEXT@70..80 "Data.List."
                   UPPER@80..84 "Cons"
-                  Comment@84..85
-                    WHITESPACE@84..85 "\n"
-        LAYOUT_SEPARATOR@85..85 ""
-        ValueEquation@85..110
+        LAYOUT_SEPARATOR@84..84 ""
+        ValueEquation@84..109
+          Annotation@84..85
+            TEXT@84..85 "\n"
           LOWER@85..93 "prefixed"
-          Comment@93..94
-            WHITESPACE@93..94 " "
-          FunctionBinders@94..94
-          Unconditional@94..110
+          FunctionBinders@93..93
+          Unconditional@93..109
+            Annotation@93..94
+              TEXT@93..94 " "
             EQUAL@94..95 "="
-            Comment@95..96
-              WHITESPACE@95..96 " "
-            WhereExpression@96..110
-              ExpressionOperatorName@96..110
-                QualifiedName@96..110
-                  PREFIX@96..106 "Data.List."
+            WhereExpression@95..109
+              ExpressionOperatorName@95..109
+                QualifiedName@95..109
+                  Annotation@95..96
+                    TEXT@95..96 " "
+                  Qualifier@96..106
+                    TEXT@96..106 "Data.List."
                   OPERATOR_NAME@106..109 "(:)"
-                  Comment@109..110
-                    WHITESPACE@109..110 "\n"
-      LAYOUT_END@110..110 ""
+      LAYOUT_END@109..109 ""
+      Annotation@109..110
+        TEXT@109..110 "\n"
       END_OF_FILE@110..110 ""
     ,
     [],

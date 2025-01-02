@@ -5,60 +5,60 @@ snapshot_kind: text
 ---
 (
     Module@0..60
-      ModuleHeader@0..31
+      ModuleHeader@0..29
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..24
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..23 "NewtypeVariables"
-          Comment@23..24
-            WHITESPACE@23..24 " "
-        ModuleExportList@24..24
+        ModuleExportList@23..23
+        Annotation@23..24
+          TEXT@23..24 " "
         WHERE@24..29 "where"
-        Comment@29..31
-          WHITESPACE@29..31 "\n\n"
-      LAYOUT_START@31..31 ""
-      ModuleImports@31..31
-      ModuleStatements@31..60
-        NewtypeEquation@31..60
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..59
+        NewtypeEquation@29..59
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
           NEWTYPE@31..38 "newtype"
-          Comment@38..39
-            WHITESPACE@38..39 " "
+          Annotation@38..39
+            TEXT@38..39 " "
           UPPER@39..41 "Mu"
-          Comment@41..42
-            WHITESPACE@41..42 " "
-          TypeVariableBinding@42..44
+          TypeVariableBinding@41..43
+            Annotation@41..42
+              TEXT@41..42 " "
             LOWER@42..43 "f"
-            Comment@43..44
-              WHITESPACE@43..44 " "
+          Annotation@43..44
+            TEXT@43..44 " "
           EQUAL@44..45 "="
-          Comment@45..46
-            WHITESPACE@45..46 " "
+          Annotation@45..46
+            TEXT@45..46 " "
           UPPER@46..48 "In"
-          Comment@48..49
-            WHITESPACE@48..49 " "
-          TypeParenthesized@49..60
+          TypeParenthesized@48..59
+            Annotation@48..49
+              TEXT@48..49 " "
             LEFT_PARENTHESIS@49..50 "("
             TypeApplicationChain@50..58
-              TypeVariable@50..52
+              TypeVariable@50..51
                 LOWER@50..51 "f"
-                Comment@51..52
-                  WHITESPACE@51..52 " "
-              TypeParenthesized@52..58
+              TypeParenthesized@51..58
+                Annotation@51..52
+                  TEXT@51..52 " "
                 LEFT_PARENTHESIS@52..53 "("
                 TypeApplicationChain@53..57
-                  TypeConstructor@53..56
-                    QualifiedName@53..56
+                  TypeConstructor@53..55
+                    QualifiedName@53..55
                       UPPER@53..55 "Mu"
-                      Comment@55..56
-                        WHITESPACE@55..56 " "
-                  TypeVariable@56..57
+                  TypeVariable@55..57
+                    Annotation@55..56
+                      TEXT@55..56 " "
                     LOWER@56..57 "f"
                 RIGHT_PARENTHESIS@57..58 ")"
             RIGHT_PARENTHESIS@58..59 ")"
-            Comment@59..60
-              WHITESPACE@59..60 "\n"
-      LAYOUT_END@60..60 ""
+      LAYOUT_END@59..59 ""
+      Annotation@59..60
+        TEXT@59..60 "\n"
       END_OF_FILE@60..60 ""
     ,
     [],

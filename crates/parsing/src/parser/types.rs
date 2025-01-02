@@ -48,7 +48,7 @@ pub(super) fn type_3(p: &mut Parser) {
     let mut i = 0;
 
     type_4(p);
-    while names::at_operator(p) && !p.at_eof() {
+    while p.at_in(names::OPERATOR) && !p.at_eof() {
         names::operator(p);
         type_4(p);
         i += 1;
@@ -78,7 +78,7 @@ pub(super) fn type_5(p: &mut Parser) {
     let mut i = 0;
 
     type_atom(p);
-    while at_type_argument(p) && !p.at_eof() {
+    while p.at_in(TYPE_ATOM_START) && !p.at_eof() {
         type_atom(p);
         i += 1;
     }
@@ -90,29 +90,8 @@ pub(super) fn type_5(p: &mut Parser) {
     }
 }
 
-fn at_type_argument(p: &Parser) -> bool {
-    if p.at(SyntaxKind::PREFIX) {
-        TYPE_ATOM_START.contains(p.nth(1))
-    } else {
-        TYPE_ATOM_START.contains(p.nth(0))
-    }
-}
-
 pub(super) fn type_atom(p: &mut Parser) {
     let mut m = p.start();
-
-    let mut n = p.start();
-    if p.eat(SyntaxKind::PREFIX) {
-        if p.eat(SyntaxKind::UPPER) {
-            m.end(p, SyntaxKind::TypeConstructor);
-        } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
-            m.end(p, SyntaxKind::TypeOperator);
-        } else {
-            m.cancel(p);
-        }
-        return n.end(p, SyntaxKind::QualifiedName);
-    }
-    n.cancel(p);
 
     if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
         m.end(p, SyntaxKind::TypeVariable);
@@ -145,7 +124,6 @@ pub(super) fn type_atom(p: &mut Parser) {
 
 pub(super) const TYPE_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
-    SyntaxKind::PREFIX,
     SyntaxKind::STRING,
     SyntaxKind::RAW_STRING,
     SyntaxKind::MINUS,

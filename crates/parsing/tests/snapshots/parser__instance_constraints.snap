@@ -5,121 +5,121 @@ snapshot_kind: text
 ---
 (
     Module@0..149
-      ModuleHeader@0..34
+      ModuleHeader@0..32
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..27
+        ModuleName@6..26
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..26 "InstanceConstraints"
-          Comment@26..27
-            WHITESPACE@26..27 " "
-        ModuleExportList@27..27
+        ModuleExportList@26..26
+        Annotation@26..27
+          TEXT@26..27 " "
         WHERE@27..32 "where"
-        Comment@32..34
-          WHITESPACE@32..34 "\n\n"
-      LAYOUT_START@34..34 ""
-      ModuleImports@34..34
-      ModuleStatements@34..149
-        InstanceChain@34..149
-          InstanceDeclaration@34..80
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..148
+        InstanceChain@32..148
+          InstanceDeclaration@32..79
+            Annotation@32..34
+              TEXT@32..34 "\n\n"
             INSTANCE@34..42 "instance"
-            Comment@42..43
-              WHITESPACE@42..43 " "
-            InstanceConstraints@43..58
-              TypeApplicationChain@43..55
-                TypeConstructor@43..53
-                  QualifiedName@43..53
+            InstanceConstraints@42..57
+              TypeApplicationChain@42..54
+                TypeConstructor@42..52
+                  QualifiedName@42..52
+                    Annotation@42..43
+                      TEXT@42..43 " "
                     UPPER@43..52 "Serialise"
-                    Comment@52..53
-                      WHITESPACE@52..53 " "
-                TypeVariable@53..55
+                TypeVariable@52..54
+                  Annotation@52..53
+                    TEXT@52..53 " "
                   LOWER@53..54 "a"
-                  Comment@54..55
-                    WHITESPACE@54..55 " "
+              Annotation@54..55
+                TEXT@54..55 " "
               RIGHT_THICK_ARROW@55..57 "=>"
-              Comment@57..58
-                WHITESPACE@57..58 " "
-            InstanceHead@58..80
+            InstanceHead@57..79
+              Annotation@57..58
+                TEXT@57..58 " "
               UPPER@58..67 "Serialise"
-              Comment@67..68
-                WHITESPACE@67..68 " "
-              TypeVariable@68..70
+              TypeVariable@67..69
+                Annotation@67..68
+                  TEXT@67..68 " "
                 LOWER@68..69 "s"
-                Comment@69..70
-                  WHITESPACE@69..70 " "
-              TypeParenthesized@70..80
+              TypeParenthesized@69..79
+                Annotation@69..70
+                  TEXT@69..70 " "
                 LEFT_PARENTHESIS@70..71 "("
                 TypeApplicationChain@71..78
-                  TypeConstructor@71..77
-                    QualifiedName@71..77
+                  TypeConstructor@71..76
+                    QualifiedName@71..76
                       UPPER@71..76 "Array"
-                      Comment@76..77
-                        WHITESPACE@76..77 " "
-                  TypeVariable@77..78
+                  TypeVariable@76..78
+                    Annotation@76..77
+                      TEXT@76..77 " "
                     LOWER@77..78 "a"
                 RIGHT_PARENTHESIS@78..79 ")"
-                Comment@79..80
-                  WHITESPACE@79..80 "\n"
-          InstanceDeclaration@80..149
+          InstanceDeclaration@79..148
+            Annotation@79..80
+              TEXT@79..80 "\n"
             ELSE@80..84 "else"
-            Comment@84..85
-              WHITESPACE@84..85 " "
+            Annotation@84..85
+              TEXT@84..85 " "
             INSTANCE@85..93 "instance"
-            Comment@93..94
-              WHITESPACE@93..94 " "
-            InstanceConstraints@94..124
+            InstanceConstraints@93..123
+              Annotation@93..94
+                TEXT@93..94 " "
               LEFT_PARENTHESIS@94..95 "("
               TypeApplicationChain@95..106
-                TypeConstructor@95..105
-                  QualifiedName@95..105
+                TypeConstructor@95..104
+                  QualifiedName@95..104
                     UPPER@95..104 "Serialise"
-                    Comment@104..105
-                      WHITESPACE@104..105 " "
-                TypeVariable@105..106
+                TypeVariable@104..106
+                  Annotation@104..105
+                    TEXT@104..105 " "
                   LOWER@105..106 "a"
               COMMA@106..107 ","
-              Comment@107..108
-                WHITESPACE@107..108 " "
-              TypeApplicationChain@108..119
-                TypeConstructor@108..118
-                  QualifiedName@108..118
+              TypeApplicationChain@107..119
+                TypeConstructor@107..117
+                  QualifiedName@107..117
+                    Annotation@107..108
+                      TEXT@107..108 " "
                     UPPER@108..117 "Serialise"
-                    Comment@117..118
-                      WHITESPACE@117..118 " "
-                TypeVariable@118..119
+                TypeVariable@117..119
+                  Annotation@117..118
+                    TEXT@117..118 " "
                   LOWER@118..119 "b"
               RIGHT_PARENTHESIS@119..120 ")"
-              Comment@120..121
-                WHITESPACE@120..121 " "
+              Annotation@120..121
+                TEXT@120..121 " "
               RIGHT_THICK_ARROW@121..123 "=>"
-              Comment@123..124
-                WHITESPACE@123..124 " "
-            InstanceHead@124..149
+            InstanceHead@123..148
+              Annotation@123..124
+                TEXT@123..124 " "
               UPPER@124..133 "Serialise"
-              Comment@133..134
-                WHITESPACE@133..134 " "
-              TypeVariable@134..136
+              TypeVariable@133..135
+                Annotation@133..134
+                  TEXT@133..134 " "
                 LOWER@134..135 "s"
-                Comment@135..136
-                  WHITESPACE@135..136 " "
-              TypeParenthesized@136..149
+              TypeParenthesized@135..148
+                Annotation@135..136
+                  TEXT@135..136 " "
                 LEFT_PARENTHESIS@136..137 "("
                 TypeApplicationChain@137..147
-                  TypeConstructor@137..144
-                    QualifiedName@137..144
+                  TypeConstructor@137..143
+                    QualifiedName@137..143
                       UPPER@137..143 "Either"
-                      Comment@143..144
-                        WHITESPACE@143..144 " "
-                  TypeVariable@144..146
+                  TypeVariable@143..145
+                    Annotation@143..144
+                      TEXT@143..144 " "
                     LOWER@144..145 "a"
-                    Comment@145..146
-                      WHITESPACE@145..146 " "
-                  TypeVariable@146..147
+                  TypeVariable@145..147
+                    Annotation@145..146
+                      TEXT@145..146 " "
                     LOWER@146..147 "b"
                 RIGHT_PARENTHESIS@147..148 ")"
-                Comment@148..149
-                  WHITESPACE@148..149 "\n"
-      LAYOUT_END@149..149 ""
+      LAYOUT_END@148..148 ""
+      Annotation@148..149
+        TEXT@148..149 "\n"
       END_OF_FILE@149..149 ""
     ,
     [],

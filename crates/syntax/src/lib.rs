@@ -6,14 +6,11 @@ pub use token_set::TokenSet;
 #[repr(u16)]
 #[allow(non_camel_case_types)]
 pub enum SyntaxKind {
-    // Comments
-    WHITESPACE = 0,
-    LINE_COMMENT,
-    BLOCK_COMMENT,
+    // Generic
+    TEXT = 0,
 
     // Names
     HOLE,
-    PREFIX,
     UPPER,
     LOWER,
     OPERATOR,
@@ -95,7 +92,8 @@ pub enum SyntaxKind {
 
     // Nodes
     Node,
-    Comment,
+    Annotation,
+    Qualifier,
 
     ModuleName,
     QualifiedName,
@@ -297,68 +295,7 @@ pub type SyntaxToken = rowan::SyntaxToken<PureScript>;
 pub type SyntaxElement = rowan::SyntaxElement<PureScript>;
 
 impl SyntaxKind {
-    pub fn is_whitespace_or_comment(&self) -> bool {
-        matches!(self, Self::WHITESPACE | Self::LINE_COMMENT | Self::BLOCK_COMMENT)
-    }
-
-    pub fn is_whitespace(&self) -> bool {
-        matches!(self, Self::WHITESPACE)
-    }
-
-    pub fn is_lower(&self) -> bool {
-        matches!(
-            self,
-            Self::LOWER
-                | Self::ADO
-                | Self::AS
-                | Self::CASE
-                | Self::CLASS
-                | Self::DATA
-                | Self::DERIVE
-                | Self::DO
-                | Self::ELSE
-                | Self::FALSE
-                | Self::FORALL
-                | Self::FOREIGN
-                | Self::HIDING
-                | Self::IF
-                | Self::IMPORT
-                | Self::IN
-                | Self::INFIX
-                | Self::INFIXL
-                | Self::INFIXR
-                | Self::INSTANCE
-                | Self::LET
-                | Self::MODULE
-                | Self::NEWTYPE
-                | Self::NOMINAL
-                | Self::OF
-                | Self::PHANTOM
-                | Self::REPRESENTATIONAL
-                | Self::ROLE
-                | Self::THEN
-                | Self::TRUE
-                | Self::TYPE
-                | Self::WHERE
-        )
-    }
-
-    pub fn is_operator(&self) -> bool {
-        matches!(
-            self,
-            Self::OPERATOR
-                | Self::MINUS
-                | Self::COLON
-                | Self::DOUBLE_PERIOD
-                | Self::LEFT_THICK_ARROW
-        )
-    }
-
-    pub fn is_end(&self) -> bool {
-        matches!(self, Self::LAYOUT_SEPARATOR | Self::LAYOUT_END | Self::END_OF_FILE)
-    }
-
-    pub fn is_layout(&self) -> bool {
+    pub fn is_layout_token(&self) -> bool {
         matches!(self, Self::LAYOUT_START | Self::LAYOUT_SEPARATOR | Self::LAYOUT_END)
     }
 }

@@ -5,15 +5,15 @@ snapshot_kind: text
 ---
 (
     Module@0..52
-      ModuleHeader@0..52
+      ModuleHeader@0..51
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..30
+        ModuleName@6..29
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..29 "ModuleExportCommaError"
-          Comment@29..30
-            WHITESPACE@29..30 " "
-        ModuleExportList@30..46
+        ModuleExportList@29..45
+          Annotation@29..30
+            TEXT@29..30 " "
           LEFT_PARENTHESIS@30..31 "("
           ModuleExportValue@31..36
             LOWER@31..36 "hello"
@@ -27,29 +27,29 @@ snapshot_kind: text
             ERROR@43..43 ""
             COMMA@43..44 ","
           RIGHT_PARENTHESIS@44..45 ")"
-          Comment@45..46
-            WHITESPACE@45..46 " "
+        Annotation@45..46
+          TEXT@45..46 " "
         WHERE@46..51 "where"
-        Comment@51..52
-          WHITESPACE@51..52 "\n"
-      LAYOUT_START@52..52 ""
-      ModuleImports@52..52
-      ModuleStatements@52..52
-      LAYOUT_END@52..52 ""
+      LAYOUT_START@51..51 ""
+      ModuleImports@51..51
+      ModuleStatements@51..51
+      LAYOUT_END@51..51 ""
+      Annotation@51..52
+        TEXT@51..52 "\n"
       END_OF_FILE@52..52 ""
     ,
     [
         ParseError {
+            offset: 37,
             position: Position {
-                offset: 37,
                 line: 1,
                 column: 38,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 43,
             position: Position {
-                offset: 43,
                 line: 1,
                 column: 44,
             },

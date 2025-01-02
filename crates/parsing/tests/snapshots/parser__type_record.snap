@@ -5,213 +5,213 @@ snapshot_kind: text
 ---
 (
     Module@0..187
-      ModuleHeader@0..25
+      ModuleHeader@0..23
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..18
+        ModuleName@6..17
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..17 "TypeRecord"
-          Comment@17..18
-            WHITESPACE@17..18 " "
-        ModuleExportList@18..18
+        ModuleExportList@17..17
+        Annotation@17..18
+          TEXT@17..18 " "
         WHERE@18..23 "where"
-        Comment@23..25
-          WHITESPACE@23..25 "\n\n"
-      LAYOUT_START@25..25 ""
-      ModuleImports@25..25
-      ModuleStatements@25..187
-        ValueSignature@25..38
+      LAYOUT_START@23..23 ""
+      ModuleImports@23..23
+      ModuleStatements@23..185
+        ValueSignature@23..36
+          Annotation@23..25
+            TEXT@23..25 "\n\n"
           LOWER@25..30 "empty"
-          Comment@30..31
-            WHITESPACE@30..31 " "
+          Annotation@30..31
+            TEXT@30..31 " "
           DOUBLE_COLON@31..33 "::"
-          Comment@33..34
-            WHITESPACE@33..34 " "
-          TypeRecord@34..38
+          TypeRecord@33..36
+            Annotation@33..34
+              TEXT@33..34 " "
             LEFT_CURLY@34..35 "{"
             RIGHT_CURLY@35..36 "}"
-            Comment@36..38
-              WHITESPACE@36..38 "\n\n"
-        LAYOUT_SEPARATOR@38..38 ""
-        ValueSignature@38..55
+        LAYOUT_SEPARATOR@36..36 ""
+        ValueSignature@36..53
+          Annotation@36..38
+            TEXT@36..38 "\n\n"
           LOWER@38..42 "tail"
-          Comment@42..43
-            WHITESPACE@42..43 " "
+          Annotation@42..43
+            TEXT@42..43 " "
           DOUBLE_COLON@43..45 "::"
-          Comment@45..46
-            WHITESPACE@45..46 " "
-          TypeRecord@46..55
+          TypeRecord@45..53
+            Annotation@45..46
+              TEXT@45..46 " "
             LEFT_CURLY@46..47 "{"
-            Comment@47..48
-              WHITESPACE@47..48 " "
-            TypeRowTail@48..52
+            TypeRowTail@47..51
+              Annotation@47..48
+                TEXT@47..48 " "
               PIPE@48..49 "|"
-              Comment@49..50
-                WHITESPACE@49..50 " "
-              TypeVariable@50..52
+              TypeVariable@49..51
+                Annotation@49..50
+                  TEXT@49..50 " "
                 LOWER@50..51 "r"
-                Comment@51..52
-                  WHITESPACE@51..52 " "
+            Annotation@51..52
+              TEXT@51..52 " "
             RIGHT_CURLY@52..53 "}"
-            Comment@53..55
-              WHITESPACE@53..55 "\n\n"
-        LAYOUT_SEPARATOR@55..55 ""
-        ValueSignature@55..78
+        LAYOUT_SEPARATOR@53..53 ""
+        ValueSignature@53..76
+          Annotation@53..55
+            TEXT@53..55 "\n\n"
           LOWER@55..59 "item"
-          Comment@59..60
-            WHITESPACE@59..60 " "
+          Annotation@59..60
+            TEXT@59..60 " "
           DOUBLE_COLON@60..62 "::"
-          Comment@62..63
-            WHITESPACE@62..63 " "
-          TypeRecord@63..78
+          TypeRecord@62..76
+            Annotation@62..63
+              TEXT@62..63 " "
             LEFT_CURLY@63..64 "{"
-            Comment@64..65
-              WHITESPACE@64..65 " "
-            TypeRowItem@65..75
-              LabelName@65..67
+            TypeRowItem@64..74
+              LabelName@64..66
+                Annotation@64..65
+                  TEXT@64..65 " "
                 LOWER@65..66 "a"
-                Comment@66..67
-                  WHITESPACE@66..67 " "
+              Annotation@66..67
+                TEXT@66..67 " "
               DOUBLE_COLON@67..69 "::"
-              Comment@69..70
-                WHITESPACE@69..70 " "
-              TypeConstructor@70..75
-                QualifiedName@70..75
+              TypeConstructor@69..74
+                QualifiedName@69..74
+                  Annotation@69..70
+                    TEXT@69..70 " "
                   UPPER@70..74 "Type"
-                  Comment@74..75
-                    WHITESPACE@74..75 " "
+            Annotation@74..75
+              TEXT@74..75 " "
             RIGHT_CURLY@75..76 "}"
-            Comment@76..78
-              WHITESPACE@76..78 "\n\n"
-        LAYOUT_SEPARATOR@78..78 ""
-        ValueSignature@78..109
+        LAYOUT_SEPARATOR@76..76 ""
+        ValueSignature@76..107
+          Annotation@76..78
+            TEXT@76..78 "\n\n"
           LOWER@78..86 "itemTail"
-          Comment@86..87
-            WHITESPACE@86..87 " "
+          Annotation@86..87
+            TEXT@86..87 " "
           DOUBLE_COLON@87..89 "::"
-          Comment@89..90
-            WHITESPACE@89..90 " "
-          TypeRecord@90..109
+          TypeRecord@89..107
+            Annotation@89..90
+              TEXT@89..90 " "
             LEFT_CURLY@90..91 "{"
-            Comment@91..92
-              WHITESPACE@91..92 " "
-            TypeRowItem@92..102
-              LabelName@92..94
+            TypeRowItem@91..101
+              LabelName@91..93
+                Annotation@91..92
+                  TEXT@91..92 " "
                 LOWER@92..93 "a"
-                Comment@93..94
-                  WHITESPACE@93..94 " "
+              Annotation@93..94
+                TEXT@93..94 " "
               DOUBLE_COLON@94..96 "::"
-              Comment@96..97
-                WHITESPACE@96..97 " "
-              TypeConstructor@97..102
-                QualifiedName@97..102
+              TypeConstructor@96..101
+                QualifiedName@96..101
+                  Annotation@96..97
+                    TEXT@96..97 " "
                   UPPER@97..101 "Type"
-                  Comment@101..102
-                    WHITESPACE@101..102 " "
-            TypeRowTail@102..106
+            TypeRowTail@101..105
+              Annotation@101..102
+                TEXT@101..102 " "
               PIPE@102..103 "|"
-              Comment@103..104
-                WHITESPACE@103..104 " "
-              TypeVariable@104..106
+              TypeVariable@103..105
+                Annotation@103..104
+                  TEXT@103..104 " "
                 LOWER@104..105 "r"
-                Comment@105..106
-                  WHITESPACE@105..106 " "
+            Annotation@105..106
+              TEXT@105..106 " "
             RIGHT_CURLY@106..107 "}"
-            Comment@107..109
-              WHITESPACE@107..109 "\n\n"
-        LAYOUT_SEPARATOR@109..109 ""
-        ValueSignature@109..144
+        LAYOUT_SEPARATOR@107..107 ""
+        ValueSignature@107..142
+          Annotation@107..109
+            TEXT@107..109 "\n\n"
           LOWER@109..114 "items"
-          Comment@114..115
-            WHITESPACE@114..115 " "
+          Annotation@114..115
+            TEXT@114..115 " "
           DOUBLE_COLON@115..117 "::"
-          Comment@117..118
-            WHITESPACE@117..118 " "
-          TypeRecord@118..144
+          TypeRecord@117..142
+            Annotation@117..118
+              TEXT@117..118 " "
             LEFT_CURLY@118..119 "{"
-            Comment@119..120
-              WHITESPACE@119..120 " "
-            TypeRowItem@120..129
-              LabelName@120..122
+            TypeRowItem@119..129
+              LabelName@119..121
+                Annotation@119..120
+                  TEXT@119..120 " "
                 LOWER@120..121 "a"
-                Comment@121..122
-                  WHITESPACE@121..122 " "
+              Annotation@121..122
+                TEXT@121..122 " "
               DOUBLE_COLON@122..124 "::"
-              Comment@124..125
-                WHITESPACE@124..125 " "
-              TypeConstructor@125..129
-                QualifiedName@125..129
+              TypeConstructor@124..129
+                QualifiedName@124..129
+                  Annotation@124..125
+                    TEXT@124..125 " "
                   UPPER@125..129 "Type"
             COMMA@129..130 ","
-            Comment@130..131
-              WHITESPACE@130..131 " "
-            TypeRowItem@131..141
-              LabelName@131..133
+            TypeRowItem@130..140
+              LabelName@130..132
+                Annotation@130..131
+                  TEXT@130..131 " "
                 LOWER@131..132 "b"
-                Comment@132..133
-                  WHITESPACE@132..133 " "
+              Annotation@132..133
+                TEXT@132..133 " "
               DOUBLE_COLON@133..135 "::"
-              Comment@135..136
-                WHITESPACE@135..136 " "
-              TypeConstructor@136..141
-                QualifiedName@136..141
+              TypeConstructor@135..140
+                QualifiedName@135..140
+                  Annotation@135..136
+                    TEXT@135..136 " "
                   UPPER@136..140 "Type"
-                  Comment@140..141
-                    WHITESPACE@140..141 " "
+            Annotation@140..141
+              TEXT@140..141 " "
             RIGHT_CURLY@141..142 "}"
-            Comment@142..144
-              WHITESPACE@142..144 "\n\n"
-        LAYOUT_SEPARATOR@144..144 ""
-        ValueSignature@144..187
+        LAYOUT_SEPARATOR@142..142 ""
+        ValueSignature@142..185
+          Annotation@142..144
+            TEXT@142..144 "\n\n"
           LOWER@144..153 "itemsTail"
-          Comment@153..154
-            WHITESPACE@153..154 " "
+          Annotation@153..154
+            TEXT@153..154 " "
           DOUBLE_COLON@154..156 "::"
-          Comment@156..157
-            WHITESPACE@156..157 " "
-          TypeRecord@157..187
+          TypeRecord@156..185
+            Annotation@156..157
+              TEXT@156..157 " "
             LEFT_CURLY@157..158 "{"
-            Comment@158..159
-              WHITESPACE@158..159 " "
-            TypeRowItem@159..168
-              LabelName@159..161
+            TypeRowItem@158..168
+              LabelName@158..160
+                Annotation@158..159
+                  TEXT@158..159 " "
                 LOWER@159..160 "a"
-                Comment@160..161
-                  WHITESPACE@160..161 " "
+              Annotation@160..161
+                TEXT@160..161 " "
               DOUBLE_COLON@161..163 "::"
-              Comment@163..164
-                WHITESPACE@163..164 " "
-              TypeConstructor@164..168
-                QualifiedName@164..168
+              TypeConstructor@163..168
+                QualifiedName@163..168
+                  Annotation@163..164
+                    TEXT@163..164 " "
                   UPPER@164..168 "Type"
             COMMA@168..169 ","
-            Comment@169..170
-              WHITESPACE@169..170 " "
-            TypeRowItem@170..180
-              LabelName@170..172
+            TypeRowItem@169..179
+              LabelName@169..171
+                Annotation@169..170
+                  TEXT@169..170 " "
                 LOWER@170..171 "b"
-                Comment@171..172
-                  WHITESPACE@171..172 " "
+              Annotation@171..172
+                TEXT@171..172 " "
               DOUBLE_COLON@172..174 "::"
-              Comment@174..175
-                WHITESPACE@174..175 " "
-              TypeConstructor@175..180
-                QualifiedName@175..180
+              TypeConstructor@174..179
+                QualifiedName@174..179
+                  Annotation@174..175
+                    TEXT@174..175 " "
                   UPPER@175..179 "Type"
-                  Comment@179..180
-                    WHITESPACE@179..180 " "
-            TypeRowTail@180..184
+            TypeRowTail@179..183
+              Annotation@179..180
+                TEXT@179..180 " "
               PIPE@180..181 "|"
-              Comment@181..182
-                WHITESPACE@181..182 " "
-              TypeVariable@182..184
+              TypeVariable@181..183
+                Annotation@181..182
+                  TEXT@181..182 " "
                 LOWER@182..183 "r"
-                Comment@183..184
-                  WHITESPACE@183..184 " "
+            Annotation@183..184
+              TEXT@183..184 " "
             RIGHT_CURLY@184..185 "}"
-            Comment@185..187
-              WHITESPACE@185..187 "\n\n"
-      LAYOUT_END@187..187 ""
+      LAYOUT_END@185..185 ""
+      Annotation@185..187
+        TEXT@185..187 "\n\n"
       END_OF_FILE@187..187 ""
     ,
     [],

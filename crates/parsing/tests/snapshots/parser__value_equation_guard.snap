@@ -5,94 +5,94 @@ snapshot_kind: text
 ---
 (
     Module@0..67
-      ModuleHeader@0..33
+      ModuleHeader@0..31
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..26
+        ModuleName@6..25
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..25 "ValueEquationGuard"
-          Comment@25..26
-            WHITESPACE@25..26 " "
-        ModuleExportList@26..26
+        ModuleExportList@25..25
+        Annotation@25..26
+          TEXT@25..26 " "
         WHERE@26..31 "where"
-        Comment@31..33
-          WHITESPACE@31..33 "\n\n"
-      LAYOUT_START@33..33 ""
-      ModuleImports@33..33
-      ModuleStatements@33..67
-        ValueEquation@33..67
+      LAYOUT_START@31..31 ""
+      ModuleImports@31..31
+      ModuleStatements@31..66
+        ValueEquation@31..66
+          Annotation@31..33
+            TEXT@31..33 "\n\n"
           LOWER@33..34 "f"
-          Comment@34..35
-            WHITESPACE@34..35 " "
-          FunctionBinders@35..41
-            BinderVariable@35..37
+          FunctionBinders@34..38
+            BinderVariable@34..36
+              Annotation@34..35
+                TEXT@34..35 " "
               LOWER@35..36 "a"
-              Comment@36..37
-                WHITESPACE@36..37 " "
-            BinderVariable@37..41
+            BinderVariable@36..38
+              Annotation@36..37
+                TEXT@36..37 " "
               LOWER@37..38 "b"
-              Comment@38..41
-                WHITESPACE@38..41 "\n  "
-          Conditionals@41..67
-            PatternGuarded@41..55
+          Conditionals@38..66
+            PatternGuarded@38..52
+              Annotation@38..41
+                TEXT@38..41 "\n  "
               PIPE@41..42 "|"
-              Comment@42..43
-                WHITESPACE@42..43 " "
-              PatternGuardExpression@43..49
-                ExpressionOperatorChain@43..49
-                  ExpressionVariable@43..45
-                    QualifiedName@43..45
+              PatternGuardExpression@42..48
+                ExpressionOperatorChain@42..48
+                  ExpressionVariable@42..44
+                    QualifiedName@42..44
+                      Annotation@42..43
+                        TEXT@42..43 " "
                       LOWER@43..44 "a"
-                      Comment@44..45
-                        WHITESPACE@44..45 " "
-                  QualifiedName@45..47
+                  QualifiedName@44..46
+                    Annotation@44..45
+                      TEXT@44..45 " "
                     OPERATOR@45..46 "<"
-                    Comment@46..47
-                      WHITESPACE@46..47 " "
-                  ExpressionVariable@47..49
-                    QualifiedName@47..49
+                  ExpressionVariable@46..48
+                    QualifiedName@46..48
+                      Annotation@46..47
+                        TEXT@46..47 " "
                       LOWER@47..48 "b"
-                      Comment@48..49
-                        WHITESPACE@48..49 " "
+              Annotation@48..49
+                TEXT@48..49 " "
               EQUAL@49..50 "="
-              Comment@50..51
-                WHITESPACE@50..51 " "
-              WhereExpression@51..55
-                ExpressionVariable@51..55
-                  QualifiedName@51..55
+              WhereExpression@50..52
+                ExpressionVariable@50..52
+                  QualifiedName@50..52
+                    Annotation@50..51
+                      TEXT@50..51 " "
                     LOWER@51..52 "a"
-                    Comment@52..55
-                      WHITESPACE@52..55 "\n  "
-            PatternGuarded@55..67
+            PatternGuarded@52..66
+              Annotation@52..55
+                TEXT@52..55 "\n  "
               PIPE@55..56 "|"
-              Comment@56..57
-                WHITESPACE@56..57 " "
-              PatternGuardExpression@57..63
-                ExpressionOperatorChain@57..63
-                  ExpressionVariable@57..59
-                    QualifiedName@57..59
+              PatternGuardExpression@56..62
+                ExpressionOperatorChain@56..62
+                  ExpressionVariable@56..58
+                    QualifiedName@56..58
+                      Annotation@56..57
+                        TEXT@56..57 " "
                       LOWER@57..58 "b"
-                      Comment@58..59
-                        WHITESPACE@58..59 " "
-                  QualifiedName@59..61
+                  QualifiedName@58..60
+                    Annotation@58..59
+                      TEXT@58..59 " "
                     OPERATOR@59..60 "<"
-                    Comment@60..61
-                      WHITESPACE@60..61 " "
-                  ExpressionVariable@61..63
-                    QualifiedName@61..63
+                  ExpressionVariable@60..62
+                    QualifiedName@60..62
+                      Annotation@60..61
+                        TEXT@60..61 " "
                       LOWER@61..62 "a"
-                      Comment@62..63
-                        WHITESPACE@62..63 " "
+              Annotation@62..63
+                TEXT@62..63 " "
               EQUAL@63..64 "="
-              Comment@64..65
-                WHITESPACE@64..65 " "
-              WhereExpression@65..67
-                ExpressionVariable@65..67
-                  QualifiedName@65..67
+              WhereExpression@64..66
+                ExpressionVariable@64..66
+                  QualifiedName@64..66
+                    Annotation@64..65
+                      TEXT@64..65 " "
                     LOWER@65..66 "b"
-                    Comment@66..67
-                      WHITESPACE@66..67 "\n"
-      LAYOUT_END@67..67 ""
+      LAYOUT_END@66..66 ""
+      Annotation@66..67
+        TEXT@66..67 "\n"
       END_OF_FILE@67..67 ""
     ,
     [],

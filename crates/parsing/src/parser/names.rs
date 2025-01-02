@@ -22,54 +22,31 @@ pub(super) const OPERATOR_NAME: TokenSet =
 
 pub(super) fn module_name(p: &mut Parser) {
     let mut m = p.start();
-
-    p.eat(SyntaxKind::PREFIX);
     p.expect(SyntaxKind::UPPER);
-
     m.end(p, SyntaxKind::ModuleName);
 }
 
 pub(super) fn lower(p: &mut Parser) {
     let mut m = p.start();
-
-    p.eat(SyntaxKind::PREFIX);
-    p.expect(SyntaxKind::LOWER);
-
+    p.expect_in(LOWER, SyntaxKind::LOWER, "Expected LOWER");
     m.end(p, SyntaxKind::QualifiedName);
 }
 
 pub(super) fn upper(p: &mut Parser) {
     let mut m = p.start();
-
-    p.eat(SyntaxKind::PREFIX);
     p.expect(SyntaxKind::UPPER);
-
     m.end(p, SyntaxKind::QualifiedName);
 }
 
-pub(super) fn at_operator(p: &Parser) -> bool {
-    p.at_in(OPERATOR) || p.at(SyntaxKind::PREFIX) && OPERATOR.contains(p.nth(1))
-}
-
-pub(super) fn operator(p: &mut Parser) -> bool {
+pub(super) fn operator(p: &mut Parser) {
     let mut m = p.start();
-
-    p.eat(SyntaxKind::PREFIX);
-    if p.eat_in(OPERATOR, SyntaxKind::OPERATOR) {
-        m.end(p, SyntaxKind::QualifiedName);
-        true
-    } else {
-        m.cancel(p);
-        false
-    }
+    p.expect_in(OPERATOR, SyntaxKind::OPERATOR, "Expected OPERATOR");
+    m.end(p, SyntaxKind::QualifiedName)
 }
 
 pub(super) fn operator_name(p: &mut Parser) {
     let mut m = p.start();
-
-    p.eat(SyntaxKind::PREFIX);
     p.expect_in(OPERATOR_NAME, SyntaxKind::OPERATOR_NAME, "Expected OPERATOR_NAME");
-
     m.end(p, SyntaxKind::QualifiedName);
 }
 

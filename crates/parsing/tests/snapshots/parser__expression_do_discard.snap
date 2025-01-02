@@ -5,52 +5,52 @@ snapshot_kind: text
 ---
 (
     Module@0..56
-      ModuleHeader@0..34
+      ModuleHeader@0..32
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..27
+        ModuleName@6..26
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..26 "ExpressionDoDiscard"
-          Comment@26..27
-            WHITESPACE@26..27 " "
-        ModuleExportList@27..27
+        ModuleExportList@26..26
+        Annotation@26..27
+          TEXT@26..27 " "
         WHERE@27..32 "where"
-        Comment@32..34
-          WHITESPACE@32..34 "\n\n"
-      LAYOUT_START@34..34 ""
-      ModuleImports@34..34
-      ModuleStatements@34..56
-        ValueEquation@34..56
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..55
+        ValueEquation@32..55
+          Annotation@32..34
+            TEXT@32..34 "\n\n"
           LOWER@34..38 "main"
-          Comment@38..39
-            WHITESPACE@38..39 " "
-          FunctionBinders@39..39
-          Unconditional@39..56
+          FunctionBinders@38..38
+          Unconditional@38..55
+            Annotation@38..39
+              TEXT@38..39 " "
             EQUAL@39..40 "="
-            Comment@40..41
-              WHITESPACE@40..41 " "
-            WhereExpression@41..56
-              ExpressionDo@41..56
+            WhereExpression@40..55
+              ExpressionDo@40..55
+                Annotation@40..41
+                  TEXT@40..41 " "
                 DO@41..43 "do"
-                Comment@43..46
-                  WHITESPACE@43..46 "\n  "
-                DoStatements@46..56
-                  LAYOUT_START@46..46 ""
-                  DoStatementDiscard@46..56
-                    ExpressionApplicationChain@46..56
-                      ExpressionVariable@46..51
-                        QualifiedName@46..51
+                DoStatements@43..55
+                  LAYOUT_START@43..43 ""
+                  DoStatementDiscard@43..55
+                    ExpressionApplicationChain@43..55
+                      ExpressionVariable@43..50
+                        QualifiedName@43..50
+                          Annotation@43..46
+                            TEXT@43..46 "\n  "
                           LOWER@46..50 "pure"
-                          Comment@50..51
-                            WHITESPACE@50..51 " "
-                      ExpressionTermArgument@51..56
-                        ExpressionVariable@51..56
-                          QualifiedName@51..56
+                      ExpressionTermArgument@50..55
+                        ExpressionVariable@50..55
+                          QualifiedName@50..55
+                            Annotation@50..51
+                              TEXT@50..51 " "
                             LOWER@51..55 "unit"
-                            Comment@55..56
-                              WHITESPACE@55..56 "\n"
-                  LAYOUT_END@56..56 ""
-      LAYOUT_END@56..56 ""
+                  LAYOUT_END@55..55 ""
+      LAYOUT_END@55..55 ""
+      Annotation@55..56
+        TEXT@55..56 "\n"
       END_OF_FILE@56..56 ""
     ,
     [],

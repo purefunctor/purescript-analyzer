@@ -5,197 +5,197 @@ snapshot_kind: text
 ---
 (
     Module@0..180
-      ModuleHeader@0..30
+      ModuleHeader@0..28
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..23
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..22 "ExpressionLetIn"
-          Comment@22..23
-            WHITESPACE@22..23 " "
-        ModuleExportList@23..23
+        ModuleExportList@22..22
+        Annotation@22..23
+          TEXT@22..23 " "
         WHERE@23..28 "where"
-        Comment@28..30
-          WHITESPACE@28..30 "\n\n"
-      LAYOUT_START@30..30 ""
-      ModuleImports@30..30
-      ModuleStatements@30..180
-        ValueEquation@30..55
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..179
+        ValueEquation@28..53
+          Annotation@28..30
+            TEXT@28..30 "\n\n"
           LOWER@30..36 "let_in"
-          Comment@36..37
-            WHITESPACE@36..37 " "
-          FunctionBinders@37..37
-          Unconditional@37..55
+          FunctionBinders@36..36
+          Unconditional@36..53
+            Annotation@36..37
+              TEXT@36..37 " "
             EQUAL@37..38 "="
-            Comment@38..39
-              WHITESPACE@38..39 " "
-            WhereExpression@39..55
-              ExpressionLetIn@39..55
+            WhereExpression@38..53
+              ExpressionLetIn@38..53
+                Annotation@38..39
+                  TEXT@38..39 " "
                 LET@39..42 "let"
-                Comment@42..43
-                  WHITESPACE@42..43 " "
-                LetBindingStatements@43..49
-                  LAYOUT_START@43..43 ""
-                  LetBindingEquation@43..49
+                LetBindingStatements@42..48
+                  LAYOUT_START@42..42 ""
+                  LetBindingEquation@42..48
+                    Annotation@42..43
+                      TEXT@42..43 " "
                     LOWER@43..44 "x"
-                    Comment@44..45
-                      WHITESPACE@44..45 " "
-                    FunctionBinders@45..45
-                    Unconditional@45..49
+                    FunctionBinders@44..44
+                    Unconditional@44..48
+                      Annotation@44..45
+                        TEXT@44..45 " "
                       EQUAL@45..46 "="
-                      Comment@46..47
-                        WHITESPACE@46..47 " "
-                      WhereExpression@47..49
-                        ExpressionVariable@47..49
-                          QualifiedName@47..49
+                      WhereExpression@46..48
+                        ExpressionVariable@46..48
+                          QualifiedName@46..48
+                            Annotation@46..47
+                              TEXT@46..47 " "
                             LOWER@47..48 "y"
-                            Comment@48..49
-                              WHITESPACE@48..49 " "
-                  LAYOUT_END@49..49 ""
+                  LAYOUT_END@48..48 ""
+                Annotation@48..49
+                  TEXT@48..49 " "
                 IN@49..51 "in"
-                Comment@51..52
-                  WHITESPACE@51..52 " "
-                ExpressionVariable@52..55
-                  QualifiedName@52..55
+                ExpressionVariable@51..53
+                  QualifiedName@51..53
+                    Annotation@51..52
+                      TEXT@51..52 " "
                     LOWER@52..53 "z"
-                    Comment@53..55
-                      WHITESPACE@53..55 "\n\n"
-        LAYOUT_SEPARATOR@55..55 ""
-        ValueEquation@55..84
+        LAYOUT_SEPARATOR@53..53 ""
+        ValueEquation@53..82
+          Annotation@53..55
+            TEXT@53..55 "\n\n"
           LOWER@55..61 "let_in"
-          Comment@61..62
-            WHITESPACE@61..62 " "
-          FunctionBinders@62..62
-          Unconditional@62..84
+          FunctionBinders@61..61
+          Unconditional@61..82
+            Annotation@61..62
+              TEXT@61..62 " "
             EQUAL@62..63 "="
-            Comment@63..66
-              WHITESPACE@63..66 "\n  "
-            WhereExpression@66..84
-              ExpressionLetIn@66..84
+            WhereExpression@63..82
+              ExpressionLetIn@63..82
+                Annotation@63..66
+                  TEXT@63..66 "\n  "
                 LET@66..69 "let"
-                Comment@69..70
-                  WHITESPACE@69..70 " "
-                LetBindingStatements@70..78
-                  LAYOUT_START@70..70 ""
-                  LetBindingEquation@70..78
+                LetBindingStatements@69..75
+                  LAYOUT_START@69..69 ""
+                  LetBindingEquation@69..75
+                    Annotation@69..70
+                      TEXT@69..70 " "
                     LOWER@70..71 "x"
-                    Comment@71..72
-                      WHITESPACE@71..72 " "
-                    FunctionBinders@72..72
-                    Unconditional@72..78
+                    FunctionBinders@71..71
+                    Unconditional@71..75
+                      Annotation@71..72
+                        TEXT@71..72 " "
                       EQUAL@72..73 "="
-                      Comment@73..74
-                        WHITESPACE@73..74 " "
-                      WhereExpression@74..78
-                        ExpressionVariable@74..78
-                          QualifiedName@74..78
+                      WhereExpression@73..75
+                        ExpressionVariable@73..75
+                          QualifiedName@73..75
+                            Annotation@73..74
+                              TEXT@73..74 " "
                             LOWER@74..75 "y"
-                            Comment@75..78
-                              WHITESPACE@75..78 "\n  "
-                  LAYOUT_END@78..78 ""
+                  LAYOUT_END@75..75 ""
+                Annotation@75..78
+                  TEXT@75..78 "\n  "
                 IN@78..80 "in"
-                Comment@80..81
-                  WHITESPACE@80..81 " "
-                ExpressionVariable@81..84
-                  QualifiedName@81..84
+                ExpressionVariable@80..82
+                  QualifiedName@80..82
+                    Annotation@80..81
+                      TEXT@80..81 " "
                     LOWER@81..82 "z"
-                    Comment@82..84
-                      WHITESPACE@82..84 "\n\n"
-        LAYOUT_SEPARATOR@84..84 ""
-        ValueEquation@84..121
+        LAYOUT_SEPARATOR@82..82 ""
+        ValueEquation@82..119
+          Annotation@82..84
+            TEXT@82..84 "\n\n"
           LOWER@84..90 "let_in"
-          Comment@90..91
-            WHITESPACE@90..91 " "
-          FunctionBinders@91..91
-          Unconditional@91..121
+          FunctionBinders@90..90
+          Unconditional@90..119
+            Annotation@90..91
+              TEXT@90..91 " "
             EQUAL@91..92 "="
-            Comment@92..95
-              WHITESPACE@92..95 "\n  "
-            WhereExpression@95..121
-              ExpressionLetIn@95..121
+            WhereExpression@92..119
+              ExpressionLetIn@92..119
+                Annotation@92..95
+                  TEXT@92..95 "\n  "
                 LET@95..98 "let"
-                Comment@98..103
-                  WHITESPACE@98..103 "\n    "
-                LetBindingStatements@103..111
-                  LAYOUT_START@103..103 ""
-                  LetBindingEquation@103..111
+                LetBindingStatements@98..108
+                  LAYOUT_START@98..98 ""
+                  LetBindingEquation@98..108
+                    Annotation@98..103
+                      TEXT@98..103 "\n    "
                     LOWER@103..104 "x"
-                    Comment@104..105
-                      WHITESPACE@104..105 " "
-                    FunctionBinders@105..105
-                    Unconditional@105..111
+                    FunctionBinders@104..104
+                    Unconditional@104..108
+                      Annotation@104..105
+                        TEXT@104..105 " "
                       EQUAL@105..106 "="
-                      Comment@106..107
-                        WHITESPACE@106..107 " "
-                      WhereExpression@107..111
-                        ExpressionVariable@107..111
-                          QualifiedName@107..111
+                      WhereExpression@106..108
+                        ExpressionVariable@106..108
+                          QualifiedName@106..108
+                            Annotation@106..107
+                              TEXT@106..107 " "
                             LOWER@107..108 "y"
-                            Comment@108..111
-                              WHITESPACE@108..111 "\n  "
-                  LAYOUT_END@111..111 ""
+                  LAYOUT_END@108..108 ""
+                Annotation@108..111
+                  TEXT@108..111 "\n  "
                 IN@111..113 "in"
-                Comment@113..118
-                  WHITESPACE@113..118 "\n    "
-                ExpressionVariable@118..121
-                  QualifiedName@118..121
+                ExpressionVariable@113..119
+                  QualifiedName@113..119
+                    Annotation@113..118
+                      TEXT@113..118 "\n    "
                     LOWER@118..119 "z"
-                    Comment@119..121
-                      WHITESPACE@119..121 "\n\n"
-        LAYOUT_SEPARATOR@121..121 ""
-        ValueEquation@121..180
+        LAYOUT_SEPARATOR@119..119 ""
+        ValueEquation@119..179
+          Annotation@119..121
+            TEXT@119..121 "\n\n"
           LOWER@121..127 "let_in"
-          Comment@127..128
-            WHITESPACE@127..128 " "
-          FunctionBinders@128..128
-          Unconditional@128..180
+          FunctionBinders@127..127
+          Unconditional@127..179
+            Annotation@127..128
+              TEXT@127..128 " "
             EQUAL@128..129 "="
-            Comment@129..132
-              WHITESPACE@129..132 "\n  "
-            WhereExpression@132..180
-              ExpressionLetIn@132..180
+            WhereExpression@129..179
+              ExpressionLetIn@129..179
+                Annotation@129..132
+                  TEXT@129..132 "\n  "
                 LET@132..135 "let"
-                Comment@135..140
-                  WHITESPACE@135..140 "\n    "
-                LetBindingStatements@140..168
-                  LAYOUT_START@140..140 ""
-                  LetBindingSignature@140..156
+                LetBindingStatements@135..165
+                  LAYOUT_START@135..135 ""
+                  LetBindingSignature@135..151
+                    Annotation@135..140
+                      TEXT@135..140 "\n    "
                     LOWER@140..144 "life"
-                    Comment@144..145
-                      WHITESPACE@144..145 " "
+                    Annotation@144..145
+                      TEXT@144..145 " "
                     DOUBLE_COLON@145..147 "::"
-                    Comment@147..148
-                      WHITESPACE@147..148 " "
-                    TypeConstructor@148..156
-                      QualifiedName@148..156
+                    TypeConstructor@147..151
+                      QualifiedName@147..151
+                        Annotation@147..148
+                          TEXT@147..148 " "
                         UPPER@148..151 "Int"
-                        Comment@151..156
-                          WHITESPACE@151..156 "\n    "
-                  LAYOUT_SEPARATOR@156..156 ""
-                  LetBindingEquation@156..168
+                  LAYOUT_SEPARATOR@151..151 ""
+                  LetBindingEquation@151..165
+                    Annotation@151..156
+                      TEXT@151..156 "\n    "
                     LOWER@156..160 "life"
-                    Comment@160..161
-                      WHITESPACE@160..161 " "
-                    FunctionBinders@161..161
-                    Unconditional@161..168
+                    FunctionBinders@160..160
+                    Unconditional@160..165
+                      Annotation@160..161
+                        TEXT@160..161 " "
                       EQUAL@161..162 "="
-                      Comment@162..163
-                        WHITESPACE@162..163 " "
-                      WhereExpression@163..168
-                        ExpressionInteger@163..168
+                      WhereExpression@162..165
+                        ExpressionInteger@162..165
+                          Annotation@162..163
+                            TEXT@162..163 " "
                           INTEGER@163..165 "42"
-                          Comment@165..168
-                            WHITESPACE@165..168 "\n  "
-                  LAYOUT_END@168..168 ""
+                  LAYOUT_END@165..165 ""
+                Annotation@165..168
+                  TEXT@165..168 "\n  "
                 IN@168..170 "in"
-                Comment@170..175
-                  WHITESPACE@170..175 "\n    "
-                ExpressionVariable@175..180
-                  QualifiedName@175..180
+                ExpressionVariable@170..179
+                  QualifiedName@170..179
+                    Annotation@170..175
+                      TEXT@170..175 "\n    "
                     LOWER@175..179 "life"
-                    Comment@179..180
-                      WHITESPACE@179..180 "\n"
-      LAYOUT_END@180..180 ""
+      LAYOUT_END@179..179 ""
+      Annotation@179..180
+        TEXT@179..180 "\n"
       END_OF_FILE@180..180 ""
     ,
     [],

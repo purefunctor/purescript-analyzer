@@ -5,59 +5,59 @@ snapshot_kind: text
 ---
 (
     Module@0..63
-      ModuleHeader@0..28
+      ModuleHeader@0..26
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..21
+        ModuleName@6..20
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..20 "BinderBoolean"
-          Comment@20..21
-            WHITESPACE@20..21 " "
-        ModuleExportList@21..21
+        ModuleExportList@20..20
+        Annotation@20..21
+          TEXT@20..21 " "
         WHERE@21..26 "where"
-        Comment@26..28
-          WHITESPACE@26..28 "\n\n"
-      LAYOUT_START@28..28 ""
-      ModuleImports@28..28
-      ModuleStatements@28..63
-        ValueEquation@28..45
+      LAYOUT_START@26..26 ""
+      ModuleImports@26..26
+      ModuleStatements@26..62
+        ValueEquation@26..44
+          Annotation@26..28
+            TEXT@26..28 "\n\n"
           LOWER@28..35 "boolean"
-          Comment@35..36
-            WHITESPACE@35..36 " "
-          FunctionBinders@36..41
-            BinderTrue@36..41
+          FunctionBinders@35..40
+            BinderTrue@35..40
+              Annotation@35..36
+                TEXT@35..36 " "
               TRUE@36..40 "true"
-              Comment@40..41
-                WHITESPACE@40..41 " "
-          Unconditional@41..45
+          Unconditional@40..44
+            Annotation@40..41
+              TEXT@40..41 " "
             EQUAL@41..42 "="
-            Comment@42..43
-              WHITESPACE@42..43 " "
-            WhereExpression@43..45
-              ExpressionInteger@43..45
+            WhereExpression@42..44
+              ExpressionInteger@42..44
+                Annotation@42..43
+                  TEXT@42..43 " "
                 INTEGER@43..44 "0"
-                Comment@44..45
-                  WHITESPACE@44..45 "\n"
-        LAYOUT_SEPARATOR@45..45 ""
-        ValueEquation@45..63
+        LAYOUT_SEPARATOR@44..44 ""
+        ValueEquation@44..62
+          Annotation@44..45
+            TEXT@44..45 "\n"
           LOWER@45..52 "boolean"
-          Comment@52..53
-            WHITESPACE@52..53 " "
-          FunctionBinders@53..59
-            BinderFalse@53..59
+          FunctionBinders@52..58
+            BinderFalse@52..58
+              Annotation@52..53
+                TEXT@52..53 " "
               FALSE@53..58 "false"
-              Comment@58..59
-                WHITESPACE@58..59 " "
-          Unconditional@59..63
+          Unconditional@58..62
+            Annotation@58..59
+              TEXT@58..59 " "
             EQUAL@59..60 "="
-            Comment@60..61
-              WHITESPACE@60..61 " "
-            WhereExpression@61..63
-              ExpressionInteger@61..63
+            WhereExpression@60..62
+              ExpressionInteger@60..62
+                Annotation@60..61
+                  TEXT@60..61 " "
                 INTEGER@61..62 "0"
-                Comment@62..63
-                  WHITESPACE@62..63 "\n"
-      LAYOUT_END@63..63 ""
+      LAYOUT_END@62..62 ""
+      Annotation@62..63
+        TEXT@62..63 "\n"
       END_OF_FILE@63..63 ""
     ,
     [],

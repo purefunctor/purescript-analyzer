@@ -5,28 +5,28 @@ snapshot_kind: text
 ---
 (
     Module@0..26
-      ModuleHeader@0..26
+      ModuleHeader@0..25
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..12
+        ModuleName@6..11
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..11 "Main"
-          Comment@11..12
-            WHITESPACE@11..12 " "
-        ModuleExportList@12..20
+        ModuleExportList@11..19
+          Annotation@11..12
+            TEXT@11..12 " "
           LEFT_PARENTHESIS@12..13 "("
           ModuleExportValue@13..18
             LOWER@13..18 "hello"
           RIGHT_PARENTHESIS@18..19 ")"
-          Comment@19..20
-            WHITESPACE@19..20 " "
+        Annotation@19..20
+          TEXT@19..20 " "
         WHERE@20..25 "where"
-        Comment@25..26
-          WHITESPACE@25..26 "\n"
-      LAYOUT_START@26..26 ""
-      ModuleImports@26..26
-      ModuleStatements@26..26
-      LAYOUT_END@26..26 ""
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..25
+      LAYOUT_END@25..25 ""
+      Annotation@25..26
+        TEXT@25..26 "\n"
       END_OF_FILE@26..26 ""
     ,
     [],

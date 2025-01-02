@@ -5,166 +5,166 @@ snapshot_kind: text
 ---
 (
     Module@0..190
-      ModuleHeader@0..42
+      ModuleHeader@0..40
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..35
+        ModuleName@6..34
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..34 "ClassDeclarationConst ..."
-          Comment@34..35
-            WHITESPACE@34..35 " "
-        ModuleExportList@35..35
+        ModuleExportList@34..34
+        Annotation@34..35
+          TEXT@34..35 " "
         WHERE@35..40 "where"
-        Comment@40..42
-          WHITESPACE@40..42 "\n\n"
-      LAYOUT_START@42..42 ""
-      ModuleImports@42..42
-      ModuleStatements@42..190
-        ClassDeclaration@42..109
+      LAYOUT_START@40..40 ""
+      ModuleImports@40..40
+      ModuleStatements@40..189
+        ClassDeclaration@40..107
+          Annotation@40..42
+            TEXT@40..42 "\n\n"
           CLASS@42..47 "class"
-          Comment@47..48
-            WHITESPACE@47..48 " "
-          ClassConstraints@48..59
-            TypeApplicationChain@48..56
-              TypeConstructor@48..54
-                QualifiedName@48..54
+          ClassConstraints@47..58
+            TypeApplicationChain@47..55
+              TypeConstructor@47..53
+                QualifiedName@47..53
+                  Annotation@47..48
+                    TEXT@47..48 " "
                   UPPER@48..53 "Apply"
-                  Comment@53..54
-                    WHITESPACE@53..54 " "
-              TypeVariable@54..56
+              TypeVariable@53..55
+                Annotation@53..54
+                  TEXT@53..54 " "
                 LOWER@54..55 "f"
-                Comment@55..56
-                  WHITESPACE@55..56 " "
+            Annotation@55..56
+              TEXT@55..56 " "
             LEFT_THICK_ARROW@56..58 "<="
-            Comment@58..59
-              WHITESPACE@58..59 " "
-          ClassHead@59..73
+          ClassHead@58..72
+            Annotation@58..59
+              TEXT@58..59 " "
             UPPER@59..70 "Applicative"
-            Comment@70..71
-              WHITESPACE@70..71 " "
-            TypeVariable@71..73
+            TypeVariable@70..72
+              Annotation@70..71
+                TEXT@70..71 " "
               LOWER@71..72 "f"
-              Comment@72..73
-                WHITESPACE@72..73 " "
+          Annotation@72..73
+            TEXT@72..73 " "
           WHERE@73..78 "where"
-          Comment@78..81
-            WHITESPACE@78..81 "\n  "
-          ClassStatements@81..109
-            LAYOUT_START@81..81 ""
-            ClassMemberStatement@81..109
+          ClassStatements@78..107
+            LAYOUT_START@78..78 ""
+            ClassMemberStatement@78..107
+              Annotation@78..81
+                TEXT@78..81 "\n  "
               LOWER@81..85 "pure"
-              Comment@85..86
-                WHITESPACE@85..86 " "
+              Annotation@85..86
+                TEXT@85..86 " "
               DOUBLE_COLON@86..88 "::"
-              Comment@88..89
-                WHITESPACE@88..89 " "
-              TypeForall@89..109
+              TypeForall@88..107
+                Annotation@88..89
+                  TEXT@88..89 " "
                 FORALL@89..95 "forall"
-                Comment@95..96
-                  WHITESPACE@95..96 " "
-                TypeVariableBinding@96..97
+                TypeVariableBinding@95..97
+                  Annotation@95..96
+                    TEXT@95..96 " "
                   LOWER@96..97 "a"
                 PERIOD@97..98 "."
-                Comment@98..99
-                  WHITESPACE@98..99 " "
-                TypeArrow@99..109
-                  TypeVariable@99..101
+                TypeArrow@98..107
+                  TypeVariable@98..100
+                    Annotation@98..99
+                      TEXT@98..99 " "
                     LOWER@99..100 "a"
-                    Comment@100..101
-                      WHITESPACE@100..101 " "
+                  Annotation@100..101
+                    TEXT@100..101 " "
                   RIGHT_ARROW@101..103 "->"
-                  Comment@103..104
-                    WHITESPACE@103..104 " "
-                  TypeApplicationChain@104..109
-                    TypeVariable@104..106
+                  TypeApplicationChain@103..107
+                    TypeVariable@103..105
+                      Annotation@103..104
+                        TEXT@103..104 " "
                       LOWER@104..105 "f"
-                      Comment@105..106
-                        WHITESPACE@105..106 " "
-                    TypeVariable@106..109
+                    TypeVariable@105..107
+                      Annotation@105..106
+                        TEXT@105..106 " "
                       LOWER@106..107 "a"
-                      Comment@107..109
-                        WHITESPACE@107..109 "\n\n"
-            LAYOUT_END@109..109 ""
-        LAYOUT_SEPARATOR@109..109 ""
-        ClassDeclaration@109..190
+            LAYOUT_END@107..107 ""
+        LAYOUT_SEPARATOR@107..107 ""
+        ClassDeclaration@107..189
+          Annotation@107..109
+            TEXT@107..109 "\n\n"
           CLASS@109..114 "class"
-          Comment@114..115
-            WHITESPACE@114..115 " "
-          ClassConstraints@115..145
+          ClassConstraints@114..144
+            Annotation@114..115
+              TEXT@114..115 " "
             LEFT_PARENTHESIS@115..116 "("
             TypeApplicationChain@116..125
-              TypeConstructor@116..124
-                QualifiedName@116..124
+              TypeConstructor@116..123
+                QualifiedName@116..123
                   UPPER@116..123 "Functor"
-                  Comment@123..124
-                    WHITESPACE@123..124 " "
-              TypeVariable@124..125
+              TypeVariable@123..125
+                Annotation@123..124
+                  TEXT@123..124 " "
                 LOWER@124..125 "f"
             COMMA@125..126 ","
-            Comment@126..127
-              WHITESPACE@126..127 " "
-            TypeApplicationChain@127..140
-              TypeConstructor@127..139
-                QualifiedName@127..139
+            TypeApplicationChain@126..140
+              TypeConstructor@126..138
+                QualifiedName@126..138
+                  Annotation@126..127
+                    TEXT@126..127 " "
                   UPPER@127..138 "Applicative"
-                  Comment@138..139
-                    WHITESPACE@138..139 " "
-              TypeVariable@139..140
+              TypeVariable@138..140
+                Annotation@138..139
+                  TEXT@138..139 " "
                 LOWER@139..140 "f"
             RIGHT_PARENTHESIS@140..141 ")"
-            Comment@141..142
-              WHITESPACE@141..142 " "
+            Annotation@141..142
+              TEXT@141..142 " "
             LEFT_THICK_ARROW@142..144 "<="
-            Comment@144..145
-              WHITESPACE@144..145 " "
-          ClassHead@145..153
+          ClassHead@144..152
+            Annotation@144..145
+              TEXT@144..145 " "
             UPPER@145..150 "Monad"
-            Comment@150..151
-              WHITESPACE@150..151 " "
-            TypeVariable@151..153
+            TypeVariable@150..152
+              Annotation@150..151
+                TEXT@150..151 " "
               LOWER@151..152 "f"
-              Comment@152..153
-                WHITESPACE@152..153 " "
+          Annotation@152..153
+            TEXT@152..153 " "
           WHERE@153..158 "where"
-          Comment@158..161
-            WHITESPACE@158..161 "\n  "
-          ClassStatements@161..190
-            LAYOUT_START@161..161 ""
-            ClassMemberStatement@161..190
+          ClassStatements@158..189
+            LAYOUT_START@158..158 ""
+            ClassMemberStatement@158..189
+              Annotation@158..161
+                TEXT@158..161 "\n  "
               LOWER@161..167 "return"
-              Comment@167..168
-                WHITESPACE@167..168 " "
+              Annotation@167..168
+                TEXT@167..168 " "
               DOUBLE_COLON@168..170 "::"
-              Comment@170..171
-                WHITESPACE@170..171 " "
-              TypeForall@171..190
+              TypeForall@170..189
+                Annotation@170..171
+                  TEXT@170..171 " "
                 FORALL@171..177 "forall"
-                Comment@177..178
-                  WHITESPACE@177..178 " "
-                TypeVariableBinding@178..179
+                TypeVariableBinding@177..179
+                  Annotation@177..178
+                    TEXT@177..178 " "
                   LOWER@178..179 "a"
                 PERIOD@179..180 "."
-                Comment@180..181
-                  WHITESPACE@180..181 " "
-                TypeArrow@181..190
-                  TypeVariable@181..183
+                TypeArrow@180..189
+                  TypeVariable@180..182
+                    Annotation@180..181
+                      TEXT@180..181 " "
                     LOWER@181..182 "a"
-                    Comment@182..183
-                      WHITESPACE@182..183 " "
+                  Annotation@182..183
+                    TEXT@182..183 " "
                   RIGHT_ARROW@183..185 "->"
-                  Comment@185..186
-                    WHITESPACE@185..186 " "
-                  TypeApplicationChain@186..190
-                    TypeVariable@186..188
+                  TypeApplicationChain@185..189
+                    TypeVariable@185..187
+                      Annotation@185..186
+                        TEXT@185..186 " "
                       LOWER@186..187 "f"
-                      Comment@187..188
-                        WHITESPACE@187..188 " "
-                    TypeVariable@188..190
+                    TypeVariable@187..189
+                      Annotation@187..188
+                        TEXT@187..188 " "
                       LOWER@188..189 "a"
-                      Comment@189..190
-                        WHITESPACE@189..190 "\n"
-            LAYOUT_END@190..190 ""
-      LAYOUT_END@190..190 ""
+            LAYOUT_END@189..189 ""
+      LAYOUT_END@189..189 ""
+      Annotation@189..190
+        TEXT@189..190 "\n"
       END_OF_FILE@190..190 ""
     ,
     [],

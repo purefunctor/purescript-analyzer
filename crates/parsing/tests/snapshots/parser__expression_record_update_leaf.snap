@@ -5,58 +5,58 @@ snapshot_kind: text
 ---
 (
     Module@0..60
-      ModuleHeader@0..41
+      ModuleHeader@0..39
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..34
+        ModuleName@6..33
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..33 "ExpressionRecordUpdat ..."
-          Comment@33..34
-            WHITESPACE@33..34 " "
-        ModuleExportList@34..34
+        ModuleExportList@33..33
+        Annotation@33..34
+          TEXT@33..34 " "
         WHERE@34..39 "where"
-        Comment@39..41
-          WHITESPACE@39..41 "\n\n"
-      LAYOUT_START@41..41 ""
-      ModuleImports@41..41
-      ModuleStatements@41..60
-        ValueEquation@41..60
+      LAYOUT_START@39..39 ""
+      ModuleImports@39..39
+      ModuleStatements@39..59
+        ValueEquation@39..59
+          Annotation@39..41
+            TEXT@39..41 "\n\n"
           LOWER@41..45 "leaf"
-          Comment@45..46
-            WHITESPACE@45..46 " "
-          FunctionBinders@46..46
-          Unconditional@46..60
+          FunctionBinders@45..45
+          Unconditional@45..59
+            Annotation@45..46
+              TEXT@45..46 " "
             EQUAL@46..47 "="
-            Comment@47..48
-              WHITESPACE@47..48 " "
-            WhereExpression@48..60
-              ExpressionRecordUpdate@48..60
-                ExpressionVariable@48..50
-                  QualifiedName@48..50
+            WhereExpression@47..59
+              ExpressionRecordUpdate@47..59
+                ExpressionVariable@47..49
+                  QualifiedName@47..49
+                    Annotation@47..48
+                      TEXT@47..48 " "
                     LOWER@48..49 "x"
-                    Comment@49..50
-                      WHITESPACE@49..50 " "
-                RecordUpdates@50..60
+                RecordUpdates@49..59
+                  Annotation@49..50
+                    TEXT@49..50 " "
                   LEFT_CURLY@50..51 "{"
-                  Comment@51..52
-                    WHITESPACE@51..52 " "
-                  RecordUpdateLeaf@52..58
-                    LabelName@52..54
+                  RecordUpdateLeaf@51..57
+                    LabelName@51..53
+                      Annotation@51..52
+                        TEXT@51..52 " "
                       LOWER@52..53 "a"
-                      Comment@53..54
-                        WHITESPACE@53..54 " "
+                    Annotation@53..54
+                      TEXT@53..54 " "
                     EQUAL@54..55 "="
-                    Comment@55..56
-                      WHITESPACE@55..56 " "
-                    ExpressionVariable@56..58
-                      QualifiedName@56..58
+                    ExpressionVariable@55..57
+                      QualifiedName@55..57
+                        Annotation@55..56
+                          TEXT@55..56 " "
                         LOWER@56..57 "b"
-                        Comment@57..58
-                          WHITESPACE@57..58 " "
+                  Annotation@57..58
+                    TEXT@57..58 " "
                   RIGHT_CURLY@58..59 "}"
-                  Comment@59..60
-                    WHITESPACE@59..60 "\n"
-      LAYOUT_END@60..60 ""
+      LAYOUT_END@59..59 ""
+      Annotation@59..60
+        TEXT@59..60 "\n"
       END_OF_FILE@60..60 ""
     ,
     [],

@@ -5,153 +5,153 @@ snapshot_kind: text
 ---
 (
     Module@0..188
-      ModuleHeader@0..53
+      ModuleHeader@0..51
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..46
+        ModuleName@6..45
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..45 "ClassDeclarationFunct ..."
-          Comment@45..46
-            WHITESPACE@45..46 " "
-        ModuleExportList@46..46
+        ModuleExportList@45..45
+        Annotation@45..46
+          TEXT@45..46 " "
         WHERE@46..51 "where"
-        Comment@51..53
-          WHITESPACE@51..53 "\n\n"
-      LAYOUT_START@53..53 ""
-      ModuleImports@53..53
-      ModuleStatements@53..188
-        ClassDeclaration@53..116
+      LAYOUT_START@51..51 ""
+      ModuleImports@51..51
+      ModuleStatements@51..187
+        ClassDeclaration@51..114
+          Annotation@51..53
+            TEXT@51..53 "\n\n"
           CLASS@53..58 "class"
-          Comment@58..59
-            WHITESPACE@58..59 " "
-          ClassHead@59..74
+          ClassHead@58..73
+            Annotation@58..59
+              TEXT@58..59 " "
             UPPER@59..69 "TypeEquals"
-            Comment@69..70
-              WHITESPACE@69..70 " "
-            TypeVariable@70..72
+            TypeVariable@69..71
+              Annotation@69..70
+                TEXT@69..70 " "
               LOWER@70..71 "a"
-              Comment@71..72
-                WHITESPACE@71..72 " "
-            TypeVariable@72..74
+            TypeVariable@71..73
+              Annotation@71..72
+                TEXT@71..72 " "
               LOWER@72..73 "b"
-              Comment@73..74
-                WHITESPACE@73..74 " "
-          ClassFunctionalDependencies@74..91
+          ClassFunctionalDependencies@73..90
+            Annotation@73..74
+              TEXT@73..74 " "
             PIPE@74..75 "|"
-            Comment@75..76
-              WHITESPACE@75..76 " "
-            FunctionalDependencyDetermines@76..82
+            FunctionalDependencyDetermines@75..82
+              Annotation@75..76
+                TEXT@75..76 " "
               LOWER@76..77 "a"
-              Comment@77..78
-                WHITESPACE@77..78 " "
+              Annotation@77..78
+                TEXT@77..78 " "
               RIGHT_ARROW@78..80 "->"
-              Comment@80..81
-                WHITESPACE@80..81 " "
+              Annotation@80..81
+                TEXT@80..81 " "
               LOWER@81..82 "b"
             COMMA@82..83 ","
-            Comment@83..84
-              WHITESPACE@83..84 " "
-            FunctionalDependencyDetermines@84..91
+            FunctionalDependencyDetermines@83..90
+              Annotation@83..84
+                TEXT@83..84 " "
               LOWER@84..85 "b"
-              Comment@85..86
-                WHITESPACE@85..86 " "
+              Annotation@85..86
+                TEXT@85..86 " "
               RIGHT_ARROW@86..88 "->"
-              Comment@88..89
-                WHITESPACE@88..89 " "
+              Annotation@88..89
+                TEXT@88..89 " "
               LOWER@89..90 "a"
-              Comment@90..91
-                WHITESPACE@90..91 " "
+          Annotation@90..91
+            TEXT@90..91 " "
           WHERE@91..96 "where"
-          Comment@96..99
-            WHITESPACE@96..99 "\n  "
-          ClassStatements@99..116
-            LAYOUT_START@99..99 ""
-            ClassMemberStatement@99..116
+          ClassStatements@96..114
+            LAYOUT_START@96..96 ""
+            ClassMemberStatement@96..114
+              Annotation@96..99
+                TEXT@96..99 "\n  "
               LOWER@99..104 "proof"
-              Comment@104..105
-                WHITESPACE@104..105 " "
+              Annotation@104..105
+                TEXT@104..105 " "
               DOUBLE_COLON@105..107 "::"
-              Comment@107..108
-                WHITESPACE@107..108 " "
-              TypeArrow@108..116
-                TypeVariable@108..110
+              TypeArrow@107..114
+                TypeVariable@107..109
+                  Annotation@107..108
+                    TEXT@107..108 " "
                   LOWER@108..109 "a"
-                  Comment@109..110
-                    WHITESPACE@109..110 " "
+                Annotation@109..110
+                  TEXT@109..110 " "
                 RIGHT_ARROW@110..112 "->"
-                Comment@112..113
-                  WHITESPACE@112..113 " "
-                TypeVariable@113..116
+                TypeVariable@112..114
+                  Annotation@112..113
+                    TEXT@112..113 " "
                   LOWER@113..114 "b"
-                  Comment@114..116
-                    WHITESPACE@114..116 "\n\n"
-            LAYOUT_END@116..116 ""
-        LAYOUT_SEPARATOR@116..116 ""
-        ClassDeclaration@116..167
+            LAYOUT_END@114..114 ""
+        LAYOUT_SEPARATOR@114..114 ""
+        ClassDeclaration@114..165
+          Annotation@114..116
+            TEXT@114..116 "\n\n"
           CLASS@116..121 "class"
-          Comment@121..122
-            WHITESPACE@121..122 " "
-          ClassHead@122..135
+          ClassHead@121..134
+            Annotation@121..122
+              TEXT@121..122 " "
             UPPER@122..132 "Determined"
-            Comment@132..133
-              WHITESPACE@132..133 " "
-            TypeVariable@133..135
+            TypeVariable@132..134
+              Annotation@132..133
+                TEXT@132..133 " "
               LOWER@133..134 "a"
-              Comment@134..135
-                WHITESPACE@134..135 " "
-          ClassFunctionalDependencies@135..142
+          ClassFunctionalDependencies@134..141
+            Annotation@134..135
+              TEXT@134..135 " "
             PIPE@135..136 "|"
-            Comment@136..137
-              WHITESPACE@136..137 " "
-            FunctionalDependencyDetermined@137..142
+            FunctionalDependencyDetermined@136..141
+              Annotation@136..137
+                TEXT@136..137 " "
               RIGHT_ARROW@137..139 "->"
-              Comment@139..140
-                WHITESPACE@139..140 " "
+              Annotation@139..140
+                TEXT@139..140 " "
               LOWER@140..141 "a"
-              Comment@141..142
-                WHITESPACE@141..142 " "
+          Annotation@141..142
+            TEXT@141..142 " "
           WHERE@142..147 "where"
-          Comment@147..150
-            WHITESPACE@147..150 "\n  "
-          ClassStatements@150..167
-            LAYOUT_START@150..150 ""
-            ClassMemberStatement@150..167
+          ClassStatements@147..165
+            LAYOUT_START@147..147 ""
+            ClassMemberStatement@147..165
+              Annotation@147..150
+                TEXT@147..150 "\n  "
               LOWER@150..160 "determined"
-              Comment@160..161
-                WHITESPACE@160..161 " "
+              Annotation@160..161
+                TEXT@160..161 " "
               DOUBLE_COLON@161..163 "::"
-              Comment@163..164
-                WHITESPACE@163..164 " "
-              TypeVariable@164..167
+              TypeVariable@163..165
+                Annotation@163..164
+                  TEXT@163..164 " "
                 LOWER@164..165 "a"
-                Comment@165..167
-                  WHITESPACE@165..167 "\n\n"
-            LAYOUT_END@167..167 ""
-        LAYOUT_SEPARATOR@167..167 ""
-        ClassDeclaration@167..188
+            LAYOUT_END@165..165 ""
+        LAYOUT_SEPARATOR@165..165 ""
+        ClassDeclaration@165..187
+          Annotation@165..167
+            TEXT@165..167 "\n\n"
           CLASS@167..172 "class"
-          Comment@172..173
-            WHITESPACE@172..173 " "
-          ClassHead@173..181
+          ClassHead@172..180
+            Annotation@172..173
+              TEXT@172..173 " "
             UPPER@173..178 "Empty"
-            Comment@178..179
-              WHITESPACE@178..179 " "
-            TypeVariable@179..181
+            TypeVariable@178..180
+              Annotation@178..179
+                TEXT@178..179 " "
               LOWER@179..180 "a"
-              Comment@180..181
-                WHITESPACE@180..181 " "
-          ClassFunctionalDependencies@181..188
+          ClassFunctionalDependencies@180..187
+            Annotation@180..181
+              TEXT@180..181 " "
             PIPE@181..182 "|"
-            Comment@182..183
-              WHITESPACE@182..183 " "
-            FunctionalDependencyDetermined@183..188
+            FunctionalDependencyDetermined@182..187
+              Annotation@182..183
+                TEXT@182..183 " "
               RIGHT_ARROW@183..185 "->"
-              Comment@185..186
-                WHITESPACE@185..186 " "
+              Annotation@185..186
+                TEXT@185..186 " "
               LOWER@186..187 "a"
-              Comment@187..188
-                WHITESPACE@187..188 "\n"
-      LAYOUT_END@188..188 ""
+      LAYOUT_END@187..187 ""
+      Annotation@187..188
+        TEXT@187..188 "\n"
       END_OF_FILE@188..188 ""
     ,
     [],

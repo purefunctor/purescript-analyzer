@@ -5,72 +5,72 @@ snapshot_kind: text
 ---
 (
     Module@0..141
-      ModuleHeader@0..37
+      ModuleHeader@0..34
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..29
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..28 "DeriveDeclarationName"
-          Comment@28..29
-            WHITESPACE@28..29 " "
-        ModuleExportList@29..29
+        ModuleExportList@28..28
+        Annotation@28..29
+          TEXT@28..29 " "
         WHERE@29..34 "where"
-        Comment@34..37
-          WHITESPACE@34..37 "\n\n\n"
-      LAYOUT_START@37..37 ""
-      ModuleImports@37..37
-      ModuleStatements@37..141
-        DeriveDeclaration@37..85
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..140
+        DeriveDeclaration@34..84
+          Annotation@34..37
+            TEXT@34..37 "\n\n\n"
           DERIVE@37..43 "derive"
-          Comment@43..44
-            WHITESPACE@43..44 " "
+          Annotation@43..44
+            TEXT@43..44 " "
           INSTANCE@44..52 "instance"
-          Comment@52..53
-            WHITESPACE@52..53 " "
-          InstanceName@53..70
+          InstanceName@52..69
+            Annotation@52..53
+              TEXT@52..53 " "
             LOWER@53..66 "functorParser"
-            Comment@66..67
-              WHITESPACE@66..67 " "
+            Annotation@66..67
+              TEXT@66..67 " "
             DOUBLE_COLON@67..69 "::"
-            Comment@69..70
-              WHITESPACE@69..70 " "
-          InstanceHead@70..85
+          InstanceHead@69..84
+            Annotation@69..70
+              TEXT@69..70 " "
             UPPER@70..77 "Functor"
-            Comment@77..78
-              WHITESPACE@77..78 " "
-            TypeConstructor@78..85
-              QualifiedName@78..85
+            TypeConstructor@77..84
+              QualifiedName@77..84
+                Annotation@77..78
+                  TEXT@77..78 " "
                 UPPER@78..84 "Parser"
-                Comment@84..85
-                  WHITESPACE@84..85 "\n"
-        LAYOUT_SEPARATOR@85..85 ""
-        DeriveDeclaration@85..141
+        LAYOUT_SEPARATOR@84..84 ""
+        DeriveDeclaration@84..140
+          Annotation@84..85
+            TEXT@84..85 "\n"
           DERIVE@85..91 "derive"
-          Comment@91..92
-            WHITESPACE@91..92 " "
+          Annotation@91..92
+            TEXT@91..92 " "
           NEWTYPE@92..99 "newtype"
-          Comment@99..100
-            WHITESPACE@99..100 " "
+          Annotation@99..100
+            TEXT@99..100 " "
           INSTANCE@100..108 "instance"
-          Comment@108..109
-            WHITESPACE@108..109 " "
-          InstanceName@109..126
+          InstanceName@108..125
+            Annotation@108..109
+              TEXT@108..109 " "
             LOWER@109..122 "functorParser"
-            Comment@122..123
-              WHITESPACE@122..123 " "
+            Annotation@122..123
+              TEXT@122..123 " "
             DOUBLE_COLON@123..125 "::"
-            Comment@125..126
-              WHITESPACE@125..126 " "
-          InstanceHead@126..141
+          InstanceHead@125..140
+            Annotation@125..126
+              TEXT@125..126 " "
             UPPER@126..133 "Functor"
-            Comment@133..134
-              WHITESPACE@133..134 " "
-            TypeConstructor@134..141
-              QualifiedName@134..141
+            TypeConstructor@133..140
+              QualifiedName@133..140
+                Annotation@133..134
+                  TEXT@133..134 " "
                 UPPER@134..140 "Parser"
-                Comment@140..141
-                  WHITESPACE@140..141 "\n"
-      LAYOUT_END@141..141 ""
+      LAYOUT_END@140..140 ""
+      Annotation@140..141
+        TEXT@140..141 "\n"
       END_OF_FILE@141..141 ""
     ,
     [],

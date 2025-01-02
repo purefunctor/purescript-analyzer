@@ -5,62 +5,62 @@ snapshot_kind: text
 ---
 (
     Module@0..61
-      ModuleHeader@0..29
+      ModuleHeader@0..27
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..22
+        ModuleName@6..21
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..21 "BinderVariable"
-          Comment@21..22
-            WHITESPACE@21..22 " "
-        ModuleExportList@22..22
+        ModuleExportList@21..21
+        Annotation@21..22
+          TEXT@21..22 " "
         WHERE@22..27 "where"
-        Comment@27..29
-          WHITESPACE@27..29 "\n\n"
-      LAYOUT_START@29..29 ""
-      ModuleImports@29..29
-      ModuleStatements@29..61
-        ValueEquation@29..44
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..60
+        ValueEquation@27..43
+          Annotation@27..29
+            TEXT@27..29 "\n\n"
           LOWER@29..37 "identity"
-          Comment@37..38
-            WHITESPACE@37..38 " "
-          FunctionBinders@38..40
-            BinderVariable@38..40
+          FunctionBinders@37..39
+            BinderVariable@37..39
+              Annotation@37..38
+                TEXT@37..38 " "
               LOWER@38..39 "x"
-              Comment@39..40
-                WHITESPACE@39..40 " "
-          Unconditional@40..44
+          Unconditional@39..43
+            Annotation@39..40
+              TEXT@39..40 " "
             EQUAL@40..41 "="
-            Comment@41..42
-              WHITESPACE@41..42 " "
-            WhereExpression@42..44
-              ExpressionInteger@42..44
+            WhereExpression@41..43
+              ExpressionInteger@41..43
+                Annotation@41..42
+                  TEXT@41..42 " "
                 INTEGER@42..43 "0"
-                Comment@43..44
-                  WHITESPACE@43..44 "\n"
-        LAYOUT_SEPARATOR@44..44 ""
-        ValueEquation@44..61
+        LAYOUT_SEPARATOR@43..43 ""
+        ValueEquation@43..60
+          Annotation@43..44
+            TEXT@43..44 "\n"
           LOWER@44..52 "identity"
-          Comment@52..53
-            WHITESPACE@52..53 " "
-          FunctionBinders@53..57
-            BinderNamed@53..57
+          FunctionBinders@52..56
+            BinderNamed@52..56
+              Annotation@52..53
+                TEXT@52..53 " "
               LOWER@53..54 "x"
               AT@54..55 "@"
-              BinderVariable@55..57
+              BinderVariable@55..56
                 LOWER@55..56 "y"
-                Comment@56..57
-                  WHITESPACE@56..57 " "
-          Unconditional@57..61
+          Unconditional@56..60
+            Annotation@56..57
+              TEXT@56..57 " "
             EQUAL@57..58 "="
-            Comment@58..59
-              WHITESPACE@58..59 " "
-            WhereExpression@59..61
-              ExpressionInteger@59..61
+            WhereExpression@58..60
+              ExpressionInteger@58..60
+                Annotation@58..59
+                  TEXT@58..59 " "
                 INTEGER@59..60 "0"
-                Comment@60..61
-                  WHITESPACE@60..61 "\n"
-      LAYOUT_END@61..61 ""
+      LAYOUT_END@60..60 ""
+      Annotation@60..61
+        TEXT@60..61 "\n"
       END_OF_FILE@61..61 ""
     ,
     [],

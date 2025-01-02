@@ -5,231 +5,231 @@ snapshot_kind: text
 ---
 (
     Module@0..343
-      ModuleHeader@0..48
+      ModuleHeader@0..45
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..40
+        ModuleName@6..39
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..39 "DeriveDeclarationName ..."
-          Comment@39..40
-            WHITESPACE@39..40 " "
-        ModuleExportList@40..40
+        ModuleExportList@39..39
+        Annotation@39..40
+          TEXT@39..40 " "
         WHERE@40..45 "where"
-        Comment@45..48
-          WHITESPACE@45..48 "\n\n\n"
-      LAYOUT_START@48..48 ""
-      ModuleImports@48..48
-      ModuleStatements@48..343
-        DeriveDeclaration@48..113
+      LAYOUT_START@45..45 ""
+      ModuleImports@45..45
+      ModuleStatements@45..342
+        DeriveDeclaration@45..112
+          Annotation@45..48
+            TEXT@45..48 "\n\n\n"
           DERIVE@48..54 "derive"
-          Comment@54..55
-            WHITESPACE@54..55 " "
+          Annotation@54..55
+            TEXT@54..55 " "
           INSTANCE@55..63 "instance"
-          Comment@63..64
-            WHITESPACE@63..64 " "
-          InstanceName@64..81
+          InstanceName@63..80
+            Annotation@63..64
+              TEXT@63..64 " "
             LOWER@64..77 "functorParser"
-            Comment@77..78
-              WHITESPACE@77..78 " "
+            Annotation@77..78
+              TEXT@77..78 " "
             DOUBLE_COLON@78..80 "::"
-            Comment@80..81
-              WHITESPACE@80..81 " "
-          InstanceConstraints@81..98
-            TypeApplicationChain@81..95
-              TypeConstructor@81..88
-                QualifiedName@81..88
+          InstanceConstraints@80..97
+            TypeApplicationChain@80..94
+              TypeConstructor@80..87
+                QualifiedName@80..87
+                  Annotation@80..81
+                    TEXT@80..81 " "
                   UPPER@81..87 "Monoid"
-                  Comment@87..88
-                    WHITESPACE@87..88 " "
-              TypeConstructor@88..95
-                QualifiedName@88..95
+              TypeConstructor@87..94
+                QualifiedName@87..94
+                  Annotation@87..88
+                    TEXT@87..88 " "
                   UPPER@88..94 "Parser"
-                  Comment@94..95
-                    WHITESPACE@94..95 " "
+            Annotation@94..95
+              TEXT@94..95 " "
             RIGHT_THICK_ARROW@95..97 "=>"
-            Comment@97..98
-              WHITESPACE@97..98 " "
-          InstanceHead@98..113
+          InstanceHead@97..112
+            Annotation@97..98
+              TEXT@97..98 " "
             UPPER@98..105 "Functor"
-            Comment@105..106
-              WHITESPACE@105..106 " "
-            TypeConstructor@106..113
-              QualifiedName@106..113
+            TypeConstructor@105..112
+              QualifiedName@105..112
+                Annotation@105..106
+                  TEXT@105..106 " "
                 UPPER@106..112 "Parser"
-                Comment@112..113
-                  WHITESPACE@112..113 "\n"
-        LAYOUT_SEPARATOR@113..113 ""
-        DeriveDeclaration@113..187
+        LAYOUT_SEPARATOR@112..112 ""
+        DeriveDeclaration@112..185
+          Annotation@112..113
+            TEXT@112..113 "\n"
           DERIVE@113..119 "derive"
-          Comment@119..120
-            WHITESPACE@119..120 " "
+          Annotation@119..120
+            TEXT@119..120 " "
           NEWTYPE@120..127 "newtype"
-          Comment@127..128
-            WHITESPACE@127..128 " "
+          Annotation@127..128
+            TEXT@127..128 " "
           INSTANCE@128..136 "instance"
-          Comment@136..137
-            WHITESPACE@136..137 " "
-          InstanceName@137..154
+          InstanceName@136..153
+            Annotation@136..137
+              TEXT@136..137 " "
             LOWER@137..150 "functorParser"
-            Comment@150..151
-              WHITESPACE@150..151 " "
+            Annotation@150..151
+              TEXT@150..151 " "
             DOUBLE_COLON@151..153 "::"
-            Comment@153..154
-              WHITESPACE@153..154 " "
-          InstanceConstraints@154..171
-            TypeApplicationChain@154..168
-              TypeConstructor@154..161
-                QualifiedName@154..161
+          InstanceConstraints@153..170
+            TypeApplicationChain@153..167
+              TypeConstructor@153..160
+                QualifiedName@153..160
+                  Annotation@153..154
+                    TEXT@153..154 " "
                   UPPER@154..160 "Monoid"
-                  Comment@160..161
-                    WHITESPACE@160..161 " "
-              TypeConstructor@161..168
-                QualifiedName@161..168
+              TypeConstructor@160..167
+                QualifiedName@160..167
+                  Annotation@160..161
+                    TEXT@160..161 " "
                   UPPER@161..167 "Parser"
-                  Comment@167..168
-                    WHITESPACE@167..168 " "
+            Annotation@167..168
+              TEXT@167..168 " "
             RIGHT_THICK_ARROW@168..170 "=>"
-            Comment@170..171
-              WHITESPACE@170..171 " "
-          InstanceHead@171..187
+          InstanceHead@170..185
+            Annotation@170..171
+              TEXT@170..171 " "
             UPPER@171..178 "Functor"
-            Comment@178..179
-              WHITESPACE@178..179 " "
-            TypeConstructor@179..187
-              QualifiedName@179..187
+            TypeConstructor@178..185
+              QualifiedName@178..185
+                Annotation@178..179
+                  TEXT@178..179 " "
                 UPPER@179..185 "Parser"
-                Comment@185..187
-                  WHITESPACE@185..187 "\n\n"
-        LAYOUT_SEPARATOR@187..187 ""
-        DeriveDeclaration@187..261
+        LAYOUT_SEPARATOR@185..185 ""
+        DeriveDeclaration@185..260
+          Annotation@185..187
+            TEXT@185..187 "\n\n"
           DERIVE@187..193 "derive"
-          Comment@193..194
-            WHITESPACE@193..194 " "
+          Annotation@193..194
+            TEXT@193..194 " "
           INSTANCE@194..202 "instance"
-          Comment@202..203
-            WHITESPACE@202..203 " "
-          InstanceName@203..218
+          InstanceName@202..217
+            Annotation@202..203
+              TEXT@202..203 " "
             LOWER@203..214 "monoidTuple"
-            Comment@214..215
-              WHITESPACE@214..215 " "
+            Annotation@214..215
+              TEXT@214..215 " "
             DOUBLE_COLON@215..217 "::"
-            Comment@217..218
-              WHITESPACE@217..218 " "
-          InstanceConstraints@218..242
+          InstanceConstraints@217..241
+            Annotation@217..218
+              TEXT@217..218 " "
             LEFT_PARENTHESIS@218..219 "("
             TypeApplicationChain@219..227
-              TypeConstructor@219..226
-                QualifiedName@219..226
+              TypeConstructor@219..225
+                QualifiedName@219..225
                   UPPER@219..225 "Monoid"
-                  Comment@225..226
-                    WHITESPACE@225..226 " "
-              TypeVariable@226..227
+              TypeVariable@225..227
+                Annotation@225..226
+                  TEXT@225..226 " "
                 LOWER@226..227 "a"
             COMMA@227..228 ","
-            Comment@228..229
-              WHITESPACE@228..229 " "
-            TypeApplicationChain@229..237
-              TypeConstructor@229..236
-                QualifiedName@229..236
+            TypeApplicationChain@228..237
+              TypeConstructor@228..235
+                QualifiedName@228..235
+                  Annotation@228..229
+                    TEXT@228..229 " "
                   UPPER@229..235 "Monoid"
-                  Comment@235..236
-                    WHITESPACE@235..236 " "
-              TypeVariable@236..237
+              TypeVariable@235..237
+                Annotation@235..236
+                  TEXT@235..236 " "
                 LOWER@236..237 "b"
             RIGHT_PARENTHESIS@237..238 ")"
-            Comment@238..239
-              WHITESPACE@238..239 " "
+            Annotation@238..239
+              TEXT@238..239 " "
             RIGHT_THICK_ARROW@239..241 "=>"
-            Comment@241..242
-              WHITESPACE@241..242 " "
-          InstanceHead@242..261
+          InstanceHead@241..260
+            Annotation@241..242
+              TEXT@241..242 " "
             UPPER@242..248 "Monoid"
-            Comment@248..249
-              WHITESPACE@248..249 " "
-            TypeParenthesized@249..261
+            TypeParenthesized@248..260
+              Annotation@248..249
+                TEXT@248..249 " "
               LEFT_PARENTHESIS@249..250 "("
               TypeApplicationChain@250..259
-                TypeConstructor@250..256
-                  QualifiedName@250..256
+                TypeConstructor@250..255
+                  QualifiedName@250..255
                     UPPER@250..255 "Tuple"
-                    Comment@255..256
-                      WHITESPACE@255..256 " "
-                TypeVariable@256..258
+                TypeVariable@255..257
+                  Annotation@255..256
+                    TEXT@255..256 " "
                   LOWER@256..257 "a"
-                  Comment@257..258
-                    WHITESPACE@257..258 " "
-                TypeVariable@258..259
+                TypeVariable@257..259
+                  Annotation@257..258
+                    TEXT@257..258 " "
                   LOWER@258..259 "b"
               RIGHT_PARENTHESIS@259..260 ")"
-              Comment@260..261
-                WHITESPACE@260..261 "\n"
-        LAYOUT_SEPARATOR@261..261 ""
-        DeriveDeclaration@261..343
+        LAYOUT_SEPARATOR@260..260 ""
+        DeriveDeclaration@260..342
+          Annotation@260..261
+            TEXT@260..261 "\n"
           DERIVE@261..267 "derive"
-          Comment@267..268
-            WHITESPACE@267..268 " "
+          Annotation@267..268
+            TEXT@267..268 " "
           NEWTYPE@268..275 "newtype"
-          Comment@275..276
-            WHITESPACE@275..276 " "
+          Annotation@275..276
+            TEXT@275..276 " "
           INSTANCE@276..284 "instance"
-          Comment@284..285
-            WHITESPACE@284..285 " "
-          InstanceName@285..300
+          InstanceName@284..299
+            Annotation@284..285
+              TEXT@284..285 " "
             LOWER@285..296 "monoidTuple"
-            Comment@296..297
-              WHITESPACE@296..297 " "
+            Annotation@296..297
+              TEXT@296..297 " "
             DOUBLE_COLON@297..299 "::"
-            Comment@299..300
-              WHITESPACE@299..300 " "
-          InstanceConstraints@300..324
+          InstanceConstraints@299..323
+            Annotation@299..300
+              TEXT@299..300 " "
             LEFT_PARENTHESIS@300..301 "("
             TypeApplicationChain@301..309
-              TypeConstructor@301..308
-                QualifiedName@301..308
+              TypeConstructor@301..307
+                QualifiedName@301..307
                   UPPER@301..307 "Monoid"
-                  Comment@307..308
-                    WHITESPACE@307..308 " "
-              TypeVariable@308..309
+              TypeVariable@307..309
+                Annotation@307..308
+                  TEXT@307..308 " "
                 LOWER@308..309 "a"
             COMMA@309..310 ","
-            Comment@310..311
-              WHITESPACE@310..311 " "
-            TypeApplicationChain@311..319
-              TypeConstructor@311..318
-                QualifiedName@311..318
+            TypeApplicationChain@310..319
+              TypeConstructor@310..317
+                QualifiedName@310..317
+                  Annotation@310..311
+                    TEXT@310..311 " "
                   UPPER@311..317 "Monoid"
-                  Comment@317..318
-                    WHITESPACE@317..318 " "
-              TypeVariable@318..319
+              TypeVariable@317..319
+                Annotation@317..318
+                  TEXT@317..318 " "
                 LOWER@318..319 "b"
             RIGHT_PARENTHESIS@319..320 ")"
-            Comment@320..321
-              WHITESPACE@320..321 " "
+            Annotation@320..321
+              TEXT@320..321 " "
             RIGHT_THICK_ARROW@321..323 "=>"
-            Comment@323..324
-              WHITESPACE@323..324 " "
-          InstanceHead@324..343
+          InstanceHead@323..342
+            Annotation@323..324
+              TEXT@323..324 " "
             UPPER@324..330 "Monoid"
-            Comment@330..331
-              WHITESPACE@330..331 " "
-            TypeParenthesized@331..343
+            TypeParenthesized@330..342
+              Annotation@330..331
+                TEXT@330..331 " "
               LEFT_PARENTHESIS@331..332 "("
               TypeApplicationChain@332..341
-                TypeConstructor@332..338
-                  QualifiedName@332..338
+                TypeConstructor@332..337
+                  QualifiedName@332..337
                     UPPER@332..337 "Tuple"
-                    Comment@337..338
-                      WHITESPACE@337..338 " "
-                TypeVariable@338..340
+                TypeVariable@337..339
+                  Annotation@337..338
+                    TEXT@337..338 " "
                   LOWER@338..339 "a"
-                  Comment@339..340
-                    WHITESPACE@339..340 " "
-                TypeVariable@340..341
+                TypeVariable@339..341
+                  Annotation@339..340
+                    TEXT@339..340 " "
                   LOWER@340..341 "b"
               RIGHT_PARENTHESIS@341..342 ")"
-              Comment@342..343
-                WHITESPACE@342..343 "\n"
-      LAYOUT_END@343..343 ""
+      LAYOUT_END@342..342 ""
+      Annotation@342..343
+        TEXT@342..343 "\n"
       END_OF_FILE@343..343 ""
     ,
     [],

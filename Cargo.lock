@@ -212,15 +212,10 @@ dependencies = [
  "drop_bomb",
  "insta",
  "lexing",
- "position",
  "rowan",
  "syntax",
  "test_each_file",
 ]
-
-[[package]]
-name = "position"
-version = "0.1.0"
 
 [[package]]
 name = "proc-macro2"

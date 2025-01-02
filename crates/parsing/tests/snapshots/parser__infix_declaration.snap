@@ -5,117 +5,120 @@ snapshot_kind: text
 ---
 (
     Module@0..135
-      ModuleHeader@0..31
+      ModuleHeader@0..29
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..24
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..23 "InfixDeclaration"
-          Comment@23..24
-            WHITESPACE@23..24 " "
-        ModuleExportList@24..24
+        ModuleExportList@23..23
+        Annotation@23..24
+          TEXT@23..24 " "
         WHERE@24..29 "where"
-        Comment@29..31
-          WHITESPACE@29..31 "\n\n"
-      LAYOUT_START@31..31 ""
-      ModuleImports@31..31
-      ModuleStatements@31..135
-        InfixDeclaration@31..48
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..134
+        InfixDeclaration@29..47
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
           INFIX@31..36 "infix"
-          Comment@36..37
-            WHITESPACE@36..37 " "
+          Annotation@36..37
+            TEXT@36..37 " "
           INTEGER@37..38 "5"
-          Comment@38..39
-            WHITESPACE@38..39 " "
-          QualifiedName@39..43
+          QualifiedName@38..42
+            Annotation@38..39
+              TEXT@38..39 " "
             LOWER@39..42 "add"
-            Comment@42..43
-              WHITESPACE@42..43 " "
+          Annotation@42..43
+            TEXT@42..43 " "
           AS@43..45 "as"
-          Comment@45..46
-            WHITESPACE@45..46 " "
+          Annotation@45..46
+            TEXT@45..46 " "
           OPERATOR@46..47 "+"
-          Comment@47..48
-            WHITESPACE@47..48 "\n"
-        LAYOUT_SEPARATOR@48..48 ""
-        InfixDeclaration@48..66
+        LAYOUT_SEPARATOR@47..47 ""
+        InfixDeclaration@47..64
+          Annotation@47..48
+            TEXT@47..48 "\n"
           INFIX@48..53 "infix"
-          Comment@53..54
-            WHITESPACE@53..54 " "
+          Annotation@53..54
+            TEXT@53..54 " "
           INTEGER@54..55 "5"
-          Comment@55..56
-            WHITESPACE@55..56 " "
-          QualifiedName@56..60
+          QualifiedName@55..59
+            Annotation@55..56
+              TEXT@55..56 " "
             UPPER@56..59 "Add"
-            Comment@59..60
-              WHITESPACE@59..60 " "
+          Annotation@59..60
+            TEXT@59..60 " "
           AS@60..62 "as"
-          Comment@62..63
-            WHITESPACE@62..63 " "
+          Annotation@62..63
+            TEXT@62..63 " "
           OPERATOR@63..64 "+"
-          Comment@64..66
-            WHITESPACE@64..66 "\n\n"
-        LAYOUT_SEPARATOR@66..66 ""
-        InfixDeclaration@66..87
+        LAYOUT_SEPARATOR@64..64 ""
+        InfixDeclaration@64..86
+          Annotation@64..66
+            TEXT@64..66 "\n\n"
           INFIX@66..71 "infix"
-          Comment@71..72
-            WHITESPACE@71..72 " "
+          Annotation@71..72
+            TEXT@71..72 " "
           INTEGER@72..73 "5"
-          Comment@73..74
-            WHITESPACE@73..74 " "
-          QualifiedName@74..82
-            PREFIX@74..78 "Add."
+          QualifiedName@73..81
+            Annotation@73..74
+              TEXT@73..74 " "
+            Qualifier@74..78
+              TEXT@74..78 "Add."
             LOWER@78..81 "add"
-            Comment@81..82
-              WHITESPACE@81..82 " "
+          Annotation@81..82
+            TEXT@81..82 " "
           AS@82..84 "as"
-          Comment@84..85
-            WHITESPACE@84..85 " "
+          Annotation@84..85
+            TEXT@84..85 " "
           OPERATOR@85..86 "+"
-          Comment@86..87
-            WHITESPACE@86..87 "\n"
-        LAYOUT_SEPARATOR@87..87 ""
-        InfixDeclaration@87..109
+        LAYOUT_SEPARATOR@86..86 ""
+        InfixDeclaration@86..107
+          Annotation@86..87
+            TEXT@86..87 "\n"
           INFIX@87..92 "infix"
-          Comment@92..93
-            WHITESPACE@92..93 " "
+          Annotation@92..93
+            TEXT@92..93 " "
           INTEGER@93..94 "5"
-          Comment@94..95
-            WHITESPACE@94..95 " "
-          QualifiedName@95..103
-            PREFIX@95..99 "Add."
+          QualifiedName@94..102
+            Annotation@94..95
+              TEXT@94..95 " "
+            Qualifier@95..99
+              TEXT@95..99 "Add."
             UPPER@99..102 "Add"
-            Comment@102..103
-              WHITESPACE@102..103 " "
+          Annotation@102..103
+            TEXT@102..103 " "
           AS@103..105 "as"
-          Comment@105..106
-            WHITESPACE@105..106 " "
+          Annotation@105..106
+            TEXT@105..106 " "
           OPERATOR@106..107 "+"
-          Comment@107..109
-            WHITESPACE@107..109 "\n\n"
-        LAYOUT_SEPARATOR@109..109 ""
-        InfixDeclaration@109..135
+        LAYOUT_SEPARATOR@107..107 ""
+        InfixDeclaration@107..134
+          Annotation@107..109
+            TEXT@107..109 "\n\n"
           INFIX@109..114 "infix"
-          Comment@114..115
-            WHITESPACE@114..115 " "
+          Annotation@114..115
+            TEXT@114..115 " "
           INTEGER@115..116 "5"
-          Comment@116..117
-            WHITESPACE@116..117 " "
+          Annotation@116..117
+            TEXT@116..117 " "
           TYPE@117..121 "type"
-          Comment@121..122
-            WHITESPACE@121..122 " "
-          QualifiedName@122..130
-            PREFIX@122..126 "Add."
+          QualifiedName@121..129
+            Annotation@121..122
+              TEXT@121..122 " "
+            Qualifier@122..126
+              TEXT@122..126 "Add."
             LOWER@126..129 "add"
-            Comment@129..130
-              WHITESPACE@129..130 " "
+          Annotation@129..130
+            TEXT@129..130 " "
           AS@130..132 "as"
-          Comment@132..133
-            WHITESPACE@132..133 " "
+          Annotation@132..133
+            TEXT@132..133 " "
           OPERATOR@133..134 "+"
-          Comment@134..135
-            WHITESPACE@134..135 "\n"
-      LAYOUT_END@135..135 ""
+      LAYOUT_END@134..134 ""
+      Annotation@134..135
+        TEXT@134..135 "\n"
       END_OF_FILE@135..135 ""
     ,
     [],

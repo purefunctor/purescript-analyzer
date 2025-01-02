@@ -5,56 +5,53 @@ snapshot_kind: text
 ---
 (
     Module@0..150
-      ModuleHeader@0..39
+      ModuleHeader@0..37
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..32
+        ModuleName@6..31
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..31 "InstanceChainElseNewline"
-          Comment@31..32
-            WHITESPACE@31..32 " "
-        ModuleExportList@32..32
+        ModuleExportList@31..31
+        Annotation@31..32
+          TEXT@31..32 " "
         WHERE@32..37 "where"
-        Comment@37..39
-          WHITESPACE@37..39 "\n\n"
-      Comment@39..111
-        LINE_COMMENT@39..109 "-- Instance chains ar ..."
-        WHITESPACE@109..111 "\n\n"
-      LAYOUT_START@111..111 ""
-      ModuleImports@111..111
-      ModuleStatements@111..150
-        InstanceChain@111..150
-          InstanceDeclaration@111..128
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..149
+        InstanceChain@37..149
+          InstanceDeclaration@37..127
+            Annotation@37..111
+              TEXT@37..111 "\n\n-- Instance chains  ..."
             INSTANCE@111..119 "instance"
-            Comment@119..120
-              WHITESPACE@119..120 " "
-            InstanceHead@120..128
+            InstanceHead@119..127
+              Annotation@119..120
+                TEXT@119..120 " "
               UPPER@120..123 "Foo"
-              Comment@123..124
-                WHITESPACE@123..124 " "
-              TypeConstructor@124..128
-                QualifiedName@124..128
+              TypeConstructor@123..127
+                QualifiedName@123..127
+                  Annotation@123..124
+                    TEXT@123..124 " "
                   UPPER@124..127 "Bar"
-                  Comment@127..128
-                    WHITESPACE@127..128 "\n"
-          InstanceDeclaration@128..150
+          InstanceDeclaration@127..149
+            Annotation@127..128
+              TEXT@127..128 "\n"
             ELSE@128..132 "else"
-            Comment@132..133
-              WHITESPACE@132..133 "\n"
-            LAYOUT_SEPARATOR@133..133 ""
+            LAYOUT_SEPARATOR@132..132 ""
+            Annotation@132..133
+              TEXT@132..133 "\n"
             INSTANCE@133..141 "instance"
-            Comment@141..142
-              WHITESPACE@141..142 " "
-            InstanceHead@142..150
+            InstanceHead@141..149
+              Annotation@141..142
+                TEXT@141..142 " "
               UPPER@142..145 "Foo"
-              Comment@145..146
-                WHITESPACE@145..146 " "
-              TypeConstructor@146..150
-                QualifiedName@146..150
+              TypeConstructor@145..149
+                QualifiedName@145..149
+                  Annotation@145..146
+                    TEXT@145..146 " "
                   UPPER@146..149 "Baz"
-                  Comment@149..150
-                    WHITESPACE@149..150 "\n"
-      LAYOUT_END@150..150 ""
+      LAYOUT_END@149..149 ""
+      Annotation@149..150
+        TEXT@149..150 "\n"
       END_OF_FILE@150..150 ""
     ,
     [],

@@ -5,83 +5,83 @@ snapshot_kind: text
 ---
 (
     Module@0..74
-      ModuleHeader@0..74
+      ModuleHeader@0..73
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..37
+        ModuleName@6..36
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..36 "ModuleExportTypeOpera ..."
-          Comment@36..37
-            WHITESPACE@36..37 " "
-        ModuleExportList@37..68
+        ModuleExportList@36..67
+          Annotation@36..37
+            TEXT@36..37 " "
           LEFT_PARENTHESIS@37..38 "("
           ModuleExportTypeOperator@38..46
             TYPE@38..42 "type"
-            Comment@42..43
-              WHITESPACE@42..43 " "
+            Annotation@42..43
+              TEXT@42..43 " "
             OPERATOR_NAME@43..46 "(+)"
           COMMA@46..47 ","
-          Comment@47..48
-            WHITESPACE@47..48 " "
-          ModuleExportTypeOperator@48..53
+          ModuleExportTypeOperator@47..52
+            Annotation@47..48
+              TEXT@47..48 " "
             TYPE@48..52 "type"
-            Comment@52..53
-              WHITESPACE@52..53 " "
-            ERROR@53..53 ""
-          ERROR@53..53 ""
-          ERROR@53..56
-            ERROR@53..53 ""
+            ERROR@52..52 ""
+          ERROR@52..52 ""
+          ERROR@52..56
+            ERROR@52..52 ""
+            Annotation@52..53
+              TEXT@52..53 " "
             INTEGER@53..56 "123"
-          ERROR@56..58
+          ERROR@56..57
             ERROR@56..56 ""
             COMMA@56..57 ","
-            Comment@57..58
-              WHITESPACE@57..58 " "
-          ModuleExportTypeOperator@58..66
+          ModuleExportTypeOperator@57..66
+            Annotation@57..58
+              TEXT@57..58 " "
             TYPE@58..62 "type"
-            Comment@62..63
-              WHITESPACE@62..63 " "
+            Annotation@62..63
+              TEXT@62..63 " "
             OPERATOR_NAME@63..66 "(*)"
           RIGHT_PARENTHESIS@66..67 ")"
-          Comment@67..68
-            WHITESPACE@67..68 " "
+        Annotation@67..68
+          TEXT@67..68 " "
         WHERE@68..73 "where"
-        Comment@73..74
-          WHITESPACE@73..74 "\n"
-      LAYOUT_START@74..74 ""
-      ModuleImports@74..74
-      ModuleStatements@74..74
-      LAYOUT_END@74..74 ""
+      LAYOUT_START@73..73 ""
+      ModuleImports@73..73
+      ModuleStatements@73..73
+      LAYOUT_END@73..73 ""
+      Annotation@73..74
+        TEXT@73..74 "\n"
       END_OF_FILE@74..74 ""
     ,
     [
         ParseError {
+            offset: 53,
             position: Position {
-                offset: 53,
                 line: 1,
                 column: 54,
             },
             message: "Expected OPERATOR_NAME",
         },
         ParseError {
+            offset: 53,
             position: Position {
-                offset: 53,
                 line: 1,
                 column: 54,
             },
             message: "expected COMMA",
         },
         ParseError {
+            offset: 53,
             position: Position {
-                offset: 53,
                 line: 1,
                 column: 54,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 56,
             position: Position {
-                offset: 56,
                 line: 1,
                 column: 57,
             },

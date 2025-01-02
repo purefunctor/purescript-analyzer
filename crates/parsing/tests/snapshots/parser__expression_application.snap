@@ -5,51 +5,51 @@ snapshot_kind: text
 ---
 (
     Module@0..58
-      ModuleHeader@0..37
+      ModuleHeader@0..35
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..30
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..28 "ExpressionApplication"
-          Comment@28..30
-            WHITESPACE@28..30 "  "
-        ModuleExportList@30..30
+        ModuleExportList@28..28
+        Annotation@28..30
+          TEXT@28..30 "  "
         WHERE@30..35 "where"
-        Comment@35..37
-          WHITESPACE@35..37 "\n\n"
-      LAYOUT_START@37..37 ""
-      ModuleImports@37..37
-      ModuleStatements@37..58
-        ValueEquation@37..58
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..57
+        ValueEquation@35..57
+          Annotation@35..37
+            TEXT@35..37 "\n\n"
           LOWER@37..48 "application"
-          Comment@48..49
-            WHITESPACE@48..49 " "
-          FunctionBinders@49..49
-          Unconditional@49..58
+          FunctionBinders@48..48
+          Unconditional@48..57
+            Annotation@48..49
+              TEXT@48..49 " "
             EQUAL@49..50 "="
-            Comment@50..51
-              WHITESPACE@50..51 " "
-            WhereExpression@51..58
-              ExpressionApplicationChain@51..58
-                ExpressionVariable@51..53
-                  QualifiedName@51..53
+            WhereExpression@50..57
+              ExpressionApplicationChain@50..57
+                ExpressionVariable@50..52
+                  QualifiedName@50..52
+                    Annotation@50..51
+                      TEXT@50..51 " "
                     LOWER@51..52 "f"
-                    Comment@52..53
-                      WHITESPACE@52..53 " "
-                ExpressionTypeArgument@53..56
+                ExpressionTypeArgument@52..55
+                  Annotation@52..53
+                    TEXT@52..53 " "
                   AT@53..54 "@"
-                  TypeConstructor@54..56
-                    QualifiedName@54..56
+                  TypeConstructor@54..55
+                    QualifiedName@54..55
                       UPPER@54..55 "T"
-                      Comment@55..56
-                        WHITESPACE@55..56 " "
-                ExpressionTermArgument@56..58
-                  ExpressionVariable@56..58
-                    QualifiedName@56..58
+                ExpressionTermArgument@55..57
+                  ExpressionVariable@55..57
+                    QualifiedName@55..57
+                      Annotation@55..56
+                        TEXT@55..56 " "
                       LOWER@56..57 "t"
-                      Comment@57..58
-                        WHITESPACE@57..58 "\n"
-      LAYOUT_END@58..58 ""
+      LAYOUT_END@57..57 ""
+      Annotation@57..58
+        TEXT@57..58 "\n"
       END_OF_FILE@58..58 ""
     ,
     [],

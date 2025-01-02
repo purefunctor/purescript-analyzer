@@ -494,7 +494,6 @@ fn infix_declaration(p: &mut Parser) {
     p.eat(SyntaxKind::TYPE);
 
     let mut n = p.start();
-    p.eat(SyntaxKind::PREFIX);
     if !(p.eat_in(names::LOWER, SyntaxKind::LOWER) || p.eat(SyntaxKind::UPPER)) {
         p.error("Expected LOWER or UPPER");
     }
@@ -744,7 +743,6 @@ fn instance_constraints(p: &mut Parser) {
 
 fn instance_head(p: &mut Parser) {
     let mut m = p.start();
-    p.eat(SyntaxKind::PREFIX);
     p.expect(SyntaxKind::UPPER);
     while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
         types::type_atom(p);

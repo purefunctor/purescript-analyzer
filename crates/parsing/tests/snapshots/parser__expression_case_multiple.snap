@@ -5,95 +5,95 @@ snapshot_kind: text
 ---
 (
     Module@0..87
-      ModuleHeader@0..36
+      ModuleHeader@0..34
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..29
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..28 "ExpressionCaseMultipl"
-          Comment@28..29
-            WHITESPACE@28..29 " "
-        ModuleExportList@29..29
+        ModuleExportList@28..28
+        Annotation@28..29
+          TEXT@28..29 " "
         WHERE@29..34 "where"
-        Comment@34..36
-          WHITESPACE@34..36 "\n\n"
-      LAYOUT_START@36..36 ""
-      ModuleImports@36..36
-      ModuleStatements@36..87
-        ValueEquation@36..87
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..86
+        ValueEquation@34..86
+          Annotation@34..36
+            TEXT@34..36 "\n\n"
           LOWER@36..40 "main"
-          Comment@40..41
-            WHITESPACE@40..41 " "
-          FunctionBinders@41..41
-          Unconditional@41..87
+          FunctionBinders@40..40
+          Unconditional@40..86
+            Annotation@40..41
+              TEXT@40..41 " "
             EQUAL@41..42 "="
-            Comment@42..43
-              WHITESPACE@42..43 " "
-            WhereExpression@43..87
-              ExpressionCaseOf@43..87
+            WhereExpression@42..86
+              ExpressionCaseOf@42..86
+                Annotation@42..43
+                  TEXT@42..43 " "
                 CASE@43..47 "case"
-                Comment@47..48
-                  WHITESPACE@47..48 " "
-                CaseTrunk@48..53
-                  ExpressionVariable@48..49
-                    QualifiedName@48..49
+                CaseTrunk@47..52
+                  ExpressionVariable@47..49
+                    QualifiedName@47..49
+                      Annotation@47..48
+                        TEXT@47..48 " "
                       LOWER@48..49 "a"
                   COMMA@49..50 ","
-                  Comment@50..51
-                    WHITESPACE@50..51 " "
-                  ExpressionVariable@51..53
-                    QualifiedName@51..53
+                  ExpressionVariable@50..52
+                    QualifiedName@50..52
+                      Annotation@50..51
+                        TEXT@50..51 " "
                       LOWER@51..52 "b"
-                      Comment@52..53
-                        WHITESPACE@52..53 " "
+                Annotation@52..53
+                  TEXT@52..53 " "
                 OF@53..55 "of"
-                Comment@55..58
-                  WHITESPACE@55..58 "\n  "
-                CaseBranches@58..87
-                  LAYOUT_START@58..58 ""
-                  CaseBranch@58..73
-                    CaseBranchBinders@58..63
-                      BinderInteger@58..59
+                CaseBranches@55..86
+                  LAYOUT_START@55..55 ""
+                  CaseBranch@55..70
+                    CaseBranchBinders@55..62
+                      BinderInteger@55..59
+                        Annotation@55..58
+                          TEXT@55..58 "\n  "
                         INTEGER@58..59 "0"
                       COMMA@59..60 ","
-                      Comment@60..61
-                        WHITESPACE@60..61 " "
-                      BinderInteger@61..63
+                      BinderInteger@60..62
+                        Annotation@60..61
+                          TEXT@60..61 " "
                         INTEGER@61..62 "1"
-                        Comment@62..63
-                          WHITESPACE@62..63 " "
-                    Unconditional@63..73
+                    Unconditional@62..70
+                      Annotation@62..63
+                        TEXT@62..63 " "
                       RIGHT_ARROW@63..65 "->"
-                      Comment@65..66
-                        WHITESPACE@65..66 " "
-                      WhereExpression@66..73
-                        ExpressionTrue@66..73
+                      WhereExpression@65..70
+                        ExpressionTrue@65..70
+                          Annotation@65..66
+                            TEXT@65..66 " "
                           TRUE@66..70 "true"
-                          Comment@70..73
-                            WHITESPACE@70..73 "\n  "
-                  LAYOUT_SEPARATOR@73..73 ""
-                  CaseBranch@73..87
-                    CaseBranchBinders@73..78
-                      BinderWildcard@73..74
+                  LAYOUT_SEPARATOR@70..70 ""
+                  CaseBranch@70..86
+                    CaseBranchBinders@70..77
+                      BinderWildcard@70..74
+                        Annotation@70..73
+                          TEXT@70..73 "\n  "
                         UNDERSCORE@73..74 "_"
                       COMMA@74..75 ","
-                      Comment@75..76
-                        WHITESPACE@75..76 " "
-                      BinderWildcard@76..78
+                      BinderWildcard@75..77
+                        Annotation@75..76
+                          TEXT@75..76 " "
                         UNDERSCORE@76..77 "_"
-                        Comment@77..78
-                          WHITESPACE@77..78 " "
-                    Unconditional@78..87
+                    Unconditional@77..86
+                      Annotation@77..78
+                        TEXT@77..78 " "
                       RIGHT_ARROW@78..80 "->"
-                      Comment@80..81
-                        WHITESPACE@80..81 " "
-                      WhereExpression@81..87
-                        ExpressionFalse@81..87
+                      WhereExpression@80..86
+                        ExpressionFalse@80..86
+                          Annotation@80..81
+                            TEXT@80..81 " "
                           FALSE@81..86 "false"
-                          Comment@86..87
-                            WHITESPACE@86..87 "\n"
-                  LAYOUT_END@87..87 ""
-      LAYOUT_END@87..87 ""
+                  LAYOUT_END@86..86 ""
+      LAYOUT_END@86..86 ""
+      Annotation@86..87
+        TEXT@86..87 "\n"
       END_OF_FILE@87..87 ""
     ,
     [],

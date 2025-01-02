@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use lexing::Lexed;
-use position::Position;
+use lexing::{Lexed, Position};
 use syntax::{SyntaxKind, SyntaxNode};
 
 mod builder;
@@ -9,6 +8,7 @@ mod parser;
 
 #[derive(Debug)]
 pub struct ParseError {
+    pub offset: usize,
     pub position: Position,
     pub message: Arc<str>,
 }

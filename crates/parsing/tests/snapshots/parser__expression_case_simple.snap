@@ -5,79 +5,79 @@ snapshot_kind: text
 ---
 (
     Module@0..77
-      ModuleHeader@0..35
+      ModuleHeader@0..33
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..28
+        ModuleName@6..27
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..27 "ExpressionCaseSimple"
-          Comment@27..28
-            WHITESPACE@27..28 " "
-        ModuleExportList@28..28
+        ModuleExportList@27..27
+        Annotation@27..28
+          TEXT@27..28 " "
         WHERE@28..33 "where"
-        Comment@33..35
-          WHITESPACE@33..35 "\n\n"
-      LAYOUT_START@35..35 ""
-      ModuleImports@35..35
-      ModuleStatements@35..77
-        ValueEquation@35..77
+      LAYOUT_START@33..33 ""
+      ModuleImports@33..33
+      ModuleStatements@33..76
+        ValueEquation@33..76
+          Annotation@33..35
+            TEXT@33..35 "\n\n"
           LOWER@35..39 "main"
-          Comment@39..40
-            WHITESPACE@39..40 " "
-          FunctionBinders@40..40
-          Unconditional@40..77
+          FunctionBinders@39..39
+          Unconditional@39..76
+            Annotation@39..40
+              TEXT@39..40 " "
             EQUAL@40..41 "="
-            Comment@41..42
-              WHITESPACE@41..42 " "
-            WhereExpression@42..77
-              ExpressionCaseOf@42..77
+            WhereExpression@41..76
+              ExpressionCaseOf@41..76
+                Annotation@41..42
+                  TEXT@41..42 " "
                 CASE@42..46 "case"
-                Comment@46..47
-                  WHITESPACE@46..47 " "
-                CaseTrunk@47..49
-                  ExpressionVariable@47..49
-                    QualifiedName@47..49
+                CaseTrunk@46..48
+                  ExpressionVariable@46..48
+                    QualifiedName@46..48
+                      Annotation@46..47
+                        TEXT@46..47 " "
                       LOWER@47..48 "n"
-                      Comment@48..49
-                        WHITESPACE@48..49 " "
+                Annotation@48..49
+                  TEXT@48..49 " "
                 OF@49..51 "of"
-                Comment@51..54
-                  WHITESPACE@51..54 "\n  "
-                CaseBranches@54..77
-                  LAYOUT_START@54..54 ""
-                  CaseBranch@54..66
-                    CaseBranchBinders@54..56
-                      BinderInteger@54..56
+                CaseBranches@51..76
+                  LAYOUT_START@51..51 ""
+                  CaseBranch@51..63
+                    CaseBranchBinders@51..55
+                      BinderInteger@51..55
+                        Annotation@51..54
+                          TEXT@51..54 "\n  "
                         INTEGER@54..55 "0"
-                        Comment@55..56
-                          WHITESPACE@55..56 " "
-                    Unconditional@56..66
+                    Unconditional@55..63
+                      Annotation@55..56
+                        TEXT@55..56 " "
                       RIGHT_ARROW@56..58 "->"
-                      Comment@58..59
-                        WHITESPACE@58..59 " "
-                      WhereExpression@59..66
-                        ExpressionTrue@59..66
+                      WhereExpression@58..63
+                        ExpressionTrue@58..63
+                          Annotation@58..59
+                            TEXT@58..59 " "
                           TRUE@59..63 "true"
-                          Comment@63..66
-                            WHITESPACE@63..66 "\n  "
-                  LAYOUT_SEPARATOR@66..66 ""
-                  CaseBranch@66..77
-                    CaseBranchBinders@66..68
-                      BinderWildcard@66..68
+                  LAYOUT_SEPARATOR@63..63 ""
+                  CaseBranch@63..76
+                    CaseBranchBinders@63..67
+                      BinderWildcard@63..67
+                        Annotation@63..66
+                          TEXT@63..66 "\n  "
                         UNDERSCORE@66..67 "_"
-                        Comment@67..68
-                          WHITESPACE@67..68 " "
-                    Unconditional@68..77
+                    Unconditional@67..76
+                      Annotation@67..68
+                        TEXT@67..68 " "
                       RIGHT_ARROW@68..70 "->"
-                      Comment@70..71
-                        WHITESPACE@70..71 " "
-                      WhereExpression@71..77
-                        ExpressionFalse@71..77
+                      WhereExpression@70..76
+                        ExpressionFalse@70..76
+                          Annotation@70..71
+                            TEXT@70..71 " "
                           FALSE@71..76 "false"
-                          Comment@76..77
-                            WHITESPACE@76..77 "\n"
-                  LAYOUT_END@77..77 ""
-      LAYOUT_END@77..77 ""
+                  LAYOUT_END@76..76 ""
+      LAYOUT_END@76..76 ""
+      Annotation@76..77
+        TEXT@76..77 "\n"
       END_OF_FILE@77..77 ""
     ,
     [],

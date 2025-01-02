@@ -5,107 +5,107 @@ snapshot_kind: text
 ---
 (
     Module@0..112
-      ModuleHeader@0..37
+      ModuleHeader@0..35
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..30
+        ModuleName@6..29
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..29 "ExpressionDoStatements"
-          Comment@29..30
-            WHITESPACE@29..30 " "
-        ModuleExportList@30..30
+        ModuleExportList@29..29
+        Annotation@29..30
+          TEXT@29..30 " "
         WHERE@30..35 "where"
-        Comment@35..37
-          WHITESPACE@35..37 "\n\n"
-      LAYOUT_START@37..37 ""
-      ModuleImports@37..37
-      ModuleStatements@37..112
-        ValueEquation@37..112
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..111
+        ValueEquation@35..111
+          Annotation@35..37
+            TEXT@35..37 "\n\n"
           LOWER@37..41 "main"
-          Comment@41..42
-            WHITESPACE@41..42 " "
-          FunctionBinders@42..42
-          Unconditional@42..112
+          FunctionBinders@41..41
+          Unconditional@41..111
+            Annotation@41..42
+              TEXT@41..42 " "
             EQUAL@42..43 "="
-            Comment@43..44
-              WHITESPACE@43..44 " "
-            WhereExpression@44..112
-              ExpressionDo@44..112
+            WhereExpression@43..111
+              ExpressionDo@43..111
+                Annotation@43..44
+                  TEXT@43..44 " "
                 DO@44..46 "do"
-                Comment@46..49
-                  WHITESPACE@46..49 "\n  "
-                DoStatements@49..112
-                  LAYOUT_START@49..49 ""
-                  DoStatementLet@49..65
+                DoStatements@46..111
+                  LAYOUT_START@46..46 ""
+                  DoStatementLet@46..62
+                    Annotation@46..49
+                      TEXT@46..49 "\n  "
                     LET@49..52 "let"
-                    Comment@52..53
-                      WHITESPACE@52..53 " "
-                    LetBindingStatements@53..65
-                      LAYOUT_START@53..53 ""
-                      LetBindingEquation@53..65
+                    LetBindingStatements@52..62
+                      LAYOUT_START@52..52 ""
+                      LetBindingEquation@52..62
+                        Annotation@52..53
+                          TEXT@52..53 " "
                         LOWER@53..57 "life"
-                        Comment@57..58
-                          WHITESPACE@57..58 " "
-                        FunctionBinders@58..58
-                        Unconditional@58..65
+                        FunctionBinders@57..57
+                        Unconditional@57..62
+                          Annotation@57..58
+                            TEXT@57..58 " "
                           EQUAL@58..59 "="
-                          Comment@59..60
-                            WHITESPACE@59..60 " "
-                          WhereExpression@60..65
-                            ExpressionInteger@60..65
+                          WhereExpression@59..62
+                            ExpressionInteger@59..62
+                              Annotation@59..60
+                                TEXT@59..60 " "
                               INTEGER@60..62 "21"
-                              Comment@62..65
-                                WHITESPACE@62..65 "\n  "
-                      LAYOUT_END@65..65 ""
-                  LAYOUT_SEPARATOR@65..65 ""
-                  DoStatementBind@65..89
-                    BinderVariable@65..74
+                      LAYOUT_END@62..62 ""
+                  LAYOUT_SEPARATOR@62..62 ""
+                  DoStatementBind@62..86
+                    BinderVariable@62..73
+                      Annotation@62..65
+                        TEXT@62..65 "\n  "
                       LOWER@65..73 "universe"
-                      Comment@73..74
-                        WHITESPACE@73..74 " "
+                    Annotation@73..74
+                      TEXT@73..74 " "
                     LEFT_ARROW@74..76 "<-"
-                    Comment@76..77
-                      WHITESPACE@76..77 " "
-                    ExpressionApplicationChain@77..89
-                      ExpressionVariable@77..82
-                        QualifiedName@77..82
+                    ExpressionApplicationChain@76..86
+                      ExpressionVariable@76..81
+                        QualifiedName@76..81
+                          Annotation@76..77
+                            TEXT@76..77 " "
                           LOWER@77..81 "pure"
-                          Comment@81..82
-                            WHITESPACE@81..82 " "
-                      ExpressionTermArgument@82..89
-                        ExpressionVariable@82..89
-                          QualifiedName@82..89
+                      ExpressionTermArgument@81..86
+                        ExpressionVariable@81..86
+                          QualifiedName@81..86
+                            Annotation@81..82
+                              TEXT@81..82 " "
                             LOWER@82..86 "life"
-                            Comment@86..89
-                              WHITESPACE@86..89 "\n  "
-                  LAYOUT_SEPARATOR@89..89 ""
-                  DoStatementDiscard@89..112
-                    ExpressionOperatorChain@89..112
-                      ExpressionVariable@89..94
-                        QualifiedName@89..94
+                  LAYOUT_SEPARATOR@86..86 ""
+                  DoStatementDiscard@86..111
+                    ExpressionOperatorChain@86..111
+                      ExpressionVariable@86..93
+                        QualifiedName@86..93
+                          Annotation@86..89
+                            TEXT@86..89 "\n  "
                           LOWER@89..93 "pure"
-                          Comment@93..94
-                            WHITESPACE@93..94 " "
-                      QualifiedName@94..96
+                      QualifiedName@93..95
+                        Annotation@93..94
+                          TEXT@93..94 " "
                         OPERATOR@94..95 "$"
-                        Comment@95..96
-                          WHITESPACE@95..96 " "
-                      ExpressionVariable@96..101
-                        QualifiedName@96..101
+                      ExpressionVariable@95..100
+                        QualifiedName@95..100
+                          Annotation@95..96
+                            TEXT@95..96 " "
                           LOWER@96..100 "life"
-                          Comment@100..101
-                            WHITESPACE@100..101 " "
-                      QualifiedName@101..103
+                      QualifiedName@100..102
+                        Annotation@100..101
+                          TEXT@100..101 " "
                         OPERATOR@101..102 "+"
-                        Comment@102..103
-                          WHITESPACE@102..103 " "
-                      ExpressionVariable@103..112
-                        QualifiedName@103..112
+                      ExpressionVariable@102..111
+                        QualifiedName@102..111
+                          Annotation@102..103
+                            TEXT@102..103 " "
                           LOWER@103..111 "universe"
-                          Comment@111..112
-                            WHITESPACE@111..112 "\n"
-                  LAYOUT_END@112..112 ""
-      LAYOUT_END@112..112 ""
+                  LAYOUT_END@111..111 ""
+      LAYOUT_END@111..111 ""
+      Annotation@111..112
+        TEXT@111..112 "\n"
       END_OF_FILE@112..112 ""
     ,
     [],

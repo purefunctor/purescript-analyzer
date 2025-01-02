@@ -5,36 +5,36 @@ snapshot_kind: text
 ---
 (
     Module@0..40
-      ModuleHeader@0..29
+      ModuleHeader@0..27
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..22
+        ModuleName@6..21
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..21 "ExpressionChar"
-          Comment@21..22
-            WHITESPACE@21..22 " "
-        ModuleExportList@22..22
+        ModuleExportList@21..21
+        Annotation@21..22
+          TEXT@21..22 " "
         WHERE@22..27 "where"
-        Comment@27..29
-          WHITESPACE@27..29 "\n\n"
-      LAYOUT_START@29..29 ""
-      ModuleImports@29..29
-      ModuleStatements@29..40
-        ValueEquation@29..40
+      LAYOUT_START@27..27 ""
+      ModuleImports@27..27
+      ModuleStatements@27..39
+        ValueEquation@27..39
+          Annotation@27..29
+            TEXT@27..29 "\n\n"
           LOWER@29..33 "char"
-          Comment@33..34
-            WHITESPACE@33..34 " "
-          FunctionBinders@34..34
-          Unconditional@34..40
+          FunctionBinders@33..33
+          Unconditional@33..39
+            Annotation@33..34
+              TEXT@33..34 " "
             EQUAL@34..35 "="
-            Comment@35..36
-              WHITESPACE@35..36 " "
-            WhereExpression@36..40
-              ExpressionChar@36..40
+            WhereExpression@35..39
+              ExpressionChar@35..39
+                Annotation@35..36
+                  TEXT@35..36 " "
                 CHAR@36..39 "'c'"
-                Comment@39..40
-                  WHITESPACE@39..40 "\n"
-      LAYOUT_END@40..40 ""
+      LAYOUT_END@39..39 ""
+      Annotation@39..40
+        TEXT@39..40 "\n"
       END_OF_FILE@40..40 ""
     ,
     [],

@@ -41,14 +41,15 @@ impl TokenSet {
 #[test]
 fn test_token_set() {
     let set = TokenSet::new(&[
-        SyntaxKind::WHITESPACE,
-        SyntaxKind::LINE_COMMENT,
-        SyntaxKind::BLOCK_COMMENT,
         SyntaxKind::MODULE,
     ]);
-    assert!(set.contains(SyntaxKind::WHITESPACE));
-    assert!(set.contains(SyntaxKind::LINE_COMMENT));
-    assert!(set.contains(SyntaxKind::BLOCK_COMMENT));
     assert!(set.contains(SyntaxKind::MODULE));
+    assert!(!set.contains(SyntaxKind::LEFT_PARENTHESIS));
+    let set = TokenSet::new(&[
+        SyntaxKind::IMPORT,
+        SyntaxKind::WHERE, 
+    ]);
+    assert!(set.contains(SyntaxKind::IMPORT));
+    assert!(set.contains(SyntaxKind::WHERE));
     assert!(!set.contains(SyntaxKind::LEFT_PARENTHESIS));
 }

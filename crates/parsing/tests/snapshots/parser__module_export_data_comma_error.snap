@@ -5,15 +5,15 @@ snapshot_kind: text
 ---
 (
     Module@0..63
-      ModuleHeader@0..63
+      ModuleHeader@0..62
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..34
+        ModuleName@6..33
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..33 "ModuleExportDataComma ..."
-          Comment@33..34
-            WHITESPACE@33..34 " "
-        ModuleExportList@34..57
+        ModuleExportList@33..56
+          Annotation@33..34
+            TEXT@33..34 " "
           LEFT_PARENTHESIS@34..35 "("
           ModuleExportType@35..55
             UPPER@35..41 "Either"
@@ -30,29 +30,29 @@ snapshot_kind: text
                 COMMA@53..54 ","
               RIGHT_PARENTHESIS@54..55 ")"
           RIGHT_PARENTHESIS@55..56 ")"
-          Comment@56..57
-            WHITESPACE@56..57 " "
+        Annotation@56..57
+          TEXT@56..57 " "
         WHERE@57..62 "where"
-        Comment@62..63
-          WHITESPACE@62..63 "\n"
-      LAYOUT_START@63..63 ""
-      ModuleImports@63..63
-      ModuleStatements@63..63
-      LAYOUT_END@63..63 ""
+      LAYOUT_START@62..62 ""
+      ModuleImports@62..62
+      ModuleStatements@62..62
+      LAYOUT_END@62..62 ""
+      Annotation@62..63
+        TEXT@62..63 "\n"
       END_OF_FILE@63..63 ""
     ,
     [
         ParseError {
+            offset: 47,
             position: Position {
-                offset: 47,
                 line: 1,
                 column: 48,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 53,
             position: Position {
-                offset: 53,
                 line: 1,
                 column: 54,
             },

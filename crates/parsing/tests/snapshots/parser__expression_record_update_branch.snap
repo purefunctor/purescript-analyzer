@@ -5,70 +5,70 @@ snapshot_kind: text
 ---
 (
     Module@0..70
-      ModuleHeader@0..43
+      ModuleHeader@0..41
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..36
+        ModuleName@6..35
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..35 "ExpressionRecordUpdat ..."
-          Comment@35..36
-            WHITESPACE@35..36 " "
-        ModuleExportList@36..36
+        ModuleExportList@35..35
+        Annotation@35..36
+          TEXT@35..36 " "
         WHERE@36..41 "where"
-        Comment@41..43
-          WHITESPACE@41..43 "\n\n"
-      LAYOUT_START@43..43 ""
-      ModuleImports@43..43
-      ModuleStatements@43..70
-        ValueEquation@43..70
+      LAYOUT_START@41..41 ""
+      ModuleImports@41..41
+      ModuleStatements@41..69
+        ValueEquation@41..69
+          Annotation@41..43
+            TEXT@41..43 "\n\n"
           LOWER@43..49 "branch"
-          Comment@49..50
-            WHITESPACE@49..50 " "
-          FunctionBinders@50..50
-          Unconditional@50..70
+          FunctionBinders@49..49
+          Unconditional@49..69
+            Annotation@49..50
+              TEXT@49..50 " "
             EQUAL@50..51 "="
-            Comment@51..52
-              WHITESPACE@51..52 " "
-            WhereExpression@52..70
-              ExpressionRecordUpdate@52..70
-                ExpressionVariable@52..54
-                  QualifiedName@52..54
+            WhereExpression@51..69
+              ExpressionRecordUpdate@51..69
+                ExpressionVariable@51..53
+                  QualifiedName@51..53
+                    Annotation@51..52
+                      TEXT@51..52 " "
                     LOWER@52..53 "a"
-                    Comment@53..54
-                      WHITESPACE@53..54 " "
-                RecordUpdates@54..70
+                RecordUpdates@53..69
+                  Annotation@53..54
+                    TEXT@53..54 " "
                   LEFT_CURLY@54..55 "{"
-                  Comment@55..56
-                    WHITESPACE@55..56 " "
-                  RecordUpdateBranch@56..68
-                    LabelName@56..58
+                  RecordUpdateBranch@55..67
+                    LabelName@55..57
+                      Annotation@55..56
+                        TEXT@55..56 " "
                       LOWER@56..57 "b"
-                      Comment@57..58
-                        WHITESPACE@57..58 " "
-                    RecordUpdates@58..68
+                    RecordUpdates@57..67
+                      Annotation@57..58
+                        TEXT@57..58 " "
                       LEFT_CURLY@58..59 "{"
-                      Comment@59..60
-                        WHITESPACE@59..60 " "
-                      RecordUpdateLeaf@60..66
-                        LabelName@60..62
+                      RecordUpdateLeaf@59..65
+                        LabelName@59..61
+                          Annotation@59..60
+                            TEXT@59..60 " "
                           LOWER@60..61 "c"
-                          Comment@61..62
-                            WHITESPACE@61..62 " "
+                        Annotation@61..62
+                          TEXT@61..62 " "
                         EQUAL@62..63 "="
-                        Comment@63..64
-                          WHITESPACE@63..64 " "
-                        ExpressionVariable@64..66
-                          QualifiedName@64..66
+                        ExpressionVariable@63..65
+                          QualifiedName@63..65
+                            Annotation@63..64
+                              TEXT@63..64 " "
                             LOWER@64..65 "d"
-                            Comment@65..66
-                              WHITESPACE@65..66 " "
+                      Annotation@65..66
+                        TEXT@65..66 " "
                       RIGHT_CURLY@66..67 "}"
-                      Comment@67..68
-                        WHITESPACE@67..68 " "
+                  Annotation@67..68
+                    TEXT@67..68 " "
                   RIGHT_CURLY@68..69 "}"
-                  Comment@69..70
-                    WHITESPACE@69..70 "\n"
-      LAYOUT_END@70..70 ""
+      LAYOUT_END@69..69 ""
+      Annotation@69..70
+        TEXT@69..70 "\n"
       END_OF_FILE@70..70 ""
     ,
     [],

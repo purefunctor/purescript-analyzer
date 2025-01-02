@@ -5,64 +5,64 @@ snapshot_kind: text
 ---
 (
     Module@0..64
-      ModuleHeader@0..28
+      ModuleHeader@0..26
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..21
+        ModuleName@6..20
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..20 "TypeRoleError"
-          Comment@20..21
-            WHITESPACE@20..21 " "
-        ModuleExportList@21..21
+        ModuleExportList@20..20
+        Annotation@20..21
+          TEXT@20..21 " "
         WHERE@21..26 "where"
-        Comment@26..28
-          WHITESPACE@26..28 "\n\n"
-      LAYOUT_START@28..28 ""
-      ModuleImports@28..28
-      ModuleStatements@28..64
-        TypeRoleDeclaration@28..64
+      LAYOUT_START@26..26 ""
+      ModuleImports@26..26
+      ModuleStatements@26..63
+        TypeRoleDeclaration@26..63
+          Annotation@26..28
+            TEXT@26..28 "\n\n"
           TYPE@28..32 "type"
-          Comment@32..33
-            WHITESPACE@32..33 " "
+          Annotation@32..33
+            TEXT@32..33 " "
           ROLE@33..37 "role"
-          Comment@37..38
-            WHITESPACE@37..38 " "
+          Annotation@37..38
+            TEXT@37..38 " "
           UPPER@38..43 "Error"
-          Comment@43..44
-            WHITESPACE@43..44 " "
-          ERROR@44..46
-            ERROR@44..44 ""
+          ERROR@43..45
+            ERROR@43..43 ""
+            Annotation@43..44
+              TEXT@43..44 " "
             INTEGER@44..45 "1"
-            Comment@45..46
-              WHITESPACE@45..46 " "
-          TypeRole@46..54
+          TypeRole@45..53
+            Annotation@45..46
+              TEXT@45..46 " "
             NOMINAL@46..53 "nominal"
-            Comment@53..54
-              WHITESPACE@53..54 " "
-          TypeRole@54..62
+          TypeRole@53..61
+            Annotation@53..54
+              TEXT@53..54 " "
             PHANTOM@54..61 "phantom"
-            Comment@61..62
-              WHITESPACE@61..62 " "
-          ERROR@62..64
-            ERROR@62..62 ""
+          ERROR@61..63
+            ERROR@61..61 ""
+            Annotation@61..62
+              TEXT@61..62 " "
             INTEGER@62..63 "2"
-            Comment@63..64
-              WHITESPACE@63..64 "\n"
-      LAYOUT_END@64..64 ""
+      LAYOUT_END@63..63 ""
+      Annotation@63..64
+        TEXT@63..64 "\n"
       END_OF_FILE@64..64 ""
     ,
     [
         ParseError {
+            offset: 44,
             position: Position {
-                offset: 44,
                 line: 3,
                 column: 17,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 62,
             position: Position {
-                offset: 62,
                 line: 3,
                 column: 35,
             },

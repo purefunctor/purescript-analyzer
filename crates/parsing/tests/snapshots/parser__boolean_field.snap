@@ -5,60 +5,60 @@ snapshot_kind: text
 ---
 (
     Module@0..64
-      ModuleHeader@0..27
+      ModuleHeader@0..25
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..20
+        ModuleName@6..19
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..19 "BooleanField"
-          Comment@19..20
-            WHITESPACE@19..20 " "
-        ModuleExportList@20..20
+        ModuleExportList@19..19
+        Annotation@19..20
+          TEXT@19..20 " "
         WHERE@20..25 "where"
-        Comment@25..27
-          WHITESPACE@25..27 "\n\n"
-      LAYOUT_START@27..27 ""
-      ModuleImports@27..27
-      ModuleStatements@27..64
-        ValueEquation@27..64
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..63
+        ValueEquation@25..63
+          Annotation@25..27
+            TEXT@25..27 "\n\n"
           LOWER@27..32 "field"
-          Comment@32..33
-            WHITESPACE@32..33 " "
-          FunctionBinders@33..33
-          Unconditional@33..64
+          FunctionBinders@32..32
+          Unconditional@32..63
+            Annotation@32..33
+              TEXT@32..33 " "
             EQUAL@33..34 "="
-            Comment@34..35
-              WHITESPACE@34..35 " "
-            WhereExpression@35..64
-              ExpressionRecord@35..64
+            WhereExpression@34..63
+              ExpressionRecord@34..63
+                Annotation@34..35
+                  TEXT@34..35 " "
                 LEFT_CURLY@35..36 "{"
-                Comment@36..37
-                  WHITESPACE@36..37 " "
-                RecordField@37..48
-                  LabelName@37..41
+                RecordField@36..48
+                  LabelName@36..41
+                    Annotation@36..37
+                      TEXT@36..37 " "
                     TRUE@37..41 "true"
                   COLON@41..42 ":"
-                  Comment@42..43
-                    WHITESPACE@42..43 " "
-                  ExpressionFalse@43..48
+                  ExpressionFalse@42..48
+                    Annotation@42..43
+                      TEXT@42..43 " "
                     FALSE@43..48 "false"
                 COMMA@48..49 ","
-                Comment@49..50
-                  WHITESPACE@49..50 " "
-                RecordField@50..62
-                  LabelName@50..55
+                RecordField@49..61
+                  LabelName@49..55
+                    Annotation@49..50
+                      TEXT@49..50 " "
                     FALSE@50..55 "false"
                   COLON@55..56 ":"
-                  Comment@56..57
-                    WHITESPACE@56..57 " "
-                  ExpressionTrue@57..62
+                  ExpressionTrue@56..61
+                    Annotation@56..57
+                      TEXT@56..57 " "
                     TRUE@57..61 "true"
-                    Comment@61..62
-                      WHITESPACE@61..62 " "
+                Annotation@61..62
+                  TEXT@61..62 " "
                 RIGHT_CURLY@62..63 "}"
-                Comment@63..64
-                  WHITESPACE@63..64 "\n"
-      LAYOUT_END@64..64 ""
+      LAYOUT_END@63..63 ""
+      Annotation@63..64
+        TEXT@63..64 "\n"
       END_OF_FILE@64..64 ""
     ,
     [],

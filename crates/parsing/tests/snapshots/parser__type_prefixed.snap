@@ -5,49 +5,51 @@ snapshot_kind: text
 ---
 (
     Module@0..90
-      ModuleHeader@0..27
+      ModuleHeader@0..25
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..20
+        ModuleName@6..19
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..19 "TypePrefixed"
-          Comment@19..20
-            WHITESPACE@19..20 " "
-        ModuleExportList@20..20
+        ModuleExportList@19..19
+        Annotation@19..20
+          TEXT@19..20 " "
         WHERE@20..25 "where"
-        Comment@25..27
-          WHITESPACE@25..27 "\n\n"
-      LAYOUT_START@27..27 ""
-      ModuleImports@27..27
-      ModuleStatements@27..90
-        ValueSignature@27..56
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..89
+        ValueSignature@25..55
+          Annotation@25..27
+            TEXT@25..27 "\n\n"
           LOWER@27..35 "prefixed"
-          Comment@35..36
-            WHITESPACE@35..36 " "
+          Annotation@35..36
+            TEXT@35..36 " "
           DOUBLE_COLON@36..38 "::"
-          Comment@38..39
-            WHITESPACE@38..39 " "
-          TypeConstructor@39..56
-            QualifiedName@39..56
-              PREFIX@39..50 "Data.Tuple."
+          TypeConstructor@38..55
+            QualifiedName@38..55
+              Annotation@38..39
+                TEXT@38..39 " "
+              Qualifier@39..50
+                TEXT@39..50 "Data.Tuple."
               UPPER@50..55 "Tuple"
-              Comment@55..56
-                WHITESPACE@55..56 "\n"
-        LAYOUT_SEPARATOR@56..56 ""
-        ValueSignature@56..90
+        LAYOUT_SEPARATOR@55..55 ""
+        ValueSignature@55..89
+          Annotation@55..56
+            TEXT@55..56 "\n"
           LOWER@56..64 "prefixed"
-          Comment@64..65
-            WHITESPACE@64..65 " "
+          Annotation@64..65
+            TEXT@64..65 " "
           DOUBLE_COLON@65..67 "::"
-          Comment@67..68
-            WHITESPACE@67..68 " "
-          TypeOperator@68..90
-            QualifiedName@68..90
-              PREFIX@68..86 "Data.Tuple.Nested."
+          TypeOperator@67..89
+            QualifiedName@67..89
+              Annotation@67..68
+                TEXT@67..68 " "
+              Qualifier@68..86
+                TEXT@68..86 "Data.Tuple.Nested."
               OPERATOR_NAME@86..89 "(/)"
-              Comment@89..90
-                WHITESPACE@89..90 "\n"
-      LAYOUT_END@90..90 ""
+      LAYOUT_END@89..89 ""
+      Annotation@89..90
+        TEXT@89..90 "\n"
       END_OF_FILE@90..90 ""
     ,
     [],

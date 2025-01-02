@@ -5,64 +5,64 @@ snapshot_kind: text
 ---
 (
     Module@0..54
-      ModuleHeader@0..54
+      ModuleHeader@0..53
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..26
+        ModuleName@6..25
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..25 "LexerErrorInserted"
-          Comment@25..26
-            WHITESPACE@25..26 " "
-        ModuleExportList@26..48
+        ModuleExportList@25..47
+          Annotation@25..26
+            TEXT@25..26 " "
           LEFT_PARENTHESIS@26..27 "("
           ModuleExportValue@27..32
             LOWER@27..32 "hello"
           COMMA@32..33 ","
-          Comment@33..34
-            WHITESPACE@33..34 " "
-          ERROR@34..39
-            ERROR@34..34 ""
+          ERROR@33..39
+            ERROR@33..33 ""
+            Annotation@33..34
+              TEXT@33..34 " "
             ERROR@34..34 ""
             INTEGER@34..39 "00123"
-          ERROR@39..41
+          ERROR@39..40
             ERROR@39..39 ""
             COMMA@39..40 ","
-            Comment@40..41
-              WHITESPACE@40..41 " "
-          ModuleExportValue@41..46
+          ModuleExportValue@40..46
+            Annotation@40..41
+              TEXT@40..41 " "
             LOWER@41..46 "world"
           RIGHT_PARENTHESIS@46..47 ")"
-          Comment@47..48
-            WHITESPACE@47..48 " "
+        Annotation@47..48
+          TEXT@47..48 " "
         WHERE@48..53 "where"
-        Comment@53..54
-          WHITESPACE@53..54 "\n"
-      LAYOUT_START@54..54 ""
-      ModuleImports@54..54
-      ModuleStatements@54..54
-      LAYOUT_END@54..54 ""
+      LAYOUT_START@53..53 ""
+      ModuleImports@53..53
+      ModuleStatements@53..53
+      LAYOUT_END@53..53 ""
+      Annotation@53..54
+        TEXT@53..54 "\n"
       END_OF_FILE@54..54 ""
     ,
     [
         ParseError {
+            offset: 34,
             position: Position {
-                offset: 34,
                 line: 1,
                 column: 35,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 34,
             position: Position {
-                offset: 34,
                 line: 1,
                 column: 35,
             },
             message: "Too many leading zeros",
         },
         ParseError {
+            offset: 39,
             position: Position {
-                offset: 39,
                 line: 1,
                 column: 40,
             },

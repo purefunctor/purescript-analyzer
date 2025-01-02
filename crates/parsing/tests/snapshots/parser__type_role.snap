@@ -5,89 +5,89 @@ snapshot_kind: text
 ---
 (
     Module@0..170
-      ModuleHeader@0..23
+      ModuleHeader@0..21
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..16
+        ModuleName@6..15
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..15 "TypeRole"
-          Comment@15..16
-            WHITESPACE@15..16 " "
-        ModuleExportList@16..16
+        ModuleExportList@15..15
+        Annotation@15..16
+          TEXT@15..16 " "
         WHERE@16..21 "where"
-        Comment@21..23
-          WHITESPACE@21..23 "\n\n"
-      LAYOUT_START@23..23 ""
-      ModuleImports@23..23
-      ModuleStatements@23..170
-        TypeRoleDeclaration@23..49
+      LAYOUT_START@21..21 ""
+      ModuleImports@21..21
+      ModuleStatements@21..169
+        TypeRoleDeclaration@21..48
+          Annotation@21..23
+            TEXT@21..23 "\n\n"
           TYPE@23..27 "type"
-          Comment@27..28
-            WHITESPACE@27..28 " "
+          Annotation@27..28
+            TEXT@27..28 " "
           ROLE@28..32 "role"
-          Comment@32..33
-            WHITESPACE@32..33 " "
+          Annotation@32..33
+            TEXT@32..33 " "
           UPPER@33..40 "Nominal"
-          Comment@40..41
-            WHITESPACE@40..41 " "
-          TypeRole@41..49
+          TypeRole@40..48
+            Annotation@40..41
+              TEXT@40..41 " "
             NOMINAL@41..48 "nominal"
-            Comment@48..49
-              WHITESPACE@48..49 "\n"
-        LAYOUT_SEPARATOR@49..49 ""
-        TypeRoleDeclaration@49..93
+        LAYOUT_SEPARATOR@48..48 ""
+        TypeRoleDeclaration@48..92
+          Annotation@48..49
+            TEXT@48..49 "\n"
           TYPE@49..53 "type"
-          Comment@53..54
-            WHITESPACE@53..54 " "
+          Annotation@53..54
+            TEXT@53..54 " "
           ROLE@54..58 "role"
-          Comment@58..59
-            WHITESPACE@58..59 " "
+          Annotation@58..59
+            TEXT@58..59 " "
           UPPER@59..75 "Representational"
-          Comment@75..76
-            WHITESPACE@75..76 " "
-          TypeRole@76..93
+          TypeRole@75..92
+            Annotation@75..76
+              TEXT@75..76 " "
             REPRESENTATIONAL@76..92 "representational"
-            Comment@92..93
-              WHITESPACE@92..93 "\n"
-        LAYOUT_SEPARATOR@93..93 ""
-        TypeRoleDeclaration@93..120
+        LAYOUT_SEPARATOR@92..92 ""
+        TypeRoleDeclaration@92..118
+          Annotation@92..93
+            TEXT@92..93 "\n"
           TYPE@93..97 "type"
-          Comment@97..98
-            WHITESPACE@97..98 " "
+          Annotation@97..98
+            TEXT@97..98 " "
           ROLE@98..102 "role"
-          Comment@102..103
-            WHITESPACE@102..103 " "
+          Annotation@102..103
+            TEXT@102..103 " "
           UPPER@103..110 "Phantom"
-          Comment@110..111
-            WHITESPACE@110..111 " "
-          TypeRole@111..120
+          TypeRole@110..118
+            Annotation@110..111
+              TEXT@110..111 " "
             PHANTOM@111..118 "phantom"
-            Comment@118..120
-              WHITESPACE@118..120 "\n\n"
-        LAYOUT_SEPARATOR@120..120 ""
-        TypeRoleDeclaration@120..170
+        LAYOUT_SEPARATOR@118..118 ""
+        TypeRoleDeclaration@118..169
+          Annotation@118..120
+            TEXT@118..120 "\n\n"
           TYPE@120..124 "type"
-          Comment@124..125
-            WHITESPACE@124..125 " "
+          Annotation@124..125
+            TEXT@124..125 " "
           ROLE@125..129 "role"
-          Comment@129..130
-            WHITESPACE@129..130 " "
+          Annotation@129..130
+            TEXT@129..130 " "
           UPPER@130..136 "Triple"
-          Comment@136..137
-            WHITESPACE@136..137 " "
-          TypeRole@137..145
+          TypeRole@136..144
+            Annotation@136..137
+              TEXT@136..137 " "
             NOMINAL@137..144 "nominal"
-            Comment@144..145
-              WHITESPACE@144..145 " "
-          TypeRole@145..162
+          TypeRole@144..161
+            Annotation@144..145
+              TEXT@144..145 " "
             REPRESENTATIONAL@145..161 "representational"
-            Comment@161..162
-              WHITESPACE@161..162 " "
-          TypeRole@162..170
+          TypeRole@161..169
+            Annotation@161..162
+              TEXT@161..162 " "
             PHANTOM@162..169 "phantom"
-            Comment@169..170
-              WHITESPACE@169..170 "\n"
-      LAYOUT_END@170..170 ""
+      LAYOUT_END@169..169 ""
+      Annotation@169..170
+        TEXT@169..170 "\n"
       END_OF_FILE@170..170 ""
     ,
     [],

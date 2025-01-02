@@ -5,50 +5,50 @@ snapshot_kind: text
 ---
 (
     Module@0..82
-      ModuleHeader@0..38
+      ModuleHeader@0..36
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..31
+        ModuleName@6..30
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..30 "ExpressionParenthesized"
-          Comment@30..31
-            WHITESPACE@30..31 " "
-        ModuleExportList@31..31
+        ModuleExportList@30..30
+        Annotation@30..31
+          TEXT@30..31 " "
         WHERE@31..36 "where"
-        Comment@36..38
-          WHITESPACE@36..38 "\n\n"
-      LAYOUT_START@38..38 ""
-      ModuleImports@38..38
-      ModuleStatements@38..82
-        ValueEquation@38..58
+      LAYOUT_START@36..36 ""
+      ModuleImports@36..36
+      ModuleStatements@36..81
+        ValueEquation@36..57
+          Annotation@36..38
+            TEXT@36..38 "\n\n"
           LOWER@38..51 "parenthesized"
-          Comment@51..52
-            WHITESPACE@51..52 " "
-          FunctionBinders@52..52
-          Unconditional@52..58
+          FunctionBinders@51..51
+          Unconditional@51..57
+            Annotation@51..52
+              TEXT@51..52 " "
             EQUAL@52..53 "="
-            Comment@53..54
-              WHITESPACE@53..54 " "
-            WhereExpression@54..58
-              ExpressionParenthesized@54..58
+            WhereExpression@53..57
+              ExpressionParenthesized@53..57
+                Annotation@53..54
+                  TEXT@53..54 " "
                 LEFT_PARENTHESIS@54..55 "("
                 ExpressionInteger@55..56
                   INTEGER@55..56 "1"
                 RIGHT_PARENTHESIS@56..57 ")"
-                Comment@57..58
-                  WHITESPACE@57..58 "\n"
-        LAYOUT_SEPARATOR@58..58 ""
-        ValueEquation@58..82
+        LAYOUT_SEPARATOR@57..57 ""
+        ValueEquation@57..81
+          Annotation@57..58
+            TEXT@57..58 "\n"
           LOWER@58..71 "parenthesized"
-          Comment@71..72
-            WHITESPACE@71..72 " "
-          FunctionBinders@72..72
-          Unconditional@72..82
+          FunctionBinders@71..71
+          Unconditional@71..81
+            Annotation@71..72
+              TEXT@71..72 " "
             EQUAL@72..73 "="
-            Comment@73..74
-              WHITESPACE@73..74 " "
-            WhereExpression@74..82
-              ExpressionParenthesized@74..82
+            WhereExpression@73..81
+              ExpressionParenthesized@73..81
+                Annotation@73..74
+                  TEXT@73..74 " "
                 LEFT_PARENTHESIS@74..75 "("
                 ExpressionParenthesized@75..80
                   LEFT_PARENTHESIS@75..76 "("
@@ -59,9 +59,9 @@ snapshot_kind: text
                     RIGHT_PARENTHESIS@78..79 ")"
                   RIGHT_PARENTHESIS@79..80 ")"
                 RIGHT_PARENTHESIS@80..81 ")"
-                Comment@81..82
-                  WHITESPACE@81..82 "\n"
-      LAYOUT_END@82..82 ""
+      LAYOUT_END@81..81 ""
+      Annotation@81..82
+        TEXT@81..82 "\n"
       END_OF_FILE@82..82 ""
     ,
     [],

@@ -5,35 +5,35 @@ snapshot_kind: text
 ---
 (
     Module@0..47
-      ModuleHeader@0..47
+      ModuleHeader@0..46
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..33
+        ModuleName@6..32
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..32 "ModuleExportClassErro ..."
-          Comment@32..33
-            WHITESPACE@32..33 " "
-        ModuleExportList@33..41
+        ModuleExportList@32..40
+          Annotation@32..33
+            TEXT@32..33 " "
           LEFT_PARENTHESIS@33..34 "("
           ModuleExportClass@34..39
             CLASS@34..39 "class"
             ERROR@39..39 ""
           RIGHT_PARENTHESIS@39..40 ")"
-          Comment@40..41
-            WHITESPACE@40..41 " "
+        Annotation@40..41
+          TEXT@40..41 " "
         WHERE@41..46 "where"
-        Comment@46..47
-          WHITESPACE@46..47 "\n"
-      LAYOUT_START@47..47 ""
-      ModuleImports@47..47
-      ModuleStatements@47..47
-      LAYOUT_END@47..47 ""
+      LAYOUT_START@46..46 ""
+      ModuleImports@46..46
+      ModuleStatements@46..46
+      LAYOUT_END@46..46 ""
+      Annotation@46..47
+        TEXT@46..47 "\n"
       END_OF_FILE@47..47 ""
     ,
     [
         ParseError {
+            offset: 39,
             position: Position {
-                offset: 39,
                 line: 1,
                 column: 40,
             },

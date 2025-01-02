@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 drop_bomb = "0.1.5"
 lexing = { version = "0.1.0", path = "../lexing" }
-position = { version = "0.1.0", path = "../position" }
 rowan = "0.16.1"
 syntax = { version = "0.1.0", path = "../syntax" }
 

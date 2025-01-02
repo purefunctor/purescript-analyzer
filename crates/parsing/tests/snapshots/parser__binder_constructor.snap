@@ -5,125 +5,127 @@ snapshot_kind: text
 ---
 (
     Module@0..139
-      ModuleHeader@0..32
+      ModuleHeader@0..30
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..25
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..24 "BinderConstructor"
-          Comment@24..25
-            WHITESPACE@24..25 " "
-        ModuleExportList@25..25
+        ModuleExportList@24..24
+        Annotation@24..25
+          TEXT@24..25 " "
         WHERE@25..30 "where"
-        Comment@30..32
-          WHITESPACE@30..32 "\n\n"
-      LAYOUT_START@32..32 ""
-      ModuleImports@32..32
-      ModuleStatements@32..139
-        ValueEquation@32..60
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..30
+      ModuleStatements@30..138
+        ValueEquation@30..59
+          Annotation@30..32
+            TEXT@30..32 "\n\n"
           LOWER@32..43 "constructor"
-          Comment@43..44
-            WHITESPACE@43..44 " "
-          FunctionBinders@44..56
-            BinderParenthesized@44..56
+          FunctionBinders@43..55
+            BinderParenthesized@43..55
+              Annotation@43..44
+                TEXT@43..44 " "
               LEFT_PARENTHESIS@44..45 "("
               BinderConstructor@45..54
-                QualifiedName@45..50
+                QualifiedName@45..49
                   UPPER@45..49 "Cons"
-                  Comment@49..50
-                    WHITESPACE@49..50 " "
-                BinderVariable@50..52
+                BinderVariable@49..51
+                  Annotation@49..50
+                    TEXT@49..50 " "
                   LOWER@50..51 "x"
-                  Comment@51..52
-                    WHITESPACE@51..52 " "
-                BinderVariable@52..54
+                BinderVariable@51..54
+                  Annotation@51..52
+                    TEXT@51..52 " "
                   LOWER@52..54 "xs"
               RIGHT_PARENTHESIS@54..55 ")"
-              Comment@55..56
-                WHITESPACE@55..56 " "
-          Unconditional@56..60
+          Unconditional@55..59
+            Annotation@55..56
+              TEXT@55..56 " "
             EQUAL@56..57 "="
-            Comment@57..58
-              WHITESPACE@57..58 " "
-            WhereExpression@58..60
-              ExpressionInteger@58..60
+            WhereExpression@57..59
+              ExpressionInteger@57..59
+                Annotation@57..58
+                  TEXT@57..58 " "
                 INTEGER@58..59 "0"
-                Comment@59..60
-                  WHITESPACE@59..60 "\n"
-        LAYOUT_SEPARATOR@60..60 ""
-        ValueEquation@60..81
+        LAYOUT_SEPARATOR@59..59 ""
+        ValueEquation@59..79
+          Annotation@59..60
+            TEXT@59..60 "\n"
           LOWER@60..71 "constructor"
-          Comment@71..72
-            WHITESPACE@71..72 " "
-          FunctionBinders@72..76
-            BinderConstructor@72..76
-              QualifiedName@72..76
+          FunctionBinders@71..75
+            BinderConstructor@71..75
+              QualifiedName@71..75
+                Annotation@71..72
+                  TEXT@71..72 " "
                 UPPER@72..75 "Nil"
-                Comment@75..76
-                  WHITESPACE@75..76 " "
-          Unconditional@76..81
+          Unconditional@75..79
+            Annotation@75..76
+              TEXT@75..76 " "
             EQUAL@76..77 "="
-            Comment@77..78
-              WHITESPACE@77..78 " "
-            WhereExpression@78..81
-              ExpressionInteger@78..81
+            WhereExpression@77..79
+              ExpressionInteger@77..79
+                Annotation@77..78
+                  TEXT@77..78 " "
                 INTEGER@78..79 "0"
-                Comment@79..81
-                  WHITESPACE@79..81 "\n\n"
-        LAYOUT_SEPARATOR@81..81 ""
-        ValueEquation@81..114
+        LAYOUT_SEPARATOR@79..79 ""
+        ValueEquation@79..113
+          Annotation@79..81
+            TEXT@79..81 "\n\n"
           LOWER@81..92 "constructor"
-          Comment@92..93
-            WHITESPACE@92..93 " "
-          FunctionBinders@93..110
-            BinderParenthesized@93..110
+          FunctionBinders@92..109
+            BinderParenthesized@92..109
+              Annotation@92..93
+                TEXT@92..93 " "
               LEFT_PARENTHESIS@93..94 "("
               BinderConstructor@94..108
-                QualifiedName@94..104
-                  PREFIX@94..99 "List."
+                QualifiedName@94..103
+                  Qualifier@94..99
+                    TEXT@94..99 "List."
                   UPPER@99..103 "Cons"
-                  Comment@103..104
-                    WHITESPACE@103..104 " "
-                BinderVariable@104..106
+                BinderVariable@103..105
+                  Annotation@103..104
+                    TEXT@103..104 " "
                   LOWER@104..105 "x"
-                  Comment@105..106
-                    WHITESPACE@105..106 " "
-                BinderVariable@106..108
+                BinderVariable@105..108
+                  Annotation@105..106
+                    TEXT@105..106 " "
                   LOWER@106..108 "xs"
               RIGHT_PARENTHESIS@108..109 ")"
-              Comment@109..110
-                WHITESPACE@109..110 " "
-          Unconditional@110..114
+          Unconditional@109..113
+            Annotation@109..110
+              TEXT@109..110 " "
             EQUAL@110..111 "="
-            Comment@111..112
-              WHITESPACE@111..112 " "
-            WhereExpression@112..114
-              ExpressionInteger@112..114
+            WhereExpression@111..113
+              ExpressionInteger@111..113
+                Annotation@111..112
+                  TEXT@111..112 " "
                 INTEGER@112..113 "0"
-                Comment@113..114
-                  WHITESPACE@113..114 "\n"
-        LAYOUT_SEPARATOR@114..114 ""
-        ValueEquation@114..139
+        LAYOUT_SEPARATOR@113..113 ""
+        ValueEquation@113..138
+          Annotation@113..114
+            TEXT@113..114 "\n"
           LOWER@114..125 "constructor"
-          Comment@125..126
-            WHITESPACE@125..126 " "
-          FunctionBinders@126..135
-            BinderConstructor@126..135
-              QualifiedName@126..135
-                PREFIX@126..131 "List."
+          FunctionBinders@125..134
+            BinderConstructor@125..134
+              QualifiedName@125..134
+                Annotation@125..126
+                  TEXT@125..126 " "
+                Qualifier@126..131
+                  TEXT@126..131 "List."
                 UPPER@131..134 "Nil"
-                Comment@134..135
-                  WHITESPACE@134..135 " "
-          Unconditional@135..139
+          Unconditional@134..138
+            Annotation@134..135
+              TEXT@134..135 " "
             EQUAL@135..136 "="
-            Comment@136..137
-              WHITESPACE@136..137 " "
-            WhereExpression@137..139
-              ExpressionInteger@137..139
+            WhereExpression@136..138
+              ExpressionInteger@136..138
+                Annotation@136..137
+                  TEXT@136..137 " "
                 INTEGER@137..138 "0"
-                Comment@138..139
-                  WHITESPACE@138..139 "\n"
-      LAYOUT_END@139..139 ""
+      LAYOUT_END@138..138 ""
+      Annotation@138..139
+        TEXT@138..139 "\n"
       END_OF_FILE@139..139 ""
     ,
     [],

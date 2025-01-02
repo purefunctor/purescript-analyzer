@@ -5,93 +5,95 @@ snapshot_kind: text
 ---
 (
     Module@0..104
-      ModuleHeader@0..36
+      ModuleHeader@0..34
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..29
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..28 "ExpressionDoAdoPrefix"
-          Comment@28..29
-            WHITESPACE@28..29 " "
-        ModuleExportList@29..29
+        ModuleExportList@28..28
+        Annotation@28..29
+          TEXT@28..29 " "
         WHERE@29..34 "where"
-        Comment@34..36
-          WHITESPACE@34..36 "\n\n"
-      LAYOUT_START@36..36 ""
-      ModuleImports@36..36
-      ModuleStatements@36..104
-        ValueEquation@36..65
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..103
+        ValueEquation@34..63
+          Annotation@34..36
+            TEXT@34..36 "\n\n"
           LOWER@36..40 "main"
-          Comment@40..41
-            WHITESPACE@40..41 " "
-          FunctionBinders@41..41
-          Unconditional@41..65
+          FunctionBinders@40..40
+          Unconditional@40..63
+            Annotation@40..41
+              TEXT@40..41 " "
             EQUAL@41..42 "="
-            Comment@42..43
-              WHITESPACE@42..43 " "
-            WhereExpression@43..65
-              ExpressionDo@43..65
-                PREFIX@43..49 "Hooks."
+            WhereExpression@42..63
+              ExpressionDo@42..63
+                Annotation@42..43
+                  TEXT@42..43 " "
+                Qualifier@43..49
+                  TEXT@43..49 "Hooks."
                 DO@49..51 "do"
-                Comment@51..54
-                  WHITESPACE@51..54 "\n  "
-                DoStatements@54..65
-                  LAYOUT_START@54..54 ""
-                  DoStatementDiscard@54..65
-                    ExpressionApplicationChain@54..65
-                      ExpressionVariable@54..59
-                        QualifiedName@54..59
+                DoStatements@51..63
+                  LAYOUT_START@51..51 ""
+                  DoStatementDiscard@51..63
+                    ExpressionApplicationChain@51..63
+                      ExpressionVariable@51..58
+                        QualifiedName@51..58
+                          Annotation@51..54
+                            TEXT@51..54 "\n  "
                           LOWER@54..58 "pure"
-                          Comment@58..59
-                            WHITESPACE@58..59 " "
-                      ExpressionTermArgument@59..65
-                        ExpressionVariable@59..65
-                          QualifiedName@59..65
+                      ExpressionTermArgument@58..63
+                        ExpressionVariable@58..63
+                          QualifiedName@58..63
+                            Annotation@58..59
+                              TEXT@58..59 " "
                             LOWER@59..63 "unit"
-                            Comment@63..65
-                              WHITESPACE@63..65 "\n\n"
-                  LAYOUT_END@65..65 ""
-        LAYOUT_SEPARATOR@65..65 ""
-        ValueEquation@65..104
+                  LAYOUT_END@63..63 ""
+        LAYOUT_SEPARATOR@63..63 ""
+        ValueEquation@63..103
+          Annotation@63..65
+            TEXT@63..65 "\n\n"
           LOWER@65..69 "main"
-          Comment@69..70
-            WHITESPACE@69..70 " "
-          FunctionBinders@70..70
-          Unconditional@70..104
+          FunctionBinders@69..69
+          Unconditional@69..103
+            Annotation@69..70
+              TEXT@69..70 " "
             EQUAL@70..71 "="
-            Comment@71..72
-              WHITESPACE@71..72 " "
-            WhereExpression@72..104
-              ExpressionAdo@72..104
-                PREFIX@72..78 "Hooks."
+            WhereExpression@71..103
+              ExpressionAdo@71..103
+                Annotation@71..72
+                  TEXT@71..72 " "
+                Qualifier@72..78
+                  TEXT@72..78 "Hooks."
                 ADO@78..81 "ado"
-                Comment@81..84
-                  WHITESPACE@81..84 "\n  "
-                DoStatements@84..96
-                  LAYOUT_START@84..84 ""
-                  DoStatementDiscard@84..96
-                    ExpressionApplicationChain@84..96
-                      ExpressionVariable@84..89
-                        QualifiedName@84..89
+                DoStatements@81..93
+                  LAYOUT_START@81..81 ""
+                  DoStatementDiscard@81..93
+                    ExpressionApplicationChain@81..93
+                      ExpressionVariable@81..88
+                        QualifiedName@81..88
+                          Annotation@81..84
+                            TEXT@81..84 "\n  "
                           LOWER@84..88 "pure"
-                          Comment@88..89
-                            WHITESPACE@88..89 " "
-                      ExpressionTermArgument@89..96
-                        ExpressionVariable@89..96
-                          QualifiedName@89..96
+                      ExpressionTermArgument@88..93
+                        ExpressionVariable@88..93
+                          QualifiedName@88..93
+                            Annotation@88..89
+                              TEXT@88..89 " "
                             LOWER@89..93 "unit"
-                            Comment@93..96
-                              WHITESPACE@93..96 "\n  "
-                  LAYOUT_END@96..96 ""
+                  LAYOUT_END@93..93 ""
+                Annotation@93..96
+                  TEXT@93..96 "\n  "
                 IN@96..98 "in"
-                Comment@98..99
-                  WHITESPACE@98..99 " "
-                ExpressionVariable@99..104
-                  QualifiedName@99..104
+                ExpressionVariable@98..103
+                  QualifiedName@98..103
+                    Annotation@98..99
+                      TEXT@98..99 " "
                     LOWER@99..103 "unit"
-                    Comment@103..104
-                      WHITESPACE@103..104 "\n"
-      LAYOUT_END@104..104 ""
+      LAYOUT_END@103..103 ""
+      Annotation@103..104
+        TEXT@103..104 "\n"
       END_OF_FILE@104..104 ""
     ,
     [],

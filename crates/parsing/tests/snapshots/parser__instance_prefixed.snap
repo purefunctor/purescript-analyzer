@@ -5,37 +5,38 @@ snapshot_kind: text
 ---
 (
     Module@0..55
-      ModuleHeader@0..31
+      ModuleHeader@0..29
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..24
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..23 "InstancePrefixed"
-          Comment@23..24
-            WHITESPACE@23..24 " "
-        ModuleExportList@24..24
+        ModuleExportList@23..23
+        Annotation@23..24
+          TEXT@23..24 " "
         WHERE@24..29 "where"
-        Comment@29..31
-          WHITESPACE@29..31 "\n\n"
-      LAYOUT_START@31..31 ""
-      ModuleImports@31..31
-      ModuleStatements@31..55
-        InstanceChain@31..55
-          InstanceDeclaration@31..55
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..54
+        InstanceChain@29..54
+          InstanceDeclaration@29..54
+            Annotation@29..31
+              TEXT@29..31 "\n\n"
             INSTANCE@31..39 "instance"
-            Comment@39..40
-              WHITESPACE@39..40 " "
-            InstanceHead@40..55
-              PREFIX@40..48 "Data.Eq."
+            InstanceHead@39..54
+              Annotation@39..40
+                TEXT@39..40 " "
+              Qualifier@40..48
+                TEXT@40..48 "Data.Eq."
               UPPER@48..50 "Eq"
-              Comment@50..51
-                WHITESPACE@50..51 " "
-              TypeConstructor@51..55
-                QualifiedName@51..55
+              TypeConstructor@50..54
+                QualifiedName@50..54
+                  Annotation@50..51
+                    TEXT@50..51 " "
                   UPPER@51..54 "Int"
-                  Comment@54..55
-                    WHITESPACE@54..55 "\n"
-      LAYOUT_END@55..55 ""
+      LAYOUT_END@54..54 ""
+      Annotation@54..55
+        TEXT@54..55 "\n"
       END_OF_FILE@55..55 ""
     ,
     [],

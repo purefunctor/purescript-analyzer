@@ -5,43 +5,43 @@ snapshot_kind: text
 ---
 (
     Module@0..42
-      ModuleHeader@0..25
+      ModuleHeader@0..23
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..18
+        ModuleName@6..17
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..17 "TypeKinded"
-          Comment@17..18
-            WHITESPACE@17..18 " "
-        ModuleExportList@18..18
+        ModuleExportList@17..17
+        Annotation@17..18
+          TEXT@17..18 " "
         WHERE@18..23 "where"
-        Comment@23..25
-          WHITESPACE@23..25 "\n\n"
-      LAYOUT_START@25..25 ""
-      ModuleImports@25..25
-      ModuleStatements@25..42
-        ValueSignature@25..42
+      LAYOUT_START@23..23 ""
+      ModuleImports@23..23
+      ModuleStatements@23..41
+        ValueSignature@23..41
+          Annotation@23..25
+            TEXT@23..25 "\n\n"
           LOWER@25..31 "kinded"
-          Comment@31..32
-            WHITESPACE@31..32 " "
+          Annotation@31..32
+            TEXT@31..32 " "
           DOUBLE_COLON@32..34 "::"
-          Comment@34..35
-            WHITESPACE@34..35 " "
-          TypeKinded@35..42
-            TypeConstructor@35..37
-              QualifiedName@35..37
+          TypeKinded@34..41
+            TypeConstructor@34..36
+              QualifiedName@34..36
+                Annotation@34..35
+                  TEXT@34..35 " "
                 UPPER@35..36 "T"
-                Comment@36..37
-                  WHITESPACE@36..37 " "
+            Annotation@36..37
+              TEXT@36..37 " "
             DOUBLE_COLON@37..39 "::"
-            Comment@39..40
-              WHITESPACE@39..40 " "
-            TypeConstructor@40..42
-              QualifiedName@40..42
+            TypeConstructor@39..41
+              QualifiedName@39..41
+                Annotation@39..40
+                  TEXT@39..40 " "
                 UPPER@40..41 "T"
-                Comment@41..42
-                  WHITESPACE@41..42 "\n"
-      LAYOUT_END@42..42 ""
+      LAYOUT_END@41..41 ""
+      Annotation@41..42
+        TEXT@41..42 "\n"
       END_OF_FILE@42..42 ""
     ,
     [],

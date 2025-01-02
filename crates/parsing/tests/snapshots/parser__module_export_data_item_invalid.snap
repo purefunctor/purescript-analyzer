@@ -5,15 +5,15 @@ snapshot_kind: text
 ---
 (
     Module@0..54
-      ModuleHeader@0..54
+      ModuleHeader@0..53
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..35
+        ModuleName@6..34
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..34 "ModuleExportDataItemI ..."
-          Comment@34..35
-            WHITESPACE@34..35 " "
-        ModuleExportList@35..48
+        ModuleExportList@34..47
+          Annotation@34..35
+            TEXT@34..35 " "
           LEFT_PARENTHESIS@35..36 "("
           ModuleExportType@36..46
             UPPER@36..40 "List"
@@ -22,47 +22,47 @@ snapshot_kind: text
               ERROR@41..42
                 ERROR@41..41 ""
                 LOWER@41..42 "a"
-              ERROR@42..44
+              ERROR@42..43
                 ERROR@42..42 ""
                 COMMA@42..43 ","
-                Comment@43..44
-                  WHITESPACE@43..44 " "
-              ERROR@44..45
-                ERROR@44..44 ""
+              ERROR@43..45
+                ERROR@43..43 ""
+                Annotation@43..44
+                  TEXT@43..44 " "
                 LOWER@44..45 "b"
               RIGHT_PARENTHESIS@45..46 ")"
           RIGHT_PARENTHESIS@46..47 ")"
-          Comment@47..48
-            WHITESPACE@47..48 " "
+        Annotation@47..48
+          TEXT@47..48 " "
         WHERE@48..53 "where"
-        Comment@53..54
-          WHITESPACE@53..54 "\n"
-      LAYOUT_START@54..54 ""
-      ModuleImports@54..54
-      ModuleStatements@54..54
-      LAYOUT_END@54..54 ""
+      LAYOUT_START@53..53 ""
+      ModuleImports@53..53
+      ModuleStatements@53..53
+      LAYOUT_END@53..53 ""
+      Annotation@53..54
+        TEXT@53..54 "\n"
       END_OF_FILE@54..54 ""
     ,
     [
         ParseError {
+            offset: 41,
             position: Position {
-                offset: 41,
                 line: 1,
                 column: 42,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 42,
             position: Position {
-                offset: 42,
                 line: 1,
                 column: 43,
             },
             message: "Invalid token",
         },
         ParseError {
+            offset: 44,
             position: Position {
-                offset: 44,
                 line: 1,
                 column: 45,
             },

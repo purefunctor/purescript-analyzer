@@ -5,15 +5,15 @@ snapshot_kind: text
 ---
 (
     Module@0..48
-      ModuleHeader@0..48
+      ModuleHeader@0..47
         MODULE@0..6 "module"
-        Comment@6..7
-          WHITESPACE@6..7 " "
-        ModuleName@7..33
+        ModuleName@6..32
+          Annotation@6..7
+            TEXT@6..7 " "
           UPPER@7..32 "ModuleExportDataItemE ..."
-          Comment@32..33
-            WHITESPACE@32..33 " "
-        ModuleExportList@33..42
+        ModuleExportList@32..41
+          Annotation@32..33
+            TEXT@32..33 " "
           LEFT_PARENTHESIS@33..34 "("
           ModuleExportType@34..40
             UPPER@34..38 "List"
@@ -21,15 +21,15 @@ snapshot_kind: text
               LEFT_PARENTHESIS@38..39 "("
               RIGHT_PARENTHESIS@39..40 ")"
           RIGHT_PARENTHESIS@40..41 ")"
-          Comment@41..42
-            WHITESPACE@41..42 " "
+        Annotation@41..42
+          TEXT@41..42 " "
         WHERE@42..47 "where"
-        Comment@47..48
-          WHITESPACE@47..48 "\n"
-      LAYOUT_START@48..48 ""
-      ModuleImports@48..48
-      ModuleStatements@48..48
-      LAYOUT_END@48..48 ""
+      LAYOUT_START@47..47 ""
+      ModuleImports@47..47
+      ModuleStatements@47..47
+      LAYOUT_END@47..47 ""
+      Annotation@47..48
+        TEXT@47..48 "\n"
       END_OF_FILE@48..48 ""
     ,
     [],
