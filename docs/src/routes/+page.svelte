@@ -8,7 +8,9 @@
   let docsLib: Remote<Lib> | null = null;
 
   let source = writable("");
-  let time = $state(0);
+  let lex = $state(0);
+  let layout = $state(0);
+  let parse = $state(0);
   let output = $state("");
 
   onMount(async () => {
@@ -18,9 +20,11 @@
   onMount(() => {
     return source.subscribe(async (source) => {
       if (!docsLib) return;
-      const start = performance.now();
-      output = await docsLib!.parse(source);
-      time = performance.now() - start;
+      let result = await docsLib!.parse(source);
+      lex = result.lex;
+      layout = result.layout;
+      parse = result.parse;
+      output = result.output;
     });
   });
 </script>
@@ -28,7 +32,9 @@
 <div class="container">
   <div>
     <h1>PureScript Analyzer</h1>
-    <p>Finished: {time}ms</p>
+    <p>Lex: {lex}ms</p>
+    <p>Layout: {layout}ms</p>
+    <p>Parse: {parse}ms</p>
   </div>
   <div class="grid">
     <div class="editor">
@@ -61,6 +67,7 @@
 
   .grid {
     min-height: 0;
+    height: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: minmax(0, 1fr);
@@ -76,5 +83,9 @@
     overflow-y: scroll;
     display: flex;
     flex-direction: column-reverse;
+  }
+
+  .preview > pre {
+    flex-grow: 1;
   }
 </style>

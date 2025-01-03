@@ -7,4 +7,4 @@ resolver = "1"
 opt-level = 3
 
 [profile.dev.package.docs-lib]
-opt-level = "s"
+opt-level = 3
