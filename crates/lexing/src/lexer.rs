@@ -5,7 +5,7 @@ use syntax::SyntaxKind;
 use crate::{
     categories::LexerCategories,
     lexed::{LexedBuilder, SyntaxKindInfo},
-    Lexed,
+    Lexed, Position,
 };
 
 const EOF_CHAR: char = '\0';
@@ -15,6 +15,8 @@ pub(super) struct Lexer<'s> {
     chars: Chars<'s>,
     annotation: u32,
     qualifier: u32,
+    qualifier_position: Position,
+    current_position: Position,
     lexed: LexedBuilder<'s>,
 }
 
@@ -24,11 +26,21 @@ impl<'s> Lexer<'s> {
         let annotation = 0;
         let qualifier = 0;
         let lexed = LexedBuilder::new(source);
+        let qualifier_position = Position { line: 1, column: 1 };
+        let current_position = Position { line: 1, column: 1 };
 
         // This allows us to take the annotation and qualifier at the end
         // of `take_token` rather than at the beginning. This positioning
         // is important for handling "hanging" annotations and qualifiers.
-        let mut lexer = Lexer { source, chars, annotation, qualifier, lexed };
+        let mut lexer = Lexer {
+            source,
+            chars,
+            annotation,
+            qualifier,
+            lexed,
+            qualifier_position,
+            current_position,
+        };
         lexer.take_annotation();
         lexer.take_qualifier();
 
@@ -73,7 +85,14 @@ impl<'s> Lexer<'s> {
     }
 
     fn take(&mut self) -> char {
-        self.chars.next().unwrap_or(EOF_CHAR)
+        let c = self.chars.next().unwrap_or(EOF_CHAR);
+        if c == '\n' {
+            self.current_position.line += 1;
+            self.current_position.column = 1;
+        } else {
+            self.current_position.column += c.len_utf8() as u32;
+        }
+        c
     }
 
     fn take_while(&mut self, predicate: impl Fn(char) -> bool) {
@@ -102,6 +121,7 @@ impl<'s> Lexer<'s> {
             }
         }
         self.annotation = self.consumed() as u32;
+        self.qualifier_position = self.current_position;
     }
 
     fn take_annotation_whitespace(&mut self) {
@@ -144,6 +164,8 @@ impl<'s> Lexer<'s> {
             let checkpoint = self.chars.clone();
             let annotation = self.annotation;
             let qualifier = self.qualifier;
+            let qualifier_position = self.qualifier_position;
+            let current_position = self.current_position;
 
             self.take_while(char::is_name);
             if self.first() == '.' {
@@ -152,6 +174,8 @@ impl<'s> Lexer<'s> {
                 self.chars = checkpoint;
                 self.annotation = annotation;
                 self.qualifier = qualifier;
+                self.qualifier_position = qualifier_position;
+                self.current_position = current_position;
                 break;
             }
         }
@@ -165,6 +189,7 @@ impl<'s> Lexer<'s> {
             annotation: self.annotation,
             qualifier: self.qualifier,
             token: self.consumed() as u32,
+            position: self.qualifier_position,
         };
         self.lexed.push(kind, info, error);
     }
@@ -249,6 +274,7 @@ impl<'s> Lexer<'s> {
     }
 
     fn take_operator_name_or_left_parenthesis(&mut self) {
+        let lp_position = self.current_position;
         self.take();
 
         let lp_token = self.consumed() as u32;
@@ -256,12 +282,14 @@ impl<'s> Lexer<'s> {
             annotation: self.annotation,
             qualifier: self.qualifier,
             token: lp_token,
+            position: lp_position,
         };
 
         if !self.first().is_operator() {
             return self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_info, None);
         }
 
+        let op_position = self.current_position;
         let op_kind = self.take_operator_kind();
         if self.first() != ')' {
             self.lexed.push(SyntaxKind::LEFT_PARENTHESIS, lp_info, None);
@@ -270,17 +298,18 @@ impl<'s> Lexer<'s> {
                 annotation: lp_info.token,
                 qualifier: lp_info.token,
                 token: self.consumed() as u32,
+                position: op_position,
             };
             return self.lexed.push(op_kind, op_info, None);
         }
 
         self.take();
-
         let rp_token = self.consumed() as u32;
         let rp_info = SyntaxKindInfo {
             annotation: lp_info.annotation,
             qualifier: lp_info.qualifier,
             token: rp_token,
+            position: lp_position,
         };
 
         let op_name_kind = match op_kind {

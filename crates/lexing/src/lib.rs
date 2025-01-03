@@ -8,8 +8,8 @@ use syntax::SyntaxKind;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
-    pub line: usize,
-    pub column: usize,
+    pub line: u32,
+    pub column: u32,
 }
 
 pub fn lex(source: &str) -> Lexed {

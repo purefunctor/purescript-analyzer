@@ -5,6 +5,3 @@ resolver = "1"
 
 [profile.dev.package.insta]
 opt-level = 3
-
-[profile.dev.package.docs-lib]
-opt-level = 3
