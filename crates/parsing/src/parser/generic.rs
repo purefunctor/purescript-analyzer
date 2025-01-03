@@ -60,14 +60,13 @@ pub(super) fn function_binders(p: &mut Parser, s: TokenSet) {
 
 pub(super) fn unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
     let mut m = p.start();
-    if p.eat(s) {
-        where_expression(p);
-        m.end(p, SyntaxKind::Unconditional);
-    } else if p.at(SyntaxKind::PIPE) {
+    if p.at(SyntaxKind::PIPE) {
         conditionals(p, s);
         m.end(p, SyntaxKind::Conditionals);
     } else {
-        m.cancel(p);
+        p.expect(s);
+        where_expression(p);
+        m.end(p, SyntaxKind::Unconditional);
     }
 }
 
