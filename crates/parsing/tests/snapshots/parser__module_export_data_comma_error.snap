@@ -21,13 +21,13 @@ snapshot_kind: text
               LEFT_PARENTHESIS@41..42 "("
               UPPER@42..46 "Left"
               COMMA@46..47 ","
-              ERROR@47..48
+              ERROR@47..54
                 ERROR@47..47 ""
                 COMMA@47..48 ","
-              UPPER@48..53 "Right"
-              ERROR@53..54
-                ERROR@53..53 ""
-                COMMA@53..54 ","
+                UPPER@48..53 "Right"
+                ERROR@53..54
+                  ERROR@53..53 ""
+                  COMMA@53..54 ","
               RIGHT_PARENTHESIS@54..55 ")"
           RIGHT_PARENTHESIS@55..56 ")"
         Annotation@56..57
@@ -48,7 +48,7 @@ snapshot_kind: text
                 line: 1,
                 column: 48,
             },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 53,

@@ -62,14 +62,10 @@ snapshot_kind: text
               UPPER@82..86 "List"
               TypeItemsList@86..97
                 LEFT_PARENTHESIS@86..87 "("
-                ERROR@87..91
+                ERROR@87..96
                   ERROR@87..87 ""
                   LOWER@87..91 "cons"
-                ERROR@91..92
-                  ERROR@91..91 ""
                   COMMA@91..92 ","
-                ERROR@92..96
-                  ERROR@92..92 ""
                   Annotation@92..93
                     TEXT@92..93 " "
                   LOWER@93..96 "nil"
@@ -124,15 +120,13 @@ snapshot_kind: text
               UPPER@151..155 "List"
               TypeItemsList@155..165
                 LEFT_PARENTHESIS@155..156 "("
-                ERROR@156..158
+                ERROR@156..164
                   ERROR@156..156 ""
                   DOUBLE_PERIOD@156..158 ".."
-                ERROR@158..159
-                  ERROR@158..158 ""
                   COMMA@158..159 ","
-                Annotation@159..160
-                  TEXT@159..160 " "
-                UPPER@160..164 "Cons"
+                  Annotation@159..160
+                    TEXT@159..160 " "
+                  UPPER@160..164 "Cons"
                 RIGHT_PARENTHESIS@164..165 ")"
             RIGHT_PARENTHESIS@165..166 ")"
           ImportAlias@166..166
@@ -223,23 +217,7 @@ snapshot_kind: text
                 line: 5,
                 column: 24,
             },
-            message: "Invalid token",
-        },
-        ParseError {
-            offset: 91,
-            position: Position {
-                line: 5,
-                column: 28,
-            },
-            message: "Invalid token",
-        },
-        ParseError {
-            offset: 93,
-            position: Position {
-                line: 5,
-                column: 30,
-            },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 128,
@@ -247,7 +225,7 @@ snapshot_kind: text
                 line: 6,
                 column: 30,
             },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 156,
@@ -255,15 +233,7 @@ snapshot_kind: text
                 line: 7,
                 column: 24,
             },
-            message: "Invalid token",
-        },
-        ParseError {
-            offset: 158,
-            position: Position {
-                line: 7,
-                column: 26,
-            },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 185,

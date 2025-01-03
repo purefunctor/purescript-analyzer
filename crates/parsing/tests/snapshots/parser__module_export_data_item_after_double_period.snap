@@ -19,15 +19,13 @@ snapshot_kind: text
             UPPER@46..50 "List"
             TypeItemsList@50..62
               LEFT_PARENTHESIS@50..51 "("
-              ERROR@51..53
+              ERROR@51..61
                 ERROR@51..51 ""
                 DOUBLE_PERIOD@51..53 ".."
-              ERROR@53..54
-                ERROR@53..53 ""
                 COMMA@53..54 ","
-              Annotation@54..55
-                TEXT@54..55 " "
-              UPPER@55..61 "Period"
+                Annotation@54..55
+                  TEXT@54..55 " "
+                UPPER@55..61 "Period"
               RIGHT_PARENTHESIS@61..62 ")"
           RIGHT_PARENTHESIS@62..63 ")"
         Annotation@63..64
@@ -48,15 +46,7 @@ snapshot_kind: text
                 line: 1,
                 column: 52,
             },
-            message: "Invalid token",
-        },
-        ParseError {
-            offset: 53,
-            position: Position {
-                line: 1,
-                column: 54,
-            },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
     ],
 )

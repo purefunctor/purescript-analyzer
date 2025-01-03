@@ -282,8 +282,6 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
 .union(names::LOWER)
 .union(names::OPERATOR_NAME);
 
-const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
-
 fn export_item(p: &mut Parser) {
     let mut m = p.start();
 
@@ -312,27 +310,39 @@ fn type_items(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat(SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME) {
-        m.end(p, SyntaxKind::TypeItemsAll);
-    } else if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-            if p.eat(SyntaxKind::UPPER) {
-                if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                    p.error_recover("Trailing comma");
-                } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                    p.expect(SyntaxKind::COMMA);
-                }
-            } else {
-                if p.at_in(EXPORT_LIST_RECOVERY) {
-                    break;
-                }
-                p.error_recover("Invalid token");
-            }
-        }
-        p.expect(SyntaxKind::RIGHT_PARENTHESIS);
-        m.end(p, SyntaxKind::TypeItemsList);
-    } else {
-        m.cancel(p);
+        return m.end(p, SyntaxKind::TypeItemsAll);
     }
+
+    if !p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        return m.cancel(p);
+    }
+
+    let mut e = None;
+    while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+        if p.eat(SyntaxKind::UPPER) {
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.expect(SyntaxKind::COMMA);
+            }
+        } else {
+            if p.at(SyntaxKind::WHERE) {
+                break;
+            }
+            if e.is_none() {
+                e = Some(p.start());
+                p.error("Invalid tokens");
+            }
+            p.consume();
+        }
+    }
+    if let Some(mut e) = e {
+        e.end(p, SyntaxKind::ERROR);
+    }
+
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+
+    m.end(p, SyntaxKind::TypeItemsList);
 }
 
 fn imports_and_statements(p: &mut Parser) {
