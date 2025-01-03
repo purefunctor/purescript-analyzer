@@ -138,7 +138,7 @@ impl<'s> Lexer<'s> {
         self.take();
         self.take();
         let mut level = 1;
-        loop {
+        while !self.is_eof() {
             match (self.first(), self.second()) {
                 ('{', '-') => {
                     level += 1;
