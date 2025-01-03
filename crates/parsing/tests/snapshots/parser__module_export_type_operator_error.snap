@@ -27,21 +27,19 @@ snapshot_kind: text
             TYPE@48..52 "type"
             ERROR@52..52 ""
           ERROR@52..52 ""
-          ERROR@52..56
+          ERROR@52..66
             ERROR@52..52 ""
             Annotation@52..53
               TEXT@52..53 " "
             INTEGER@53..56 "123"
-          ERROR@56..57
-            ERROR@56..56 ""
             COMMA@56..57 ","
-          ModuleExportTypeOperator@57..66
-            Annotation@57..58
-              TEXT@57..58 " "
-            TYPE@58..62 "type"
-            Annotation@62..63
-              TEXT@62..63 " "
-            OPERATOR_NAME@63..66 "(*)"
+            ModuleExportTypeOperator@57..66
+              Annotation@57..58
+                TEXT@57..58 " "
+              TYPE@58..62 "type"
+              Annotation@62..63
+                TEXT@62..63 " "
+              OPERATOR_NAME@63..66 "(*)"
           RIGHT_PARENTHESIS@66..67 ")"
         Annotation@67..68
           TEXT@67..68 " "
@@ -77,15 +75,7 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "Invalid token",
-        },
-        ParseError {
-            offset: 56,
-            position: Position {
-                line: 1,
-                column: 57,
-            },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
     ],
 )

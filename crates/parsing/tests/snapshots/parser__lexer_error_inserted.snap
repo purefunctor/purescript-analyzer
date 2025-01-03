@@ -18,19 +18,17 @@ snapshot_kind: text
           ModuleExportValue@27..32
             LOWER@27..32 "hello"
           COMMA@32..33 ","
-          ERROR@33..39
+          ERROR@33..46
             ERROR@33..33 ""
             Annotation@33..34
               TEXT@33..34 " "
             ERROR@34..34 ""
             INTEGER@34..39 "00123"
-          ERROR@39..40
-            ERROR@39..39 ""
             COMMA@39..40 ","
-          ModuleExportValue@40..46
-            Annotation@40..41
-              TEXT@40..41 " "
-            LOWER@41..46 "world"
+            ModuleExportValue@40..46
+              Annotation@40..41
+                TEXT@40..41 " "
+              LOWER@41..46 "world"
           RIGHT_PARENTHESIS@46..47 ")"
         Annotation@47..48
           TEXT@47..48 " "
@@ -50,7 +48,7 @@ snapshot_kind: text
                 line: 1,
                 column: 35,
             },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 34,
@@ -59,14 +57,6 @@ snapshot_kind: text
                 column: 35,
             },
             message: "Too many leading zeros",
-        },
-        ParseError {
-            offset: 39,
-            position: Position {
-                line: 1,
-                column: 40,
-            },
-            message: "Invalid token",
         },
     ],
 )

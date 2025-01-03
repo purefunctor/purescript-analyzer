@@ -18,14 +18,14 @@ snapshot_kind: text
           ModuleExportValue@31..36
             LOWER@31..36 "hello"
           COMMA@36..37 ","
-          ERROR@37..38
+          ERROR@37..44
             ERROR@37..37 ""
             COMMA@37..38 ","
-          ModuleExportValue@38..43
-            LOWER@38..43 "world"
-          ERROR@43..44
-            ERROR@43..43 ""
-            COMMA@43..44 ","
+            ModuleExportValue@38..43
+              LOWER@38..43 "world"
+            ERROR@43..44
+              ERROR@43..43 ""
+              COMMA@43..44 ","
           RIGHT_PARENTHESIS@44..45 ")"
         Annotation@45..46
           TEXT@45..46 " "
@@ -45,7 +45,7 @@ snapshot_kind: text
                 line: 1,
                 column: 38,
             },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 43,

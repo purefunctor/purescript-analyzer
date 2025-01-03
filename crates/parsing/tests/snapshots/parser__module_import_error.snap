@@ -271,7 +271,7 @@ snapshot_kind: text
                 line: 8,
                 column: 19,
             },
-            message: "Invalid token",
+            message: "Invalid tokens",
         },
         ParseError {
             offset: 207,

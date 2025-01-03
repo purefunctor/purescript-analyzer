@@ -224,40 +224,50 @@ fn module_header(p: &mut Parser) {
 
     p.expect(SyntaxKind::MODULE);
     names::module_name(p);
-    module_export_list(p);
+    export_list(p);
     p.expect(SyntaxKind::WHERE);
 
     m.end(p, SyntaxKind::ModuleHeader);
 }
 
-fn module_export_list(p: &mut Parser) {
+fn export_list(p: &mut Parser) {
     let mut m = p.start();
 
-    'list: {
-        if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-            if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                p.error("Empty export list");
-                p.consume();
-                break 'list;
+    if !p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        return m.end(p, SyntaxKind::ModuleExportList);
+    }
+
+    if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+        p.error("Empty export list");
+        p.consume();
+        return m.end(p, SyntaxKind::ModuleExportList);
+    }
+
+    let mut e = None;
+    while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+        if p.at_in(EXPORT_ITEM_START) {
+            export_item(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.expect(SyntaxKind::COMMA);
             }
-            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-                if p.at_in(EXPORT_ITEM_START) {
-                    module_export_item(p);
-                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.error_recover("Trailing comma");
-                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.expect(SyntaxKind::COMMA);
-                    }
-                } else {
-                    if p.at_in(EXPORT_LIST_RECOVERY) {
-                        break;
-                    }
-                    p.error_recover("Invalid token");
-                }
+        } else {
+            if p.at(SyntaxKind::WHERE) {
+                break;
             }
-            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+            if e.is_none() {
+                e = Some(p.start());
+                p.error("Invalid tokens");
+            }
+            p.consume();
         }
     }
+    if let Some(mut e) = e {
+        e.end(p, SyntaxKind::ERROR);
+    }
+
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
 
     m.end(p, SyntaxKind::ModuleExportList);
 }
@@ -274,7 +284,7 @@ const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
 
 const EXPORT_LIST_RECOVERY: TokenSet = TokenSet::new(&[SyntaxKind::WHERE]);
 
-fn module_export_item(p: &mut Parser) {
+fn export_item(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
@@ -370,31 +380,39 @@ fn import_list(p: &mut Parser) {
     let mut m = p.start();
 
     p.eat(SyntaxKind::HIDING);
-    'list: {
-        if p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-            if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                p.error("Empty export list");
-                p.consume();
-                break 'list;
+
+    if !p.eat(SyntaxKind::LEFT_PARENTHESIS) {
+        return m.end(p, SyntaxKind::ImportList);
+    }
+
+    if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+        p.error("Empty import list");
+        p.consume();
+        return m.end(p, SyntaxKind::ImportList);
+    }
+
+    let mut e = None;
+    while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
+        if p.at_in(IMPORT_ITEM_START) {
+            import_item(p);
+            if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.error_recover("Trailing comma");
+            } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
+                p.expect(SyntaxKind::COMMA);
             }
-            while !p.at(SyntaxKind::RIGHT_PARENTHESIS) && !p.at_eof() {
-                if p.at_in(IMPORT_ITEM_START) {
-                    import_item(p);
-                    if p.at(SyntaxKind::COMMA) && p.at_next(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.error_recover("Trailing comma");
-                    } else if !p.at(SyntaxKind::RIGHT_PARENTHESIS) {
-                        p.expect(SyntaxKind::COMMA);
-                    }
-                } else {
-                    if p.at_in(IMPORT_LIST_RECOVERY) {
-                        break;
-                    }
-                    p.error_recover("Invalid token");
-                }
+        } else {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error("Invalid tokens");
             }
-            p.expect(SyntaxKind::RIGHT_PARENTHESIS);
+            p.consume();
         }
     }
+    if let Some(mut e) = e {
+        e.end(p, SyntaxKind::ERROR);
+    }
+
+    p.expect(SyntaxKind::RIGHT_PARENTHESIS);
 
     m.end(p, SyntaxKind::ImportList);
 }
@@ -403,9 +421,6 @@ const IMPORT_ITEM_START: TokenSet =
     TokenSet::new(&[SyntaxKind::UPPER, SyntaxKind::CLASS, SyntaxKind::TYPE])
         .union(names::LOWER)
         .union(names::OPERATOR_NAME);
-
-const IMPORT_LIST_RECOVERY: TokenSet =
-    TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
 
 fn import_item(p: &mut Parser) {
     let mut m = p.start();
