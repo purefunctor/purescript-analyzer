@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..45 "ClassDeclarationFunct ..."
-        ModuleExportList@45..45
+        ExportList@45..45
         Annotation@45..46
           TEXT@45..46 " "
         WHERE@46..51 "where"

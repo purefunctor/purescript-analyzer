@@ -11,11 +11,11 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..32 "ModuleExportClassErro ..."
-        ModuleExportList@32..40
+        ExportList@32..40
           Annotation@32..33
             TEXT@32..33 " "
           LEFT_PARENTHESIS@33..34 "("
-          ModuleExportClass@34..39
+          ExportClass@34..39
             CLASS@34..39 "class"
             ERROR@39..39 ""
           RIGHT_PARENTHESIS@39..40 ")"

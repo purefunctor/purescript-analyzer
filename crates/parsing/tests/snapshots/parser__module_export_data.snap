@@ -11,21 +11,21 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..23 "ModuleExportData"
-        ModuleExportList@23..61
+        ExportList@23..61
           Annotation@23..24
             TEXT@23..24 " "
           LEFT_PARENTHESIS@24..25 "("
-          ModuleExportType@25..29
+          ExportType@25..29
             UPPER@25..29 "Void"
           COMMA@29..30 ","
-          ModuleExportType@30..39
+          ExportType@30..39
             Annotation@30..31
               TEXT@30..31 " "
             UPPER@31..35 "List"
             TypeItemsAll@35..39
               DOUBLE_PERIOD_OPERATOR_NAME@35..39 "(..)"
           COMMA@39..40 ","
-          ModuleExportType@40..60
+          ExportType@40..60
             Annotation@40..41
               TEXT@40..41 " "
             UPPER@41..47 "Either"

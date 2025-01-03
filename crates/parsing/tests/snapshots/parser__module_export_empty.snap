@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..11 "Main"
-        ModuleExportList@11..14
+        ExportList@11..14
           Annotation@11..12
             TEXT@11..12 " "
           LEFT_PARENTHESIS@12..13 "("

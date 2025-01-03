@@ -11,14 +11,14 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..18 "NonReserved"
-        ModuleExportList@18..31
+        ExportList@18..31
           Annotation@18..19
             TEXT@18..19 " "
           LEFT_PARENTHESIS@19..20 "("
-          ModuleExportValue@20..26
+          ExportValue@20..26
             LOWER@20..26 "hiding"
           COMMA@26..27 ","
-          ModuleExportValue@27..30
+          ExportValue@27..30
             Annotation@27..28
               TEXT@27..28 " "
             LOWER@28..30 "as"

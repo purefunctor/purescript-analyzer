@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..39 "DeriveDeclarationName ..."
-        ModuleExportList@39..39
+        ExportList@39..39
         Annotation@39..40
           TEXT@39..40 " "
         WHERE@40..45 "where"

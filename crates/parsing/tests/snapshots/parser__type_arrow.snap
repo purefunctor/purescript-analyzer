@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..16 "TypeArrow"
-        ModuleExportList@16..16
+        ExportList@16..16
         Annotation@16..17
           TEXT@16..17 " "
         WHERE@17..22 "where"

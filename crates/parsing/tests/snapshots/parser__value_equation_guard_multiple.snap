@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..33 "ValueEquationGuardMul ..."
-        ModuleExportList@33..33
+        ExportList@33..33
         Annotation@33..34
           TEXT@33..34 " "
         WHERE@34..39 "where"

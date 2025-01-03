@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..32 "TypeParenthesizedFunc ..."
-        ModuleExportList@32..32
+        ExportList@32..32
         Annotation@32..33
           TEXT@32..33 " "
         WHERE@33..38 "where"

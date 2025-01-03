@@ -249,13 +249,13 @@ fn export_list(p: &mut Parser) {
     let mut m = p.start();
 
     if !p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        return m.end(p, SyntaxKind::ModuleExportList);
+        return m.end(p, SyntaxKind::ExportList);
     }
 
     if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
         p.error("Empty export list");
         p.consume();
-        return m.end(p, SyntaxKind::ModuleExportList);
+        return m.end(p, SyntaxKind::ExportList);
     }
 
     let mut e = None;
@@ -284,7 +284,7 @@ fn export_list(p: &mut Parser) {
 
     p.expect(SyntaxKind::RIGHT_PARENTHESIS);
 
-    m.end(p, SyntaxKind::ModuleExportList);
+    m.end(p, SyntaxKind::ExportList);
 }
 
 const EXPORT_ITEM_START: TokenSet = TokenSet::new(&[
@@ -301,21 +301,21 @@ fn export_item(p: &mut Parser) {
     let mut m = p.start();
 
     if p.eat_in(names::LOWER, SyntaxKind::LOWER) {
-        m.end(p, SyntaxKind::ModuleExportValue);
+        m.end(p, SyntaxKind::ExportValue);
     } else if p.eat(SyntaxKind::UPPER) {
         type_items(p);
-        m.end(p, SyntaxKind::ModuleExportType);
+        m.end(p, SyntaxKind::ExportType);
     } else if p.eat(SyntaxKind::CLASS) {
         p.expect(SyntaxKind::UPPER);
-        m.end(p, SyntaxKind::ModuleExportClass);
+        m.end(p, SyntaxKind::ExportClass);
     } else if p.eat(SyntaxKind::TYPE) {
         p.expect_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME, "Expected OPERATOR_NAME");
-        m.end(p, SyntaxKind::ModuleExportTypeOperator);
+        m.end(p, SyntaxKind::ExportTypeOperator);
     } else if p.eat_in(names::OPERATOR_NAME, SyntaxKind::OPERATOR_NAME) {
-        m.end(p, SyntaxKind::ModuleExportOperator);
+        m.end(p, SyntaxKind::ExportOperator);
     } else if p.eat(SyntaxKind::MODULE) {
         names::module_name(p);
-        m.end(p, SyntaxKind::ModuleExportModule);
+        m.end(p, SyntaxKind::ExportModule);
     } else {
         m.cancel(p);
     }

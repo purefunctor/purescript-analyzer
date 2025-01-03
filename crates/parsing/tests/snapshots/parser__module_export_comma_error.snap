@@ -11,17 +11,17 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..29 "ModuleExportCommaError"
-        ModuleExportList@29..45
+        ExportList@29..45
           Annotation@29..30
             TEXT@29..30 " "
           LEFT_PARENTHESIS@30..31 "("
-          ModuleExportValue@31..36
+          ExportValue@31..36
             LOWER@31..36 "hello"
           COMMA@36..37 ","
           ERROR@37..44
             ERROR@37..37 ""
             COMMA@37..38 ","
-            ModuleExportValue@38..43
+            ExportValue@38..43
               LOWER@38..43 "world"
             ERROR@43..44
               ERROR@43..43 ""

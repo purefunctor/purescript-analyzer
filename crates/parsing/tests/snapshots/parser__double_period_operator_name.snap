@@ -11,14 +11,14 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..31 "DoublePeriodOperatorName"
-        ModuleExportList@31..49
+        ExportList@31..49
           Annotation@31..32
             TEXT@31..32 " "
           LEFT_PARENTHESIS@32..33 "("
-          ModuleExportOperator@33..37
+          ExportOperator@33..37
             OPERATOR_NAME@33..37 "(..)"
           COMMA@37..38 ","
-          ModuleExportTypeOperator@38..48
+          ExportTypeOperator@38..48
             Annotation@38..39
               TEXT@38..39 " "
             TYPE@39..43 "type"

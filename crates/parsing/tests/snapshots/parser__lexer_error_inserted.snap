@@ -11,11 +11,11 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..25 "LexerErrorInserted"
-        ModuleExportList@25..47
+        ExportList@25..47
           Annotation@25..26
             TEXT@25..26 " "
           LEFT_PARENTHESIS@26..27 "("
-          ModuleExportValue@27..32
+          ExportValue@27..32
             LOWER@27..32 "hello"
           COMMA@32..33 ","
           ERROR@33..46
@@ -25,7 +25,7 @@ snapshot_kind: text
             ERROR@34..34 ""
             INTEGER@34..39 "00123"
             COMMA@39..40 ","
-            ModuleExportValue@40..46
+            ExportValue@40..46
               Annotation@40..41
                 TEXT@40..41 " "
               LOWER@41..46 "world"

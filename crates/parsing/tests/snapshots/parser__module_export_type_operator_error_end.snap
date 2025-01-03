@@ -11,11 +11,11 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..39 "ModuleExportTypeOpera ..."
-        ModuleExportList@39..46
+        ExportList@39..46
           Annotation@39..40
             TEXT@39..40 " "
           LEFT_PARENTHESIS@40..41 "("
-          ModuleExportTypeOperator@41..45
+          ExportTypeOperator@41..45
             TYPE@41..45 "type"
             ERROR@45..45 ""
           RIGHT_PARENTHESIS@45..46 ")"

@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..23 "NewtypeSignature"
-        ModuleExportList@23..23
+        ExportList@23..23
         Annotation@23..24
           TEXT@23..24 " "
         WHERE@24..29 "where"

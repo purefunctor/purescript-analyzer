@@ -11,7 +11,7 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..27 "ExpressionCaseSimple"
-        ModuleExportList@27..27
+        ExportList@27..27
         Annotation@27..28
           TEXT@27..28 " "
         WHERE@28..33 "where"

@@ -11,17 +11,17 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..36 "ModuleExportTypeOpera ..."
-        ModuleExportList@36..67
+        ExportList@36..67
           Annotation@36..37
             TEXT@36..37 " "
           LEFT_PARENTHESIS@37..38 "("
-          ModuleExportTypeOperator@38..46
+          ExportTypeOperator@38..46
             TYPE@38..42 "type"
             Annotation@42..43
               TEXT@42..43 " "
             OPERATOR_NAME@43..46 "(+)"
           COMMA@46..47 ","
-          ModuleExportTypeOperator@47..52
+          ExportTypeOperator@47..52
             Annotation@47..48
               TEXT@47..48 " "
             TYPE@48..52 "type"
@@ -33,7 +33,7 @@ snapshot_kind: text
               TEXT@52..53 " "
             INTEGER@53..56 "123"
             COMMA@56..57 ","
-            ModuleExportTypeOperator@57..66
+            ExportTypeOperator@57..66
               Annotation@57..58
                 TEXT@57..58 " "
               TYPE@58..62 "type"

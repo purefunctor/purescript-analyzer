@@ -11,28 +11,28 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..24 "ModuleExportClass"
-        ModuleExportList@24..52
+        ExportList@24..52
           Annotation@24..25
             TEXT@24..25 " "
           LEFT_PARENTHESIS@25..26 "("
-          ModuleExportClass@26..33
+          ExportClass@26..33
             CLASS@26..31 "class"
             Annotation@31..32
               TEXT@31..32 " "
             UPPER@32..33 "A"
           COMMA@33..34 ","
-          ModuleExportClass@34..40
+          ExportClass@34..40
             Annotation@34..35
               TEXT@34..35 " "
             CLASS@35..40 "class"
             ERROR@40..40 ""
           ERROR@40..40 ""
-          ModuleExportValue@40..42
+          ExportValue@40..42
             Annotation@40..41
               TEXT@40..41 " "
             LOWER@41..42 "b"
           COMMA@42..43 ","
-          ModuleExportClass@43..51
+          ExportClass@43..51
             Annotation@43..44
               TEXT@43..44 " "
             CLASS@44..49 "class"

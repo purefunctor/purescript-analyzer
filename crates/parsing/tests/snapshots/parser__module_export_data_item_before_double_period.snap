@@ -11,11 +11,11 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..44 "ModuleExportDataItemA ..."
-        ModuleExportList@44..63
+        ExportList@44..63
           Annotation@44..45
             TEXT@44..45 " "
           LEFT_PARENTHESIS@45..46 "("
-          ModuleExportType@46..62
+          ExportType@46..62
             UPPER@46..50 "List"
             TypeItemsList@50..62
               LEFT_PARENTHESIS@50..51 "("

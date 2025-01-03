@@ -11,11 +11,11 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..26 "ModuleExportInvalid"
-        ModuleExportList@26..46
+        ExportList@26..46
           Annotation@26..27
             TEXT@26..27 " "
           LEFT_PARENTHESIS@27..28 "("
-          ModuleExportValue@28..33
+          ExportValue@28..33
             LOWER@28..33 "hello"
           COMMA@33..34 ","
           ERROR@34..45
@@ -24,7 +24,7 @@ snapshot_kind: text
               TEXT@34..35 " "
             INTEGER@35..38 "123"
             COMMA@38..39 ","
-            ModuleExportValue@39..45
+            ExportValue@39..45
               Annotation@39..40
                 TEXT@39..40 " "
               LOWER@40..45 "world"
