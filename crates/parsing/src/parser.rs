@@ -207,6 +207,21 @@ impl NodeMarker {
     }
 }
 
+fn end_of_file(p: &mut Parser) {
+    let mut m = None;
+    while !p.at_eof() {
+        if m.is_none() {
+            m = Some(p.start());
+            p.error("Unexpected tokens at end of file");
+        }
+        p.consume();
+    }
+    if let Some(mut m) = m {
+        m.end(p, SyntaxKind::ERROR);
+    }
+    p.expect(SyntaxKind::END_OF_FILE);
+}
+
 pub(crate) fn module(p: &mut Parser) {
     let mut m = p.start();
 
@@ -214,7 +229,7 @@ pub(crate) fn module(p: &mut Parser) {
     p.expect(SyntaxKind::LAYOUT_START);
     imports_and_statements(p);
     p.expect(SyntaxKind::LAYOUT_END);
-    p.expect(SyntaxKind::END_OF_FILE);
+    end_of_file(p);
 
     m.end(p, SyntaxKind::Module);
 }
