@@ -58,7 +58,7 @@ snapshot_kind: text
                 line: 1,
                 column: 42,
             },
-            message: "expected UPPER",
+            message: "Expected UPPER",
         },
         ParseError {
             offset: 41,
@@ -66,7 +66,7 @@ snapshot_kind: text
                 line: 1,
                 column: 42,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
     ],
 )

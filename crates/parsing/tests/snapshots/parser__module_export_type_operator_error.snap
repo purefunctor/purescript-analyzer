@@ -67,7 +67,7 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 53,
@@ -75,7 +75,7 @@ snapshot_kind: text
                 line: 1,
                 column: 54,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in export list",
         },
     ],
 )

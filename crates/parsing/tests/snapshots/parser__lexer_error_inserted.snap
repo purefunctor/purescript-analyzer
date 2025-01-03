@@ -48,7 +48,7 @@ snapshot_kind: text
                 line: 1,
                 column: 35,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in export list",
         },
         ParseError {
             offset: 34,

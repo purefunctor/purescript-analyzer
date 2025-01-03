@@ -201,7 +201,7 @@ snapshot_kind: text
                 line: 3,
                 column: 8,
             },
-            message: "expected UPPER",
+            message: "Expected UPPER",
         },
         ParseError {
             offset: 39,
@@ -217,7 +217,7 @@ snapshot_kind: text
                 line: 5,
                 column: 24,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in type items",
         },
         ParseError {
             offset: 128,
@@ -225,7 +225,7 @@ snapshot_kind: text
                 line: 6,
                 column: 30,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in type items",
         },
         ParseError {
             offset: 156,
@@ -233,7 +233,7 @@ snapshot_kind: text
                 line: 7,
                 column: 24,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in type items",
         },
         ParseError {
             offset: 185,
@@ -241,7 +241,7 @@ snapshot_kind: text
                 line: 8,
                 column: 19,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in import list",
         },
         ParseError {
             offset: 207,

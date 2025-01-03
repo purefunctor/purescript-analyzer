@@ -161,7 +161,7 @@ impl<'t> Parser<'t> {
         if self.eat(kind) {
             return true;
         }
-        self.error(format!("expected {:?}", kind));
+        self.error(format!("Expected {:?}", kind));
         false
     }
 
@@ -258,7 +258,7 @@ fn export_list(p: &mut Parser) {
             }
             if e.is_none() {
                 e = Some(p.start());
-                p.error("Invalid tokens");
+                p.error("Unexpected tokens in export list");
             }
             p.consume();
         }
@@ -331,7 +331,7 @@ fn type_items(p: &mut Parser) {
             }
             if e.is_none() {
                 e = Some(p.start());
-                p.error("Invalid tokens");
+                p.error("Unexpected tokens in type items");
             }
             p.consume();
         }
@@ -413,7 +413,7 @@ fn import_list(p: &mut Parser) {
         } else {
             if e.is_none() {
                 e = Some(p.start());
-                p.error("Invalid tokens");
+                p.error("Unexpected tokens in import list");
             }
             p.consume();
         }

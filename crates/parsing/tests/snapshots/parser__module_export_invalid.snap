@@ -47,7 +47,7 @@ snapshot_kind: text
                 line: 1,
                 column: 36,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in export list",
         },
     ],
 )

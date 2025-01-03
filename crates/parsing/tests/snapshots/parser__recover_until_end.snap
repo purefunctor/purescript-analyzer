@@ -151,7 +151,7 @@ snapshot_kind: text
                 line: 5,
                 column: 6,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 60,
@@ -159,7 +159,7 @@ snapshot_kind: text
                 line: 5,
                 column: 8,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 60,
@@ -167,7 +167,7 @@ snapshot_kind: text
                 line: 5,
                 column: 8,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in import list",
         },
         ParseError {
             offset: 68,
@@ -175,7 +175,7 @@ snapshot_kind: text
                 line: 7,
                 column: 1,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 70,
@@ -183,7 +183,7 @@ snapshot_kind: text
                 line: 7,
                 column: 3,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 72,
@@ -191,7 +191,7 @@ snapshot_kind: text
                 line: 7,
                 column: 5,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 74,
@@ -199,7 +199,7 @@ snapshot_kind: text
                 line: 7,
                 column: 7,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 80,
@@ -207,7 +207,7 @@ snapshot_kind: text
                 line: 8,
                 column: 3,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 90,
@@ -215,7 +215,7 @@ snapshot_kind: text
                 line: 9,
                 column: 5,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 94,
@@ -223,7 +223,7 @@ snapshot_kind: text
                 line: 9,
                 column: 9,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 99,
@@ -231,7 +231,7 @@ snapshot_kind: text
                 line: 11,
                 column: 1,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 106,
@@ -239,7 +239,7 @@ snapshot_kind: text
                 line: 11,
                 column: 8,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 110,
@@ -247,7 +247,7 @@ snapshot_kind: text
                 line: 11,
                 column: 12,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 114,
@@ -255,7 +255,7 @@ snapshot_kind: text
                 line: 12,
                 column: 1,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 114,
@@ -263,7 +263,7 @@ snapshot_kind: text
                 line: 12,
                 column: 1,
             },
-            message: "expected RIGHT_PARENTHESIS",
+            message: "Expected RIGHT_PARENTHESIS",
         },
         ParseError {
             offset: 114,
@@ -271,7 +271,7 @@ snapshot_kind: text
                 line: 12,
                 column: 1,
             },
-            message: "expected LAYOUT_SEPARATOR",
+            message: "Expected LAYOUT_SEPARATOR",
         },
         ParseError {
             offset: 114,
@@ -279,7 +279,7 @@ snapshot_kind: text
                 line: 12,
                 column: 1,
             },
-            message: "expected LAYOUT_END",
+            message: "Expected LAYOUT_END",
         },
     ],
 )

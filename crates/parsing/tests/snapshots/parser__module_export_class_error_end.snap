@@ -37,7 +37,7 @@ snapshot_kind: text
                 line: 1,
                 column: 40,
             },
-            message: "expected UPPER",
+            message: "Expected UPPER",
         },
     ],
 )

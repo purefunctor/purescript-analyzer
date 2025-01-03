@@ -47,7 +47,7 @@ snapshot_kind: text
                 line: 1,
                 column: 49,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in type items",
         },
         ParseError {
             offset: 52,
@@ -55,7 +55,7 @@ snapshot_kind: text
                 line: 1,
                 column: 53,
             },
-            message: "expected RIGHT_PARENTHESIS",
+            message: "Expected RIGHT_PARENTHESIS",
         },
         ParseError {
             offset: 52,
@@ -63,7 +63,7 @@ snapshot_kind: text
                 line: 1,
                 column: 53,
             },
-            message: "expected COMMA",
+            message: "Expected COMMA",
         },
         ParseError {
             offset: 52,
@@ -71,7 +71,7 @@ snapshot_kind: text
                 line: 1,
                 column: 53,
             },
-            message: "expected RIGHT_PARENTHESIS",
+            message: "Expected RIGHT_PARENTHESIS",
         },
     ],
 )

@@ -46,7 +46,7 @@ snapshot_kind: text
                 line: 1,
                 column: 60,
             },
-            message: "Invalid tokens",
+            message: "Unexpected tokens in type items",
         },
     ],
 )
