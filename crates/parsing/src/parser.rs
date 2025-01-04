@@ -824,11 +824,22 @@ fn instance_head(p: &mut Parser) {
 fn instance_statements(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
+    let recover_until_end = |p: &mut Parser, m: &str| {
+        let mut e = None;
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error(m);
+            }
+            p.consume();
+        }
+        if let Some(mut e) = e {
+            e.end(p, SyntaxKind::ERROR);
+        }
+    };
     while p.at_in(names::LOWER) && !p.at_eof() {
         instance_statement(p);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in instance statement");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
