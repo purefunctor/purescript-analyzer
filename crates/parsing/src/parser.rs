@@ -572,7 +572,7 @@ fn role_or_synonym_signature_or_equation(p: &mut Parser) {
                 p.consume();
                 n.end(p, SyntaxKind::TypeRole);
             } else {
-                p.error_recover("Invalid token");
+                p.error_recover("Expected NOMINAL, REPRESENTATIONAL, or PHANTOM");
             }
         }
         return m.end(p, SyntaxKind::TypeRoleDeclaration);
