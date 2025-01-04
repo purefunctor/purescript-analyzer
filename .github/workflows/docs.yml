@@ -34,6 +34,12 @@ jobs:
           cache-bin: "false"
           prefix-key: "v2-maho"
 
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.10.7
+
+      - name: Install cargo-nextest
+        run: cargo binstall wasm-pack
+
       - name: Install dependencies
         run: cd docs && pnpm wasm && pnpm install
 
