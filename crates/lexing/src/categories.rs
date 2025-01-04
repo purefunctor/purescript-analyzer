@@ -24,8 +24,8 @@ impl LexerCategories for char {
     fn is_operator(self) -> bool {
         match self {
             // These are the only valid ASCII operators
-            '~' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '.' | '/' | '<' | '=' | '>' | '?' | '@'
-            | '\\' | '^' | '|' | '-' | ':' => true,
+            '~' | '!' | '#' | '$' | '%' | '&' | '*' | '+' | '.' | '/' | '<' | '=' | '>' | '?'
+            | '@' | '\\' | '^' | '|' | '-' | ':' => true,
             _ => self.is_symbol() && !self.is_ascii(),
         }
     }
