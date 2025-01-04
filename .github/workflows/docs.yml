@@ -43,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: cd docs && pnpm wasm && pnpm install
 
-      - name: build
+      - name: Build documentation website
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
         run: cd docs && pnpm build
