@@ -163,13 +163,11 @@ snapshot_kind: text
             UPPER@202..206 "List"
           ImportList@206..206
           ImportAlias@206..206
-        ERROR@206..208
+        ERROR@206..218
           ERROR@206..206 ""
           Annotation@206..207
             TEXT@206..207 " "
           LOWER@207..208 "s"
-        ERROR@208..218
-          ERROR@208..208 ""
           Annotation@208..209
             TEXT@208..209 " "
           Qualifier@209..214
@@ -209,7 +207,7 @@ snapshot_kind: text
                 line: 3,
                 column: 8,
             },
-            message: "Invalid token",
+            message: "Unexpected tokens in import statement",
         },
         ParseError {
             offset: 87,
@@ -249,15 +247,7 @@ snapshot_kind: text
                 line: 9,
                 column: 18,
             },
-            message: "Invalid token",
-        },
-        ParseError {
-            offset: 214,
-            position: Position {
-                line: 9,
-                column: 20,
-            },
-            message: "Invalid token",
+            message: "Unexpected tokens in import statement",
         },
     ],
 )

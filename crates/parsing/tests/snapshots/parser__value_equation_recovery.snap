@@ -141,7 +141,7 @@ snapshot_kind: text
                 line: 4,
                 column: 8,
             },
-            message: "Invalid token",
+            message: "Unexpected tokens in module statement",
         },
         ParseError {
             offset: 114,
@@ -149,7 +149,7 @@ snapshot_kind: text
                 line: 10,
                 column: 10,
             },
-            message: "Invalid token",
+            message: "Unexpected tokens in let binding statement",
         },
     ],
 )

@@ -8,12 +8,23 @@ const LET_BINDING_START: TokenSet = TokenSet::new(&[SyntaxKind::LOWER])
 
 pub(super) fn let_binding_statements(p: &mut Parser) {
     let mut m = p.start();
+    let recover_until_end = |p: &mut Parser, m: &str| {
+        let mut e = None;
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error(m);
+            }
+            p.consume();
+        }
+        if let Some(mut e) = e {
+            e.end(p, SyntaxKind::ERROR);
+        }
+    };
     p.expect(SyntaxKind::LAYOUT_START);
     while p.at_in(LET_BINDING_START) && !p.at_eof() {
         p.alternative([let_binding_signature_or_equation, let_binding_pattern]);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in let binding statement");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }

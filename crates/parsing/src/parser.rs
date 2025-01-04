@@ -208,16 +208,16 @@ impl NodeMarker {
 }
 
 fn end_of_file(p: &mut Parser) {
-    let mut m = None;
+    let mut e = None;
     while !p.at_eof() {
-        if m.is_none() {
-            m = Some(p.start());
+        if e.is_none() {
+            e = Some(p.start());
             p.error("Unexpected tokens at end of file");
         }
         p.consume();
     }
-    if let Some(mut m) = m {
-        m.end(p, SyntaxKind::ERROR);
+    if let Some(mut e) = e {
+        e.end(p, SyntaxKind::ERROR);
     }
     p.expect(SyntaxKind::END_OF_FILE);
 }
@@ -363,11 +363,23 @@ fn type_items(p: &mut Parser) {
 fn imports_and_statements(p: &mut Parser) {
     let mut imports = p.start();
 
+    let recover_until_end = |p: &mut Parser, m: &str| {
+        let mut e = None;
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error(m);
+            }
+            p.consume();
+        }
+        if let Some(mut e) = e {
+            e.end(p, SyntaxKind::ERROR);
+        }
+    };
+
     while p.at(SyntaxKind::IMPORT) && !p.at_eof() {
         import_statement(p);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in import statement");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
@@ -379,9 +391,7 @@ fn imports_and_statements(p: &mut Parser) {
 
     while p.at_in(MODULE_STATEMENT_START) && !p.at_eof() {
         module_statement(p);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in module statement");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
