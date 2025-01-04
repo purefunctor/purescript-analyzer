@@ -149,7 +149,7 @@ fn type_variable_bindings(p: &mut Parser) {
             if p.at_in(TYPE_VARIABLE_BINDING_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in variable bindings.");
         }
     }
 }
@@ -252,7 +252,7 @@ fn type_row(p: &mut Parser) {
             if p.at_in(TYPE_ROW_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in row");
         }
     }
 
@@ -308,7 +308,7 @@ fn type_record(p: &mut Parser) {
             if p.at_in(TYPE_ROW_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in record");
         }
     }
 

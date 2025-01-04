@@ -651,7 +651,7 @@ fn class_constraints(p: &mut Parser) {
                 if p.at_in(CLASS_CONSTRAINTS_RECOVERY) {
                     break;
                 }
-                p.error_recover("Invalid token");
+                p.error_recover("Unexpected token in class constraints");
             }
         }
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
@@ -695,7 +695,7 @@ fn class_functional_dependencies(p: &mut Parser) {
             if p.at_in(FUNCTIONAL_DEPENDENCY_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in functional dependencies");
         }
     }
     m.end(p, SyntaxKind::ClassFunctionalDependencies);
@@ -801,7 +801,7 @@ fn instance_constraints(p: &mut Parser) {
                 if p.at_in(INSTANCE_CONSTRAINTS_RECOVERY) {
                     break;
                 }
-                p.error_recover("Invalid token");
+                p.error_recover("Unexpected token in instance constraints");
             }
         }
         p.expect(SyntaxKind::RIGHT_PARENTHESIS);
@@ -939,7 +939,7 @@ fn type_variable_bindings(p: &mut Parser) {
             if p.at_in(TYPE_VARIABLE_BINDING_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in variable bindings");
         }
     }
 }

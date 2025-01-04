@@ -148,7 +148,7 @@ fn binder_array(p: &mut Parser, mut m: NodeMarker) {
             if p.at_in(BINDER_ATOM_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in array");
         }
     }
     p.expect(SyntaxKind::RIGHT_SQUARE);
@@ -168,7 +168,7 @@ fn binder_record(p: &mut Parser, mut m: NodeMarker) {
             if p.at_in(BINDER_ATOM_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in record");
         }
     }
     p.expect(SyntaxKind::RIGHT_CURLY);

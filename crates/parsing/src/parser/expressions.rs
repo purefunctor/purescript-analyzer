@@ -193,7 +193,7 @@ fn case_trunk(p: &mut Parser) {
             if p.at_in(EXPRESSION_ATOM_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in case trunk");
         }
     }
     m.end(p, SyntaxKind::CaseTrunk);
@@ -201,12 +201,23 @@ fn case_trunk(p: &mut Parser) {
 
 fn case_branches(p: &mut Parser) {
     let mut m = p.start();
+    let recover_until_end = |p: &mut Parser, m: &str| {
+        let mut e = None;
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error(m);
+            }
+            p.consume();
+        }
+        if let Some(mut e) = e {
+            e.end(p, SyntaxKind::ERROR);
+        }
+    };
     p.expect(SyntaxKind::LAYOUT_START);
     while !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
         case_branch(p);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in case branch");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
@@ -241,7 +252,7 @@ fn case_branch_binders(p: &mut Parser) {
             if p.at_in(BINDERS_LIST_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in branch binders");
         }
     }
     m.end(p, SyntaxKind::CaseBranchBinders);
@@ -258,12 +269,23 @@ fn expression_do(p: &mut Parser, mut m: NodeMarker) {
 
 fn do_statements(p: &mut Parser) {
     let mut m = p.start();
+    let recover_until_end = |p: &mut Parser, m: &str| {
+        let mut e = None;
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error(m);
+            }
+            p.consume();
+        }
+        if let Some(mut e) = e {
+            e.end(p, SyntaxKind::ERROR);
+        }
+    };
     p.expect(SyntaxKind::LAYOUT_START);
     while p.at_in(DO_STATEMENT_START) && !p.at_eof() {
         do_statement(p);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in do statement");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
@@ -325,7 +347,7 @@ fn is_record_update(p: &mut Parser) {
     p.expect(SyntaxKind::LEFT_CURLY);
     names::label(p);
     if !p.eat(SyntaxKind::EQUAL) && !p.eat(SyntaxKind::LEFT_CURLY) {
-        p.error("Invalid token");
+        p.error("Expected EQUAL or LEFT_CURLY");
     }
 }
 
@@ -344,7 +366,7 @@ fn record_updates(p: &mut Parser) {
             if p.at_in(EXPRESSION_ATOM_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in record update");
         }
     }
     p.expect(SyntaxKind::RIGHT_CURLY);
@@ -436,7 +458,7 @@ fn expression_array(p: &mut Parser, mut m: NodeMarker) {
             if p.at_in(EXPRESSION_ATOM_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in array");
         }
     }
     p.expect(SyntaxKind::RIGHT_SQUARE);
@@ -456,7 +478,7 @@ fn expression_record(p: &mut Parser, mut m: NodeMarker) {
             if p.at_in(EXPRESSION_ATOM_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in record");
         }
     }
     p.expect(SyntaxKind::RIGHT_CURLY);

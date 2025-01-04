@@ -52,7 +52,7 @@ pub(super) fn function_binders(p: &mut Parser, s: TokenSet) {
             if p.at_in(FUNCTION_BINDERS_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in function binders");
         }
     }
     m.end(p, SyntaxKind::FunctionBinders);
@@ -107,7 +107,7 @@ fn pattern_guards(p: &mut Parser, s: SyntaxKind) {
             if p.at(s) || p.at_in(PATTERN_GUARD_RECOVERY) {
                 break;
             }
-            p.error_recover("Invalid token");
+            p.error_recover("Unexpected token in pattern guards");
         }
     }
 }
