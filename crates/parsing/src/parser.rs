@@ -591,8 +591,18 @@ fn role_or_synonym_signature_or_equation(p: &mut Parser) {
     }
 }
 
+fn is_class_signature(p: &mut Parser) {
+    p.expect(SyntaxKind::CLASS);
+    p.expect(SyntaxKind::UPPER);
+    p.expect(SyntaxKind::DOUBLE_COLON);
+}
+
 fn class_signature_or_declaration(p: &mut Parser) {
-    p.alternative([class_signature, class_declaration]);
+    if p.lookahead(is_class_signature) {
+        class_signature(p);
+    } else {
+        class_declaration(p);
+    }
 }
 
 fn class_signature(p: &mut Parser) {
@@ -707,11 +717,22 @@ fn class_functional_dependency(p: &mut Parser) {
 fn class_statements(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::LAYOUT_START);
+    let recover_until_end = |p: &mut Parser, m: &str| {
+        let mut e = None;
+        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
+            if e.is_none() {
+                e = Some(p.start());
+                p.error(m);
+            }
+            p.consume();
+        }
+        if let Some(mut e) = e {
+            e.end(p, SyntaxKind::ERROR);
+        }
+    };
     while p.at_in(names::LOWER) && !p.at_eof() {
         class_statement(p);
-        while !p.at(SyntaxKind::LAYOUT_SEPARATOR) && !p.at(SyntaxKind::LAYOUT_END) && !p.at_eof() {
-            p.error_recover("Invalid token");
-        }
+        recover_until_end(p, "Unexpected tokens in class statement");
         if !p.at(SyntaxKind::LAYOUT_END) {
             p.expect(SyntaxKind::LAYOUT_SEPARATOR);
         }
