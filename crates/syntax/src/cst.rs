@@ -1,3 +1,7 @@
+use rowan::ast::AstNode;
+
+use crate::{SyntaxKind, SyntaxToken};
+
 #[macro_use]
 mod macros;
 
@@ -172,3 +176,38 @@ create_cst_enum!(RecordItem | RecordField | RecordPun);
 create_cst_struct!(RecordUpdates);
 
 create_cst_enum!(RecordUpdate | RecordUpdateLeaf | RecordUpdateBranch);
+
+impl Module {
+    pub fn statements(&self) -> Option<ModuleStatements> {
+        self.syntax().children().find_map(ModuleStatements::cast)
+    }
+}
+
+impl ModuleStatements {
+    pub fn children(&self) -> impl Iterator<Item = Declaration> {
+        self.syntax().children().filter_map(Declaration::cast)
+    }
+}
+
+impl ValueSignature {
+    pub fn name_token(&self) -> Option<SyntaxToken> {
+        support::token(self.syntax(), SyntaxKind::LOWER)
+    }
+}
+
+impl ValueEquation {
+    pub fn name_token(&self) -> Option<SyntaxToken> {
+        support::token(self.syntax(), SyntaxKind::LOWER)
+    }
+}
+
+mod support {
+    use crate::{SyntaxKind, SyntaxNode, SyntaxToken};
+
+    pub(super) fn token(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxToken> {
+        parent
+            .children_with_tokens()
+            .filter_map(|element| element.into_token())
+            .find(|token| token.kind() == kind)
+    }
+}

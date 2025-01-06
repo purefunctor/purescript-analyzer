@@ -1,0 +1,16 @@
+[package]
+name = "indexing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fxhash = "0.2.1"
+la-arena = "0.3.1"
+rowan = "0.16.1"
+rustc-hash = "2.1.0"
+smol_str = "0.3.2"
+syntax = { version = "0.1.0", path = "../syntax" }
+
+[dev-dependencies]
+lexing = { path = "../lexing" }
+parsing = { path = "../parsing" }

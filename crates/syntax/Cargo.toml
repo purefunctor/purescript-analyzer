@@ -8,4 +8,3 @@ edition = "2021"
 [dependencies]
 paste = "1.0.15"
 rowan = "0.16.1"
-smol_str = "0.3.2"
