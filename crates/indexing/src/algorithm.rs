@@ -36,13 +36,13 @@ fn index_value(module_map: &mut FullIndexingResult, signature_or_equation: Index
         IndexValue::Equation(e) => (e.name_token(), cst::Declaration::ValueEquation(e), false),
     };
 
-    let Some(name_token) = name_token else {
-        return;
-    };
-
     let pointer = SyntaxNodePtr::new(declaration.syntax());
     let index = module_map.arena.alloc(declaration);
     module_map.pointer.insert(index, pointer);
+
+    let Some(name_token) = name_token else {
+        return;
+    };
 
     let name = name_token.text();
     match module_map.value.get_mut(name) {
@@ -124,8 +124,58 @@ fn index_instance_declaration(
 }
 
 fn index_instance_statement(
-    _module_map: &mut FullIndexingResult,
-    _instance_statement: cst::InstanceDeclarationStatement,
+    module_map: &mut FullIndexingResult,
+    instance_statement: cst::InstanceDeclarationStatement,
 ) -> DeclarationId {
-    todo!()
+    let (name_token, declaration, is_signature) = match instance_statement {
+        cst::InstanceDeclarationStatement::InstanceSignatureStatement(s) => {
+            (s.name_token(), cst::Declaration::InstanceSignatureStatement(s), true)
+        }
+        cst::InstanceDeclarationStatement::InstanceEquationStatement(e) => {
+            (e.name_token(), cst::Declaration::InstanceEquationStatement(e), false)
+        }
+    };
+
+    let pointer = SyntaxNodePtr::new(declaration.syntax());
+    let statement_index = module_map.arena.alloc(declaration);
+    module_map.pointer.insert(statement_index, pointer);
+
+    let Some(name_token) = name_token else {
+        return statement_index;
+    };
+
+    let name = name_token.text();
+    match module_map.value.get_mut(name) {
+        Some(group) => {
+            if is_signature {
+                // Signature is declared after equation.
+                if let &[equation, ..] = &group.equations[..] {
+                    let error =
+                        IndexingError::SignatureIsLate { equation, signature: statement_index };
+                    module_map.errors.push(error);
+                }
+                // Signature is declared twice.
+                if let Some(existing) = group.signature {
+                    let error =
+                        IndexingError::SignatureConflict { existing, duplicate: statement_index };
+                    module_map.errors.push(error);
+                } else {
+                    group.signature = Some(statement_index);
+                }
+            } else {
+                group.equations.push(statement_index);
+            }
+        }
+        None => {
+            let signature = if is_signature { Some(statement_index) } else { None };
+            let equations = if is_signature { vec![] } else { vec![statement_index] };
+
+            let name: SmolStr = name.into();
+            let group = ValueGroup { signature, equations };
+
+            module_map.value.insert(name, group);
+        }
+    };
+
+    statement_index
 }
