@@ -231,3 +231,29 @@ has_token!(
     InstanceEquationStatement
     | name_token() -> LOWER
 );
+
+has_token!(
+    ClassSignature
+    | name_token() -> UPPER
+);
+
+has_child!(
+    ClassDeclaration
+    | class_head() -> ClassHead
+    | class_statements() -> ClassStatements
+);
+
+has_token!(
+    ClassHead
+    | name_token() -> UPPER
+);
+
+has_children!(
+    ClassStatements
+    | children() -> ClassDeclarationStatement
+);
+
+has_token!(
+    ClassMemberStatement
+    | name_token() -> LOWER
+);

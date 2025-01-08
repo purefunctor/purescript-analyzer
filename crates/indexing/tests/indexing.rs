@@ -177,3 +177,63 @@ fn instance_chain_late_signatures_conflict() {
         ]
     );
 }
+
+#[test]
+fn class_signature() {
+    let module_map = index([
+        "class Ord :: Type -> Constraint",
+        "class Ord a where",
+        "  compare :: a -> a -> Ordering",
+    ]);
+
+    let ord = module_map.class.by_type.get("Ord");
+    assert_eq!(
+        ord,
+        Some(&indexing::ClassGroup { signature: Some(idx!(0)), declaration: Some(idx!(1)) })
+    );
+
+    let ord_statements = module_map.class.statement_graph.neighbors(idx!(1)).collect::<Vec<_>>();
+    assert_eq!(ord_statements, vec![idx!(2)]);
+}
+
+#[test]
+fn class_signature_conflict() {
+    let module_map = index(["class Eq :: Type -> Constraint", "class Eq :: Type -> Constraint"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(1) }]
+    );
+}
+
+#[test]
+fn class_declaration_conflict() {
+    let module_map = index(["class Eq a", "class Eq a"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::DeclarationConflict { existing: idx!(0), duplicate: idx!(1) }]
+    );
+}
+
+#[test]
+fn class_member_conflict() {
+    let module_map =
+        index(["class Eq a where", "  eq :: a -> a -> Boolean", "  eq :: a -> a -> Boolean"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::DeclarationConflict { existing: idx!(1), duplicate: idx!(2) }]
+    );
+}
+
+#[test]
+fn class_member_conflict_cross() {
+    let module_map = index([
+        "class Eq a where",
+        "  eq :: a -> a -> Boolean",
+        "class Ord a where",
+        "  eq :: a -> a -> Boolean",
+    ]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::DeclarationConflict { existing: idx!(1), duplicate: idx!(3) }]
+    );
+}

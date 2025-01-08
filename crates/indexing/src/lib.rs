@@ -8,6 +8,19 @@ use syntax::{cst, SyntaxNode, SyntaxNodePtr};
 
 pub type DeclarationId = Idx<cst::Declaration>;
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct ClassGroup {
+    pub signature: Option<DeclarationId>,
+    pub declaration: Option<DeclarationId>,
+}
+
+#[derive(Debug, Default)]
+pub struct ClassIndex {
+    pub by_type: FxHashMap<SmolStr, ClassGroup>,
+    pub by_member: FxHashMap<SmolStr, DeclarationId>,
+    pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
+}
+
 #[derive(Debug, Default)]
 pub struct InstanceIndex {
     pub by_type: FxHashMap<SmolStr, Vec<DeclarationId>>,
@@ -28,6 +41,7 @@ pub type ValueIndex = FxHashMap<SmolStr, ValueGroup>;
 pub struct FullIndexingResult {
     arena: Arena<cst::Declaration>,
     pub pointer: ArenaMap<DeclarationId, SyntaxNodePtr>,
+    pub class: ClassIndex,
     pub instance: InstanceIndex,
     pub value: ValueIndex,
     pub errors: Vec<IndexingError>,
@@ -37,6 +51,7 @@ pub struct FullIndexingResult {
 pub enum IndexingError {
     SignatureConflict { existing: DeclarationId, duplicate: DeclarationId },
     SignatureIsLate { equation: DeclarationId, signature: DeclarationId },
+    DeclarationConflict { existing: DeclarationId, duplicate: DeclarationId },
 }
 
 pub fn index(node: SyntaxNode) -> FullIndexingResult {
