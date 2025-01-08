@@ -1,4 +1,4 @@
-use rowan::ast::AstNode;
+use rowan::ast::{AstChildren, AstNode};
 
 use crate::{SyntaxKind, SyntaxToken};
 
@@ -189,25 +189,52 @@ impl ModuleStatements {
     }
 }
 
+impl InstanceChain {
+    pub fn instance_declarations(&self) -> AstChildren<InstanceDeclaration> {
+        rowan::ast::support::children(self.syntax())
+    }
+}
+
+impl InstanceDeclaration {
+    pub fn instance_head(&self) -> Option<InstanceHead> {
+        rowan::ast::support::child(self.syntax())
+    }
+
+    pub fn instance_name(&self) -> Option<InstanceName> {
+        rowan::ast::support::child(self.syntax())
+    }
+
+    pub fn instance_statements(&self) -> Option<InstanceStatements> {
+        rowan::ast::support::child(self.syntax())
+    }
+}
+
+impl InstanceName {
+    pub fn name_token(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(self.syntax(), SyntaxKind::LOWER)
+    }
+}
+
+impl InstanceHead {
+    pub fn type_name_token(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(self.syntax(), SyntaxKind::UPPER)
+    }
+}
+
+impl InstanceStatements {
+    pub fn children(&self) -> AstChildren<InstanceDeclarationStatement> {
+        rowan::ast::support::children(self.syntax())
+    }
+}
+
 impl ValueSignature {
     pub fn name_token(&self) -> Option<SyntaxToken> {
-        support::token(self.syntax(), SyntaxKind::LOWER)
+        rowan::ast::support::token(self.syntax(), SyntaxKind::LOWER)
     }
 }
 
 impl ValueEquation {
     pub fn name_token(&self) -> Option<SyntaxToken> {
-        support::token(self.syntax(), SyntaxKind::LOWER)
-    }
-}
-
-mod support {
-    use crate::{SyntaxKind, SyntaxNode, SyntaxToken};
-
-    pub(super) fn token(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxToken> {
-        parent
-            .children_with_tokens()
-            .filter_map(|element| element.into_token())
-            .find(|token| token.kind() == kind)
+        rowan::ast::support::token(self.syntax(), SyntaxKind::LOWER)
     }
 }

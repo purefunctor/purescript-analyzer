@@ -1,11 +1,20 @@
 mod algorithm;
 
-use fxhash::FxHashMap;
+use fxhash::{FxBuildHasher, FxHashMap};
 use la_arena::{Arena, ArenaMap, Idx};
+use petgraph::{prelude::GraphMap, Directed};
 use smol_str::SmolStr;
 use syntax::{cst, SyntaxNode, SyntaxNodePtr};
 
 pub type DeclarationId = Idx<cst::Declaration>;
+
+#[derive(Debug, Default)]
+pub struct InstanceIndex {
+    pub by_type: FxHashMap<SmolStr, Vec<DeclarationId>>,
+    pub by_name: FxHashMap<SmolStr, DeclarationId>,
+    pub instance_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
+    pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
@@ -19,6 +28,7 @@ pub type ValueIndex = FxHashMap<SmolStr, ValueGroup>;
 pub struct FullIndexingResult {
     arena: Arena<cst::Declaration>,
     pub pointer: ArenaMap<DeclarationId, SyntaxNodePtr>,
+    pub instance: InstanceIndex,
     pub value: ValueIndex,
     pub errors: Vec<IndexingError>,
 }

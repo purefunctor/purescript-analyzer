@@ -13,6 +13,14 @@ macro_rules! idx {
 }
 
 #[test]
+fn instance_chain() {
+    let _ = index([
+        "instance eqIntInt :: Eq Int Int where eq = 0",
+        "else instance eqBooleanBoolean :: Eq Boolean Boolean where eq = 1",
+    ]);
+}
+
+#[test]
 fn value_group() {
     let module_map = index(["main :: Effect Unit", "main = pure unit"]);
     let group = module_map.value.get("main");
