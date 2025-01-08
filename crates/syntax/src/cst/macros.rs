@@ -88,6 +88,7 @@ macro_rules! create_cst_enum {
 macro_rules! associated_declarations {
     ($kind:ident where $statement_0:ident$(| $statement:ident)*) => {
         paste::paste! {
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
             pub enum [<$kind Statement>] {
                 $statement_0(crate::cst::$statement_0),
                 $(
