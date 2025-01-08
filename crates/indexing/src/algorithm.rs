@@ -2,7 +2,7 @@ use rowan::ast::{AstNode, SyntaxNodePtr};
 use smol_str::SmolStr;
 use syntax::{cst, SyntaxNode};
 
-use crate::{DeclarationGroup, IndexingError, FullIndexingResult};
+use crate::{FullIndexingResult, IndexingError, ValueGroup};
 
 pub(super) fn index_module(module_map: &mut FullIndexingResult, node: SyntaxNode) {
     let Some(module) = cst::Module::cast(node) else {
@@ -48,7 +48,7 @@ fn index_value(module_map: &mut FullIndexingResult, signature_or_equation: Index
         Some(group) => {
             if is_signature {
                 // Signature is declared after equation.
-                if let &[equation, ..] = &group.declarations[..] {
+                if let &[equation, ..] = &group.equations[..] {
                     let error = IndexingError::SignatureIsLate { equation, signature: index };
                     module_map.errors.push(error);
                 }
@@ -60,15 +60,15 @@ fn index_value(module_map: &mut FullIndexingResult, signature_or_equation: Index
                     group.signature = Some(index);
                 }
             } else {
-                group.declarations.push(index);
+                group.equations.push(index);
             }
         }
         None => {
             let signature = if is_signature { Some(index) } else { None };
-            let declarations = if is_signature { vec![] } else { vec![index] };
+            let equations = if is_signature { vec![] } else { vec![index] };
 
             let name: SmolStr = name.into();
-            let group = DeclarationGroup { signature, declarations };
+            let group = ValueGroup { signature, equations };
 
             module_map.value.insert(name, group);
         }

@@ -8,16 +8,18 @@ use syntax::{cst, SyntaxNode, SyntaxNodePtr};
 pub type DeclarationId = Idx<cst::Declaration>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct DeclarationGroup {
+pub struct ValueGroup {
     pub signature: Option<DeclarationId>,
-    pub declarations: Vec<DeclarationId>,
+    pub equations: Vec<DeclarationId>,
 }
+
+pub type ValueIndex = FxHashMap<SmolStr, ValueGroup>;
 
 #[derive(Debug, Default)]
 pub struct FullIndexingResult {
     arena: Arena<cst::Declaration>,
     pub pointer: ArenaMap<DeclarationId, SyntaxNodePtr>,
-    pub value: FxHashMap<SmolStr, DeclarationGroup>,
+    pub value: ValueIndex,
     pub errors: Vec<IndexingError>,
 }
 

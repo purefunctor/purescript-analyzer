@@ -18,7 +18,7 @@ fn value_group() {
     let group = module_map.value.get("main");
     assert_eq!(
         group,
-        Some(&indexing::DeclarationGroup { signature: Some(idx!(0)), declarations: vec![idx!(1)] })
+        Some(&indexing::ValueGroup { signature: Some(idx!(0)), equations: vec![idx!(1)] })
     );
 }
 
@@ -37,7 +37,7 @@ fn value_group_late_signature() {
     let group = module_map.value.get("main");
     assert_eq!(
         group,
-        Some(&indexing::DeclarationGroup { signature: Some(idx!(1)), declarations: vec![idx!(0)] })
+        Some(&indexing::ValueGroup { signature: Some(idx!(1)), equations: vec![idx!(0)] })
     );
     assert_eq!(
         &module_map.errors,
@@ -51,7 +51,7 @@ fn value_group_late_signature_conflict() {
     let group = module_map.value.get("main");
     assert_eq!(
         group,
-        Some(&indexing::DeclarationGroup { signature: Some(idx!(0)), declarations: vec![idx!(1)] })
+        Some(&indexing::ValueGroup { signature: Some(idx!(0)), equations: vec![idx!(1)] })
     );
     assert_eq!(
         &module_map.errors,
@@ -68,7 +68,7 @@ fn value_group_late_signatures_conflict() {
     let group = module_map.value.get("main");
     assert_eq!(
         group,
-        Some(&indexing::DeclarationGroup { signature: Some(idx!(1)), declarations: vec![idx!(0)] })
+        Some(&indexing::ValueGroup { signature: Some(idx!(1)), equations: vec![idx!(0)] })
     );
     assert_eq!(
         &module_map.errors,
