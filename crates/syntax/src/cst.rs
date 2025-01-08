@@ -185,6 +185,16 @@ has_children!(
     | children() -> Declaration
 );
 
+has_token!(
+    ValueSignature
+    | name_token() -> LOWER
+);
+
+has_token!(
+    ValueEquation
+    | name_token() -> LOWER
+);
+
 has_children!(
     InstanceChain
     | instance_declarations() -> InstanceDeclaration
@@ -219,15 +229,5 @@ has_token!(
 
 has_token!(
     InstanceEquationStatement
-    | name_token() -> LOWER
-);
-
-has_token!(
-    ValueSignature
-    | name_token() -> LOWER
-);
-
-has_token!(
-    ValueEquation
     | name_token() -> LOWER
 );
