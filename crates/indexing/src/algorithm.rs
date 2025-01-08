@@ -51,8 +51,8 @@ fn index_value(module_map: &mut FullIndexingResult, signature_or_equation: Index
         Some(group) => {
             if is_signature {
                 // Signature is declared after equation.
-                if let &[equation, ..] = &group.equations[..] {
-                    let error = IndexingError::SignatureIsLate { equation, signature: index };
+                if let &[declaration, ..] = &group.equations[..] {
+                    let error = IndexingError::SignatureIsLate { declaration, signature: index };
                     module_map.errors.push(error);
                 }
                 // Signature is declared twice.
@@ -151,9 +151,9 @@ fn index_instance_statement(
         Some(group) => {
             if is_signature {
                 // Signature is declared after equation.
-                if let &[equation, ..] = &group.equations[..] {
+                if let &[declaration, ..] = &group.equations[..] {
                     let error =
-                        IndexingError::SignatureIsLate { equation, signature: statement_index };
+                        IndexingError::SignatureIsLate { declaration, signature: statement_index };
                     module_map.errors.push(error);
                 }
                 // Signature is declared twice.
@@ -197,12 +197,12 @@ fn index_class_signature(module_map: &mut FullIndexingResult, signature: cst::Cl
     let name = name_token.text();
     match module_map.class.by_type.get_mut(name) {
         Some(group) => {
-            // Signature is declared after equation
-            if let Some(_) = group.declaration {
-                let error = IndexingError::SignatureIsLate { equation: index, signature: index };
+            // Signature is declared after declaration.
+            if let Some(declaration) = group.declaration {
+                let error = IndexingError::SignatureIsLate { declaration, signature: index };
                 module_map.errors.push(error);
             }
-            // Signature is declared twice
+            // Signature is declared twice.
             if let Some(existing) = group.signature {
                 let error = IndexingError::SignatureConflict { existing, duplicate: index };
                 module_map.errors.push(error);

@@ -50,7 +50,7 @@ pub struct FullIndexingResult {
 #[derive(Debug, PartialEq, Eq)]
 pub enum IndexingError {
     SignatureConflict { existing: DeclarationId, duplicate: DeclarationId },
-    SignatureIsLate { equation: DeclarationId, signature: DeclarationId },
+    SignatureIsLate { declaration: DeclarationId, signature: DeclarationId },
     DeclarationConflict { existing: DeclarationId, duplicate: DeclarationId },
 }
 

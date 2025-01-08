@@ -41,7 +41,7 @@ fn value_group_late_signature() {
     );
     assert_eq!(
         &module_map.errors,
-        &[indexing::IndexingError::SignatureIsLate { equation: idx!(0), signature: idx!(1) }]
+        &[indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(1) }]
     );
 }
 
@@ -56,7 +56,7 @@ fn value_group_late_signature_conflict() {
     assert_eq!(
         &module_map.errors,
         &[
-            indexing::IndexingError::SignatureIsLate { equation: idx!(1), signature: idx!(2) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(1), signature: idx!(2) },
             indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(2) },
         ]
     )
@@ -73,8 +73,8 @@ fn value_group_late_signatures_conflict() {
     assert_eq!(
         &module_map.errors,
         &[
-            indexing::IndexingError::SignatureIsLate { equation: idx!(0), signature: idx!(1) },
-            indexing::IndexingError::SignatureIsLate { equation: idx!(0), signature: idx!(2) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(1) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(2) },
             indexing::IndexingError::SignatureConflict { existing: idx!(1), duplicate: idx!(2) },
         ]
     )
@@ -137,7 +137,7 @@ fn instance_chain_late_signature() {
 
     assert_eq!(
         &module_map.errors,
-        &[indexing::IndexingError::SignatureIsLate { equation: idx!(2), signature: idx!(3) }]
+        &[indexing::IndexingError::SignatureIsLate { declaration: idx!(2), signature: idx!(3) }]
     );
 }
 
@@ -153,7 +153,7 @@ fn instance_chain_late_signature_conflict() {
     assert_eq!(
         &module_map.errors,
         &[
-            indexing::IndexingError::SignatureIsLate { equation: idx!(3), signature: idx!(4) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(3), signature: idx!(4) },
             indexing::IndexingError::SignatureConflict { existing: idx!(2), duplicate: idx!(4) },
         ]
     );
@@ -171,8 +171,8 @@ fn instance_chain_late_signatures_conflict() {
     assert_eq!(
         &module_map.errors,
         &[
-            indexing::IndexingError::SignatureIsLate { equation: idx!(2), signature: idx!(3) },
-            indexing::IndexingError::SignatureIsLate { equation: idx!(2), signature: idx!(4) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(2), signature: idx!(3) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(2), signature: idx!(4) },
             indexing::IndexingError::SignatureConflict { existing: idx!(3), duplicate: idx!(4) },
         ]
     );
@@ -211,6 +211,16 @@ fn class_declaration_conflict() {
     assert_eq!(
         &module_map.errors,
         &[indexing::IndexingError::DeclarationConflict { existing: idx!(0), duplicate: idx!(1) }]
+    );
+}
+
+#[test]
+fn class_declaration_late() {
+    let module_map =
+        index(["class Eq a where", "  eq :: a -> a -> Boolean", "class Eq :: Type -> Constraint"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(2) }]
     );
 }
 
