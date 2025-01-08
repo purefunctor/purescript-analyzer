@@ -192,6 +192,9 @@ fn class_signature() {
         Some(&indexing::ClassGroup { signature: Some(idx!(0)), declaration: Some(idx!(1)) })
     );
 
+    let compare = module_map.class.by_member.get("compare");
+    assert_eq!(compare, Some(&idx!(2)));
+
     let ord_statements = module_map.class.statement_graph.neighbors(idx!(1)).collect::<Vec<_>>();
     assert_eq!(ord_statements, vec![idx!(2)]);
 }
