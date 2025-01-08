@@ -1,6 +1,4 @@
-use rowan::ast::{AstChildren, AstNode};
-
-use crate::{SyntaxKind, SyntaxToken};
+use rowan::ast::AstNode;
 
 #[macro_use]
 mod macros;
@@ -177,64 +175,59 @@ create_cst_struct!(RecordUpdates);
 
 create_cst_enum!(RecordUpdate | RecordUpdateLeaf | RecordUpdateBranch);
 
-impl Module {
-    pub fn statements(&self) -> Option<ModuleStatements> {
-        self.syntax().children().find_map(ModuleStatements::cast)
-    }
-}
+has_child!(
+    Module
+    | statements() -> ModuleStatements
+);
 
-impl ModuleStatements {
-    pub fn children(&self) -> impl Iterator<Item = Declaration> {
-        self.syntax().children().filter_map(Declaration::cast)
-    }
-}
+has_children!(
+    ModuleStatements
+    | children() -> Declaration
+);
 
-impl InstanceChain {
-    pub fn instance_declarations(&self) -> AstChildren<InstanceDeclaration> {
-        rowan::ast::support::children(self.syntax())
-    }
-}
+has_children!(
+    InstanceChain
+    | instance_declarations() -> InstanceDeclaration
+);
 
-impl InstanceDeclaration {
-    pub fn instance_head(&self) -> Option<InstanceHead> {
-        rowan::ast::support::child(self.syntax())
-    }
+has_child!(
+    InstanceDeclaration
+    | instance_head() -> InstanceHead
+    | instance_name() -> InstanceName
+    | instance_statements() -> InstanceStatements
+);
 
-    pub fn instance_name(&self) -> Option<InstanceName> {
-        rowan::ast::support::child(self.syntax())
-    }
+has_token!(
+    InstanceName
+    | name_token() -> LOWER
+);
 
-    pub fn instance_statements(&self) -> Option<InstanceStatements> {
-        rowan::ast::support::child(self.syntax())
-    }
-}
+has_token!(
+    InstanceHead
+    | type_name_token() -> UPPER
+);
 
-impl InstanceName {
-    pub fn name_token(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(self.syntax(), SyntaxKind::LOWER)
-    }
-}
+has_children!(
+    InstanceStatements
+    | children() -> InstanceDeclarationStatement
+);
 
-impl InstanceHead {
-    pub fn type_name_token(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(self.syntax(), SyntaxKind::UPPER)
-    }
-}
+has_token!(
+    InstanceSignatureStatement
+    | name_token() -> LOWER
+);
 
-impl InstanceStatements {
-    pub fn children(&self) -> AstChildren<InstanceDeclarationStatement> {
-        rowan::ast::support::children(self.syntax())
-    }
-}
+has_token!(
+    InstanceEquationStatement
+    | name_token() -> LOWER
+);
 
-impl ValueSignature {
-    pub fn name_token(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(self.syntax(), SyntaxKind::LOWER)
-    }
-}
+has_token!(
+    ValueSignature
+    | name_token() -> LOWER
+);
 
-impl ValueEquation {
-    pub fn name_token(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(self.syntax(), SyntaxKind::LOWER)
-    }
-}
+has_token!(
+    ValueEquation
+    | name_token() -> LOWER
+);

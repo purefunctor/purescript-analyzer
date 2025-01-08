@@ -131,3 +131,39 @@ macro_rules! associated_declarations {
         }
     }
 }
+
+macro_rules! has_token {
+    ($kind:ident $(|$name:ident() -> $token:ident)+) => {
+        impl $kind {
+            $(
+                pub fn $name(&self) -> Option<crate::SyntaxToken> {
+                    rowan::ast::support::token(self.syntax(), crate::SyntaxKind::$token)
+                }
+            )+
+        }
+    };
+}
+
+macro_rules! has_child {
+    ($kind:ident $(|$name:ident() -> $child:ident)+) => {
+        impl $kind {
+            $(
+                pub fn $name(&self) -> Option<crate::cst::$child> {
+                    rowan::ast::support::child(self.syntax())
+                }
+            )+
+        }
+    };
+}
+
+macro_rules! has_children {
+    ($kind:ident $(|$name:ident() -> $child:ident)+) => {
+        impl $kind {
+            $(
+                pub fn $name(&self) -> rowan::ast::AstChildren<crate::cst::$child> {
+                    rowan::ast::support::children(self.syntax())
+                }
+            )+
+        }
+    };
+}
