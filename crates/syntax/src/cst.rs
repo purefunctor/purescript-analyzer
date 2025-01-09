@@ -267,3 +267,38 @@ has_token!(
     ClassMemberStatement
     | name_token() -> LOWER
 );
+
+has_token!(
+    NewtypeSignature
+    | name_token() -> UPPER
+);
+
+has_token!(
+    NewtypeEquation
+    | name_token() -> UPPER
+);
+
+has_children!(
+    NewtypeEquation
+    | data_constructors() -> DataConstructor
+);
+
+has_token!(
+    DataSignature
+    | name_token() -> UPPER
+);
+
+has_token!(
+    DataEquation
+    | name_token() -> UPPER
+);
+
+has_children!(
+    DataEquation
+    | data_constructors() -> DataConstructor
+);
+
+has_token!(
+    DataConstructor
+    | name_token() -> UPPER
+);

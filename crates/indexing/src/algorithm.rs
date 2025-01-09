@@ -3,16 +3,27 @@ use smol_str::SmolStr;
 use syntax::{cst, SyntaxNode};
 
 use crate::{
-    ClassGroup, DeclarationId, DeclarationPtr, FullIndexingResult, IndexingError,
-    InstanceStatementGroup, InstanceStatementGroupKey, SynonymGroup, ValueGroup,
+    ClassGroup, ConstructorId, ConstructorPtr, DataTypeGroup, DeclarationId, DeclarationPtr,
+    FullIndexingResult, IndexingError, InstanceStatementGroup, InstanceStatementGroupKey,
+    SynonymGroup, ValueGroup,
 };
 
 impl FullIndexingResult {
     fn allocate_declaration(&mut self, node: cst::Declaration) -> DeclarationId {
         let pointer = DeclarationPtr::new(&node);
-        let index = self.arena.alloc(node);
+        let index = self.declarations.alloc(node);
 
-        let insert = self.pointer.insert_full(pointer);
+        let insert = self.declarations_pointers.insert_full(pointer);
+        debug_assert_eq!(insert, (index.into_raw().into_u32() as usize, true));
+
+        index
+    }
+
+    fn allocate_constructor(&mut self, node: cst::DataConstructor) -> ConstructorId {
+        let pointer = ConstructorPtr::new(&node);
+        let index = self.constructors.alloc(node);
+
+        let insert = self.constructors_pointers.insert_full(pointer);
         debug_assert_eq!(insert, (index.into_raw().into_u32() as usize, true));
 
         index
@@ -40,6 +51,18 @@ fn index_declaration(module_map: &mut FullIndexingResult, declaration: cst::Decl
         cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(module_map, e),
         cst::Declaration::ClassSignature(s) => index_class_signature(module_map, s),
         cst::Declaration::ClassDeclaration(e) => index_class_declaration(module_map, e),
+        cst::Declaration::NewtypeSignature(s) => {
+            index_data_type_signature(module_map, IndexDataSignature::Newtype(s))
+        }
+        cst::Declaration::NewtypeEquation(e) => {
+            index_data_type_equation(module_map, IndexDataEquation::Newtype(e))
+        }
+        cst::Declaration::DataSignature(s) => {
+            index_data_type_signature(module_map, IndexDataSignature::Data(s))
+        }
+        cst::Declaration::DataEquation(e) => {
+            index_data_type_equation(module_map, IndexDataEquation::Data(e))
+        }
         _ => (),
     }
 }
@@ -380,4 +403,122 @@ fn index_class_statement(
     }
 
     statement_index
+}
+
+enum IndexDataSignature {
+    Newtype(cst::NewtypeSignature),
+    Data(cst::DataSignature),
+}
+
+fn index_data_type_signature(module_map: &mut FullIndexingResult, signature: IndexDataSignature) {
+    let (name_token, declaration) = match signature {
+        IndexDataSignature::Newtype(n) => (n.name_token(), cst::Declaration::NewtypeSignature(n)),
+        IndexDataSignature::Data(d) => (d.name_token(), cst::Declaration::DataSignature(d)),
+    };
+
+    let declaration_index = module_map.allocate_declaration(declaration);
+
+    let Some(name_token) = name_token else {
+        return;
+    };
+
+    let name = name_token.text();
+    match module_map.data.by_name.get_mut(name) {
+        Some(group) => {
+            // Signature is declared after equation.
+            if let Some(declaration) = group.equation {
+                let error =
+                    IndexingError::SignatureIsLate { declaration, signature: declaration_index };
+                module_map.errors.push(error);
+            }
+            // Signature is declared twice.
+            if let Some(existing) = group.signature {
+                let error =
+                    IndexingError::SignatureConflict { existing, duplicate: declaration_index };
+                module_map.errors.push(error);
+            } else {
+                group.signature = Some(declaration_index);
+            }
+        }
+        None => {
+            let name: SmolStr = name.into();
+            let group = DataTypeGroup { signature: Some(declaration_index), equation: None };
+            module_map.data.by_name.insert(name, group);
+        }
+    }
+}
+
+enum IndexDataEquation {
+    Newtype(cst::NewtypeEquation),
+    Data(cst::DataEquation),
+}
+
+fn index_data_type_equation(module_map: &mut FullIndexingResult, equation: IndexDataEquation) {
+    let (name_token, constructors, declaration) = match equation {
+        IndexDataEquation::Newtype(n) => {
+            (n.name_token(), n.data_constructors(), cst::Declaration::NewtypeEquation(n))
+        }
+        IndexDataEquation::Data(d) => {
+            (d.name_token(), d.data_constructors(), cst::Declaration::DataEquation(d))
+        }
+    };
+
+    let declaration_index = module_map.allocate_declaration(declaration);
+
+    let Some(name_token) = name_token else {
+        return;
+    };
+
+    let name = name_token.text();
+    let group_index = match module_map.data.by_name.get_full_mut(name) {
+        Some((group_index, _, group)) => {
+            if let Some(existing) = group.equation {
+                let error =
+                    IndexingError::DeclarationConflict { existing, duplicate: declaration_index };
+                module_map.errors.push(error);
+            } else {
+                group.equation = Some(declaration_index);
+            }
+            group_index
+        }
+        None => {
+            let name: SmolStr = name.into();
+            let group = DataTypeGroup { signature: None, equation: Some(declaration_index) };
+            let (group_index, _) = module_map.data.by_name.insert_full(name, group);
+            group_index
+        }
+    };
+
+    for constructor in constructors {
+        let constructor_index = index_data_constructor(module_map, constructor);
+        module_map.data.constructor_of.insert(constructor_index, group_index);
+    }
+}
+
+fn index_data_constructor(
+    module_map: &mut FullIndexingResult,
+    constructor: cst::DataConstructor,
+) -> ConstructorId {
+    let name_token = constructor.name_token();
+
+    let constructor_index = module_map.allocate_constructor(constructor);
+
+    if let Some(name) = name_token {
+        let name = name.text();
+        match module_map.data.by_constructor.get_mut(name) {
+            Some(existing) => {
+                let error = IndexingError::ConstructorConflict {
+                    existing: *existing,
+                    duplicate: constructor_index,
+                };
+                module_map.errors.push(error);
+            }
+            None => {
+                let name: SmolStr = name.into();
+                module_map.data.by_constructor.insert(name, constructor_index);
+            }
+        }
+    }
+
+    constructor_index
 }

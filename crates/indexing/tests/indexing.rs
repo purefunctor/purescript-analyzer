@@ -341,3 +341,140 @@ fn class_member_conflict_cross() {
         &[indexing::IndexingError::DeclarationConflict { existing: idx!(1), duplicate: idx!(3) }]
     );
 }
+
+#[test]
+fn data_type() {
+    let module_map = index([
+        "newtype Id :: Type",
+        "newtype Id = Id Int",
+        "data Kind :: Type",
+        "data Kind = Additive | Subtractive",
+    ]);
+
+    let id_group = module_map.data.by_name.get("Id");
+    assert_eq!(
+        id_group,
+        Some(&indexing::DataTypeGroup { signature: Some(idx!(0)), equation: Some(idx!(1)) })
+    );
+
+    let kind_group = module_map.data.by_name.get("Kind");
+    assert_eq!(
+        kind_group,
+        Some(&indexing::DataTypeGroup { signature: Some(idx!(2)), equation: Some(idx!(3)) })
+    );
+
+    let id_constructor = module_map.data.by_constructor.get("Id");
+    assert_eq!(id_constructor, Some(&idx!(0)));
+
+    let additive_constructor = module_map.data.by_constructor.get("Additive");
+    assert_eq!(additive_constructor, Some(&idx!(1)));
+
+    let subtractive_constructor = module_map.data.by_constructor.get("Subtractive");
+    assert_eq!(subtractive_constructor, Some(&idx!(2)));
+
+    let id_index = module_map.data.constructor_of.get(&idx!(0)).unwrap();
+    let id_group = module_map.data.by_name.get_index(*id_index);
+    assert_eq!(
+        id_group,
+        Some((
+            &"Id".into(),
+            &indexing::DataTypeGroup { signature: Some(idx!(0)), equation: Some(idx!(1)) }
+        ))
+    );
+
+    let kind_index = module_map.data.constructor_of.get(&idx!(1)).unwrap();
+    let kind_group = module_map.data.by_name.get_index(*kind_index);
+    assert_eq!(
+        kind_group,
+        Some((
+            &"Kind".into(),
+            &indexing::DataTypeGroup { signature: Some(idx!(2)), equation: Some(idx!(3)) }
+        ))
+    )
+}
+
+#[test]
+fn data_type_signature_conflict() {
+    let module_map = index(["newtype Id :: Type", "newtype Id :: Type", "data Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(1) },
+            indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(2) }
+        ]
+    );
+}
+
+#[test]
+fn data_type_equation_conflict() {
+    let module_map = index(["newtype Id = Id0 Int", "data Id = Id1 Int"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::DeclarationConflict { existing: idx!(0), duplicate: idx!(1) },]
+    );
+}
+
+#[test]
+fn data_type_late_signature() {
+    let module_map = index([
+        "newtype Id = Id Int",
+        "newtype Id :: Type",
+        "data Kind = Additive | Subtractive",
+        "data Kind :: Type",
+    ]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(1) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(2), signature: idx!(3) },
+        ]
+    );
+}
+
+#[test]
+fn data_type_constructor_conflict() {
+    let module_map = index(["data Kind = Additive | Additive"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::ConstructorConflict { existing: idx!(0), duplicate: idx!(1) }]
+    );
+}
+
+#[test]
+fn data_type_constructor_conflict_cross() {
+    let module_map =
+        index(["data Kind = Additive | Subtractive", "data Kind = Subtractive | Additive"]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::DeclarationConflict { existing: idx!(0), duplicate: idx!(1) },
+            indexing::IndexingError::ConstructorConflict { existing: idx!(1), duplicate: idx!(2) },
+            indexing::IndexingError::ConstructorConflict { existing: idx!(0), duplicate: idx!(3) },
+        ]
+    );
+}
+
+#[test]
+fn data_type_late_signature_conflict() {
+    let module_map = index(["newtype Id :: Type", "newtype Id = Id Int", "newtype Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(1), signature: idx!(2) },
+            indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(2) },
+        ]
+    );
+}
+
+#[test]
+fn data_type_late_signatures_conflict() {
+    let module_map = index(["newtype Id = Id Int", "newtype Id :: Type", "newtype Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(1) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(2) },
+            indexing::IndexingError::SignatureConflict { existing: idx!(1), duplicate: idx!(2) },
+        ]
+    );
+}

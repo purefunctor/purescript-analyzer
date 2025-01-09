@@ -2,7 +2,7 @@ mod algorithm;
 
 use fxhash::{FxBuildHasher, FxHashMap};
 use hashbrown::HashMap;
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
 use la_arena::{Arena, Idx, RawIdx};
 use petgraph::{prelude::GraphMap, Directed};
 use smol_str::SmolStr;
@@ -10,6 +10,9 @@ use syntax::{cst, SyntaxNode};
 
 pub type DeclarationId = Idx<cst::Declaration>;
 pub type DeclarationPtr = rowan::ast::AstPtr<cst::Declaration>;
+
+pub type ConstructorId = Idx<cst::DataConstructor>;
+pub type ConstructorPtr = rowan::ast::AstPtr<cst::DataConstructor>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ClassGroup {
@@ -61,6 +64,26 @@ pub struct InstanceIndex {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct DataTypeGroup {
+    /// [`cst::NewtypeSignature`] or [`cst::DataSignature`]
+    pub signature: Option<DeclarationId>,
+    /// [`cst::NewtypeEquation`] or [`cst::DataEquation`]
+    pub equation: Option<DeclarationId>,
+}
+
+#[derive(Debug, Default)]
+pub struct DataTypeIndex {
+    /// From data type name to data type group
+    pub by_name: IndexMap<SmolStr, DataTypeGroup, FxBuildHasher>,
+    /// From constructor name to [`cst::DataConstructor`]
+    pub by_constructor: FxHashMap<SmolStr, ConstructorId>,
+    /// From [`cst::DataConstructor`] to [`by_name`] index
+    ///
+    /// [`by_name`]: DataTypeIndex::by_name
+    pub constructor_of: FxHashMap<ConstructorId, usize>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct SynonymGroup {
     /// [`cst::TypeSynonymSignature`]
     pub signature: Option<DeclarationId>,
@@ -82,8 +105,11 @@ pub type ValueIndex = FxHashMap<SmolStr, ValueGroup>;
 
 #[derive(Debug, Default)]
 pub struct FullIndexingResult {
-    arena: Arena<cst::Declaration>,
-    pointer: IndexSet<DeclarationPtr, FxBuildHasher>,
+    declarations: Arena<cst::Declaration>,
+    declarations_pointers: IndexSet<DeclarationPtr, FxBuildHasher>,
+    constructors: Arena<cst::DataConstructor>,
+    constructors_pointers: IndexSet<ConstructorPtr, FxBuildHasher>,
+    pub data: DataTypeIndex,
     pub class: ClassIndex,
     pub instance: InstanceIndex,
     pub synonym: SynonymIndex,
@@ -94,11 +120,11 @@ pub struct FullIndexingResult {
 impl FullIndexingResult {
     pub fn pointer(&self, index: DeclarationId) -> Option<DeclarationPtr> {
         let index: usize = index.into_raw().into_u32() as usize;
-        self.pointer.get_index(index).cloned()
+        self.declarations_pointers.get_index(index).cloned()
     }
 
     pub fn index(&self, pointer: DeclarationPtr) -> Option<DeclarationId> {
-        let index = self.pointer.get_full(&pointer)?.0 as u32;
+        let index = self.declarations_pointers.get_full(&pointer)?.0 as u32;
         Some(DeclarationId::from_raw(RawIdx::from_u32(index)))
     }
 }
@@ -108,6 +134,7 @@ pub enum IndexingError {
     SignatureConflict { existing: DeclarationId, duplicate: DeclarationId },
     SignatureIsLate { declaration: DeclarationId, signature: DeclarationId },
     DeclarationConflict { existing: DeclarationId, duplicate: DeclarationId },
+    ConstructorConflict { existing: ConstructorId, duplicate: ConstructorId },
 }
 
 pub fn index(node: SyntaxNode) -> FullIndexingResult {
