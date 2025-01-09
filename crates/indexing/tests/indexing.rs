@@ -97,7 +97,7 @@ fn instance_chain() {
     let eq_boolean = module_map.instance.by_name.get("eqBoolean");
     assert_eq!(eq_boolean, Some(&idx!(4)));
 
-    let eq_chains = module_map.instance.by_type.get("Eq");
+    let eq_chains = module_map.instance.by_class.get("Eq");
     assert_eq!(eq_chains, Some(&vec![idx!(1), idx!(4)]));
 
     let eq_chain_declarations =
@@ -277,7 +277,7 @@ fn class_signature() {
         "  compare :: a -> a -> Ordering",
     ]);
 
-    let ord = module_map.class.by_type.get("Ord");
+    let ord = module_map.class.by_name.get("Ord");
     assert_eq!(
         ord,
         Some(&indexing::ClassGroup { signature: Some(idx!(0)), declaration: Some(idx!(1)) })

@@ -135,7 +135,7 @@ fn index_instance_declaration(
 
     if let Some(head) = head.and_then(|h| h.type_name_token()) {
         let head: SmolStr = head.text().into();
-        module_map.instance.by_type.entry(head).or_default().push(declaration_index);
+        module_map.instance.by_class.entry(head).or_default().push(declaration_index);
     }
 
     if let Some(statements) = statements {
@@ -286,7 +286,7 @@ fn index_class_signature(module_map: &mut FullIndexingResult, signature: cst::Cl
     };
 
     let name = name_token.text();
-    match module_map.class.by_type.get_mut(name) {
+    match module_map.class.by_name.get_mut(name) {
         Some(group) => {
             // Signature is declared after declaration.
             if let Some(declaration) = group.declaration {
@@ -304,7 +304,7 @@ fn index_class_signature(module_map: &mut FullIndexingResult, signature: cst::Cl
         None => {
             let name: SmolStr = name.into();
             let group = ClassGroup { signature: Some(index), declaration: None };
-            module_map.class.by_type.insert(name, group);
+            module_map.class.by_name.insert(name, group);
         }
     }
 }
@@ -321,7 +321,7 @@ fn index_class_declaration(
 
     if let Some(name) = head.and_then(|h| h.name_token()) {
         let name = name.text();
-        match module_map.class.by_type.get_mut(name) {
+        match module_map.class.by_name.get_mut(name) {
             Some(group) => {
                 if let Some(existing) = group.declaration {
                     let error = IndexingError::DeclarationConflict {
@@ -336,7 +336,7 @@ fn index_class_declaration(
             None => {
                 let name: SmolStr = name.into();
                 let group = ClassGroup { signature: None, declaration: Some(declaration_index) };
-                module_map.class.by_type.insert(name, group);
+                module_map.class.by_name.insert(name, group);
             }
         }
     }

@@ -13,20 +13,27 @@ pub type DeclarationPtr = rowan::ast::AstPtr<cst::Declaration>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ClassGroup {
+    /// [`cst::ClassSignature`]
     pub signature: Option<DeclarationId>,
+    /// [`cst::ClassDeclaration`]
     pub declaration: Option<DeclarationId>,
 }
 
 #[derive(Debug, Default)]
 pub struct ClassIndex {
-    pub by_type: FxHashMap<SmolStr, ClassGroup>,
+    /// From class name to class group
+    pub by_name: FxHashMap<SmolStr, ClassGroup>,
+    /// From member name to [`cst::ClassMemberStatement`]
     pub by_member: FxHashMap<SmolStr, DeclarationId>,
+    /// From [`cst::ClassDeclaration`] to [`cst::ClassMemberStatement`]
     pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InstanceStatementGroup {
+    /// [`cst::InstanceSignatureStatement`]
     pub signature: Option<DeclarationId>,
+    /// [`cst::InstanceEquationStatement`]
     pub equations: Vec<DeclarationId>,
 }
 
@@ -41,16 +48,23 @@ impl hashbrown::Equivalent<InstanceStatementGroupKey> for (DeclarationId, &str) 
 
 #[derive(Debug, Default)]
 pub struct InstanceIndex {
-    pub by_type: FxHashMap<SmolStr, Vec<DeclarationId>>,
+    /// From class name to instance chains
+    pub by_class: FxHashMap<SmolStr, Vec<DeclarationId>>,
+    /// From instance name to [`cst::InstanceDeclaration`]
     pub by_name: FxHashMap<SmolStr, DeclarationId>,
+    /// From [`cst::InstanceChain`] to [`cst::InstanceDeclaration`]
     pub instance_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
+    /// From [`cst::InstanceDeclaration`] to [`cst::InstanceChain`]
     pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
+    /// From member name and [`cst::InstanceDeclaration`] to [`InstanceStatementGroup`]
     pub statement_group: HashMap<InstanceStatementGroupKey, InstanceStatementGroup, FxBuildHasher>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct SynonymGroup {
+    /// [`cst::TypeSynonymSignature`]
     pub signature: Option<DeclarationId>,
+    /// [`cst::TypeSynonymEquation`]
     pub equation: Option<DeclarationId>,
 }
 
@@ -58,7 +72,9 @@ pub type SynonymIndex = FxHashMap<SmolStr, SynonymGroup>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
+    /// [`cst::ValueSignature`]
     pub signature: Option<DeclarationId>,
+    /// [`cst::ValueEquation`]
     pub equations: Vec<DeclarationId>,
 }
 
