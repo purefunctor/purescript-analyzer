@@ -106,8 +106,20 @@ fn index_instance_declaration(
     module_map.pointer.insert(declaration_index, pointer);
 
     if let Some(name) = name.and_then(|n| n.name_token()) {
-        let name: SmolStr = name.text().into();
-        module_map.instance.by_name.insert(name, declaration_index);
+        let name = name.text().into();
+        match module_map.instance.by_name.get_mut(name) {
+            Some(existing) => {
+                let error = IndexingError::DeclarationConflict {
+                    existing: *existing,
+                    duplicate: declaration_index,
+                };
+                module_map.errors.push(error);
+            }
+            None => {
+                let name: SmolStr = name.into();
+                module_map.instance.by_name.insert(name, declaration_index);
+            }
+        }
     }
 
     if let Some(head) = head.and_then(|h| h.type_name_token()) {

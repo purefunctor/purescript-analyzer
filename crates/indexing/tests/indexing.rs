@@ -114,6 +114,22 @@ fn instance_chain() {
 }
 
 #[test]
+fn instance_declaration_conflict() {
+    let module_map = index([
+        "instance eqInt :: Eq Int",
+        "instance eqInt :: Eq Int",
+        "else instance eqInt :: Eq Int",
+    ]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::DeclarationConflict { existing: idx!(1), duplicate: idx!(3) },
+            indexing::IndexingError::DeclarationConflict { existing: idx!(1), duplicate: idx!(4) }
+        ]
+    );
+}
+
+#[test]
 fn instance_chain_signature_conflict() {
     let module_map = index([
         "instance eqInt :: Eq Int where",
