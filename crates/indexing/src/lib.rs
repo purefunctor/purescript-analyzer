@@ -1,6 +1,7 @@
 mod algorithm;
 
 use fxhash::{FxBuildHasher, FxHashMap};
+use hashbrown::HashMap;
 use indexmap::IndexSet;
 use la_arena::{Arena, Idx, RawIdx};
 use petgraph::{prelude::GraphMap, Directed};
@@ -29,13 +30,22 @@ pub struct InstanceStatementGroup {
     pub equations: Vec<DeclarationId>,
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct InstanceStatementGroupKey(pub DeclarationId, pub SmolStr);
+
+impl hashbrown::Equivalent<InstanceStatementGroupKey> for (DeclarationId, &str) {
+    fn equivalent(&self, key: &InstanceStatementGroupKey) -> bool {
+        self.0 == key.0 && self.1 == key.1
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct InstanceIndex {
     pub by_type: FxHashMap<SmolStr, Vec<DeclarationId>>,
     pub by_name: FxHashMap<SmolStr, DeclarationId>,
     pub instance_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
     pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
-    pub statement_group: FxHashMap<DeclarationId, InstanceStatementGroup>,
+    pub statement_group: HashMap<InstanceStatementGroupKey, InstanceStatementGroup, FxBuildHasher>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
