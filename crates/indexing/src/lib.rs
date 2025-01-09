@@ -1,12 +1,14 @@
 mod algorithm;
 
 use fxhash::{FxBuildHasher, FxHashMap};
-use la_arena::{Arena, ArenaMap, Idx};
+use indexmap::IndexSet;
+use la_arena::{Arena, Idx, RawIdx};
 use petgraph::{prelude::GraphMap, Directed};
 use smol_str::SmolStr;
-use syntax::{cst, SyntaxNode, SyntaxNodePtr};
+use syntax::{cst, SyntaxNode};
 
 pub type DeclarationId = Idx<cst::Declaration>;
+pub type DeclarationPtr = rowan::ast::AstPtr<cst::Declaration>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ClassGroup {
@@ -40,11 +42,23 @@ pub type ValueIndex = FxHashMap<SmolStr, ValueGroup>;
 #[derive(Debug, Default)]
 pub struct FullIndexingResult {
     arena: Arena<cst::Declaration>,
-    pub pointer: ArenaMap<DeclarationId, SyntaxNodePtr>,
+    pointer: IndexSet<DeclarationPtr, FxBuildHasher>,
     pub class: ClassIndex,
     pub instance: InstanceIndex,
     pub value: ValueIndex,
     pub errors: Vec<IndexingError>,
+}
+
+impl FullIndexingResult {
+    pub fn pointer(&self, index: DeclarationId) -> Option<DeclarationPtr> {
+        let index: usize = index.into_raw().into_u32() as usize;
+        self.pointer.get_index(index).cloned()
+    }
+
+    pub fn index(&self, pointer: DeclarationPtr) -> Option<DeclarationId> {
+        let index = self.pointer.get_full(&pointer)?.0 as u32;
+        Some(DeclarationId::from_raw(RawIdx::from_u32(index)))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

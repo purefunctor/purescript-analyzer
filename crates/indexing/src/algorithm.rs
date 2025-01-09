@@ -1,8 +1,22 @@
-use rowan::ast::{AstNode, SyntaxNodePtr};
+use rowan::ast::AstNode;
 use smol_str::SmolStr;
 use syntax::{cst, SyntaxNode};
 
-use crate::{ClassGroup, DeclarationId, FullIndexingResult, IndexingError, ValueGroup};
+use crate::{
+    ClassGroup, DeclarationId, DeclarationPtr, FullIndexingResult, IndexingError, ValueGroup,
+};
+
+impl FullIndexingResult {
+    fn allocate_declaration(&mut self, node: cst::Declaration) -> DeclarationId {
+        let pointer = DeclarationPtr::new(&node);
+        let index = self.arena.alloc(node);
+
+        let insert = self.pointer.insert_full(pointer);
+        debug_assert_eq!(insert, (index.into_raw().into_u32() as usize, true));
+
+        index
+    }
+}
 
 pub(super) fn index_module(module_map: &mut FullIndexingResult, node: SyntaxNode) {
     let Some(module) = cst::Module::cast(node) else {
@@ -38,9 +52,7 @@ fn index_value(module_map: &mut FullIndexingResult, signature_or_equation: Index
         IndexValue::Equation(e) => (e.name_token(), cst::Declaration::ValueEquation(e), false),
     };
 
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(index, pointer);
+    let index = module_map.allocate_declaration(declaration);
 
     let Some(name_token) = name_token else {
         return;
@@ -82,9 +94,7 @@ fn index_instance_chain(module_map: &mut FullIndexingResult, instance_chain: cst
     let instance_declarations = instance_chain.instance_declarations();
 
     let declaration = cst::Declaration::InstanceChain(instance_chain);
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let chain_index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(chain_index, pointer);
+    let chain_index = module_map.allocate_declaration(declaration);
 
     for instance_declaration in instance_declarations {
         let declaration_index = index_instance_declaration(module_map, instance_declaration);
@@ -101,9 +111,7 @@ fn index_instance_declaration(
     let statements = instance_declaration.instance_statements();
 
     let declaration = cst::Declaration::InstanceDeclaration(instance_declaration);
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let declaration_index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(declaration_index, pointer);
+    let declaration_index = module_map.allocate_declaration(declaration);
 
     if let Some(name) = name.and_then(|n| n.name_token()) {
         let name = name.text().into();
@@ -150,9 +158,7 @@ fn index_instance_statement(
         }
     };
 
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let statement_index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(statement_index, pointer);
+    let statement_index = module_map.allocate_declaration(declaration);
 
     let Some(name_token) = name_token else {
         return statement_index;
@@ -198,9 +204,7 @@ fn index_class_signature(module_map: &mut FullIndexingResult, signature: cst::Cl
     let name_token = signature.name_token();
 
     let declaration = cst::Declaration::ClassSignature(signature);
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(index, pointer);
+    let index = module_map.allocate_declaration(declaration);
 
     let Some(name_token) = name_token else {
         return;
@@ -238,9 +242,7 @@ fn index_class_declaration(
     let statements = declaration.class_statements();
 
     let declaration = cst::Declaration::ClassDeclaration(declaration);
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let declaration_index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(declaration_index, pointer);
+    let declaration_index = module_map.allocate_declaration(declaration);
 
     if let Some(name) = head.and_then(|h| h.name_token()) {
         let name = name.text();
@@ -281,9 +283,7 @@ fn index_class_statement(
     };
 
     let declaration = cst::Declaration::ClassMemberStatement(class_statement);
-    let pointer = SyntaxNodePtr::new(declaration.syntax());
-    let statement_index = module_map.arena.alloc(declaration);
-    module_map.pointer.insert(statement_index, pointer);
+    let statement_index = module_map.allocate_declaration(declaration);
 
     let Some(name_token) = name_token else {
         return statement_index;
