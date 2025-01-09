@@ -195,6 +195,63 @@ fn instance_chain_late_signatures_conflict() {
 }
 
 #[test]
+fn type_synonym() {
+    let _ = index(["type Id :: Type", "type Id = Int"]);
+}
+
+#[test]
+fn type_synonym_signature_conflict() {
+    let module_map = index(["type Id :: Type", "type Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(1) }]
+    );
+}
+
+#[test]
+fn type_synonym_declaration_conflict() {
+    let module_map = index(["type Id = Int", "type Id = Int"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::DeclarationConflict { existing: idx!(0), duplicate: idx!(1) }]
+    );
+}
+
+#[test]
+fn type_synonym_late_signature() {
+    let module_map = index(["type Id = Int", "type Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(1) }]
+    );
+}
+
+#[test]
+fn type_synonym_late_signature_conflict() {
+    let module_map = index(["type Id :: Type", "type Id = Int", "type Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(1), signature: idx!(2) },
+            indexing::IndexingError::SignatureConflict { existing: idx!(0), duplicate: idx!(2) },
+        ]
+    );
+}
+
+#[test]
+fn type_synonym_late_signatures_conflict() {
+    let module_map = index(["type Id = Int", "type Id :: Type", "type Id :: Type"]);
+    assert_eq!(
+        &module_map.errors,
+        &[
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(1) },
+            indexing::IndexingError::SignatureIsLate { declaration: idx!(0), signature: idx!(2) },
+            indexing::IndexingError::SignatureConflict { existing: idx!(1), duplicate: idx!(2) },
+        ]
+    );
+}
+
+#[test]
 fn class_signature() {
     let module_map = index([
         "class Ord :: Type -> Constraint",

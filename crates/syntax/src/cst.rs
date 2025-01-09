@@ -233,6 +233,16 @@ has_token!(
 );
 
 has_token!(
+    TypeSynonymSignature
+    | name_token() -> UPPER
+);
+
+has_token!(
+    TypeSynonymEquation
+    | name_token() -> UPPER
+);
+
+has_token!(
     ClassSignature
     | name_token() -> UPPER
 );

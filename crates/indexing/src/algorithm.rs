@@ -3,7 +3,8 @@ use smol_str::SmolStr;
 use syntax::{cst, SyntaxNode};
 
 use crate::{
-    ClassGroup, DeclarationId, DeclarationPtr, FullIndexingResult, IndexingError, ValueGroup,
+    ClassGroup, DeclarationId, DeclarationPtr, FullIndexingResult, IndexingError, SynonymGroup,
+    ValueGroup,
 };
 
 impl FullIndexingResult {
@@ -35,6 +36,8 @@ fn index_declaration(module_map: &mut FullIndexingResult, declaration: cst::Decl
         cst::Declaration::ValueSignature(s) => index_value(module_map, IndexValue::Signature(s)),
         cst::Declaration::ValueEquation(e) => index_value(module_map, IndexValue::Equation(e)),
         cst::Declaration::InstanceChain(c) => index_instance_chain(module_map, c),
+        cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(module_map, s),
+        cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(module_map, e),
         cst::Declaration::ClassSignature(s) => index_class_signature(module_map, s),
         cst::Declaration::ClassDeclaration(e) => index_class_declaration(module_map, e),
         _ => (),
@@ -198,6 +201,75 @@ fn index_instance_statement(
     };
 
     statement_index
+}
+
+fn index_synonym_signature(
+    module_map: &mut FullIndexingResult,
+    signature: cst::TypeSynonymSignature,
+) {
+    let name_token = signature.name_token();
+
+    let declaration = cst::Declaration::TypeSynonymSignature(signature);
+    let signature_index = module_map.allocate_declaration(declaration);
+
+    let Some(name_token) = name_token else {
+        return;
+    };
+
+    let name = name_token.text();
+    match module_map.synonym.get_mut(name) {
+        Some(group) => {
+            // Signature is declared after equation.
+            if let Some(declaration) = group.equation {
+                let error =
+                    IndexingError::SignatureIsLate { declaration, signature: signature_index };
+                module_map.errors.push(error);
+            }
+            // Signature is declared twice.
+            if let Some(existing) = group.signature {
+                let error =
+                    IndexingError::SignatureConflict { existing, duplicate: signature_index };
+                module_map.errors.push(error);
+            } else {
+                group.signature = Some(signature_index);
+            }
+        }
+        None => {
+            let name: SmolStr = name.into();
+            let group = SynonymGroup { signature: Some(signature_index), equation: None };
+            module_map.synonym.insert(name, group);
+        }
+    }
+}
+
+fn index_synonym_equation(module_map: &mut FullIndexingResult, equation: cst::TypeSynonymEquation) {
+    let name_token = equation.name_token();
+
+    let declaration = cst::Declaration::TypeSynonymEquation(equation);
+    let equation_index = module_map.allocate_declaration(declaration);
+
+    let Some(name_token) = name_token else {
+        return;
+    };
+
+    let name = name_token.text();
+    match module_map.synonym.get_mut(name) {
+        Some(group) => {
+            // Equation is declared twice.
+            if let Some(existing) = group.equation {
+                let error =
+                    IndexingError::DeclarationConflict { existing, duplicate: equation_index };
+                module_map.errors.push(error);
+            } else {
+                group.equation = Some(equation_index);
+            }
+        }
+        None => {
+            let name: SmolStr = name.into();
+            let group = SynonymGroup { signature: None, equation: Some(equation_index) };
+            module_map.synonym.insert(name, group);
+        }
+    }
 }
 
 fn index_class_signature(module_map: &mut FullIndexingResult, signature: cst::ClassSignature) {

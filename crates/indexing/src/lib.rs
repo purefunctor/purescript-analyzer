@@ -32,6 +32,14 @@ pub struct InstanceIndex {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct SynonymGroup {
+    pub signature: Option<DeclarationId>,
+    pub equation: Option<DeclarationId>,
+}
+
+pub type SynonymIndex = FxHashMap<SmolStr, SynonymGroup>;
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValueGroup {
     pub signature: Option<DeclarationId>,
     pub equations: Vec<DeclarationId>,
@@ -45,6 +53,7 @@ pub struct FullIndexingResult {
     pointer: IndexSet<DeclarationPtr, FxBuildHasher>,
     pub class: ClassIndex,
     pub instance: InstanceIndex,
+    pub synonym: SynonymIndex,
     pub value: ValueIndex,
     pub errors: Vec<IndexingError>,
 }
