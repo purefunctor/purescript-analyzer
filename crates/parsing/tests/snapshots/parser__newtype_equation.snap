@@ -28,14 +28,15 @@ snapshot_kind: text
           Annotation@42..43
             TEXT@42..43 " "
           EQUAL@43..44 "="
-          Annotation@44..45
-            TEXT@44..45 " "
-          UPPER@45..49 "Year"
-          TypeConstructor@49..53
-            QualifiedName@49..53
-              Annotation@49..50
-                TEXT@49..50 " "
-              UPPER@50..53 "Int"
+          DataConstructor@44..53
+            Annotation@44..45
+              TEXT@44..45 " "
+            UPPER@45..49 "Year"
+            TypeConstructor@49..53
+              QualifiedName@49..53
+                Annotation@49..50
+                  TEXT@49..50 " "
+                UPPER@50..53 "Int"
       LAYOUT_END@53..53 ""
       Annotation@53..54
         TEXT@53..54 "\n"

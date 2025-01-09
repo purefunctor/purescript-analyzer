@@ -882,8 +882,10 @@ fn newtype_signature_or_equation(p: &mut Parser) {
     } else {
         type_variable_bindings(p);
         p.expect(SyntaxKind::EQUAL);
+        let mut n = p.start();
         p.expect(SyntaxKind::UPPER);
         types::type_atom(p);
+        n.end(p, SyntaxKind::DataConstructor);
         m.end(p, SyntaxKind::NewtypeEquation);
     }
 }
