@@ -111,6 +111,24 @@ fn instance_chain() {
     let eq_boolean_statements =
         module_map.instance.statement_graph.neighbors(idx!(4)).collect::<Vec<_>>();
     assert_eq!(eq_boolean_statements, vec![idx!(5), idx!(6)]);
+
+    let eq_int_statement_group = module_map.instance.statement_group.get(&idx!(1));
+    assert_eq!(
+        eq_int_statement_group,
+        Some(&indexing::InstanceStatementGroup {
+            signature: Some(idx!(2)),
+            equations: vec![idx!(3)]
+        })
+    );
+
+    let eq_boolean_statement_group = module_map.instance.statement_group.get(&idx!(4));
+    assert_eq!(
+        eq_boolean_statement_group,
+        Some(&indexing::InstanceStatementGroup {
+            signature: Some(idx!(5)),
+            equations: vec![idx!(6)]
+        })
+    );
 }
 
 #[test]

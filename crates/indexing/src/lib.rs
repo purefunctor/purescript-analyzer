@@ -23,12 +23,19 @@ pub struct ClassIndex {
     pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct InstanceStatementGroup {
+    pub signature: Option<DeclarationId>,
+    pub equations: Vec<DeclarationId>,
+}
+
 #[derive(Debug, Default)]
 pub struct InstanceIndex {
     pub by_type: FxHashMap<SmolStr, Vec<DeclarationId>>,
     pub by_name: FxHashMap<SmolStr, DeclarationId>,
     pub instance_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
     pub statement_graph: GraphMap<DeclarationId, (), Directed, FxBuildHasher>,
+    pub statement_group: FxHashMap<DeclarationId, InstanceStatementGroup>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

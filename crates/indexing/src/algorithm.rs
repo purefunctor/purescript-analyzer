@@ -3,8 +3,8 @@ use smol_str::SmolStr;
 use syntax::{cst, SyntaxNode};
 
 use crate::{
-    ClassGroup, DeclarationId, DeclarationPtr, FullIndexingResult, IndexingError, SynonymGroup,
-    ValueGroup,
+    ClassGroup, DeclarationId, DeclarationPtr, FullIndexingResult, IndexingError,
+    InstanceStatementGroup, SynonymGroup, ValueGroup,
 };
 
 impl FullIndexingResult {
@@ -139,10 +139,13 @@ fn index_instance_declaration(
     }
 
     if let Some(statements) = statements {
+        let mut statement_group = InstanceStatementGroup { signature: None, equations: vec![] };
         for statement in statements.children() {
-            let statement_index = index_instance_statement(module_map, statement);
+            let statement_index =
+                index_instance_statement(module_map, &mut statement_group, statement);
             module_map.instance.statement_graph.add_edge(declaration_index, statement_index, ());
         }
+        module_map.instance.statement_group.insert(declaration_index, statement_group);
     }
 
     declaration_index
@@ -150,55 +153,36 @@ fn index_instance_declaration(
 
 fn index_instance_statement(
     module_map: &mut FullIndexingResult,
+    statement_group: &mut InstanceStatementGroup,
     instance_statement: cst::InstanceDeclarationStatement,
 ) -> DeclarationId {
-    let (name_token, declaration, is_signature) = match instance_statement {
+    let (declaration, is_signature) = match instance_statement {
         cst::InstanceDeclarationStatement::InstanceSignatureStatement(s) => {
-            (s.name_token(), cst::Declaration::InstanceSignatureStatement(s), true)
+            (cst::Declaration::InstanceSignatureStatement(s), true)
         }
         cst::InstanceDeclarationStatement::InstanceEquationStatement(e) => {
-            (e.name_token(), cst::Declaration::InstanceEquationStatement(e), false)
+            (cst::Declaration::InstanceEquationStatement(e), false)
         }
     };
 
     let statement_index = module_map.allocate_declaration(declaration);
 
-    let Some(name_token) = name_token else {
-        return statement_index;
-    };
-
-    let name = name_token.text();
-    match module_map.value.get_mut(name) {
-        Some(group) => {
-            if is_signature {
-                // Signature is declared after equation.
-                if let &[declaration, ..] = &group.equations[..] {
-                    let error =
-                        IndexingError::SignatureIsLate { declaration, signature: statement_index };
-                    module_map.errors.push(error);
-                }
-                // Signature is declared twice.
-                if let Some(existing) = group.signature {
-                    let error =
-                        IndexingError::SignatureConflict { existing, duplicate: statement_index };
-                    module_map.errors.push(error);
-                } else {
-                    group.signature = Some(statement_index);
-                }
-            } else {
-                group.equations.push(statement_index);
-            }
+    if is_signature {
+        // Signature is declared after equation.
+        if let &[declaration, ..] = &statement_group.equations[..] {
+            let error = IndexingError::SignatureIsLate { declaration, signature: statement_index };
+            module_map.errors.push(error);
         }
-        None => {
-            let signature = if is_signature { Some(statement_index) } else { None };
-            let equations = if is_signature { vec![] } else { vec![statement_index] };
-
-            let name: SmolStr = name.into();
-            let group = ValueGroup { signature, equations };
-
-            module_map.value.insert(name, group);
+        // Signature is declared twice.
+        if let Some(existing) = statement_group.signature {
+            let error = IndexingError::SignatureConflict { existing, duplicate: statement_index };
+            module_map.errors.push(error);
+        } else {
+            statement_group.signature = Some(statement_index);
         }
-    };
+    } else {
+        statement_group.equations.push(statement_index);
+    }
 
     statement_index
 }
