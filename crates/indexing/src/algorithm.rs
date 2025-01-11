@@ -236,7 +236,7 @@ fn index_class_declaration(state: &mut IndexState, declaration: cst::ClassDeclar
     for statement in class_statements.children() {
         let member_id = index_class_member(state, statement);
         if let Some(class_item_id) = class_item_id {
-            state.relational.method_of.push((class_item_id, member_id));
+            state.relational.class_member_of.push((class_item_id, member_id));
         }
     }
 }

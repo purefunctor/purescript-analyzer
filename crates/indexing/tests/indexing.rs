@@ -101,7 +101,7 @@ fn valid_module() {
     }
 
     if let Some((_, ExprItem::Method(id))) = index.nominal.lookup_expr_item("eq") {
-        if let Some(id) = index.relational.of_method(*id) {
+        if let Some(id) = index.relational.of_class_member(*id) {
             assert!(matches!(index.nominal.index_type_item(id), Some(TypeItem::Class(_))));
         } else {
             unreachable!()
@@ -150,8 +150,8 @@ fn valid_module() {
     }
 
     if let Some((id, _)) = index.nominal.lookup_type_item("Eq") {
-        let methods: Vec<_> = index.relational.methods_of(id).collect();
-        if let &[id] = &methods[..] {
+        let members: Vec<_> = index.relational.class_member_of(id).collect();
+        if let &[id] = &members[..] {
             let ptr = index.source_map.class_member_ptr(id).unwrap();
             let node = ptr.to_node(module.syntax());
 

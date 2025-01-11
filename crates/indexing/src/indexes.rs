@@ -180,7 +180,7 @@ impl NominalIndex {
 #[derive(Default)]
 pub struct RelationalIndex {
     pub(crate) constructor_of: Vec<(TypeItemId, ConstructorId)>,
-    pub(crate) method_of: Vec<(TypeItemId, ClassMemberId)>,
+    pub(crate) class_member_of: Vec<(TypeItemId, ClassMemberId)>,
     pub(crate) instance_of: Vec<(DeclarationId, InstanceId)>,
     pub(crate) instance_member_of: Vec<(InstanceId, InstanceMemberId)>,
 }
@@ -202,11 +202,11 @@ impl RelationalIndex {
         find_t(&self.constructor_of, id)
     }
 
-    pub fn methods_of(&self, id: TypeItemId) -> impl Iterator<Item = ClassMemberId> + '_ {
-        find_u(&self.method_of, id)
+    pub fn class_member_of(&self, id: TypeItemId) -> impl Iterator<Item = ClassMemberId> + '_ {
+        find_u(&self.class_member_of, id)
     }
 
-    pub fn of_method(&self, id: ClassMemberId) -> Option<TypeItemId> {
-        find_t(&self.method_of, id)
+    pub fn of_class_member(&self, id: ClassMemberId) -> Option<TypeItemId> {
+        find_t(&self.class_member_of, id)
     }
 }
