@@ -43,7 +43,8 @@ fn test_token_set() {
     let set = TokenSet::new(&[SyntaxKind::MODULE]);
     assert!(set.contains(SyntaxKind::MODULE));
     assert!(!set.contains(SyntaxKind::LEFT_PARENTHESIS));
-    let set = TokenSet::new(&[SyntaxKind::IMPORT, SyntaxKind::WHERE]);
+    let set = TokenSet::new(&[SyntaxKind::IMPORT, SyntaxKind::WHERE]).union(set);
+    assert!(set.contains(SyntaxKind::MODULE));
     assert!(set.contains(SyntaxKind::IMPORT));
     assert!(set.contains(SyntaxKind::WHERE));
     assert!(!set.contains(SyntaxKind::LEFT_PARENTHESIS));
