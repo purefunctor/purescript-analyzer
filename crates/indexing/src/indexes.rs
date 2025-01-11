@@ -29,7 +29,7 @@ pub struct ValueGroupId {
 
 pub type ExprItemId = Id<ExprItem>;
 
-/// An item in the expression namespace.///
+/// An item in the expression namespace.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExprItem {
     Constructor(ConstructorId),
