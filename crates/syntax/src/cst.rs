@@ -316,3 +316,9 @@ has_token!(
     TypeRoleDeclaration
     | name_token() -> UPPER
 );
+
+has_token!(
+    InfixDeclaration
+    | type_token() -> TYPE
+    | operator_token() -> OPERATOR
+);

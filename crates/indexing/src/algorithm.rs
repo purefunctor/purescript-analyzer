@@ -25,7 +25,7 @@ fn index_declaration(state: &mut IndexState, declaration: cst::Declaration) {
     match declaration {
         cst::Declaration::ValueSignature(s) => index_value_signature(state, s),
         cst::Declaration::ValueEquation(e) => index_value_equation(state, e),
-        cst::Declaration::InfixDeclaration(_) => todo!(),
+        cst::Declaration::InfixDeclaration(i) => index_infix(state, i),
         cst::Declaration::TypeRoleDeclaration(r) => index_type_role(state, r),
         cst::Declaration::ClassSignature(s) => index_class_signature(state, s),
         cst::Declaration::ClassDeclaration(d) => index_class_declaration(state, d),
@@ -97,6 +97,35 @@ fn index_value_equation(state: &mut IndexState, equation: cst::ValueEquation) {
     }
 }
 
+fn index_infix(state: &mut IndexState, infix: cst::InfixDeclaration) {
+    let type_token = infix.type_token();
+    let operator_token = infix.operator_token();
+
+    let declaration = cst::Declaration::InfixDeclaration(infix);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(operator_token) = operator_token else { return };
+    let operator = operator_token.text();
+
+    if type_token.is_none() {
+        if let Some((_, item_id)) = state.nominal.expr_get_mut(operator) {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        } else {
+            let operator: SmolStr = operator.into();
+            state.nominal.insert_expr(operator, ExprItem::Operator(declaration_id));
+        }
+    } else {
+        if let Some((_, item_id)) = state.nominal.type_get_mut(operator) {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        } else {
+            let operator: SmolStr = operator.into();
+            state.nominal.insert_type(operator, TypeItem::Operator(declaration_id));
+        }
+    }
+}
+
 fn index_type_role(state: &mut IndexState, role: cst::TypeRoleDeclaration) {
     let name_token = role.name_token();
 
@@ -108,7 +137,7 @@ fn index_type_role(state: &mut IndexState, role: cst::TypeRoleDeclaration) {
 
     if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
         match item {
-            TypeItem::Class(_) | TypeItem::Synonym(_) => {
+            TypeItem::Class(_) | TypeItem::Synonym(_) | TypeItem::Operator(_) => {
                 state.errors.push(IndexingError::InvalidRoleDeclaration {
                     item_id: Some(item_id),
                     declaration: declaration_id,

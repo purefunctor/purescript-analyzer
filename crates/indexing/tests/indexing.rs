@@ -37,6 +37,8 @@ fn valid_module() {
         "foreign import unit :: Unit",
         "derive instance eqBoolean :: Eq Boolean",
         "derive newtype instance eqId :: Eq Id",
+        "infix 5 eq as ==",
+        "infix 5 type Plus as +",
     ]);
 
     assert!(index.errors.is_empty());
@@ -551,6 +553,29 @@ fn duplicate_derive_declaration() {
             },
             IndexingError::DuplicateExprItem {
                 item_id: Id::from_raw(1),
+                duplicate: Duplicate::Declaration(Id::from_raw(3)),
+            },
+        ]
+    );
+}
+
+#[test]
+fn duplicate_operator() {
+    let (_, index) = index(&[
+        "infix 5 eq as ==",
+        "infix 5 eq as ==",
+        "infix 5 type Plus as +",
+        "infix 5 type Plus as +",
+    ]);
+    assert_eq!(
+        &index.errors,
+        &[
+            IndexingError::DuplicateExprItem {
+                item_id: Id::from_raw(0),
+                duplicate: Duplicate::Declaration(Id::from_raw(1)),
+            },
+            IndexingError::DuplicateTypeItem {
+                item_id: Id::from_raw(0),
                 duplicate: Duplicate::Declaration(Id::from_raw(3)),
             },
         ]

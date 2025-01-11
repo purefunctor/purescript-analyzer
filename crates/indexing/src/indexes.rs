@@ -38,6 +38,7 @@ pub enum ExprItem {
     Method(ClassMemberId),
     Value(ValueGroupId),
     Foreign(DeclarationId),
+    Operator(DeclarationId),
 }
 
 pub type TypeItemId = Id<TypeItem>;
@@ -49,6 +50,7 @@ pub enum TypeItem {
     Newtype(TypeGroupId),
     Synonym(TypeGroupId),
     Foreign(TypeGroupId),
+    Operator(DeclarationId),
 }
 
 /// Mapping from names to module items.
