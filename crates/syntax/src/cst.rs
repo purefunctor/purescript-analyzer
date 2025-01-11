@@ -296,3 +296,23 @@ has_token!(
     DataConstructor
     | name_token() -> UPPER
 );
+
+has_token!(
+    ForeignImportDataDeclaration
+    | name_token() -> UPPER
+);
+
+has_token!(
+    ForeignImportValueDeclaration
+    | name_token() -> LOWER
+);
+
+has_child!(
+    DeriveDeclaration
+    | instance_name() -> InstanceName
+);
+
+has_token!(
+    TypeRoleDeclaration
+    | name_token() -> UPPER
+);

@@ -23,8 +23,10 @@ pub type ExprItemId = Id<ExprItem>;
 pub enum ExprItem {
     Constructor(ConstructorId),
     Instance(InstanceId),
+    Derive(DeclarationId),
     Method(ClassMemberId),
     Value(ValueGroupId),
+    Foreign(DeclarationId),
 }
 
 pub type TypeItemId = Id<TypeItem>;
@@ -35,6 +37,7 @@ pub enum TypeItem {
     Data(TypeGroupId),
     Newtype(TypeGroupId),
     Synonym(TypeGroupId),
+    Foreign(DeclarationId),
 }
 
 /// Mapping from names to module items.

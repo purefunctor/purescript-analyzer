@@ -25,16 +25,20 @@ fn index_declaration(state: &mut IndexState, declaration: cst::Declaration) {
     match declaration {
         cst::Declaration::ValueSignature(s) => index_value_signature(state, s),
         cst::Declaration::ValueEquation(e) => index_value_equation(state, e),
+        cst::Declaration::InfixDeclaration(_) => todo!(),
+        cst::Declaration::TypeRoleDeclaration(_) => todo!(),
         cst::Declaration::ClassSignature(s) => index_class_signature(state, s),
         cst::Declaration::ClassDeclaration(d) => index_class_declaration(state, d),
         cst::Declaration::InstanceChain(c) => index_instance_chain(state, c),
         cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(state, s),
         cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(state, e),
+        cst::Declaration::ForeignImportDataDeclaration(f) => index_foreign_data(state, f),
+        cst::Declaration::ForeignImportValueDeclaration(f) => index_foreign_value(state, f),
         cst::Declaration::NewtypeSignature(s) => index_newtype_signature(state, s),
         cst::Declaration::NewtypeEquation(e) => index_newtype_equation(state, e),
         cst::Declaration::DataSignature(s) => index_data_signature(state, s),
         cst::Declaration::DataEquation(e) => index_data_equation(state, e),
-        _ => (),
+        cst::Declaration::DeriveDeclaration(d) => index_derive_declaration(state, d),
     }
 }
 
@@ -280,6 +284,42 @@ fn index_synonym_equation(state: &mut IndexState, equation: cst::TypeSynonymEqua
     }
 }
 
+fn index_foreign_data(state: &mut IndexState, foreign: cst::ForeignImportDataDeclaration) {
+    let name_token = foreign.name_token();
+
+    let declaration = cst::Declaration::ForeignImportDataDeclaration(foreign);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((_, item_id)) = state.nominal.type_get_mut(name) {
+        let duplicate = Duplicate::Declaration(declaration_id);
+        state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        state.nominal.insert_type(name, TypeItem::Foreign(declaration_id));
+    }
+}
+
+fn index_foreign_value(state: &mut IndexState, foreign: cst::ForeignImportValueDeclaration) {
+    let name_token = foreign.name_token();
+
+    let declaration = cst::Declaration::ForeignImportValueDeclaration(foreign);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+        let duplicate = Duplicate::Declaration(declaration_id);
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        state.nominal.insert_expr(name, ExprItem::Foreign(declaration_id));
+    }
+}
+
 fn index_newtype_signature(state: &mut IndexState, signature: cst::NewtypeSignature) {
     let name_token = signature.name_token();
 
@@ -441,6 +481,24 @@ fn index_data_equation(state: &mut IndexState, equation: cst::DataEquation) {
         let constructor_id = index_data_constructor(state, data_constructor);
         if let Some(equation_item_id) = equation_item_id {
             state.relational.constructor_of.push((equation_item_id, constructor_id));
+        }
+    }
+}
+
+fn index_derive_declaration(state: &mut IndexState, derive: cst::DeriveDeclaration) {
+    let instance_name = derive.instance_name();
+
+    let declaration = cst::Declaration::DeriveDeclaration(derive);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    if let Some(name_token) = instance_name.and_then(|i| i.name_token()) {
+        let name = name_token.text();
+        if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        } else {
+            let name: SmolStr = name.into();
+            state.nominal.insert_expr(name, ExprItem::Derive(declaration_id));
         }
     }
 }

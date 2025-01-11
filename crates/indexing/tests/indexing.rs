@@ -33,6 +33,10 @@ fn valid_module() {
         "  eq :: a -> a -> Boolean",
         "instance eqInt :: Eq Int where",
         "  eq = eqIntImpl",
+        "foreign import data Unit :: Type",
+        "foreign import unit :: Unit",
+        "derive instance eqBoolean :: Eq Boolean",
+        "derive newtype instance eqId :: Eq Id",
     ]);
 
     assert!(index.errors.is_empty());
@@ -165,6 +169,46 @@ fn valid_module() {
         let node = ptr.to_node(module.syntax());
 
         assert_eq!(node.syntax().text(), "\ntype Fn a b = a -> b");
+        assert_eq!(index.source_map.declaration_id(ptr), Some(*id));
+    } else {
+        unreachable!()
+    }
+
+    if let Some((_, TypeItem::Foreign(id))) = index.nominal.lookup_type_item("Unit") {
+        let ptr = index.source_map.declaration_ptr(*id).unwrap();
+        let node = ptr.to_node(module.syntax());
+
+        assert_eq!(node.syntax().text(), "\nforeign import data Unit :: Type");
+        assert_eq!(index.source_map.declaration_id(ptr), Some(*id));
+    } else {
+        unreachable!()
+    }
+
+    if let Some((_, ExprItem::Foreign(id))) = index.nominal.lookup_expr_item("unit") {
+        let ptr = index.source_map.declaration_ptr(*id).unwrap();
+        let node = ptr.to_node(module.syntax());
+
+        assert_eq!(node.syntax().text(), "\nforeign import unit :: Unit");
+        assert_eq!(index.source_map.declaration_id(ptr), Some(*id));
+    } else {
+        unreachable!()
+    }
+
+    if let Some((_, ExprItem::Derive(id))) = index.nominal.lookup_expr_item("eqBoolean") {
+        let ptr = index.source_map.declaration_ptr(*id).unwrap();
+        let node = ptr.to_node(module.syntax());
+
+        assert_eq!(node.syntax().text(), "\nderive instance eqBoolean :: Eq Boolean");
+        assert_eq!(index.source_map.declaration_id(ptr), Some(*id));
+    } else {
+        unreachable!()
+    }
+
+    if let Some((_, ExprItem::Derive(id))) = index.nominal.lookup_expr_item("eqId") {
+        let ptr = index.source_map.declaration_ptr(*id).unwrap();
+        let node = ptr.to_node(module.syntax());
+
+        assert_eq!(node.syntax().text(), "\nderive newtype instance eqId :: Eq Id");
         assert_eq!(index.source_map.declaration_id(ptr), Some(*id));
     } else {
         unreachable!()
