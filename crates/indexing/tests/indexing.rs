@@ -509,3 +509,50 @@ fn duplicate_type_role() {
         }]
     );
 }
+
+#[test]
+fn duplicate_foreign_data() {
+    let (_, index) = index(&["foreign import data Id :: Type", "foreign import data Id :: Type"]);
+    assert_eq!(
+        &index.errors,
+        &[IndexingError::DuplicateTypeItem {
+            item_id: Id::from_raw(0),
+            duplicate: Duplicate::Declaration(Id::from_raw(1)),
+        }]
+    );
+}
+
+#[test]
+fn duplicate_foreign_value() {
+    let (_, index) = index(&["foreign import unit :: Unit", "foreign import unit :: Unit"]);
+    assert_eq!(
+        &index.errors,
+        &[IndexingError::DuplicateExprItem {
+            item_id: Id::from_raw(0),
+            duplicate: Duplicate::Declaration(Id::from_raw(1)),
+        }]
+    );
+}
+
+#[test]
+fn duplicate_derive_declaration() {
+    let (_, index) = index(&[
+        "derive instance eqBoolean :: Eq Boolean",
+        "derive instance eqBoolean :: Eq Boolean",
+        "derive newtype instance eqId :: Eq Id",
+        "derive newtype instance eqId :: Eq Id",
+    ]);
+    assert_eq!(
+        &index.errors,
+        &[
+            IndexingError::DuplicateExprItem {
+                item_id: Id::from_raw(0),
+                duplicate: Duplicate::Declaration(Id::from_raw(1)),
+            },
+            IndexingError::DuplicateExprItem {
+                item_id: Id::from_raw(1),
+                duplicate: Duplicate::Declaration(Id::from_raw(3)),
+            },
+        ]
+    );
+}
