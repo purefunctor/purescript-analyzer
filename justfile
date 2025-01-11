@@ -12,3 +12,7 @@ test-s:
 [doc('Run tests with coverage')]
 test-c:
     cargo llvm-cov nextest --html
+
+[doc("Generate documentation")]
+@doc flag="":
+    cargo doc --document-private-items {{flag}}

@@ -37,14 +37,10 @@ create_cst_enum!(
         | InfixDeclaration
         | TypeRoleDeclaration
         | InstanceChain
-        | InstanceDeclaration
-        | InstanceSignatureStatement
-        | InstanceEquationStatement
         | TypeSynonymSignature
         | TypeSynonymEquation
         | ClassSignature
         | ClassDeclaration
-        | ClassMemberStatement
         | ForeignImportDataDeclaration
         | ForeignImportValueDeclaration
         | NewtypeSignature
@@ -54,13 +50,11 @@ create_cst_enum!(
         | DeriveDeclaration
 );
 
-associated_declarations!(
-    ClassDeclaration where ClassMemberStatement
-);
+create_cst_struct!(InstanceDeclaration);
 
-associated_declarations!(
-    InstanceDeclaration where InstanceSignatureStatement | InstanceEquationStatement
-);
+create_cst_enum!(InstanceMemberStatement | InstanceSignatureStatement | InstanceEquationStatement);
+
+create_cst_struct!(ClassMemberStatement);
 
 create_cst_struct!(
     TypeRole,
@@ -219,7 +213,7 @@ has_token!(
 
 has_children!(
     InstanceStatements
-    | children() -> InstanceDeclarationStatement
+    | children() -> InstanceMemberStatement
 );
 
 has_token!(
@@ -260,7 +254,7 @@ has_token!(
 
 has_children!(
     ClassStatements
-    | children() -> ClassDeclarationStatement
+    | children() -> ClassMemberStatement
 );
 
 has_token!(

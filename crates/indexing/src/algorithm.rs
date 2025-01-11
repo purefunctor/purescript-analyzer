@@ -1,524 +1,446 @@
-use rowan::ast::AstNode;
 use smol_str::SmolStr;
-use syntax::{cst, SyntaxNode};
+use syntax::cst;
 
 use crate::{
-    ClassGroup, ConstructorId, ConstructorPtr, DataTypeGroup, DeclarationId, DeclarationPtr,
-    FullIndexingResult, IndexingError, InstanceStatementGroup, InstanceStatementGroupKey,
-    SynonymGroup, ValueGroup,
+    ClassMemberId, ConstructorId, Duplicate, ExprItem, IndexingError, InstanceId, NominalIndex,
+    RelationalIndex, SourceMap, TypeGroupId, TypeItem, ValueGroupId,
 };
 
-impl FullIndexingResult {
-    fn allocate_declaration(&mut self, node: cst::Declaration) -> DeclarationId {
-        let pointer = DeclarationPtr::new(&node);
-        let index = self.declarations.alloc(node);
+#[derive(Default)]
+pub(super) struct IndexState {
+    pub(super) source_map: SourceMap,
+    pub(super) nominal: NominalIndex,
+    pub(super) relational: RelationalIndex,
+    pub(super) errors: Vec<IndexingError>,
+}
 
-        let insert = self.declarations_pointers.insert_full(pointer);
-        debug_assert_eq!(insert, (index.into_raw().into_u32() as usize, true));
-
-        index
-    }
-
-    fn allocate_constructor(&mut self, node: cst::DataConstructor) -> ConstructorId {
-        let pointer = ConstructorPtr::new(&node);
-        let index = self.constructors.alloc(node);
-
-        let insert = self.constructors_pointers.insert_full(pointer);
-        debug_assert_eq!(insert, (index.into_raw().into_u32() as usize, true));
-
-        index
+pub(super) fn index_module(state: &mut IndexState, module: &cst::Module) {
+    let Some(statements) = module.statements() else { return };
+    for statement in statements.children() {
+        index_declaration(state, statement);
     }
 }
 
-pub(super) fn index_module(module_map: &mut FullIndexingResult, node: SyntaxNode) {
-    let Some(module) = cst::Module::cast(node) else {
-        return;
-    };
-    let Some(statements) = module.statements() else {
-        return;
-    };
-    for declaration in statements.children() {
-        index_declaration(module_map, declaration);
-    }
-}
-
-fn index_declaration(module_map: &mut FullIndexingResult, declaration: cst::Declaration) {
+fn index_declaration(state: &mut IndexState, declaration: cst::Declaration) {
     match declaration {
-        cst::Declaration::ValueSignature(s) => index_value(module_map, IndexValue::Signature(s)),
-        cst::Declaration::ValueEquation(e) => index_value(module_map, IndexValue::Equation(e)),
-        cst::Declaration::InstanceChain(c) => index_instance_chain(module_map, c),
-        cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(module_map, s),
-        cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(module_map, e),
-        cst::Declaration::ClassSignature(s) => index_class_signature(module_map, s),
-        cst::Declaration::ClassDeclaration(e) => index_class_declaration(module_map, e),
-        cst::Declaration::NewtypeSignature(s) => {
-            index_data_type_signature(module_map, IndexDataSignature::Newtype(s))
-        }
-        cst::Declaration::NewtypeEquation(e) => {
-            index_data_type_equation(module_map, IndexDataEquation::Newtype(e))
-        }
-        cst::Declaration::DataSignature(s) => {
-            index_data_type_signature(module_map, IndexDataSignature::Data(s))
-        }
-        cst::Declaration::DataEquation(e) => {
-            index_data_type_equation(module_map, IndexDataEquation::Data(e))
-        }
+        cst::Declaration::ValueSignature(s) => index_value_signature(state, s),
+        cst::Declaration::ValueEquation(e) => index_value_equation(state, e),
+        cst::Declaration::ClassSignature(s) => index_class_signature(state, s),
+        cst::Declaration::ClassDeclaration(d) => index_class_declaration(state, d),
+        cst::Declaration::InstanceChain(c) => index_instance_chain(state, c),
+        cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(state, s),
+        cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(state, e),
+        cst::Declaration::NewtypeSignature(s) => index_newtype_signature(state, s),
+        cst::Declaration::NewtypeEquation(e) => index_newtype_equation(state, e),
+        cst::Declaration::DataSignature(s) => index_data_signature(state, s),
+        cst::Declaration::DataEquation(e) => index_data_equation(state, e),
         _ => (),
     }
 }
 
-enum IndexValue {
-    Signature(cst::ValueSignature),
-    Equation(cst::ValueEquation),
+fn index_value_signature(state: &mut IndexState, signature: cst::ValueSignature) {
+    let name_token = signature.name_token();
+
+    let declaration = cst::Declaration::ValueSignature(signature);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
+        if let ExprItem::Value(group) = item {
+            if let &[declaration, ..] = &group.equations[..] {
+                let signature = declaration_id;
+                state.errors.push(IndexingError::LateSignature { declaration, signature });
+            }
+            if group.signature.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+            } else {
+                group.signature = Some(declaration_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = ValueGroupId { signature: Some(declaration_id), equations: vec![] };
+        state.nominal.insert_expr(name, ExprItem::Value(group));
+    }
 }
 
-fn index_value(module_map: &mut FullIndexingResult, signature_or_equation: IndexValue) {
-    let (name_token, declaration, is_signature) = match signature_or_equation {
-        IndexValue::Signature(s) => (s.name_token(), cst::Declaration::ValueSignature(s), true),
-        IndexValue::Equation(e) => (e.name_token(), cst::Declaration::ValueEquation(e), false),
-    };
+fn index_value_equation(state: &mut IndexState, equation: cst::ValueEquation) {
+    let name_token = equation.name_token();
 
-    let index = module_map.allocate_declaration(declaration);
+    let declaration = cst::Declaration::ValueEquation(equation);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
 
-    let Some(name_token) = name_token else {
-        return;
-    };
-
+    let Some(name_token) = name_token else { return };
     let name = name_token.text();
-    match module_map.value.get_mut(name) {
-        Some(group) => {
-            if is_signature {
-                // Signature is declared after equation.
-                if let &[declaration, ..] = &group.equations[..] {
-                    let error = IndexingError::SignatureIsLate { declaration, signature: index };
-                    module_map.errors.push(error);
-                }
-                // Signature is declared twice.
-                if let Some(existing) = group.signature {
-                    let error = IndexingError::SignatureConflict { existing, duplicate: index };
-                    module_map.errors.push(error);
+
+    if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
+        if let ExprItem::Value(group) = item {
+            group.equations.push(declaration_id);
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = ValueGroupId { signature: None, equations: vec![declaration_id] };
+        state.nominal.insert_expr(name, ExprItem::Value(group));
+    }
+}
+
+fn index_class_signature(state: &mut IndexState, signature: cst::ClassSignature) {
+    let name_token = signature.name_token();
+
+    let declaration = cst::Declaration::ClassSignature(signature);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Class(group) = item {
+            if let Some(declaration) = group.declaration {
+                let signature = declaration_id;
+                state.errors.push(IndexingError::LateSignature { declaration, signature })
+            }
+            if group.signature.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+            } else {
+                group.signature = Some(declaration_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        state.nominal.insert_type(name, TypeItem::Class(group));
+    }
+}
+
+fn index_class_declaration(state: &mut IndexState, declaration: cst::ClassDeclaration) {
+    let class_head = declaration.class_head();
+    let class_statements = declaration.class_statements();
+
+    let declaration = cst::Declaration::ClassDeclaration(declaration);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let mut class_item_id = None;
+    if let Some(name_token) = class_head.and_then(|c| c.name_token()) {
+        let name = name_token.text();
+        if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+            if let TypeItem::Class(group) = item {
+                if group.declaration.is_some() {
+                    let duplicate = Duplicate::Declaration(declaration_id);
+                    state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
                 } else {
-                    group.signature = Some(index);
+                    group.declaration = Some(declaration_id);
+                    class_item_id = Some(item_id);
                 }
             } else {
-                group.equations.push(index);
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
             }
-        }
-        None => {
-            let signature = if is_signature { Some(index) } else { None };
-            let equations = if is_signature { vec![] } else { vec![index] };
-
+        } else {
             let name: SmolStr = name.into();
-            let group = ValueGroup { signature, equations };
+            let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+            class_item_id = Some(state.nominal.insert_type(name, TypeItem::Class(group)));
+        }
+    }
 
-            module_map.value.insert(name, group);
+    let Some(class_statements) = class_statements else { return };
+
+    for statement in class_statements.children() {
+        let member_id = index_class_member(state, statement);
+        if let Some(class_item_id) = class_item_id {
+            state.relational.method_of.push((class_item_id, member_id));
         }
     }
 }
 
-fn index_instance_chain(module_map: &mut FullIndexingResult, instance_chain: cst::InstanceChain) {
-    let instance_declarations = instance_chain.instance_declarations();
+fn index_class_member(state: &mut IndexState, member: cst::ClassMemberStatement) -> ClassMemberId {
+    let name_token = member.name_token();
+    let member_id = state.source_map.insert_class_member(&member);
 
-    let declaration = cst::Declaration::InstanceChain(instance_chain);
-    let chain_index = module_map.allocate_declaration(declaration);
+    let Some(name_token) = name_token else {
+        return member_id;
+    };
+
+    let name = name_token.text();
+
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+        let duplicate = Duplicate::ClassMember(member_id);
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        let item = ExprItem::Method(member_id);
+        state.nominal.insert_expr(name, item);
+    }
+
+    member_id
+}
+
+fn index_instance_chain(state: &mut IndexState, chain: cst::InstanceChain) {
+    let instance_declarations = chain.instance_declarations();
+
+    let declaration = cst::Declaration::InstanceChain(chain);
+    let _ = state.source_map.insert_declaration(&declaration);
 
     for instance_declaration in instance_declarations {
-        let declaration_index = index_instance_declaration(module_map, instance_declaration);
-        module_map.instance.instance_graph.add_edge(chain_index, declaration_index, ());
+        index_instance_declaration(state, instance_declaration);
     }
 }
 
 fn index_instance_declaration(
-    module_map: &mut FullIndexingResult,
-    instance_declaration: cst::InstanceDeclaration,
-) -> DeclarationId {
-    let name = instance_declaration.instance_name();
-    let head = instance_declaration.instance_head();
-    let statements = instance_declaration.instance_statements();
+    state: &mut IndexState,
+    instance: cst::InstanceDeclaration,
+) -> InstanceId {
+    let instance_name = instance.instance_name();
+    let instance_id = state.source_map.insert_instance(&instance);
 
-    let declaration = cst::Declaration::InstanceDeclaration(instance_declaration);
-    let declaration_index = module_map.allocate_declaration(declaration);
-
-    if let Some(name) = name.and_then(|n| n.name_token()) {
-        let name = name.text().into();
-        match module_map.instance.by_name.get_mut(name) {
-            Some(existing) => {
-                let error = IndexingError::DeclarationConflict {
-                    existing: *existing,
-                    duplicate: declaration_index,
-                };
-                module_map.errors.push(error);
-            }
-            None => {
-                let name: SmolStr = name.into();
-                module_map.instance.by_name.insert(name, declaration_index);
-            }
-        }
-    }
-
-    if let Some(head) = head.and_then(|h| h.type_name_token()) {
-        let head: SmolStr = head.text().into();
-        module_map.instance.by_class.entry(head).or_default().push(declaration_index);
-    }
-
-    if let Some(statements) = statements {
-        for statement in statements.children() {
-            let statement_index =
-                index_instance_statement(module_map, declaration_index, statement);
-            module_map.instance.statement_graph.add_edge(declaration_index, statement_index, ());
-        }
-    }
-
-    declaration_index
-}
-
-fn index_instance_statement(
-    module_map: &mut FullIndexingResult,
-    declaration_index: DeclarationId,
-    instance_statement: cst::InstanceDeclarationStatement,
-) -> DeclarationId {
-    let (name_token, declaration, is_signature) = match instance_statement {
-        cst::InstanceDeclarationStatement::InstanceSignatureStatement(s) => {
-            (s.name_token(), cst::Declaration::InstanceSignatureStatement(s), true)
-        }
-        cst::InstanceDeclarationStatement::InstanceEquationStatement(e) => {
-            (e.name_token(), cst::Declaration::InstanceEquationStatement(e), false)
-        }
-    };
-
-    let statement_index = module_map.allocate_declaration(declaration);
-
-    let Some(name_token) = name_token else {
-        return statement_index;
-    };
-
-    let name = name_token.text();
-    match module_map.instance.statement_group.get_mut(&(declaration_index, name)) {
-        Some(group) => {
-            if is_signature {
-                // Signature is declared after equation.
-                if let &[declaration, ..] = &group.equations[..] {
-                    let error =
-                        IndexingError::SignatureIsLate { declaration, signature: statement_index };
-                    module_map.errors.push(error);
-                }
-                // Signature is declared twice.
-                if let Some(existing) = group.signature {
-                    let error =
-                        IndexingError::SignatureConflict { existing, duplicate: statement_index };
-                    module_map.errors.push(error);
-                } else {
-                    group.signature = Some(statement_index);
-                }
-            } else {
-                group.equations.push(statement_index);
-            }
-        }
-        None => {
-            let signature = if is_signature { Some(statement_index) } else { None };
-            let equations = if is_signature { vec![] } else { vec![statement_index] };
-
+    if let Some(name_token) = instance_name.and_then(|i| i.name_token()) {
+        let name = name_token.text();
+        if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+            let duplicate = Duplicate::Instance(instance_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        } else {
             let name: SmolStr = name.into();
-            let key = InstanceStatementGroupKey(declaration_index, name);
-            let group = InstanceStatementGroup { signature, equations };
-
-            module_map.instance.statement_group.insert(key, group);
+            let item = ExprItem::Instance(instance_id);
+            state.nominal.insert_expr(name, item);
         }
-    };
+    }
 
-    statement_index
+    instance_id
 }
 
-fn index_synonym_signature(
-    module_map: &mut FullIndexingResult,
-    signature: cst::TypeSynonymSignature,
-) {
+fn index_synonym_signature(state: &mut IndexState, signature: cst::TypeSynonymSignature) {
     let name_token = signature.name_token();
 
     let declaration = cst::Declaration::TypeSynonymSignature(signature);
-    let signature_index = module_map.allocate_declaration(declaration);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
 
-    let Some(name_token) = name_token else {
-        return;
-    };
-
+    let Some(name_token) = name_token else { return };
     let name = name_token.text();
-    match module_map.synonym.get_mut(name) {
-        Some(group) => {
-            // Signature is declared after equation.
-            if let Some(declaration) = group.equation {
-                let error =
-                    IndexingError::SignatureIsLate { declaration, signature: signature_index };
-                module_map.errors.push(error);
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Synonym(group) = item {
+            if let Some(declaration) = group.declaration {
+                let signature = declaration_id;
+                state.errors.push(IndexingError::LateSignature { declaration, signature })
             }
-            // Signature is declared twice.
-            if let Some(existing) = group.signature {
-                let error =
-                    IndexingError::SignatureConflict { existing, duplicate: signature_index };
-                module_map.errors.push(error);
+            if group.signature.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
             } else {
-                group.signature = Some(signature_index);
+                group.signature = Some(declaration_id);
             }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
         }
-        None => {
-            let name: SmolStr = name.into();
-            let group = SynonymGroup { signature: Some(signature_index), equation: None };
-            module_map.synonym.insert(name, group);
-        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        state.nominal.insert_type(name, TypeItem::Synonym(group));
     }
 }
 
-fn index_synonym_equation(module_map: &mut FullIndexingResult, equation: cst::TypeSynonymEquation) {
+fn index_synonym_equation(state: &mut IndexState, equation: cst::TypeSynonymEquation) {
     let name_token = equation.name_token();
 
     let declaration = cst::Declaration::TypeSynonymEquation(equation);
-    let equation_index = module_map.allocate_declaration(declaration);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
 
-    let Some(name_token) = name_token else {
-        return;
-    };
-
+    let Some(name_token) = name_token else { return };
     let name = name_token.text();
-    match module_map.synonym.get_mut(name) {
-        Some(group) => {
-            // Equation is declared twice.
-            if let Some(existing) = group.equation {
-                let error =
-                    IndexingError::DeclarationConflict { existing, duplicate: equation_index };
-                module_map.errors.push(error);
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Synonym(group) = item {
+            if group.declaration.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
             } else {
-                group.equation = Some(equation_index);
+                group.declaration = Some(declaration_id);
             }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
         }
-        None => {
-            let name: SmolStr = name.into();
-            let group = SynonymGroup { signature: None, equation: Some(equation_index) };
-            module_map.synonym.insert(name, group);
-        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+        state.nominal.insert_type(name, TypeItem::Synonym(group));
     }
 }
 
-fn index_class_signature(module_map: &mut FullIndexingResult, signature: cst::ClassSignature) {
+fn index_newtype_signature(state: &mut IndexState, signature: cst::NewtypeSignature) {
     let name_token = signature.name_token();
 
-    let declaration = cst::Declaration::ClassSignature(signature);
-    let index = module_map.allocate_declaration(declaration);
+    let declaration = cst::Declaration::NewtypeSignature(signature);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
 
-    let Some(name_token) = name_token else {
-        return;
-    };
-
+    let Some(name_token) = name_token else { return };
     let name = name_token.text();
-    match module_map.class.by_name.get_mut(name) {
-        Some(group) => {
-            // Signature is declared after declaration.
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Newtype(group) = item {
             if let Some(declaration) = group.declaration {
-                let error = IndexingError::SignatureIsLate { declaration, signature: index };
-                module_map.errors.push(error);
+                let signature = declaration_id;
+                state.errors.push(IndexingError::LateSignature { declaration, signature })
             }
-            // Signature is declared twice.
-            if let Some(existing) = group.signature {
-                let error = IndexingError::SignatureConflict { existing, duplicate: index };
-                module_map.errors.push(error);
+            if group.signature.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
             } else {
-                group.signature = Some(index);
+                group.signature = Some(declaration_id);
             }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
         }
-        None => {
-            let name: SmolStr = name.into();
-            let group = ClassGroup { signature: Some(index), declaration: None };
-            module_map.class.by_name.insert(name, group);
-        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        state.nominal.insert_type(name, TypeItem::Newtype(group));
     }
 }
 
-fn index_class_declaration(
-    module_map: &mut FullIndexingResult,
-    declaration: cst::ClassDeclaration,
-) {
-    let head = declaration.class_head();
-    let statements = declaration.class_statements();
+fn index_newtype_equation(state: &mut IndexState, equation: cst::NewtypeEquation) {
+    let name_token = equation.name_token();
+    let data_constructors = equation.data_constructors();
 
-    let declaration = cst::Declaration::ClassDeclaration(declaration);
-    let declaration_index = module_map.allocate_declaration(declaration);
+    let declaration = cst::Declaration::NewtypeEquation(equation);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
 
-    if let Some(name) = head.and_then(|h| h.name_token()) {
-        let name = name.text();
-        match module_map.class.by_name.get_mut(name) {
-            Some(group) => {
-                if let Some(existing) = group.declaration {
-                    let error = IndexingError::DeclarationConflict {
-                        existing,
-                        duplicate: declaration_index,
-                    };
-                    module_map.errors.push(error);
-                } else {
-                    group.declaration = Some(declaration_index);
-                }
-            }
-            None => {
-                let name: SmolStr = name.into();
-                let group = ClassGroup { signature: None, declaration: Some(declaration_index) };
-                module_map.class.by_name.insert(name, group);
-            }
-        }
-    }
-
-    if let Some(statements) = statements {
-        for statement in statements.children() {
-            let statement_index = index_class_statement(module_map, statement);
-            module_map.class.statement_graph.add_edge(declaration_index, statement_index, ());
-        }
-    }
-}
-
-fn index_class_statement(
-    module_map: &mut FullIndexingResult,
-    class_statement: cst::ClassDeclarationStatement,
-) -> DeclarationId {
-    let (name_token, class_statement) = match class_statement {
-        cst::ClassDeclarationStatement::ClassMemberStatement(s) => (s.name_token(), s),
-    };
-
-    let declaration = cst::Declaration::ClassMemberStatement(class_statement);
-    let statement_index = module_map.allocate_declaration(declaration);
-
-    let Some(name_token) = name_token else {
-        return statement_index;
-    };
-
+    let Some(name_token) = name_token else { return };
     let name = name_token.text();
-    match module_map.class.by_member.get_mut(name) {
-        Some(existing) => {
-            let error = IndexingError::DeclarationConflict {
-                existing: *existing,
-                duplicate: statement_index,
-            };
-            module_map.errors.push(error);
-        }
-        None => {
-            let name: SmolStr = name.into();
-            module_map.class.by_member.insert(name, statement_index);
-        }
-    }
 
-    statement_index
-}
-
-enum IndexDataSignature {
-    Newtype(cst::NewtypeSignature),
-    Data(cst::DataSignature),
-}
-
-fn index_data_type_signature(module_map: &mut FullIndexingResult, signature: IndexDataSignature) {
-    let (name_token, declaration) = match signature {
-        IndexDataSignature::Newtype(n) => (n.name_token(), cst::Declaration::NewtypeSignature(n)),
-        IndexDataSignature::Data(d) => (d.name_token(), cst::Declaration::DataSignature(d)),
-    };
-
-    let declaration_index = module_map.allocate_declaration(declaration);
-
-    let Some(name_token) = name_token else {
-        return;
-    };
-
-    let name = name_token.text();
-    match module_map.data.by_name.get_mut(name) {
-        Some(group) => {
-            // Signature is declared after equation.
-            if let Some(declaration) = group.equation {
-                let error =
-                    IndexingError::SignatureIsLate { declaration, signature: declaration_index };
-                module_map.errors.push(error);
-            }
-            // Signature is declared twice.
-            if let Some(existing) = group.signature {
-                let error =
-                    IndexingError::SignatureConflict { existing, duplicate: declaration_index };
-                module_map.errors.push(error);
+    let mut equation_item_id = None;
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Newtype(group) = item {
+            if group.declaration.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
             } else {
-                group.signature = Some(declaration_index);
+                group.declaration = Some(declaration_id);
+                equation_item_id = Some(item_id);
             }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
         }
-        None => {
-            let name: SmolStr = name.into();
-            let group = DataTypeGroup { signature: Some(declaration_index), equation: None };
-            module_map.data.by_name.insert(name, group);
-        }
-    }
-}
-
-enum IndexDataEquation {
-    Newtype(cst::NewtypeEquation),
-    Data(cst::DataEquation),
-}
-
-fn index_data_type_equation(module_map: &mut FullIndexingResult, equation: IndexDataEquation) {
-    let (name_token, constructors, declaration) = match equation {
-        IndexDataEquation::Newtype(n) => {
-            (n.name_token(), n.data_constructors(), cst::Declaration::NewtypeEquation(n))
-        }
-        IndexDataEquation::Data(d) => {
-            (d.name_token(), d.data_constructors(), cst::Declaration::DataEquation(d))
-        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+        equation_item_id = Some(state.nominal.insert_type(name, TypeItem::Newtype(group)));
     };
 
-    let declaration_index = module_map.allocate_declaration(declaration);
-
-    let Some(name_token) = name_token else {
-        return;
-    };
-
-    let name = name_token.text();
-    let group_index = match module_map.data.by_name.get_full_mut(name) {
-        Some((group_index, _, group)) => {
-            if let Some(existing) = group.equation {
-                let error =
-                    IndexingError::DeclarationConflict { existing, duplicate: declaration_index };
-                module_map.errors.push(error);
-            } else {
-                group.equation = Some(declaration_index);
-            }
-            group_index
+    for data_constructor in data_constructors {
+        let constructor_id = index_data_constructor(state, data_constructor);
+        if let Some(equation_item_id) = equation_item_id {
+            state.relational.constructor_of.push((equation_item_id, constructor_id));
         }
-        None => {
-            let name: SmolStr = name.into();
-            let group = DataTypeGroup { signature: None, equation: Some(declaration_index) };
-            let (group_index, _) = module_map.data.by_name.insert_full(name, group);
-            group_index
-        }
-    };
-
-    for constructor in constructors {
-        let constructor_index = index_data_constructor(module_map, constructor);
-        module_map.data.constructor_of.insert(constructor_index, group_index);
     }
 }
 
 fn index_data_constructor(
-    module_map: &mut FullIndexingResult,
+    state: &mut IndexState,
     constructor: cst::DataConstructor,
 ) -> ConstructorId {
     let name_token = constructor.name_token();
+    let constructor_id = state.source_map.insert_constructor(&constructor);
 
-    let constructor_index = module_map.allocate_constructor(constructor);
+    let Some(name_token) = name_token else {
+        return constructor_id;
+    };
 
-    if let Some(name) = name_token {
-        let name = name.text();
-        match module_map.data.by_constructor.get_mut(name) {
-            Some(existing) => {
-                let error = IndexingError::ConstructorConflict {
-                    existing: *existing,
-                    duplicate: constructor_index,
-                };
-                module_map.errors.push(error);
-            }
-            None => {
-                let name: SmolStr = name.into();
-                module_map.data.by_constructor.insert(name, constructor_index);
-            }
-        }
+    let name = name_token.text();
+
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+        let duplicate = Duplicate::Constructor(constructor_id);
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        let item = ExprItem::Constructor(constructor_id);
+        state.nominal.insert_expr(name, item);
     }
 
-    constructor_index
+    constructor_id
+}
+
+fn index_data_signature(state: &mut IndexState, signature: cst::DataSignature) {
+    let name_token = signature.name_token();
+
+    let declaration = cst::Declaration::DataSignature(signature);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Data(group) = item {
+            if let Some(declaration) = group.declaration {
+                let signature = declaration_id;
+                state.errors.push(IndexingError::LateSignature { declaration, signature })
+            }
+            if group.signature.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+            } else {
+                group.signature = Some(declaration_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        state.nominal.insert_type(name, TypeItem::Data(group));
+    }
+}
+
+fn index_data_equation(state: &mut IndexState, equation: cst::DataEquation) {
+    let name_token = equation.name_token();
+    let data_constructors = equation.data_constructors();
+
+    let declaration = cst::Declaration::DataEquation(equation);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    let mut equation_item_id = None;
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let TypeItem::Data(group) = item {
+            if group.declaration.is_some() {
+                let duplicate = Duplicate::Declaration(declaration_id);
+                state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+            } else {
+                group.declaration = Some(declaration_id);
+                equation_item_id = Some(item_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+        equation_item_id = Some(state.nominal.insert_type(name, TypeItem::Data(group)));
+    };
+
+    for data_constructor in data_constructors {
+        let constructor_id = index_data_constructor(state, data_constructor);
+        if let Some(equation_item_id) = equation_item_id {
+            state.relational.constructor_of.push((equation_item_id, constructor_id));
+        }
+    }
 }

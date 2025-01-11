@@ -85,53 +85,6 @@ macro_rules! create_cst_enum {
     };
 }
 
-macro_rules! associated_declarations {
-    ($kind:ident where $statement_0:ident$(| $statement:ident)*) => {
-        paste::paste! {
-            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-            pub enum [<$kind Statement>] {
-                $statement_0(crate::cst::$statement_0),
-                $(
-                    $statement(crate::cst::$statement),
-                )*
-            }
-
-            impl rowan::ast::AstNode for [<$kind Statement>] {
-                type Language = crate::PureScript;
-
-                fn can_cast(kind: crate::SyntaxKind) -> bool
-                where
-                    Self: Sized,
-                {
-                    crate::cst::$statement_0::can_cast(kind) $(|| crate::cst::$statement::can_cast(kind))*
-                }
-
-                fn cast(node: crate::SyntaxNode) -> Option<Self>
-                where
-                    Self: Sized,
-                {
-                    if crate::cst::$statement_0::can_cast(node.kind()) {
-                        Some([<$kind Statement>]::$statement_0(crate::cst::$statement_0::cast(node)?))
-                    } $(else if crate::cst::$statement::can_cast(node.kind()) {
-                        Some([<$kind Statement>]::$statement(crate::cst::$statement::cast(node)?))
-                    })* else {
-                        None
-                    }
-                }
-
-                fn syntax(&self) -> &crate::SyntaxNode {
-                    match self {
-                        [<$kind Statement>]::$statement_0(t) => t.syntax(),
-                        $(
-                            [<$kind Statement>]::$statement(t) => t.syntax(),
-                        )*
-                    }
-                }
-            }
-        }
-    }
-}
-
 macro_rules! has_token {
     ($kind:ident $(|$name:ident() -> $token:ident)+) => {
         impl $kind {
