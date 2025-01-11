@@ -6,6 +6,7 @@ pub enum IndexingError {
     LateSignature { declaration: DeclarationId, signature: DeclarationId },
     DuplicateExprItem { item_id: ExprItemId, duplicate: Duplicate },
     DuplicateTypeItem { item_id: TypeItemId, duplicate: Duplicate },
+    InvalidRoleDeclaration { item_id: Option<TypeItemId>, declaration: DeclarationId, early: bool },
 }
 
 /// The kind of a duplicate item.

@@ -174,7 +174,9 @@ fn valid_module() {
         unreachable!()
     }
 
-    if let Some((_, TypeItem::Foreign(id))) = index.nominal.lookup_type_item("Unit") {
+    if let Some((_, TypeItem::Foreign(TypeGroupId { declaration: Some(id), .. }))) =
+        index.nominal.lookup_type_item("Unit")
+    {
         let ptr = index.source_map.declaration_ptr(*id).unwrap();
         let node = ptr.to_node(module.syntax());
 
@@ -455,5 +457,55 @@ fn data_is_duplicate() {
                 duplicate: Duplicate::Declaration(Id::from_raw(2)),
             }
         ]
+    );
+}
+
+#[test]
+fn early_type_role() {
+    let (_, index) = index(&[
+        "data AfterSignature :: Type -> Type",
+        "type role AfterSignature phantom",
+        "type role NonExistent phantom",
+    ]);
+
+    assert_eq!(
+        &index.errors,
+        &[
+            IndexingError::InvalidRoleDeclaration {
+                item_id: Some(Id::from_raw(0)),
+                declaration: Id::from_raw(1),
+                early: true
+            },
+            IndexingError::InvalidRoleDeclaration {
+                item_id: None,
+                declaration: Id::from_raw(2),
+                early: true
+            }
+        ]
+    );
+}
+
+#[test]
+fn invalid_type_role() {
+    let (_, index) = index(&["class Eq a", "type role Eq phantom"]);
+    assert_eq!(
+        &index.errors,
+        &[IndexingError::InvalidRoleDeclaration {
+            item_id: Some(Id::from_raw(0)),
+            declaration: Id::from_raw(1),
+            early: false
+        }]
+    );
+}
+
+#[test]
+fn duplicate_type_role() {
+    let (_, index) = index(&["data Id a = Id", "type role Id phantom", "type role Id phantom"]);
+    assert_eq!(
+        &index.errors,
+        &[IndexingError::DuplicateTypeItem {
+            item_id: Id::from_raw(0),
+            duplicate: Duplicate::Declaration(Id::from_raw(2)),
+        }]
     );
 }

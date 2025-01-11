@@ -7,6 +7,17 @@ use crate::{id::Id, ClassMemberId, ConstructorId, DeclarationId, InstanceId};
 pub struct TypeGroupId {
     pub signature: Option<DeclarationId>,
     pub declaration: Option<DeclarationId>,
+    pub role: Option<DeclarationId>,
+}
+
+impl TypeGroupId {
+    pub(crate) fn from_signature(id: DeclarationId) -> TypeGroupId {
+        TypeGroupId { signature: Some(id), declaration: None, role: None }
+    }
+
+    pub(crate) fn from_declaration(id: DeclarationId) -> TypeGroupId {
+        TypeGroupId { signature: None, declaration: Some(id), role: None }
+    }
 }
 
 /// A group of value signature and equations.
@@ -37,7 +48,7 @@ pub enum TypeItem {
     Data(TypeGroupId),
     Newtype(TypeGroupId),
     Synonym(TypeGroupId),
-    Foreign(DeclarationId),
+    Foreign(TypeGroupId),
 }
 
 /// Mapping from names to module items.

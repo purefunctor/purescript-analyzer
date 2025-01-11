@@ -26,7 +26,7 @@ fn index_declaration(state: &mut IndexState, declaration: cst::Declaration) {
         cst::Declaration::ValueSignature(s) => index_value_signature(state, s),
         cst::Declaration::ValueEquation(e) => index_value_equation(state, e),
         cst::Declaration::InfixDeclaration(_) => todo!(),
-        cst::Declaration::TypeRoleDeclaration(_) => todo!(),
+        cst::Declaration::TypeRoleDeclaration(r) => index_type_role(state, r),
         cst::Declaration::ClassSignature(s) => index_class_signature(state, s),
         cst::Declaration::ClassDeclaration(d) => index_class_declaration(state, d),
         cst::Declaration::InstanceChain(c) => index_instance_chain(state, c),
@@ -97,6 +97,49 @@ fn index_value_equation(state: &mut IndexState, equation: cst::ValueEquation) {
     }
 }
 
+fn index_type_role(state: &mut IndexState, role: cst::TypeRoleDeclaration) {
+    let name_token = role.name_token();
+
+    let declaration = cst::Declaration::TypeRoleDeclaration(role);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        match item {
+            TypeItem::Class(_) | TypeItem::Synonym(_) => {
+                state.errors.push(IndexingError::InvalidRoleDeclaration {
+                    item_id: Some(item_id),
+                    declaration: declaration_id,
+                    early: false,
+                });
+            }
+            TypeItem::Data(group) | TypeItem::Newtype(group) | TypeItem::Foreign(group) => {
+                if group.declaration.is_none() {
+                    state.errors.push(IndexingError::InvalidRoleDeclaration {
+                        item_id: Some(item_id),
+                        declaration: declaration_id,
+                        early: true,
+                    });
+                }
+                if group.role.is_some() {
+                    let duplicate = Duplicate::Declaration(declaration_id);
+                    state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+                } else {
+                    group.role = Some(declaration_id);
+                }
+            }
+        };
+    } else {
+        state.errors.push(IndexingError::InvalidRoleDeclaration {
+            item_id: None,
+            declaration: declaration_id,
+            early: true,
+        });
+    }
+}
+
 fn index_class_signature(state: &mut IndexState, signature: cst::ClassSignature) {
     let name_token = signature.name_token();
 
@@ -124,7 +167,7 @@ fn index_class_signature(state: &mut IndexState, signature: cst::ClassSignature)
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        let group = TypeGroupId::from_signature(declaration_id);
         state.nominal.insert_type(name, TypeItem::Class(group));
     }
 }
@@ -154,7 +197,7 @@ fn index_class_declaration(state: &mut IndexState, declaration: cst::ClassDeclar
             }
         } else {
             let name: SmolStr = name.into();
-            let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+            let group = TypeGroupId::from_declaration(declaration_id);
             class_item_id = Some(state.nominal.insert_type(name, TypeItem::Class(group)));
         }
     }
@@ -251,7 +294,7 @@ fn index_synonym_signature(state: &mut IndexState, signature: cst::TypeSynonymSi
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        let group = TypeGroupId::from_signature(declaration_id);
         state.nominal.insert_type(name, TypeItem::Synonym(group));
     }
 }
@@ -279,7 +322,7 @@ fn index_synonym_equation(state: &mut IndexState, equation: cst::TypeSynonymEqua
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+        let group = TypeGroupId::from_declaration(declaration_id);
         state.nominal.insert_type(name, TypeItem::Synonym(group));
     }
 }
@@ -298,7 +341,8 @@ fn index_foreign_data(state: &mut IndexState, foreign: cst::ForeignImportDataDec
         state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
     } else {
         let name: SmolStr = name.into();
-        state.nominal.insert_type(name, TypeItem::Foreign(declaration_id));
+        let group = TypeGroupId::from_declaration(declaration_id);
+        state.nominal.insert_type(name, TypeItem::Foreign(group));
     }
 }
 
@@ -347,7 +391,7 @@ fn index_newtype_signature(state: &mut IndexState, signature: cst::NewtypeSignat
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        let group = TypeGroupId::from_signature(declaration_id);
         state.nominal.insert_type(name, TypeItem::Newtype(group));
     }
 }
@@ -378,7 +422,7 @@ fn index_newtype_equation(state: &mut IndexState, equation: cst::NewtypeEquation
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+        let group = TypeGroupId::from_declaration(declaration_id);
         equation_item_id = Some(state.nominal.insert_type(name, TypeItem::Newtype(group)));
     };
 
@@ -442,7 +486,7 @@ fn index_data_signature(state: &mut IndexState, signature: cst::DataSignature) {
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: Some(declaration_id), declaration: None };
+        let group = TypeGroupId::from_signature(declaration_id);
         state.nominal.insert_type(name, TypeItem::Data(group));
     }
 }
@@ -473,7 +517,7 @@ fn index_data_equation(state: &mut IndexState, equation: cst::DataEquation) {
         }
     } else {
         let name: SmolStr = name.into();
-        let group = TypeGroupId { signature: None, declaration: Some(declaration_id) };
+        let group = TypeGroupId::from_declaration(declaration_id);
         equation_item_id = Some(state.nominal.insert_type(name, TypeItem::Data(group)));
     };
 
