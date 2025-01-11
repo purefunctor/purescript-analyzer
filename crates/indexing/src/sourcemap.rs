@@ -17,6 +17,9 @@ pub type ClassMemberPtr = AstPtr<cst::ClassMemberStatement>;
 pub type InstanceId = Id<cst::InstanceDeclaration>;
 pub type InstancePtr = AstPtr<cst::InstanceDeclaration>;
 
+pub type InstanceMemberId = Id<cst::InstanceMemberStatement>;
+pub type InstanceMemberPtr = AstPtr<cst::InstanceMemberStatement>;
+
 /// Mapping from module items to stable IDs.
 ///
 /// The `SourceMap` derives stable [`Id`] values from [`AstPtr`] in the CST.
@@ -61,23 +64,26 @@ pub type InstancePtr = AstPtr<cst::InstanceDeclaration>;
 /// implementation works well enough for the general case.
 #[derive(Debug, Default)]
 pub struct SourceMap {
-    declaration: IndexSet<DeclarationPtr, FxBuildHasher>,
-    constructor: IndexSet<ConstructorPtr, FxBuildHasher>,
-    class_member: IndexSet<ClassMemberPtr, FxBuildHasher>,
-    instance: IndexSet<InstancePtr, FxBuildHasher>,
+    declaration: FxIndexSet<DeclarationPtr>,
+    constructor: FxIndexSet<ConstructorPtr>,
+    class_member: FxIndexSet<ClassMemberPtr>,
+    instance: FxIndexSet<InstancePtr>,
+    instance_member: FxIndexSet<InstanceMemberPtr>,
 }
 
-fn insert<T: AstNode>(m: &mut IndexSet<AstPtr<T>, FxBuildHasher>, k: &T) -> Id<T> {
+type FxIndexSet<T> = IndexSet<T, FxBuildHasher>;
+
+fn insert<T: AstNode>(m: &mut FxIndexSet<AstPtr<T>>, k: &T) -> Id<T> {
     let pointer = AstPtr::new(k);
     let index = m.insert_full(pointer).0;
     Id::from_raw(index)
 }
 
-fn ptr<T: AstNode>(m: &IndexSet<AstPtr<T>, FxBuildHasher>, id: Id<T>) -> Option<AstPtr<T>> {
+fn ptr<T: AstNode>(m: &FxIndexSet<AstPtr<T>>, id: Id<T>) -> Option<AstPtr<T>> {
     m.get_index(id.index).cloned()
 }
 
-fn id<T: AstNode>(m: &IndexSet<AstPtr<T>, FxBuildHasher>, ptr: AstPtr<T>) -> Option<Id<T>> {
+fn id<T: AstNode>(m: &FxIndexSet<AstPtr<T>>, ptr: AstPtr<T>) -> Option<Id<T>> {
     let index = m.get_full(&ptr)?.0;
     Some(Id::from_raw(index))
 }
@@ -103,6 +109,13 @@ impl SourceMap {
 
     pub(crate) fn insert_instance(&mut self, instance: &cst::InstanceDeclaration) -> InstanceId {
         insert(&mut self.instance, instance)
+    }
+
+    pub(crate) fn insert_instance_member(
+        &mut self,
+        instance_member: &cst::InstanceMemberStatement,
+    ) -> InstanceMemberId {
+        insert(&mut self.instance_member, instance_member)
     }
 }
 
@@ -137,5 +150,13 @@ impl SourceMap {
 
     pub fn instance_id(&self, ptr: InstancePtr) -> Option<InstanceId> {
         id(&self.instance, ptr)
+    }
+
+    pub fn instance_member_ptr(&self, id: InstanceMemberId) -> Option<InstanceMemberPtr> {
+        ptr(&self.instance_member, id)
+    }
+
+    pub fn instance_member_id(&self, ptr: InstanceMemberPtr) -> Option<InstanceMemberId> {
+        id(&self.instance_member, ptr)
     }
 }

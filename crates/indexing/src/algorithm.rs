@@ -267,10 +267,11 @@ fn index_instance_chain(state: &mut IndexState, chain: cst::InstanceChain) {
     let instance_declarations = chain.instance_declarations();
 
     let declaration = cst::Declaration::InstanceChain(chain);
-    let _ = state.source_map.insert_declaration(&declaration);
+    let chain_id = state.source_map.insert_declaration(&declaration);
 
     for instance_declaration in instance_declarations {
-        index_instance_declaration(state, instance_declaration);
+        let instance_id = index_instance_declaration(state, instance_declaration);
+        state.relational.instance_of.push((chain_id, instance_id));
     }
 }
 
@@ -279,6 +280,8 @@ fn index_instance_declaration(
     instance: cst::InstanceDeclaration,
 ) -> InstanceId {
     let instance_name = instance.instance_name();
+    let instance_statements = instance.instance_statements();
+
     let instance_id = state.source_map.insert_instance(&instance);
 
     if let Some(name_token) = instance_name.and_then(|i| i.name_token()) {
@@ -291,6 +294,12 @@ fn index_instance_declaration(
             let item = ExprItem::Instance(instance_id);
             state.nominal.insert_expr(name, item);
         }
+    }
+
+    let Some(instance_statements) = instance_statements else { return instance_id };
+    for instance_statement in instance_statements.children() {
+        let instance_member_id = state.source_map.insert_instance_member(&instance_statement);
+        state.relational.instance_member_of.push((instance_id, instance_member_id));
     }
 
     instance_id

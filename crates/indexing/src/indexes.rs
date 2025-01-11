@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 use smol_str::SmolStr;
 
-use crate::{id::Id, ClassMemberId, ConstructorId, DeclarationId, InstanceId};
+use crate::{id::Id, ClassMemberId, ConstructorId, DeclarationId, InstanceId, InstanceMemberId};
 
 /// A group of type signature and declaration.
 pub struct TypeGroupId {
@@ -181,6 +181,8 @@ impl NominalIndex {
 pub struct RelationalIndex {
     pub(crate) constructor_of: Vec<(TypeItemId, ConstructorId)>,
     pub(crate) method_of: Vec<(TypeItemId, ClassMemberId)>,
+    pub(crate) instance_of: Vec<(DeclarationId, InstanceId)>,
+    pub(crate) instance_member_of: Vec<(InstanceId, InstanceMemberId)>,
 }
 
 fn find_t<T, U>(haystack: &[(Id<T>, Id<U>)], needle: Id<U>) -> Option<Id<T>> {
