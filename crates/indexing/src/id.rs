@@ -1,4 +1,4 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::{cmp, fmt::Debug, marker::PhantomData};
 
 /// An index associated with a type.
 pub struct Id<T> {
@@ -27,6 +27,18 @@ impl<T> PartialEq for Id<T> {
 }
 
 impl<T> Eq for Id<T> {}
+
+impl<T> PartialOrd for Id<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T> Ord for Id<T> {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.index.cmp(&other.index)
+    }
+}
 
 impl<T> Id<T> {
     pub fn from_raw(index: usize) -> Id<T> {

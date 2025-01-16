@@ -21,10 +21,20 @@ impl TypeGroupId {
 }
 
 /// A group of value signature and equations.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ValueGroupId {
     pub signature: Option<DeclarationId>,
     pub equations: Vec<DeclarationId>,
+}
+
+impl ValueGroupId {
+    pub(crate) fn from_signature(id: DeclarationId) -> ValueGroupId {
+        ValueGroupId { signature: Some(id), equations: Vec::new() }
+    }
+
+    pub(crate) fn from_equation(id: DeclarationId) -> ValueGroupId {
+        ValueGroupId { signature: None, equations: vec![id] }
+    }
 }
 
 pub type ExprItemId = Id<ExprItem>;
