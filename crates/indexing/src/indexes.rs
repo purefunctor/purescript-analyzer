@@ -4,6 +4,7 @@ use smol_str::SmolStr;
 use crate::{id::Id, ClassMemberId, ConstructorId, DeclarationId, InstanceId, InstanceMemberId};
 
 /// A group of type signature and declaration.
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct TypeGroupId {
     pub signature: Option<DeclarationId>,
     pub declaration: Option<DeclarationId>,

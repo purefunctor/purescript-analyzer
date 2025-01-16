@@ -1,7 +1,7 @@
 use std::mem;
 
 use smol_str::SmolStr;
-use syntax::cst;
+use syntax::cst::{self, Type};
 
 use crate::{
     DeclarationId, Duplicate, ExprItem, FullIndexingResult, IndexingError, NominalIndex,
@@ -80,35 +80,34 @@ impl From<State> for FullIndexingResult {
 }
 
 enum CurrentGroup {
-    Class(TypeGroupId),
-    Data(TypeGroupId),
-    Newtype(TypeGroupId),
-    Synonym(TypeGroupId),
-    Value(ValueGroupId),
+    Type { kind: TypeGroupKind, group: TypeGroupId },
+    Value { group: ValueGroupId },
+}
+
+#[derive(PartialEq, Eq)]
+enum TypeGroupKind {
+    Class,
+    Data,
+    Newtype,
+    Synonym,
 }
 
 impl State {
     fn insert_group(&mut self, name: SmolStr, group: CurrentGroup) {
         match group {
-            CurrentGroup::Class(g) => {
-                g.check_for_errors(&mut self.errors);
-                self.nominal.insert_type(name, TypeItem::Class(g));
+            CurrentGroup::Type { kind, group } => {
+                group.check_for_errors(&mut self.errors);
+                let group = match kind {
+                    TypeGroupKind::Class => TypeItem::Class(group),
+                    TypeGroupKind::Data => TypeItem::Data(group),
+                    TypeGroupKind::Newtype => TypeItem::Newtype(group),
+                    TypeGroupKind::Synonym => TypeItem::Synonym(group),
+                };
+                self.nominal.insert_type(name, group);
             }
-            CurrentGroup::Data(g) => {
-                g.check_for_errors(&mut self.errors);
-                self.nominal.insert_type(name, TypeItem::Data(g));
-            }
-            CurrentGroup::Newtype(g) => {
-                g.check_for_errors(&mut self.errors);
-                self.nominal.insert_type(name, TypeItem::Newtype(g));
-            }
-            CurrentGroup::Synonym(g) => {
-                g.check_for_errors(&mut self.errors);
-                self.nominal.insert_type(name, TypeItem::Synonym(g));
-            }
-            CurrentGroup::Value(g) => {
-                g.check_for_errors(&mut self.errors);
-                self.nominal.insert_expr(name, ExprItem::Value(g));
+            CurrentGroup::Value { group } => {
+                group.check_for_errors(&mut self.errors);
+                self.nominal.insert_expr(name, ExprItem::Value(group));
             }
         }
     }
@@ -119,11 +118,17 @@ impl State {
         true
     }
 
+    fn check_duplicate_type(&mut self, name: &str, duplicate: Duplicate) -> bool {
+        let Some((item_id, _)) = self.nominal.lookup_type_item(name) else { return false };
+        self.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        true
+    }
+
     fn with_value_group(&mut self, name: &str, f: impl FnOnce(&mut State, &mut ValueGroupId)) {
         // If the current group is a value group with the same name, take it;
         // Otherwise, create a new value group and insert the previous group.
-        let (name, mut value_group) = match mem::take(&mut self.current_group) {
-            Some((n, CurrentGroup::Value(g))) if n == name => (n, g),
+        let (name, mut group) = match mem::take(&mut self.current_group) {
+            Some((n, CurrentGroup::Value { group: g })) if n == name => (n, g),
             current_group => {
                 if let Some((n, g)) = current_group {
                     self.insert_group(n, g);
@@ -133,10 +138,29 @@ impl State {
         };
         // The logic above allows us to write logic over &mut ValueGroupId,
         // rather than having to match over the current Option<CurrentGroup>.
-        f(self, &mut value_group);
+        f(self, &mut group);
         // Finally, we either return the existing group that we took or
         // introduce the new value group that we created to the state.
-        self.current_group = Some((name, CurrentGroup::Value(value_group)));
+        self.current_group = Some((name, CurrentGroup::Value { group }));
+    }
+
+    fn with_type_group(
+        &mut self,
+        name: &str,
+        kind: TypeGroupKind,
+        f: impl FnOnce(&mut State, &mut TypeGroupId),
+    ) {
+        let (name, mut group) = match mem::take(&mut self.current_group) {
+            Some((n, CurrentGroup::Type { kind: k, group: g })) if n == name && k == kind => (n, g),
+            current_group => {
+                if let Some((n, g)) = current_group {
+                    self.insert_group(n, g);
+                }
+                (name.into(), TypeGroupId::default())
+            }
+        };
+        f(self, &mut group);
+        self.current_group = Some((name, CurrentGroup::Type { kind, group }));
     }
 
     fn value_signature(&mut self, name: &str, id: DeclarationId) {
@@ -158,6 +182,32 @@ impl State {
         }
         self.with_value_group(name, |_, group| {
             group.equations.push(id);
+        });
+    }
+
+    fn synonym_signature(&mut self, name: &str, id: DeclarationId) {
+        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
+            return;
+        }
+        self.with_type_group(name, TypeGroupKind::Synonym, |state, group| {
+            if let Some(signature) = group.signature {
+                state.errors.push(IndexingError::DuplicateSignature { signature });
+            } else {
+                group.signature = Some(id);
+            }
+        });
+    }
+
+    fn synonym_equation(&mut self, name: &str, id: DeclarationId) {
+        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
+            return;
+        }
+        self.with_type_group(name, TypeGroupKind::Synonym, |state, group| {
+            if let Some(declaration) = group.declaration {
+                state.errors.push(IndexingError::DuplicateDeclaration { declaration });
+            } else {
+                group.declaration = Some(id);
+            }
         });
     }
 }
@@ -183,8 +233,8 @@ fn index_statement(state: &mut State, declaration: cst::Declaration) {
         cst::Declaration::InfixDeclaration(i) => todo!(),
         cst::Declaration::TypeRoleDeclaration(r) => todo!(),
         cst::Declaration::InstanceChain(i) => todo!(),
-        cst::Declaration::TypeSynonymSignature(s) => todo!(),
-        cst::Declaration::TypeSynonymEquation(e) => todo!(),
+        cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(state, s),
+        cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(state, e),
         cst::Declaration::ClassSignature(s) => todo!(),
         cst::Declaration::ClassDeclaration(e) => todo!(),
         cst::Declaration::ForeignImportDataDeclaration(d) => todo!(),
@@ -197,10 +247,10 @@ fn index_statement(state: &mut State, declaration: cst::Declaration) {
     }
 }
 
-fn index_value_signature(state: &mut State, declaration: cst::ValueSignature) {
-    let name_token = declaration.name_token();
+fn index_value_signature(state: &mut State, signature: cst::ValueSignature) {
+    let name_token = signature.name_token();
 
-    let declaration = cst::Declaration::ValueSignature(declaration);
+    let declaration = cst::Declaration::ValueSignature(signature);
     let declaration_id = state.source_map.insert_declaration(&declaration);
 
     let Some(name_token) = name_token else { return };
@@ -219,6 +269,30 @@ fn index_value_equation(state: &mut State, equation: cst::ValueEquation) {
     let name = name_token.text();
 
     state.value_equation(name, declaration_id);
+}
+
+fn index_synonym_signature(state: &mut State, signature: cst::TypeSynonymSignature) {
+    let name_token = signature.name_token();
+
+    let declaration = cst::Declaration::TypeSynonymSignature(signature);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    state.synonym_signature(name, declaration_id);
+}
+
+fn index_synonym_equation(state: &mut State, equation: cst::TypeSynonymEquation) {
+    let name_token = equation.name_token();
+
+    let declaration = cst::Declaration::TypeSynonymEquation(equation);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    state.synonym_equation(name, declaration_id);
 }
 
 // endregion: Traversals

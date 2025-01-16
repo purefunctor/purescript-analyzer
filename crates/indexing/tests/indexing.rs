@@ -1,4 +1,4 @@
-use indexing::{ExprItem, FullIndexingResult, Id, IndexingError, ValueGroupId};
+use indexing::{ExprItem, FullIndexingResult, Id, IndexingError, TypeItem, ValueGroupId};
 use rowan::ast::AstNode;
 use syntax::cst;
 
@@ -61,5 +61,38 @@ fn early_value_declarations() {
 #[test]
 fn empty_value_signature() {
     let (_, index) = index(&["life :: Int"]);
+    assert_eq!(&index.errors[..], &[IndexingError::EmptySignature { signature: Id::from_raw(0) }])
+}
+
+#[test]
+fn synonym_declarations() {
+    let (_, index) = index(&[
+        "type Id :: Type",
+        "type Id = Int",
+        "type Const :: Type -> Type -> Type",
+        "type Const a b = a",
+    ]);
+
+    assert!(index.errors.is_empty());
+
+    assert!(matches!(index.nominal.lookup_type_item("Id"), Some((_, TypeItem::Synonym(_)))));
+    assert!(matches!(index.nominal.lookup_type_item("Const"), Some((_, TypeItem::Synonym(_)))));
+}
+
+#[test]
+fn early_synonym_declaration() {
+    let (_, index) = index(&["type Id = Int", "type Id :: Type"]);
+    assert_eq!(
+        &index.errors[..],
+        &[IndexingError::EarlyDeclaration {
+            declaration: Id::from_raw(0),
+            signature: Id::from_raw(1)
+        }]
+    )
+}
+
+#[test]
+fn empty_synonym_signature() {
+    let (_, index) = index(&["type Id :: Type"]);
     assert_eq!(&index.errors[..], &[IndexingError::EmptySignature { signature: Id::from_raw(0) }])
 }
