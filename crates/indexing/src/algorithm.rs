@@ -4,8 +4,8 @@ use smol_str::SmolStr;
 use syntax::cst::{self, Type};
 
 use crate::{
-    DeclarationId, Duplicate, ExprItem, FullIndexingResult, IndexingError, NominalIndex,
-    RelationalIndex, SourceMap, TypeGroupId, TypeItem, ValueGroupId,
+    ClassMemberId, DeclarationId, Duplicate, ExprItem, FullIndexingResult, IndexingError,
+    NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, ValueGroupId,
 };
 
 impl ValueGroupId {
@@ -210,6 +210,41 @@ impl State {
             }
         });
     }
+
+    fn class_signature(&mut self, name: &str, id: DeclarationId) {
+        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
+            return;
+        }
+        self.with_type_group(name, TypeGroupKind::Class, |state, group| {
+            if let Some(signature) = group.signature {
+                state.errors.push(IndexingError::DuplicateSignature { signature });
+            } else {
+                group.signature = Some(id);
+            }
+        });
+    }
+
+    fn class_declaration(&mut self, name: &str, id: DeclarationId) {
+        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
+            return;
+        }
+        self.with_type_group(name, TypeGroupKind::Class, |state, group| {
+            if let Some(declaration) = group.declaration {
+                state.errors.push(IndexingError::DuplicateDeclaration { declaration });
+            } else {
+                group.declaration = Some(id);
+            }
+        });
+    }
+
+    fn class_member(&mut self, name: &str, id: ClassMemberId) {
+        if self.check_duplicate_expr(name, Duplicate::ClassMember(id)) {
+            return;
+        }
+        let name = name.into();
+        let item = ExprItem::Method(id);
+        self.nominal.insert_expr(name, item);
+    }
 }
 
 // endregion: State
@@ -235,8 +270,8 @@ fn index_statement(state: &mut State, declaration: cst::Declaration) {
         cst::Declaration::InstanceChain(i) => todo!(),
         cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(state, s),
         cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(state, e),
-        cst::Declaration::ClassSignature(s) => todo!(),
-        cst::Declaration::ClassDeclaration(e) => todo!(),
+        cst::Declaration::ClassSignature(s) => index_class_signature(state, s),
+        cst::Declaration::ClassDeclaration(d) => index_class_declaration(state, d),
         cst::Declaration::ForeignImportDataDeclaration(d) => todo!(),
         cst::Declaration::ForeignImportValueDeclaration(v) => todo!(),
         cst::Declaration::NewtypeSignature(s) => todo!(),
@@ -293,6 +328,49 @@ fn index_synonym_equation(state: &mut State, equation: cst::TypeSynonymEquation)
     let name = name_token.text();
 
     state.synonym_equation(name, declaration_id);
+}
+
+fn index_class_signature(state: &mut State, signature: cst::ClassSignature) {
+    let name_token = signature.name_token();
+
+    let declaration = cst::Declaration::ClassSignature(signature);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    state.class_signature(name, declaration_id);
+}
+
+fn index_class_declaration(state: &mut State, declaration: cst::ClassDeclaration) {
+    let class_head = declaration.class_head();
+    let class_statements = declaration.class_statements();
+
+    let declaration = cst::Declaration::ClassDeclaration(declaration);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    if let Some(class_head) = class_head {
+        if let Some(name_token) = class_head.name_token() {
+            let name = name_token.text();
+            state.class_declaration(name, declaration_id);
+        }
+    }
+
+    if let Some(class_statements) = class_statements {
+        for class_member in class_statements.children() {
+            index_class_member(state, class_member);
+        }
+    }
+}
+
+fn index_class_member(state: &mut State, member: cst::ClassMemberStatement) {
+    let name_token = member.name_token();
+    let member_id = state.source_map.insert_class_member(&member);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    state.class_member(name, member_id);
 }
 
 // endregion: Traversals

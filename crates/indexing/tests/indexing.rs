@@ -1,4 +1,6 @@
-use indexing::{ExprItem, FullIndexingResult, Id, IndexingError, TypeItem, ValueGroupId};
+use indexing::{
+    Duplicate, ExprItem, FullIndexingResult, Id, IndexingError, TypeItem, ValueGroupId,
+};
 use rowan::ast::AstNode;
 use syntax::cst;
 
@@ -61,6 +63,7 @@ fn early_value_declarations() {
 #[test]
 fn empty_value_signature() {
     let (_, index) = index(&["life :: Int"]);
+
     assert_eq!(&index.errors[..], &[IndexingError::EmptySignature { signature: Id::from_raw(0) }])
 }
 
@@ -76,12 +79,14 @@ fn synonym_declarations() {
     assert!(index.errors.is_empty());
 
     assert!(matches!(index.nominal.lookup_type_item("Id"), Some((_, TypeItem::Synonym(_)))));
+
     assert!(matches!(index.nominal.lookup_type_item("Const"), Some((_, TypeItem::Synonym(_)))));
 }
 
 #[test]
 fn early_synonym_declaration() {
     let (_, index) = index(&["type Id = Int", "type Id :: Type"]);
+
     assert_eq!(
         &index.errors[..],
         &[IndexingError::EarlyDeclaration {
@@ -94,5 +99,55 @@ fn early_synonym_declaration() {
 #[test]
 fn empty_synonym_signature() {
     let (_, index) = index(&["type Id :: Type"]);
+
     assert_eq!(&index.errors[..], &[IndexingError::EmptySignature { signature: Id::from_raw(0) }])
+}
+
+#[test]
+fn class_declarations() {
+    let (_, index) =
+        index(&["class Eq :: Type -> Constraint", "class Eq a where", "  eq :: a -> a -> Bool"]);
+
+    assert!(index.errors.is_empty());
+
+    assert!(matches!(index.nominal.lookup_type_item("Eq"), Some((_, TypeItem::Class(_)))));
+
+    assert!(matches!(index.nominal.lookup_expr_item("eq"), Some((_, ExprItem::Method(_)))));
+}
+
+#[test]
+fn early_class_declaration() {
+    let (_, index) =
+        index(&["class Eq a where", "  eq :: a -> a -> Bool", "class Eq :: Type -> Constraint"]);
+
+    assert_eq!(
+        &index.errors[..],
+        &[IndexingError::EarlyDeclaration {
+            declaration: Id::from_raw(0),
+            signature: Id::from_raw(1)
+        }]
+    )
+}
+
+#[test]
+fn empty_class_signature() {
+    let (_, index) = index(&["class Eq :: Type -> Signature"]);
+
+    assert_eq!(&index.errors[..], &[IndexingError::EmptySignature { signature: Id::from_raw(0) }])
+}
+
+#[test]
+fn duplicate_class_member() {
+    let (_, index) =
+        index(&["class Eq a where", "  eq :: a -> a -> Bool", "  eq :: a -> a -> Bool"]);
+
+    assert!(matches!(index.nominal.lookup_expr_item("eq"), Some((_, ExprItem::Method(_)))));
+
+    assert_eq!(
+        &index.errors[..],
+        &[IndexingError::DuplicateExprItem {
+            item_id: Id::from_raw(0),
+            duplicate: Duplicate::ClassMember(Id::from_raw(1))
+        }]
+    )
 }
