@@ -1,284 +1,91 @@
-use std::mem;
-
+use rowan::ast::AstChildren;
 use smol_str::SmolStr;
-use syntax::cst::{self, Type};
+use syntax::cst;
 
 use crate::{
-    ClassMemberId, DeclarationId, Duplicate, ExprItem, FullIndexingResult, IndexingError,
-    NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, ValueGroupId,
+    ClassMemberId, ConstructorId, Duplicate, ExprItem, IndexingError, IndexingResult, InstanceId,
+    NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, TypeItemId, ValueGroupId,
 };
-
-impl ValueGroupId {
-    fn check_for_errors(&self, errors: &mut Vec<IndexingError>) {
-        debug_assert!(
-            self.signature.is_some() || !self.equations.is_empty(),
-            "Invalid ValueGroupId"
-        );
-        let Some(signature) = self.signature else { return };
-        if self.equations.is_empty() {
-            return errors.push(IndexingError::EmptySignature { signature });
-        }
-        // Invariant: IDs are allocated in order of appearance in the source code.
-        // Therefore, equations that have smaller IDs than the signature are invalid.
-        for declaration in self.equations.iter().filter(|&equation| signature > *equation).copied()
-        {
-            errors.push(IndexingError::EarlyDeclaration { declaration, signature });
-        }
-    }
-}
-
-impl TypeGroupId {
-    fn check_for_errors(&self, errors: &mut Vec<IndexingError>) {
-        debug_assert!(
-            self.signature.is_some() || self.declaration.is_some() || self.role.is_some(),
-            "Invalid TypeGroupId"
-        );
-        if let Some(signature) = self.signature {
-            if let Some(declaration) = self.declaration {
-                if signature > declaration {
-                    errors.push(IndexingError::EarlyDeclaration { declaration, signature });
-                }
-            } else {
-                errors.push(IndexingError::EmptySignature { signature });
-            }
-        }
-        if let Some(role) = self.role {
-            if let Some(declaration) = self.declaration {
-                if role < declaration {
-                    errors.push(IndexingError::EarlyRole { role });
-                }
-            } else {
-                errors.push(IndexingError::EmptyRole { role });
-            }
-        }
-    }
-}
-
-// region: State
 
 #[derive(Default)]
 struct State {
-    current_group: Option<(SmolStr, CurrentGroup)>,
     source_map: SourceMap,
     nominal: NominalIndex,
     relational: RelationalIndex,
     errors: Vec<IndexingError>,
 }
 
-impl From<State> for FullIndexingResult {
-    fn from(mut state: State) -> FullIndexingResult {
-        if let Some((name, group)) = mem::take(&mut state.current_group) {
-            state.insert_group(name, group);
-        }
-        FullIndexingResult {
-            source_map: state.source_map,
-            nominal: state.nominal,
-            relational: state.relational,
-            errors: state.errors,
-        }
-    }
-}
-
-enum CurrentGroup {
-    Type { kind: TypeGroupKind, group: TypeGroupId },
-    Value { group: ValueGroupId },
-}
-
-#[derive(PartialEq, Eq)]
-enum TypeGroupKind {
-    Class,
-    Data,
-    Newtype,
-    Synonym,
-}
-
-impl State {
-    fn insert_group(&mut self, name: SmolStr, group: CurrentGroup) {
-        match group {
-            CurrentGroup::Type { kind, group } => {
-                group.check_for_errors(&mut self.errors);
-                let group = match kind {
-                    TypeGroupKind::Class => TypeItem::Class(group),
-                    TypeGroupKind::Data => TypeItem::Data(group),
-                    TypeGroupKind::Newtype => TypeItem::Newtype(group),
-                    TypeGroupKind::Synonym => TypeItem::Synonym(group),
-                };
-                self.nominal.insert_type(name, group);
-            }
-            CurrentGroup::Value { group } => {
-                group.check_for_errors(&mut self.errors);
-                self.nominal.insert_expr(name, ExprItem::Value(group));
-            }
-        }
-    }
-
-    fn check_duplicate_expr(&mut self, name: &str, duplicate: Duplicate) -> bool {
-        let Some((item_id, _)) = self.nominal.lookup_expr_item(name) else { return false };
-        self.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
-        true
-    }
-
-    fn check_duplicate_type(&mut self, name: &str, duplicate: Duplicate) -> bool {
-        let Some((item_id, _)) = self.nominal.lookup_type_item(name) else { return false };
-        self.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
-        true
-    }
-
-    fn with_value_group(&mut self, name: &str, f: impl FnOnce(&mut State, &mut ValueGroupId)) {
-        // If the current group is a value group with the same name, take it;
-        // Otherwise, create a new value group and insert the previous group.
-        let (name, mut group) = match mem::take(&mut self.current_group) {
-            Some((n, CurrentGroup::Value { group: g })) if n == name => (n, g),
-            current_group => {
-                if let Some((n, g)) = current_group {
-                    self.insert_group(n, g);
-                }
-                (name.into(), ValueGroupId::default())
-            }
-        };
-        // The logic above allows us to write logic over &mut ValueGroupId,
-        // rather than having to match over the current Option<CurrentGroup>.
-        f(self, &mut group);
-        // Finally, we either return the existing group that we took or
-        // introduce the new value group that we created to the state.
-        self.current_group = Some((name, CurrentGroup::Value { group }));
-    }
-
-    fn with_type_group(
-        &mut self,
-        name: &str,
-        kind: TypeGroupKind,
-        f: impl FnOnce(&mut State, &mut TypeGroupId),
-    ) {
-        let (name, mut group) = match mem::take(&mut self.current_group) {
-            Some((n, CurrentGroup::Type { kind: k, group: g })) if n == name && k == kind => (n, g),
-            current_group => {
-                if let Some((n, g)) = current_group {
-                    self.insert_group(n, g);
-                }
-                (name.into(), TypeGroupId::default())
-            }
-        };
-        f(self, &mut group);
-        self.current_group = Some((name, CurrentGroup::Type { kind, group }));
-    }
-
-    fn value_signature(&mut self, name: &str, id: DeclarationId) {
-        if self.check_duplicate_expr(name, Duplicate::Declaration(id)) {
-            return;
-        }
-        self.with_value_group(name, |state, group| {
-            if let Some(signature) = group.signature {
-                state.errors.push(IndexingError::DuplicateSignature { signature });
-            } else {
-                group.signature = Some(id);
-            }
-        });
-    }
-
-    fn value_equation(&mut self, name: &str, id: DeclarationId) {
-        if self.check_duplicate_expr(name, Duplicate::Declaration(id)) {
-            return;
-        }
-        self.with_value_group(name, |_, group| {
-            group.equations.push(id);
-        });
-    }
-
-    fn synonym_signature(&mut self, name: &str, id: DeclarationId) {
-        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
-            return;
-        }
-        self.with_type_group(name, TypeGroupKind::Synonym, |state, group| {
-            if let Some(signature) = group.signature {
-                state.errors.push(IndexingError::DuplicateSignature { signature });
-            } else {
-                group.signature = Some(id);
-            }
-        });
-    }
-
-    fn synonym_equation(&mut self, name: &str, id: DeclarationId) {
-        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
-            return;
-        }
-        self.with_type_group(name, TypeGroupKind::Synonym, |state, group| {
-            if let Some(declaration) = group.declaration {
-                state.errors.push(IndexingError::DuplicateDeclaration { declaration });
-            } else {
-                group.declaration = Some(id);
-            }
-        });
-    }
-
-    fn class_signature(&mut self, name: &str, id: DeclarationId) {
-        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
-            return;
-        }
-        self.with_type_group(name, TypeGroupKind::Class, |state, group| {
-            if let Some(signature) = group.signature {
-                state.errors.push(IndexingError::DuplicateSignature { signature });
-            } else {
-                group.signature = Some(id);
-            }
-        });
-    }
-
-    fn class_declaration(&mut self, name: &str, id: DeclarationId) {
-        if self.check_duplicate_type(name, Duplicate::Declaration(id)) {
-            return;
-        }
-        self.with_type_group(name, TypeGroupKind::Class, |state, group| {
-            if let Some(declaration) = group.declaration {
-                state.errors.push(IndexingError::DuplicateDeclaration { declaration });
-            } else {
-                group.declaration = Some(id);
-            }
-        });
-    }
-
-    fn class_member(&mut self, name: &str, id: ClassMemberId) {
-        if self.check_duplicate_expr(name, Duplicate::ClassMember(id)) {
-            return;
-        }
-        let name = name.into();
-        let item = ExprItem::Method(id);
-        self.nominal.insert_expr(name, item);
-    }
-}
-
-// endregion: State
-
-// region: Traversals
-
-pub(super) fn index_module(module: &cst::Module) -> FullIndexingResult {
+pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<IndexingError>) {
     let mut state = State::default();
+
     if let Some(statements) = module.statements() {
         for statement in statements.children() {
             index_statement(&mut state, statement);
         }
     }
-    FullIndexingResult::from(state)
+
+    let State { source_map, nominal, relational, errors } = state;
+    let result = IndexingResult { source_map, nominal, relational };
+
+    (result, errors)
 }
 
 fn index_statement(state: &mut State, declaration: cst::Declaration) {
     match declaration {
-        cst::Declaration::ValueSignature(s) => index_value_signature(state, s),
-        cst::Declaration::ValueEquation(e) => index_value_equation(state, e),
-        cst::Declaration::InfixDeclaration(i) => todo!(),
-        cst::Declaration::TypeRoleDeclaration(r) => todo!(),
-        cst::Declaration::InstanceChain(i) => todo!(),
-        cst::Declaration::TypeSynonymSignature(s) => index_synonym_signature(state, s),
-        cst::Declaration::TypeSynonymEquation(e) => index_synonym_equation(state, e),
-        cst::Declaration::ClassSignature(s) => index_class_signature(state, s),
-        cst::Declaration::ClassDeclaration(d) => index_class_declaration(state, d),
-        cst::Declaration::ForeignImportDataDeclaration(d) => todo!(),
-        cst::Declaration::ForeignImportValueDeclaration(v) => todo!(),
-        cst::Declaration::NewtypeSignature(s) => todo!(),
-        cst::Declaration::NewtypeEquation(e) => todo!(),
-        cst::Declaration::DataSignature(s) => todo!(),
-        cst::Declaration::DataEquation(e) => todo!(),
-        cst::Declaration::DeriveDeclaration(d) => todo!(),
+        cst::Declaration::ValueSignature(s) => {
+            index_value_signature(state, s);
+        }
+        cst::Declaration::ValueEquation(e) => {
+            index_value_equation(state, e);
+        }
+        cst::Declaration::InfixDeclaration(i) => {
+            index_infix(state, i);
+        }
+        cst::Declaration::TypeRoleDeclaration(r) => {
+            index_type_role(state, r);
+        }
+        cst::Declaration::InstanceChain(c) => {
+            index_instance_chain(state, c);
+        }
+        cst::Declaration::TypeSynonymSignature(s) => {
+            index_type_signature(state, TypeSignature::Synonym(s));
+        }
+        cst::Declaration::TypeSynonymEquation(e) => {
+            index_type_declaration(state, TypeDeclaration::Synonym(e));
+        }
+        cst::Declaration::ClassSignature(s) => {
+            index_type_signature(state, TypeSignature::Class(s));
+        }
+        cst::Declaration::ClassDeclaration(d) => {
+            let statements = d.class_statements();
+            let item_id = index_type_declaration(state, TypeDeclaration::Class(d));
+            index_class_statements(state, item_id, statements);
+        }
+        cst::Declaration::ForeignImportDataDeclaration(f) => {
+            index_foreign_data(state, f);
+        }
+        cst::Declaration::ForeignImportValueDeclaration(f) => {
+            index_foreign_value(state, f);
+        }
+        cst::Declaration::NewtypeSignature(s) => {
+            index_type_signature(state, TypeSignature::Newtype(s));
+        }
+        cst::Declaration::NewtypeEquation(e) => {
+            let constructors = e.data_constructors();
+            let item_id = index_type_declaration(state, TypeDeclaration::Newtype(e));
+            index_data_constructors(state, item_id, constructors);
+        }
+        cst::Declaration::DataSignature(s) => {
+            index_type_signature(state, TypeSignature::Data(s));
+        }
+        cst::Declaration::DataEquation(e) => {
+            let constructors = e.data_constructors();
+            let item_id = index_type_declaration(state, TypeDeclaration::Data(e));
+            index_data_constructors(state, item_id, constructors);
+        }
+        cst::Declaration::DeriveDeclaration(d) => {
+            index_derive_declaration(state, d);
+        }
     }
 }
 
@@ -291,7 +98,22 @@ fn index_value_signature(state: &mut State, signature: cst::ValueSignature) {
     let Some(name_token) = name_token else { return };
     let name = name_token.text();
 
-    state.value_signature(name, declaration_id);
+    if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
+        if let ExprItem::Value(group) = item {
+            if let Some(signature) = group.signature {
+                state.errors.push(IndexingError::DuplicateSignature { signature });
+            } else {
+                group.signature = Some(declaration_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = ValueGroupId::from_signature(declaration_id);
+        state.nominal.insert_expr(name, ExprItem::Value(group));
+    }
 }
 
 fn index_value_equation(state: &mut State, equation: cst::ValueEquation) {
@@ -303,74 +125,426 @@ fn index_value_equation(state: &mut State, equation: cst::ValueEquation) {
     let Some(name_token) = name_token else { return };
     let name = name_token.text();
 
-    state.value_equation(name, declaration_id);
-}
-
-fn index_synonym_signature(state: &mut State, signature: cst::TypeSynonymSignature) {
-    let name_token = signature.name_token();
-
-    let declaration = cst::Declaration::TypeSynonymSignature(signature);
-    let declaration_id = state.source_map.insert_declaration(&declaration);
-
-    let Some(name_token) = name_token else { return };
-    let name = name_token.text();
-
-    state.synonym_signature(name, declaration_id);
-}
-
-fn index_synonym_equation(state: &mut State, equation: cst::TypeSynonymEquation) {
-    let name_token = equation.name_token();
-
-    let declaration = cst::Declaration::TypeSynonymEquation(equation);
-    let declaration_id = state.source_map.insert_declaration(&declaration);
-
-    let Some(name_token) = name_token else { return };
-    let name = name_token.text();
-
-    state.synonym_equation(name, declaration_id);
-}
-
-fn index_class_signature(state: &mut State, signature: cst::ClassSignature) {
-    let name_token = signature.name_token();
-
-    let declaration = cst::Declaration::ClassSignature(signature);
-    let declaration_id = state.source_map.insert_declaration(&declaration);
-
-    let Some(name_token) = name_token else { return };
-    let name = name_token.text();
-
-    state.class_signature(name, declaration_id);
-}
-
-fn index_class_declaration(state: &mut State, declaration: cst::ClassDeclaration) {
-    let class_head = declaration.class_head();
-    let class_statements = declaration.class_statements();
-
-    let declaration = cst::Declaration::ClassDeclaration(declaration);
-    let declaration_id = state.source_map.insert_declaration(&declaration);
-
-    if let Some(class_head) = class_head {
-        if let Some(name_token) = class_head.name_token() {
-            let name = name_token.text();
-            state.class_declaration(name, declaration_id);
+    if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
+        if let ExprItem::Value(group) = item {
+            group.equations.push(declaration_id);
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
         }
-    }
-
-    if let Some(class_statements) = class_statements {
-        for class_member in class_statements.children() {
-            index_class_member(state, class_member);
-        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = ValueGroupId::from_equation(declaration_id);
+        state.nominal.insert_expr(name, ExprItem::Value(group));
     }
 }
 
-fn index_class_member(state: &mut State, member: cst::ClassMemberStatement) {
+impl TypeItem {
+    fn role_group(&mut self) -> Option<&mut TypeGroupId> {
+        match self {
+            TypeItem::Data(g) => Some(g),
+            TypeItem::Newtype(g) => Some(g),
+            TypeItem::Foreign(g) => Some(g),
+            _ => None,
+        }
+    }
+
+    fn class_group(&mut self) -> Option<&mut TypeGroupId> {
+        if let TypeItem::Class(g) = self {
+            Some(g)
+        } else {
+            None
+        }
+    }
+
+    fn class_item(g: TypeGroupId) -> TypeItem {
+        TypeItem::Class(g)
+    }
+
+    fn data_group(&mut self) -> Option<&mut TypeGroupId> {
+        if let TypeItem::Data(g) = self {
+            Some(g)
+        } else {
+            None
+        }
+    }
+
+    fn data_item(g: TypeGroupId) -> TypeItem {
+        TypeItem::Data(g)
+    }
+
+    fn newtype_group(&mut self) -> Option<&mut TypeGroupId> {
+        if let TypeItem::Newtype(g) = self {
+            Some(g)
+        } else {
+            None
+        }
+    }
+
+    fn newtype_item(g: TypeGroupId) -> TypeItem {
+        TypeItem::Newtype(g)
+    }
+
+    fn synonym_group(&mut self) -> Option<&mut TypeGroupId> {
+        if let TypeItem::Synonym(g) = self {
+            Some(g)
+        } else {
+            None
+        }
+    }
+
+    fn synonym_item(g: TypeGroupId) -> TypeItem {
+        TypeItem::Synonym(g)
+    }
+}
+
+enum TypeSignature {
+    Class(cst::ClassSignature),
+    Data(cst::DataSignature),
+    Newtype(cst::NewtypeSignature),
+    Synonym(cst::TypeSynonymSignature),
+}
+
+fn index_type_signature(state: &mut State, signature: TypeSignature) {
+    type TypeItemGroupFn = fn(&mut TypeItem) -> Option<&mut TypeGroupId>;
+    type MakeTypeItemFn = fn(TypeGroupId) -> TypeItem;
+
+    let (name_token, declaration, item_fn, make_fn) = match signature {
+        TypeSignature::Class(s) => (
+            s.name_token(),
+            cst::Declaration::ClassSignature(s),
+            TypeItem::class_group as TypeItemGroupFn,
+            TypeItem::class_item as MakeTypeItemFn,
+        ),
+        TypeSignature::Data(s) => (
+            s.name_token(),
+            cst::Declaration::DataSignature(s),
+            TypeItem::data_group as TypeItemGroupFn,
+            TypeItem::data_item as MakeTypeItemFn,
+        ),
+        TypeSignature::Newtype(s) => (
+            s.name_token(),
+            cst::Declaration::NewtypeSignature(s),
+            TypeItem::newtype_group as TypeItemGroupFn,
+            TypeItem::newtype_item as MakeTypeItemFn,
+        ),
+        TypeSignature::Synonym(s) => (
+            s.name_token(),
+            cst::Declaration::TypeSynonymSignature(s),
+            TypeItem::synonym_group as TypeItemGroupFn,
+            TypeItem::synonym_item as MakeTypeItemFn,
+        ),
+    };
+
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        if let Some(group) = item_fn(item) {
+            if let Some(signature) = group.signature {
+                state.errors.push(IndexingError::DuplicateSignature { signature });
+            } else {
+                group.signature = Some(declaration_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId::from_signature(declaration_id);
+        state.nominal.insert_type(name, make_fn(group));
+    }
+}
+
+enum TypeDeclaration {
+    Class(cst::ClassDeclaration),
+    Data(cst::DataEquation),
+    Newtype(cst::NewtypeEquation),
+    Synonym(cst::TypeSynonymEquation),
+}
+
+fn index_type_declaration(state: &mut State, declaration: TypeDeclaration) -> Option<TypeItemId> {
+    type TypeItemGroupFn = fn(&mut TypeItem) -> Option<&mut TypeGroupId>;
+    type MakeTypeItemFn = fn(TypeGroupId) -> TypeItem;
+
+    let (name_token, declaration, item_fn, make_fn) = match declaration {
+        TypeDeclaration::Class(d) => (
+            d.class_head().and_then(|h| h.name_token()),
+            cst::Declaration::ClassDeclaration(d),
+            TypeItem::class_group as TypeItemGroupFn,
+            TypeItem::class_item as MakeTypeItemFn,
+        ),
+        TypeDeclaration::Data(e) => (
+            e.name_token(),
+            cst::Declaration::DataEquation(e),
+            TypeItem::data_group as TypeItemGroupFn,
+            TypeItem::data_item as MakeTypeItemFn,
+        ),
+        TypeDeclaration::Newtype(e) => (
+            e.name_token(),
+            cst::Declaration::NewtypeEquation(e),
+            TypeItem::newtype_group as TypeItemGroupFn,
+            TypeItem::newtype_item as MakeTypeItemFn,
+        ),
+        TypeDeclaration::Synonym(e) => (
+            e.name_token(),
+            cst::Declaration::TypeSynonymEquation(e),
+            TypeItem::synonym_group as TypeItemGroupFn,
+            TypeItem::synonym_item as MakeTypeItemFn,
+        ),
+    };
+
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+    let name_token = name_token?;
+
+    let name = name_token.text();
+    let type_item_id;
+
+    if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
+        type_item_id = Some(item_id);
+        if let Some(group) = item_fn(item) {
+            if let Some(declaration) = group.declaration {
+                state.errors.push(IndexingError::DuplicateDeclaration { declaration });
+            } else {
+                group.declaration = Some(declaration_id);
+            }
+        } else {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        }
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId::from_declaration(declaration_id);
+
+        let item_id = state.nominal.insert_type(name, make_fn(group));
+        type_item_id = Some(item_id);
+    }
+
+    type_item_id
+}
+
+fn index_type_role(state: &mut State, role: cst::TypeRoleDeclaration) {
+    let name_token = role.name_token();
+
+    let declaration = cst::Declaration::TypeRoleDeclaration(role);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((item, _)) = state.nominal.type_get_mut(name) {
+        if let Some(group) = item.role_group() {
+            if let Some(role) = group.role {
+                state.errors.push(IndexingError::DuplicateDeclaration { declaration: role });
+            } else {
+                group.role = Some(declaration_id);
+            }
+        } else {
+            state.errors.push(IndexingError::InvalidRole { role: declaration_id });
+        }
+    } else {
+        state.errors.push(IndexingError::EmptyRole { role: declaration_id });
+    }
+}
+
+fn index_class_member(state: &mut State, member: cst::ClassMemberStatement) -> ClassMemberId {
     let name_token = member.name_token();
     let member_id = state.source_map.insert_class_member(&member);
 
+    let Some(name_token) = name_token else {
+        return member_id;
+    };
+
+    let name = name_token.text();
+
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+        let duplicate = Duplicate::ClassMember(member_id);
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        let item = ExprItem::ClassMember(member_id);
+        state.nominal.insert_expr(name, item);
+    }
+
+    member_id
+}
+
+fn index_class_statements(
+    state: &mut State,
+    item_id: Option<TypeItemId>,
+    statements: Option<cst::ClassStatements>,
+) {
+    let Some(statements) = statements else { return };
+    for statement in statements.children() {
+        let member_id = index_class_member(state, statement);
+        if let Some(item_id) = item_id {
+            state.relational.class_member_of.push((item_id, member_id));
+        }
+    }
+}
+
+fn index_data_constructor(state: &mut State, constructor: cst::DataConstructor) -> ConstructorId {
+    let name_token = constructor.name_token();
+    let constructor_id = state.source_map.insert_constructor(&constructor);
+
+    let Some(name_token) = name_token else {
+        return constructor_id;
+    };
+
+    let name = name_token.text();
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+        let duplicate = Duplicate::Constructor(constructor_id);
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        let item = ExprItem::Constructor(constructor_id);
+        state.nominal.insert_expr(name, item);
+    }
+
+    constructor_id
+}
+
+fn index_data_constructors(
+    state: &mut State,
+    item_id: Option<TypeItemId>,
+    constructors: AstChildren<cst::DataConstructor>,
+) {
+    for constructor in constructors {
+        let constructor_id = index_data_constructor(state, constructor);
+        let Some(item_id) = item_id else { continue };
+        state.relational.constructor_of.push((item_id, constructor_id));
+    }
+}
+
+fn index_infix(state: &mut State, infix: cst::InfixDeclaration) {
+    let type_token = infix.type_token();
+    let operator_token = infix.operator_token();
+
+    let declaration = cst::Declaration::InfixDeclaration(infix);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(operator_token) = operator_token else { return };
+    let operator = operator_token.text();
+
+    if type_token.is_none() {
+        if let Some((_, item_id)) = state.nominal.expr_get_mut(operator) {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        } else {
+            let operator: SmolStr = operator.into();
+            state.nominal.insert_expr(operator, ExprItem::Operator(declaration_id));
+        }
+    } else if let Some((_, item_id)) = state.nominal.type_get_mut(operator) {
+        let duplicate = Duplicate::Declaration(declaration_id);
+        state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+    } else {
+        let operator: SmolStr = operator.into();
+        state.nominal.insert_type(operator, TypeItem::Operator(declaration_id));
+    }
+}
+
+fn index_foreign_data(state: &mut State, foreign: cst::ForeignImportDataDeclaration) {
+    let name_token = foreign.name_token();
+
+    let declaration = cst::Declaration::ForeignImportDataDeclaration(foreign);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
     let Some(name_token) = name_token else { return };
     let name = name_token.text();
 
-    state.class_member(name, member_id);
+    if let Some((_, item_id)) = state.nominal.type_get_mut(name) {
+        let duplicate = Duplicate::Declaration(declaration_id);
+        state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        let group = TypeGroupId::from_declaration(declaration_id);
+        state.nominal.insert_type(name, TypeItem::Foreign(group));
+    }
 }
 
-// endregion: Traversals
+fn index_foreign_value(state: &mut State, foreign: cst::ForeignImportValueDeclaration) {
+    let name_token = foreign.name_token();
+
+    let declaration = cst::Declaration::ForeignImportValueDeclaration(foreign);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    let Some(name_token) = name_token else { return };
+    let name = name_token.text();
+
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+        let duplicate = Duplicate::Declaration(declaration_id);
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        state.nominal.insert_expr(name, ExprItem::Foreign(declaration_id));
+    }
+}
+
+fn index_derive_declaration(state: &mut State, derive: cst::DeriveDeclaration) {
+    let instance_name = derive.instance_name();
+
+    let declaration = cst::Declaration::DeriveDeclaration(derive);
+    let declaration_id = state.source_map.insert_declaration(&declaration);
+
+    if let Some(name_token) = instance_name.and_then(|i| i.name_token()) {
+        let name = name_token.text();
+        if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
+            let duplicate = Duplicate::Declaration(declaration_id);
+            state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        } else {
+            let name: SmolStr = name.into();
+            state.nominal.insert_expr(name, ExprItem::Derive(declaration_id));
+        }
+    }
+}
+
+fn index_instance_chain(state: &mut State, chain: cst::InstanceChain) {
+    let instance_declarations = chain.instance_declarations();
+
+    let declaration = cst::Declaration::InstanceChain(chain);
+    let chain_id = state.source_map.insert_declaration(&declaration);
+
+    for instance in instance_declarations {
+        let instance_id = index_instance_declaration(state, instance);
+        state.relational.instance_of.push((chain_id, instance_id));
+    }
+}
+
+fn index_instance_declaration(state: &mut State, instance: cst::InstanceDeclaration) -> InstanceId {
+    let instance_name = instance.instance_name();
+    let instance_statements = instance.instance_statements();
+
+    let instance_id = state.source_map.insert_instance(&instance);
+
+    let Some(name_token) = instance_name.and_then(|n| n.name_token()) else {
+        return instance_id;
+    };
+
+    let name = name_token.text();
+    if let Some((_, item_id)) = state.nominal.type_get_mut(name) {
+        let duplicate = Duplicate::Instance(instance_id);
+        state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+    } else {
+        let name: SmolStr = name.into();
+        state.nominal.insert_expr(name, ExprItem::Instance(instance_id));
+    }
+
+    let Some(instance_statements) = instance_statements else {
+        return instance_id;
+    };
+
+    // We don't need to check for well-formedness during traversal because
+    // instance members are not nominally indexed. The only conflicts that
+    // can occur here are duplicate or late signatures, which do not affect
+    // the semantics of these statements. Instead, we only check for these
+    // errors when we need them for error-reporting, at the end of indexing.
+    for statement in instance_statements.children() {
+        let statement_id = state.source_map.insert_instance_member(&statement);
+        state.relational.instance_member_of.push((instance_id, statement_id));
+    }
+
+    instance_id
+}

@@ -46,7 +46,7 @@ pub enum ExprItem {
     Constructor(ConstructorId),
     Instance(InstanceId),
     Derive(DeclarationId),
-    Method(ClassMemberId),
+    ClassMember(ClassMemberId),
     Value(ValueGroupId),
     Foreign(DeclarationId),
     Operator(DeclarationId),
