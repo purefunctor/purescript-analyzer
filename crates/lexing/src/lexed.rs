@@ -105,7 +105,7 @@ pub struct Lexed<'s> {
     errors: Vec<LexerError>,
 }
 
-impl<'s> Lexed<'s> {
+impl Lexed<'_> {
     pub fn kind(&self, index: usize) -> SyntaxKind {
         assert!(index < self.kinds.len());
         self.kinds[index]
@@ -174,5 +174,9 @@ impl<'s> Lexed<'s> {
 
     pub fn len(&self) -> usize {
         self.kinds.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.kinds.is_empty()
     }
 }

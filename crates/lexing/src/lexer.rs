@@ -68,7 +68,7 @@ impl<'s> Lexer<'s> {
     }
 }
 
-impl<'s> Lexer<'s> {
+impl Lexer<'_> {
     fn first(&self) -> char {
         let mut chars = self.chars.clone();
         chars.next().unwrap_or(EOF_CHAR)
@@ -183,7 +183,7 @@ impl<'s> Lexer<'s> {
     }
 }
 
-impl<'s> Lexer<'s> {
+impl Lexer<'_> {
     fn push(&mut self, kind: SyntaxKind, error: Option<&str>) {
         let info = SyntaxKindInfo {
             annotation: self.annotation,
