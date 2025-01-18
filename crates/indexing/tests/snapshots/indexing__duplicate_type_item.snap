@@ -1,6 +1,7 @@
 ---
 source: crates/indexing/tests/indexing.rs
 expression: errors
+snapshot_kind: text
 ---
 [
     DuplicateTypeItem {
@@ -61,6 +62,14 @@ expression: errors
             Id(
                 7,
             ),
+        ),
+    },
+    DuplicateDeclaration {
+        declaration: Id(
+            8,
+        ),
+        duplicate: Id(
+            9,
         ),
     },
 ]

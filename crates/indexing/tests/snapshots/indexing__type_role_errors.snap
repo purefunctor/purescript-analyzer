@@ -1,0 +1,35 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: errors
+snapshot_kind: text
+---
+[
+    InvalidRole {
+        role: Id(
+            1,
+        ),
+    },
+    EmptyRole {
+        role: Id(
+            2,
+        ),
+    },
+    EmptyRole {
+        role: Id(
+            4,
+        ),
+    },
+    EmptyRole {
+        role: Id(
+            5,
+        ),
+    },
+    DuplicateDeclaration {
+        declaration: Id(
+            4,
+        ),
+        duplicate: Id(
+            5,
+        ),
+    },
+]

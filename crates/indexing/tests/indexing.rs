@@ -87,6 +87,7 @@ fn duplicate_expr_item() {
         "foreign import eq :: forall a. a -> a -> Bool",
         "instance ord :: Ord a",
         "ord :: forall a. a -> a -> Comparison",
+        "ord = ordImpl",
         "data Data = Id Int",
         "newtype Newtype = Id Int",
     ]);
@@ -103,7 +104,9 @@ fn duplicate_type_item() {
         "type Data = Type",
         "newtype Newtype = Constructor2",
         "data Newtype = Constructor3",
-        "data Newtype :: Type"
+        "data Newtype :: Type",
+        "data Id = Constructor4",
+        "data Id = Constructor5"
     ]);
     insta::assert_debug_snapshot!(errors);
 }
@@ -166,6 +169,19 @@ fn type_late_signature() {
     let (_, _, errors) = index([
         "data Maybe a = Just a | Nothing",
         "data Maybe :: Type -> Type",
+    ]);
+    insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
+fn type_role_errors() {
+    let (_, _, errors) = index([
+        "class Eq a",
+        "type role Eq representational",
+        "type role Ord representational",
+        "newtype Id :: Type -> Type",
+        "type role Id nominal",
+        "type role Id phantom",
     ]);
     insta::assert_debug_snapshot!(errors);
 }
