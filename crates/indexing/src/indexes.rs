@@ -55,6 +55,7 @@ pub enum ExprItem {
 pub type TypeItemId = Id<TypeItem>;
 
 /// An item in the type namespace.
+#[derive(Debug, PartialEq, Eq)]
 pub enum TypeItem {
     Class(TypeGroupId),
     Data(TypeGroupId),
@@ -144,6 +145,10 @@ impl NominalIndex {
         Id::from_raw(index)
     }
 
+    pub(crate) fn iter_expr(&self) -> impl Iterator<Item = (ExprItemId, &SmolStr, &ExprItem)> {
+        self.expr_item.iter().enumerate().map(|(i, (k, v))| (Id::from_raw(i), k, v))
+    }
+
     pub(crate) fn type_get_mut(&mut self, name: &str) -> Option<MutableItem<TypeItem>> {
         self.type_item.get_full_mut(name).map(|(index, _, item)| (item, Id::from_raw(index)))
     }
@@ -151,6 +156,10 @@ impl NominalIndex {
     pub(crate) fn insert_type(&mut self, name: SmolStr, item: TypeItem) -> TypeItemId {
         let (index, _) = self.type_item.insert_full(name, item);
         Id::from_raw(index)
+    }
+
+    pub(crate) fn iter_type(&self) -> impl Iterator<Item = (TypeItemId, &SmolStr, &TypeItem)> {
+        self.type_item.iter().enumerate().map(|(i, (k, v))| (Id::from_raw(i), k, v))
     }
 }
 

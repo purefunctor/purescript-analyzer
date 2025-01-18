@@ -30,7 +30,7 @@ impl<T> Eq for Id<T> {}
 
 impl<T> PartialOrd for Id<T> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(self.cmp(other))
+        Some(self.index.cmp(&other.index))
     }
 }
 
@@ -40,15 +40,33 @@ impl<T> Ord for Id<T> {
     }
 }
 
+impl<T> AsRef<Id<T>> for Id<T> {
+    fn as_ref(&self) -> &Id<T> {
+        self
+    }
+}
+
 impl<T> Id<T> {
     pub fn from_raw(index: usize) -> Id<T> {
         Id { index, _marker: PhantomData }
     }
+
+    pub fn consecutive_of(&self, other: impl AsRef<Id<T>>) -> bool {
+        let other = other.as_ref();
+        // signature   ~ Id(2) ~ other.index
+        // declaration ~ Id(3) ~ self.index
+        self.index.wrapping_sub(other.index) == 1
+    }
 }
 
-#[test]
-fn from_raw() {
-    let id: Id<()> = Id::from_raw(42);
-    assert_eq!(format!("{:?}", id), "Id(42)");
-    assert_eq!(id.clone(), id);
+#[cfg(test)]
+mod tests {
+    use crate::Id;
+
+    #[test]
+    fn from_raw() {
+        let id: Id<()> = Id::from_raw(42);
+        assert_eq!(format!("{:?}", id), "Id(42)");
+        assert_eq!(id.clone(), id);
+    }
 }

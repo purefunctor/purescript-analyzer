@@ -3,6 +3,7 @@ mod error;
 mod id;
 mod indexes;
 mod sourcemap;
+mod wellformed;
 
 use std::sync::Arc;
 
@@ -23,5 +24,6 @@ pub type IndexingErrors = Arc<[IndexingError]>;
 
 pub fn index(module: &cst::Module) -> (IndexingResult, IndexingErrors) {
     let (index, errors) = algorithm::index_module(module);
-    (index, IndexingErrors::from(errors))
+    let errors = wellformed::check_index(&index, errors);
+    (index, errors)
 }

@@ -101,7 +101,10 @@ fn index_value_signature(state: &mut State, signature: cst::ValueSignature) {
     if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
         if let ExprItem::Value(group) = item {
             if let Some(signature) = group.signature {
-                state.errors.push(IndexingError::DuplicateSignature { signature });
+                state.errors.push(IndexingError::DuplicateSignature {
+                    signature,
+                    duplicate: declaration_id,
+                });
             } else {
                 group.signature = Some(declaration_id);
             }
@@ -244,7 +247,10 @@ fn index_type_signature(state: &mut State, signature: TypeSignature) {
     if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
         if let Some(group) = item_fn(item) {
             if let Some(signature) = group.signature {
-                state.errors.push(IndexingError::DuplicateSignature { signature });
+                state.errors.push(IndexingError::DuplicateSignature {
+                    signature,
+                    duplicate: declaration_id,
+                });
             } else {
                 group.signature = Some(declaration_id);
             }
@@ -307,7 +313,10 @@ fn index_type_declaration(state: &mut State, declaration: TypeDeclaration) -> Op
         type_item_id = Some(item_id);
         if let Some(group) = item_fn(item) {
             if let Some(declaration) = group.declaration {
-                state.errors.push(IndexingError::DuplicateDeclaration { declaration });
+                state.errors.push(IndexingError::DuplicateDeclaration {
+                    declaration,
+                    duplicate: declaration_id,
+                });
             } else {
                 group.declaration = Some(declaration_id);
             }
@@ -337,8 +346,14 @@ fn index_type_role(state: &mut State, role: cst::TypeRoleDeclaration) {
 
     if let Some((item, _)) = state.nominal.type_get_mut(name) {
         if let Some(group) = item.role_group() {
+            if group.declaration.is_none() {
+                state.errors.push(IndexingError::EmptyRole { role: declaration_id });
+            }
             if let Some(role) = group.role {
-                state.errors.push(IndexingError::DuplicateDeclaration { declaration: role });
+                state.errors.push(IndexingError::DuplicateDeclaration {
+                    declaration: role,
+                    duplicate: declaration_id,
+                });
             } else {
                 group.role = Some(declaration_id);
             }
