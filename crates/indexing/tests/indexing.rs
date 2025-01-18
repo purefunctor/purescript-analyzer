@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use indexing::{IndexingErrors, IndexingResult};
 use rowan::ast::AstNode;
 use syntax::cst;
@@ -13,6 +15,66 @@ fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, Inde
 
     let (index, errors) = indexing::index(&module);
     (module, index, errors)
+}
+
+#[test]
+fn well_formed_module() {
+    let (_, index, _) = index([
+        "id :: forall a. a -> a",
+        "id x = x",
+        "data Maybe :: Type -> Type",
+        "data Maybe a = Just a | Nothing",
+        "type role Maybe representational",
+        "class Eq :: Type -> Constraint",
+        "class Eq a where",
+        "  eq :: a -> a -> Bool",
+        "instance eqInt :: Eq Int where",
+        "  eq :: Int -> Int -> Bool",
+        "  eq = primEqInt",
+        "newtype Identity :: Type -> Type",
+        "newtype Identity a = Identity a",
+        "type role Identity representational",
+        "type IdentityInt :: Type",
+        "type IdentityInt = Identity Int",
+        "foreign import primEqInt :: Int -> Int -> Bool",
+        "foreign import data Functor :: Type -> Type",
+        "type role Functor phantom",
+        "derive newtype instance eqIdentity :: Eq (Identity a)",
+        "infix 5 eq as ==",
+        "infix 5 type Eq as ==",
+    ]);
+
+    let id = index.nominal.lookup_expr_item("id");
+    let maybe = index.nominal.lookup_type_item("Maybe");
+    let just = index.nominal.lookup_expr_item("Just");
+    let nothing = index.nominal.lookup_expr_item("Nothing");
+    let eq_class = index.nominal.lookup_type_item("Eq");
+    let eq = index.nominal.lookup_expr_item("eq");
+    let eq_int = index.nominal.lookup_expr_item("eqInt");
+    let identity = index.nominal.lookup_type_item("Identity");
+    let identity_int = index.nominal.lookup_type_item("IdentityInt");
+    let prim_eq_int = index.nominal.lookup_expr_item("primEqInt");
+    let functor = index.nominal.lookup_type_item("Functor");
+    let eq_identity = index.nominal.lookup_expr_item("eqIdentity");
+    let expr_equal = index.nominal.lookup_expr_item("==");
+    let type_equal = index.nominal.lookup_type_item("==");
+
+    let mut snapshot = String::new();
+    writeln!(snapshot, "id: {:?}", id).unwrap();
+    writeln!(snapshot, "maybe: {:?}", maybe).unwrap();
+    writeln!(snapshot, "just: {:?}", just).unwrap();
+    writeln!(snapshot, "nothing: {:?}", nothing).unwrap();
+    writeln!(snapshot, "eq_class: {:?}", eq_class).unwrap();
+    writeln!(snapshot, "eq: {:?}", eq).unwrap();
+    writeln!(snapshot, "eq_int: {:?}", eq_int).unwrap();
+    writeln!(snapshot, "identity: {:?}", identity).unwrap();
+    writeln!(snapshot, "identity_int: {:?}", identity_int).unwrap(); 
+    writeln!(snapshot, "prim_eq_int: {:?}", prim_eq_int).unwrap();
+    writeln!(snapshot, "functor: {:?}", functor).unwrap();
+    writeln!(snapshot, "eq_identity: {:?}", eq_identity).unwrap();
+    writeln!(snapshot, "expr_equal: {:?}", expr_equal).unwrap();
+    writeln!(snapshot, "type_equal: {:?}", type_equal).unwrap();
+    insta::assert_snapshot!(snapshot);
 }
 
 #[test]

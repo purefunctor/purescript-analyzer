@@ -1,0 +1,19 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: snapshot
+snapshot_kind: text
+---
+id: Some((Id(0), Value(ValueGroupId { signature: Some(Id(0)), equations: [Id(1)] })))
+maybe: Some((Id(0), Data(TypeGroupId { signature: Some(Id(2)), declaration: Some(Id(3)), role: Some(Id(4)) })))
+just: Some((Id(1), Constructor(Id(0))))
+nothing: Some((Id(2), Constructor(Id(1))))
+eq_class: Some((Id(1), Class(TypeGroupId { signature: Some(Id(5)), declaration: Some(Id(6)), role: None })))
+eq: Some((Id(3), ClassMember(Id(0))))
+eq_int: Some((Id(4), Instance(Id(0))))
+identity: Some((Id(2), Newtype(TypeGroupId { signature: Some(Id(8)), declaration: Some(Id(9)), role: Some(Id(10)) })))
+identity_int: Some((Id(3), Synonym(TypeGroupId { signature: Some(Id(11)), declaration: Some(Id(12)), role: None })))
+prim_eq_int: Some((Id(6), Foreign(Id(13))))
+functor: Some((Id(4), Foreign(TypeGroupId { signature: None, declaration: Some(Id(14)), role: Some(Id(15)) })))
+eq_identity: Some((Id(7), Derive(Id(16))))
+expr_equal: Some((Id(8), Operator(Id(17))))
+type_equal: Some((Id(5), Operator(Id(18))))
