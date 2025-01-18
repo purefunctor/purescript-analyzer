@@ -539,9 +539,9 @@ fn index_instance_declaration(state: &mut State, instance: cst::InstanceDeclarat
     };
 
     let name = name_token.text();
-    if let Some((_, item_id)) = state.nominal.type_get_mut(name) {
+    if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
         let duplicate = Duplicate::Instance(instance_id);
-        state.errors.push(IndexingError::DuplicateTypeItem { item_id, duplicate });
+        state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
     } else {
         let name: SmolStr = name.into();
         state.nominal.insert_expr(name, ExprItem::Instance(instance_id));
