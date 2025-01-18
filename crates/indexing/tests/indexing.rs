@@ -16,6 +16,48 @@ fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, Inde
 }
 
 #[test]
+fn duplicate_expr_item() {
+    let (_, _, errors) = index([
+        "eq :: forall a. a -> a -> Bool",
+        "class Eq a where",
+        "  eq :: forall a. a -> a -> Bool",
+        "instance eq :: Eq a",
+        "foreign import eq :: forall a. a -> a -> Bool",
+        "instance ord :: Ord a",
+        "ord :: forall a. a -> a -> Comparison",
+        "data Data = Id Int",
+        "newtype Newtype = Id Int",
+    ]);
+    insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
+fn duplicate_type_item() {
+    let (_, _, errors) = index([
+        "data Data = Constructor0",
+        "newtype Data = Constructor1",
+        "class Data",
+        "foreign import data Data :: Type",
+        "type Data = Type",
+        "newtype Newtype = Constructor2",
+        "data Newtype = Constructor3",
+        "data Newtype :: Type"
+    ]);
+    insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
+fn value_duplicate_signature() {
+    let (_, _, errors) = index([
+        "isJust :: forall a. Maybe a -> Bool",
+        "isJust (Just _) = true",
+        "isJust Nothing = false",
+        "isJust :: forall a. Maybe a -> Bool",
+    ]);
+    insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
 fn value_non_consecutive() {
     let (_, _, errors) = index([
         "isJust :: forall a. Maybe a -> Bool",
@@ -32,6 +74,16 @@ fn value_late_signature() {
         "isJust (Just _) = true",
         "isJust Nothing = false",
         "isJust :: forall a. Maybe a -> Bool",
+    ]);
+    insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
+fn type_duplicate_signature() {
+    let (_, _, errors) = index([
+        "data Maybe :: Type -> Type",
+        "data Maybe a = Just a | Nothing",
+        "data Maybe :: Type -> Type",
     ]);
     insta::assert_debug_snapshot!(errors);
 }

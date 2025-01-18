@@ -1,0 +1,66 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: errors
+---
+[
+    DuplicateTypeItem {
+        item_id: Id(
+            0,
+        ),
+        duplicate: Declaration(
+            Id(
+                1,
+            ),
+        ),
+    },
+    DuplicateTypeItem {
+        item_id: Id(
+            0,
+        ),
+        duplicate: Declaration(
+            Id(
+                2,
+            ),
+        ),
+    },
+    DuplicateTypeItem {
+        item_id: Id(
+            0,
+        ),
+        duplicate: Declaration(
+            Id(
+                3,
+            ),
+        ),
+    },
+    DuplicateTypeItem {
+        item_id: Id(
+            0,
+        ),
+        duplicate: Declaration(
+            Id(
+                4,
+            ),
+        ),
+    },
+    DuplicateTypeItem {
+        item_id: Id(
+            1,
+        ),
+        duplicate: Declaration(
+            Id(
+                6,
+            ),
+        ),
+    },
+    DuplicateTypeItem {
+        item_id: Id(
+            1,
+        ),
+        duplicate: Declaration(
+            Id(
+                7,
+            ),
+        ),
+    },
+]

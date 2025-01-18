@@ -1,0 +1,15 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: errors
+snapshot_kind: text
+---
+[
+    DuplicateSignature {
+        signature: Id(
+            0,
+        ),
+        duplicate: Id(
+            3,
+        ),
+    },
+]
