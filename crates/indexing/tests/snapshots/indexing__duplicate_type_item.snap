@@ -72,4 +72,14 @@ snapshot_kind: text
             9,
         ),
     },
+    DuplicateTypeItem {
+        item_id: Id(
+            3,
+        ),
+        duplicate: Declaration(
+            Id(
+                11,
+            ),
+        ),
+    },
 ]

@@ -90,6 +90,9 @@ fn duplicate_expr_item() {
         "ord = ordImpl",
         "data Data = Id Int",
         "newtype Newtype = Id Int",
+        "infix 5 eq as ==",
+        "infix 5 eq as ==",
+        "derive instance eq :: Eq a",
     ]);
     insta::assert_debug_snapshot!(errors);
 }
@@ -106,7 +109,9 @@ fn duplicate_type_item() {
         "data Newtype = Constructor3",
         "data Newtype :: Type",
         "data Id = Constructor4",
-        "data Id = Constructor5"
+        "data Id = Constructor5",
+        "infix 5 type Eq as ==",
+        "infix 5 type Eq as ==",
     ]);
     insta::assert_debug_snapshot!(errors);
 }

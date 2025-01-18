@@ -64,4 +64,24 @@ snapshot_kind: text
             ),
         ),
     },
+    DuplicateExprItem {
+        item_id: Id(
+            3,
+        ),
+        duplicate: Declaration(
+            Id(
+                10,
+            ),
+        ),
+    },
+    DuplicateExprItem {
+        item_id: Id(
+            0,
+        ),
+        duplicate: Declaration(
+            Id(
+                11,
+            ),
+        ),
+    },
 ]
