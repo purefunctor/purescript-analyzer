@@ -68,7 +68,7 @@ fn well_formed_module() {
     writeln!(snapshot, "eq: {:?}", eq).unwrap();
     writeln!(snapshot, "eq_int: {:?}", eq_int).unwrap();
     writeln!(snapshot, "identity: {:?}", identity).unwrap();
-    writeln!(snapshot, "identity_int: {:?}", identity_int).unwrap(); 
+    writeln!(snapshot, "identity_int: {:?}", identity_int).unwrap();
     writeln!(snapshot, "prim_eq_int: {:?}", prim_eq_int).unwrap();
     writeln!(snapshot, "functor: {:?}", functor).unwrap();
     writeln!(snapshot, "eq_identity: {:?}", eq_identity).unwrap();
@@ -171,10 +171,7 @@ fn type_non_consecutive() {
 
 #[test]
 fn type_late_signature() {
-    let (_, _, errors) = index([
-        "data Maybe a = Just a | Nothing",
-        "data Maybe :: Type -> Type",
-    ]);
+    let (_, _, errors) = index(["data Maybe a = Just a | Nothing", "data Maybe :: Type -> Type"]);
     insta::assert_debug_snapshot!(errors);
 }
 
