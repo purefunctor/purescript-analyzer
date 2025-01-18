@@ -36,24 +36,36 @@ fn check_type_item(errors: &mut Vec<IndexingError>, item: &TypeItem) {
 
 fn check_value_group_id(errors: &mut Vec<IndexingError>, group: &ValueGroupId) {
     let ValueGroupId { signature, equations } = group;
-    let signature = signature.iter().copied();
+    if let Some(signature) = signature {
+        if let [equation, ..] = &equations[..] {
+            if signature > equation {
+                errors.push(IndexingError::InvalidOrder { early: *equation, late: *signature });
+            } else if !equation.consecutive_of(signature) {
+                errors.push(IndexingError::NonConsecutive { first: *signature, second: *equation });
+            }
+        }
+    }
     let equations = equations.iter().copied();
-    for (zero, one) in signature.chain(equations).tuple_windows() {
-        if !one.consecutive_of(zero) {
-            errors.push(IndexingError::NonConsecutive { before: zero, after: one });
+    for (first, second) in equations.tuple_windows() {
+        if !second.consecutive_of(first) {
+            errors.push(IndexingError::NonConsecutive { first, second });
         }
     }
 }
 
 fn check_type_group_id(errors: &mut Vec<IndexingError>, group: &TypeGroupId) {
     if let TypeGroupId { signature: Some(signature), declaration: Some(declaration), .. } = group {
-        if !declaration.consecutive_of(signature) {
-            errors.push(IndexingError::NonConsecutive { before: *signature, after: *declaration });
+        if signature > declaration {
+            errors.push(IndexingError::InvalidOrder { early: *declaration, late: *signature });
+        } else if !declaration.consecutive_of(signature) {
+            errors.push(IndexingError::NonConsecutive { first: *signature, second: *declaration });
         }
     }
     if let TypeGroupId { declaration: Some(declaration), role: Some(role), .. } = group {
-        if !role.consecutive_of(declaration) {
-            errors.push(IndexingError::NonConsecutive { before: *declaration, after: *role });
+        if declaration > role {
+            errors.push(IndexingError::InvalidOrder { early: *role, late: *declaration });
+        } else if !role.consecutive_of(declaration) {
+            errors.push(IndexingError::NonConsecutive { first: *declaration, second: *role });
         }
     }
 }

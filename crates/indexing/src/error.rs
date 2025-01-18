@@ -13,7 +13,8 @@ pub enum IndexingError {
     DuplicateSignature { signature: DeclarationId, duplicate: DeclarationId },
 
     InvalidRole { role: DeclarationId },
-    NonConsecutive { before: DeclarationId, after: DeclarationId },
+    InvalidOrder { early: DeclarationId, late: DeclarationId },
+    NonConsecutive { first: DeclarationId, second: DeclarationId },
 }
 
 /// The kind of a duplicate item.
