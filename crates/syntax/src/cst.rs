@@ -3,7 +3,19 @@ use rowan::ast::AstNode;
 #[macro_use]
 mod macros;
 
-create_cst_struct!(Module, ModuleHeader, ExportList);
+create_cst_struct!(Annotation, Qualifier);
+
+has_token!(
+    Annotation
+    | text() -> TEXT
+);
+
+has_token!(
+    Qualifier
+    | text() -> TEXT
+);
+
+create_cst_struct!(Module, ModuleHeader, ModuleName, ExportList);
 
 create_cst_enum!(
     ExportItem
@@ -171,7 +183,33 @@ create_cst_enum!(RecordUpdate | RecordUpdateLeaf | RecordUpdateBranch);
 
 has_child!(
     Module
+    | imports() -> ModuleImports
     | statements() -> ModuleStatements
+);
+
+has_children!(
+    ModuleImports
+    | children() -> ImportStatement
+);
+
+has_child!(
+    ImportStatement
+    | import_alias() -> ImportAlias
+);
+
+has_child!(
+    ImportAlias
+    | module_name() -> ModuleName
+);
+
+has_child!(
+    ModuleName
+    | qualifier() -> Qualifier
+);
+
+has_token!(
+    ModuleName
+    | name_token() -> UPPER
 );
 
 has_children!(

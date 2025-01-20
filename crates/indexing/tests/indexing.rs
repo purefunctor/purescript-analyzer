@@ -20,6 +20,10 @@ fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, Inde
 #[test]
 fn well_formed_module() {
     let (_, index, _) = index([
+        "import Prelude as Prelude",
+        "import Data.List as Data.List",
+        "import Halogen as H",
+        "import Halogen.HTML as H",
         "id :: forall a. a -> a",
         "id x = x",
         "data Maybe :: Type -> Type",
@@ -44,6 +48,9 @@ fn well_formed_module() {
         "infix 5 type Eq as ==",
     ]);
 
+    let prelude = index.nominal.lookup_qualified("Prelude");
+    let data_list = index.nominal.lookup_qualified("Data.List");
+    let halogen = index.nominal.lookup_qualified("H");
     let id = index.nominal.lookup_expr_item("id");
     let maybe = index.nominal.lookup_type_item("Maybe");
     let just = index.nominal.lookup_expr_item("Just");
@@ -60,6 +67,9 @@ fn well_formed_module() {
     let type_equal = index.nominal.lookup_type_item("==");
 
     let mut snapshot = String::new();
+    writeln!(snapshot, "prelude: {:?}", prelude).unwrap();
+    writeln!(snapshot, "data_list: {:?}", data_list).unwrap();
+    writeln!(snapshot, "halogen: {:?}", halogen).unwrap();
     writeln!(snapshot, "id: {:?}", id).unwrap();
     writeln!(snapshot, "maybe: {:?}", maybe).unwrap();
     writeln!(snapshot, "just: {:?}", just).unwrap();

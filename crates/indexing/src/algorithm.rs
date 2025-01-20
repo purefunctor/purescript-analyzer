@@ -1,5 +1,5 @@
 use rowan::ast::AstChildren;
-use smol_str::SmolStr;
+use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::cst;
 
 use crate::{
@@ -18,6 +18,12 @@ struct State {
 pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<IndexingError>) {
     let mut state = State::default();
 
+    if let Some(imports) = module.imports() {
+        for import in imports.children() {
+            index_import(&mut state, import);
+        }
+    }
+
     if let Some(statements) = module.statements() {
         for statement in statements.children() {
             index_statement(&mut state, statement);
@@ -28,6 +34,26 @@ pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<Indexin
     let result = IndexingResult { source_map, nominal, relational };
 
     (result, errors)
+}
+
+fn index_import(state: &mut State, import: cst::ImportStatement) {
+    let import_id = state.source_map.insert_import(&import);
+
+    let Some(import_alias) = import.import_alias() else { return };
+    let Some(module_name) = import_alias.module_name() else { return };
+
+    let mut buffer = SmolStrBuilder::default();
+    if let Some(qualifier) = module_name.qualifier() {
+        if let Some(token) = qualifier.text() {
+            buffer.push_str(token.text());
+        }
+    }
+
+    let Some(token) = module_name.name_token() else { return };
+    buffer.push_str(token.text());
+
+    let name = buffer.finish();
+    state.nominal.insert_qualified(name, import_id);
 }
 
 fn index_statement(state: &mut State, declaration: cst::Declaration) {

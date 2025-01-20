@@ -5,6 +5,9 @@ use syntax::cst;
 
 use crate::id::Id;
 
+pub type ImportId = Id<cst::ImportStatement>;
+pub type ImportPtr = AstPtr<cst::ImportStatement>;
+
 pub type DeclarationId = Id<cst::Declaration>;
 pub type DeclarationPtr = AstPtr<cst::Declaration>;
 
@@ -64,6 +67,7 @@ pub type InstanceMemberPtr = AstPtr<cst::InstanceMemberStatement>;
 /// implementation works well enough for the general case.
 #[derive(Debug, Default)]
 pub struct SourceMap {
+    imports: FxIndexSet<ImportPtr>,
     declaration: FxIndexSet<DeclarationPtr>,
     constructor: FxIndexSet<ConstructorPtr>,
     class_member: FxIndexSet<ClassMemberPtr>,
@@ -89,6 +93,10 @@ fn id<T: AstNode>(m: &FxIndexSet<AstPtr<T>>, ptr: AstPtr<T>) -> Option<Id<T>> {
 }
 
 impl SourceMap {
+    pub(crate) fn insert_import(&mut self, import: &cst::ImportStatement) -> ImportId {
+        insert(&mut self.imports, import)
+    }
+
     pub(crate) fn insert_declaration(&mut self, declaration: &cst::Declaration) -> DeclarationId {
         insert(&mut self.declaration, declaration)
     }
@@ -120,6 +128,14 @@ impl SourceMap {
 }
 
 impl SourceMap {
+    pub fn import_ptr(&self, id: ImportId) -> Option<ImportPtr> {
+        ptr(&self.imports, id)
+    }
+
+    pub fn import_id(&self, ptr: ImportPtr) -> Option<ImportId> {
+        id(&self.imports, ptr)
+    }
+
     pub fn declaration_ptr(&self, id: DeclarationId) -> Option<DeclarationPtr> {
         ptr(&self.declaration, id)
     }

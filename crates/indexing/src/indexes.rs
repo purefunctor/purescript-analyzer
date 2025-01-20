@@ -1,7 +1,9 @@
 use indexmap::IndexMap;
 use smol_str::SmolStr;
 
-use crate::{id::Id, ClassMemberId, ConstructorId, DeclarationId, InstanceId, InstanceMemberId};
+use crate::{
+    id::Id, ClassMemberId, ConstructorId, DeclarationId, ImportId, InstanceId, InstanceMemberId,
+};
 
 /// A group of type signature and declaration.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -129,6 +131,7 @@ pub enum TypeItem {
 /// [`SourceMap`]: crate::SourceMap
 #[derive(Default)]
 pub struct NominalIndex {
+    qualified: IndexMap<SmolStr, Vec<ImportId>>,
     expr_item: IndexMap<SmolStr, ExprItem>,
     type_item: IndexMap<SmolStr, TypeItem>,
 }
@@ -136,6 +139,10 @@ pub struct NominalIndex {
 pub(crate) type MutableItem<'t, T> = (&'t mut T, Id<T>);
 
 impl NominalIndex {
+    pub(crate) fn insert_qualified(&mut self, name: SmolStr, import: ImportId) {
+        self.qualified.entry(name).or_default().push(import);
+    }
+
     pub(crate) fn expr_get_mut(&mut self, name: &str) -> Option<MutableItem<ExprItem>> {
         self.expr_item.get_full_mut(name).map(|(index, _, item)| (item, Id::from_raw(index)))
     }
@@ -164,6 +171,10 @@ impl NominalIndex {
 }
 
 impl NominalIndex {
+    pub fn lookup_qualified(&self, name: &str) -> Option<&[ImportId]> {
+        self.qualified.get(name).map(|v| &v[..])
+    }
+
     pub fn lookup_expr_item(&self, name: &str) -> Option<(ExprItemId, &ExprItem)> {
         self.expr_item.get_full(name).map(|(id, _, item)| (Id::from_raw(id), item))
     }
