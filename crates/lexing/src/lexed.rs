@@ -61,10 +61,20 @@ pub struct SyntaxKindInfo {
     pub position: Position,
 }
 
-#[derive(Debug)]
-struct LexerError {
+#[derive(Debug, Clone)]
+pub struct LexerError {
     message: Arc<str>,
     index: u32,
+}
+
+impl LexerError {
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    pub fn index(&self) -> u32 {
+        self.index
+    }
 }
 
 pub(super) struct LexedBuilder<'s> {
@@ -98,6 +108,7 @@ impl<'s> LexedBuilder<'s> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Lexed<'s> {
     pub source: &'s str,
     kinds: Vec<SyntaxKind>,
@@ -152,6 +163,10 @@ impl Lexed<'_> {
         let token_index = index as u32;
         let error_index = self.errors.binary_search_by_key(&token_index, |v| v.index).ok()?;
         Some(Arc::clone(&self.errors[error_index].message))
+    }
+
+    pub fn errors(&self) -> Vec<Arc<LexerError>> {
+        self.errors.iter().map(|err| Arc::new(err.clone())).collect()
     }
 
     pub fn text(&self, index: usize) -> &str {
