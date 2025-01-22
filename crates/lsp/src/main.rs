@@ -1,3 +1,4 @@
+
 use dashmap::DashMap;
 use indexing::IndexingResult;
 use lexing::{lex, Lexed};
@@ -38,7 +39,7 @@ struct Backend {
 }
 
 impl Backend {
-    async fn on_change(&self, version: i32, uri: Url, text: &str) {
+    async fn on_change<'a>(&self, version: i32, uri: Url, text: &str) {
         let rope = ropey::Rope::from_str(text);
         self.document_map.insert(uri.to_string(), rope);
         let lexed: lexing::Lexed<'static> = lex(Box::leak(Box::new(text.to_string())));
@@ -60,52 +61,58 @@ impl Backend {
             self.client.publish_diagnostics(uri.clone(), diags, Some(version)).await;
         }
         self.tokens_map.insert(uri.to_string(), lexed.clone());
-        let tokens = lexing::layout(&lexed);
-        let (module, parse_errors) = parse(&lexed, &tokens);
+        let tokens: Vec<syntax::SyntaxKind> = lexing::layout(&lexed);
+        let (node, parse_errors) = parse(&lexed, &tokens);
+        let module = cst::Module::cast(node).unwrap();
         if !parse_errors.is_empty() {
-            let diags = parse_errors
-                .iter()
-                .map(|err| Diagnostic {
-                    range: Range {
-                        start: lsp_position(err.position),
-                        end: lsp_position(err.position),
-                    },
-                    severity: Some(DiagnosticSeverity::ERROR),
-                    message: err.message.to_string(),
-                    source: Some("purescript parsing".to_string()),
-                    ..Default::default()
-                })
-                .collect();
-            self.client.publish_diagnostics(uri.clone(), diags, Some(version)).await;
+            let client = self.client.clone();
+            let uri = uri.clone();
+            tokio::spawn(async move {
+                let diags = parse_errors
+                    .iter()
+                    .map(|err| Diagnostic {
+                        range: Range {
+                            start: lsp_position(err.position),
+                            end: lsp_position(err.position),
+                        },
+                        severity: Some(DiagnosticSeverity::ERROR),
+                        message: err.message.to_string(),
+                        source: Some("purescript parsing".to_string()),
+                        ..Default::default()
+                    })
+                    .collect();
+                client.publish_diagnostics(uri, diags, Some(version)).await;
+            });
         }
-        let module = cst::Module::cast(module).unwrap();
         let (index, index_errors) = indexing::index(&module);
-        // if !index_errors.is_empty() {
-        //     let diags = index_errors
-        //         .iter()
-        //         .map(|err| Diagnostic {
-        //             range: Range {
-        //                 start: lsp_position(err.position),
-        //                 end: lsp_position(err.position),
-        //             },
-        //             severity: Some(DiagnosticSeverity::ERROR),
-        //             message: err.message.to_string(),
-        //             source: Some("purescript indexing".to_string()),
-        //             ..Default::default()
-        //         })
-        //         .collect();
-        //     self.client.publish_diagnostics(uri.clone(), diags, Some(version)).await;
-        // }
+        if !index_errors.is_empty() {
+            let client = self.client.clone();
+            let uri = uri.clone();
+            tokio::spawn(async move {
+                let diags = index_errors
+                    .iter()
+                    .map(|err| Diagnostic {
+                        range: NULL_RANGE, // TODO
+                        severity: Some(DiagnosticSeverity::ERROR),
+                        message: err.message(),
+                        source: Some("purescript indexing".to_string()),
+                        ..Default::default()
+                    })
+                    .collect();
+                client.publish_diagnostics(uri, diags, Some(version)).await;
+            });
+        }
         self.index_map.insert(uri.to_string(), index);
-        // let ParserResult { ast, parse_errors, semantic_tokens } = parse(params.text);
     }
 }
 
 fn lsp_position(pos: lexing::Position) -> lsp_types::Position {
     let lexing::Position { line, column } = pos;
-
     lsp_types::Position { line, character: column }
 }
+
+const NULL_RANGE: Range =
+    Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } };
 
 static LANGUAGE_ID: &str = "Purescript";
 
@@ -159,43 +166,35 @@ impl LanguageServer for Backend {
         &self,
         params: GotoDefinitionParams,
     ) -> Result<Option<GotoDefinitionResponse>> {
-        let uri = params.text_document_position_params.text_document.uri;
-        Ok(None)
-        // let definition = || -> Option<GotoDefinitionResponse> {
-        //     let uri = params.text_document_position_params.text_document.uri;
-        //     let semantic = self.semantic_map.get(uri.as_str())?;
-        //     let rope = self.document_map.get(uri.as_str())?;
-        //     let position = params.text_document_position_params.position;
-        //     let offset = position_to_offset(position, &rope)?;
+        let definition = || -> Option<GotoDefinitionResponse> {
+            let uri = params.text_document_position_params.text_document.uri;
+            let rope = self.document_map.get(uri.as_str())?;
+            let position = params.text_document_position_params.position;
+            let offset = position_to_offset(position, &rope)?;
+            let tokens = self.tokens_map.get(uri.as_str())?;
+            let name = tokens.text(offset);
+            let index = self.index_map.get(uri.as_str())?;
+            let ptr = index.source_map.lookup(name)?;
+            todo!()
+        }();
 
-        //     let interval = semantic.ident_range.find(offset, offset + 1).next()?;
-        //     let interval_val = interval.val;
-        //     let range = match interval_val {
-        //         IdentType::Binding(symbol_id) => {
-        //             let span = &semantic.table.symbol_id_to_span[symbol_id];
-        //             Some(span.clone())
-        //         }
-        //         IdentType::Reference(reference_id) => {
-        //             let reference = semantic.table.reference_id_to_reference.get(reference_id)?;
-        //             let symbol_id = reference.symbol_id?;
-        //             let symbol_range = semantic.table.symbol_id_to_span.get(symbol_id)?;
-        //             Some(symbol_range.clone())
-        //         }
-        //     };
-
-        //     range.and_then(|range| {
-        //         let start_position = offset_to_position(range.start, &rope)?;
-        //         let end_position = offset_to_position(range.end, &rope)?;
-        //         Some(GotoDefinitionResponse::Scalar(Location::new(
-        //             uri,
-        //             Range::new(start_position, end_position),
-        //         )))
-        //     })
-        // }();
-        // Ok(definition)
+        Ok(definition)
     }
 
     async fn shutdown(&self) -> Result<()> {
         Ok(())
     }
+}
+
+fn position_to_offset(position: Position, rope: &Rope) -> Option<usize> {
+    let line_char_offset = rope.try_line_to_char(position.line as usize).ok()?;
+    let slice = rope.slice(0..line_char_offset + position.character as usize);
+    Some(slice.len_bytes())
+}
+
+fn offset_to_position(offset: usize, rope: &Rope) -> Option<Position> {
+    let line = rope.try_char_to_line(offset).ok()?;
+    let first_char_of_line = rope.try_line_to_char(line).ok()?;
+    let column = offset - first_char_of_line;
+    Some(Position::new(line as u32, column as u32))
 }
