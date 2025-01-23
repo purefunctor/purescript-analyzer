@@ -1,6 +1,6 @@
-use fxhash::FxBuildHasher;
 use indexmap::IndexSet;
 use rowan::ast::{AstNode, AstPtr};
+use rustc_hash::FxBuildHasher;
 use syntax::cst;
 
 use crate::id::Id;
