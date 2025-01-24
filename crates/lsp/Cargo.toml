@@ -15,3 +15,6 @@ syntax = { path = "../syntax" }
 ropey = "1.6.1"
 tokio = { version = "1.42.0", features = ["full", "io-std"] }
 rowan = "0.16.1"
+
+[dev-dependencies]
+test_each_file = "0.3.4"

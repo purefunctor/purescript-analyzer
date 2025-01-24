@@ -754,6 +754,7 @@ dependencies = [
  "ropey",
  "rowan",
  "syntax",
+ "test_each_file",
  "tokio",
  "tower-lsp",
 ]
