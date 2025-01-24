@@ -61,10 +61,26 @@ pub struct SyntaxKindInfo {
     pub position: Position,
 }
 
-#[derive(Debug)]
-struct LexerError {
+impl SyntaxKindInfo { 
+  pub fn is_at_offset(&self, offset: u32) -> bool {
+    self.annotation <= offset && offset <= self.token
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct LexerError {
     message: Arc<str>,
     index: u32,
+}
+
+impl LexerError {
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    pub fn index(&self) -> u32 {
+        self.index
+    }
 }
 
 pub(super) struct LexedBuilder<'s> {
@@ -98,6 +114,7 @@ impl<'s> LexedBuilder<'s> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Lexed<'s> {
     pub source: &'s str,
     kinds: Vec<SyntaxKind>,
@@ -154,6 +171,10 @@ impl Lexed<'_> {
         Some(Arc::clone(&self.errors[error_index].message))
     }
 
+    pub fn errors(&self) -> Vec<Arc<LexerError>> {
+        self.errors.iter().map(|err| Arc::new(err.clone())).collect()
+    }
+
     pub fn text(&self, index: usize) -> &str {
         assert!(index < self.infos.len());
 
@@ -161,6 +182,15 @@ impl Lexed<'_> {
         let high = self.infos[index].token as usize;
 
         &self.source[low..high]
+    }
+    pub fn text_at_offset(&self, offset: u32) -> Option<&str> {
+
+        let index = self.infos.iter().position(|info| info.is_at_offset(offset))?;
+
+        let low = self.infos[index].qualifier as usize;
+        let high = self.infos[index].token as usize;
+
+        Some(&self.source[low..high])
     }
 
     pub fn text_in_range(&self, range: Range<usize>) -> &str {

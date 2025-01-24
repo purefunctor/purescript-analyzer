@@ -38,6 +38,10 @@ impl ValueGroupId {
     pub(crate) fn from_equation(id: DeclarationId) -> ValueGroupId {
         ValueGroupId { signature: None, equations: vec![id] }
     }
+
+    pub fn declaration_ids(&self) -> impl Iterator<Item = DeclarationId> + '_ {
+        self.signature.into_iter().chain(self.equations.iter().copied())
+    }
 }
 
 pub type ExprItemId = Id<ExprItem>;
