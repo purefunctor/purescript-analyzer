@@ -5,12 +5,12 @@ use log::debug;
 use parsing::parse;
 use ropey::Rope;
 use rowan::ast::AstNode;
-use rowan::{TextRange, TextSize};
+use rowan::TextRange;
 use syntax::cst;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::{
     lsp_types::{self, *},
-    Client, LanguageServer, LspService, Server,
+    Client, LanguageServer,
 };
 
 pub struct Backend {
@@ -85,10 +85,10 @@ impl Backend {
             tokio::spawn(async move {
                 let diags = index_errors
                     .iter()
-                    .map(|err| Diagnostic {
+                    .map(|_err| Diagnostic {
                         range: NULL_RANGE, // TODO
                         severity: Some(DiagnosticSeverity::ERROR),
-                        message: err.message(),
+                        message: "TODO".to_string(), // TODO
                         source: Some("purescript indexing".to_string()),
                         ..Default::default()
                     })
@@ -106,8 +106,6 @@ fn lsp_position(pos: lexing::Position) -> lsp_types::Position {
 
 const NULL_RANGE: Range =
     Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } };
-
-static LANGUAGE_ID: &str = "Purescript";
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
@@ -223,11 +221,4 @@ fn trim_range_whitespace(text_range: TextRange, str: &str) -> TextRange {
         end -= 1;
     }
     TextRange::new(start.try_into().unwrap(), end.try_into().unwrap())
-}
-
-fn debug_range(range: Range) -> String {
-    format!(
-        "{}:{}-{}:{}",
-        range.start.line, range.start.character, range.end.line, range.end.character
-    )
 }
