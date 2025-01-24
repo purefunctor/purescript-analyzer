@@ -1,11 +1,11 @@
-
 use dashmap::DashMap;
-use indexing::IndexingResult;
+use indexing::{ExprItem, IndexingResult};
 use lexing::{lex, Lexed};
 use log::debug;
 use parsing::parse;
 use ropey::Rope;
 use rowan::ast::AstNode;
+use rowan::TextRange;
 use syntax::cst;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::{
@@ -174,8 +174,21 @@ impl LanguageServer for Backend {
             let tokens = self.tokens_map.get(uri.as_str())?;
             let name = tokens.text(offset);
             let index = self.index_map.get(uri.as_str())?;
-            let ptr = index.source_map.lookup(name)?;
-            todo!()
+            let (_, expr) = &index.nominal.lookup_expr_item(name)?;
+            let decl_id = match expr {
+                // todo add type level and other exprs
+                ExprItem::Derive(id) => *id,
+                ExprItem::Operator(id) => *id,
+                ExprItem::Value(id) => {
+                    let mut decl_ids = id.declaration_ids();
+                    decl_ids.next().unwrap()
+                }
+                _ => return None,
+            };
+            let ptr = index.source_map.declaration_ptr(decl_id)?;
+            let text_range = ptr.syntax_node_ptr().text_range();
+            let range = text_range_to_range(text_range, &rope)?;
+            Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }();
 
         Ok(definition)
@@ -197,4 +210,10 @@ fn offset_to_position(offset: usize, rope: &Rope) -> Option<Position> {
     let first_char_of_line = rope.try_line_to_char(line).ok()?;
     let column = offset - first_char_of_line;
     Some(Position::new(line as u32, column as u32))
+}
+
+fn text_range_to_range(text_range: TextRange, rope: &Rope) -> Option<Range> {
+    let start = offset_to_position(text_range.start().into(), rope)?;
+    let end = offset_to_position(text_range.start().into(), rope)?;
+    Some(Range { start, end })
 }
