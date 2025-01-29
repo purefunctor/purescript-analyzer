@@ -45,9 +45,14 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn compute<T>(&mut self, k: QueryKey, compute: impl Fn(&mut Runtime) -> T) -> T {
+    pub fn compute<T: Clone>(
+        &mut self,
+        k: QueryKey,
+        compute: impl Fn(&mut Runtime) -> T,
+        set_storage: impl Fn(&mut Runtime, T),
+    ) -> T {
         let parent = mem::replace(&mut self.parent, Some(k));
-        let result = compute(self);
+        let value = compute(self);
 
         self.revision += 1;
         let revision = self.revision;
@@ -63,14 +68,16 @@ impl Runtime {
         self.traces.insert(k, v);
 
         self.parent = parent;
-        result
+
+        set_storage(self, T::clone(&value));
+        value
     }
 
     pub fn query<T: Clone>(
         &mut self,
         k: QueryKey,
         compute: impl Fn(&mut Runtime) -> T,
-        get_storage: impl Fn(&mut Runtime) -> Option<(T, &mut Trace)>,
+        get_storage: impl Fn(&Runtime) -> Option<(T, &Trace)>,
         set_storage: impl Fn(&mut Runtime, T),
     ) -> T {
         if let Some(parent) = self.parent {
@@ -105,15 +112,11 @@ impl Runtime {
                     }
                     value
                 } else {
-                    let fresh = self.compute(k, compute);
-                    set_storage(self, T::clone(&fresh));
-                    fresh
+                    self.compute(k, compute, set_storage)
                 }
             }
         } else {
-            let fresh = self.compute(k, compute);
-            set_storage(self, T::clone(&fresh));
-            fresh
+            self.compute(k, compute, set_storage)
         }
     }
 
@@ -152,7 +155,7 @@ impl Runtime {
             },
             |this| {
                 let value = this.parse.get(&id).cloned()?;
-                let trace = this.traces.get_mut(&k)?;
+                let trace = this.traces.get(&k)?;
                 Some((value, trace))
             },
             |this, value| {
@@ -172,7 +175,7 @@ impl Runtime {
             },
             |this| {
                 let value = this.index.get(&id).cloned()?;
-                let trace = this.traces.get_mut(&k)?;
+                let trace = this.traces.get(&k)?;
                 Some((value, trace))
             },
             |this, value| {
