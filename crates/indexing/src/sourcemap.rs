@@ -3,7 +3,7 @@ use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxBuildHasher;
 use syntax::cst;
 
-use crate::id::Id;
+use id::Id;
 
 pub type ImportId = Id<cst::ImportStatement>;
 pub type ImportPtr = AstPtr<cst::ImportStatement>;
@@ -84,7 +84,8 @@ fn insert<T: AstNode>(m: &mut FxIndexSet<AstPtr<T>>, k: &T) -> Id<T> {
 }
 
 fn ptr<T: AstNode>(m: &FxIndexSet<AstPtr<T>>, id: Id<T>) -> Option<AstPtr<T>> {
-    m.get_index(id.index).cloned()
+    let index = id.into();
+    m.get_index(index).cloned()
 }
 
 fn id<T: AstNode>(m: &FxIndexSet<AstPtr<T>>, ptr: AstPtr<T>) -> Option<Id<T>> {

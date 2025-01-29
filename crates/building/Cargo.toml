@@ -1,0 +1,13 @@
+[package]
+name = "building"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dashmap = "6.1.0"
+id = { version = "0.1.0", path = "../id" }
+indexmap = "2.7.1"
+parking_lot = "0.12.3"
+petgraph = "0.7.1"
+rayon = "1.10.0"
+rustc-hash = "2.1.0"

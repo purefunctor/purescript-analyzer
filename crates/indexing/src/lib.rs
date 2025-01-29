@@ -1,6 +1,5 @@
 mod algorithm;
 mod error;
-mod id;
 mod indexes;
 mod sourcemap;
 mod wellformed;
@@ -8,7 +7,6 @@ mod wellformed;
 use std::sync::Arc;
 
 pub use error::*;
-pub use id::*;
 pub use indexes::*;
 pub use sourcemap::*;
 

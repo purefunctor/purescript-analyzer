@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 hashbrown = "0.15.2"
+id = { version = "0.1.0", path = "../id" }
 indexmap = "2.7.0"
 insta = "1.42.0"
 itertools = "0.14.0"

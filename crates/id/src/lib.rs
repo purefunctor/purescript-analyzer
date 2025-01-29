@@ -46,6 +46,12 @@ impl<T> AsRef<Id<T>> for Id<T> {
     }
 }
 
+impl<T> From<Id<T>> for usize {
+    fn from(value: Id<T>) -> Self {
+        value.index
+    }
+}
+
 impl<T> Id<T> {
     pub fn from_raw(index: usize) -> Id<T> {
         Id { index, _marker: PhantomData }

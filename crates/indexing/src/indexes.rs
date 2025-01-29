@@ -1,9 +1,8 @@
 use indexmap::IndexMap;
 use smol_str::SmolStr;
 
-use crate::{
-    id::Id, ClassMemberId, ConstructorId, DeclarationId, ImportId, InstanceId, InstanceMemberId,
-};
+use crate::{ClassMemberId, ConstructorId, DeclarationId, ImportId, InstanceId, InstanceMemberId};
+use id::Id;
 
 /// A group of type signature and declaration.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -180,7 +179,8 @@ impl NominalIndex {
     }
 
     pub fn index_expr_item(&self, id: ExprItemId) -> Option<&ExprItem> {
-        self.expr_item.get_index(id.index).map(|(_, item)| item)
+        let index = id.into();
+        self.expr_item.get_index(index).map(|(_, item)| item)
     }
 
     pub fn lookup_type_item(&self, name: &str) -> Option<(TypeItemId, &TypeItem)> {
@@ -188,7 +188,8 @@ impl NominalIndex {
     }
 
     pub fn index_type_item(&self, id: TypeItemId) -> Option<&TypeItem> {
-        self.type_item.get_index(id.index).map(|(_, item)| item)
+        let index = id.into();
+        self.type_item.get_index(index).map(|(_, item)| item)
     }
 }
 
