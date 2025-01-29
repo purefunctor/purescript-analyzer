@@ -1,4 +1,9 @@
-use std::{cmp, fmt::Debug, marker::PhantomData};
+use std::{
+    cmp,
+    fmt::Debug,
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+};
 
 /// An index associated with a type.
 pub struct Id<T> {
@@ -37,6 +42,12 @@ impl<T> PartialOrd for Id<T> {
 impl<T> Ord for Id<T> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.index.cmp(&other.index)
+    }
+}
+
+impl<T> Hash for Id<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.index.hash(state);
     }
 }
 
