@@ -35,11 +35,16 @@ version = "0.1.0"
 dependencies = [
  "dashmap",
  "id",
+ "indexing",
  "indexmap",
+ "lexing",
  "parking_lot",
+ "parsing",
  "petgraph",
  "rayon",
+ "rowan",
  "rustc-hash 2.1.0",
+ "syntax",
 ]
 
 [[package]]

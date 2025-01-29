@@ -6,8 +6,13 @@ edition = "2021"
 [dependencies]
 dashmap = "6.1.0"
 id = { version = "0.1.0", path = "../id" }
+indexing = { version = "0.1.0", path = "../indexing" }
 indexmap = "2.7.1"
+lexing = { version = "0.1.0", path = "../lexing" }
 parking_lot = "0.12.3"
+parsing = { version = "0.1.0", path = "../parsing" }
 petgraph = "0.7.1"
 rayon = "1.10.0"
+rowan = "0.16.1"
 rustc-hash = "2.1.0"
+syntax = { version = "0.1.0", path = "../syntax" }
