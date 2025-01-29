@@ -128,7 +128,7 @@ pub enum TypeItem {
 /// [`DuplicateExprItem`]: crate::IndexingError::DuplicateExprItem
 /// [`DuplicateTypeItem`]: crate::IndexingError::DuplicateTypeItem
 /// [`SourceMap`]: crate::SourceMap
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct NominalIndex {
     qualified: IndexMap<SmolStr, Vec<ImportId>>,
     expr_item: IndexMap<SmolStr, ExprItem>,
@@ -209,7 +209,7 @@ impl NominalIndex {
 /// a linear search is often sufficient for most use cases. In the future, the
 /// `RelationalIndex` could make use of SIMD-based lookups especially for large,
 /// code-generated PureScript files with hundreds if not thousands of relationships.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct RelationalIndex {
     pub(crate) constructor_of: Vec<(TypeItemId, ConstructorId)>,
     pub(crate) class_member_of: Vec<(TypeItemId, ClassMemberId)>,

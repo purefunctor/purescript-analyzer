@@ -12,6 +12,7 @@ pub use sourcemap::*;
 
 use syntax::cst;
 
+#[derive(Debug)]
 pub struct IndexingResult {
     pub source_map: SourceMap,
     pub nominal: NominalIndex,
