@@ -121,10 +121,10 @@ impl Runtime {
     }
 
     pub fn set_content(&mut self, id: FileId, content: Arc<str>) {
+        self.content.insert(id, content);
+
         self.revision += 1;
         let revision = self.revision;
-
-        self.content.insert(id, content);
 
         let k = QueryKey::Content(id);
         let v = Trace::create_input(revision);
