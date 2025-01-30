@@ -203,18 +203,33 @@ fn type_role_errors() {
 
 #[test]
 fn index_export() {
-    let (_, index, errors) = index_source(
+    let (_, index, _) = index_source(
         "module Main (life, class Eq, Synonym, Data(..), (+), type (+), module Export) where\n",
     );
 
-    insta::assert_debug_snapshot!((index, errors));
+    let life = index.export.lookup_expr_export("life");
+    let eq_class = index.export.lookup_type_export("Eq");
+    let synonym = index.export.lookup_type_export("Synonym");
+    let data = index.export.lookup_type_export("Data");
+    let plus = index.export.lookup_expr_export("(+)");
+    let plus_type = index.export.lookup_type_export("(+)");
+    let export = index.export.lookup_module_export("Export");
+
+    let mut snapshot = String::default();
+    writeln!(snapshot, "life: {:?}", life).unwrap();
+    writeln!(snapshot, "eq_class: {:?}", eq_class).unwrap();
+    writeln!(snapshot, "synonym: {:?}", synonym).unwrap();
+    writeln!(snapshot, "data: {:?}", data).unwrap();
+    writeln!(snapshot, "plus: {:?}", plus).unwrap();
+    writeln!(snapshot, "plus_type: {:?}", plus_type).unwrap();
+    writeln!(snapshot, "export: {:?}", export).unwrap();
+    insta::assert_snapshot!(snapshot);
 }
 
 #[test]
 fn index_export_duplicate() {
-    let (_, index, errors) = index_source(
+    let (_, _, errors) = index_source(
         "module Main (life, life, class Eq, class Eq, Synonym, Synonym, Data(..), Data(..), (+), (+), type (+), type (+), module Export, module Export)"
     );
-
-    insta::assert_debug_snapshot!((index, errors));
+    insta::assert_debug_snapshot!(errors);
 }
