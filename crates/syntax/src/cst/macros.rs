@@ -97,6 +97,25 @@ macro_rules! has_token {
     };
 }
 
+macro_rules! has_tokens {
+    ($kind:ident $(|$name:ident() -> $token:ident)+) => {
+        impl $kind {
+            $(
+                pub fn $name(&self) -> impl Iterator<Item = crate::SyntaxToken> {
+                    self.syntax().children_with_tokens().filter_map(|n| {
+                        let t = n.into_token()?;
+                        if t.kind() == crate::SyntaxKind::UPPER {
+                            Some(t)
+                        } else {
+                            None
+                        }
+                    })
+                }
+            )+
+        }
+    };
+}
+
 macro_rules! has_child {
     ($kind:ident $(|$name:ident() -> $child:ident)+) => {
         impl $kind {
