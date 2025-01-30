@@ -213,7 +213,12 @@ has_token!(
     | name_token() -> UPPER
 );
 
-has_children!(
+has_tokens!(
+    TypeItemsList
+    | name_tokens() -> UPPER
+);
+
+has_child!(
     ExportType
     | type_items() -> TypeItems
 );

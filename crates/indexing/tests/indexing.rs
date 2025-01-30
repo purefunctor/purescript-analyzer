@@ -204,13 +204,18 @@ fn type_role_errors() {
 #[test]
 fn index_export() {
     let (_, index, _) = index_source(
-        "module Main (life, class Eq, Synonym, Data(..), (+), type (+), module Export) where\n",
+        &["module Main (life, class Eq, Synonym, Data(..), List(Cons, Nil), (+), type (+), module Export) where", "data Data = A | B"].join("\n"),
     );
 
     let life = index.export.lookup_expr_export("life");
     let eq_class = index.export.lookup_type_export("Eq");
     let synonym = index.export.lookup_type_export("Synonym");
     let data = index.export.lookup_type_export("Data");
+    let data_a = index.export.lookup_expr_export("A");
+    let data_b = index.export.lookup_expr_export("B");
+    let list = index.export.lookup_type_export("List");
+    let list_cons = index.export.lookup_expr_export("Cons");
+    let list_nil = index.export.lookup_expr_export("Nil");
     let plus = index.export.lookup_expr_export("(+)");
     let plus_type = index.export.lookup_type_export("(+)");
     let export = index.export.lookup_module_export("Export");
@@ -220,6 +225,11 @@ fn index_export() {
     writeln!(snapshot, "eq_class: {:?}", eq_class).unwrap();
     writeln!(snapshot, "synonym: {:?}", synonym).unwrap();
     writeln!(snapshot, "data: {:?}", data).unwrap();
+    writeln!(snapshot, "data_a: {:?}", data_a).unwrap();
+    writeln!(snapshot, "data_b: {:?}", data_b).unwrap();
+    writeln!(snapshot, "list: {:?}", list).unwrap();
+    writeln!(snapshot, "list_cons: {:?}", list_cons).unwrap();
+    writeln!(snapshot, "list_nil: {:?}", list_nil).unwrap();
     writeln!(snapshot, "plus: {:?}", plus).unwrap();
     writeln!(snapshot, "plus_type: {:?}", plus_type).unwrap();
     writeln!(snapshot, "export: {:?}", export).unwrap();

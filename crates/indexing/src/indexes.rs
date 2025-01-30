@@ -182,18 +182,18 @@ impl NominalIndex {
         self.expr_item.get_full(name).map(|(id, _, item)| (Id::from_raw(id), item))
     }
 
-    pub fn index_expr_item(&self, id: ExprItemId) -> Option<&ExprItem> {
+    pub fn index_expr_item(&self, id: ExprItemId) -> Option<(&SmolStr, &ExprItem)> {
         let index = id.into();
-        self.expr_item.get_index(index).map(|(_, item)| item)
+        self.expr_item.get_index(index)
     }
 
     pub fn lookup_type_item(&self, name: &str) -> Option<(TypeItemId, &TypeItem)> {
         self.type_item.get_full(name).map(|(id, _, item)| (Id::from_raw(id), item))
     }
 
-    pub fn index_type_item(&self, id: TypeItemId) -> Option<&TypeItem> {
+    pub fn index_type_item(&self, id: TypeItemId) -> Option<(&SmolStr, &TypeItem)> {
         let index = id.into();
-        self.type_item.get_index(index).map(|(_, item)| item)
+        self.type_item.get_index(index)
     }
 }
 
@@ -215,7 +215,7 @@ impl NominalIndex {
 /// code-generated PureScript files with hundreds if not thousands of relationships.
 #[derive(Debug, Default)]
 pub struct RelationalIndex {
-    pub(crate) constructor_of: Vec<(TypeItemId, ConstructorId)>,
+    pub(crate) constructor_of: Vec<(TypeItemId, ExprItemId)>,
     pub(crate) class_member_of: Vec<(TypeItemId, ClassMemberId)>,
     pub(crate) instance_of: Vec<(DeclarationId, InstanceId)>,
     pub(crate) instance_member_of: Vec<(InstanceId, InstanceMemberId)>,
@@ -230,11 +230,11 @@ fn find_u<T, U>(haystack: &[(Id<T>, Id<U>)], needle: Id<T>) -> impl Iterator<Ite
 }
 
 impl RelationalIndex {
-    pub fn constructors_of(&self, id: TypeItemId) -> impl Iterator<Item = ConstructorId> + '_ {
+    pub fn constructors_of(&self, id: TypeItemId) -> impl Iterator<Item = ExprItemId> + '_ {
         find_u(&self.constructor_of, id)
     }
 
-    pub fn of_constructor(&self, id: ConstructorId) -> Option<TypeItemId> {
+    pub fn of_constructor(&self, id: ExprItemId) -> Option<TypeItemId> {
         find_t(&self.constructor_of, id)
     }
 

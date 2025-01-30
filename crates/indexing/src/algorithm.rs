@@ -3,7 +3,7 @@ use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::{cst, SyntaxToken};
 
 use crate::{
-    ClassMemberId, ConstructorId, Duplicate, ExportIndex, ExprItem, IndexingError, IndexingResult,
+    ClassMemberId, Duplicate, ExportIndex, ExprItem, ExprItemId, IndexingError, IndexingResult,
     InstanceId, NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, TypeItemId,
     ValueGroupId,
 };
@@ -49,7 +49,7 @@ pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<Indexin
 fn index_export(state: &mut State, export: cst::ExportItem) {
     let export_id = state.source_map.insert_export(&export);
 
-    let index_expr = |state: &mut State, token: SyntaxToken| {
+    let index_expr = |state: &mut State, token: &SyntaxToken| {
         let name = token.text();
         if let Some(existing) = state.export.lookup_expr_export(name) {
             let duplicate = export_id;
@@ -60,7 +60,7 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
         }
     };
 
-    let index_type = |state: &mut State, token: SyntaxToken| {
+    let index_type = |state: &mut State, token: &SyntaxToken| {
         let name = token.text();
         if let Some(existing) = state.export.lookup_type_export(name) {
             let duplicate = export_id;
@@ -71,26 +71,55 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
         }
     };
 
+    let index_type_items_all = |state: &mut State, name: &str| {
+        let Some((_, id)) = state.nominal.type_get_mut(name) else { return };
+        for item_id in state.relational.constructors_of(id) {
+            let Some((name, _)) = state.nominal.index_expr_item(item_id) else {
+                continue;
+            };
+            if let Some(existing) = state.export.lookup_expr_export(name) {
+                let duplicate = export_id;
+                state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
+            } else {
+                let name = name.clone();
+                state.export.insert_expr_export(name, export_id);
+            }
+        }
+    };
+
     match export {
         cst::ExportItem::ExportValue(v) => {
             let Some(token) = v.name_token() else { return };
-            index_expr(state, token);
+            index_expr(state, &token);
         }
         cst::ExportItem::ExportClass(c) => {
             let Some(token) = c.name_token() else { return };
-            index_type(state, token)
+            index_type(state, &token)
         }
         cst::ExportItem::ExportType(t) => {
             let Some(token) = t.name_token() else { return };
-            index_type(state, token);
+            index_type(state, &token);
+
+            let Some(items) = t.type_items() else { return };
+            match items {
+                cst::TypeItems::TypeItemsAll(_) => {
+                    let name = token.text();
+                    index_type_items_all(state, name);
+                }
+                cst::TypeItems::TypeItemsList(t) => {
+                    for token in t.name_tokens() {
+                        index_expr(state, &token)
+                    }
+                }
+            }
         }
         cst::ExportItem::ExportOperator(o) => {
             let Some(token) = o.name_token() else { return };
-            index_expr(state, token);
+            index_expr(state, &token);
         }
         cst::ExportItem::ExportTypeOperator(o) => {
             let Some(token) = o.name_token() else { return };
-            index_type(state, token);
+            index_type(state, &token);
         }
         cst::ExportItem::ExportModule(m) => {
             let Some(module_name) = m.module_name() else { return };
@@ -507,36 +536,34 @@ fn index_class_statements(
     }
 }
 
-fn index_data_constructor(state: &mut State, constructor: cst::DataConstructor) -> ConstructorId {
-    let name_token = constructor.name_token();
+fn index_data_constructor(
+    state: &mut State,
+    constructor: cst::DataConstructor,
+) -> Option<ExprItemId> {
+    let name_token = constructor.name_token()?;
     let constructor_id = state.source_map.insert_constructor(&constructor);
-
-    let Some(name_token) = name_token else {
-        return constructor_id;
-    };
 
     let name = name_token.text();
     if let Some((_, item_id)) = state.nominal.expr_get_mut(name) {
         let duplicate = Duplicate::Constructor(constructor_id);
         state.errors.push(IndexingError::DuplicateExprItem { item_id, duplicate });
+        Some(item_id)
     } else {
         let name: SmolStr = name.into();
         let item = ExprItem::Constructor(constructor_id);
-        state.nominal.insert_expr(name, item);
+        Some(state.nominal.insert_expr(name, item))
     }
-
-    constructor_id
 }
 
 fn index_data_constructors(
     state: &mut State,
-    item_id: Option<TypeItemId>,
+    type_id: Option<TypeItemId>,
     constructors: AstChildren<cst::DataConstructor>,
 ) {
     for constructor in constructors {
-        let constructor_id = index_data_constructor(state, constructor);
-        let Some(item_id) = item_id else { continue };
-        state.relational.constructor_of.push((item_id, constructor_id));
+        let Some(item_id) = index_data_constructor(state, constructor) else { continue };
+        let Some(type_id) = type_id else { continue };
+        state.relational.constructor_of.push((type_id, item_id));
     }
 }
 
