@@ -4,9 +4,7 @@ use indexing::{IndexingErrors, IndexingResult};
 use rowan::ast::AstNode;
 use syntax::cst;
 
-fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, IndexingErrors) {
-    let source = format!("module Main where\n{}", lines.as_ref().join("\n"));
-
+fn index_source(source: &str) -> (cst::Module, IndexingResult, IndexingErrors) {
     let lexed = lexing::lex(&source);
     let tokens = lexing::layout(&lexed);
 
@@ -15,6 +13,11 @@ fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, Inde
 
     let (index, errors) = indexing::index(&module);
     (module, index, errors)
+}
+
+fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, IndexingErrors) {
+    let source = format!("module Main where\n{}", lines.as_ref().join("\n"));
+    index_source(&source)
 }
 
 #[test]
@@ -196,4 +199,22 @@ fn type_role_errors() {
         "type role Id phantom",
     ]);
     insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
+fn index_export() {
+    let (_, index, errors) = index_source(
+        "module Main (life, class Eq, Synonym, Data(..), (+), type (+), module Export) where\n",
+    );
+
+    insta::assert_debug_snapshot!((index, errors));
+}
+
+#[test]
+fn index_export_duplicate() {
+    let (_, index, errors) = index_source(
+        "module Main (life, life, class Eq, class Eq, Synonym, Synonym, Data(..), Data(..), (+), (+), type (+), type (+), module Export, module Export)"
+    );
+
+    insta::assert_debug_snapshot!((index, errors));
 }

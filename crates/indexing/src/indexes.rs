@@ -1,7 +1,11 @@
 use indexmap::IndexMap;
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
-use crate::{ClassMemberId, ConstructorId, DeclarationId, ImportId, InstanceId, InstanceMemberId};
+use crate::{
+    ClassMemberId, ConstructorId, DeclarationId, ExportItemId, ImportId, InstanceId,
+    InstanceMemberId,
+};
 use id::Id;
 
 /// A group of type signature and declaration.
@@ -240,5 +244,40 @@ impl RelationalIndex {
 
     pub fn of_class_member(&self, id: ClassMemberId) -> Option<TypeItemId> {
         find_t(&self.class_member_of, id)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ExportIndex {
+    module_export: FxHashMap<SmolStr, ExportItemId>,
+    expr_export: FxHashMap<SmolStr, ExportItemId>,
+    type_export: FxHashMap<SmolStr, ExportItemId>,
+}
+
+impl ExportIndex {
+    pub fn lookup_module_export(&self, name: &str) -> Option<ExportItemId> {
+        self.module_export.get(name).copied()
+    }
+
+    pub fn lookup_expr_export(&self, name: &str) -> Option<ExportItemId> {
+        self.expr_export.get(name).copied()
+    }
+
+    pub fn lookup_type_export(&self, name: &str) -> Option<ExportItemId> {
+        self.type_export.get(name).copied()
+    }
+}
+
+impl ExportIndex {
+    pub(crate) fn insert_module_export(&mut self, name: SmolStr, id: ExportItemId) {
+        self.module_export.insert(name, id);
+    }
+
+    pub(crate) fn insert_expr_export(&mut self, name: SmolStr, id: ExportItemId) {
+        self.expr_export.insert(name, id);
+    }
+
+    pub(crate) fn insert_type_export(&mut self, name: SmolStr, id: ExportItemId) {
+        self.type_export.insert(name, id);
     }
 }

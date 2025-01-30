@@ -23,6 +23,9 @@ pub type InstancePtr = AstPtr<cst::InstanceDeclaration>;
 pub type InstanceMemberId = Id<cst::InstanceMemberStatement>;
 pub type InstanceMemberPtr = AstPtr<cst::InstanceMemberStatement>;
 
+pub type ExportItemId = Id<cst::ExportItem>;
+pub type ExportItemPtr = AstPtr<cst::ExportItem>;
+
 /// Mapping from module items to stable IDs.
 ///
 /// The `SourceMap` derives stable [`Id`] values from [`AstPtr`] in the CST.
@@ -67,6 +70,7 @@ pub type InstanceMemberPtr = AstPtr<cst::InstanceMemberStatement>;
 /// implementation works well enough for the general case.
 #[derive(Debug, Default)]
 pub struct SourceMap {
+    exports: FxIndexSet<ExportItemPtr>,
     imports: FxIndexSet<ImportPtr>,
     declaration: FxIndexSet<DeclarationPtr>,
     constructor: FxIndexSet<ConstructorPtr>,
@@ -94,6 +98,10 @@ fn id<T: AstNode>(m: &FxIndexSet<AstPtr<T>>, ptr: AstPtr<T>) -> Option<Id<T>> {
 }
 
 impl SourceMap {
+    pub(crate) fn insert_export(&mut self, export: &cst::ExportItem) -> ExportItemId {
+        insert(&mut self.exports, export)
+    }
+
     pub(crate) fn insert_import(&mut self, import: &cst::ImportStatement) -> ImportId {
         insert(&mut self.imports, import)
     }
@@ -129,6 +137,14 @@ impl SourceMap {
 }
 
 impl SourceMap {
+    pub fn export_ptr(&self, id: ExportItemId) -> Option<ExportItemPtr> {
+        ptr(&self.exports, id)
+    }
+
+    pub fn export_id(&self, ptr: ExportItemPtr) -> Option<ExportItemId> {
+        id(&self.exports, ptr)
+    }
+
     pub fn import_ptr(&self, id: ImportId) -> Option<ImportPtr> {
         ptr(&self.imports, id)
     }

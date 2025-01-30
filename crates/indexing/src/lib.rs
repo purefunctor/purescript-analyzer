@@ -16,6 +16,7 @@ use syntax::cst;
 pub struct IndexingResult {
     pub source_map: SourceMap,
     pub nominal: NominalIndex,
+    pub export: ExportIndex,
     pub relational: RelationalIndex,
 }
 

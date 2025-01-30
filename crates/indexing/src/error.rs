@@ -1,8 +1,12 @@
-use crate::{ClassMemberId, ConstructorId, DeclarationId, ExprItemId, InstanceId, TypeItemId};
+use crate::{
+    ClassMemberId, ConstructorId, DeclarationId, ExportItemId, ExprItemId, InstanceId, TypeItemId,
+};
 
 /// Errors emitted during indexing.
 #[derive(Debug, PartialEq, Eq)]
 pub enum IndexingError {
+    DuplicateExport { existing: ExportItemId, duplicate: ExportItemId },
+
     DuplicateExprItem { item_id: ExprItemId, duplicate: Duplicate },
     DuplicateTypeItem { item_id: TypeItemId, duplicate: Duplicate },
 

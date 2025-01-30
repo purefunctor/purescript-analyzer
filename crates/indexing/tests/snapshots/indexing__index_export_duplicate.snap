@@ -1,0 +1,201 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: "(index, errors)"
+snapshot_kind: text
+---
+(
+    IndexingResult {
+        source_map: SourceMap {
+            exports: {
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportValue,
+                        range: 13..17,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportValue,
+                        range: 18..23,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportClass,
+                        range: 24..33,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportClass,
+                        range: 34..43,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportType,
+                        range: 44..52,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportType,
+                        range: 53..61,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportType,
+                        range: 62..71,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportType,
+                        range: 72..81,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportOperator,
+                        range: 82..86,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportOperator,
+                        range: 87..91,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportTypeOperator,
+                        range: 92..101,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportTypeOperator,
+                        range: 102..111,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportModule,
+                        range: 112..126,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ExportModule,
+                        range: 127..141,
+                    },
+                },
+            },
+            imports: {},
+            declaration: {},
+            constructor: {},
+            class_member: {},
+            instance: {},
+            instance_member: {},
+        },
+        nominal: NominalIndex {
+            qualified: {},
+            expr_item: {},
+            type_item: {},
+        },
+        export: ExportIndex {
+            module_export: {
+                "Export": Id(
+                    12,
+                ),
+            },
+            expr_export: {
+                "(+)": Id(
+                    8,
+                ),
+                "life": Id(
+                    0,
+                ),
+            },
+            type_export: {
+                "(+)": Id(
+                    10,
+                ),
+                "Synonym": Id(
+                    4,
+                ),
+                "Eq": Id(
+                    2,
+                ),
+                "Data": Id(
+                    6,
+                ),
+            },
+        },
+        relational: RelationalIndex {
+            constructor_of: [],
+            class_member_of: [],
+            instance_of: [],
+            instance_member_of: [],
+        },
+    },
+    [
+        DuplicateExport {
+            existing: Id(
+                0,
+            ),
+            duplicate: Id(
+                1,
+            ),
+        },
+        DuplicateExport {
+            existing: Id(
+                2,
+            ),
+            duplicate: Id(
+                3,
+            ),
+        },
+        DuplicateExport {
+            existing: Id(
+                4,
+            ),
+            duplicate: Id(
+                5,
+            ),
+        },
+        DuplicateExport {
+            existing: Id(
+                6,
+            ),
+            duplicate: Id(
+                7,
+            ),
+        },
+        DuplicateExport {
+            existing: Id(
+                8,
+            ),
+            duplicate: Id(
+                9,
+            ),
+        },
+        DuplicateExport {
+            existing: Id(
+                10,
+            ),
+            duplicate: Id(
+                11,
+            ),
+        },
+        DuplicateExport {
+            existing: Id(
+                12,
+            ),
+            duplicate: Id(
+                13,
+            ),
+        },
+    ],
+)

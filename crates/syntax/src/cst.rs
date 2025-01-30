@@ -183,8 +183,54 @@ create_cst_enum!(RecordUpdate | RecordUpdateLeaf | RecordUpdateBranch);
 
 has_child!(
     Module
+    | header() -> ModuleHeader
     | imports() -> ModuleImports
     | statements() -> ModuleStatements
+);
+
+has_child!(
+    ModuleHeader
+    | exports() -> ExportList
+);
+
+has_children!(
+    ExportList
+    | children() -> ExportItem
+);
+
+has_token!(
+    ExportValue
+    | name_token() -> LOWER
+);
+
+has_token!(
+    ExportClass
+    | name_token() -> UPPER
+);
+
+has_token!(
+    ExportType
+    | name_token() -> UPPER
+);
+
+has_children!(
+    ExportType
+    | type_items() -> TypeItems
+);
+
+has_token!(
+    ExportOperator
+    | name_token() -> OPERATOR_NAME
+);
+
+has_token!(
+    ExportTypeOperator
+    | name_token() -> OPERATOR_NAME
+);
+
+has_child!(
+    ExportModule
+    | module_name() -> ModuleName
 );
 
 has_children!(

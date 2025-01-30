@@ -1,10 +1,11 @@
 use rowan::ast::AstChildren;
 use smol_str::{SmolStr, SmolStrBuilder};
-use syntax::cst;
+use syntax::{cst, SyntaxToken};
 
 use crate::{
-    ClassMemberId, ConstructorId, Duplicate, ExprItem, IndexingError, IndexingResult, InstanceId,
-    NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, TypeItemId, ValueGroupId,
+    ClassMemberId, ConstructorId, Duplicate, ExportIndex, ExprItem, IndexingError, IndexingResult,
+    InstanceId, NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, TypeItemId,
+    ValueGroupId,
 };
 
 #[derive(Default)]
@@ -12,6 +13,7 @@ struct State {
     source_map: SourceMap,
     nominal: NominalIndex,
     relational: RelationalIndex,
+    export: ExportIndex,
     errors: Vec<IndexingError>,
 }
 
@@ -30,10 +32,88 @@ pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<Indexin
         }
     }
 
-    let State { source_map, nominal, relational, errors } = state;
-    let result = IndexingResult { source_map, nominal, relational };
+    if let Some(header) = module.header() {
+        if let Some(exports) = header.exports() {
+            for export in exports.children() {
+                index_export(&mut state, export);
+            }
+        }
+    }
+
+    let State { source_map, nominal, relational, export, errors } = state;
+    let result = IndexingResult { source_map, nominal, relational, export };
 
     (result, errors)
+}
+
+fn index_export(state: &mut State, export: cst::ExportItem) {
+    let export_id = state.source_map.insert_export(&export);
+
+    let index_expr = |state: &mut State, token: SyntaxToken| {
+        let name = token.text();
+        if let Some(existing) = state.export.lookup_expr_export(name) {
+            let duplicate = export_id;
+            state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
+        } else {
+            let name = SmolStr::from(name);
+            state.export.insert_expr_export(name, export_id);
+        }
+    };
+
+    let index_type = |state: &mut State, token: SyntaxToken| {
+        let name = token.text();
+        if let Some(existing) = state.export.lookup_type_export(name) {
+            let duplicate = export_id;
+            state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
+        } else {
+            let name = SmolStr::from(name);
+            state.export.insert_type_export(name, export_id);
+        }
+    };
+
+    match export {
+        cst::ExportItem::ExportValue(v) => {
+            let Some(token) = v.name_token() else { return };
+            index_expr(state, token);
+        }
+        cst::ExportItem::ExportClass(c) => {
+            let Some(token) = c.name_token() else { return };
+            index_type(state, token)
+        }
+        cst::ExportItem::ExportType(t) => {
+            let Some(token) = t.name_token() else { return };
+            index_type(state, token);
+        }
+        cst::ExportItem::ExportOperator(o) => {
+            let Some(token) = o.name_token() else { return };
+            index_expr(state, token);
+        }
+        cst::ExportItem::ExportTypeOperator(o) => {
+            let Some(token) = o.name_token() else { return };
+            index_type(state, token);
+        }
+        cst::ExportItem::ExportModule(m) => {
+            let Some(module_name) = m.module_name() else { return };
+
+            let mut buffer = SmolStrBuilder::default();
+            if let Some(qualifier) = module_name.qualifier() {
+                if let Some(token) = qualifier.text() {
+                    buffer.push_str(token.text());
+                }
+            }
+
+            let Some(token) = module_name.name_token() else { return };
+            buffer.push_str(token.text());
+
+            let name = buffer.finish();
+            if let Some(existing) = state.export.lookup_module_export(&name) {
+                let duplicate = export_id;
+                state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
+            } else {
+                state.export.insert_module_export(name, export_id);
+            }
+        }
+    }
 }
 
 fn index_import(state: &mut State, import: cst::ImportStatement) {
