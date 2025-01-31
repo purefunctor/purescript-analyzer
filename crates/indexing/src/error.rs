@@ -6,6 +6,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq)]
 pub enum IndexingError {
     DuplicateExport { existing: ExportItemId, duplicate: ExportItemId },
+    InvalidTypeItemExport { export_id: ExportItemId, type_id: TypeItemId },
 
     DuplicateExprItem { item_id: ExprItemId, duplicate: Duplicate },
     DuplicateTypeItem { item_id: TypeItemId, duplicate: Duplicate },

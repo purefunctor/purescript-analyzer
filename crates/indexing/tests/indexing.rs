@@ -204,7 +204,7 @@ fn type_role_errors() {
 #[test]
 fn index_export() {
     let (_, index, _) = index_source(
-        &["module Main (life, class Eq, Synonym, Data(..), List(Cons, Nil), (+), type (+), module Export) where", "data Data = A | B"].join("\n"),
+        &["module Main (life, class Eq, Synonym, Data(..), List(Cons, Nil), (+), type (+), module Export) where", "data Data = A | B", "data List = Cons | Nil"].join("\n"),
     );
 
     let life = index.export.lookup_expr_export("life");
@@ -240,6 +240,15 @@ fn index_export() {
 fn index_export_duplicate() {
     let (_, _, errors) = index_source(
         "module Main (life, life, class Eq, class Eq, Synonym, Synonym, Data(..), Data(..), (+), (+), type (+), type (+), module Export, module Export)"
+    );
+    insta::assert_debug_snapshot!(errors);
+}
+
+#[test]
+fn index_export_synonym_error() {
+    let (_, _, errors) = index_source(
+        &["module Main (Id(..), Index(Index)) where", "type Id = Int", "type Index = Int"]
+            .join("\n"),
     );
     insta::assert_debug_snapshot!(errors);
 }

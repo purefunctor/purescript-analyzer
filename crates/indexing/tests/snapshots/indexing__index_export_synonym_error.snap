@@ -1,0 +1,23 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: errors
+snapshot_kind: text
+---
+[
+    InvalidTypeItemExport {
+        export_id: Id(
+            0,
+        ),
+        type_id: Id(
+            0,
+        ),
+    },
+    InvalidTypeItemExport {
+        export_id: Id(
+            1,
+        ),
+        type_id: Id(
+            1,
+        ),
+    },
+]

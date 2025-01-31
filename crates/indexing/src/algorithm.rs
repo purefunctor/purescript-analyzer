@@ -72,8 +72,15 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
     };
 
     let index_type_items_all = |state: &mut State, name: &str| {
-        let Some((_, id)) = state.nominal.type_get_mut(name) else { return };
-        for item_id in state.relational.constructors_of(id) {
+        let Some((_, type_id)) = state.nominal.type_get_mut(name) else { return };
+
+        let Some((_, TypeItem::Data(_) | TypeItem::Newtype(_))) =
+            state.nominal.index_type_item(type_id)
+        else {
+            return state.errors.push(IndexingError::InvalidTypeItemExport { export_id, type_id });
+        };
+
+        for item_id in state.relational.constructors_of(type_id) {
             let Some((name, _)) = state.nominal.index_expr_item(item_id) else {
                 continue;
             };
@@ -84,6 +91,20 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
                 let name = name.clone();
                 state.export.insert_expr_export(name, export_id);
             }
+        }
+    };
+
+    let index_type_items_list = |state: &mut State, name: &str, t: cst::TypeItemsList| {
+        let Some((_, type_id)) = state.nominal.type_get_mut(name) else { return };
+
+        let Some((_, TypeItem::Data(_) | TypeItem::Newtype(_))) =
+            state.nominal.index_type_item(type_id)
+        else {
+            return state.errors.push(IndexingError::InvalidTypeItemExport { export_id, type_id });
+        };
+
+        for token in t.name_tokens() {
+            index_expr(state, &token)
         }
     };
 
@@ -107,9 +128,8 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
                     index_type_items_all(state, name);
                 }
                 cst::TypeItems::TypeItemsList(t) => {
-                    for token in t.name_tokens() {
-                        index_expr(state, &token)
-                    }
+                    let name = token.text();
+                    index_type_items_list(state, name, t);
                 }
             }
         }
