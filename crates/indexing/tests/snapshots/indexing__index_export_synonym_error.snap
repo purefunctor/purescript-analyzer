@@ -5,19 +5,11 @@ snapshot_kind: text
 ---
 [
     InvalidTypeItemExport {
-        export_id: Id(
-            0,
-        ),
-        type_id: Id(
-            0,
-        ),
+        export_id: Id<syntax::cst::ExportItem>(0),
+        type_id: Id<indexing::indexes::TypeItem>(0),
     },
     InvalidTypeItemExport {
-        export_id: Id(
-            1,
-        ),
-        type_id: Id(
-            1,
-        ),
+        export_id: Id<syntax::cst::ExportItem>(1),
+        type_id: Id<indexing::indexes::TypeItem>(1),
     },
 ]

@@ -5,11 +5,7 @@ snapshot_kind: text
 ---
 [
     InvalidOrder {
-        early: Id(
-            0,
-        ),
-        late: Id(
-            2,
-        ),
+        early: Id<syntax::cst::Declaration>(0),
+        late: Id<syntax::cst::Declaration>(2),
     },
 ]

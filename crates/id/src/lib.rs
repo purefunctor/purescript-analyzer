@@ -1,5 +1,5 @@
 use std::{
-    cmp,
+    any, cmp,
     fmt::Debug,
     hash::{Hash, Hasher},
     marker::PhantomData,
@@ -11,9 +11,13 @@ pub struct Id<T> {
     _marker: PhantomData<fn() -> T>,
 }
 
-impl<T> Debug for Id<T> {
+impl<T: any::Any> Debug for Id<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("Id").field(&self.index).finish()
+        if f.alternate() {
+            write!(f, "Id<{}>({})", any::type_name::<T>(), &self.index)
+        } else {
+            write!(f, "Id({})", &self.index)
+        }
     }
 }
 
@@ -84,6 +88,7 @@ mod tests {
     fn from_raw() {
         let id: Id<()> = Id::from_raw(42);
         assert_eq!(format!("{:?}", id), "Id(42)");
+        assert_eq!(format!("{:#?}", id), "Id<()>(42)");
         assert_eq!(id.clone(), id);
     }
 }

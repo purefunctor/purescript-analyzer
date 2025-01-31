@@ -5,11 +5,7 @@ snapshot_kind: text
 ---
 [
     NonConsecutive {
-        first: Id(
-            1,
-        ),
-        second: Id(
-            3,
-        ),
+        first: Id<syntax::cst::Declaration>(1),
+        second: Id<syntax::cst::Declaration>(3),
     },
 ]

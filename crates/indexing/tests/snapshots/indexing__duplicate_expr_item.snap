@@ -5,83 +5,51 @@ snapshot_kind: text
 ---
 [
     DuplicateExprItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(0),
         duplicate: ClassMember(
-            Id(
-                0,
-            ),
+            Id<syntax::cst::ClassMemberStatement>(0),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(0),
         duplicate: Instance(
-            Id(
-                0,
-            ),
+            Id<syntax::cst::InstanceDeclaration>(0),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(0),
         duplicate: Declaration(
-            Id(
-                3,
-            ),
+            Id<syntax::cst::Declaration>(3),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            1,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(1),
         duplicate: Declaration(
-            Id(
-                5,
-            ),
+            Id<syntax::cst::Declaration>(5),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            1,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(1),
         duplicate: Declaration(
-            Id(
-                6,
-            ),
+            Id<syntax::cst::Declaration>(6),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            2,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(2),
         duplicate: Constructor(
-            Id(
-                1,
-            ),
+            Id<syntax::cst::DataConstructor>(1),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            3,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(3),
         duplicate: Declaration(
-            Id(
-                10,
-            ),
+            Id<syntax::cst::Declaration>(10),
         ),
     },
     DuplicateExprItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::ExprItem>(0),
         duplicate: Declaration(
-            Id(
-                11,
-            ),
+            Id<syntax::cst::Declaration>(11),
         ),
     },
 ]

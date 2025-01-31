@@ -5,81 +5,49 @@ snapshot_kind: text
 ---
 [
     DuplicateTypeItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(0),
         duplicate: Declaration(
-            Id(
-                1,
-            ),
+            Id<syntax::cst::Declaration>(1),
         ),
     },
     DuplicateTypeItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(0),
         duplicate: Declaration(
-            Id(
-                2,
-            ),
+            Id<syntax::cst::Declaration>(2),
         ),
     },
     DuplicateTypeItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(0),
         duplicate: Declaration(
-            Id(
-                3,
-            ),
+            Id<syntax::cst::Declaration>(3),
         ),
     },
     DuplicateTypeItem {
-        item_id: Id(
-            0,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(0),
         duplicate: Declaration(
-            Id(
-                4,
-            ),
+            Id<syntax::cst::Declaration>(4),
         ),
     },
     DuplicateTypeItem {
-        item_id: Id(
-            1,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(1),
         duplicate: Declaration(
-            Id(
-                6,
-            ),
+            Id<syntax::cst::Declaration>(6),
         ),
     },
     DuplicateTypeItem {
-        item_id: Id(
-            1,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(1),
         duplicate: Declaration(
-            Id(
-                7,
-            ),
+            Id<syntax::cst::Declaration>(7),
         ),
     },
     DuplicateDeclaration {
-        declaration: Id(
-            8,
-        ),
-        duplicate: Id(
-            9,
-        ),
+        declaration: Id<syntax::cst::Declaration>(8),
+        duplicate: Id<syntax::cst::Declaration>(9),
     },
     DuplicateTypeItem {
-        item_id: Id(
-            3,
-        ),
+        item_id: Id<indexing::indexes::TypeItem>(3),
         duplicate: Declaration(
-            Id(
-                11,
-            ),
+            Id<syntax::cst::Declaration>(11),
         ),
     },
 ]

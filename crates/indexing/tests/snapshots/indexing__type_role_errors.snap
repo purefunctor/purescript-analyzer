@@ -5,31 +5,19 @@ snapshot_kind: text
 ---
 [
     InvalidRole {
-        role: Id(
-            1,
-        ),
+        role: Id<syntax::cst::Declaration>(1),
     },
     EmptyRole {
-        role: Id(
-            2,
-        ),
+        role: Id<syntax::cst::Declaration>(2),
     },
     EmptyRole {
-        role: Id(
-            4,
-        ),
+        role: Id<syntax::cst::Declaration>(4),
     },
     EmptyRole {
-        role: Id(
-            5,
-        ),
+        role: Id<syntax::cst::Declaration>(5),
     },
     DuplicateDeclaration {
-        declaration: Id(
-            4,
-        ),
-        duplicate: Id(
-            5,
-        ),
+        declaration: Id<syntax::cst::Declaration>(4),
+        duplicate: Id<syntax::cst::Declaration>(5),
     },
 ]

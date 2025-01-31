@@ -5,11 +5,7 @@ snapshot_kind: text
 ---
 [
     DuplicateSignature {
-        signature: Id(
-            0,
-        ),
-        duplicate: Id(
-            2,
-        ),
+        signature: Id<syntax::cst::Declaration>(0),
+        duplicate: Id<syntax::cst::Declaration>(2),
     },
 ]

@@ -5,59 +5,31 @@ snapshot_kind: text
 ---
 [
     DuplicateExport {
-        existing: Id(
-            0,
-        ),
-        duplicate: Id(
-            1,
-        ),
+        existing: Id<syntax::cst::ExportItem>(0),
+        duplicate: Id<syntax::cst::ExportItem>(1),
     },
     DuplicateExport {
-        existing: Id(
-            2,
-        ),
-        duplicate: Id(
-            3,
-        ),
+        existing: Id<syntax::cst::ExportItem>(2),
+        duplicate: Id<syntax::cst::ExportItem>(3),
     },
     DuplicateExport {
-        existing: Id(
-            4,
-        ),
-        duplicate: Id(
-            5,
-        ),
+        existing: Id<syntax::cst::ExportItem>(4),
+        duplicate: Id<syntax::cst::ExportItem>(5),
     },
     DuplicateExport {
-        existing: Id(
-            6,
-        ),
-        duplicate: Id(
-            7,
-        ),
+        existing: Id<syntax::cst::ExportItem>(6),
+        duplicate: Id<syntax::cst::ExportItem>(7),
     },
     DuplicateExport {
-        existing: Id(
-            8,
-        ),
-        duplicate: Id(
-            9,
-        ),
+        existing: Id<syntax::cst::ExportItem>(8),
+        duplicate: Id<syntax::cst::ExportItem>(9),
     },
     DuplicateExport {
-        existing: Id(
-            10,
-        ),
-        duplicate: Id(
-            11,
-        ),
+        existing: Id<syntax::cst::ExportItem>(10),
+        duplicate: Id<syntax::cst::ExportItem>(11),
     },
     DuplicateExport {
-        existing: Id(
-            12,
-        ),
-        duplicate: Id(
-            13,
-        ),
+        existing: Id<syntax::cst::ExportItem>(12),
+        duplicate: Id<syntax::cst::ExportItem>(13),
     },
 ]
