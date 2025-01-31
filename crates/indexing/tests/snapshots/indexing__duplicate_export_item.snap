@@ -21,6 +21,14 @@ snapshot_kind: text
         duplicate: Id<syntax::cst::ExportItem>(7),
     },
     DuplicateExport {
+        existing: Id<syntax::cst::ExportItem>(6),
+        duplicate: Id<syntax::cst::ExportItem>(7),
+    },
+    DuplicateExport {
+        existing: Id<syntax::cst::ExportItem>(6),
+        duplicate: Id<syntax::cst::ExportItem>(7),
+    },
+    DuplicateExport {
         existing: Id<syntax::cst::ExportItem>(8),
         duplicate: Id<syntax::cst::ExportItem>(9),
     },

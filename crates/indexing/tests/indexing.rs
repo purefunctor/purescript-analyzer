@@ -4,7 +4,11 @@ use indexing::{IndexingErrors, IndexingResult};
 use rowan::ast::AstNode;
 use syntax::cst;
 
-fn index_source(source: &str) -> (cst::Module, IndexingResult, IndexingErrors) {
+fn index_source<'s>(
+    source: impl AsRef<[&'s str]>,
+) -> (cst::Module, IndexingResult, IndexingErrors) {
+    let source = source.as_ref().join("\n");
+
     let lexed = lexing::lex(&source);
     let tokens = lexing::layout(&lexed);
 
@@ -17,7 +21,7 @@ fn index_source(source: &str) -> (cst::Module, IndexingResult, IndexingErrors) {
 
 fn index<'s>(lines: impl AsRef<[&'s str]>) -> (cst::Module, IndexingResult, IndexingErrors) {
     let source = format!("module Main where\n{}", lines.as_ref().join("\n"));
-    index_source(&source)
+    index_source([source.as_str()])
 }
 
 #[test]
@@ -202,23 +206,31 @@ fn type_role_errors() {
 }
 
 #[test]
-fn index_export() {
-    let (_, index, _) = index_source(
-        &["module Main (life, class Eq, Synonym, Data(..), List(Cons, Nil), (+), type (+), module Export) where", "data Data = A | B", "data List = Cons | Nil"].join("\n"),
-    );
+fn well_formed_export() {
+    let (_, index, _) = index_source([
+        "module Main (life, class Eq, Synonym, Data(..), List(Cons, Nil), (+), type (+), module Export) where",
+        "import Lib as Export",
+        "life = 42", 
+        "class Eq", 
+        "type Synonym = Int", 
+        "data Data = A | B", 
+        "data List = Cons | Nil",
+        "infix 5 + as add",
+        "infix 5 type + as Add",
+    ]);
 
-    let life = index.export.lookup_expr_export("life");
-    let eq_class = index.export.lookup_type_export("Eq");
-    let synonym = index.export.lookup_type_export("Synonym");
-    let data = index.export.lookup_type_export("Data");
-    let data_a = index.export.lookup_expr_export("A");
-    let data_b = index.export.lookup_expr_export("B");
-    let list = index.export.lookup_type_export("List");
-    let list_cons = index.export.lookup_expr_export("Cons");
-    let list_nil = index.export.lookup_expr_export("Nil");
-    let plus = index.export.lookup_expr_export("(+)");
-    let plus_type = index.export.lookup_type_export("(+)");
-    let export = index.export.lookup_module_export("Export");
+    let life = index.nominal.lookup_expr_item("life");
+    let eq_class = index.nominal.lookup_type_item("Eq");
+    let synonym = index.nominal.lookup_type_item("Synonym");
+    let data = index.nominal.lookup_type_item("Data");
+    let data_a = index.nominal.lookup_expr_item("A");
+    let data_b = index.nominal.lookup_expr_item("B");
+    let list = index.nominal.lookup_type_item("List");
+    let list_cons = index.nominal.lookup_expr_item("Cons");
+    let list_nil = index.nominal.lookup_expr_item("Nil");
+    let plus = index.nominal.lookup_expr_item("+");
+    let plus_type = index.nominal.lookup_type_item("+");
+    let export = index.nominal.lookup_qualified("Export");
 
     let mut snapshot = String::default();
     writeln!(snapshot, "life: {:?}", life).unwrap();
@@ -237,18 +249,26 @@ fn index_export() {
 }
 
 #[test]
-fn index_export_duplicate() {
-    let (_, _, errors) = index_source(
-        "module Main (life, life, class Eq, class Eq, Synonym, Synonym, Data(..), Data(..), (+), (+), type (+), type (+), module Export, module Export)"
-    );
+fn duplicate_export_item() {
+    let (_, _, errors) = index_source([
+        "module Main (life, life, class Eq, class Eq, Synonym, Synonym, Data(..), Data(..), (+), (+), type (+), type (+), module Export, module Export) where",
+        "import Lib as Export",
+        "life = 42", 
+        "class Eq", 
+        "type Synonym = Int", 
+        "data Data = A | B", 
+        "infix 5 + as add",
+        "infix 5 type + as Add",
+    ]);
     insta::assert_debug_snapshot!(errors);
 }
 
 #[test]
-fn index_export_synonym_error() {
-    let (_, _, errors) = index_source(
-        &["module Main (Id(..), Index(Index)) where", "type Id = Int", "type Index = Int"]
-            .join("\n"),
-    );
+fn export_type_item_error() {
+    let (_, _, errors) = index_source([
+        "module Main (Id(..), Index(Index)) where",
+        "type Id = Int",
+        "type Index = Int",
+    ]);
     insta::assert_debug_snapshot!(errors);
 }

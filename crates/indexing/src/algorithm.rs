@@ -1,11 +1,10 @@
 use rowan::ast::AstChildren;
 use smol_str::{SmolStr, SmolStrBuilder};
-use syntax::{cst, SyntaxToken};
+use syntax::cst;
 
 use crate::{
-    ClassMemberId, Duplicate, ExportIndex, ExprItem, ExprItemId, IndexingError, IndexingResult,
-    InstanceId, NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, TypeItemId,
-    ValueGroupId,
+    ClassMemberId, Duplicate, ExprItem, ExprItemId, IndexingError, IndexingResult, InstanceId,
+    NominalIndex, RelationalIndex, SourceMap, TypeGroupId, TypeItem, TypeItemId, ValueGroupId,
 };
 
 #[derive(Default)]
@@ -13,7 +12,6 @@ struct State {
     source_map: SourceMap,
     nominal: NominalIndex,
     relational: RelationalIndex,
-    export: ExportIndex,
     errors: Vec<IndexingError>,
 }
 
@@ -40,8 +38,8 @@ pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<Indexin
         }
     }
 
-    let State { source_map, nominal, relational, export, errors } = state;
-    let result = IndexingResult { source_map, nominal, relational, export };
+    let State { source_map, nominal, relational, errors } = state;
+    let result = IndexingResult { source_map, nominal, relational };
 
     (result, errors)
 }
@@ -49,47 +47,42 @@ pub(super) fn index_module(module: &cst::Module) -> (IndexingResult, Vec<Indexin
 fn index_export(state: &mut State, export: cst::ExportItem) {
     let export_id = state.source_map.insert_export(&export);
 
-    let index_expr = |state: &mut State, token: &SyntaxToken| {
-        let name = token.text();
-        if let Some(existing) = state.export.lookup_expr_export(name) {
+    let index_expr = |state: &mut State, name: &str| {
+        let Some((item, _)) = state.nominal.expr_get_mut(name) else { return };
+        if let Some(existing) = item.export_id {
             let duplicate = export_id;
             state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
         } else {
-            let name = SmolStr::from(name);
-            state.export.insert_expr_export(name, export_id);
+            item.export_id = Some(export_id);
         }
     };
 
-    let index_type = |state: &mut State, token: &SyntaxToken| {
-        let name = token.text();
-        if let Some(existing) = state.export.lookup_type_export(name) {
+    let index_type = |state: &mut State, name: &str| {
+        let Some((item, _)) = state.nominal.type_get_mut(name) else { return };
+        if let Some(existing) = item.export_id {
             let duplicate = export_id;
             state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
         } else {
-            let name = SmolStr::from(name);
-            state.export.insert_type_export(name, export_id);
+            item.export_id = Some(export_id);
         }
     };
 
     let index_type_items_all = |state: &mut State, name: &str| {
         let Some((_, type_id)) = state.nominal.type_get_mut(name) else { return };
 
-        let Some((_, TypeItem::Data(_) | TypeItem::Newtype(_))) =
+        let Some((_, TypeItem::Data(_) | TypeItem::Newtype(_), _)) =
             state.nominal.index_type_item(type_id)
         else {
             return state.errors.push(IndexingError::InvalidTypeItemExport { export_id, type_id });
         };
 
         for item_id in state.relational.constructors_of(type_id) {
-            let Some((name, _)) = state.nominal.index_expr_item(item_id) else {
-                continue;
-            };
-            if let Some(existing) = state.export.lookup_expr_export(name) {
+            let Some((item, _)) = state.nominal.expr_index_mut(item_id) else { continue };
+            if let Some(existing) = item.export_id {
                 let duplicate = export_id;
                 state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
             } else {
-                let name = name.clone();
-                state.export.insert_expr_export(name, export_id);
+                item.export_id = Some(export_id);
             }
         }
     };
@@ -97,29 +90,47 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
     let index_type_items_list = |state: &mut State, name: &str, t: cst::TypeItemsList| {
         let Some((_, type_id)) = state.nominal.type_get_mut(name) else { return };
 
-        let Some((_, TypeItem::Data(_) | TypeItem::Newtype(_))) =
+        let Some((_, TypeItem::Data(_) | TypeItem::Newtype(_), _)) =
             state.nominal.index_type_item(type_id)
         else {
             return state.errors.push(IndexingError::InvalidTypeItemExport { export_id, type_id });
         };
 
         for token in t.name_tokens() {
-            index_expr(state, &token)
+            let name = token.text();
+            index_expr(state, &name);
         }
     };
+
+    fn operator_name(name: &str) -> Option<&str> {
+        let mut chars = name.chars();
+        if chars.next() != Some('(') {
+            return None;
+        }
+        if chars.next_back() != Some(')') {
+            return None;
+        }
+        Some(chars.as_str())
+    }
 
     match export {
         cst::ExportItem::ExportValue(v) => {
             let Some(token) = v.name_token() else { return };
-            index_expr(state, &token);
+
+            let name = token.text();
+            index_expr(state, &name);
         }
         cst::ExportItem::ExportClass(c) => {
             let Some(token) = c.name_token() else { return };
-            index_type(state, &token)
+
+            let name = token.text();
+            index_type(state, &name);
         }
         cst::ExportItem::ExportType(t) => {
             let Some(token) = t.name_token() else { return };
-            index_type(state, &token);
+
+            let name = token.text();
+            index_type(state, &name);
 
             let Some(items) = t.type_items() else { return };
             match items {
@@ -135,11 +146,19 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
         }
         cst::ExportItem::ExportOperator(o) => {
             let Some(token) = o.name_token() else { return };
-            index_expr(state, &token);
+
+            let name = token.text();
+            let Some(name) = operator_name(name) else { return };
+
+            index_expr(state, &name);
         }
         cst::ExportItem::ExportTypeOperator(o) => {
             let Some(token) = o.name_token() else { return };
-            index_type(state, &token);
+
+            let name = token.text();
+            let Some(name) = operator_name(name) else { return };
+
+            index_type(state, &name);
         }
         cst::ExportItem::ExportModule(m) => {
             let Some(module_name) = m.module_name() else { return };
@@ -155,11 +174,15 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
             buffer.push_str(token.text());
 
             let name = buffer.finish();
-            if let Some(existing) = state.export.lookup_module_export(&name) {
-                let duplicate = export_id;
-                state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
+            if let Some((item, _)) = state.nominal.qualified_get_mut(&name) {
+                if let Some(existing) = item.export_id {
+                    let duplicate = export_id;
+                    state.errors.push(IndexingError::DuplicateExport { existing, duplicate });
+                } else {
+                    item.export_id = Some(export_id);
+                }
             } else {
-                state.export.insert_module_export(name, export_id);
+                state.errors.push(IndexingError::InvalidExport { export_id });
             }
         }
     }
@@ -254,7 +277,7 @@ fn index_value_signature(state: &mut State, signature: cst::ValueSignature) {
     let name = name_token.text();
 
     if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
-        if let ExprItem::Value(group) = item {
+        if let ExprItem::Value(group) = &mut item.value {
             if let Some(signature) = group.signature {
                 state.errors.push(IndexingError::DuplicateSignature {
                     signature,
@@ -284,7 +307,7 @@ fn index_value_equation(state: &mut State, equation: cst::ValueEquation) {
     let name = name_token.text();
 
     if let Some((item, item_id)) = state.nominal.expr_get_mut(name) {
-        if let ExprItem::Value(group) = item {
+        if let ExprItem::Value(group) = &mut item.value {
             group.equations.push(declaration_id);
         } else {
             let duplicate = Duplicate::Declaration(declaration_id);
@@ -400,7 +423,7 @@ fn index_type_signature(state: &mut State, signature: TypeSignature) {
     let name = name_token.text();
 
     if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
-        if let Some(group) = item_fn(item) {
+        if let Some(group) = item_fn(&mut item.value) {
             if let Some(signature) = group.signature {
                 state.errors.push(IndexingError::DuplicateSignature {
                     signature,
@@ -466,7 +489,7 @@ fn index_type_declaration(state: &mut State, declaration: TypeDeclaration) -> Op
 
     if let Some((item, item_id)) = state.nominal.type_get_mut(name) {
         type_item_id = Some(item_id);
-        if let Some(group) = item_fn(item) {
+        if let Some(group) = item_fn(&mut item.value) {
             if let Some(declaration) = group.declaration {
                 state.errors.push(IndexingError::DuplicateDeclaration {
                     declaration,
@@ -482,7 +505,6 @@ fn index_type_declaration(state: &mut State, declaration: TypeDeclaration) -> Op
     } else {
         let name: SmolStr = name.into();
         let group = TypeGroupId::from_declaration(declaration_id);
-
         let item_id = state.nominal.insert_type(name, make_fn(group));
         type_item_id = Some(item_id);
     }
@@ -500,7 +522,7 @@ fn index_type_role(state: &mut State, role: cst::TypeRoleDeclaration) {
     let name = name_token.text();
 
     if let Some((item, _)) = state.nominal.type_get_mut(name) {
-        if let Some(group) = item.role_group() {
+        if let Some(group) = item.value.role_group() {
             if group.declaration.is_none() {
                 state.errors.push(IndexingError::EmptyRole { role: declaration_id });
             }

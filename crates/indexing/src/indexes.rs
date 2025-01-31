@@ -1,5 +1,4 @@
 use indexmap::IndexMap;
-use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::{
@@ -70,6 +69,18 @@ pub enum TypeItem {
     Operator(DeclarationId),
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct Exportable<T> {
+    pub(crate) value: T,
+    pub(crate) export_id: Option<ExportItemId>,
+}
+
+impl<T> Exportable<T> {
+    fn new(value: T) -> Exportable<T> {
+        Exportable { value, export_id: None }
+    }
+}
+
 /// Mapping from names to module items.
 ///
 /// In PureScript, names can be shared between different kinds of declarations.
@@ -134,66 +145,92 @@ pub enum TypeItem {
 /// [`SourceMap`]: crate::SourceMap
 #[derive(Debug, Default)]
 pub struct NominalIndex {
-    qualified: IndexMap<SmolStr, Vec<ImportId>>,
-    expr_item: IndexMap<SmolStr, ExprItem>,
-    type_item: IndexMap<SmolStr, TypeItem>,
+    qualified: IndexMap<SmolStr, Exportable<Vec<ImportId>>>,
+    expr_item: IndexMap<SmolStr, Exportable<ExprItem>>,
+    type_item: IndexMap<SmolStr, Exportable<TypeItem>>,
 }
 
-pub(crate) type MutableItem<'t, T> = (&'t mut T, Id<T>);
+pub(crate) type MutableItem<'t, T> = (&'t mut Exportable<T>, Id<T>);
 
 impl NominalIndex {
     pub(crate) fn insert_qualified(&mut self, name: SmolStr, import: ImportId) {
-        self.qualified.entry(name).or_default().push(import);
+        self.qualified.entry(name).or_insert_with(|| Exportable::new(vec![])).value.push(import);
+    }
+
+    pub(crate) fn qualified_get_mut(&mut self, name: &str) -> Option<MutableItem<Vec<ImportId>>> {
+        let (index, _, value) = self.qualified.get_full_mut(name)?;
+        Some((value, Id::from_raw(index)))
     }
 
     pub(crate) fn expr_get_mut(&mut self, name: &str) -> Option<MutableItem<ExprItem>> {
-        self.expr_item.get_full_mut(name).map(|(index, _, item)| (item, Id::from_raw(index)))
+        let (index, _, value) = self.expr_item.get_full_mut(name)?;
+        Some((value, Id::from_raw(index)))
+    }
+
+    pub(crate) fn expr_index_mut(&mut self, id: ExprItemId) -> Option<MutableItem<ExprItem>> {
+        let index = id.into();
+        let (_, value) = self.expr_item.get_index_mut(index)?;
+        Some((value, id))
     }
 
     pub(crate) fn insert_expr(&mut self, name: SmolStr, item: ExprItem) -> ExprItemId {
-        let (index, _) = self.expr_item.insert_full(name, item);
+        let (index, _) = self.expr_item.insert_full(name, Exportable::new(item));
         Id::from_raw(index)
     }
 
     pub(crate) fn iter_expr(&self) -> impl Iterator<Item = (ExprItemId, &SmolStr, &ExprItem)> {
-        self.expr_item.iter().enumerate().map(|(i, (k, v))| (Id::from_raw(i), k, v))
+        self.expr_item
+            .iter()
+            .enumerate()
+            .map(|(index, (name, item))| (Id::from_raw(index), name, &item.value))
     }
 
     pub(crate) fn type_get_mut(&mut self, name: &str) -> Option<MutableItem<TypeItem>> {
-        self.type_item.get_full_mut(name).map(|(index, _, item)| (item, Id::from_raw(index)))
+        let (index, _, item) = self.type_item.get_full_mut(name)?;
+        Some((item, Id::from_raw(index)))
     }
 
     pub(crate) fn insert_type(&mut self, name: SmolStr, item: TypeItem) -> TypeItemId {
-        let (index, _) = self.type_item.insert_full(name, item);
+        let (index, _) = self.type_item.insert_full(name, Exportable::new(item));
         Id::from_raw(index)
     }
 
     pub(crate) fn iter_type(&self) -> impl Iterator<Item = (TypeItemId, &SmolStr, &TypeItem)> {
-        self.type_item.iter().enumerate().map(|(i, (k, v))| (Id::from_raw(i), k, v))
+        self.type_item
+            .iter()
+            .enumerate()
+            .map(|(index, (name, item))| (Id::from_raw(index), name, &item.value))
     }
 }
 
+pub type NominalLookupResult<'t, T> = Option<(Id<T>, &'t T, Option<ExportItemId>)>;
+pub type NominalIndexResult<'t, T> = Option<(&'t SmolStr, &'t T, Option<ExportItemId>)>;
+
 impl NominalIndex {
     pub fn lookup_qualified(&self, name: &str) -> Option<&[ImportId]> {
-        self.qualified.get(name).map(|v| &v[..])
+        self.qualified.get(name).map(|v| &v.value[..])
     }
 
-    pub fn lookup_expr_item(&self, name: &str) -> Option<(ExprItemId, &ExprItem)> {
-        self.expr_item.get_full(name).map(|(id, _, item)| (Id::from_raw(id), item))
+    pub fn lookup_expr_item(&self, name: &str) -> NominalLookupResult<ExprItem> {
+        let (id, _, Exportable { value, export_id }) = self.expr_item.get_full(name)?;
+        Some((Id::from_raw(id), value, *export_id))
     }
 
-    pub fn index_expr_item(&self, id: ExprItemId) -> Option<(&SmolStr, &ExprItem)> {
+    pub fn index_expr_item(&self, id: ExprItemId) -> NominalIndexResult<ExprItem> {
         let index = id.into();
-        self.expr_item.get_index(index)
+        let (key, Exportable { value, export_id }) = self.expr_item.get_index(index)?;
+        Some((key, value, *export_id))
     }
 
-    pub fn lookup_type_item(&self, name: &str) -> Option<(TypeItemId, &TypeItem)> {
-        self.type_item.get_full(name).map(|(id, _, item)| (Id::from_raw(id), item))
+    pub fn lookup_type_item(&self, name: &str) -> NominalLookupResult<TypeItem> {
+        let (id, _, Exportable { value, export_id }) = self.type_item.get_full(name)?;
+        Some((Id::from_raw(id), value, *export_id))
     }
 
-    pub fn index_type_item(&self, id: TypeItemId) -> Option<(&SmolStr, &TypeItem)> {
+    pub fn index_type_item(&self, id: TypeItemId) -> NominalIndexResult<TypeItem> {
         let index = id.into();
-        self.type_item.get_index(index)
+        let (key, Exportable { value, export_id }) = self.type_item.get_index(index)?;
+        Some((key, value, *export_id))
     }
 }
 
@@ -244,40 +281,5 @@ impl RelationalIndex {
 
     pub fn of_class_member(&self, id: ClassMemberId) -> Option<TypeItemId> {
         find_t(&self.class_member_of, id)
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct ExportIndex {
-    module_export: FxHashMap<SmolStr, ExportItemId>,
-    expr_export: FxHashMap<SmolStr, ExportItemId>,
-    type_export: FxHashMap<SmolStr, ExportItemId>,
-}
-
-impl ExportIndex {
-    pub fn lookup_module_export(&self, name: &str) -> Option<ExportItemId> {
-        self.module_export.get(name).copied()
-    }
-
-    pub fn lookup_expr_export(&self, name: &str) -> Option<ExportItemId> {
-        self.expr_export.get(name).copied()
-    }
-
-    pub fn lookup_type_export(&self, name: &str) -> Option<ExportItemId> {
-        self.type_export.get(name).copied()
-    }
-}
-
-impl ExportIndex {
-    pub(crate) fn insert_module_export(&mut self, name: SmolStr, id: ExportItemId) {
-        self.module_export.insert(name, id);
-    }
-
-    pub(crate) fn insert_expr_export(&mut self, name: SmolStr, id: ExportItemId) {
-        self.expr_export.insert(name, id);
-    }
-
-    pub(crate) fn insert_type_export(&mut self, name: SmolStr, id: ExportItemId) {
-        self.type_export.insert(name, id);
     }
 }

@@ -5,6 +5,7 @@ use crate::{
 /// Errors emitted during indexing.
 #[derive(Debug, PartialEq, Eq)]
 pub enum IndexingError {
+    InvalidExport { export_id: ExportItemId },
     DuplicateExport { existing: ExportItemId, duplicate: ExportItemId },
     InvalidTypeItemExport { export_id: ExportItemId, type_id: TypeItemId },
 
