@@ -69,6 +69,29 @@ pub enum TypeItem {
     Operator(DeclarationId),
 }
 
+/// Import declarations qualified with the same name.
+///
+/// ```purescript
+/// import Indexing.Algorithm as Exported
+/// import Indexing.Indexes as Exported
+/// ```
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ImportGroup(Vec<ImportId>);
+
+impl AsRef<[ImportId]> for ImportGroup {
+    fn as_ref(&self) -> &[ImportId] {
+        self.0.as_ref()
+    }
+}
+
+impl ImportGroup {
+    pub(crate) fn push(&mut self, import_id: ImportId) {
+        self.0.push(import_id);
+    }
+}
+
+pub type ImportGroupId = Id<ImportGroup>;
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Exportable<T> {
     pub(crate) value: T,
@@ -145,7 +168,7 @@ impl<T> Exportable<T> {
 /// [`SourceMap`]: crate::SourceMap
 #[derive(Debug, Default)]
 pub struct NominalIndex {
-    qualified: IndexMap<SmolStr, Exportable<Vec<ImportId>>>,
+    qualified: IndexMap<SmolStr, Exportable<ImportGroup>>,
     expr_item: IndexMap<SmolStr, Exportable<ExprItem>>,
     type_item: IndexMap<SmolStr, Exportable<TypeItem>>,
 }
@@ -154,10 +177,14 @@ pub(crate) type MutableItem<'t, T> = (&'t mut Exportable<T>, Id<T>);
 
 impl NominalIndex {
     pub(crate) fn insert_qualified(&mut self, name: SmolStr, import: ImportId) {
-        self.qualified.entry(name).or_insert_with(|| Exportable::new(vec![])).value.push(import);
+        self.qualified
+            .entry(name)
+            .or_insert_with(|| Exportable::new(ImportGroup::default()))
+            .value
+            .push(import);
     }
 
-    pub(crate) fn qualified_get_mut(&mut self, name: &str) -> Option<MutableItem<Vec<ImportId>>> {
+    pub(crate) fn qualified_get_mut(&mut self, name: &str) -> Option<MutableItem<ImportGroup>> {
         let (index, _, value) = self.qualified.get_full_mut(name)?;
         Some((value, Id::from_raw(index)))
     }
@@ -207,8 +234,15 @@ pub type NominalLookupResult<'t, T> = Option<(Id<T>, &'t T, Option<ExportItemId>
 pub type NominalIndexResult<'t, T> = Option<(&'t SmolStr, &'t T, Option<ExportItemId>)>;
 
 impl NominalIndex {
-    pub fn lookup_qualified(&self, name: &str) -> Option<&[ImportId]> {
-        self.qualified.get(name).map(|v| &v.value[..])
+    pub fn lookup_qualified(&self, name: &str) -> NominalLookupResult<ImportGroup> {
+        let (id, _, Exportable { value, export_id }) = self.qualified.get_full(name)?;
+        Some((Id::from_raw(id), value, *export_id))
+    }
+
+    pub fn index_qualified(&self, id: ImportGroupId) -> NominalIndexResult<ImportGroup> {
+        let index = id.into();
+        let (key, Exportable { value, export_id }) = self.qualified.get_index(index)?;
+        Some((key, value, *export_id))
     }
 
     pub fn lookup_expr_item(&self, name: &str) -> NominalLookupResult<ExprItem> {

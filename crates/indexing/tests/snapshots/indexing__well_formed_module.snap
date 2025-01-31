@@ -3,9 +3,9 @@ source: crates/indexing/tests/indexing.rs
 expression: snapshot
 snapshot_kind: text
 ---
-prelude: Some([Id(0)])
-data_list: Some([Id(1)])
-halogen: Some([Id(2), Id(3)])
+prelude: Some((Id(0), ImportGroup([Id(0)]), None))
+data_list: Some((Id(1), ImportGroup([Id(1)]), None))
+halogen: Some((Id(2), ImportGroup([Id(2), Id(3)]), None))
 id: Some((Id(0), Value(ValueGroupId { signature: Some(Id(0)), equations: [Id(1)] }), None))
 maybe: Some((Id(0), Data(TypeGroupId { signature: Some(Id(2)), declaration: Some(Id(3)), role: Some(Id(4)) }), None))
 just: Some((Id(1), Constructor(Id(0)), None))
