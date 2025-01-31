@@ -6,12 +6,12 @@ use std::{
 };
 
 /// An index associated with a type.
-pub struct Id<T> {
+pub struct Id<T: ?Sized> {
     pub(crate) index: usize,
     _marker: PhantomData<fn() -> T>,
 }
 
-impl<T: any::Any> Debug for Id<T> {
+impl<T: ?Sized + any::Any> Debug for Id<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
             write!(f, "Id<{}>({})", any::type_name::<T>(), &self.index)
@@ -21,53 +21,53 @@ impl<T: any::Any> Debug for Id<T> {
     }
 }
 
-impl<T> Clone for Id<T> {
+impl<T: ?Sized> Clone for Id<T> {
     fn clone(&self) -> Id<T> {
         *self
     }
 }
 
-impl<T> Copy for Id<T> {}
+impl<T: ?Sized> Copy for Id<T> {}
 
-impl<T> PartialEq for Id<T> {
+impl<T: ?Sized> PartialEq for Id<T> {
     fn eq(&self, other: &Id<T>) -> bool {
         self.index == other.index
     }
 }
 
-impl<T> Eq for Id<T> {}
+impl<T: ?Sized> Eq for Id<T> {}
 
-impl<T> PartialOrd for Id<T> {
+impl<T: ?Sized> PartialOrd for Id<T> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         Some(self.index.cmp(&other.index))
     }
 }
 
-impl<T> Ord for Id<T> {
+impl<T: ?Sized> Ord for Id<T> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.index.cmp(&other.index)
     }
 }
 
-impl<T> Hash for Id<T> {
+impl<T: ?Sized> Hash for Id<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.index.hash(state);
     }
 }
 
-impl<T> AsRef<Id<T>> for Id<T> {
+impl<T: ?Sized> AsRef<Id<T>> for Id<T> {
     fn as_ref(&self) -> &Id<T> {
         self
     }
 }
 
-impl<T> From<Id<T>> for usize {
+impl<T: ?Sized> From<Id<T>> for usize {
     fn from(value: Id<T>) -> Self {
         value.index
     }
 }
 
-impl<T> Id<T> {
+impl<T: ?Sized> Id<T> {
     pub fn from_raw(index: usize) -> Id<T> {
         Id { index, _marker: PhantomData }
     }
