@@ -98,7 +98,7 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
 
         for token in t.name_tokens() {
             let name = token.text();
-            index_expr(state, &name);
+            index_expr(state, name);
         }
     };
 
@@ -118,19 +118,19 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
             let Some(token) = v.name_token() else { return };
 
             let name = token.text();
-            index_expr(state, &name);
+            index_expr(state, name);
         }
         cst::ExportItem::ExportClass(c) => {
             let Some(token) = c.name_token() else { return };
 
             let name = token.text();
-            index_type(state, &name);
+            index_type(state, name);
         }
         cst::ExportItem::ExportType(t) => {
             let Some(token) = t.name_token() else { return };
 
             let name = token.text();
-            index_type(state, &name);
+            index_type(state, name);
 
             let Some(items) = t.type_items() else { return };
             match items {
@@ -150,7 +150,7 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
             let name = token.text();
             let Some(name) = operator_name(name) else { return };
 
-            index_expr(state, &name);
+            index_expr(state, name);
         }
         cst::ExportItem::ExportTypeOperator(o) => {
             let Some(token) = o.name_token() else { return };
@@ -158,7 +158,7 @@ fn index_export(state: &mut State, export: cst::ExportItem) {
             let name = token.text();
             let Some(name) = operator_name(name) else { return };
 
-            index_type(state, &name);
+            index_type(state, name);
         }
         cst::ExportItem::ExportModule(m) => {
             let Some(module_name) = m.module_name() else { return };
