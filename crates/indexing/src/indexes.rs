@@ -200,12 +200,6 @@ fn insert_t<T>(map: &mut FxIndexMap<SmolStr, Exportable<T>>, name: SmolStr, item
     Id::from_raw(index)
 }
 
-fn iter_t<T>(
-    map: &FxIndexMap<SmolStr, Exportable<T>>,
-) -> impl Iterator<Item = (Id<T>, &SmolStr, &T)> {
-    map.iter().enumerate().map(|(index, (name, item))| (Id::from_raw(index), name, &item.value))
-}
-
 impl NominalIndex {
     pub(crate) fn insert_qualified(&mut self, name: SmolStr, import: ImportId) {
         self.qualified
@@ -231,20 +225,12 @@ impl NominalIndex {
         insert_t(&mut self.expr_item, name, item)
     }
 
-    pub(crate) fn iter_expr(&self) -> impl Iterator<Item = (ExprItemId, &SmolStr, &ExprItem)> {
-        iter_t(&self.expr_item)
-    }
-
     pub(crate) fn type_get_mut(&mut self, name: &str) -> Option<MutableItem<TypeItem>> {
         get_mut_t(&mut self.type_item, name)
     }
 
     pub(crate) fn insert_type(&mut self, name: SmolStr, item: TypeItem) -> TypeItemId {
         insert_t(&mut self.type_item, name, item)
-    }
-
-    pub(crate) fn iter_type(&self) -> impl Iterator<Item = (TypeItemId, &SmolStr, &TypeItem)> {
-        iter_t(&self.type_item)
     }
 }
 
@@ -268,6 +254,12 @@ fn index_t<T>(
     Some((key, value, *export_id))
 }
 
+fn iter_t<T>(
+    map: &FxIndexMap<SmolStr, Exportable<T>>,
+) -> impl Iterator<Item = (Id<T>, &SmolStr, &T)> {
+    map.iter().enumerate().map(|(index, (name, item))| (Id::from_raw(index), name, &item.value))
+}
+
 impl NominalIndex {
     pub fn lookup_qualified(&self, name: &str) -> NominalLookupResult<ImportGroup> {
         lookup_t(&self.qualified, name)
@@ -285,12 +277,20 @@ impl NominalIndex {
         index_t(&self.expr_item, id)
     }
 
+    pub fn iter_expr(&self) -> impl Iterator<Item = (ExprItemId, &SmolStr, &ExprItem)> {
+        iter_t(&self.expr_item)
+    }
+
     pub fn lookup_type_item(&self, name: &str) -> NominalLookupResult<TypeItem> {
         lookup_t(&self.type_item, name)
     }
 
     pub fn index_type_item(&self, id: TypeItemId) -> NominalIndexResult<TypeItem> {
         index_t(&self.type_item, id)
+    }
+
+    pub fn iter_type(&self) -> impl Iterator<Item = (TypeItemId, &SmolStr, &TypeItem)> {
+        iter_t(&self.type_item)
     }
 }
 
