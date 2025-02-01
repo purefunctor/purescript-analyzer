@@ -10,6 +10,12 @@ SourceMap {
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionInteger,
+                range: 25..27,
+            },
+        }: Integer,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionInteger,
                 range: 29..31,
             },
         }: Integer,
@@ -37,16 +43,10 @@ SourceMap {
                 range: 25..43,
             },
         }: OperatorChain {
-            pairs: [
-                OperatorPair {
-                    qualifier: None,
-                    operator: Some(
-                        "+",
-                    ),
-                    element: Some(
-                        Id<syntax::cst::Expression>(0),
-                    ),
-                },
+            head: Some(
+                Id<syntax::cst::Expression>(0),
+            ),
+            tail: [
                 OperatorPair {
                     qualifier: None,
                     operator: Some(
@@ -72,6 +72,15 @@ SourceMap {
                     ),
                     element: Some(
                         Id<syntax::cst::Expression>(3),
+                    ),
+                },
+                OperatorPair {
+                    qualifier: None,
+                    operator: Some(
+                        "+",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Expression>(4),
                     ),
                 },
             ],

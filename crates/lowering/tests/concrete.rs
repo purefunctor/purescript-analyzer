@@ -12,8 +12,6 @@ fn lower_declaration<'s>(source: impl AsRef<[&'s str]>) -> (IndexingResult, Lowe
     let (node, _) = parsing::parse(&lexed, &tokens);
     let module = cst::Module::cast(node).unwrap();
 
-    dbg!(&module);
-
     let (index, _) = indexing::index(&module);
     let lower = lowering::lower(&module, &index);
 

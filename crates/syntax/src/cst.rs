@@ -450,6 +450,11 @@ has_child!(
     | signature() -> Type
 );
 
+has_child!(
+    ExpressionOperatorChain
+    | expression() -> Expression
+);
+
 has_children!(
     ExpressionOperatorChain
     | children() -> ExpressionOperatorPair
