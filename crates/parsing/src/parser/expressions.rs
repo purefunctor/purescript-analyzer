@@ -40,8 +40,10 @@ fn expression_2(p: &mut Parser) {
 
     expression_3(p);
     while p.at(SyntaxKind::TICK) && !p.at_eof() {
+        let mut m = p.start();
         tick_expression(p);
         expression_3(p);
+        m.end(p, SyntaxKind::ExpressionInfixPair);
         i += 1;
     }
 

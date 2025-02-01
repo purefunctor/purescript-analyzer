@@ -33,30 +33,32 @@ snapshot_kind: text
                   Annotation@35..36
                     TEXT@35..36 " "
                   INTEGER@36..37 "1"
-                ExpressionTick@37..44
-                  Annotation@37..38
-                    TEXT@37..38 " "
-                  TICK@38..39 "`"
-                  ExpressionVariable@39..43
-                    QualifiedName@39..43
-                      LOWER@39..43 "plus"
-                  TICK@43..44 "`"
-                ExpressionInteger@44..46
-                  Annotation@44..45
-                    TEXT@44..45 " "
-                  INTEGER@45..46 "2"
-                ExpressionTick@46..53
-                  Annotation@46..47
-                    TEXT@46..47 " "
-                  TICK@47..48 "`"
-                  ExpressionVariable@48..52
-                    QualifiedName@48..52
-                      LOWER@48..52 "plus"
-                  TICK@52..53 "`"
-                ExpressionInteger@53..55
-                  Annotation@53..54
-                    TEXT@53..54 " "
-                  INTEGER@54..55 "3"
+                ExpressionInfixPair@37..46
+                  ExpressionTick@37..44
+                    Annotation@37..38
+                      TEXT@37..38 " "
+                    TICK@38..39 "`"
+                    ExpressionVariable@39..43
+                      QualifiedName@39..43
+                        LOWER@39..43 "plus"
+                    TICK@43..44 "`"
+                  ExpressionInteger@44..46
+                    Annotation@44..45
+                      TEXT@44..45 " "
+                    INTEGER@45..46 "2"
+                ExpressionInfixPair@46..55
+                  ExpressionTick@46..53
+                    Annotation@46..47
+                      TEXT@46..47 " "
+                    TICK@47..48 "`"
+                    ExpressionVariable@48..52
+                      QualifiedName@48..52
+                        LOWER@48..52 "plus"
+                    TICK@52..53 "`"
+                  ExpressionInteger@53..55
+                    Annotation@53..54
+                      TEXT@53..54 " "
+                    INTEGER@54..55 "3"
         LAYOUT_SEPARATOR@55..55 ""
         ValueEquation@55..84
           Annotation@55..56
@@ -73,46 +75,48 @@ snapshot_kind: text
                   Annotation@62..63
                     TEXT@62..63 " "
                   INTEGER@63..64 "1"
-                ExpressionTick@64..72
-                  Annotation@64..65
-                    TEXT@64..65 " "
-                  TICK@65..66 "`"
-                  ExpressionOperatorChain@66..71
-                    ExpressionInteger@66..67
-                      INTEGER@66..67 "2"
-                    QualifiedName@67..69
-                      Annotation@67..68
-                        TEXT@67..68 " "
-                      OPERATOR@68..69 "+"
-                    ExpressionInteger@69..71
-                      Annotation@69..70
-                        TEXT@69..70 " "
-                      INTEGER@70..71 "3"
-                  TICK@71..72 "`"
-                ExpressionInteger@72..74
-                  Annotation@72..73
-                    TEXT@72..73 " "
-                  INTEGER@73..74 "4"
-                ExpressionTick@74..82
-                  Annotation@74..75
-                    TEXT@74..75 " "
-                  TICK@75..76 "`"
-                  ExpressionOperatorChain@76..81
-                    ExpressionInteger@76..77
-                      INTEGER@76..77 "5"
-                    QualifiedName@77..79
-                      Annotation@77..78
-                        TEXT@77..78 " "
-                      OPERATOR@78..79 "+"
-                    ExpressionInteger@79..81
-                      Annotation@79..80
-                        TEXT@79..80 " "
-                      INTEGER@80..81 "6"
-                  TICK@81..82 "`"
-                ExpressionInteger@82..84
-                  Annotation@82..83
-                    TEXT@82..83 " "
-                  INTEGER@83..84 "7"
+                ExpressionInfixPair@64..74
+                  ExpressionTick@64..72
+                    Annotation@64..65
+                      TEXT@64..65 " "
+                    TICK@65..66 "`"
+                    ExpressionOperatorChain@66..71
+                      ExpressionInteger@66..67
+                        INTEGER@66..67 "2"
+                      QualifiedName@67..69
+                        Annotation@67..68
+                          TEXT@67..68 " "
+                        OPERATOR@68..69 "+"
+                      ExpressionInteger@69..71
+                        Annotation@69..70
+                          TEXT@69..70 " "
+                        INTEGER@70..71 "3"
+                    TICK@71..72 "`"
+                  ExpressionInteger@72..74
+                    Annotation@72..73
+                      TEXT@72..73 " "
+                    INTEGER@73..74 "4"
+                ExpressionInfixPair@74..84
+                  ExpressionTick@74..82
+                    Annotation@74..75
+                      TEXT@74..75 " "
+                    TICK@75..76 "`"
+                    ExpressionOperatorChain@76..81
+                      ExpressionInteger@76..77
+                        INTEGER@76..77 "5"
+                      QualifiedName@77..79
+                        Annotation@77..78
+                          TEXT@77..78 " "
+                        OPERATOR@78..79 "+"
+                      ExpressionInteger@79..81
+                        Annotation@79..80
+                          TEXT@79..80 " "
+                        INTEGER@80..81 "6"
+                    TICK@81..82 "`"
+                  ExpressionInteger@82..84
+                    Annotation@82..83
+                      TEXT@82..83 " "
+                    INTEGER@83..84 "7"
       LAYOUT_END@84..84 ""
       Annotation@84..85
         TEXT@84..85 "\n"

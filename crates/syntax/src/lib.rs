@@ -181,6 +181,7 @@ pub enum SyntaxKind {
     ExpressionOperatorChain,
     ExpressionOperatorPair,
     ExpressionInfixChain,
+    ExpressionInfixPair,
     ExpressionTick,
     ExpressionNegate,
     ExpressionApplicationChain,
