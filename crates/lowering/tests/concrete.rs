@@ -24,7 +24,7 @@ fn lower_value_equation() {
 
     let (id, _, _) = index.nominal.lookup_expr_item("id").unwrap();
     let id = lower.lowering_map.expr_item.get(&id).unwrap();
- 
+
     insta::assert_debug_snapshot!(id);
 }
 
@@ -34,6 +34,6 @@ fn lower_value_equation_partial() {
 
     let (id, _, _) = index.nominal.lookup_expr_item("id").unwrap();
     let id = lower.lowering_map.expr_item.get(&id).unwrap();
- 
+
     insta::assert_debug_snapshot!(id);
 }
