@@ -124,14 +124,9 @@ create_cst_enum!(
         | BinderParenthesized
 );
 
-create_cst_struct!(
-    FunctionBinders,
-    Unconditional,
-    WhereExpression,
-    Conditionals,
-    PatternGuarded,
-    PatternGuards
-);
+create_cst_enum!(GuardedExpression | Unconditional | Conditionals);
+
+create_cst_struct!(FunctionBinders, WhereExpression, PatternGuarded, PatternGuards);
 
 create_cst_enum!(PatternGuard | PatternGuardBinder | PatternGuardExpression);
 
