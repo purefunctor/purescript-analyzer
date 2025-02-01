@@ -150,7 +150,11 @@ fn lower_binder(state: &mut State, cst: &cst::Binder) -> BinderId {
 
 fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
     let kind = match cst {
-        cst::Expression::ExpressionTyped(_t) => ExpressionKind::Typed,
+        cst::Expression::ExpressionTyped(t) => {
+            let expression = t.expression().map(|e| lower_expression(state, &e));
+            let signature = t.signature().map(|s| lower_type(state, &s));
+            ExpressionKind::Typed { expression, signature }
+        }
         cst::Expression::ExpressionOperatorChain(_o) => ExpressionKind::OperatorChain,
         cst::Expression::ExpressionInfixChain(_i) => ExpressionKind::InfixChain,
         cst::Expression::ExpressionTick(_t) => ExpressionKind::Tick,

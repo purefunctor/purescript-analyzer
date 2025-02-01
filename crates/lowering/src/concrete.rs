@@ -6,7 +6,7 @@ use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
-    Typed,
+    Typed { expression: Option<ExpressionId>, signature: Option<TypeId> },
     OperatorChain,
     InfixChain,
     Tick,

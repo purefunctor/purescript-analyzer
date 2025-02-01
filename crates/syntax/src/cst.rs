@@ -432,3 +432,9 @@ has_token!(
     | type_token() -> TYPE
     | operator_token() -> OPERATOR
 );
+
+has_child!(
+    ExpressionTyped
+    | expression() -> Expression
+    | signature() -> Type
+);

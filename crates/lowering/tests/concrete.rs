@@ -20,7 +20,7 @@ fn lower_declaration<'s>(source: impl AsRef<[&'s str]>) -> (IndexingResult, Lowe
 
 #[test]
 fn lower_value_equation() {
-    let (index, lower) = lower_declaration(&["id :: forall a. a -> a", "id a = a", "id b = b"]);
+    let (index, lower) = lower_declaration(["id :: forall a. a -> a", "id a = a", "id b = b"]);
 
     let (id, _, _) = index.nominal.lookup_expr_item("id").unwrap();
     let id = lower.lowering_map.expr_item.get(&id).unwrap();
@@ -30,10 +30,16 @@ fn lower_value_equation() {
 
 #[test]
 fn lower_value_equation_partial() {
-    let (index, lower) = lower_declaration(&["id :: forall a. a -> a", "id a = ;", "id b = b"]);
+    let (index, lower) = lower_declaration(["id :: forall a. a -> a", "id a = ;", "id b = b"]);
 
     let (id, _, _) = index.nominal.lookup_expr_item("id").unwrap();
     let id = lower.lowering_map.expr_item.get(&id).unwrap();
 
     insta::assert_debug_snapshot!(id);
+}
+
+#[test]
+fn lower_expression_typed() {
+    let (_, lower) = lower_declaration(["four = 4 :: Int", "five = 5 ::"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
 }
