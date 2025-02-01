@@ -179,6 +179,7 @@ pub enum SyntaxKind {
 
     ExpressionTyped,
     ExpressionOperatorChain,
+    ExpressionOperatorPair,
     ExpressionInfixChain,
     ExpressionTick,
     ExpressionNegate,

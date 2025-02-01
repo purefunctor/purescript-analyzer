@@ -61,14 +61,15 @@ snapshot_kind: text
                                 Annotation@56..57
                                   TEXT@56..57 " "
                                 LOWER@57..58 "n"
-                            QualifiedName@58..61
-                              Annotation@58..59
-                                TEXT@58..59 " "
-                              OPERATOR@59..61 "=="
-                            ExpressionInteger@61..63
-                              Annotation@61..62
-                                TEXT@61..62 " "
-                              INTEGER@62..63 "0"
+                            ExpressionOperatorPair@58..63
+                              QualifiedName@58..61
+                                Annotation@58..59
+                                  TEXT@58..59 " "
+                                OPERATOR@59..61 "=="
+                              ExpressionInteger@61..63
+                                Annotation@61..62
+                                  TEXT@61..62 " "
+                                INTEGER@62..63 "0"
                         Annotation@63..64
                           TEXT@63..64 " "
                         RIGHT_ARROW@64..66 "->"
@@ -112,15 +113,16 @@ snapshot_kind: text
                                 Annotation@90..91
                                   TEXT@90..91 " "
                                 LOWER@91..92 "m"
-                            QualifiedName@92..95
-                              Annotation@92..93
-                                TEXT@92..93 " "
-                              OPERATOR@93..95 "=="
-                            ExpressionVariable@95..97
-                              QualifiedName@95..97
-                                Annotation@95..96
-                                  TEXT@95..96 " "
-                                LOWER@96..97 "n"
+                            ExpressionOperatorPair@92..97
+                              QualifiedName@92..95
+                                Annotation@92..93
+                                  TEXT@92..93 " "
+                                OPERATOR@93..95 "=="
+                              ExpressionVariable@95..97
+                                QualifiedName@95..97
+                                  Annotation@95..96
+                                    TEXT@95..96 " "
+                                  LOWER@96..97 "n"
                         Annotation@97..98
                           TEXT@97..98 " "
                         RIGHT_ARROW@98..100 "->"

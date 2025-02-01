@@ -75,15 +75,16 @@ snapshot_kind: text
                       Annotation@68..69
                         TEXT@68..69 " "
                       LOWER@69..70 "c"
-                  QualifiedName@70..73
-                    Annotation@70..71
-                      TEXT@70..71 " "
-                    OPERATOR@71..73 "<<"
-                  ExpressionVariable@73..75
-                    QualifiedName@73..75
-                      Annotation@73..74
-                        TEXT@73..74 " "
-                      LOWER@74..75 "d"
+                  ExpressionOperatorPair@70..75
+                    QualifiedName@70..73
+                      Annotation@70..71
+                        TEXT@70..71 " "
+                      OPERATOR@71..73 "<<"
+                    ExpressionVariable@73..75
+                      QualifiedName@73..75
+                        Annotation@73..74
+                          TEXT@73..74 " "
+                        LOWER@74..75 "d"
               Annotation@75..76
                 TEXT@75..76 " "
               EQUAL@76..77 "="
@@ -114,15 +115,16 @@ snapshot_kind: text
                               Annotation@93..94
                                 TEXT@93..94 " "
                               LOWER@94..95 "c"
-                          QualifiedName@95..97
-                            Annotation@95..96
-                              TEXT@95..96 " "
-                            OPERATOR@96..97 "+"
-                          ExpressionVariable@97..99
-                            QualifiedName@97..99
-                              Annotation@97..98
-                                TEXT@97..98 " "
-                              LOWER@98..99 "d"
+                          ExpressionOperatorPair@95..99
+                            QualifiedName@95..97
+                              Annotation@95..96
+                                TEXT@95..96 " "
+                              OPERATOR@96..97 "+"
+                            ExpressionVariable@97..99
+                              QualifiedName@97..99
+                                Annotation@97..98
+                                  TEXT@97..98 " "
+                                LOWER@98..99 "d"
                   LAYOUT_END@99..99 ""
             PatternGuarded@99..157
               Annotation@99..103
@@ -167,15 +169,16 @@ snapshot_kind: text
                       Annotation@126..127
                         TEXT@126..127 " "
                       LOWER@127..128 "j"
-                  QualifiedName@128..131
-                    Annotation@128..129
-                      TEXT@128..129 " "
-                    OPERATOR@129..131 "<<"
-                  ExpressionVariable@131..133
-                    QualifiedName@131..133
-                      Annotation@131..132
-                        TEXT@131..132 " "
-                      LOWER@132..133 "k"
+                  ExpressionOperatorPair@128..133
+                    QualifiedName@128..131
+                      Annotation@128..129
+                        TEXT@128..129 " "
+                      OPERATOR@129..131 "<<"
+                    ExpressionVariable@131..133
+                      QualifiedName@131..133
+                        Annotation@131..132
+                          TEXT@131..132 " "
+                        LOWER@132..133 "k"
               Annotation@133..134
                 TEXT@133..134 " "
               EQUAL@134..135 "="
@@ -206,15 +209,16 @@ snapshot_kind: text
                               Annotation@151..152
                                 TEXT@151..152 " "
                               LOWER@152..153 "j"
-                          QualifiedName@153..155
-                            Annotation@153..154
-                              TEXT@153..154 " "
-                            OPERATOR@154..155 "+"
-                          ExpressionVariable@155..157
-                            QualifiedName@155..157
-                              Annotation@155..156
-                                TEXT@155..156 " "
-                              LOWER@156..157 "k"
+                          ExpressionOperatorPair@153..157
+                            QualifiedName@153..155
+                              Annotation@153..154
+                                TEXT@153..154 " "
+                              OPERATOR@154..155 "+"
+                            ExpressionVariable@155..157
+                              QualifiedName@155..157
+                                Annotation@155..156
+                                  TEXT@155..156 " "
+                                LOWER@156..157 "k"
                   LAYOUT_END@157..157 ""
       LAYOUT_END@157..157 ""
       Annotation@157..158

@@ -72,15 +72,16 @@ snapshot_kind: text
                       Annotation@66..71
                         TEXT@66..71 "\n    "
                       LOWER@71..72 "x"
-                  QualifiedName@72..74
-                    Annotation@72..73
-                      TEXT@72..73 " "
-                    OPERATOR@73..74 "+"
-                  ExpressionVariable@74..76
-                    QualifiedName@74..76
-                      Annotation@74..75
-                        TEXT@74..75 " "
-                      LOWER@75..76 "y"
+                  ExpressionOperatorPair@72..76
+                    QualifiedName@72..74
+                      Annotation@72..73
+                        TEXT@72..73 " "
+                      OPERATOR@73..74 "+"
+                    ExpressionVariable@74..76
+                      QualifiedName@74..76
+                        Annotation@74..75
+                          TEXT@74..75 " "
+                        LOWER@75..76 "y"
       LAYOUT_END@76..76 ""
       Annotation@76..77
         TEXT@76..77 "\n"

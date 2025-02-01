@@ -75,15 +75,16 @@ snapshot_kind: text
                       Annotation@73..74
                         TEXT@73..74 " "
                       LOWER@74..75 "c"
-                  QualifiedName@75..78
-                    Annotation@75..76
-                      TEXT@75..76 " "
-                    OPERATOR@76..78 "<<"
-                  ExpressionVariable@78..80
-                    QualifiedName@78..80
-                      Annotation@78..79
-                        TEXT@78..79 " "
-                      LOWER@79..80 "d"
+                  ExpressionOperatorPair@75..80
+                    QualifiedName@75..78
+                      Annotation@75..76
+                        TEXT@75..76 " "
+                      OPERATOR@76..78 "<<"
+                    ExpressionVariable@78..80
+                      QualifiedName@78..80
+                        Annotation@78..79
+                          TEXT@78..79 " "
+                        LOWER@79..80 "d"
               Annotation@80..81
                 TEXT@80..81 " "
               EQUAL@81..82 "="

@@ -33,29 +33,31 @@ snapshot_kind: text
                   Annotation@48..49
                     TEXT@48..49 " "
                   INTEGER@49..50 "1"
-                QualifiedName@50..54
-                  Annotation@50..51
-                    TEXT@50..51 " "
-                  Qualifier@51..53
-                    TEXT@51..53 "L."
-                  OPERATOR@53..54 ":"
-                ExpressionInteger@54..56
-                  Annotation@54..55
-                    TEXT@54..55 " "
-                  INTEGER@55..56 "2"
-                QualifiedName@56..60
-                  Annotation@56..57
-                    TEXT@56..57 " "
-                  Qualifier@57..59
-                    TEXT@57..59 "L."
-                  OPERATOR@59..60 ":"
-                ExpressionConstructor@60..66
-                  QualifiedName@60..66
-                    Annotation@60..61
-                      TEXT@60..61 " "
-                    Qualifier@61..63
-                      TEXT@61..63 "L."
-                    UPPER@63..66 "Nil"
+                ExpressionOperatorPair@50..56
+                  QualifiedName@50..54
+                    Annotation@50..51
+                      TEXT@50..51 " "
+                    Qualifier@51..53
+                      TEXT@51..53 "L."
+                    OPERATOR@53..54 ":"
+                  ExpressionInteger@54..56
+                    Annotation@54..55
+                      TEXT@54..55 " "
+                    INTEGER@55..56 "2"
+                ExpressionOperatorPair@56..66
+                  QualifiedName@56..60
+                    Annotation@56..57
+                      TEXT@56..57 " "
+                    Qualifier@57..59
+                      TEXT@57..59 "L."
+                    OPERATOR@59..60 ":"
+                  ExpressionConstructor@60..66
+                    QualifiedName@60..66
+                      Annotation@60..61
+                        TEXT@60..61 " "
+                      Qualifier@61..63
+                        TEXT@61..63 "L."
+                      UPPER@63..66 "Nil"
         LAYOUT_SEPARATOR@66..66 ""
         ValueEquation@66..104
           Annotation@66..68
@@ -104,17 +106,18 @@ snapshot_kind: text
                     Annotation@96..97
                       TEXT@96..97 " "
                     LOWER@97..98 "a"
-                QualifiedName@98..102
-                  Annotation@98..99
-                    TEXT@98..99 " "
-                  Qualifier@99..101
-                    TEXT@99..101 "S."
-                  OPERATOR@101..102 "+"
-                ExpressionVariable@102..104
-                  QualifiedName@102..104
-                    Annotation@102..103
-                      TEXT@102..103 " "
-                    LOWER@103..104 "b"
+                ExpressionOperatorPair@98..104
+                  QualifiedName@98..102
+                    Annotation@98..99
+                      TEXT@98..99 " "
+                    Qualifier@99..101
+                      TEXT@99..101 "S."
+                    OPERATOR@101..102 "+"
+                  ExpressionVariable@102..104
+                    QualifiedName@102..104
+                      Annotation@102..103
+                        TEXT@102..103 " "
+                      LOWER@103..104 "b"
         LAYOUT_SEPARATOR@104..104 ""
         TypeSynonymEquation@104..147
           Annotation@104..106

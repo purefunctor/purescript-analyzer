@@ -75,15 +75,16 @@ snapshot_kind: text
                       Annotation@70..71
                         TEXT@70..71 " "
                       LOWER@71..72 "c"
-                  QualifiedName@72..75
-                    Annotation@72..73
-                      TEXT@72..73 " "
-                    OPERATOR@73..75 "<<"
-                  ExpressionVariable@75..77
-                    QualifiedName@75..77
-                      Annotation@75..76
-                        TEXT@75..76 " "
-                      LOWER@76..77 "d"
+                  ExpressionOperatorPair@72..77
+                    QualifiedName@72..75
+                      Annotation@72..73
+                        TEXT@72..73 " "
+                      OPERATOR@73..75 "<<"
+                    ExpressionVariable@75..77
+                      QualifiedName@75..77
+                        Annotation@75..76
+                          TEXT@75..76 " "
+                        LOWER@76..77 "d"
               Annotation@77..78
                 TEXT@77..78 " "
               EQUAL@78..79 "="
@@ -114,15 +115,16 @@ snapshot_kind: text
                               Annotation@95..96
                                 TEXT@95..96 " "
                               LOWER@96..97 "c"
-                          QualifiedName@97..99
-                            Annotation@97..98
-                              TEXT@97..98 " "
-                            OPERATOR@98..99 "+"
-                          ExpressionVariable@99..101
-                            QualifiedName@99..101
-                              Annotation@99..100
-                                TEXT@99..100 " "
-                              LOWER@100..101 "d"
+                          ExpressionOperatorPair@97..101
+                            QualifiedName@97..99
+                              Annotation@97..98
+                                TEXT@97..98 " "
+                              OPERATOR@98..99 "+"
+                            ExpressionVariable@99..101
+                              QualifiedName@99..101
+                                Annotation@99..100
+                                  TEXT@99..100 " "
+                                LOWER@100..101 "d"
                   LAYOUT_END@101..101 ""
       LAYOUT_END@101..101 ""
       Annotation@101..102

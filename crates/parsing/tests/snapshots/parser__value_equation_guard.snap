@@ -43,15 +43,16 @@ snapshot_kind: text
                       Annotation@42..43
                         TEXT@42..43 " "
                       LOWER@43..44 "a"
-                  QualifiedName@44..46
-                    Annotation@44..45
-                      TEXT@44..45 " "
-                    OPERATOR@45..46 "<"
-                  ExpressionVariable@46..48
-                    QualifiedName@46..48
-                      Annotation@46..47
-                        TEXT@46..47 " "
-                      LOWER@47..48 "b"
+                  ExpressionOperatorPair@44..48
+                    QualifiedName@44..46
+                      Annotation@44..45
+                        TEXT@44..45 " "
+                      OPERATOR@45..46 "<"
+                    ExpressionVariable@46..48
+                      QualifiedName@46..48
+                        Annotation@46..47
+                          TEXT@46..47 " "
+                        LOWER@47..48 "b"
               Annotation@48..49
                 TEXT@48..49 " "
               EQUAL@49..50 "="
@@ -72,15 +73,16 @@ snapshot_kind: text
                       Annotation@56..57
                         TEXT@56..57 " "
                       LOWER@57..58 "b"
-                  QualifiedName@58..60
-                    Annotation@58..59
-                      TEXT@58..59 " "
-                    OPERATOR@59..60 "<"
-                  ExpressionVariable@60..62
-                    QualifiedName@60..62
-                      Annotation@60..61
-                        TEXT@60..61 " "
-                      LOWER@61..62 "a"
+                  ExpressionOperatorPair@58..62
+                    QualifiedName@58..60
+                      Annotation@58..59
+                        TEXT@58..59 " "
+                      OPERATOR@59..60 "<"
+                    ExpressionVariable@60..62
+                      QualifiedName@60..62
+                        Annotation@60..61
+                          TEXT@60..61 " "
+                        LOWER@61..62 "a"
               Annotation@62..63
                 TEXT@62..63 " "
               EQUAL@63..64 "="

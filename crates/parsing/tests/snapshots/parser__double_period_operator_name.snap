@@ -88,14 +88,15 @@ snapshot_kind: text
                   Annotation@112..113
                     TEXT@112..113 " "
                   INTEGER@113..114 "1"
-                QualifiedName@114..117
-                  Annotation@114..115
-                    TEXT@114..115 " "
-                  OPERATOR@115..117 ".."
-                ExpressionInteger@117..119
-                  Annotation@117..118
-                    TEXT@117..118 " "
-                  INTEGER@118..119 "2"
+                ExpressionOperatorPair@114..119
+                  QualifiedName@114..117
+                    Annotation@114..115
+                      TEXT@114..115 " "
+                    OPERATOR@115..117 ".."
+                  ExpressionInteger@117..119
+                    Annotation@117..118
+                      TEXT@117..118 " "
+                    INTEGER@118..119 "2"
       LAYOUT_END@119..119 ""
       Annotation@119..120
         TEXT@119..120 "\n"
