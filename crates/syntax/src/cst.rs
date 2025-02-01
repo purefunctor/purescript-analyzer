@@ -268,9 +268,29 @@ has_token!(
     | name_token() -> LOWER
 );
 
+has_child!(
+    ValueSignature
+    | signature() -> Type
+);
+
 has_token!(
     ValueEquation
     | name_token() -> LOWER
+);
+
+has_child!(
+    ValueEquation
+    | guarded_expression() -> GuardedExpression
+);
+
+has_child!(
+    GuardedExpression
+    | where_expression() -> WhereExpression
+);
+
+has_child!(
+    WhereExpression
+    | expression() -> Expression
 );
 
 has_children!(

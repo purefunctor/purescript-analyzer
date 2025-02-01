@@ -1,0 +1,14 @@
+[package]
+name = "lowering"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+id = { version = "0.1.0", path = "../id" }
+indexing = { version = "0.1.0", path = "../indexing" }
+indexmap = "2.7.1"
+lexing = { version = "0.1.0", path = "../lexing" }
+parsing = { version = "0.1.0", path = "../parsing" }
+rowan = "0.16.1"
+rustc-hash = "2.1.0"
+syntax = { version = "0.1.0", path = "../syntax" }
