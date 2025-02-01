@@ -1,0 +1,80 @@
+---
+source: crates/lowering/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {},
+    binders: {},
+    expressions: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionInteger,
+                range: 29..31,
+            },
+        }: Integer,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionInteger,
+                range: 33..35,
+            },
+        }: Integer,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionInteger,
+                range: 37..39,
+            },
+        }: Integer,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionInteger,
+                range: 41..43,
+            },
+        }: Integer,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionOperatorChain,
+                range: 25..43,
+            },
+        }: OperatorChain {
+            pairs: [
+                OperatorPair {
+                    qualifier: None,
+                    operator: Some(
+                        "+",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Expression>(0),
+                    ),
+                },
+                OperatorPair {
+                    qualifier: None,
+                    operator: Some(
+                        "+",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Expression>(1),
+                    ),
+                },
+                OperatorPair {
+                    qualifier: None,
+                    operator: Some(
+                        "+",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Expression>(2),
+                    ),
+                },
+                OperatorPair {
+                    qualifier: None,
+                    operator: Some(
+                        "+",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Expression>(3),
+                    ),
+                },
+            ],
+        },
+    },
+}

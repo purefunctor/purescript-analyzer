@@ -2,11 +2,12 @@ use std::iter;
 
 use indexing::{ExprItem, ExprItemId, IndexingResult, ValueGroupId};
 use rowan::ast::AstNode;
+use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
     BinderId, BinderKind, ExpressionId, ExpressionKind, LoweredEquation, LoweredExprItem,
-    LoweringMap, LoweringResult, SourceMap, TypeId, TypeKind,
+    LoweringMap, LoweringResult, OperatorPair, SourceMap, TypeId, TypeKind,
 };
 
 #[derive(Default)]
@@ -155,7 +156,30 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let signature = t.signature().map(|s| lower_type(state, &s));
             ExpressionKind::Typed { expression, signature }
         }
-        cst::Expression::ExpressionOperatorChain(_o) => ExpressionKind::OperatorChain,
+        cst::Expression::ExpressionOperatorChain(o) => {
+            let pairs: Vec<_> = o
+                .children()
+                .map(|p| {
+                    let qualified = p.qualified();
+
+                    let qualifier = qualified.as_ref().and_then(|q| {
+                        let q = q.qualifier()?;
+                        let t = q.text()?;
+                        Some(SmolStr::from(t.text()))
+                    });
+
+                    let operator = qualified.as_ref().and_then(|q| {
+                        let o = q.operator()?;
+                        Some(SmolStr::from(o.text()))
+                    });
+
+                    let element = p.expression().map(|e| lower_expression(state, &e));
+
+                    OperatorPair { qualifier, operator, element }
+                })
+                .collect();
+            ExpressionKind::OperatorChain { pairs }
+        }
         cst::Expression::ExpressionInfixChain(_i) => ExpressionKind::InfixChain,
         cst::Expression::ExpressionTick(_t) => ExpressionKind::Tick,
         cst::Expression::ExpressionNegate(_n) => ExpressionKind::Negate,

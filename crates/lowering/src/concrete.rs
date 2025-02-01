@@ -2,12 +2,20 @@ use id::Id;
 use indexing::ExprItemId;
 use rowan::ast::AstPtr;
 use rustc_hash::FxHashMap;
+use smol_str::SmolStr;
 use syntax::cst;
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct OperatorPair<T> {
+    pub qualifier: Option<SmolStr>,
+    pub operator: Option<SmolStr>,
+    pub element: Option<T>,
+}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
     Typed { expression: Option<ExpressionId>, signature: Option<TypeId> },
-    OperatorChain,
+    OperatorChain { pairs: Vec<OperatorPair<ExpressionId>> },
     InfixChain,
     Tick,
     Negate,

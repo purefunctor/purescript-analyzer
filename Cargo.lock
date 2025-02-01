@@ -343,6 +343,7 @@ dependencies = [
  "parsing",
  "rowan",
  "rustc-hash 2.1.0",
+ "smol_str",
  "syntax",
 ]
 

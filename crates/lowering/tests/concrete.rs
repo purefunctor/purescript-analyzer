@@ -43,3 +43,9 @@ fn lower_expression_typed() {
     let (_, lower) = lower_declaration(["four = 4 :: Int", "five = 5 ::"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_operator_chain() {
+    let (_, lower) = lower_declaration(["plus = 1 + 2 + 3 + 4 + 5"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
