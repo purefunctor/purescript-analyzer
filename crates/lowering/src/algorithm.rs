@@ -7,7 +7,7 @@ use syntax::cst;
 
 use crate::{
     BinderId, BinderKind, ExpressionId, ExpressionKind, LoweredEquation, LoweredExprItem,
-    LoweringMap, LoweringResult, OperatorPair, SourceMap, TypeId, TypeKind,
+    LoweringMap, LoweringResult, OperatorPair, SourceMap, TickPair, TypeId, TypeKind,
 };
 
 #[derive(Default)]
@@ -180,8 +180,21 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
                 .collect();
             ExpressionKind::OperatorChain { pairs }
         }
-        cst::Expression::ExpressionInfixChain(_i) => ExpressionKind::InfixChain,
-        cst::Expression::ExpressionTick(_t) => ExpressionKind::Tick,
+        cst::Expression::ExpressionInfixChain(i) => {
+            let lower_pair = |state: &mut State, p: &cst::ExpressionInfixPair| {
+                let tick = p.tick().and_then(|t| {
+                    let e = t.expression()?;
+                    Some(lower_expression(state, &e))
+                });
+                let element = p.expression().map(|e| lower_expression(state, &e));
+                TickPair { tick, element }
+            };
+
+            let head = i.expression().map(|e| lower_expression(state, &e));
+            let tail: Vec<_> = i.children().map(|p| lower_pair(state, &p)).collect();
+
+            ExpressionKind::InfixChain { head, tail }
+        }
         cst::Expression::ExpressionNegate(_n) => ExpressionKind::Negate,
         cst::Expression::ExpressionApplicationChain(_a) => ExpressionKind::ApplicationChain,
         cst::Expression::ExpressionTypeArgument(_t) => ExpressionKind::TypeArgument,

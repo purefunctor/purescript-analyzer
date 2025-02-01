@@ -12,6 +12,8 @@ fn lower_declaration<'s>(source: impl AsRef<[&'s str]>) -> (IndexingResult, Lowe
     let (node, _) = parsing::parse(&lexed, &tokens);
     let module = cst::Module::cast(node).unwrap();
 
+    dbg!(&module);
+
     let (index, _) = indexing::index(&module);
     let lower = lowering::lower(&module, &index);
 
@@ -47,5 +49,11 @@ fn lower_expression_typed() {
 #[test]
 fn lower_expression_operator_chain() {
     let (_, lower) = lower_declaration(["plus = 1 + 2 + 3 + 4 + 5"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_expression_infix_chain() {
+    let (_, lower) = lower_declaration(["chain = a `for` b `for` c"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }

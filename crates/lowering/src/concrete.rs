@@ -13,11 +13,16 @@ pub struct OperatorPair<T> {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub struct TickPair<T> {
+    pub tick: Option<T>,
+    pub element: Option<T>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
     Typed { expression: Option<ExpressionId>, signature: Option<TypeId> },
     OperatorChain { pairs: Vec<OperatorPair<ExpressionId>> },
-    InfixChain,
-    Tick,
+    InfixChain { head: Option<ExpressionId>, tail: Vec<TickPair<ExpressionId>> },
     Negate,
     ApplicationChain,
     TypeArgument,

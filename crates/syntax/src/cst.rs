@@ -145,7 +145,6 @@ create_cst_enum!(
         | ExpressionTyped
         | ExpressionOperatorChain
         | ExpressionInfixChain
-        | ExpressionTick
         | ExpressionNegate
         | ExpressionApplicationChain
         | ExpressionTypeArgument
@@ -174,7 +173,7 @@ create_cst_enum!(
         | ExpressionRecordUpdate
 );
 
-create_cst_struct!(ExpressionOperatorPair);
+create_cst_struct!(ExpressionOperatorPair, ExpressionInfixPair, ExpressionTick);
 
 create_cst_struct!(CaseTrunk, CaseBranches, CaseBranchBinders, CaseBranch);
 
@@ -459,5 +458,26 @@ has_children!(
 has_child!(
     ExpressionOperatorPair
     | qualified() -> QualifiedName
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionInfixChain
+    | expression() -> Expression
+);
+
+has_children!(
+    ExpressionInfixChain
+    | children() -> ExpressionInfixPair
+);
+
+has_child!(
+    ExpressionInfixPair
+    | tick() -> ExpressionTick
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionTick
     | expression() -> Expression
 );
