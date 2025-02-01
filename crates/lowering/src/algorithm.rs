@@ -1,39 +1,48 @@
-use indexing::{ExprItem, IndexingResult, ValueGroupId};
+use std::iter;
+
+use indexing::{ExprItem, ExprItemId, IndexingResult, ValueGroupId};
 use rowan::ast::AstNode;
 use syntax::cst;
 
-use super::{BinderId, BinderKind, ExpressionId, ExpressionKind, SourceMap, TypeId, TypeKind};
+use crate::{
+    BinderId, BinderKind, ExpressionId, ExpressionKind, LoweredEquation, LoweredExprItem,
+    LoweringMap, LoweringResult, SourceMap, TypeId, TypeKind,
+};
 
 #[derive(Default)]
 struct State {
     source_map: SourceMap,
+    lowering_map: LoweringMap,
 }
 
-pub(super) fn lower_module(module: &cst::Module, index: &IndexingResult) {
+pub(super) fn lower_module(module: &cst::Module, index: &IndexingResult) -> LoweringResult {
     let mut state = State::default();
 
-    for (_, _, item) in index.nominal.iter_expr() {
-        lower_expr_item(&mut state, module, index, item);
+    for (item_id, _, item) in index.nominal.iter_expr() {
+        lower_expr_item(&mut state, module, index, item_id, item);
     }
+
+    let State { source_map, lowering_map } = state;
+    LoweringResult { source_map, lowering_map }
 }
 
 fn lower_expr_item(
     state: &mut State,
     module: &cst::Module,
     index: &IndexingResult,
+    item_id: ExprItemId,
     item: &ExprItem,
 ) {
-    match item {
-        ExprItem::Constructor(_) => (),
-        ExprItem::Instance(_) => (),
-        ExprItem::Derive(_) => (),
-        ExprItem::ClassMember(_) => (),
-        ExprItem::Value(v) => {
-            lower_value_group(state, module, index, v);
-        }
-        ExprItem::Foreign(_) => (),
-        ExprItem::Operator(_) => (),
-    }
+    let item = match item {
+        ExprItem::Constructor(_) => todo!(),
+        ExprItem::Instance(_) => todo!(),
+        ExprItem::Derive(_) => todo!(),
+        ExprItem::ClassMember(_) => todo!(),
+        ExprItem::Value(v) => lower_value_group(state, module, index, v),
+        ExprItem::Foreign(_) => todo!(),
+        ExprItem::Operator(_) => todo!(),
+    };
+    state.lowering_map.expr_item.insert(item_id, item);
 }
 
 fn lower_value_group(
@@ -41,35 +50,58 @@ fn lower_value_group(
     module: &cst::Module,
     index: &IndexingResult,
     group: &ValueGroupId,
-) {
+) -> LoweredExprItem {
     let root = module.syntax();
 
-    let mut signature_id = None;
+    // let-else = anti-hadouken
+    let mut signature = None;
     'signature: {
-        let Some(signature) = group.signature else { break 'signature };
-        let Some(signature) = index.source_map.declaration_ptr(signature) else { break 'signature };
-        let Some(signature) = signature.try_to_node(root) else { break 'signature };
-        let cst::Declaration::ValueSignature(signature) = signature else { break 'signature };
-        let Some(signature) = signature.signature() else { break 'signature };
-        signature_id = Some(lower_type(state, &signature));
+        let Some(id) = group.signature else { break 'signature };
+        let Some(ptr) = index.source_map.declaration_ptr(id) else { break 'signature };
+        let Some(node) = ptr.try_to_node(root) else { break 'signature };
+        let cst::Declaration::ValueSignature(s) = node else { break 'signature };
+        let Some(s) = s.signature() else { break 'signature };
+        signature = Some(lower_type(state, &s));
     };
 
-    let capacity = group.equations.len();
-    let mut equation_id = Vec::with_capacity(capacity);
-    for equation in &group.equations {
-        let Some(equation) = index.source_map.declaration_ptr(*equation) else { continue };
-        let Some(equation) = equation.try_to_node(root) else { continue };
-        let cst::Declaration::ValueEquation(equation) = equation else { continue };
-        
-        dbg!(&equation);
+    // The resilient nature of the parser makes it possible to extract
+    // information from source files that produce partially-valid CSTs.
+    // As such, traversals over the CST must be written with this in
+    // mind to make available as much information as possible.
+    //
+    // For instance, in the following snippet, the compiler should
+    // be able to provide information about the `Just` binder despite
+    // the equation itself being invalid.
+    //
+    // ```
+    // fromMaybe :: forall a. a -> Maybe a -> a
+    // fromMaybe _ (Just a) =
+    // fromMaybe a Nothing = a
+    // ```
+    let count = group.equations.len();
+    let mut equations: Vec<_> = iter::repeat_with(LoweredEquation::default).take(count).collect();
 
-        let Some(guarded_expression) = equation.guarded_expression() else { continue };
-        let Some(where_expression) = guarded_expression.where_expression() else { continue };
-        let Some(expression) = where_expression.expression() else { continue };
-        equation_id.push(lower_expression(state, &expression));
+    let id_iter = group.equations.iter().copied();
+    let equations_iter = equations.iter_mut();
+
+    for (id, equation) in id_iter.zip(equations_iter) {
+        let Some(ptr) = index.source_map.declaration_ptr(id) else { continue };
+        let Some(node) = ptr.try_to_node(root) else { continue };
+        let cst::Declaration::ValueEquation(e) = node else { continue };
+
+        if let Some(f) = e.function_binders() {
+            for b in f.children() {
+                equation.binders.push(lower_binder(state, &b));
+            }
+        }
+
+        let Some(g) = e.guarded_expression() else { continue };
+        let Some(w) = g.where_expression() else { continue };
+        let Some(e) = w.expression() else { continue };
+        equation.expression = Some(lower_expression(state, &e));
     }
 
-    dbg!((signature_id, equation_id));
+    LoweredExprItem::Value { signature, equations }
 }
 
 fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {

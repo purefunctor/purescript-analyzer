@@ -1,5 +1,7 @@
 use id::Id;
+use indexing::ExprItemId;
 use rowan::ast::AstPtr;
+use rustc_hash::FxHashMap;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -101,4 +103,20 @@ pub type BinderPtr = AstPtr<cst::Binder>;
 pub struct Binder {
     pub kind: BinderKind,
     pub id: BinderId,
+}
+
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
+pub struct LoweredEquation {
+    pub binders: Vec<BinderId>,
+    pub expression: Option<ExpressionId>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum LoweredExprItem {
+    Value { signature: Option<TypeId>, equations: Vec<LoweredEquation> },
+}
+
+#[derive(Debug, Default)]
+pub struct LoweringMap {
+    pub expr_item: FxHashMap<ExprItemId, LoweredExprItem>,
 }

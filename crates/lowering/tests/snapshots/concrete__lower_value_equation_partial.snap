@@ -1,0 +1,26 @@
+---
+source: crates/lowering/tests/concrete.rs
+expression: id
+snapshot_kind: text
+---
+Value {
+    signature: Some(
+        Id<syntax::cst::Type>(0),
+    ),
+    equations: [
+        LoweredEquation {
+            binders: [
+                Id<syntax::cst::Binder>(0),
+            ],
+            expression: None,
+        },
+        LoweredEquation {
+            binders: [
+                Id<syntax::cst::Binder>(1),
+            ],
+            expression: Some(
+                Id<syntax::cst::Expression>(0),
+            ),
+        },
+    ],
+}

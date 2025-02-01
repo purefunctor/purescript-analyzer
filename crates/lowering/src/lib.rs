@@ -8,6 +8,12 @@ mod sourcemap;
 pub use concrete::*;
 pub use sourcemap::*;
 
-pub fn lower(module: &cst::Module, index: &IndexingResult) {
-    algorithm::lower_module(module, &index);
+#[derive(Debug)]
+pub struct LoweringResult {
+    pub source_map: SourceMap,
+    pub lowering_map: LoweringMap,
+}
+
+pub fn lower(module: &cst::Module, index: &IndexingResult) -> LoweringResult {
+    algorithm::lower_module(module, index)
 }

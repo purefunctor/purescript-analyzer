@@ -280,7 +280,13 @@ has_token!(
 
 has_child!(
     ValueEquation
+    | function_binders() -> FunctionBinders
     | guarded_expression() -> GuardedExpression
+);
+
+has_children!(
+    FunctionBinders
+    | children() -> Binder
 );
 
 has_child!(
