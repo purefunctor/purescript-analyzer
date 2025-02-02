@@ -14,14 +14,24 @@ use super::{
 type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 
 /// Mapping from recursive trees to stable IDs.
+///
+/// # Let Bindings
+///
+/// Let bindings are handled differently in the [`SourceMap`] as let declarations
+/// must be considered in groups rather than individually.
+///
+/// To accommodate this requirement, we make use of:
+/// * [`let_bindings_grouped`], to assign stable IDs to [`LetBindingKind`];
+/// * [`let_bindings`] to assign stable IDs to [`LetBindingPtr`] _and_ track
+///   the [`LetBindingKind`] that it belongs to.
+///
+/// [`let_bindings`]: SourceMap::let_bindings
+/// [`let_bindings_grouped`]: SourceMap::let_bindings_grouped
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct SourceMap {
     types: FxIndexMap<TypePtr, TypeKind>,
     binders: FxIndexMap<BinderPtr, BinderKind>,
     expressions: FxIndexMap<ExpressionPtr, ExpressionKind>,
-    // We opt to define insertion logic for the following mappings in
-    // the lowering code itself because it's non-trivial, thus we mark
-    // them as pub(crate)
     pub(crate) let_bindings: FxIndexMap<LetBindingPtr, LetBindingKindId>,
     pub(crate) let_bindings_grouped: Vec<LetBindingKind>,
 }
