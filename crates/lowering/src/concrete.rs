@@ -23,7 +23,7 @@ pub enum ExpressionKind {
     Typed { expression: Option<ExpressionId>, signature: Option<TypeId> },
     OperatorChain { head: Option<ExpressionId>, tail: Vec<OperatorPair<ExpressionId>> },
     InfixChain { head: Option<ExpressionId>, tail: Vec<TickPair<ExpressionId>> },
-    Negate,
+    Negate { expression: Option<ExpressionId> },
     ApplicationChain,
     TypeArgument,
     TermArgument,

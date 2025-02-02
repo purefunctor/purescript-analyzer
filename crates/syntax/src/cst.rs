@@ -486,3 +486,8 @@ has_child!(
     ExpressionTick
     | expression() -> Expression
 );
+
+has_child!(
+    ExpressionNegate
+    | expression() -> Expression
+);

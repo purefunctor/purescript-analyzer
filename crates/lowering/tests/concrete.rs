@@ -55,3 +55,9 @@ fn lower_expression_infix_chain() {
     let (_, lower) = lower_declaration(["chain = a `for` b `for` c"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_negate() {
+    let (_, lower) = lower_declaration(["negate = -1"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

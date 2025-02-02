@@ -192,7 +192,10 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
 
             ExpressionKind::InfixChain { head, tail }
         }
-        cst::Expression::ExpressionNegate(_n) => ExpressionKind::Negate,
+        cst::Expression::ExpressionNegate(n) => {
+            let expression = n.expression().map(|e| lower_expression(state, &e));
+            ExpressionKind::Negate { expression }
+        }
         cst::Expression::ExpressionApplicationChain(_a) => ExpressionKind::ApplicationChain,
         cst::Expression::ExpressionTypeArgument(_t) => ExpressionKind::TypeArgument,
         cst::Expression::ExpressionTermArgument(_t) => ExpressionKind::TermArgument,
