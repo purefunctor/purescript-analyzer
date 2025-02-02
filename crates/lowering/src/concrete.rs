@@ -31,8 +31,6 @@ pub enum ExpressionKind {
     InfixChain { head: Option<ExpressionId>, tail: Vec<TickPair<ExpressionId>> },
     Negate { expression: Option<ExpressionId> },
     ApplicationChain { head: Option<ExpressionId>, tail: Vec<ExpressionArgument> },
-    TypeArgument,
-    TermArgument,
     IfThenElse,
     LetIn,
     Lambda,
