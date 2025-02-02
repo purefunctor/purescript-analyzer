@@ -171,7 +171,14 @@ create_cst_enum!(
         | ExpressionRecordUpdate
 );
 
-create_cst_struct!(ExpressionOperatorPair, ExpressionInfixPair, ExpressionTick);
+create_cst_struct!(
+    ExpressionOperatorPair,
+    ExpressionInfixPair,
+    ExpressionTick,
+    ExpressionCond,
+    ExpressionThen,
+    ExpressionElse,
+);
 
 create_cst_enum!(ExpressionArgument | ExpressionTypeArgument | ExpressionTermArgument);
 

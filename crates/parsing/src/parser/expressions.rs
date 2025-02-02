@@ -149,11 +149,17 @@ fn expression_5(p: &mut Parser) {
 
 fn expression_if_then_else(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::IF);
+    let mut n = p.start();
     expression(p);
+    n.end(p, SyntaxKind::ExpressionCond);
     p.expect(SyntaxKind::THEN);
+    let mut n = p.start();
     expression(p);
+    n.end(p, SyntaxKind::ExpressionThen);
     p.expect(SyntaxKind::ELSE);
+    let mut n = p.start();
     expression(p);
+    n.end(p, SyntaxKind::ExpressionElse);
     m.end(p, SyntaxKind::ExpressionIfThenElse);
 }
 
