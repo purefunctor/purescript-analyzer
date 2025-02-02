@@ -182,7 +182,7 @@ create_cst_struct!(
 
 create_cst_enum!(ExpressionArgument | ExpressionTypeArgument | ExpressionTermArgument);
 
-create_cst_struct!(CaseTrunk, CaseBranches, CaseBranchBinders, CaseBranch);
+create_cst_struct!(LetBindingStatements, CaseTrunk, CaseBranches, CaseBranchBinders, CaseBranch);
 
 create_cst_enum!(DoStatement | DoStatementBind | DoStatementLet | DoStatementDiscard);
 
@@ -315,6 +315,7 @@ has_child!(
 has_child!(
     WhereExpression
     | expression() -> Expression
+    | bindings() -> LetBindingStatements
 );
 
 has_children!(
@@ -539,4 +540,42 @@ has_child!(
 has_child!(
     ExpressionElse
     | expression() -> Expression
+);
+
+has_child!(
+    ExpressionLetIn
+    | bindings() -> LetBindingStatements
+    | expression() -> Expression
+);
+
+has_children!(
+    LetBindingStatements
+    | children() -> LetBinding
+);
+
+has_child!(
+    LetBindingPattern
+    | binder() -> Binder
+    | where_expression() -> WhereExpression
+);
+
+has_token!(
+    LetBindingSignature
+    | name_token() -> LOWER
+);
+
+has_child!(
+    LetBindingSignature
+    | signature() -> Type
+);
+
+has_token!(
+    LetBindingEquation
+    | name_token() -> LOWER
+);
+
+has_child!(
+    LetBindingEquation
+    | function_binders() -> FunctionBinders
+    | guarded_expression() -> GuardedExpression
 );

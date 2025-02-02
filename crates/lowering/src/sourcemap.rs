@@ -4,6 +4,8 @@ use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxBuildHasher;
 use syntax::cst;
 
+use crate::{LetBindingKind, LetBindingKindId, LetBindingPtr};
+
 use super::{
     BinderId, BinderKind, BinderPtr, ExpressionId, ExpressionKind, ExpressionPtr, TypeId, TypeKind,
     TypePtr,
@@ -11,11 +13,17 @@ use super::{
 
 type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 
+/// Mapping from recursive trees to stable IDs.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct SourceMap {
     types: FxIndexMap<TypePtr, TypeKind>,
     binders: FxIndexMap<BinderPtr, BinderKind>,
     expressions: FxIndexMap<ExpressionPtr, ExpressionKind>,
+    // We opt to define insertion logic for the following mappings in
+    // the lowering code itself because it's non-trivial, thus we mark
+    // them as pub(crate)
+    pub(crate) let_bindings: FxIndexMap<LetBindingPtr, LetBindingKindId>,
+    pub(crate) let_bindings_grouped: Vec<LetBindingKind>,
 }
 
 fn insert<K: AstNode, V>(m: &mut FxIndexMap<AstPtr<K>, V>, p: &K, k: V) -> Id<K> {

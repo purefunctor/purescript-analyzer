@@ -25,6 +25,30 @@ pub enum ExpressionArgument {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub enum LetBindingKind {
+    Value {
+        name: Option<SmolStr>,
+        signature: Option<TypeId>,
+        equations: Vec<LoweredEquation>,
+    },
+    Pattern {
+        pattern: Option<BinderId>,
+        expression: Option<ExpressionId>,
+        bindings: Vec<LetBindingId>,
+    },
+}
+
+/// A stable ID for lowered let bindings.  
+///
+/// See comments in [`crate::sourcemap::SourceMap`]
+pub type LetBindingKindId = Id<LetBindingKind>;
+
+/// A stable ID for an individual let binding.
+pub type LetBindingId = Id<cst::LetBinding>;
+
+pub type LetBindingPtr = AstPtr<cst::LetBinding>;
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
     Typed {
         expression: Option<ExpressionId>,
@@ -50,7 +74,10 @@ pub enum ExpressionKind {
         then: Option<ExpressionId>,
         r#else: Option<ExpressionId>,
     },
-    LetIn,
+    LetIn {
+        bindings: Vec<LetBindingId>,
+        expression: Option<ExpressionId>,
+    },
     Lambda,
     CaseOf,
     Do,
@@ -144,6 +171,7 @@ pub struct Binder {
 pub struct LoweredEquation {
     pub binders: Vec<BinderId>,
     pub expression: Option<ExpressionId>,
+    pub bindings: Vec<LetBindingId>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

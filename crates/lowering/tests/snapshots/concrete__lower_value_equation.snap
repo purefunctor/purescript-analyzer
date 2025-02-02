@@ -15,6 +15,7 @@ Value {
             expression: Some(
                 Id<syntax::cst::Expression>(0),
             ),
+            bindings: [],
         },
         LoweredEquation {
             binders: [
@@ -23,6 +24,7 @@ Value {
             expression: Some(
                 Id<syntax::cst::Expression>(1),
             ),
+            bindings: [],
         },
     ],
 }

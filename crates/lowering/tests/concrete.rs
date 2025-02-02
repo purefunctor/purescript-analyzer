@@ -73,3 +73,21 @@ fn lower_expression_if_then_else() {
     let (_, lower) = lower_declaration(["ifThenElse = if a then b else c"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_let_in() {
+    let (_, lower) = lower_declaration([
+        "letIn =",
+        "  let",
+        "    life :: Int",
+        "    life = 42",
+        "",
+        "    42 = value",
+        "      where",
+        "      value = 42",
+        "",
+        "  in",
+        "    life",
+    ]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

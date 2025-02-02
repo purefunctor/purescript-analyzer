@@ -1,14 +1,15 @@
 use std::iter;
 
 use indexing::{ExprItem, ExprItemId, IndexingResult, ValueGroupId};
-use rowan::ast::AstNode;
+use rowan::ast::{AstNode, AstPtr};
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    BinderId, BinderKind, ExpressionArgument, ExpressionId, ExpressionKind, LoweredEquation,
-    LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, SourceMap, TickPair, TypeId,
-    TypeKind,
+    BinderId, BinderKind, ExpressionArgument, ExpressionId, ExpressionKind, LetBindingId,
+    LetBindingKind, LetBindingKindId, LoweredEquation, LoweredExprItem, LoweringMap,
+    LoweringResult, OperatorPair, SourceMap, TickPair, TypeId, TypeKind,
 };
 
 #[derive(Default)]
@@ -90,17 +91,7 @@ fn lower_value_group(
         let Some(ptr) = index.source_map.declaration_ptr(id) else { continue };
         let Some(node) = ptr.try_to_node(root) else { continue };
         let cst::Declaration::ValueEquation(e) = node else { continue };
-
-        if let Some(f) = e.function_binders() {
-            for b in f.children() {
-                equation.binders.push(lower_binder(state, &b));
-            }
-        }
-
-        let Some(g) = e.guarded_expression() else { continue };
-        let Some(w) = g.where_expression() else { continue };
-        let Some(e) = w.expression() else { continue };
-        equation.expression = Some(lower_expression(state, &e));
+        lower_equation_like(state, equation, e.function_binders(), e.guarded_expression());
     }
 
     LoweredExprItem::Value { signature, equations }
@@ -229,7 +220,11 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             });
             ExpressionKind::IfThenElse { r#if, then, r#else }
         }
-        cst::Expression::ExpressionLetIn(_l) => ExpressionKind::LetIn,
+        cst::Expression::ExpressionLetIn(l) => {
+            let bindings = l.bindings().map_or(vec![], |b| lower_let_binding_statements(state, &b));
+            let expression = l.expression().map(|e| lower_expression(state, &e));
+            ExpressionKind::LetIn { bindings, expression }
+        }
         cst::Expression::ExpressionLambda(_l) => ExpressionKind::Lambda,
         cst::Expression::ExpressionCaseOf(_c) => ExpressionKind::CaseOf,
         cst::Expression::ExpressionDo(_d) => ExpressionKind::Do,
@@ -252,4 +247,167 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
         cst::Expression::ExpressionRecordUpdate(_r) => ExpressionKind::RecordUpdate,
     };
     state.source_map.insert_expression(cst, kind)
+}
+
+fn lower_let_binding_statements(
+    state: &mut State,
+    cst: &cst::LetBindingStatements,
+) -> Vec<LetBindingId> {
+    let mut nominal = FxHashMap::default();
+    cst.children().map(|b| lower_let_binding(state, &mut nominal, &b)).collect()
+}
+
+fn lower_let_binding(
+    state: &mut State,
+    nominal: &mut FxHashMap<SmolStr, LetBindingKindId>,
+    cst: &cst::LetBinding,
+) -> LetBindingId {
+    fn insert_kind_id(
+        state: &mut State,
+        ptr: &cst::LetBinding,
+        kind_id: LetBindingKindId,
+    ) -> LetBindingId {
+        let ptr = AstPtr::new(ptr);
+        let (index, _) = state.source_map.let_bindings.insert_full(ptr, kind_id);
+        LetBindingId::from_raw(index)
+    }
+
+    fn insert_kind(
+        state: &mut State,
+        ptr: &cst::LetBinding,
+        kind: LetBindingKind,
+    ) -> (LetBindingKindId, LetBindingId) {
+        let index = state.source_map.let_bindings_grouped.len();
+        let kind_id = LetBindingKindId::from_raw(index);
+        state.source_map.let_bindings_grouped.push(kind);
+        let ptr_id = insert_kind_id(state, ptr, kind_id);
+        (kind_id, ptr_id)
+    }
+
+    match cst {
+        cst::LetBinding::LetBindingPattern(p) => {
+            let kind = lower_let_binding_pattern(state, p);
+            let (_, ptr_id) = insert_kind(state, cst, kind);
+            ptr_id
+        }
+        cst::LetBinding::LetBindingSignature(s) => {
+            let token = s.name_token();
+            let name = token.as_ref().map(|t| t.text());
+            let signature = s.signature().map(|s| lower_type(state, &s));
+
+            if let Some(name) = name {
+                if let Some(&kind_id) = nominal.get(name) {
+                    let index: usize = kind_id.into();
+                    let group = &mut state.source_map.let_bindings_grouped[index];
+                    if let LetBindingKind::Value { signature: s, .. } = group {
+                        if let Some(existing) = s {
+                            unimplemented!(
+                                "{:?} <-> {:?} : duplicate let bindings",
+                                existing,
+                                signature
+                            );
+                        } else {
+                            *s = signature;
+                        }
+                    }
+                    return insert_kind_id(state, cst, kind_id);
+                }
+            }
+
+            let name = name.map(SmolStr::from);
+            let for_nominal = name.clone();
+
+            let equations = vec![];
+            let kind = LetBindingKind::Value { name, signature, equations };
+
+            let (kind_id, ptr_id) = insert_kind(state, cst, kind);
+
+            if let Some(name) = for_nominal {
+                nominal.insert(name, kind_id);
+            }
+
+            ptr_id
+        }
+        cst::LetBinding::LetBindingEquation(e) => {
+            let token = e.name_token();
+            let name = token.as_ref().map(|t| t.text());
+
+            let mut equation = LoweredEquation::default();
+            lower_equation_like(state, &mut equation, e.function_binders(), e.guarded_expression());
+
+            if let Some(name) = name {
+                if let Some(&kind_id) = nominal.get(name) {
+                    let index: usize = kind_id.into();
+                    let group = &mut state.source_map.let_bindings_grouped[index];
+                    if let LetBindingKind::Value { equations, .. } = group {
+                        equations.push(equation);
+                    }
+                    return insert_kind_id(state, cst, kind_id);
+                }
+            }
+
+            let name = name.map(SmolStr::from);
+            let for_nominal = name.clone();
+
+            let signature = None;
+            let equations = vec![equation];
+            let kind = LetBindingKind::Value { name, signature, equations };
+
+            let (kind_id, ptr_id) = insert_kind(state, cst, kind);
+
+            if let Some(name) = for_nominal {
+                nominal.insert(name, kind_id);
+            }
+
+            ptr_id
+        }
+    }
+}
+
+fn lower_let_binding_pattern(state: &mut State, cst: &cst::LetBindingPattern) -> LetBindingKind {
+    let pattern = cst.binder().map(|b| lower_binder(state, &b));
+
+    let where_expression = cst.where_expression();
+
+    let expression = where_expression.as_ref().and_then(|w| {
+        let e = w.expression()?;
+        Some(lower_expression(state, &e))
+    });
+
+    let bindings = where_expression
+        .as_ref()
+        .and_then(|w| {
+            let b = w.bindings()?;
+            Some(lower_let_binding_statements(state, &b))
+        })
+        .unwrap_or_default();
+
+    LetBindingKind::Pattern { pattern, expression, bindings }
+}
+
+fn lower_equation_like(
+    state: &mut State,
+    equation: &mut LoweredEquation,
+    function_binders: Option<cst::FunctionBinders>,
+    guarded_expression: Option<cst::GuardedExpression>,
+) {
+    let where_expression = guarded_expression.and_then(|g| g.where_expression());
+
+    let binders = function_binders.map_or(vec![], |b| {
+        let children = b.children();
+        children.map(|b| lower_binder(state, &b)).collect()
+    });
+
+    let expression = where_expression.as_ref().and_then(|w| {
+        let e = w.expression()?;
+        Some(lower_expression(state, &e))
+    });
+
+    let bindings = where_expression
+        .and_then(|w| w.bindings())
+        .map_or(vec![], |b| lower_let_binding_statements(state, &b));
+
+    equation.binders = binders;
+    equation.expression = expression;
+    equation.bindings = bindings;
 }
