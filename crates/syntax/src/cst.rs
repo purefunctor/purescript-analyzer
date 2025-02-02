@@ -147,8 +147,6 @@ create_cst_enum!(
         | ExpressionInfixChain
         | ExpressionNegate
         | ExpressionApplicationChain
-        | ExpressionTypeArgument
-        | ExpressionTermArgument
         | ExpressionIfThenElse
         | ExpressionLetIn
         | ExpressionLambda
@@ -174,6 +172,8 @@ create_cst_enum!(
 );
 
 create_cst_struct!(ExpressionOperatorPair, ExpressionInfixPair, ExpressionTick);
+
+create_cst_enum!(ExpressionArgument | ExpressionTypeArgument | ExpressionTermArgument);
 
 create_cst_struct!(CaseTrunk, CaseBranches, CaseBranchBinders, CaseBranch);
 
@@ -489,5 +489,25 @@ has_child!(
 
 has_child!(
     ExpressionNegate
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionApplicationChain
+    | expression() -> Expression
+);
+
+has_children!(
+    ExpressionApplicationChain
+    | children() -> ExpressionArgument
+);
+
+has_child!(
+    ExpressionTypeArgument
+    | type_argument() -> Type
+);
+
+has_child!(
+    ExpressionTermArgument
     | expression() -> Expression
 );

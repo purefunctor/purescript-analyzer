@@ -61,3 +61,9 @@ fn lower_expression_negate() {
     let (_, lower) = lower_declaration(["negate = -1"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_application_chain() {
+    let (_, lower) = lower_declaration(["negate = f @a @b a b"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

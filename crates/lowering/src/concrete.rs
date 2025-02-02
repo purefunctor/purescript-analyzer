@@ -19,12 +19,18 @@ pub struct TickPair<T> {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub enum ExpressionArgument {
+    Expression(Option<ExpressionId>),
+    Type(Option<TypeId>),
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
     Typed { expression: Option<ExpressionId>, signature: Option<TypeId> },
     OperatorChain { head: Option<ExpressionId>, tail: Vec<OperatorPair<ExpressionId>> },
     InfixChain { head: Option<ExpressionId>, tail: Vec<TickPair<ExpressionId>> },
     Negate { expression: Option<ExpressionId> },
-    ApplicationChain,
+    ApplicationChain { head: Option<ExpressionId>, tail: Vec<ExpressionArgument> },
     TypeArgument,
     TermArgument,
     IfThenElse,

@@ -6,8 +6,9 @@ use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, LoweredEquation, LoweredExprItem,
-    LoweringMap, LoweringResult, OperatorPair, SourceMap, TickPair, TypeId, TypeKind,
+    BinderId, BinderKind, ExpressionArgument, ExpressionId, ExpressionKind, LoweredEquation,
+    LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, SourceMap, TickPair, TypeId,
+    TypeKind,
 };
 
 #[derive(Default)]
@@ -196,9 +197,23 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let expression = n.expression().map(|e| lower_expression(state, &e));
             ExpressionKind::Negate { expression }
         }
-        cst::Expression::ExpressionApplicationChain(_a) => ExpressionKind::ApplicationChain,
-        cst::Expression::ExpressionTypeArgument(_t) => ExpressionKind::TypeArgument,
-        cst::Expression::ExpressionTermArgument(_t) => ExpressionKind::TermArgument,
+        cst::Expression::ExpressionApplicationChain(a) => {
+            let lower_argument = |state: &mut State, a: &cst::ExpressionArgument| match a {
+                cst::ExpressionArgument::ExpressionTypeArgument(t) => {
+                    let t = t.type_argument().map(|t| lower_type(state, &t));
+                    ExpressionArgument::Type(t)
+                }
+                cst::ExpressionArgument::ExpressionTermArgument(t) => {
+                    let e = t.expression().map(|e| lower_expression(state, &e));
+                    ExpressionArgument::Expression(e)
+                }
+            };
+
+            let head = a.expression().map(|e| lower_expression(state, &e));
+            let tail: Vec<_> = a.children().map(|a| lower_argument(state, &a)).collect();
+
+            ExpressionKind::ApplicationChain { head, tail }
+        }
         cst::Expression::ExpressionIfThenElse(_i) => ExpressionKind::IfThenElse,
         cst::Expression::ExpressionLetIn(_l) => ExpressionKind::LetIn,
         cst::Expression::ExpressionLambda(_l) => ExpressionKind::Lambda,
