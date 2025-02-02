@@ -579,3 +579,9 @@ has_child!(
     | function_binders() -> FunctionBinders
     | guarded_expression() -> GuardedExpression
 );
+
+has_child!(
+    ExpressionLambda
+    | function_binders() -> FunctionBinders
+    | expression() -> Expression
+);

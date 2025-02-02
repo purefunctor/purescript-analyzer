@@ -78,7 +78,10 @@ pub enum ExpressionKind {
         bindings: Vec<LetBindingId>,
         expression: Option<ExpressionId>,
     },
-    Lambda,
+    Lambda {
+        binders: Vec<BinderId>,
+        expression: Option<ExpressionId>,
+    },
     CaseOf,
     Do,
     Ado,

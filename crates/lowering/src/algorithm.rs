@@ -225,7 +225,14 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let expression = l.expression().map(|e| lower_expression(state, &e));
             ExpressionKind::LetIn { bindings, expression }
         }
-        cst::Expression::ExpressionLambda(_l) => ExpressionKind::Lambda,
+        cst::Expression::ExpressionLambda(l) => {
+            let binders = l.function_binders().map_or(vec![], |b| {
+                let children = b.children();
+                children.map(|b| lower_binder(state, &b)).collect()
+            });
+            let expression = l.expression().map(|e| lower_expression(state, &e));
+            ExpressionKind::Lambda { binders, expression }
+        }
         cst::Expression::ExpressionCaseOf(_c) => ExpressionKind::CaseOf,
         cst::Expression::ExpressionDo(_d) => ExpressionKind::Do,
         cst::Expression::ExpressionAdo(_a) => ExpressionKind::Ado,

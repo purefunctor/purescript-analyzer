@@ -91,3 +91,9 @@ fn lower_expression_let_in() {
     ]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_lambda() {
+    let (_, lower) = lower_declaration(["id = \\a -> a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
