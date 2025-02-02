@@ -67,3 +67,9 @@ fn lower_expression_application_chain() {
     let (_, lower) = lower_declaration(["negate = f @a @b a b"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_if_then_else() {
+    let (_, lower) = lower_declaration(["ifThenElse = if a then b else c"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

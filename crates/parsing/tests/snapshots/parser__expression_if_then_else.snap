@@ -32,7 +32,7 @@ snapshot_kind: text
                 Annotation@49..50
                   TEXT@49..50 " "
                 IF@50..52 "if"
-                ExpressionCond@52..54
+                ExpressionIf@52..54
                   ExpressionVariable@52..54
                     QualifiedName@52..54
                       Annotation@52..53

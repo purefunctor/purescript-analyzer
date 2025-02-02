@@ -188,7 +188,7 @@ pub enum SyntaxKind {
     ExpressionTypeArgument,
     ExpressionTermArgument,
     ExpressionIfThenElse,
-    ExpressionCond,
+    ExpressionIf,
     ExpressionThen,
     ExpressionElse,
     ExpressionLetIn,

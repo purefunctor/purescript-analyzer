@@ -26,12 +26,30 @@ pub enum ExpressionArgument {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
-    Typed { expression: Option<ExpressionId>, signature: Option<TypeId> },
-    OperatorChain { head: Option<ExpressionId>, tail: Vec<OperatorPair<ExpressionId>> },
-    InfixChain { head: Option<ExpressionId>, tail: Vec<TickPair<ExpressionId>> },
-    Negate { expression: Option<ExpressionId> },
-    ApplicationChain { head: Option<ExpressionId>, tail: Vec<ExpressionArgument> },
-    IfThenElse,
+    Typed {
+        expression: Option<ExpressionId>,
+        signature: Option<TypeId>,
+    },
+    OperatorChain {
+        head: Option<ExpressionId>,
+        tail: Vec<OperatorPair<ExpressionId>>,
+    },
+    InfixChain {
+        head: Option<ExpressionId>,
+        tail: Vec<TickPair<ExpressionId>>,
+    },
+    Negate {
+        expression: Option<ExpressionId>,
+    },
+    ApplicationChain {
+        head: Option<ExpressionId>,
+        tail: Vec<ExpressionArgument>,
+    },
+    IfThenElse {
+        r#if: Option<ExpressionId>,
+        then: Option<ExpressionId>,
+        r#else: Option<ExpressionId>,
+    },
     LetIn,
     Lambda,
     CaseOf,

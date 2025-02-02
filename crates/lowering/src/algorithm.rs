@@ -214,7 +214,21 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
 
             ExpressionKind::ApplicationChain { head, tail }
         }
-        cst::Expression::ExpressionIfThenElse(_i) => ExpressionKind::IfThenElse,
+        cst::Expression::ExpressionIfThenElse(i) => {
+            let r#if = i.r#if().and_then(|c| {
+                let e = c.expression()?;
+                Some(lower_expression(state, &e))
+            });
+            let then = i.then().and_then(|t| {
+                let e = t.expression()?;
+                Some(lower_expression(state, &e))
+            });
+            let r#else = i.r#else().and_then(|e| {
+                let e = e.expression()?;
+                Some(lower_expression(state, &e))
+            });
+            ExpressionKind::IfThenElse { r#if, then, r#else }
+        }
         cst::Expression::ExpressionLetIn(_l) => ExpressionKind::LetIn,
         cst::Expression::ExpressionLambda(_l) => ExpressionKind::Lambda,
         cst::Expression::ExpressionCaseOf(_c) => ExpressionKind::CaseOf,

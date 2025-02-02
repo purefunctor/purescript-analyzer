@@ -151,7 +151,7 @@ fn expression_if_then_else(p: &mut Parser, mut m: NodeMarker) {
     p.expect(SyntaxKind::IF);
     let mut n = p.start();
     expression(p);
-    n.end(p, SyntaxKind::ExpressionCond);
+    n.end(p, SyntaxKind::ExpressionIf);
     p.expect(SyntaxKind::THEN);
     let mut n = p.start();
     expression(p);

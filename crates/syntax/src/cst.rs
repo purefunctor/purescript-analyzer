@@ -175,7 +175,7 @@ create_cst_struct!(
     ExpressionOperatorPair,
     ExpressionInfixPair,
     ExpressionTick,
-    ExpressionCond,
+    ExpressionIf,
     ExpressionThen,
     ExpressionElse,
 );
@@ -516,5 +516,27 @@ has_child!(
 
 has_child!(
     ExpressionTermArgument
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionIfThenElse
+    | r#if() -> ExpressionIf
+    | then() -> ExpressionThen
+    | r#else() -> ExpressionElse
+);
+
+has_child!(
+    ExpressionIf
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionThen
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionElse
     | expression() -> Expression
 );
