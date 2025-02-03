@@ -4,7 +4,7 @@ use indexing::{ExprItem, ExprItemId, IndexingResult, ValueGroupId};
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use syntax::cst;
+use syntax::{cst, SyntaxToken};
 
 use crate::{
     BinderId, BinderKind, CaseBranch, DoStatement, ExpressionArgument, ExpressionId,
@@ -276,21 +276,31 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let expression = a.expression().map(|e| lower_expression(state, &e));
             ExpressionKind::Ado { qualifier, statements, expression }
         }
-        // TODO: Literals
-        //
-        // These are easy as well, no need to extract values for now.
-        // Actually, we do need some of them for name resolution.
-        cst::Expression::ExpressionConstructor(_c) => ExpressionKind::Constructor,
-        cst::Expression::ExpressionVariable(_v) => ExpressionKind::Variable,
-        cst::Expression::ExpressionOperatorName(_o) => ExpressionKind::OperatorName,
-        // TODO: Section
-        //
-        // Perform desugaring for sections, and things
-        cst::Expression::ExpressionSection(_s) => ExpressionKind::Section,
-        // TODO: Hole
-        //
-        // Should we lower the name for this, or just infer from the CST?
-        cst::Expression::ExpressionHole(_h) => ExpressionKind::Hole,
+        cst::Expression::ExpressionConstructor(c) => {
+            let (qualifier, name) = c
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            ExpressionKind::Constructor { qualifier, name }
+        }
+        cst::Expression::ExpressionVariable(v) => {
+            let (qualifier, name) = v
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::lower))
+                .unwrap_or_default();
+            ExpressionKind::Variable { qualifier, name }
+        }
+        cst::Expression::ExpressionOperatorName(o) => {
+            let (qualifier, name) = o
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
+                .unwrap_or_default();
+            ExpressionKind::OperatorName { qualifier, name }
+        }
+        cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
+        cst::Expression::ExpressionHole(_) => ExpressionKind::Hole,
+        // TODO: These need to be lowered for exhaustiveness checking
+        // but we'll cross that bridge when we get there.
         cst::Expression::ExpressionString(_s) => ExpressionKind::String,
         cst::Expression::ExpressionChar(_c) => ExpressionKind::Char,
         cst::Expression::ExpressionTrue(_t) => ExpressionKind::True,
@@ -519,4 +529,20 @@ fn lower_do_statement(state: &mut State, cst: &cst::DoStatement) -> DoStatement 
             DoStatement::Discard { expression }
         }
     }
+}
+
+fn lower_qualified_name(
+    cst: &cst::QualifiedName,
+    token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
+) -> (Option<SmolStr>, Option<SmolStr>) {
+    let qualifier = cst.qualifier().and_then(|q| {
+        let q = q.text()?;
+        let text = q.text();
+        Some(SmolStr::from(text))
+    });
+    let name = token(cst).and_then(|t| {
+        let text = t.text();
+        Some(SmolStr::from(text))
+    });
+    (qualifier, name)
 }

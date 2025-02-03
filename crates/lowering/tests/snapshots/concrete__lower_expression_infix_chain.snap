@@ -12,31 +12,56 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 26..28,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 30..33,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "for",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 34..36,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "b",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 38..41,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "for",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 42..44,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "c",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionInfixChain,

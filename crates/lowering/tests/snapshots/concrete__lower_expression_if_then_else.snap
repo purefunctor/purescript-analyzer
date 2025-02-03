@@ -12,19 +12,34 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 34..36,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 41..43,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "b",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 48..50,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "c",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionIfThenElse,

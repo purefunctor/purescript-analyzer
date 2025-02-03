@@ -19,13 +19,23 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 34..41,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "pure",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 41..46,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "unit",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionApplicationChain,
@@ -48,13 +58,23 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 53..58,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "pure",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 58..63,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "unit",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionApplicationChain,
@@ -77,13 +97,23 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 77..82,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "pure",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 82..84,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "b",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionApplicationChain,
@@ -106,13 +136,23 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 84..91,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "pure",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 91..96,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "unit",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionApplicationChain,

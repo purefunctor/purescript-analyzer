@@ -17,7 +17,10 @@ has_token!(
 
 has_token!(
     QualifiedName
+    | upper() -> UPPER
+    | lower() -> LOWER
     | operator() -> OPERATOR
+    | operator_name() -> OPERATOR_NAME
 );
 
 has_child!(
@@ -678,4 +681,19 @@ has_child!(
     | qualifier() -> Qualifier
     | statements() -> DoStatements
     | expression() -> Expression
+);
+
+has_child!(
+    ExpressionConstructor
+    | name() -> QualifiedName
+);
+
+has_child!(
+    ExpressionVariable
+    | name() -> QualifiedName
+);
+
+has_child!(
+    ExpressionOperatorName
+    | name() -> QualifiedName
 );

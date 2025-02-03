@@ -19,7 +19,12 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 29..31,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionLambda,

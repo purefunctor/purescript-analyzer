@@ -4,75 +4,58 @@ expression: "&lower.source_map"
 snapshot_kind: text
 ---
 SourceMap {
-    types: {
-        AstPtr {
-            raw: SyntaxNodePtr {
-                kind: TypeVariable,
-                range: 31..32,
-            },
-        }: Variable,
-        AstPtr {
-            raw: SyntaxNodePtr {
-                kind: TypeVariable,
-                range: 34..35,
-            },
-        }: Variable,
-    },
+    types: {},
     binders: {},
     expressions: {
         AstPtr {
             raw: SyntaxNodePtr {
-                kind: ExpressionVariable,
-                range: 27..29,
+                kind: ExpressionConstructor,
+                range: 23..28,
             },
-        }: Variable {
-            qualifier: None,
+        }: Constructor {
+            qualifier: Some(
+                "F.",
+            ),
             name: Some(
-                "f",
+                "Id",
             ),
         },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
-                range: 35..37,
+                range: 28..33,
             },
         }: Variable {
-            qualifier: None,
+            qualifier: Some(
+                "F.",
+            ),
             name: Some(
-                "a",
+                "id",
             ),
         },
         AstPtr {
             raw: SyntaxNodePtr {
-                kind: ExpressionVariable,
-                range: 37..39,
+                kind: ExpressionOperatorName,
+                range: 33..39,
             },
-        }: Variable {
-            qualifier: None,
+        }: OperatorName {
+            qualifier: Some(
+                "F.",
+            ),
             name: Some(
-                "b",
+                "(+)",
             ),
         },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionApplicationChain,
-                range: 27..39,
+                range: 23..39,
             },
         }: ApplicationChain {
             head: Some(
                 Id<syntax::cst::Expression>(0),
             ),
             tail: [
-                Type(
-                    Some(
-                        Id<syntax::cst::Type>(0),
-                    ),
-                ),
-                Type(
-                    Some(
-                        Id<syntax::cst::Type>(1),
-                    ),
-                ),
                 Expression(
                     Some(
                         Id<syntax::cst::Expression>(1),

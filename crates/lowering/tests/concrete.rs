@@ -149,3 +149,9 @@ fn lower_expression_ado() {
     ]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_name() {
+    let (_, lower) = lower_declaration(["id = F.Id F.id F.(+)"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

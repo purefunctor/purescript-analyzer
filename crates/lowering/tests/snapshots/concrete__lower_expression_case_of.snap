@@ -43,19 +43,34 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 44..46,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "c",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 57..59,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "e",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 70..72,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "g",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionInteger,

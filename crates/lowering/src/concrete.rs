@@ -132,9 +132,18 @@ pub enum ExpressionKind {
         statements: Vec<DoStatement>,
         expression: Option<ExpressionId>,
     },
-    Constructor,
-    Variable,
-    OperatorName,
+    Constructor {
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+    },
+    Variable {
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+    },
+    OperatorName {
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+    },
     Section,
     Hole,
     String,

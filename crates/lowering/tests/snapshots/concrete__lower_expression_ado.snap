@@ -31,25 +31,45 @@ SourceMap {
                 kind: ExpressionVariable,
                 range: 42..49,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "action",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 66..68,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 75..82,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "action",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionVariable,
                 range: 87..94,
             },
-        }: Variable,
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "result",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: ExpressionAdo,
