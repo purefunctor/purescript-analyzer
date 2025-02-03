@@ -67,25 +67,25 @@ SourceMap {
                 kind: LetBindingSignature,
                 range: 32..48,
             },
-        }: Id<lowering::concrete::LetBindingKind>(0),
+        }: Id<lowering::concrete::LetBinding>(0),
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: LetBindingEquation,
                 range: 48..62,
             },
-        }: Id<lowering::concrete::LetBindingKind>(0),
+        }: Id<lowering::concrete::LetBinding>(0),
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: LetBindingEquation,
                 range: 90..107,
             },
-        }: Id<lowering::concrete::LetBindingKind>(1),
+        }: Id<lowering::concrete::LetBinding>(1),
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: LetBindingPattern,
                 range: 62..107,
             },
-        }: Id<lowering::concrete::LetBindingKind>(2),
+        }: Id<lowering::concrete::LetBinding>(2),
     },
     let_bindings_grouped: [
         Value {

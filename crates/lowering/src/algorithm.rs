@@ -7,8 +7,8 @@ use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    BinderId, BinderKind, CaseBranch, ExpressionArgument, ExpressionId, ExpressionKind,
-    GuardedExpression, LetBindingId, LetBindingKind, LetBindingKindId, LoweredEquation,
+    BinderId, BinderKind, CaseBranch, DoStatement, ExpressionArgument, ExpressionId,
+    ExpressionKind, GuardedExpression, LetBinding, LetBindingId, LetBindingKindId, LoweredEquation,
     LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
     SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
 };
@@ -253,18 +253,29 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
 
             ExpressionKind::CaseOf { trunk, branches }
         }
-        // TODO: Do/Ado
-        // prefix : Option<SmolStr>
-        // statement :
-        //   DoBind : Option<BinderId> + Option<Expressionid>
-        //   DoLet : Vec<LetBindingId>
-        //   DoDiscard : Option<ExpressionId>
-        //
-        // Also easy to implement, since for DoLet we can reuse the
-        // work that's already written for LetIn. Don't forget to
-        // also lower the prefix!
-        cst::Expression::ExpressionDo(_d) => ExpressionKind::Do,
-        cst::Expression::ExpressionAdo(_a) => ExpressionKind::Ado,
+        cst::Expression::ExpressionDo(d) => {
+            let qualifier = d.qualifier().and_then(|t| {
+                let token = t.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+            let statements = d
+                .statements()
+                .map_or(vec![], |s| s.children().map(|s| lower_do_statement(state, &s)).collect());
+            ExpressionKind::Do { qualifier, statements }
+        }
+        cst::Expression::ExpressionAdo(a) => {
+            let qualifier = a.qualifier().and_then(|t| {
+                let token = t.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+            let statements = a
+                .statements()
+                .map_or(vec![], |s| s.children().map(|s| lower_do_statement(state, &s)).collect());
+            let expression = a.expression().map(|e| lower_expression(state, &e));
+            ExpressionKind::Ado { qualifier, statements, expression }
+        }
         // TODO: Literals
         //
         // These are easy as well, no need to extract values for now.
@@ -328,7 +339,7 @@ fn lower_let_binding(
     fn insert_kind(
         state: &mut State,
         ptr: &cst::LetBinding,
-        kind: LetBindingKind,
+        kind: LetBinding,
     ) -> (LetBindingKindId, LetBindingId) {
         let index = state.source_map.let_bindings_grouped.len();
         let kind_id = LetBindingKindId::from_raw(index);
@@ -352,7 +363,7 @@ fn lower_let_binding(
                 if let Some(&kind_id) = nominal.get(name) {
                     let index: usize = kind_id.into();
                     let group = &mut state.source_map.let_bindings_grouped[index];
-                    if let LetBindingKind::Value { signature: s, .. } = group {
+                    if let LetBinding::Value { signature: s, .. } = group {
                         if let Some(existing) = s {
                             unimplemented!(
                                 "{:?} <-> {:?} : duplicate let bindings",
@@ -371,7 +382,7 @@ fn lower_let_binding(
             let for_nominal = name.clone();
 
             let equations = vec![];
-            let kind = LetBindingKind::Value { name, signature, equations };
+            let kind = LetBinding::Value { name, signature, equations };
 
             let (kind_id, ptr_id) = insert_kind(state, cst, kind);
 
@@ -392,7 +403,7 @@ fn lower_let_binding(
                 if let Some(&kind_id) = nominal.get(name) {
                     let index: usize = kind_id.into();
                     let group = &mut state.source_map.let_bindings_grouped[index];
-                    if let LetBindingKind::Value { equations, .. } = group {
+                    if let LetBinding::Value { equations, .. } = group {
                         equations.push(equation);
                     }
                     return insert_kind_id(state, cst, kind_id);
@@ -404,7 +415,7 @@ fn lower_let_binding(
 
             let signature = None;
             let equations = vec![equation];
-            let kind = LetBindingKind::Value { name, signature, equations };
+            let kind = LetBinding::Value { name, signature, equations };
 
             let (kind_id, ptr_id) = insert_kind(state, cst, kind);
 
@@ -417,7 +428,7 @@ fn lower_let_binding(
     }
 }
 
-fn lower_let_binding_pattern(state: &mut State, cst: &cst::LetBindingPattern) -> LetBindingKind {
+fn lower_let_binding_pattern(state: &mut State, cst: &cst::LetBindingPattern) -> LetBinding {
     let pattern = cst.binder().map(|b| lower_binder(state, &b));
 
     let where_expression = cst.where_expression();
@@ -435,7 +446,7 @@ fn lower_let_binding_pattern(state: &mut State, cst: &cst::LetBindingPattern) ->
         })
         .unwrap_or_default();
 
-    LetBindingKind::Pattern { pattern, expression, bindings }
+    LetBinding::Pattern { pattern, expression, bindings }
 }
 
 fn lower_equation_like(
@@ -487,6 +498,25 @@ fn lower_pattern_guard(state: &mut State, cst: &cst::PatternGuard) -> PatternGua
             let binder = None;
             let expression = e.expression().map(|e| lower_expression(state, &e));
             PatternGuard { binder, expression }
+        }
+    }
+}
+
+fn lower_do_statement(state: &mut State, cst: &cst::DoStatement) -> DoStatement {
+    match cst {
+        cst::DoStatement::DoStatementBind(b) => {
+            let binder = b.binder().map(|b| lower_binder(state, &b));
+            let expression = b.expression().map(|e| lower_expression(state, &e));
+            DoStatement::Bind { binder, expression }
+        }
+        cst::DoStatement::DoStatementLet(l) => {
+            let statements =
+                l.statements().map_or(vec![], |l| lower_let_binding_statements(state, &l));
+            DoStatement::Let { statements }
+        }
+        cst::DoStatement::DoStatementDiscard(d) => {
+            let expression = d.expression().map(|e| lower_expression(state, &e));
+            DoStatement::Discard { expression }
         }
     }
 }

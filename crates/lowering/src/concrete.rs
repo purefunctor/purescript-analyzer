@@ -25,7 +25,7 @@ pub enum ExpressionArgument {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub enum LetBindingKind {
+pub enum LetBinding {
     Value {
         name: Option<SmolStr>,
         signature: Option<TypeId>,
@@ -37,6 +37,16 @@ pub enum LetBindingKind {
         bindings: Vec<LetBindingId>,
     },
 }
+
+/// A stable ID for lowered let bindings.  
+///
+/// See comments in [`crate::sourcemap::SourceMap`]
+pub type LetBindingKindId = Id<LetBinding>;
+
+/// A stable ID for an individual let binding.
+pub type LetBindingId = Id<cst::LetBinding>;
+
+pub type LetBindingPtr = AstPtr<cst::LetBinding>;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct WhereExpression {
@@ -68,15 +78,12 @@ pub struct CaseBranch {
     pub guarded_expression: Option<GuardedExpression>,
 }
 
-/// A stable ID for lowered let bindings.  
-///
-/// See comments in [`crate::sourcemap::SourceMap`]
-pub type LetBindingKindId = Id<LetBindingKind>;
-
-/// A stable ID for an individual let binding.
-pub type LetBindingId = Id<cst::LetBinding>;
-
-pub type LetBindingPtr = AstPtr<cst::LetBinding>;
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum DoStatement {
+    Bind { binder: Option<BinderId>, expression: Option<ExpressionId> },
+    Let { statements: Vec<LetBindingId> },
+    Discard { expression: Option<ExpressionId> },
+}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
@@ -116,8 +123,15 @@ pub enum ExpressionKind {
         trunk: Vec<ExpressionId>,
         branches: Vec<CaseBranch>,
     },
-    Do,
-    Ado,
+    Do {
+        qualifier: Option<SmolStr>,
+        statements: Vec<DoStatement>,
+    },
+    Ado {
+        qualifier: Option<SmolStr>,
+        statements: Vec<DoStatement>,
+        expression: Option<ExpressionId>,
+    },
     Constructor,
     Variable,
     OperatorName,

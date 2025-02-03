@@ -182,7 +182,14 @@ create_cst_struct!(
 
 create_cst_enum!(ExpressionArgument | ExpressionTypeArgument | ExpressionTermArgument);
 
-create_cst_struct!(LetBindingStatements, CaseTrunk, CaseBranches, CaseBranchBinders, CaseBranch);
+create_cst_struct!(
+    LetBindingStatements,
+    CaseTrunk,
+    CaseBranches,
+    CaseBranchBinders,
+    CaseBranch,
+    DoStatements
+);
 
 create_cst_enum!(DoStatement | DoStatementBind | DoStatementLet | DoStatementDiscard);
 
@@ -637,4 +644,38 @@ has_child!(
 has_children!(
     CaseBranchBinders
     | children() -> Binder
+);
+
+has_child!(
+    ExpressionDo
+    | qualifier() -> Qualifier
+    | statements() -> DoStatements
+);
+
+has_children!(
+    DoStatements
+    | children() -> DoStatement
+);
+
+has_child!(
+    DoStatementBind
+    | binder() -> Binder
+    | expression() -> Expression
+);
+
+has_child!(
+    DoStatementLet
+    | statements() -> LetBindingStatements
+);
+
+has_child!(
+    DoStatementDiscard
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionAdo
+    | qualifier() -> Qualifier
+    | statements() -> DoStatements
+    | expression() -> Expression
 );

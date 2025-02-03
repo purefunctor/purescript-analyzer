@@ -123,3 +123,29 @@ fn lower_expression_case_of() {
     ]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_do() {
+    let (_, lower) = lower_declaration([
+        "main = Hooks.do",
+        "  pure unit",
+        "  _ <- pure unit",
+        "  let",
+        "    a = pure b",
+        "  pure unit",
+    ]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_expression_ado() {
+    let (_, lower) = lower_declaration([
+        "main = Hooks.ado",
+        "  _ <- action",
+        "  let",
+        "    id a = a",
+        "  _ <- action",
+        "  in result",
+    ]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
