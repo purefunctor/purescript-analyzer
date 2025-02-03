@@ -7,10 +7,10 @@ use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    BinderId, BinderKind, ExpressionArgument, ExpressionId, ExpressionKind, GuardedExpressionKind,
-    LetBindingId, LetBindingKind, LetBindingKindId, LoweredEquation, LoweredExprItem, LoweringMap,
-    LoweringResult, OperatorPair, PatternGuard, PatternGuarded, SourceMap, TickPair, TypeId,
-    TypeKind, WhereExpression,
+    BinderId, BinderKind, CaseBranch, ExpressionArgument, ExpressionId, ExpressionKind,
+    GuardedExpression, LetBindingId, LetBindingKind, LetBindingKindId, LoweredEquation,
+    LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
+    SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
 };
 
 #[derive(Default)]
@@ -234,16 +234,25 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let expression = l.expression().map(|e| lower_expression(state, &e));
             ExpressionKind::Lambda { binders, expression }
         }
-        // TODO: CaseOf
-        // head : Vec<ExpressionId>
-        // branch : Vec<BinderId>
-        //        : Vec<PatternGuard>
-        //        : Option<ExpressionId>
-        //
-        // Best to implement pattern guards for top-level expressions
-        // first so we can just reuse it for this expression. Should
-        // be pretty easy to implement all things considered.
-        cst::Expression::ExpressionCaseOf(_c) => ExpressionKind::CaseOf,
+        cst::Expression::ExpressionCaseOf(c) => {
+            let lower_case_branch = |state: &mut State, cst: &cst::CaseBranch| {
+                let binders = cst
+                    .binders()
+                    .map_or(vec![], |b| b.children().map(|b| lower_binder(state, &b)).collect());
+                let guarded_expression =
+                    cst.guarded_expression().map(|g| lower_guarded_expression(state, &g));
+                CaseBranch { binders, guarded_expression }
+            };
+
+            let trunk = c
+                .trunk()
+                .map_or(vec![], |t| t.children().map(|e| lower_expression(state, &e)).collect());
+            let branches = c
+                .branches()
+                .map_or(vec![], |b| b.children().map(|b| lower_case_branch(state, &b)).collect());
+
+            ExpressionKind::CaseOf { trunk, branches }
+        }
         // TODO: Do/Ado
         // prefix : Option<SmolStr>
         // statement :
@@ -435,24 +444,24 @@ fn lower_equation_like(
     function_binders: Option<cst::FunctionBinders>,
     guarded_expression: Option<cst::GuardedExpression>,
 ) {
-    let binders = function_binders.map_or(vec![], |b| {
+    equation.binders = function_binders.map_or(vec![], |b| {
         let children = b.children();
         children.map(|b| lower_binder(state, &b)).collect()
     });
+    equation.guarded = guarded_expression.as_ref().map(|g| lower_guarded_expression(state, &g));
+}
 
-    let guarded = guarded_expression.as_ref().map(|g| match g {
+fn lower_guarded_expression(state: &mut State, cst: &cst::GuardedExpression) -> GuardedExpression {
+    match cst {
         cst::GuardedExpression::Unconditional(u) => {
             let where_expression = u.where_expression().map(|w| lower_where_expression(state, &w));
-            GuardedExpressionKind::Unconditional { where_expression }
+            GuardedExpression::Unconditional { where_expression }
         }
         cst::GuardedExpression::Conditionals(c) => {
             let pattern_guarded = c.children().map(|p| lower_pattern_guarded(state, &p)).collect();
-            GuardedExpressionKind::Conditionals { pattern_guarded }
+            GuardedExpression::Conditionals { pattern_guarded }
         }
-    });
-
-    equation.binders = binders;
-    equation.guarded = guarded;
+    }
 }
 
 fn lower_where_expression(state: &mut State, cst: &cst::WhereExpression) -> WhereExpression {

@@ -45,7 +45,7 @@ pub struct WhereExpression {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub enum GuardedExpressionKind {
+pub enum GuardedExpression {
     Unconditional { where_expression: Option<WhereExpression> },
     Conditionals { pattern_guarded: Vec<PatternGuarded> },
 }
@@ -60,6 +60,12 @@ pub struct PatternGuarded {
 pub struct PatternGuard {
     pub binder: Option<BinderId>,
     pub expression: Option<ExpressionId>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct CaseBranch {
+    pub binders: Vec<BinderId>,
+    pub guarded_expression: Option<GuardedExpression>,
 }
 
 /// A stable ID for lowered let bindings.  
@@ -106,7 +112,10 @@ pub enum ExpressionKind {
         binders: Vec<BinderId>,
         expression: Option<ExpressionId>,
     },
-    CaseOf,
+    CaseOf {
+        trunk: Vec<ExpressionId>,
+        branches: Vec<CaseBranch>,
+    },
     Do,
     Ado,
     Constructor,
@@ -197,7 +206,7 @@ pub struct Binder {
 #[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct LoweredEquation {
     pub binders: Vec<BinderId>,
-    pub guarded: Option<GuardedExpressionKind>,
+    pub guarded: Option<GuardedExpression>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

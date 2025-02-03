@@ -110,3 +110,16 @@ fn lower_expression_conditionals() {
     ]);
     insta::assert_debug_snapshot!(&lower.lowering_map.expr_item);
 }
+
+#[test]
+fn lower_expression_case_of() {
+    let (_, lower) = lower_declaration([
+        "id = case _ of",
+        "  a | b <- c",
+        "    , d <- e",
+        "    , f <- g -> 0",
+        "    | true -> 1",
+        "    | false -> 1",
+    ]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

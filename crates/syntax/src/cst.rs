@@ -611,3 +611,30 @@ has_child!(
     | function_binders() -> FunctionBinders
     | expression() -> Expression
 );
+
+has_child!(
+    ExpressionCaseOf
+    | trunk() -> CaseTrunk
+    | branches() -> CaseBranches
+);
+
+has_children!(
+    CaseTrunk
+    | children() -> Expression
+);
+
+has_children!(
+    CaseBranches
+    | children() -> CaseBranch
+);
+
+has_child!(
+    CaseBranch
+    | binders() -> CaseBranchBinders
+    | guarded_expression() -> GuardedExpression
+);
+
+has_children!(
+    CaseBranchBinders
+    | children() -> Binder
+);
