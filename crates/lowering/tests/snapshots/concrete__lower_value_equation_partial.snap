@@ -12,17 +12,33 @@ Value {
             binders: [
                 Id<syntax::cst::Binder>(0),
             ],
-            expression: None,
-            bindings: [],
+            guarded: Some(
+                Unconditional {
+                    where_expression: Some(
+                        WhereExpression {
+                            expression: None,
+                            bindings: [],
+                        },
+                    ),
+                },
+            ),
         },
         LoweredEquation {
             binders: [
                 Id<syntax::cst::Binder>(1),
             ],
-            expression: Some(
-                Id<syntax::cst::Expression>(0),
+            guarded: Some(
+                Unconditional {
+                    where_expression: Some(
+                        WhereExpression {
+                            expression: Some(
+                                Id<syntax::cst::Expression>(0),
+                            ),
+                            bindings: [],
+                        },
+                    ),
+                },
             ),
-            bindings: [],
         },
     ],
 }

@@ -38,6 +38,30 @@ pub enum LetBindingKind {
     },
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct WhereExpression {
+    pub expression: Option<ExpressionId>,
+    pub bindings: Vec<LetBindingId>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum GuardedExpressionKind {
+    Unconditional { where_expression: Option<WhereExpression> },
+    Conditionals { pattern_guarded: Vec<PatternGuarded> },
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct PatternGuarded {
+    pub pattern_guards: Vec<PatternGuard>,
+    pub where_expression: Option<WhereExpression>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct PatternGuard {
+    pub binder: Option<BinderId>,
+    pub expression: Option<ExpressionId>,
+}
+
 /// A stable ID for lowered let bindings.  
 ///
 /// See comments in [`crate::sourcemap::SourceMap`]
@@ -173,8 +197,7 @@ pub struct Binder {
 #[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct LoweredEquation {
     pub binders: Vec<BinderId>,
-    pub expression: Option<ExpressionId>,
-    pub bindings: Vec<LetBindingId>,
+    pub guarded: Option<GuardedExpressionKind>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

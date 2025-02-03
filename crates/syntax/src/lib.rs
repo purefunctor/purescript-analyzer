@@ -132,7 +132,6 @@ pub enum SyntaxKind {
 
     Conditionals,
     PatternGuarded,
-    PatternGuards,
     PatternGuardBinder,
     PatternGuardExpression,
 

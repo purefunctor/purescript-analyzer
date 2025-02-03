@@ -98,10 +98,18 @@ SourceMap {
             equations: [
                 LoweredEquation {
                     binders: [],
-                    expression: Some(
-                        Id<syntax::cst::Expression>(0),
+                    guarded: Some(
+                        Unconditional {
+                            where_expression: Some(
+                                WhereExpression {
+                                    expression: Some(
+                                        Id<syntax::cst::Expression>(0),
+                                    ),
+                                    bindings: [],
+                                },
+                            ),
+                        },
                     ),
-                    bindings: [],
                 },
             ],
         },
@@ -113,10 +121,18 @@ SourceMap {
             equations: [
                 LoweredEquation {
                     binders: [],
-                    expression: Some(
-                        Id<syntax::cst::Expression>(2),
+                    guarded: Some(
+                        Unconditional {
+                            where_expression: Some(
+                                WhereExpression {
+                                    expression: Some(
+                                        Id<syntax::cst::Expression>(2),
+                                    ),
+                                    bindings: [],
+                                },
+                            ),
+                        },
                     ),
-                    bindings: [],
                 },
             ],
         },

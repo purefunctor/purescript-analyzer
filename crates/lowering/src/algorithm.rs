@@ -7,9 +7,10 @@ use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    BinderId, BinderKind, ExpressionArgument, ExpressionId, ExpressionKind, LetBindingId,
-    LetBindingKind, LetBindingKindId, LoweredEquation, LoweredExprItem, LoweringMap,
-    LoweringResult, OperatorPair, SourceMap, TickPair, TypeId, TypeKind,
+    BinderId, BinderKind, ExpressionArgument, ExpressionId, ExpressionKind, GuardedExpressionKind,
+    LetBindingId, LetBindingKind, LetBindingKindId, LoweredEquation, LoweredExprItem, LoweringMap,
+    LoweringResult, OperatorPair, PatternGuard, PatternGuarded, SourceMap, TickPair, TypeId,
+    TypeKind, WhereExpression,
 };
 
 #[derive(Default)]
@@ -233,13 +234,42 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let expression = l.expression().map(|e| lower_expression(state, &e));
             ExpressionKind::Lambda { binders, expression }
         }
+        // TODO: CaseOf
+        // head : Vec<ExpressionId>
+        // branch : Vec<BinderId>
+        //        : Vec<PatternGuard>
+        //        : Option<ExpressionId>
+        //
+        // Best to implement pattern guards for top-level expressions
+        // first so we can just reuse it for this expression. Should
+        // be pretty easy to implement all things considered.
         cst::Expression::ExpressionCaseOf(_c) => ExpressionKind::CaseOf,
+        // TODO: Do/Ado
+        // prefix : Option<SmolStr>
+        // statement :
+        //   DoBind : Option<BinderId> + Option<Expressionid>
+        //   DoLet : Vec<LetBindingId>
+        //   DoDiscard : Option<ExpressionId>
+        //
+        // Also easy to implement, since for DoLet we can reuse the
+        // work that's already written for LetIn. Don't forget to
+        // also lower the prefix!
         cst::Expression::ExpressionDo(_d) => ExpressionKind::Do,
         cst::Expression::ExpressionAdo(_a) => ExpressionKind::Ado,
+        // TODO: Literals
+        //
+        // These are easy as well, no need to extract values for now.
+        // Actually, we do need some of them for name resolution.
         cst::Expression::ExpressionConstructor(_c) => ExpressionKind::Constructor,
         cst::Expression::ExpressionVariable(_v) => ExpressionKind::Variable,
         cst::Expression::ExpressionOperatorName(_o) => ExpressionKind::OperatorName,
+        // TODO: Section
+        //
+        // Perform desugaring for sections, and things
         cst::Expression::ExpressionSection(_s) => ExpressionKind::Section,
+        // TODO: Hole
+        //
+        // Should we lower the name for this, or just infer from the CST?
         cst::Expression::ExpressionHole(_h) => ExpressionKind::Hole,
         cst::Expression::ExpressionString(_s) => ExpressionKind::String,
         cst::Expression::ExpressionChar(_c) => ExpressionKind::Char,
@@ -247,10 +277,17 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
         cst::Expression::ExpressionFalse(_f) => ExpressionKind::False,
         cst::Expression::ExpressionInteger(_i) => ExpressionKind::Integer,
         cst::Expression::ExpressionNumber(_n) => ExpressionKind::Number,
+        // TODO: Array/Record
+        //
+        // Think about how to lower record puns that makes sense for resolution?
         cst::Expression::ExpressionArray(_a) => ExpressionKind::Array,
         cst::Expression::ExpressionRecord(_r) => ExpressionKind::Record,
+        // TODO: Parenthesis/RecordAccess are quite easy to do as well
         cst::Expression::ExpressionParenthesized(_p) => ExpressionKind::Parenthesized,
         cst::Expression::ExpressionRecordAccess(_r) => ExpressionKind::RecordAccess,
+        // TODO: RecordUpdate
+        //
+        // This one is tricky as well, depends on Record lowering
         cst::Expression::ExpressionRecordUpdate(_r) => ExpressionKind::RecordUpdate,
     };
     state.source_map.insert_expression(cst, kind)
@@ -398,23 +435,49 @@ fn lower_equation_like(
     function_binders: Option<cst::FunctionBinders>,
     guarded_expression: Option<cst::GuardedExpression>,
 ) {
-    let where_expression = guarded_expression.and_then(|g| g.where_expression());
-
     let binders = function_binders.map_or(vec![], |b| {
         let children = b.children();
         children.map(|b| lower_binder(state, &b)).collect()
     });
 
-    let expression = where_expression.as_ref().and_then(|w| {
-        let e = w.expression()?;
-        Some(lower_expression(state, &e))
+    let guarded = guarded_expression.as_ref().map(|g| match g {
+        cst::GuardedExpression::Unconditional(u) => {
+            let where_expression = u.where_expression().map(|w| lower_where_expression(state, &w));
+            GuardedExpressionKind::Unconditional { where_expression }
+        }
+        cst::GuardedExpression::Conditionals(c) => {
+            let pattern_guarded = c.children().map(|p| lower_pattern_guarded(state, &p)).collect();
+            GuardedExpressionKind::Conditionals { pattern_guarded }
+        }
     });
 
-    let bindings = where_expression
-        .and_then(|w| w.bindings())
-        .map_or(vec![], |b| lower_let_binding_statements(state, &b));
-
     equation.binders = binders;
-    equation.expression = expression;
-    equation.bindings = bindings;
+    equation.guarded = guarded;
+}
+
+fn lower_where_expression(state: &mut State, cst: &cst::WhereExpression) -> WhereExpression {
+    let expression = cst.expression().map(|e| lower_expression(state, &e));
+    let bindings = cst.bindings().map_or(vec![], |b| lower_let_binding_statements(state, &b));
+    WhereExpression { expression, bindings }
+}
+
+fn lower_pattern_guarded(state: &mut State, cst: &cst::PatternGuarded) -> PatternGuarded {
+    let pattern_guards = cst.children().map(|p| lower_pattern_guard(state, &p)).collect();
+    let where_expression = cst.where_expression().map(|w| lower_where_expression(state, &w));
+    PatternGuarded { pattern_guards, where_expression }
+}
+
+fn lower_pattern_guard(state: &mut State, cst: &cst::PatternGuard) -> PatternGuard {
+    match cst {
+        cst::PatternGuard::PatternGuardBinder(b) => {
+            let binder = b.binder().map(|b| lower_binder(state, &b));
+            let expression = b.expression().map(|e| lower_expression(state, &e));
+            PatternGuard { binder, expression }
+        }
+        cst::PatternGuard::PatternGuardExpression(e) => {
+            let binder = None;
+            let expression = e.expression().map(|e| lower_expression(state, &e));
+            PatternGuard { binder, expression }
+        }
+    }
 }

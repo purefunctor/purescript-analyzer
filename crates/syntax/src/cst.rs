@@ -136,7 +136,7 @@ create_cst_enum!(
 
 create_cst_enum!(GuardedExpression | Unconditional | Conditionals);
 
-create_cst_struct!(FunctionBinders, WhereExpression, PatternGuarded, PatternGuards);
+create_cst_struct!(FunctionBinders, WhereExpression, PatternGuarded);
 
 create_cst_enum!(PatternGuard | PatternGuardBinder | PatternGuardExpression);
 
@@ -308,14 +308,40 @@ has_children!(
 );
 
 has_child!(
-    GuardedExpression
+    Unconditional
     | where_expression() -> WhereExpression
+);
+
+has_children!(
+    Conditionals
+    | children() -> PatternGuarded
+);
+
+has_child!(
+    PatternGuarded
+    | where_expression() -> WhereExpression
+);
+
+has_children!(
+    PatternGuarded
+    | children() -> PatternGuard
 );
 
 has_child!(
     WhereExpression
     | expression() -> Expression
     | bindings() -> LetBindingStatements
+);
+
+has_child!(
+    PatternGuardBinder
+    | binder() -> Binder
+    | expression() -> Expression
+);
+
+has_child!(
+    PatternGuardExpression
+    | expression() -> Expression
 );
 
 has_children!(

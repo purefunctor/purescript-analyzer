@@ -97,3 +97,16 @@ fn lower_expression_lambda() {
     let (_, lower) = lower_declaration(["id = \\a -> a"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_conditionals() {
+    let (_, lower) = lower_declaration([
+        "id a",
+        "  | b <- c",
+        "  , d <- e",
+        "  , f <- g = 0",
+        "  | true = 1",
+        "  | false = 1",
+    ]);
+    insta::assert_debug_snapshot!(&lower.lowering_map.expr_item);
+}
