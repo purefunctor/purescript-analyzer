@@ -41,14 +41,15 @@ snapshot_kind: text
                           Annotation@46..49
                             TEXT@46..49 "\n  "
                           LOWER@49..50 "a"
-                        QualifiedName@50..53
-                          Annotation@50..51
-                            TEXT@50..51 " "
-                          OPERATOR@51..53 "/\\"
-                        BinderVariable@53..55
-                          Annotation@53..54
-                            TEXT@53..54 " "
-                          LOWER@54..55 "b"
+                        BinderOperatorPair@50..55
+                          QualifiedName@50..53
+                            Annotation@50..51
+                              TEXT@50..51 " "
+                            OPERATOR@51..53 "/\\"
+                          BinderVariable@53..55
+                            Annotation@53..54
+                              TEXT@53..54 " "
+                            LOWER@54..55 "b"
                       Annotation@55..56
                         TEXT@55..56 " "
                       DOUBLE_COLON@56..58 "::"
@@ -100,14 +101,15 @@ snapshot_kind: text
                             Annotation@87..93
                               TEXT@87..93 " \n    "
                             LOWER@93..94 "a"
-                          QualifiedName@94..97
-                            Annotation@94..95
-                              TEXT@94..95 " "
-                            OPERATOR@95..97 "/\\"
-                          BinderVariable@97..99
-                            Annotation@97..98
-                              TEXT@97..98 " "
-                            LOWER@98..99 "b"
+                          BinderOperatorPair@94..99
+                            QualifiedName@94..97
+                              Annotation@94..95
+                                TEXT@94..95 " "
+                              OPERATOR@95..97 "/\\"
+                            BinderVariable@97..99
+                              Annotation@97..98
+                                TEXT@97..98 " "
+                              LOWER@98..99 "b"
                         Annotation@99..100
                           TEXT@99..100 " "
                         EQUAL@100..101 "="

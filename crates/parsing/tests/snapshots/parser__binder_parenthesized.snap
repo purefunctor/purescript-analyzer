@@ -52,14 +52,15 @@ snapshot_kind: text
               BinderOperatorChain@71..76
                 BinderVariable@71..72
                   LOWER@71..72 "x"
-                QualifiedName@72..74
-                  Annotation@72..73
-                    TEXT@72..73 " "
-                  OPERATOR@73..74 "+"
-                BinderVariable@74..76
-                  Annotation@74..75
-                    TEXT@74..75 " "
-                  LOWER@75..76 "y"
+                BinderOperatorPair@72..76
+                  QualifiedName@72..74
+                    Annotation@72..73
+                      TEXT@72..73 " "
+                    OPERATOR@73..74 "+"
+                  BinderVariable@74..76
+                    Annotation@74..75
+                      TEXT@74..75 " "
+                    LOWER@75..76 "y"
               RIGHT_PARENTHESIS@76..77 ")"
           Unconditional@77..81
             Annotation@77..78

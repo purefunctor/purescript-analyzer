@@ -17,7 +17,11 @@ SourceMap {
                 kind: BinderVariable,
                 range: 62..64,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: BinderWildcard,

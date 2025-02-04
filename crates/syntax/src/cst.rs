@@ -142,6 +142,8 @@ create_cst_enum!(
         | BinderParenthesized
 );
 
+create_cst_struct!(BinderOperatorPair);
+
 create_cst_enum!(GuardedExpression | Unconditional | Conditionals);
 
 create_cst_struct!(FunctionBinders, WhereExpression, PatternGuarded);
@@ -717,6 +719,8 @@ has_child!(
     RecordField
     | name() -> LabelName
     | expression() -> Expression
+    | binder() -> Binder
+    | signature() -> Type
 );
 
 has_child!(
@@ -759,4 +763,66 @@ has_child!(
     RecordUpdateBranch
     | name() -> LabelName
     | record_updates() -> RecordUpdates
+);
+
+has_child!(
+    BinderTyped
+    | binder() -> Binder
+    | signature() -> Type
+);
+
+has_child!(
+    BinderOperatorChain
+    | binder() -> Binder
+);
+
+has_children!(
+    BinderOperatorChain
+    | children() -> BinderOperatorPair
+);
+
+has_child!(
+    BinderOperatorPair
+    | qualified() -> QualifiedName
+    | binder() -> Binder
+);
+
+has_child!(
+    BinderConstructor
+    | name() -> QualifiedName
+);
+
+has_children!(
+    BinderConstructor
+    | children() -> Binder
+);
+
+has_token!(
+    BinderVariable
+    | name_token() -> LOWER
+);
+
+has_token!(
+    BinderNamed
+    | name_token() -> LOWER
+);
+
+has_child!(
+    BinderNamed
+    | binder() -> Binder
+);
+
+has_children!(
+    BinderArray
+    | children() -> Binder
+);
+
+has_children!(
+    BinderRecord
+    | children() -> RecordItem
+);
+
+has_child!(
+    BinderParenthesized
+    | binder() -> Binder
 );

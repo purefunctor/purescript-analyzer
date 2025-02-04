@@ -185,3 +185,87 @@ fn lower_expression_record_update() {
     let (_, lower) = lower_declaration(["id = f { a = b, c { d = e } }"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_binder_typed() {
+    let (_, lower) = lower_declaration(["id (a :: T) = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_operator_chain() {
+    let (_, lower) = lower_declaration(["id (a L.: b L.: c) = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_integer() {
+    let (_, lower) = lower_declaration(["id 1 2 3 = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_number() {
+    let (_, lower) = lower_declaration(["id 1.0 2.0 3.0 = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_constructor() {
+    let (_, lower) = lower_declaration(["id (Cons a b)"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_variable() {
+    let (_, lower) = lower_declaration(["id a b c = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_named() {
+    let (_, lower) = lower_declaration(["id a@b c@d = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_wildcard() {
+    let (_, lower) = lower_declaration(["id _ = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_string() {
+    let (_, lower) = lower_declaration(["id \"a\" = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_char() {
+    let (_, lower) = lower_declaration(["id 'a' = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_true_false() {
+    let (_, lower) = lower_declaration(["id true false = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_array() {
+    let (_, lower) = lower_declaration(["id [a, b, c] = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_record() {
+    let (_, lower) = lower_declaration(["id { a, b: c } = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_binder_parenthesized() {
+    let (_, lower) = lower_declaration(["id (a) = a"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

@@ -24,7 +24,7 @@ SourceMap {
                     name: Some(
                         "a",
                     ),
-                    expression: Some(
+                    value: Some(
                         Id<syntax::cst::Expression>(0),
                     ),
                 },

@@ -123,21 +123,62 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
 
 fn lower_binder(state: &mut State, cst: &cst::Binder) -> BinderId {
     let kind = match cst {
-        cst::Binder::BinderTyped(_t) => BinderKind::Typed,
-        cst::Binder::BinderOperatorChain(_o) => BinderKind::OperatorChain,
-        cst::Binder::BinderInteger(_i) => BinderKind::Integer,
-        cst::Binder::BinderNumber(_n) => BinderKind::Number,
-        cst::Binder::BinderConstructor(_c) => BinderKind::Constructor,
-        cst::Binder::BinderVariable(_v) => BinderKind::Variable,
-        cst::Binder::BinderNamed(_n) => BinderKind::Named,
-        cst::Binder::BinderWildcard(_w) => BinderKind::Wildcard,
-        cst::Binder::BinderString(_s) => BinderKind::String,
-        cst::Binder::BinderChar(_c) => BinderKind::Char,
-        cst::Binder::BinderTrue(_t) => BinderKind::True,
-        cst::Binder::BinderFalse(_f) => BinderKind::False,
-        cst::Binder::BinderArray(_a) => BinderKind::Array,
-        cst::Binder::BinderRecord(_r) => BinderKind::Record,
-        cst::Binder::BinderParenthesized(_p) => BinderKind::Parenthesized,
+        cst::Binder::BinderTyped(t) => {
+            let binder = t.binder().map(|b| lower_binder(state, &b));
+            let signature = t.signature().map(|s| lower_type(state, &s));
+            BinderKind::Typed { binder, signature }
+        }
+        cst::Binder::BinderOperatorChain(o) => {
+            let head = o.binder().map(|b| lower_binder(state, &b));
+            let tail = o
+                .children()
+                .map(|p| {
+                    let qualified = p.qualified();
+                    let binder = p.binder().map(|b| lower_binder(state, &b));
+                    lower_pair(qualified, binder)
+                })
+                .collect();
+            BinderKind::OperatorChain { head, tail }
+        }
+        cst::Binder::BinderInteger(_) => BinderKind::Integer,
+        cst::Binder::BinderNumber(_) => BinderKind::Number,
+        cst::Binder::BinderConstructor(c) => {
+            let (qualifier, name) = c
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            let arguments = c.children().map(|b| lower_binder(state, &b)).collect();
+            BinderKind::Constructor { qualifier, name, arguments }
+        }
+        cst::Binder::BinderVariable(v) => {
+            let name = v.name_token().map(|t| SmolStr::from(t.text()));
+            BinderKind::Variable { name }
+        }
+        cst::Binder::BinderNamed(n) => {
+            let name = n.name_token().map(|t| SmolStr::from(t.text()));
+            let binder = n.binder().map(|b| lower_binder(state, &b));
+            BinderKind::Named { name, binder }
+        }
+        cst::Binder::BinderWildcard(_) => BinderKind::Wildcard,
+        cst::Binder::BinderString(_) => BinderKind::String,
+        cst::Binder::BinderChar(_) => BinderKind::Char,
+        cst::Binder::BinderTrue(_) => BinderKind::True,
+        cst::Binder::BinderFalse(_) => BinderKind::False,
+        cst::Binder::BinderArray(a) => {
+            let binders = a.children().map(|b| lower_binder(state, &b)).collect();
+            BinderKind::Array { binders }
+        }
+        cst::Binder::BinderRecord(r) => {
+            let items = r
+                .children()
+                .map(|i| lower_record_item(&i, |f| f.binder().map(|b| lower_binder(state, &b))))
+                .collect();
+            BinderKind::Record { items }
+        }
+        cst::Binder::BinderParenthesized(p) => {
+            let binder = p.binder().map(|b| lower_binder(state, &b));
+            BinderKind::Parenthesized { binder }
+        }
     };
     state.source_map.insert_binder(cst, kind)
 }
@@ -150,24 +191,15 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             ExpressionKind::Typed { expression, signature }
         }
         cst::Expression::ExpressionOperatorChain(o) => {
-            let lower_pair = |state: &mut State, p: &cst::ExpressionOperatorPair| {
-                let qualified = p.qualified();
-                let qualifier = qualified.as_ref().and_then(|q| {
-                    let q = q.qualifier()?;
-                    let t = q.text()?;
-                    Some(SmolStr::from(t.text()))
-                });
-                let operator = qualified.as_ref().and_then(|q| {
-                    let o = q.operator()?;
-                    Some(SmolStr::from(o.text()))
-                });
-                let element = p.expression().map(|e| lower_expression(state, &e));
-                OperatorPair { qualifier, operator, element }
-            };
-
             let head = o.expression().map(|e| lower_expression(state, &e));
-            let tail: Vec<_> = o.children().map(|p| lower_pair(state, &p)).collect();
-
+            let tail = o
+                .children()
+                .map(|p| {
+                    let qualified = p.qualified();
+                    let expression = p.expression().map(|e| lower_expression(state, &e));
+                    lower_pair(qualified, expression)
+                })
+                .collect();
             ExpressionKind::OperatorChain { head, tail }
         }
         cst::Expression::ExpressionInfixChain(i) => {
@@ -299,38 +331,23 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
         cst::Expression::ExpressionHole(_) => ExpressionKind::Hole,
-        // TODO: Implement lowering for values to perform exhaustiveness checks with.
-        cst::Expression::ExpressionString(_s) => ExpressionKind::String,
-        cst::Expression::ExpressionChar(_c) => ExpressionKind::Char,
-        cst::Expression::ExpressionTrue(_t) => ExpressionKind::True,
-        cst::Expression::ExpressionFalse(_f) => ExpressionKind::False,
-        cst::Expression::ExpressionInteger(_i) => ExpressionKind::Integer,
-        cst::Expression::ExpressionNumber(_n) => ExpressionKind::Number,
+        cst::Expression::ExpressionString(_) => ExpressionKind::String,
+        cst::Expression::ExpressionChar(_) => ExpressionKind::Char,
+        cst::Expression::ExpressionTrue(_) => ExpressionKind::True,
+        cst::Expression::ExpressionFalse(_) => ExpressionKind::False,
+        cst::Expression::ExpressionInteger(_) => ExpressionKind::Integer,
+        cst::Expression::ExpressionNumber(_) => ExpressionKind::Number,
         cst::Expression::ExpressionArray(a) => {
             let expressions = a.children().map(|e| lower_expression(state, &e)).collect();
             ExpressionKind::Array { expressions }
         }
         cst::Expression::ExpressionRecord(r) => {
-            let lower_record_item = |state: &mut State, i: &cst::RecordItem| match i {
-                cst::RecordItem::RecordField(f) => {
-                    let name = f.name().and_then(|l| {
-                        let token = l.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
-                    });
-                    let expression = f.expression().map(|e| lower_expression(state, &e));
-                    RecordItem::Field { name, expression }
-                }
-                cst::RecordItem::RecordPun(p) => {
-                    let name = p.name().and_then(|l| {
-                        let token = l.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
-                    });
-                    RecordItem::Pun { name }
-                }
-            };
-            let items = r.children().map(|i| lower_record_item(state, &i)).collect();
+            let items = r
+                .children()
+                .map(|i| {
+                    lower_record_item(&i, |f| f.expression().map(|e| lower_expression(state, &e)))
+                })
+                .collect();
             ExpressionKind::Record { items }
         }
         cst::Expression::ExpressionParenthesized(p) => {
@@ -614,4 +631,42 @@ fn lower_record_updates(state: &mut State, cst: &cst::RecordUpdates) -> Vec<Reco
             }
         })
         .collect()
+}
+
+fn lower_pair<T>(qualified: Option<cst::QualifiedName>, element: Option<T>) -> OperatorPair<T> {
+    let qualifier = qualified.as_ref().and_then(|q| {
+        let q = q.qualifier()?;
+        let t = q.text()?;
+        Some(SmolStr::from(t.text()))
+    });
+    let operator = qualified.as_ref().and_then(|q| {
+        let o = q.operator()?;
+        Some(SmolStr::from(o.text()))
+    });
+    OperatorPair { qualifier, operator, element }
+}
+
+fn lower_record_item<T>(
+    cst: &cst::RecordItem,
+    mut item: impl FnMut(&cst::RecordField) -> Option<T>,
+) -> RecordItem<T> {
+    match cst {
+        cst::RecordItem::RecordField(f) => {
+            let name = f.name().and_then(|l| {
+                let token = l.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+            let value = item(f);
+            RecordItem::Field { name, value }
+        }
+        cst::RecordItem::RecordPun(p) => {
+            let name = p.name().and_then(|l| {
+                let token = l.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+            RecordItem::Pun { name }
+        }
+    }
 }

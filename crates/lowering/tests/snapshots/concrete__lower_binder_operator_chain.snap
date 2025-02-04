@@ -1,0 +1,99 @@
+---
+source: crates/lowering/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {},
+    binders: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderVariable,
+                range: 23..24,
+            },
+        }: Variable {
+            name: Some(
+                "a",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderVariable,
+                range: 28..30,
+            },
+        }: Variable {
+            name: Some(
+                "b",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderVariable,
+                range: 34..36,
+            },
+        }: Variable {
+            name: Some(
+                "c",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderOperatorChain,
+                range: 23..36,
+            },
+        }: OperatorChain {
+            head: Some(
+                Id<syntax::cst::Binder>(0),
+            ),
+            tail: [
+                OperatorPair {
+                    qualifier: Some(
+                        "L.",
+                    ),
+                    operator: Some(
+                        ":",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Binder>(1),
+                    ),
+                },
+                OperatorPair {
+                    qualifier: Some(
+                        "L.",
+                    ),
+                    operator: Some(
+                        ":",
+                    ),
+                    element: Some(
+                        Id<syntax::cst::Binder>(2),
+                    ),
+                },
+            ],
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderParenthesized,
+                range: 21..37,
+            },
+        }: Parenthesized {
+            binder: Some(
+                Id<syntax::cst::Binder>(3),
+            ),
+        },
+    },
+    expressions: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 39..41,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
+    },
+    let_bindings: {},
+    let_bindings_grouped: [],
+}

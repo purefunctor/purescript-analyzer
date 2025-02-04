@@ -20,8 +20,10 @@ pub(super) fn binder_1(p: &mut Parser) {
 
     binder_2(p);
     while p.at_in(names::OPERATOR) && !p.at_eof() {
+        let mut n = p.start();
         names::operator(p);
         binder_2(p);
+        n.end(p, SyntaxKind::BinderOperatorPair);
         i += 1;
     }
 

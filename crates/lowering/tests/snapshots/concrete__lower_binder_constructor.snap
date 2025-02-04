@@ -9,40 +9,50 @@ SourceMap {
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: BinderVariable,
-                range: 25..26,
+                range: 27..29,
             },
         }: Variable {
             name: Some(
                 "a",
             ),
         },
-    },
-    expressions: {
         AstPtr {
             raw: SyntaxNodePtr {
-                kind: ExpressionVariable,
+                kind: BinderVariable,
                 range: 29..31,
             },
         }: Variable {
-            qualifier: None,
             name: Some(
-                "a",
+                "b",
             ),
         },
         AstPtr {
             raw: SyntaxNodePtr {
-                kind: ExpressionLambda,
+                kind: BinderConstructor,
                 range: 23..31,
             },
-        }: Lambda {
-            binders: [
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "Cons",
+            ),
+            arguments: [
                 Id<syntax::cst::Binder>(0),
+                Id<syntax::cst::Binder>(1),
             ],
-            expression: Some(
-                Id<syntax::cst::Expression>(0),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderParenthesized,
+                range: 21..32,
+            },
+        }: Parenthesized {
+            binder: Some(
+                Id<syntax::cst::Binder>(2),
             ),
         },
     },
+    expressions: {},
     let_bindings: {},
     let_bindings_grouped: [],
 }

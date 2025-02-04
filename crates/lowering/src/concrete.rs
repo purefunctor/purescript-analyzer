@@ -86,8 +86,8 @@ pub enum DoStatement {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub enum RecordItem {
-    Field { name: Option<SmolStr>, expression: Option<ExpressionId> },
+pub enum RecordItem<T> {
+    Field { name: Option<SmolStr>, value: Option<T> },
     Pun { name: Option<SmolStr> },
 }
 
@@ -168,7 +168,7 @@ pub enum ExpressionKind {
         expressions: Vec<ExpressionId>,
     },
     Record {
-        items: Vec<RecordItem>,
+        items: Vec<RecordItem<ExpressionId>>,
     },
     Parenthesized {
         expression: Option<ExpressionId>,
@@ -223,21 +223,21 @@ pub struct Type {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum BinderKind {
-    Typed,
-    OperatorChain,
+    Typed { binder: Option<BinderId>, signature: Option<TypeId> },
+    OperatorChain { head: Option<BinderId>, tail: Vec<OperatorPair<BinderId>> },
     Integer,
     Number,
-    Constructor,
-    Variable,
-    Named,
+    Constructor { qualifier: Option<SmolStr>, name: Option<SmolStr>, arguments: Vec<BinderId> },
+    Variable { name: Option<SmolStr> },
+    Named { name: Option<SmolStr>, binder: Option<BinderId> },
     Wildcard,
     String,
     Char,
     True,
     False,
-    Array,
-    Record,
-    Parenthesized,
+    Array { binders: Vec<BinderId> },
+    Record { items: Vec<RecordItem<BinderId>> },
+    Parenthesized { binder: Option<BinderId> },
 }
 
 pub type BinderId = Id<cst::Binder>;

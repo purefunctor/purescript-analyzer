@@ -71,29 +71,31 @@ snapshot_kind: text
               BinderOperatorChain@76..93
                 BinderVariable@76..77
                   LOWER@76..77 "a"
-                QualifiedName@77..81
-                  Annotation@77..78
-                    TEXT@77..78 " "
-                  Qualifier@78..80
-                    TEXT@78..80 "L."
-                  OPERATOR@80..81 ":"
-                BinderVariable@81..83
-                  Annotation@81..82
-                    TEXT@81..82 " "
-                  LOWER@82..83 "b"
-                QualifiedName@83..87
-                  Annotation@83..84
-                    TEXT@83..84 " "
-                  Qualifier@84..86
-                    TEXT@84..86 "L."
-                  OPERATOR@86..87 ":"
-                BinderConstructor@87..93
-                  QualifiedName@87..93
-                    Annotation@87..88
-                      TEXT@87..88 " "
-                    Qualifier@88..90
-                      TEXT@88..90 "L."
-                    UPPER@90..93 "Nil"
+                BinderOperatorPair@77..83
+                  QualifiedName@77..81
+                    Annotation@77..78
+                      TEXT@77..78 " "
+                    Qualifier@78..80
+                      TEXT@78..80 "L."
+                    OPERATOR@80..81 ":"
+                  BinderVariable@81..83
+                    Annotation@81..82
+                      TEXT@81..82 " "
+                    LOWER@82..83 "b"
+                BinderOperatorPair@83..93
+                  QualifiedName@83..87
+                    Annotation@83..84
+                      TEXT@83..84 " "
+                    Qualifier@84..86
+                      TEXT@84..86 "L."
+                    OPERATOR@86..87 ":"
+                  BinderConstructor@87..93
+                    QualifiedName@87..93
+                      Annotation@87..88
+                        TEXT@87..88 " "
+                      Qualifier@88..90
+                        TEXT@88..90 "L."
+                      UPPER@90..93 "Nil"
               RIGHT_PARENTHESIS@93..94 ")"
           Unconditional@94..104
             Annotation@94..95

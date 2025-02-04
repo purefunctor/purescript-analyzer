@@ -162,6 +162,7 @@ pub enum SyntaxKind {
 
     BinderTyped,
     BinderOperatorChain,
+    BinderOperatorPair,
     BinderInteger,
     BinderNumber,
     BinderConstructor,

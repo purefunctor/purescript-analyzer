@@ -9,11 +9,31 @@ SourceMap {
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: BinderVariable,
-                range: 25..26,
+                range: 21..23,
             },
         }: Variable {
             name: Some(
                 "a",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderVariable,
+                range: 23..25,
+            },
+        }: Variable {
+            name: Some(
+                "b",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: BinderVariable,
+                range: 25..27,
+            },
+        }: Variable {
+            name: Some(
+                "c",
             ),
         },
     },
@@ -27,19 +47,6 @@ SourceMap {
             qualifier: None,
             name: Some(
                 "a",
-            ),
-        },
-        AstPtr {
-            raw: SyntaxNodePtr {
-                kind: ExpressionLambda,
-                range: 23..31,
-            },
-        }: Lambda {
-            binders: [
-                Id<syntax::cst::Binder>(0),
-            ],
-            expression: Some(
-                Id<syntax::cst::Expression>(0),
             ),
         },
     },

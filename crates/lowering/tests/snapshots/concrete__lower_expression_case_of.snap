@@ -11,25 +11,41 @@ SourceMap {
                 kind: BinderVariable,
                 range: 33..37,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: BinderVariable,
                 range: 39..41,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "b",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: BinderVariable,
                 range: 52..54,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "d",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: BinderVariable,
                 range: 65..67,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "f",
+            ),
+        },
     },
     expressions: {
         AstPtr {
