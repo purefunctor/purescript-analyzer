@@ -299,18 +299,17 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
         cst::Expression::ExpressionHole(_) => ExpressionKind::Hole,
-        // TODO: These need to be lowered for exhaustiveness checking
-        // but we'll cross that bridge when we get there.
+        // TODO: Implement lowering for values to perform exhaustiveness checks with.
         cst::Expression::ExpressionString(_s) => ExpressionKind::String,
         cst::Expression::ExpressionChar(_c) => ExpressionKind::Char,
         cst::Expression::ExpressionTrue(_t) => ExpressionKind::True,
         cst::Expression::ExpressionFalse(_f) => ExpressionKind::False,
         cst::Expression::ExpressionInteger(_i) => ExpressionKind::Integer,
         cst::Expression::ExpressionNumber(_n) => ExpressionKind::Number,
-        // TODO: Array/Record
-        //
-        // Think about how to lower record puns that makes sense for resolution?
-        cst::Expression::ExpressionArray(_a) => ExpressionKind::Array,
+        cst::Expression::ExpressionArray(a) => {
+            let expressions = a.children().map(|e| lower_expression(state, &e)).collect();
+            ExpressionKind::Array { expressions }
+        }
         cst::Expression::ExpressionRecord(_r) => ExpressionKind::Record,
         cst::Expression::ExpressionParenthesized(p) => {
             let expression = p.expression().map(|e| lower_expression(state, &e));

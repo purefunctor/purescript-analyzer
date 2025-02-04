@@ -152,7 +152,9 @@ pub enum ExpressionKind {
     False,
     Integer,
     Number,
-    Array,
+    Array {
+        expressions: Vec<ExpressionId>,
+    },
     Record,
     Parenthesized {
         expression: Option<ExpressionId>,

@@ -703,6 +703,11 @@ has_child!(
     | name() -> QualifiedName
 );
 
+has_children!(
+    ExpressionArray
+    | children() -> Expression
+);
+
 has_child!(
     ExpressionParenthesized
     | expression() -> Expression
