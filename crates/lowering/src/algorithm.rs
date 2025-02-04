@@ -512,7 +512,7 @@ fn lower_equation_like(
         let children = b.children();
         children.map(|b| lower_binder(state, &b)).collect()
     });
-    equation.guarded = guarded_expression.as_ref().map(|g| lower_guarded_expression(state, &g));
+    equation.guarded = guarded_expression.as_ref().map(|g| lower_guarded_expression(state, g));
 }
 
 fn lower_guarded_expression(state: &mut State, cst: &cst::GuardedExpression) -> GuardedExpression {
@@ -583,9 +583,9 @@ fn lower_qualified_name(
         let text = q.text();
         Some(SmolStr::from(text))
     });
-    let name = token(cst).and_then(|t| {
+    let name = token(cst).map(|t| {
         let text = t.text();
-        Some(SmolStr::from(text))
+        SmolStr::from(text)
     });
     (qualifier, name)
 }
