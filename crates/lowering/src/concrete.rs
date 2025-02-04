@@ -154,8 +154,13 @@ pub enum ExpressionKind {
     Number,
     Array,
     Record,
-    Parenthesized,
-    RecordAccess,
+    Parenthesized {
+        expression: Option<ExpressionId>,
+    },
+    RecordAccess {
+        expression: Option<ExpressionId>,
+        labels: Option<SmolStr>,
+    },
     RecordUpdate,
 }
 

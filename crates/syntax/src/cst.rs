@@ -3,7 +3,7 @@ use rowan::ast::AstNode;
 #[macro_use]
 mod macros;
 
-create_cst_struct!(Annotation, Qualifier, QualifiedName);
+create_cst_struct!(Annotation, Qualifier, QualifiedName, LabelName);
 
 has_token!(
     Annotation
@@ -26,6 +26,11 @@ has_token!(
 has_child!(
     QualifiedName
     | qualifier() -> Qualifier
+);
+
+has_token!(
+    LabelName
+    | text() -> TEXT
 );
 
 create_cst_struct!(Module, ModuleHeader, ModuleName, ExportList);
@@ -696,4 +701,19 @@ has_child!(
 has_child!(
     ExpressionOperatorName
     | name() -> QualifiedName
+);
+
+has_child!(
+    ExpressionParenthesized
+    | expression() -> Expression
+);
+
+has_child!(
+    ExpressionRecordAccess
+    | expression() -> Expression
+);
+
+has_children!(
+    ExpressionRecordAccess
+    | children() -> LabelName
 );

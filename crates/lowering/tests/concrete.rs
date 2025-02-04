@@ -155,3 +155,15 @@ fn lower_expression_name() {
     let (_, lower) = lower_declaration(["id = F.Id F.id F.(+)"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_parenthesized() {
+    let (_, lower) = lower_declaration(["id = (1 + 2)"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
+fn lower_expression_record_access() {
+    let (_, lower) = lower_declaration(["id = a.foo.bar"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

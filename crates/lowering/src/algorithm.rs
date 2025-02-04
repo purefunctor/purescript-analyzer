@@ -3,7 +3,7 @@ use std::iter;
 use indexing::{ExprItem, ExprItemId, IndexingResult, ValueGroupId};
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashMap;
-use smol_str::SmolStr;
+use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::{cst, SyntaxToken};
 
 use crate::{
@@ -312,9 +312,31 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
         // Think about how to lower record puns that makes sense for resolution?
         cst::Expression::ExpressionArray(_a) => ExpressionKind::Array,
         cst::Expression::ExpressionRecord(_r) => ExpressionKind::Record,
-        // TODO: Parenthesis/RecordAccess are quite easy to do as well
-        cst::Expression::ExpressionParenthesized(_p) => ExpressionKind::Parenthesized,
-        cst::Expression::ExpressionRecordAccess(_r) => ExpressionKind::RecordAccess,
+        cst::Expression::ExpressionParenthesized(p) => {
+            let expression = p.expression().map(|e| lower_expression(state, &e));
+            ExpressionKind::Parenthesized { expression }
+        }
+        cst::Expression::ExpressionRecordAccess(r) => {
+            let lower_label_name =
+                |mut builder: SmolStrBuilder, (index, label): (usize, cst::LabelName)| {
+                    let token = label.text()?;
+                    let text = token.text();
+                    if index != 0 {
+                        builder.push('.');
+                    }
+                    builder.push_str(text);
+                    Some(builder)
+                };
+
+            let expression = r.expression().map(|e| lower_expression(state, &e));
+            let labels = r
+                .children()
+                .enumerate()
+                .try_fold(SmolStrBuilder::default(), lower_label_name)
+                .map(|b| b.finish());
+
+            ExpressionKind::RecordAccess { expression, labels }
+        }
         // TODO: RecordUpdate
         //
         // This one is tricky as well, depends on Record lowering
