@@ -179,3 +179,9 @@ fn lower_expression_record_access() {
     let (_, lower) = lower_declaration(["id = a.foo.bar"]);
     insta::assert_debug_snapshot!(&lower.source_map);
 }
+
+#[test]
+fn lower_expression_record_update() {
+    let (_, lower) = lower_declaration(["id = f { a = b, c { d = e } }"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}

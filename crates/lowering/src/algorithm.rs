@@ -10,7 +10,7 @@ use crate::{
     BinderId, BinderKind, CaseBranch, DoStatement, ExpressionArgument, ExpressionId,
     ExpressionKind, GuardedExpression, LetBinding, LetBindingId, LetBindingKindId, LoweredEquation,
     LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
-    RecordItem, SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
+    RecordItem, RecordUpdate, SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
 };
 
 #[derive(Default)]
@@ -358,10 +358,10 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
 
             ExpressionKind::RecordAccess { expression, labels }
         }
-        // TODO: RecordUpdate
-        //
-        // This one is tricky as well, depends on Record lowering
-        cst::Expression::ExpressionRecordUpdate(_r) => ExpressionKind::RecordUpdate,
+        cst::Expression::ExpressionRecordUpdate(r) => {
+            let updates = r.record_updates().map_or(vec![], |u| lower_record_updates(state, &u));
+            ExpressionKind::RecordUpdate { updates }
+        }
     };
     state.source_map.insert_expression(cst, kind)
 }
@@ -588,4 +588,30 @@ fn lower_qualified_name(
         Some(SmolStr::from(text))
     });
     (qualifier, name)
+}
+
+fn lower_record_updates(state: &mut State, cst: &cst::RecordUpdates) -> Vec<RecordUpdate> {
+    cst.children()
+        .map(|u| match u {
+            cst::RecordUpdate::RecordUpdateLeaf(l) => {
+                let name = l.name().and_then(|l| {
+                    let token = l.text()?;
+                    let text = token.text();
+                    Some(SmolStr::from(text))
+                });
+                let expression = l.expression().map(|e| lower_expression(state, &e));
+                RecordUpdate::Leaf { name, expression }
+            }
+            cst::RecordUpdate::RecordUpdateBranch(b) => {
+                let name = b.name().and_then(|l| {
+                    let token = l.text()?;
+                    let text = token.text();
+                    Some(SmolStr::from(text))
+                });
+                let updates =
+                    b.record_updates().map_or(vec![], |u| lower_record_updates(state, &u));
+                RecordUpdate::Branch { name, updates }
+            }
+        })
+        .collect()
 }

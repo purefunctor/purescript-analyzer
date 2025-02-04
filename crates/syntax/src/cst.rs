@@ -738,3 +738,25 @@ has_children!(
     ExpressionRecordAccess
     | children() -> LabelName
 );
+
+has_child!(
+    ExpressionRecordUpdate
+    | record_updates() -> RecordUpdates
+);
+
+has_children!(
+    RecordUpdates
+    | children() -> RecordUpdate
+);
+
+has_child!(
+    RecordUpdateLeaf
+    | name() -> LabelName
+    | expression() -> Expression
+);
+
+has_child!(
+    RecordUpdateBranch
+    | name() -> LabelName
+    | record_updates() -> RecordUpdates
+);

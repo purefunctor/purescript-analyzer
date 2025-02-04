@@ -92,6 +92,12 @@ pub enum RecordItem {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub enum RecordUpdate {
+    Leaf { name: Option<SmolStr>, expression: Option<ExpressionId> },
+    Branch { name: Option<SmolStr>, updates: Vec<RecordUpdate> },
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
     Typed {
         expression: Option<ExpressionId>,
@@ -171,7 +177,9 @@ pub enum ExpressionKind {
         expression: Option<ExpressionId>,
         labels: Option<SmolStr>,
     },
-    RecordUpdate,
+    RecordUpdate {
+        updates: Vec<RecordUpdate>,
+    },
 }
 
 pub type ExpressionId = Id<cst::Expression>;
