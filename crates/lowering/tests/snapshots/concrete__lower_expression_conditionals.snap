@@ -1,95 +1,97 @@
 ---
 source: crates/lowering/tests/concrete.rs
-expression: "&lower.lowering_map.expr_item"
+expression: "&lower.lowering_map"
 snapshot_kind: text
 ---
-{
-    Id<indexing::indexes::ExprItem>(0): Value {
-        signature: None,
-        equations: [
-            LoweredEquation {
-                binders: [
-                    Id<syntax::cst::Binder>(0),
-                ],
-                guarded: Some(
-                    Conditionals {
-                        pattern_guarded: [
-                            PatternGuarded {
-                                pattern_guards: [
-                                    PatternGuard {
-                                        binder: Some(
-                                            Id<syntax::cst::Binder>(1),
-                                        ),
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(0),
-                                        ),
-                                    },
-                                    PatternGuard {
-                                        binder: Some(
-                                            Id<syntax::cst::Binder>(2),
-                                        ),
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(1),
-                                        ),
-                                    },
-                                    PatternGuard {
-                                        binder: Some(
-                                            Id<syntax::cst::Binder>(3),
-                                        ),
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(2),
-                                        ),
-                                    },
-                                ],
-                                where_expression: Some(
-                                    WhereExpression {
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(3),
-                                        ),
-                                        bindings: [],
-                                    },
-                                ),
-                            },
-                            PatternGuarded {
-                                pattern_guards: [
-                                    PatternGuard {
-                                        binder: None,
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(4),
-                                        ),
-                                    },
-                                ],
-                                where_expression: Some(
-                                    WhereExpression {
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(5),
-                                        ),
-                                        bindings: [],
-                                    },
-                                ),
-                            },
-                            PatternGuarded {
-                                pattern_guards: [
-                                    PatternGuard {
-                                        binder: None,
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(6),
-                                        ),
-                                    },
-                                ],
-                                where_expression: Some(
-                                    WhereExpression {
-                                        expression: Some(
-                                            Id<syntax::cst::Expression>(7),
-                                        ),
-                                        bindings: [],
-                                    },
-                                ),
-                            },
-                        ],
-                    },
-                ),
-            },
-        ],
+LoweringMap {
+    expr_item: {
+        Id<indexing::indexes::ExprItem>(0): Value {
+            signature: None,
+            equations: [
+                LoweredEquation {
+                    binders: [
+                        Id<syntax::cst::Binder>(0),
+                    ],
+                    guarded: Some(
+                        Conditionals {
+                            pattern_guarded: [
+                                PatternGuarded {
+                                    pattern_guards: [
+                                        PatternGuard {
+                                            binder: Some(
+                                                Id<syntax::cst::Binder>(1),
+                                            ),
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(0),
+                                            ),
+                                        },
+                                        PatternGuard {
+                                            binder: Some(
+                                                Id<syntax::cst::Binder>(2),
+                                            ),
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(1),
+                                            ),
+                                        },
+                                        PatternGuard {
+                                            binder: Some(
+                                                Id<syntax::cst::Binder>(3),
+                                            ),
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(2),
+                                            ),
+                                        },
+                                    ],
+                                    where_expression: Some(
+                                        WhereExpression {
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(3),
+                                            ),
+                                            bindings: [],
+                                        },
+                                    ),
+                                },
+                                PatternGuarded {
+                                    pattern_guards: [
+                                        PatternGuard {
+                                            binder: None,
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(4),
+                                            ),
+                                        },
+                                    ],
+                                    where_expression: Some(
+                                        WhereExpression {
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(5),
+                                            ),
+                                            bindings: [],
+                                        },
+                                    ),
+                                },
+                                PatternGuarded {
+                                    pattern_guards: [
+                                        PatternGuard {
+                                            binder: None,
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(6),
+                                            ),
+                                        },
+                                    ],
+                                    where_expression: Some(
+                                        WhereExpression {
+                                            expression: Some(
+                                                Id<syntax::cst::Expression>(7),
+                                            ),
+                                            bindings: [],
+                                        },
+                                    ),
+                                },
+                            ],
+                        },
+                    ),
+                },
+            ],
+        },
     },
 }

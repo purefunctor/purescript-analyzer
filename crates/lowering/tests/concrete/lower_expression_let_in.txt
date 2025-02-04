@@ -1,0 +1,13 @@
+module Main where
+
+letIn =
+  let
+    life :: Int
+    life = 42
+
+    42 = value
+      where
+      value = 42
+
+  in
+    life

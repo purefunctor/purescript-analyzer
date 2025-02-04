@@ -1,0 +1,6 @@
+-- @lowering_map
+module Main where
+
+id :: forall a. a -> a
+id a = ;
+id b = b

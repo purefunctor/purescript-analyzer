@@ -14,3 +14,4 @@ rowan = "0.16.1"
 rustc-hash = "2.1.0"
 smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }
+test_each_file = "0.3.4"

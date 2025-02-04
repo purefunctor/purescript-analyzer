@@ -1,0 +1,8 @@
+module Main where
+
+id = case _ of
+  a | b <- c
+    , d <- e
+    , f <- g -> 0
+    | true -> 1
+    | false -> 1

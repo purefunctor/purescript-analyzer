@@ -1,0 +1,3 @@
+module Main where
+
+id (a L.: b L.: c) = a
