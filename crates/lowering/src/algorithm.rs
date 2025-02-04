@@ -10,7 +10,7 @@ use crate::{
     BinderId, BinderKind, CaseBranch, DoStatement, ExpressionArgument, ExpressionId,
     ExpressionKind, GuardedExpression, LetBinding, LetBindingId, LetBindingKindId, LoweredEquation,
     LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
-    SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
+    RecordItem, SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
 };
 
 #[derive(Default)]
@@ -310,7 +310,29 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
             let expressions = a.children().map(|e| lower_expression(state, &e)).collect();
             ExpressionKind::Array { expressions }
         }
-        cst::Expression::ExpressionRecord(_r) => ExpressionKind::Record,
+        cst::Expression::ExpressionRecord(r) => {
+            let lower_record_item = |state: &mut State, i: &cst::RecordItem| match i {
+                cst::RecordItem::RecordField(f) => {
+                    let name = f.name().and_then(|l| {
+                        let token = l.text()?;
+                        let text = token.text();
+                        Some(SmolStr::from(text))
+                    });
+                    let expression = f.expression().map(|e| lower_expression(state, &e));
+                    RecordItem::Field { name, expression }
+                }
+                cst::RecordItem::RecordPun(p) => {
+                    let name = p.name().and_then(|l| {
+                        let token = l.text()?;
+                        let text = token.text();
+                        Some(SmolStr::from(text))
+                    });
+                    RecordItem::Pun { name }
+                }
+            };
+            let items = r.children().map(|i| lower_record_item(state, &i)).collect();
+            ExpressionKind::Record { items }
+        }
         cst::Expression::ExpressionParenthesized(p) => {
             let expression = p.expression().map(|e| lower_expression(state, &e));
             ExpressionKind::Parenthesized { expression }

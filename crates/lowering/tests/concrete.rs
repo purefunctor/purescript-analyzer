@@ -163,6 +163,12 @@ fn lower_expression_array() {
 }
 
 #[test]
+fn lower_expression_record() {
+    let (_, lower) = lower_declaration(["id = { a: 1, b }"]);
+    insta::assert_debug_snapshot!(&lower.source_map);
+}
+
+#[test]
 fn lower_expression_parenthesized() {
     let (_, lower) = lower_declaration(["id = (1 + 2)"]);
     insta::assert_debug_snapshot!(&lower.source_map);

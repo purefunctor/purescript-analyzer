@@ -86,6 +86,12 @@ pub enum DoStatement {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub enum RecordItem {
+    Field { name: Option<SmolStr>, expression: Option<ExpressionId> },
+    Pun { name: Option<SmolStr> },
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum ExpressionKind {
     Typed {
         expression: Option<ExpressionId>,
@@ -155,7 +161,9 @@ pub enum ExpressionKind {
     Array {
         expressions: Vec<ExpressionId>,
     },
-    Record,
+    Record {
+        items: Vec<RecordItem>,
+    },
     Parenthesized {
         expression: Option<ExpressionId>,
     },

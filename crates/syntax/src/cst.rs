@@ -708,6 +708,22 @@ has_children!(
     | children() -> Expression
 );
 
+has_children!(
+    ExpressionRecord
+    | children() -> RecordItem
+);
+
+has_child!(
+    RecordField
+    | name() -> LabelName
+    | expression() -> Expression
+);
+
+has_child!(
+    RecordPun
+    | name() -> LabelName
+);
+
 has_child!(
     ExpressionParenthesized
     | expression() -> Expression
