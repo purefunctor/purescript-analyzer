@@ -831,3 +831,13 @@ has_children!(
     TypeApplicationChain
     | children() -> Type
 );
+
+has_children!(
+    TypeArrow
+    | children() -> Type
+);
+
+has_children!(
+    TypeConstrained
+    | children() -> Type
+);

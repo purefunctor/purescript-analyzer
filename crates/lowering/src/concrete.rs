@@ -198,8 +198,8 @@ pub struct Expression {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     ApplicationChain { head: Option<TypeId>, tail: Vec<TypeId> },
-    Arrow,
-    Constrained,
+    Arrow { domain: Option<TypeId>, codomain: Option<TypeId> },
+    Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
     Constructor,
     Forall,
     Hole,

@@ -1,0 +1,58 @@
+---
+source: crates/lowering/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeVariable,
+                range: 24..26,
+            },
+        }: Variable,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeVariable,
+                range: 29..31,
+            },
+        }: Variable,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeVariable,
+                range: 34..36,
+            },
+        }: Variable,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeArrow,
+                range: 29..36,
+            },
+        }: Arrow {
+            domain: Some(
+                Id<syntax::cst::Type>(1),
+            ),
+            codomain: Some(
+                Id<syntax::cst::Type>(2),
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeArrow,
+                range: 24..36,
+            },
+        }: Arrow {
+            domain: Some(
+                Id<syntax::cst::Type>(0),
+            ),
+            codomain: Some(
+                Id<syntax::cst::Type>(3),
+            ),
+        },
+    },
+    binders: {},
+    expressions: {},
+    let_bindings: {},
+    let_bindings_grouped: [],
+    do_statements: {},
+}

@@ -106,8 +106,18 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             let tail: Vec<_> = children.collect();
             TypeKind::ApplicationChain { head, tail }
         }
-        cst::Type::TypeArrow(_a) => TypeKind::Arrow,
-        cst::Type::TypeConstrained(_c) => TypeKind::Constrained,
+        cst::Type::TypeArrow(a) => {
+            let mut children = a.children().map(|t| lower_type(state, &t));
+            let domain = children.next();
+            let codomain = children.next();
+            TypeKind::Arrow { domain, codomain }
+        }
+        cst::Type::TypeConstrained(c) => {
+            let mut children = c.children().map(|t| lower_type(state, &t));
+            let constraint = children.next();
+            let constrained = children.next();
+            TypeKind::Constrained { constraint, constrained }
+        }
         cst::Type::TypeConstructor(_c) => TypeKind::Constructor,
         cst::Type::TypeForall(_f) => TypeKind::Forall,
         cst::Type::TypeHole(_h) => TypeKind::Hole,
