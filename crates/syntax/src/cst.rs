@@ -826,3 +826,8 @@ has_child!(
     BinderParenthesized
     | binder() -> Binder
 );
+
+has_children!(
+    TypeApplicationChain
+    | children() -> Type
+);

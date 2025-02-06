@@ -100,7 +100,12 @@ fn lower_value_group(
 
 fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
     let kind = match &cst {
-        cst::Type::TypeApplicationChain(_a) => TypeKind::ApplicationChain,
+        cst::Type::TypeApplicationChain(a) => {
+            let mut children = a.children().map(|t| lower_type(state, &t));
+            let head = children.next();
+            let tail: Vec<_> = children.collect();
+            TypeKind::ApplicationChain { head, tail }
+        }
         cst::Type::TypeArrow(_a) => TypeKind::Arrow,
         cst::Type::TypeConstrained(_c) => TypeKind::Constrained,
         cst::Type::TypeConstructor(_c) => TypeKind::Constructor,

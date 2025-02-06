@@ -197,7 +197,7 @@ pub struct Expression {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum TypeKind {
-    ApplicationChain,
+    ApplicationChain { head: Option<TypeId>, tail: Vec<TypeId> },
     Arrow,
     Constrained,
     Constructor,
