@@ -7,7 +7,7 @@ use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::{cst, SyntaxToken};
 
 use crate::{
-    BinderId, BinderKind, CaseBranch, DoStatement, ExpressionArgument, ExpressionId,
+    BinderId, BinderKind, CaseBranch, DoStatement, DoStatementId, ExpressionArgument, ExpressionId,
     ExpressionKind, GuardedExpression, LetBinding, LetBindingId, LetBindingKindId, LoweredEquation,
     LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
     RecordItem, RecordUpdate, SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
@@ -572,8 +572,8 @@ fn lower_pattern_guard(state: &mut State, cst: &cst::PatternGuard) -> PatternGua
     }
 }
 
-fn lower_do_statement(state: &mut State, cst: &cst::DoStatement) -> DoStatement {
-    match cst {
+fn lower_do_statement(state: &mut State, cst: &cst::DoStatement) -> DoStatementId {
+    let kind = match cst {
         cst::DoStatement::DoStatementBind(b) => {
             let binder = b.binder().map(|b| lower_binder(state, &b));
             let expression = b.expression().map(|e| lower_expression(state, &e));
@@ -588,7 +588,8 @@ fn lower_do_statement(state: &mut State, cst: &cst::DoStatement) -> DoStatement 
             let expression = d.expression().map(|e| lower_expression(state, &e));
             DoStatement::Discard { expression }
         }
-    }
+    };
+    state.source_map.insert_do_statement(cst, kind)
 }
 
 fn lower_qualified_name(

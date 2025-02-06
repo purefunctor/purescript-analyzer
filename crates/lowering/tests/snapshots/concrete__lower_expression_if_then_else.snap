@@ -59,4 +59,5 @@ SourceMap {
     },
     let_bindings: {},
     let_bindings_grouped: [],
+    do_statements: {},
 }

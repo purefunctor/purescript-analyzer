@@ -158,4 +158,5 @@ SourceMap {
             ],
         },
     ],
+    do_statements: {},
 }

@@ -4,7 +4,9 @@ use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxBuildHasher;
 use syntax::cst;
 
-use crate::{LetBinding, LetBindingKindId, LetBindingPtr};
+use crate::{
+    DoStatement, DoStatementId, DoStatementPtr, LetBinding, LetBindingKindId, LetBindingPtr,
+};
 
 use super::{
     BinderId, BinderKind, BinderPtr, ExpressionId, ExpressionKind, ExpressionPtr, TypeId, TypeKind,
@@ -34,6 +36,7 @@ pub struct SourceMap {
     expressions: FxIndexMap<ExpressionPtr, ExpressionKind>,
     pub(crate) let_bindings: FxIndexMap<LetBindingPtr, LetBindingKindId>,
     pub(crate) let_bindings_grouped: Vec<LetBinding>,
+    do_statements: FxIndexMap<DoStatementPtr, DoStatement>,
 }
 
 fn insert<K: AstNode, V>(m: &mut FxIndexMap<AstPtr<K>, V>, p: &K, k: V) -> Id<K> {
@@ -57,6 +60,14 @@ impl SourceMap {
         kind: ExpressionKind,
     ) -> ExpressionId {
         insert(&mut self.expressions, ptr, kind)
+    }
+
+    pub(crate) fn insert_do_statement(
+        &mut self,
+        ptr: &cst::DoStatement,
+        kind: DoStatement,
+    ) -> DoStatementId {
+        insert(&mut self.do_statements, ptr, kind)
     }
 }
 

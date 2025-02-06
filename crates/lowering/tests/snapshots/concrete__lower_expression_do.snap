@@ -180,29 +180,10 @@ SourceMap {
                 "Hooks.",
             ),
             statements: [
-                Discard {
-                    expression: Some(
-                        Id<syntax::cst::Expression>(2),
-                    ),
-                },
-                Bind {
-                    binder: Some(
-                        Id<syntax::cst::Binder>(0),
-                    ),
-                    expression: Some(
-                        Id<syntax::cst::Expression>(5),
-                    ),
-                },
-                Let {
-                    statements: [
-                        Id<syntax::cst::LetBinding>(0),
-                    ],
-                },
-                Discard {
-                    expression: Some(
-                        Id<syntax::cst::Expression>(11),
-                    ),
-                },
+                Id<syntax::cst::DoStatement>(0),
+                Id<syntax::cst::DoStatement>(1),
+                Id<syntax::cst::DoStatement>(2),
+                Id<syntax::cst::DoStatement>(3),
             ],
         },
     },
@@ -239,4 +220,49 @@ SourceMap {
             ],
         },
     ],
+    do_statements: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementDiscard,
+                range: 34..46,
+            },
+        }: Discard {
+            expression: Some(
+                Id<syntax::cst::Expression>(2),
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementBind,
+                range: 46..63,
+            },
+        }: Bind {
+            binder: Some(
+                Id<syntax::cst::Binder>(0),
+            ),
+            expression: Some(
+                Id<syntax::cst::Expression>(5),
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementLet,
+                range: 63..84,
+            },
+        }: Let {
+            statements: [
+                Id<syntax::cst::LetBinding>(0),
+            ],
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementDiscard,
+                range: 84..96,
+            },
+        }: Discard {
+            expression: Some(
+                Id<syntax::cst::Expression>(11),
+            ),
+        },
+    },
 }

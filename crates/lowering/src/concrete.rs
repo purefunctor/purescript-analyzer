@@ -85,6 +85,10 @@ pub enum DoStatement {
     Discard { expression: Option<ExpressionId> },
 }
 
+pub type DoStatementPtr = AstPtr<cst::DoStatement>;
+
+pub type DoStatementId = Id<cst::DoStatement>;
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum RecordItem<T> {
     Field { name: Option<SmolStr>, value: Option<T> },
@@ -137,11 +141,11 @@ pub enum ExpressionKind {
     },
     Do {
         qualifier: Option<SmolStr>,
-        statements: Vec<DoStatement>,
+        statements: Vec<DoStatementId>,
     },
     Ado {
         qualifier: Option<SmolStr>,
-        statements: Vec<DoStatement>,
+        statements: Vec<DoStatementId>,
         expression: Option<ExpressionId>,
     },
     Constructor {

@@ -84,27 +84,9 @@ SourceMap {
                 "Hooks.",
             ),
             statements: [
-                Bind {
-                    binder: Some(
-                        Id<syntax::cst::Binder>(0),
-                    ),
-                    expression: Some(
-                        Id<syntax::cst::Expression>(0),
-                    ),
-                },
-                Let {
-                    statements: [
-                        Id<syntax::cst::LetBinding>(0),
-                    ],
-                },
-                Bind {
-                    binder: Some(
-                        Id<syntax::cst::Binder>(2),
-                    ),
-                    expression: Some(
-                        Id<syntax::cst::Expression>(2),
-                    ),
-                },
+                Id<syntax::cst::DoStatement>(0),
+                Id<syntax::cst::DoStatement>(1),
+                Id<syntax::cst::DoStatement>(2),
             ],
             expression: Some(
                 Id<syntax::cst::Expression>(3),
@@ -146,4 +128,42 @@ SourceMap {
             ],
         },
     ],
+    do_statements: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementBind,
+                range: 35..49,
+            },
+        }: Bind {
+            binder: Some(
+                Id<syntax::cst::Binder>(0),
+            ),
+            expression: Some(
+                Id<syntax::cst::Expression>(0),
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementLet,
+                range: 49..68,
+            },
+        }: Let {
+            statements: [
+                Id<syntax::cst::LetBinding>(0),
+            ],
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: DoStatementBind,
+                range: 68..82,
+            },
+        }: Bind {
+            binder: Some(
+                Id<syntax::cst::Binder>(2),
+            ),
+            expression: Some(
+                Id<syntax::cst::Expression>(2),
+            ),
+        },
+    },
 }
