@@ -196,12 +196,19 @@ pub struct Expression {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub struct TypeVariableBinding {
+    pub visible: bool,
+    pub name: Option<SmolStr>,
+    pub kind: Option<TypeId>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     ApplicationChain { head: Option<TypeId>, tail: Vec<TypeId> },
     Arrow { domain: Option<TypeId>, codomain: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
     Constructor { qualifier: Option<SmolStr>, name: Option<SmolStr> },
-    Forall,
+    Forall { bindings: Vec<TypeVariableBinding>, r#type: Option<TypeId> },
     Hole,
     Integer,
     Kinded,

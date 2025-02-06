@@ -116,12 +116,13 @@ create_cst_enum!(
         | TypeOperatorChain
         | TypeString
         | TypeVariable
-        | TypeVariableBinding
         | TypeWildcard
         | TypeRecord
         | TypeRow
         | TypeParenthesized
 );
+
+create_cst_struct!(TypeVariableBinding);
 
 create_cst_enum!(
     Binder
@@ -845,4 +846,25 @@ has_children!(
 has_child!(
     TypeConstructor
     | name() -> QualifiedName
+);
+
+has_child!(
+    TypeForall
+    | r#type() -> Type
+);
+
+has_children!(
+    TypeForall
+    | children() -> TypeVariableBinding
+);
+
+has_token!(
+    TypeVariableBinding
+    | at() -> AT
+    | name() -> LOWER
+);
+
+has_child!(
+    TypeVariableBinding
+    | kind() -> Type
 );

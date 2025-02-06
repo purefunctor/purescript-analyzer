@@ -10,7 +10,8 @@ use crate::{
     BinderId, BinderKind, CaseBranch, DoStatement, DoStatementId, ExpressionArgument, ExpressionId,
     ExpressionKind, GuardedExpression, LetBinding, LetBindingId, LetBindingKindId, LoweredEquation,
     LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
-    RecordItem, RecordUpdate, SourceMap, TickPair, TypeId, TypeKind, WhereExpression,
+    RecordItem, RecordUpdate, SourceMap, TickPair, TypeId, TypeKind, TypeVariableBinding,
+    WhereExpression,
 };
 
 #[derive(Default)]
@@ -125,7 +126,11 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
                 .unwrap_or_default();
             TypeKind::Constructor { qualifier, name }
         }
-        cst::Type::TypeForall(_f) => TypeKind::Forall,
+        cst::Type::TypeForall(f) => {
+            let bindings = f.children().map(|b| lower_type_variable_binding(state, &b)).collect();
+            let r#type = f.r#type().map(|t| lower_type(state, &t));
+            TypeKind::Forall { bindings, r#type }
+        }
         cst::Type::TypeHole(_h) => TypeKind::Hole,
         cst::Type::TypeInteger(_i) => TypeKind::Integer,
         cst::Type::TypeKinded(_k) => TypeKind::Kinded,
@@ -133,7 +138,6 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
         cst::Type::TypeOperatorChain(_o) => TypeKind::OperatorChain,
         cst::Type::TypeString(_s) => TypeKind::String,
         cst::Type::TypeVariable(_v) => TypeKind::Variable,
-        cst::Type::TypeVariableBinding(_v) => TypeKind::VariableBinding,
         cst::Type::TypeWildcard(_w) => TypeKind::Wildcard,
         cst::Type::TypeRecord(_r) => TypeKind::Record,
         cst::Type::TypeRow(_r) => TypeKind::Row,
@@ -691,4 +695,17 @@ fn lower_record_item<T>(
             RecordItem::Pun { name }
         }
     }
+}
+
+fn lower_type_variable_binding(
+    state: &mut State,
+    cst: &cst::TypeVariableBinding,
+) -> TypeVariableBinding {
+    let visible = cst.at().is_some();
+    let name = cst.name().map(|t| {
+        let text = t.text();
+        SmolStr::from(text)
+    });
+    let kind = cst.kind().map(|k| lower_type(state, &k));
+    TypeVariableBinding { visible, name, kind }
 }

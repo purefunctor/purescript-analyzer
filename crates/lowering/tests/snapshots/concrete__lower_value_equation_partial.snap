@@ -6,9 +6,7 @@ snapshot_kind: text
 LoweringMap {
     expr_item: {
         Id<indexing::indexes::ExprItem>(0): Value {
-            signature: Some(
-                Id<syntax::cst::Type>(0),
-            ),
+            signature: None,
             equations: [
                 LoweredEquation {
                     binders: [
