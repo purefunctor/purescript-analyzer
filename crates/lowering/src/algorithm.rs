@@ -131,9 +131,14 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             let r#type = f.r#type().map(|t| lower_type(state, &t));
             TypeKind::Forall { bindings, r#type }
         }
-        cst::Type::TypeHole(_h) => TypeKind::Hole,
-        cst::Type::TypeInteger(_i) => TypeKind::Integer,
-        cst::Type::TypeKinded(_k) => TypeKind::Kinded,
+        cst::Type::TypeHole(_) => TypeKind::Hole,
+        cst::Type::TypeInteger(_) => TypeKind::Integer,
+        cst::Type::TypeKinded(k) => {
+            let mut children = k.children().map(|t| lower_type(state, &t));
+            let r#type = children.next();
+            let kind = children.next();
+            TypeKind::Kinded { r#type, kind }
+        },
         cst::Type::TypeOperator(_o) => TypeKind::Operator,
         cst::Type::TypeOperatorChain(_o) => TypeKind::OperatorChain,
         cst::Type::TypeString(_s) => TypeKind::String,

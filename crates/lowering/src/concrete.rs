@@ -211,7 +211,7 @@ pub enum TypeKind {
     Forall { bindings: Vec<TypeVariableBinding>, r#type: Option<TypeId> },
     Hole,
     Integer,
-    Kinded,
+    Kinded { r#type: Option<TypeId>, kind: Option<TypeId> },
     Operator,
     OperatorChain,
     String,

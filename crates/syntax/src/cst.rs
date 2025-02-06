@@ -868,3 +868,8 @@ has_child!(
     TypeVariableBinding
     | kind() -> Type
 );
+
+has_children!(
+    TypeKinded
+    | children() -> Type
+);
