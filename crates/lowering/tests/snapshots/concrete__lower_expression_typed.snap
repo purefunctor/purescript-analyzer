@@ -10,7 +10,12 @@ SourceMap {
                 kind: TypeConstructor,
                 range: 30..34,
             },
-        }: Constructor,
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "Int",
+            ),
+        },
     },
     binders: {},
     expressions: {

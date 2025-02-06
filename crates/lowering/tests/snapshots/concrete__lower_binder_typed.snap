@@ -10,7 +10,12 @@ SourceMap {
                 kind: TypeConstructor,
                 range: 27..29,
             },
-        }: Constructor,
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "T",
+            ),
+        },
     },
     binders: {
         AstPtr {

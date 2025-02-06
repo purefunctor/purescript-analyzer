@@ -118,7 +118,13 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             let constrained = children.next();
             TypeKind::Constrained { constraint, constrained }
         }
-        cst::Type::TypeConstructor(_c) => TypeKind::Constructor,
+        cst::Type::TypeConstructor(c) => {
+            let (qualifier, name) = c
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            TypeKind::Constructor { qualifier, name }
+        }
         cst::Type::TypeForall(_f) => TypeKind::Forall,
         cst::Type::TypeHole(_h) => TypeKind::Hole,
         cst::Type::TypeInteger(_i) => TypeKind::Integer,

@@ -841,3 +841,8 @@ has_children!(
     TypeConstrained
     | children() -> Type
 );
+
+has_child!(
+    TypeConstructor
+    | name() -> QualifiedName
+);

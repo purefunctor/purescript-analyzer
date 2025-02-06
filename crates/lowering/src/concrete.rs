@@ -200,7 +200,7 @@ pub enum TypeKind {
     ApplicationChain { head: Option<TypeId>, tail: Vec<TypeId> },
     Arrow { domain: Option<TypeId>, codomain: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
-    Constructor,
+    Constructor { qualifier: Option<SmolStr>, name: Option<SmolStr> },
     Forall,
     Hole,
     Integer,

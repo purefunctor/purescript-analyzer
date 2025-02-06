@@ -10,19 +10,34 @@ SourceMap {
                 kind: TypeConstructor,
                 range: 24..26,
             },
-        }: Constructor,
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "A",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeConstructor,
                 range: 29..31,
             },
-        }: Constructor,
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "B",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeConstructor,
                 range: 34..36,
             },
-        }: Constructor,
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "C",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeConstrained,
