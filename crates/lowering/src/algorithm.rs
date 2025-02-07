@@ -138,8 +138,14 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             let r#type = children.next();
             let kind = children.next();
             TypeKind::Kinded { r#type, kind }
-        },
-        cst::Type::TypeOperator(_o) => TypeKind::Operator,
+        }
+        cst::Type::TypeOperator(o) => {
+            let (qualifier, name) = o
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
+                .unwrap_or_default();
+            TypeKind::Operator { qualifier, name }
+        }
         cst::Type::TypeOperatorChain(_o) => TypeKind::OperatorChain,
         cst::Type::TypeString(_s) => TypeKind::String,
         cst::Type::TypeVariable(_v) => TypeKind::Variable,

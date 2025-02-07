@@ -873,3 +873,8 @@ has_children!(
     TypeKinded
     | children() -> Type
 );
+
+has_child!(
+    TypeOperator
+    | name() -> QualifiedName
+);

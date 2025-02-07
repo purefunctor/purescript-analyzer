@@ -212,7 +212,7 @@ pub enum TypeKind {
     Hole,
     Integer,
     Kinded { r#type: Option<TypeId>, kind: Option<TypeId> },
-    Operator,
+    Operator { qualifier: Option<SmolStr>, name: Option<SmolStr> },
     OperatorChain,
     String,
     Variable,
