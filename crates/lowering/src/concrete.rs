@@ -273,11 +273,35 @@ pub struct LoweredEquation {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum LoweredExprItem {
-    Constructor { arguments: Vec<TypeId> },
-    ClassMember { signature: Option<TypeId> },
-    Value { signature: Option<TypeId>, equations: Vec<LoweredEquation> },
-    Foreign { signature: Option<TypeId> },
-    Operator { qualifier: Option<SmolStr>, name: Option<SmolStr> },
+    Constructor {
+        arguments: Vec<TypeId>,
+    },
+    Instance {
+        constraints: Vec<TypeId>,
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+        arguments: Vec<TypeId>,
+    },
+    Derive {
+        constraints: Vec<TypeId>,
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+        arguments: Vec<TypeId>,
+    },
+    ClassMember {
+        signature: Option<TypeId>,
+    },
+    Value {
+        signature: Option<TypeId>,
+        equations: Vec<LoweredEquation>,
+    },
+    Foreign {
+        signature: Option<TypeId>,
+    },
+    Operator {
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+    },
 }
 
 #[derive(Debug, Default)]

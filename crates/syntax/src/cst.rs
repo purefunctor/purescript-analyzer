@@ -369,9 +369,15 @@ has_children!(
 
 has_child!(
     InstanceDeclaration
+    | instance_constraints() -> InstanceConstraints
     | instance_head() -> InstanceHead
     | instance_name() -> InstanceName
     | instance_statements() -> InstanceStatements
+);
+
+has_children!(
+    InstanceConstraints
+    | children() -> Type
 );
 
 has_token!(
@@ -382,6 +388,16 @@ has_token!(
 has_token!(
     InstanceHead
     | type_name_token() -> UPPER
+);
+
+has_child!(
+    InstanceHead
+    | qualifier() -> Qualifier
+);
+
+has_children!(
+    InstanceHead
+    | children() -> Type
 );
 
 has_children!(
@@ -492,6 +508,8 @@ has_token!(
 
 has_child!(
     DeriveDeclaration
+    | instance_constraints() -> InstanceConstraints
+    | instance_head() -> InstanceHead
     | instance_name() -> InstanceName
 );
 

@@ -1,7 +1,8 @@
 use std::iter;
 
 use indexing::{
-    ClassMemberId, ConstructorId, DeclarationId, ExprItem, ExprItemId, IndexingResult, ValueGroupId,
+    ClassMemberId, ConstructorId, DeclarationId, ExprItem, ExprItemId, IndexingResult, InstanceId,
+    ValueGroupId,
 };
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashMap;
@@ -42,8 +43,8 @@ fn lower_expr_item(
 ) {
     let item = match item {
         ExprItem::Constructor(c) => lower_value_constructor(state, module, index, *c),
-        ExprItem::Instance(_) => todo!(),
-        ExprItem::Derive(_) => todo!(),
+        ExprItem::Instance(i) => lower_value_instance(state, module, index, *i),
+        ExprItem::Derive(d) => lower_value_derive(state, module, index, *d),
         ExprItem::ClassMember(c) => lower_value_class_member(state, module, index, *c),
         ExprItem::Value(v) => lower_value_group(state, module, index, v),
         ExprItem::Foreign(f) => lower_value_foreign(state, module, index, *f),
@@ -775,6 +776,84 @@ fn lower_value_constructor(
     let arguments = node.children().map(|t| lower_type(state, &t)).collect();
 
     LoweredExprItem::Constructor { arguments }
+}
+
+fn lower_value_instance(
+    state: &mut State,
+    module: &cst::Module,
+    index: &IndexingResult,
+    instance: InstanceId,
+) -> LoweredExprItem {
+    let Some(pointer) = index.source_map.instance_ptr(instance) else {
+        return LoweredExprItem::Instance {
+            constraints: vec![],
+            qualifier: None,
+            name: None,
+            arguments: vec![],
+        };
+    };
+
+    let node = pointer.to_node(module.syntax());
+
+    let constraints = node
+        .instance_constraints()
+        .map_or(vec![], |c| c.children().map(|t| lower_type(state, &t)).collect());
+
+    let (qualifier, name, arguments) =
+        node.instance_head().map_or((None, None, vec![]), |h| lower_instance_head(state, &h));
+
+    LoweredExprItem::Instance { constraints, qualifier, name, arguments }
+}
+
+fn lower_value_derive(
+    state: &mut State,
+    module: &cst::Module,
+    index: &IndexingResult,
+    derive: DeclarationId,
+) -> LoweredExprItem {
+    let Some(pointer) = index.source_map.declaration_ptr(derive) else {
+        return LoweredExprItem::Derive {
+            constraints: vec![],
+            qualifier: None,
+            name: None,
+            arguments: vec![],
+        };
+    };
+
+    let cst::Declaration::DeriveDeclaration(node) = pointer.to_node(module.syntax()) else {
+        return LoweredExprItem::Derive {
+            constraints: vec![],
+            qualifier: None,
+            name: None,
+            arguments: vec![],
+        };
+    };
+
+    let constraints = node
+        .instance_constraints()
+        .map_or(vec![], |c| c.children().map(|t| lower_type(state, &t)).collect());
+
+    let (qualifier, name, arguments) =
+        node.instance_head().map_or((None, None, vec![]), |h| lower_instance_head(state, &h));
+
+    LoweredExprItem::Derive { constraints, qualifier, name, arguments }
+}
+
+fn lower_instance_head(
+    state: &mut State,
+    cst: &cst::InstanceHead,
+) -> (Option<SmolStr>, Option<SmolStr>, Vec<TypeId>) {
+    let qualifier = cst.qualifier().and_then(|q| {
+        let token = q.text()?;
+        let text = token.text();
+        Some(SmolStr::from(text))
+    });
+    let name = cst.type_name_token().map(|t| {
+        let text = t.text();
+        SmolStr::from(text)
+    });
+    let arguments = cst.children().map(|t| lower_type(state, &t)).collect();
+    (qualifier, name, arguments)
 }
 
 fn lower_value_class_member(

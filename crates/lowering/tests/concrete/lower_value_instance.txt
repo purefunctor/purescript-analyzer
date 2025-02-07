@@ -1,0 +1,17 @@
+-- @lowering_map
+module Main where
+
+instance eqInt :: Prelude.Eq Int where
+  eq = eqIntImpl
+
+derive instance eqNumber :: Eq Number
+derive newtype instance eqId :: Eq Int
+
+instance eqMaybe :: Eq a => Eq (Maybe a)
+instance eqEither :: (Eq a, Eq b) => Eq (Either a b)
+
+instance Prelude.Ord Int where
+  compare = compareIntImpl
+
+derive instance Ord Int
+derive newtype instance Ord Id
