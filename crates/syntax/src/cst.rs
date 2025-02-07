@@ -940,3 +940,8 @@ has_child!(
     ForeignImportValueDeclaration
     | signature() -> Type
 );
+
+has_children!(
+    DataConstructor
+    | children() -> Type
+);

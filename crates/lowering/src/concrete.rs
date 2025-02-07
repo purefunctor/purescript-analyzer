@@ -273,6 +273,7 @@ pub struct LoweredEquation {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum LoweredExprItem {
+    Constructor { arguments: Vec<TypeId> },
     Value { signature: Option<TypeId>, equations: Vec<LoweredEquation> },
     Foreign { signature: Option<TypeId> },
 }
