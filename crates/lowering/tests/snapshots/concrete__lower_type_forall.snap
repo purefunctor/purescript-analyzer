@@ -32,25 +32,41 @@ SourceMap {
                 kind: TypeVariable,
                 range: 64..66,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "a",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeVariable,
                 range: 69..71,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "b",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeVariable,
                 range: 74..76,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "c",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeVariable,
                 range: 79..81,
             },
-        }: Variable,
+        }: Variable {
+            name: Some(
+                "d",
+            ),
+        },
         AstPtr {
             raw: SyntaxNodePtr {
                 kind: TypeArrow,

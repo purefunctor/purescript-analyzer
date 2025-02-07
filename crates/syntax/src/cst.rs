@@ -894,3 +894,8 @@ has_child!(
     | qualified() -> QualifiedName
     | r#type() -> Type
 );
+
+has_token!(
+    TypeVariable
+    | name_token() -> LOWER
+);

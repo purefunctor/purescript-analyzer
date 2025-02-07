@@ -158,9 +158,15 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
                 .collect();
             TypeKind::OperatorChain { head, tail }
         }
-        cst::Type::TypeString(_s) => TypeKind::String,
-        cst::Type::TypeVariable(_v) => TypeKind::Variable,
-        cst::Type::TypeWildcard(_w) => TypeKind::Wildcard,
+        cst::Type::TypeString(_) => TypeKind::String,
+        cst::Type::TypeVariable(v) => {
+            let name = v.name_token().map(|t| {
+                let text = t.text();
+                SmolStr::from(text)
+            });
+            TypeKind::Variable { name }
+        }
+        cst::Type::TypeWildcard(_) => TypeKind::Wildcard,
         cst::Type::TypeRecord(_r) => TypeKind::Record,
         cst::Type::TypeRow(_r) => TypeKind::Row,
         cst::Type::TypeParenthesized(_p) => TypeKind::Parenthesized,
