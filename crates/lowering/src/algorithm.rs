@@ -172,9 +172,9 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             let tail = r.tail().and_then(|t| t.r#type()).map(|t| lower_type(state, &t));
             TypeKind::Record { items, tail }
         }
-        cst::Type::TypeRow(_) => {
-            let items = vec![];
-            let tail = None;
+        cst::Type::TypeRow(r) => {
+            let items = r.children().map(|i| lower_row_item(state, &i)).collect();
+            let tail = r.tail().and_then(|t| t.r#type()).map(|t| lower_type(state, &t));
             TypeKind::Row { items, tail }
         }
         cst::Type::TypeParenthesized(_p) => TypeKind::Parenthesized,

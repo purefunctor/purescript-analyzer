@@ -905,6 +905,11 @@ has_children!(
     | children() -> TypeRowItem
 );
 
+has_children!(
+    TypeRow
+    | children() -> TypeRowItem
+);
+
 has_child!(
     TypeRowItem
     | name() -> LabelName
@@ -915,6 +920,12 @@ has_child!(
     TypeRecord
     | tail() -> TypeRowTail
 );
+
+has_child!(
+    TypeRow
+    | tail() -> TypeRowTail
+);
+
 
 has_child!(
     TypeRowTail
