@@ -7,7 +7,7 @@ use std::{
 
 /// An index associated with a type.
 pub struct Id<T: ?Sized> {
-    pub(crate) index: usize,
+    pub(crate) index: u32,
     _marker: PhantomData<fn() -> T>,
 }
 
@@ -63,13 +63,14 @@ impl<T: ?Sized> AsRef<Id<T>> for Id<T> {
 
 impl<T: ?Sized> From<Id<T>> for usize {
     fn from(value: Id<T>) -> Self {
-        value.index
+        value.index as usize
     }
 }
 
 impl<T: ?Sized> Id<T> {
     pub fn from_raw(index: usize) -> Id<T> {
-        Id { index, _marker: PhantomData }
+        debug_assert!(index < u32::MAX as usize, "invariant violated: non-u32 index");
+        Id { index: index as u32, _marker: PhantomData }
     }
 
     pub fn consecutive_of(&self, other: impl AsRef<Id<T>>) -> bool {
