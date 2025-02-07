@@ -47,7 +47,7 @@ fn lower_expr_item(
         ExprItem::ClassMember(c) => lower_value_class_member(state, module, index, *c),
         ExprItem::Value(v) => lower_value_group(state, module, index, v),
         ExprItem::Foreign(f) => lower_value_foreign(state, module, index, *f),
-        ExprItem::Operator(_) => todo!(),
+        ExprItem::Operator(o) => lower_value_operator(module, index, *o),
     };
     state.lowering_map.expr_item.insert(item_id, item);
 }
@@ -814,4 +814,26 @@ fn lower_value_foreign(
 
     signature = value.signature().map(|t| lower_type(state, &t));
     LoweredExprItem::Foreign { signature }
+}
+
+fn lower_value_operator(
+    module: &cst::Module,
+    index: &IndexingResult,
+    operator: DeclarationId,
+) -> LoweredExprItem {
+    let Some(pointer) = index.source_map.declaration_ptr(operator) else {
+        return LoweredExprItem::Operator { qualifier: None, name: None };
+    };
+
+    let node = pointer.to_node(module.syntax());
+    let cst::Declaration::InfixDeclaration(value) = node else {
+        return LoweredExprItem::Operator { qualifier: None, name: None };
+    };
+
+    let (qualifier, name) = value
+        .qualified()
+        .map(|q| lower_qualified_name(&q, cst::QualifiedName::lower))
+        .unwrap_or_default();
+
+    LoweredExprItem::Operator { qualifier, name }
 }

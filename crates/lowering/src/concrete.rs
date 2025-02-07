@@ -277,6 +277,7 @@ pub enum LoweredExprItem {
     ClassMember { signature: Option<TypeId> },
     Value { signature: Option<TypeId>, equations: Vec<LoweredEquation> },
     Foreign { signature: Option<TypeId> },
+    Operator { qualifier: Option<SmolStr>, name: Option<SmolStr> },
 }
 
 #[derive(Debug, Default)]

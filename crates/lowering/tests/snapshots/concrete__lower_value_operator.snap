@@ -1,0 +1,17 @@
+---
+source: crates/lowering/tests/concrete.rs
+expression: "&lower.lowering_map"
+snapshot_kind: text
+---
+LoweringMap {
+    expr_item: {
+        Id<indexing::indexes::ExprItem>(0): Operator {
+            qualifier: Some(
+                "Prelude.",
+            ),
+            name: Some(
+                "add",
+            ),
+        },
+    },
+}

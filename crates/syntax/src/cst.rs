@@ -507,6 +507,11 @@ has_token!(
 );
 
 has_child!(
+    InfixDeclaration
+    | qualified() -> QualifiedName
+);
+
+has_child!(
     ExpressionTyped
     | expression() -> Expression
     | signature() -> Type
