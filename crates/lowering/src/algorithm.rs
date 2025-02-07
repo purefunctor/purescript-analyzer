@@ -177,7 +177,10 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             let tail = r.tail().and_then(|t| t.r#type()).map(|t| lower_type(state, &t));
             TypeKind::Row { items, tail }
         }
-        cst::Type::TypeParenthesized(_p) => TypeKind::Parenthesized,
+        cst::Type::TypeParenthesized(p) => {
+            let r#type = p.r#type().map(|t| lower_type(state, &t));
+            TypeKind::Parenthesized { r#type }
+        }
     };
     state.source_map.insert_type(cst, kind)
 }

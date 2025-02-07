@@ -931,3 +931,8 @@ has_child!(
     TypeRowTail
     | r#type() -> Type
 );
+
+has_child!(
+    TypeParenthesized
+    | r#type() -> Type
+);

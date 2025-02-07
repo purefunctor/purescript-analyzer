@@ -225,7 +225,7 @@ pub enum TypeKind {
     Wildcard,
     Record { items: Vec<TypeRowItem>, tail: Option<TypeId> },
     Row { items: Vec<TypeRowItem>, tail: Option<TypeId> },
-    Parenthesized,
+    Parenthesized { r#type: Option<TypeId> },
 }
 
 pub type TypeId = Id<cst::Type>;
