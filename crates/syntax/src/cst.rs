@@ -926,7 +926,6 @@ has_child!(
     | tail() -> TypeRowTail
 );
 
-
 has_child!(
     TypeRowTail
     | r#type() -> Type
