@@ -10,8 +10,8 @@ use crate::{
     BinderId, BinderKind, CaseBranch, DoStatement, DoStatementId, ExpressionArgument, ExpressionId,
     ExpressionKind, GuardedExpression, LetBinding, LetBindingId, LetBindingKindId, LoweredEquation,
     LoweredExprItem, LoweringMap, LoweringResult, OperatorPair, PatternGuard, PatternGuarded,
-    RecordItem, RecordUpdate, SourceMap, TickPair, TypeId, TypeKind, TypeVariableBinding,
-    WhereExpression,
+    RecordItem, RecordUpdate, SourceMap, TickPair, TypeId, TypeKind, TypeRowItem,
+    TypeVariableBinding, WhereExpression,
 };
 
 #[derive(Default)]
@@ -167,8 +167,16 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
             TypeKind::Variable { name }
         }
         cst::Type::TypeWildcard(_) => TypeKind::Wildcard,
-        cst::Type::TypeRecord(_r) => TypeKind::Record,
-        cst::Type::TypeRow(_r) => TypeKind::Row,
+        cst::Type::TypeRecord(r) => {
+            let items = r.children().map(|i| lower_row_item(state, &i)).collect();
+            let tail = r.tail().and_then(|t| t.r#type()).map(|t| lower_type(state, &t));
+            TypeKind::Record { items, tail }
+        }
+        cst::Type::TypeRow(_) => {
+            let items = vec![];
+            let tail = None;
+            TypeKind::Row { items, tail }
+        }
         cst::Type::TypeParenthesized(_p) => TypeKind::Parenthesized,
     };
     state.source_map.insert_type(cst, kind)
@@ -736,4 +744,14 @@ fn lower_type_variable_binding(
     });
     let kind = cst.kind().map(|k| lower_type(state, &k));
     TypeVariableBinding { visible, name, kind }
+}
+
+fn lower_row_item(state: &mut State, cst: &cst::TypeRowItem) -> TypeRowItem {
+    let name = cst.name().and_then(|l| {
+        let token = l.text()?;
+        let text = token.text();
+        Some(SmolStr::from(text))
+    });
+    let r#type = cst.r#type().map(|t| lower_type(state, &t));
+    TypeRowItem { name, r#type }
 }

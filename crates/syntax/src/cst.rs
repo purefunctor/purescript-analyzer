@@ -122,7 +122,7 @@ create_cst_enum!(
         | TypeParenthesized
 );
 
-create_cst_struct!(TypeVariableBinding, TypeOperatorPair);
+create_cst_struct!(TypeVariableBinding, TypeOperatorPair, TypeRowItem, TypeRowTail);
 
 create_cst_enum!(
     Binder
@@ -898,4 +898,25 @@ has_child!(
 has_token!(
     TypeVariable
     | name_token() -> LOWER
+);
+
+has_children!(
+    TypeRecord
+    | children() -> TypeRowItem
+);
+
+has_child!(
+    TypeRowItem
+    | name() -> LabelName
+    | r#type() -> Type
+);
+
+has_child!(
+    TypeRecord
+    | tail() -> TypeRowTail
+);
+
+has_child!(
+    TypeRowTail
+    | r#type() -> Type
 );

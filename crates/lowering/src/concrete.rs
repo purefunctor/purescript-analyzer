@@ -203,6 +203,12 @@ pub struct TypeVariableBinding {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub struct TypeRowItem {
+    pub name: Option<SmolStr>,
+    pub r#type: Option<TypeId>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     ApplicationChain { head: Option<TypeId>, tail: Vec<TypeId> },
     Arrow { domain: Option<TypeId>, codomain: Option<TypeId> },
@@ -217,8 +223,8 @@ pub enum TypeKind {
     String,
     Variable { name: Option<SmolStr> },
     Wildcard,
-    Record,
-    Row,
+    Record { items: Vec<TypeRowItem>, tail: Option<TypeId> },
+    Row { items: Vec<TypeRowItem>, tail: Option<TypeId> },
     Parenthesized,
 }
 
