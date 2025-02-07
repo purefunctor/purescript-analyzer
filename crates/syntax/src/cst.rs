@@ -435,6 +435,11 @@ has_token!(
     | name_token() -> LOWER
 );
 
+has_child!(
+    ClassMemberStatement
+    | signature() -> Type
+);
+
 has_token!(
     NewtypeSignature
     | name_token() -> UPPER
@@ -468,6 +473,11 @@ has_children!(
 has_token!(
     DataConstructor
     | name_token() -> UPPER
+);
+
+has_children!(
+    DataConstructor
+    | children() -> Type
 );
 
 has_token!(
@@ -939,9 +949,4 @@ has_child!(
 has_child!(
     ForeignImportValueDeclaration
     | signature() -> Type
-);
-
-has_children!(
-    DataConstructor
-    | children() -> Type
 );

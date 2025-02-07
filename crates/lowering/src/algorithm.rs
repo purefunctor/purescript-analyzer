@@ -1,6 +1,8 @@
 use std::iter;
 
-use indexing::{ConstructorId, DeclarationId, ExprItem, ExprItemId, IndexingResult, ValueGroupId};
+use indexing::{
+    ClassMemberId, ConstructorId, DeclarationId, ExprItem, ExprItemId, IndexingResult, ValueGroupId,
+};
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, SmolStrBuilder};
@@ -42,7 +44,7 @@ fn lower_expr_item(
         ExprItem::Constructor(c) => lower_value_constructor(state, module, index, *c),
         ExprItem::Instance(_) => todo!(),
         ExprItem::Derive(_) => todo!(),
-        ExprItem::ClassMember(_) => todo!(),
+        ExprItem::ClassMember(c) => lower_value_class_member(state, module, index, *c),
         ExprItem::Value(v) => lower_value_group(state, module, index, v),
         ExprItem::Foreign(f) => lower_value_foreign(state, module, index, *f),
         ExprItem::Operator(_) => todo!(),
@@ -773,6 +775,24 @@ fn lower_value_constructor(
     let arguments = node.children().map(|t| lower_type(state, &t)).collect();
 
     LoweredExprItem::Constructor { arguments }
+}
+
+fn lower_value_class_member(
+    state: &mut State,
+    module: &cst::Module,
+    index: &IndexingResult,
+    class_member: ClassMemberId,
+) -> LoweredExprItem {
+    let mut signature = None;
+
+    let Some(pointer) = index.source_map.class_member_ptr(class_member) else {
+        return LoweredExprItem::ClassMember { signature };
+    };
+
+    let node = pointer.to_node(module.syntax());
+    signature = node.signature().map(|t| lower_type(state, &t));
+
+    LoweredExprItem::ClassMember { signature }
 }
 
 fn lower_value_foreign(
