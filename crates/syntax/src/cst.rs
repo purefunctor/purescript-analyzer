@@ -935,3 +935,8 @@ has_child!(
     TypeParenthesized
     | r#type() -> Type
 );
+
+has_child!(
+    ForeignImportValueDeclaration
+    | signature() -> Type
+);

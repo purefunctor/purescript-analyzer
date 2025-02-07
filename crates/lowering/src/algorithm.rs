@@ -1,6 +1,6 @@
 use std::iter;
 
-use indexing::{ExprItem, ExprItemId, IndexingResult, ValueGroupId};
+use indexing::{DeclarationId, ExprItem, ExprItemId, IndexingResult, ValueGroupId};
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, SmolStrBuilder};
@@ -44,7 +44,7 @@ fn lower_expr_item(
         ExprItem::Derive(_) => todo!(),
         ExprItem::ClassMember(_) => todo!(),
         ExprItem::Value(v) => lower_value_group(state, module, index, v),
-        ExprItem::Foreign(_) => todo!(),
+        ExprItem::Foreign(f) => lower_value_foreign(state, module, index, *f),
         ExprItem::Operator(_) => todo!(),
     };
     state.lowering_map.expr_item.insert(item_id, item);
@@ -757,4 +757,25 @@ fn lower_row_item(state: &mut State, cst: &cst::TypeRowItem) -> TypeRowItem {
     });
     let r#type = cst.r#type().map(|t| lower_type(state, &t));
     TypeRowItem { name, r#type }
+}
+
+fn lower_value_foreign(
+    state: &mut State,
+    module: &cst::Module,
+    index: &IndexingResult,
+    foreign: DeclarationId,
+) -> LoweredExprItem {
+    let mut signature = None;
+
+    let Some(pointer) = index.source_map.declaration_ptr(foreign) else {
+        return LoweredExprItem::Foreign { signature };
+    };
+
+    let cst::Declaration::ForeignImportValueDeclaration(value) = pointer.to_node(module.syntax())
+    else {
+        return LoweredExprItem::Foreign { signature };
+    };
+
+    signature = value.signature().map(|t| lower_type(state, &t));
+    LoweredExprItem::Foreign { signature }
 }
