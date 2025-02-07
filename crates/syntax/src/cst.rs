@@ -122,7 +122,7 @@ create_cst_enum!(
         | TypeParenthesized
 );
 
-create_cst_struct!(TypeVariableBinding);
+create_cst_struct!(TypeVariableBinding, TypeOperatorPair);
 
 create_cst_enum!(
     Binder
@@ -877,4 +877,20 @@ has_children!(
 has_child!(
     TypeOperator
     | name() -> QualifiedName
+);
+
+has_child!(
+    TypeOperatorChain
+    | r#type() -> Type
+);
+
+has_children!(
+    TypeOperatorChain
+    | children() -> TypeOperatorPair
+);
+
+has_child!(
+    TypeOperatorPair
+    | qualified() -> QualifiedName
+    | r#type() -> Type
 );

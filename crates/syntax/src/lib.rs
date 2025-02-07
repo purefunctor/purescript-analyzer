@@ -150,6 +150,7 @@ pub enum SyntaxKind {
     TypeKinded,
     TypeOperator,
     TypeOperatorChain,
+    TypeOperatorPair,
     TypeString,
     TypeVariable,
     TypeVariableBinding,

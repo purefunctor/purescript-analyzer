@@ -213,7 +213,7 @@ pub enum TypeKind {
     Integer,
     Kinded { r#type: Option<TypeId>, kind: Option<TypeId> },
     Operator { qualifier: Option<SmolStr>, name: Option<SmolStr> },
-    OperatorChain,
+    OperatorChain { head: Option<TypeId>, tail: Vec<OperatorPair<TypeId>> },
     String,
     Variable,
     VariableBinding,

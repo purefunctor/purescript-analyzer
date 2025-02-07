@@ -137,30 +137,32 @@ snapshot_kind: text
                 Annotation@117..118
                   TEXT@117..118 " "
                 UPPER@118..125 "Integer"
-            QualifiedName@125..129
-              Annotation@125..126
-                TEXT@125..126 " "
-              Qualifier@126..128
-                TEXT@126..128 "L."
-              OPERATOR@128..129 ":"
-            TypeConstructor@129..137
-              QualifiedName@129..137
-                Annotation@129..130
-                  TEXT@129..130 " "
-                UPPER@130..137 "Integer"
-            QualifiedName@137..141
-              Annotation@137..138
-                TEXT@137..138 " "
-              Qualifier@138..140
-                TEXT@138..140 "L."
-              OPERATOR@140..141 ":"
-            TypeConstructor@141..147
-              QualifiedName@141..147
-                Annotation@141..142
-                  TEXT@141..142 " "
-                Qualifier@142..144
-                  TEXT@142..144 "L."
-                UPPER@144..147 "Nil"
+            TypeOperatorPair@125..137
+              QualifiedName@125..129
+                Annotation@125..126
+                  TEXT@125..126 " "
+                Qualifier@126..128
+                  TEXT@126..128 "L."
+                OPERATOR@128..129 ":"
+              TypeConstructor@129..137
+                QualifiedName@129..137
+                  Annotation@129..130
+                    TEXT@129..130 " "
+                  UPPER@130..137 "Integer"
+            TypeOperatorPair@137..147
+              QualifiedName@137..141
+                Annotation@137..138
+                  TEXT@137..138 " "
+                Qualifier@138..140
+                  TEXT@138..140 "L."
+                OPERATOR@140..141 ":"
+              TypeConstructor@141..147
+                QualifiedName@141..147
+                  Annotation@141..142
+                    TEXT@141..142 " "
+                  Qualifier@142..144
+                    TEXT@142..144 "L."
+                  UPPER@144..147 "Nil"
       LAYOUT_END@147..147 ""
       Annotation@147..148
         TEXT@147..148 "\n"

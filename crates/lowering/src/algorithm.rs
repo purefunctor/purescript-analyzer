@@ -146,7 +146,18 @@ fn lower_type(state: &mut State, cst: &cst::Type) -> TypeId {
                 .unwrap_or_default();
             TypeKind::Operator { qualifier, name }
         }
-        cst::Type::TypeOperatorChain(_o) => TypeKind::OperatorChain,
+        cst::Type::TypeOperatorChain(o) => {
+            let head = o.r#type().map(|t| lower_type(state, &t));
+            let tail = o
+                .children()
+                .map(|p| {
+                    let qualified = p.qualified();
+                    let expression = p.r#type().map(|t| lower_type(state, &t));
+                    lower_pair(qualified, expression)
+                })
+                .collect();
+            TypeKind::OperatorChain { head, tail }
+        }
         cst::Type::TypeString(_s) => TypeKind::String,
         cst::Type::TypeVariable(_v) => TypeKind::Variable,
         cst::Type::TypeWildcard(_w) => TypeKind::Wildcard,

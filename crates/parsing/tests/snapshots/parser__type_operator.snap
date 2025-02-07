@@ -31,24 +31,26 @@ snapshot_kind: text
                 Annotation@38..39
                   TEXT@38..39 " "
                 UPPER@39..40 "A"
-            QualifiedName@40..42
-              Annotation@40..41
-                TEXT@40..41 " "
-              OPERATOR@41..42 "+"
-            TypeConstructor@42..44
-              QualifiedName@42..44
-                Annotation@42..43
-                  TEXT@42..43 " "
-                UPPER@43..44 "B"
-            QualifiedName@44..46
-              Annotation@44..45
-                TEXT@44..45 " "
-              OPERATOR@45..46 "+"
-            TypeConstructor@46..48
-              QualifiedName@46..48
-                Annotation@46..47
-                  TEXT@46..47 " "
-                UPPER@47..48 "C"
+            TypeOperatorPair@40..44
+              QualifiedName@40..42
+                Annotation@40..41
+                  TEXT@40..41 " "
+                OPERATOR@41..42 "+"
+              TypeConstructor@42..44
+                QualifiedName@42..44
+                  Annotation@42..43
+                    TEXT@42..43 " "
+                  UPPER@43..44 "B"
+            TypeOperatorPair@44..48
+              QualifiedName@44..46
+                Annotation@44..45
+                  TEXT@44..45 " "
+                OPERATOR@45..46 "+"
+              TypeConstructor@46..48
+                QualifiedName@46..48
+                  Annotation@46..47
+                    TEXT@46..47 " "
+                  UPPER@47..48 "C"
       LAYOUT_END@48..48 ""
       Annotation@48..49
         TEXT@48..49 "\n"
