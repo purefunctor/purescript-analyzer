@@ -226,6 +226,22 @@ name = "id"
 version = "0.1.0"
 
 [[package]]
+name = "indexing"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "la-arena",
+ "lexing",
+ "parsing",
+ "paste",
+ "rowan",
+ "rustc-hash 2.1.1",
+ "smol_str",
+ "syntax",
+ "test_each_file",
+]
+
+[[package]]
 name = "indexing_v1"
 version = "0.1.0"
 dependencies = [

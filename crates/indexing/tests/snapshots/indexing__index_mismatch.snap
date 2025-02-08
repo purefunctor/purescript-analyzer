@@ -1,0 +1,374 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: snapshot
+snapshot_kind: text
+---
+Index {
+    term_item: Arena {
+        len: 4,
+        data: [
+            Instance {
+                id: Idx::<InstanceDeclaration>>(0),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(0),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(1),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(2),
+            },
+        ],
+    },
+    type_item: Arena {
+        len: 6,
+        data: [
+            Data {
+                signature: Some(
+                    Idx::<DataSignature>>(0),
+                ),
+                equation: None,
+                role: None,
+            },
+            Data {
+                signature: Some(
+                    Idx::<DataSignature>>(2),
+                ),
+                equation: Some(
+                    Idx::<DataEquation>>(0),
+                ),
+                role: None,
+            },
+            Data {
+                signature: Some(
+                    Idx::<DataSignature>>(3),
+                ),
+                equation: None,
+                role: None,
+            },
+            Data {
+                signature: None,
+                equation: Some(
+                    Idx::<DataEquation>>(1),
+                ),
+                role: None,
+            },
+            Data {
+                signature: None,
+                equation: Some(
+                    Idx::<DataEquation>>(2),
+                ),
+                role: Some(
+                    Idx::<TypeRoleDeclaration>>(1),
+                ),
+            },
+            Synonym {
+                signature: None,
+                equation: Some(
+                    Idx::<TypeSynonymEquation>>(0),
+                ),
+            },
+        ],
+    },
+    term_nominal: {
+        "DiffDecl": Idx::<TermItem>(2),
+        "LateData": Idx::<TermItem>(1),
+        "DiffDecl'": Idx::<TermItem>(3),
+        "eqInt": Idx::<TermItem>(0),
+    },
+    type_nominal: {
+        "SameData": Idx::<TypeItem>(0),
+        "LateData": Idx::<TypeItem>(1),
+        "DiffDecl": Idx::<TypeItem>(3),
+        "NotSupported": Idx::<TypeItem>(5),
+        "DiffSig": Idx::<TypeItem>(2),
+        "Phantom": Idx::<TypeItem>(4),
+    },
+    data_relational: [
+        (
+            Idx::<TypeItem>(1),
+            Idx::<DataConstructor>>(0),
+        ),
+        (
+            Idx::<TypeItem>(3),
+            Idx::<DataConstructor>>(1),
+        ),
+    ],
+    class_relational: [],
+    chain_relational: [
+        (
+            Idx::<InstanceChain>>(0),
+            Idx::<InstanceDeclaration>>(0),
+        ),
+    ],
+    instance_relational: [],
+}
+Source {
+    export: Arena {
+        len: 0,
+        data: [],
+    },
+    import: Arena {
+        len: 0,
+        data: [],
+    },
+    data_signature: Arena {
+        len: 4,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataSignature,
+                    range: 64..87,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataSignature,
+                    range: 87..109,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataSignature,
+                    range: 135..157,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataSignature,
+                    range: 157..179,
+                },
+            },
+        ],
+    },
+    data_equation: Arena {
+        len: 3,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataEquation,
+                    range: 109..135,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataEquation,
+                    range: 203..229,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataEquation,
+                    range: 287..303,
+                },
+            },
+        ],
+    },
+    data_constructor: Arena {
+        len: 3,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 126..135,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 220..229,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 248..258,
+                },
+            },
+        ],
+    },
+    newtype_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: NewtypeSignature,
+                    range: 179..203,
+                },
+            },
+        ],
+    },
+    newtype_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: NewtypeEquation,
+                    range: 229..258,
+                },
+            },
+        ],
+    },
+    type_role: Arena {
+        len: 4,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeRoleDeclaration,
+                    range: 258..287,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeRoleDeclaration,
+                    range: 303..330,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeRoleDeclaration,
+                    range: 330..356,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeRoleDeclaration,
+                    range: 377..408,
+                },
+            },
+        ],
+    },
+    type_signature: Arena {
+        len: 0,
+        data: [],
+    },
+    type_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeSynonymEquation,
+                    range: 356..377,
+                },
+            },
+        ],
+    },
+    class_signature: Arena {
+        len: 0,
+        data: [],
+    },
+    class_declaration: Arena {
+        len: 0,
+        data: [],
+    },
+    class_member: Arena {
+        len: 0,
+        data: [],
+    },
+    value_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ValueSignature,
+                    range: 43..64,
+                },
+            },
+        ],
+    },
+    value_equation: Arena {
+        len: 0,
+        data: [],
+    },
+    chain: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceChain,
+                    range: 17..43,
+                },
+            },
+        ],
+    },
+    instance: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceDeclaration,
+                    range: 17..43,
+                },
+            },
+        ],
+    },
+    instance_member: Arena {
+        len: 0,
+        data: [],
+    },
+    derive: Arena {
+        len: 0,
+        data: [],
+    },
+    infix: Arena {
+        len: 0,
+        data: [],
+    },
+    foreign_data: Arena {
+        len: 0,
+        data: [],
+    },
+    foreign_value: Arena {
+        len: 0,
+        data: [],
+    },
+}
+[
+    MismatchedItem {
+        kind: ValueSignature(
+            Idx::<ValueSignature>>(0),
+        ),
+        existing: Term(
+            Idx::<TermItem>(0),
+        ),
+    },
+    DuplicateItem {
+        kind: DataSignature(
+            Idx::<DataSignature>>(1),
+        ),
+        existing: Type(
+            Idx::<TypeItem>(0),
+        ),
+    },
+    MismatchedItem {
+        kind: NewtypeSignature(
+            Idx::<NewtypeSignature>>(0),
+        ),
+        existing: Type(
+            Idx::<TypeItem>(2),
+        ),
+    },
+    MismatchedItem {
+        kind: NewtypeEquation(
+            Idx::<NewtypeEquation>>(0),
+        ),
+        existing: Type(
+            Idx::<TypeItem>(3),
+        ),
+    },
+    InvalidRole {
+        id: Idx::<TypeRoleDeclaration>>(0),
+        existing: None,
+    },
+    InvalidRole {
+        id: Idx::<TypeRoleDeclaration>>(2),
+        existing: Some(
+            Idx::<TypeItem>(4),
+        ),
+    },
+    InvalidRole {
+        id: Idx::<TypeRoleDeclaration>>(3),
+        existing: None,
+    },
+]

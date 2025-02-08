@@ -1,0 +1,416 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: snapshot
+snapshot_kind: text
+---
+Index {
+    term_item: Arena {
+        len: 10,
+        data: [
+            Value {
+                signature: Some(
+                    Idx::<ValueSignature>>(0),
+                ),
+                equations: [
+                    Idx::<ValueEquation>>(0),
+                ],
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(0),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(1),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(2),
+            },
+            ClassMember {
+                id: Idx::<ClassMemberStatement>>(0),
+            },
+            Instance {
+                id: Idx::<InstanceDeclaration>>(0),
+            },
+            Instance {
+                id: Idx::<InstanceDeclaration>>(1),
+            },
+            Derive {
+                id: Idx::<DeriveDeclaration>>(0),
+            },
+            Foreign {
+                id: Idx::<ForeignImportValueDeclaration>>(0),
+            },
+            Operator {
+                id: Idx::<InfixDeclaration>>(0),
+            },
+        ],
+    },
+    type_item: Arena {
+        len: 6,
+        data: [
+            Data {
+                signature: Some(
+                    Idx::<DataSignature>>(0),
+                ),
+                equation: Some(
+                    Idx::<DataEquation>>(0),
+                ),
+                role: None,
+            },
+            Newtype {
+                signature: Some(
+                    Idx::<NewtypeSignature>>(0),
+                ),
+                equation: Some(
+                    Idx::<NewtypeEquation>>(0),
+                ),
+                role: Some(
+                    Idx::<TypeRoleDeclaration>>(0),
+                ),
+            },
+            Synonym {
+                signature: Some(
+                    Idx::<TypeSynonymSignature>>(0),
+                ),
+                equation: Some(
+                    Idx::<TypeSynonymEquation>>(0),
+                ),
+            },
+            Class {
+                signature: Some(
+                    Idx::<ClassSignature>>(0),
+                ),
+                declaration: Some(
+                    Idx::<ClassDeclaration>>(0),
+                ),
+            },
+            Foreign {
+                id: Idx::<ForeignImportDataDeclaration>>(0),
+            },
+            Operator {
+                id: Idx::<InfixDeclaration>>(1),
+            },
+        ],
+    },
+    term_nominal: {
+        "+": Idx::<TermItem>(9),
+        "unit": Idx::<TermItem>(8),
+        "eqId": Idx::<TermItem>(7),
+        "eq": Idx::<TermItem>(4),
+        "id": Idx::<TermItem>(0),
+        "Just": Idx::<TermItem>(1),
+        "Id": Idx::<TermItem>(3),
+        "Nothing": Idx::<TermItem>(2),
+        "eqInt": Idx::<TermItem>(5),
+    },
+    type_nominal: {
+        "MaybeId": Idx::<TypeItem>(2),
+        "Unit": Idx::<TypeItem>(4),
+        "Id": Idx::<TypeItem>(1),
+        "Eq": Idx::<TypeItem>(3),
+        "Maybe": Idx::<TypeItem>(0),
+        "+": Idx::<TypeItem>(5),
+    },
+    data_relational: [
+        (
+            Idx::<TypeItem>(0),
+            Idx::<DataConstructor>>(0),
+        ),
+        (
+            Idx::<TypeItem>(0),
+            Idx::<DataConstructor>>(1),
+        ),
+    ],
+    class_relational: [
+        (
+            Idx::<TypeItem>(3),
+            Idx::<ClassMemberStatement>>(0),
+        ),
+    ],
+    chain_relational: [
+        (
+            Idx::<InstanceChain>>(0),
+            Idx::<InstanceDeclaration>>(0),
+        ),
+        (
+            Idx::<InstanceChain>>(1),
+            Idx::<InstanceDeclaration>>(1),
+        ),
+    ],
+    instance_relational: [
+        (
+            Idx::<InstanceDeclaration>>(0),
+            Idx::<InstanceMemberStatement>>(0),
+        ),
+        (
+            Idx::<InstanceDeclaration>>(1),
+            Idx::<InstanceMemberStatement>>(1),
+        ),
+    ],
+}
+Source {
+    export: Arena {
+        len: 0,
+        data: [],
+    },
+    import: Arena {
+        len: 0,
+        data: [],
+    },
+    data_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataSignature,
+                    range: 50..78,
+                },
+            },
+        ],
+    },
+    data_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataEquation,
+                    range: 78..110,
+                },
+            },
+        ],
+    },
+    data_constructor: Arena {
+        len: 3,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 93..100,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 102..110,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 153..160,
+                },
+            },
+        ],
+    },
+    newtype_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: NewtypeSignature,
+                    range: 110..138,
+                },
+            },
+        ],
+    },
+    newtype_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: NewtypeEquation,
+                    range: 138..160,
+                },
+            },
+        ],
+    },
+    type_role: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeRoleDeclaration,
+                    range: 160..182,
+                },
+            },
+        ],
+    },
+    type_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeSynonymSignature,
+                    range: 182..204,
+                },
+            },
+        ],
+    },
+    type_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeSynonymEquation,
+                    range: 204..228,
+                },
+            },
+        ],
+    },
+    class_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ClassSignature,
+                    range: 228..260,
+                },
+            },
+        ],
+    },
+    class_declaration: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ClassDeclaration,
+                    range: 260..303,
+                },
+            },
+        ],
+    },
+    class_member: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ClassMemberStatement,
+                    range: 277..303,
+                },
+            },
+        ],
+    },
+    value_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ValueSignature,
+                    range: 17..41,
+                },
+            },
+        ],
+    },
+    value_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ValueEquation,
+                    range: 41..50,
+                },
+            },
+        ],
+    },
+    chain: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceChain,
+                    range: 303..352,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceChain,
+                    range: 352..403,
+                },
+            },
+        ],
+    },
+    instance: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceDeclaration,
+                    range: 303..352,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceDeclaration,
+                    range: 352..403,
+                },
+            },
+        ],
+    },
+    instance_member: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceEquationStatement,
+                    range: 335..352,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceEquationStatement,
+                    range: 376..403,
+                },
+            },
+        ],
+    },
+    derive: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DeriveDeclaration,
+                    range: 403..434,
+                },
+            },
+        ],
+    },
+    infix: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InfixDeclaration,
+                    range: 496..514,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InfixDeclaration,
+                    range: 514..538,
+                },
+            },
+        ],
+    },
+    foreign_data: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ForeignImportDataDeclaration,
+                    range: 463..496,
+                },
+            },
+        ],
+    },
+    foreign_value: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ForeignImportValueDeclaration,
+                    range: 434..463,
+                },
+            },
+        ],
+    },
+}
+[]

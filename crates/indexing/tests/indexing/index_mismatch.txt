@@ -1,0 +1,27 @@
+module Main where
+
+instance eqInt :: Eq Int
+
+eqInt :: Constraint
+
+data SameData :: Type
+data SameData :: Type
+
+data LateData = LateData
+data LateData :: Type
+
+data DiffSig :: Type
+newtype DiffSig :: Type
+
+data DiffDecl = DiffDecl
+newtype DiffDecl = DiffDecl'
+
+type role EmptyRole nominal
+
+data Phantom a
+
+type role Phantom phantom
+type role Phantom nominal
+
+type NotSupported a
+type role NotSupported phantom
