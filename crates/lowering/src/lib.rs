@@ -1,4 +1,4 @@
-use indexing::IndexingResult;
+use indexing_v1::IndexingResult;
 use syntax::cst;
 
 mod algorithm;

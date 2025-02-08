@@ -1,6 +1,6 @@
 use std::{mem, sync::Arc};
 
-use indexing::IndexingResult;
+use indexing_v1::IndexingResult;
 use rowan::ast::AstNode;
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::cst;
@@ -170,7 +170,7 @@ impl Runtime {
             k,
             |this| {
                 let module = this.parse(id);
-                let (result, _) = indexing::index(&module);
+                let (result, _) = indexing_v1::index(&module);
                 Arc::new(result)
             },
             |this| {

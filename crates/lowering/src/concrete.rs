@@ -1,5 +1,5 @@
 use id::Id;
-use indexing::ExprItemId;
+use indexing_v1::ExprItemId;
 use rowan::ast::AstPtr;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;

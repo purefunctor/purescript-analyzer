@@ -1,15 +1,15 @@
 ---
-source: crates/indexing/tests/indexing.rs
+source: crates/indexing_v1/tests/indexing.rs
 expression: errors
 snapshot_kind: text
 ---
 [
     InvalidTypeItemExport {
         export_id: Id<syntax::cst::ExportItem>(0),
-        type_id: Id<indexing::indexes::TypeItem>(0),
+        type_id: Id<indexing_v1::indexes::TypeItem>(0),
     },
     InvalidTypeItemExport {
         export_id: Id<syntax::cst::ExportItem>(1),
-        type_id: Id<indexing::indexes::TypeItem>(1),
+        type_id: Id<indexing_v1::indexes::TypeItem>(1),
     },
 ]

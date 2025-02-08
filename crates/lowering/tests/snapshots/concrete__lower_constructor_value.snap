@@ -5,12 +5,12 @@ snapshot_kind: text
 ---
 LoweringMap {
     expr_item: {
-        Id<indexing::indexes::ExprItem>(0): Constructor {
+        Id<indexing_v1::indexes::ExprItem>(0): Constructor {
             arguments: [
                 Id<syntax::cst::Type>(0),
             ],
         },
-        Id<indexing::indexes::ExprItem>(1): Constructor {
+        Id<indexing_v1::indexes::ExprItem>(1): Constructor {
             arguments: [],
         },
     },

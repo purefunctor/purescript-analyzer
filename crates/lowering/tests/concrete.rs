@@ -1,4 +1,4 @@
-use indexing::IndexingResult;
+use indexing_v1::IndexingResult;
 use lowering::LoweringResult;
 use rowan::ast::AstNode;
 use syntax::cst;
@@ -11,7 +11,7 @@ fn lower_source(source: &str) -> (IndexingResult, LoweringResult) {
     let (node, _) = parsing::parse(&lexed, &tokens);
     let module = cst::Module::cast(node).unwrap();
 
-    let (index, _) = indexing::index(&module);
+    let (index, _) = indexing_v1::index(&module);
     let lower = lowering::lower(&module, &index);
 
     (index, lower)

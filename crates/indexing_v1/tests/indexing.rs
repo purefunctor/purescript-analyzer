@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use indexing::{IndexingErrors, IndexingResult};
+use indexing_v1::{IndexingErrors, IndexingResult};
 use rowan::ast::AstNode;
 use syntax::cst;
 
@@ -15,7 +15,7 @@ fn index_source<'s>(
     let (module, _) = parsing::parse(&lexed, &tokens);
     let module = cst::Module::cast(module).unwrap();
 
-    let (index, errors) = indexing::index(&module);
+    let (index, errors) = indexing_v1::index(&module);
     (module, index, errors)
 }
 

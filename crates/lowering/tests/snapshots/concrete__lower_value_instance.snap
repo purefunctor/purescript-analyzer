@@ -5,7 +5,7 @@ snapshot_kind: text
 ---
 LoweringMap {
     expr_item: {
-        Id<indexing::indexes::ExprItem>(0): Instance {
+        Id<indexing_v1::indexes::ExprItem>(0): Instance {
             constraints: [],
             qualifier: Some(
                 "Prelude.",
@@ -17,17 +17,7 @@ LoweringMap {
                 Id<syntax::cst::Type>(0),
             ],
         },
-        Id<indexing::indexes::ExprItem>(1): Derive {
-            constraints: [],
-            qualifier: None,
-            name: Some(
-                "Eq",
-            ),
-            arguments: [
-                Id<syntax::cst::Type>(1),
-            ],
-        },
-        Id<indexing::indexes::ExprItem>(3): Instance {
+        Id<indexing_v1::indexes::ExprItem>(3): Instance {
             constraints: [
                 Id<syntax::cst::Type>(5),
             ],
@@ -39,7 +29,17 @@ LoweringMap {
                 Id<syntax::cst::Type>(9),
             ],
         },
-        Id<indexing::indexes::ExprItem>(4): Instance {
+        Id<indexing_v1::indexes::ExprItem>(1): Derive {
+            constraints: [],
+            qualifier: None,
+            name: Some(
+                "Eq",
+            ),
+            arguments: [
+                Id<syntax::cst::Type>(1),
+            ],
+        },
+        Id<indexing_v1::indexes::ExprItem>(4): Instance {
             constraints: [
                 Id<syntax::cst::Type>(12),
                 Id<syntax::cst::Type>(15),
@@ -52,7 +52,7 @@ LoweringMap {
                 Id<syntax::cst::Type>(20),
             ],
         },
-        Id<indexing::indexes::ExprItem>(2): Derive {
+        Id<indexing_v1::indexes::ExprItem>(2): Derive {
             constraints: [],
             qualifier: None,
             name: Some(

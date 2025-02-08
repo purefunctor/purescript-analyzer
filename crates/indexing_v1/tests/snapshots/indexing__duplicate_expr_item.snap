@@ -1,53 +1,53 @@
 ---
-source: crates/indexing/tests/indexing.rs
+source: crates/indexing_v1/tests/indexing.rs
 expression: errors
 snapshot_kind: text
 ---
 [
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(0),
+        item_id: Id<indexing_v1::indexes::ExprItem>(0),
         duplicate: ClassMember(
             Id<syntax::cst::ClassMemberStatement>(0),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(0),
+        item_id: Id<indexing_v1::indexes::ExprItem>(0),
         duplicate: Instance(
             Id<syntax::cst::InstanceDeclaration>(0),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(0),
+        item_id: Id<indexing_v1::indexes::ExprItem>(0),
         duplicate: Declaration(
             Id<syntax::cst::Declaration>(3),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(1),
+        item_id: Id<indexing_v1::indexes::ExprItem>(1),
         duplicate: Declaration(
             Id<syntax::cst::Declaration>(5),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(1),
+        item_id: Id<indexing_v1::indexes::ExprItem>(1),
         duplicate: Declaration(
             Id<syntax::cst::Declaration>(6),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(2),
+        item_id: Id<indexing_v1::indexes::ExprItem>(2),
         duplicate: Constructor(
             Id<syntax::cst::DataConstructor>(1),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(3),
+        item_id: Id<indexing_v1::indexes::ExprItem>(3),
         duplicate: Declaration(
             Id<syntax::cst::Declaration>(10),
         ),
     },
     DuplicateExprItem {
-        item_id: Id<indexing::indexes::ExprItem>(0),
+        item_id: Id<indexing_v1::indexes::ExprItem>(0),
         duplicate: Declaration(
             Id<syntax::cst::Declaration>(11),
         ),

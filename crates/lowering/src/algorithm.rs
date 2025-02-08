@@ -1,6 +1,6 @@
 use std::iter;
 
-use indexing::{
+use indexing_v1::{
     ClassMemberId, ConstructorId, DeclarationId, ExprItem, ExprItemId, IndexingResult, InstanceId,
     ValueGroupId,
 };

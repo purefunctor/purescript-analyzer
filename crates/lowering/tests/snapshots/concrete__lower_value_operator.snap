@@ -5,7 +5,7 @@ snapshot_kind: text
 ---
 LoweringMap {
     expr_item: {
-        Id<indexing::indexes::ExprItem>(0): Operator {
+        Id<indexing_v1::indexes::ExprItem>(0): Operator {
             qualifier: Some(
                 "Prelude.",
             ),
