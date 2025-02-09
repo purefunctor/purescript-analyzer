@@ -1,4 +1,9 @@
-module Main where
+module Main (id, unit, class Eq, Maybe(..), Id(Id), MaybeId, Unit, (+), type (+), module Exports) where
+
+import Prelude
+import Data.List as List
+import Data.Set as Exports
+import Data.Map as Exports
 
 id :: forall a. a -> a
 id a = a

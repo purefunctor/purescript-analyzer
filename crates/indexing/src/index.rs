@@ -1,4 +1,4 @@
-use la_arena::{Arena, Idx};
+use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
@@ -51,12 +51,19 @@ pub type TypeItemId = Idx<TypeItem>;
 pub struct Index {
     term_item: Arena<TermItem>,
     type_item: Arena<TypeItem>,
+    term_export: ArenaMap<TermItemId, ExportItemId>,
+    type_export: ArenaMap<TypeItemId, ExportItemId>,
+    import_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
-    data_relational: Vec<(TypeItemId, DataConstructorId)>,
-    class_relational: Vec<(TypeItemId, ClassMemberId)>,
-    chain_relational: Vec<(InstanceChainId, InstanceId)>,
-    instance_relational: Vec<(InstanceId, InstanceMemberId)>,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Relational {
+    data: Vec<(TypeItemId, TermItemId)>,
+    class: Vec<(TypeItemId, TermItemId)>,
+    chain: Vec<(InstanceChainId, InstanceId)>,
+    instance: Vec<(InstanceId, InstanceMemberId)>,
 }
 
 impl Index {
@@ -72,6 +79,14 @@ impl Index {
         Some((&mut self.term_item[id], id))
     }
 
+    pub(crate) fn export_term_item(&mut self, item_id: TermItemId, id: ExportItemId) {
+        self.term_export.insert(item_id, id);
+    }
+
+    pub(crate) fn term_item_export(&self, id: TermItemId) -> Option<ExportItemId> {
+        self.term_export.get(id).copied()
+    }
+
     pub(crate) fn insert_type_item(&mut self, k: Option<SmolStr>, v: TypeItem) -> TypeItemId {
         let id = self.type_item.alloc(v);
         let Some(k) = k else { return id };
@@ -84,20 +99,46 @@ impl Index {
         Some((&mut self.type_item[id], id))
     }
 
-    pub(crate) fn insert_data_relation(&mut self, item_id: TypeItemId, id: DataConstructorId) {
-        self.data_relational.push((item_id, id));
+    pub(crate) fn export_type_item(&mut self, item_id: TypeItemId, id: ExportItemId) {
+        self.type_export.insert(item_id, id);
     }
 
-    pub(crate) fn insert_class_relation(&mut self, item_id: TypeItemId, id: ClassMemberId) {
-        self.class_relational.push((item_id, id));
+    pub(crate) fn type_item_export(&self, id: TypeItemId) -> Option<ExportItemId> {
+        self.type_export.get(id).copied()
+    }
+
+    pub(crate) fn insert_import_item(&mut self, k: SmolStr, v: ImportId) {
+        self.import_nominal.entry(k).or_default().push(v);
+    }
+}
+
+impl Relational {
+    pub(crate) fn insert_data_relation(&mut self, type_id: TypeItemId, term_id: TermItemId) {
+        self.data.push((type_id, term_id));
+    }
+
+    pub(crate) fn insert_class_relation(&mut self, type_id: TypeItemId, term_id: TermItemId) {
+        self.class.push((type_id, term_id));
     }
 
     pub(crate) fn insert_chain_relation(&mut self, c_id: InstanceChainId, i_id: InstanceId) {
-        self.chain_relational.push((c_id, i_id));
+        self.chain.push((c_id, i_id));
     }
 
     pub(crate) fn insert_instance_relation(&mut self, i_id: InstanceId, m_id: InstanceMemberId) {
-        self.instance_relational.push((i_id, m_id));
+        self.instance.push((i_id, m_id));
+    }
+
+    pub(crate) fn constructors_of(&self, id: TypeItemId) -> impl Iterator<Item = TermItemId> + '_ {
+        self.data.iter().filter_map(
+            move |(type_id, term_id)| {
+                if id == *type_id {
+                    Some(*term_id)
+                } else {
+                    None
+                }
+            },
+        )
     }
 }
 
@@ -137,4 +178,6 @@ pub enum IndexError {
     DuplicateItem { kind: ItemKind, existing: ExistingKind },
     MismatchedItem { kind: ItemKind, existing: ExistingKind },
     InvalidRole { id: TypeRoleId, existing: Option<TypeItemId> },
+    InvalidExport { id: ExportItemId },
+    DuplicateExport { id: ExportItemId, existing: ExportItemId },
 }

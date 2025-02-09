@@ -76,6 +76,15 @@ Index {
             },
         ],
     },
+    term_export: ArenaMap {
+        v: [],
+        _ty: PhantomData<la_arena::Idx<indexing::index::TermItem>>,
+    },
+    type_export: ArenaMap {
+        v: [],
+        _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
+    },
+    import_nominal: {},
     term_nominal: {
         "+": Idx::<TermItem>(10),
         "unit": Idx::<TermItem>(9),
@@ -94,35 +103,45 @@ Index {
         "Maybe": Idx::<TypeItem>(0),
         "+": Idx::<TypeItem>(4),
     },
-    data_relational: [
+}
+Relational {
+    data: [
         (
             Idx::<TypeItem>(0),
-            Idx::<DataConstructor>>(0),
+            Idx::<TermItem>(1),
         ),
         (
             Idx::<TypeItem>(0),
-            Idx::<DataConstructor>>(1),
+            Idx::<TermItem>(2),
         ),
         (
             Idx::<TypeItem>(0),
-            Idx::<DataConstructor>>(2),
+            Idx::<TermItem>(1),
         ),
         (
             Idx::<TypeItem>(0),
-            Idx::<DataConstructor>>(3),
+            Idx::<TermItem>(2),
+        ),
+        (
+            Idx::<TypeItem>(1),
+            Idx::<TermItem>(3),
+        ),
+        (
+            Idx::<TypeItem>(1),
+            Idx::<TermItem>(3),
         ),
     ],
-    class_relational: [
+    class: [
         (
             Idx::<TypeItem>(2),
-            Idx::<ClassMemberStatement>>(0),
+            Idx::<TermItem>(4),
         ),
         (
             Idx::<TypeItem>(2),
-            Idx::<ClassMemberStatement>>(1),
+            Idx::<TermItem>(4),
         ),
     ],
-    chain_relational: [
+    chain: [
         (
             Idx::<InstanceChain>>(0),
             Idx::<InstanceDeclaration>>(0),
@@ -132,7 +151,7 @@ Index {
             Idx::<InstanceDeclaration>>(1),
         ),
     ],
-    instance_relational: [
+    instance: [
         (
             Idx::<InstanceDeclaration>>(0),
             Idx::<InstanceMemberStatement>>(0),

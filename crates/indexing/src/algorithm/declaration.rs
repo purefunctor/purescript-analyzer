@@ -4,13 +4,13 @@ use syntax::{cst, SyntaxToken};
 
 use crate::{
     ClassMemberId, DataConstructorId, DeriveId, ExistingKind, ForeignDataId, ForeignValueId,
-    IndexError, InfixId, InstanceId, ItemKind, TermItem, TypeItem, TypeItemId, TypeRoleId,
-    ValueEquationId, ValueSignatureId,
+    IndexError, InfixId, InstanceId, ItemKind, TermItem, TermItemId, TypeItem, TypeItemId,
+    TypeRoleId, ValueEquationId, ValueSignatureId,
 };
 
 use super::State;
 
-pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaration) {
+pub(super) fn index(state: &mut State, declaration: &cst::Declaration) {
     match declaration {
         cst::Declaration::ValueSignature(s) => {
             let id = state.source.allocate_value_signature(s);
@@ -33,11 +33,11 @@ pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaratio
             for i in c.instance_declarations() {
                 let i_id = state.source.allocate_instance(&i);
                 index_instance(state, i_id, &i);
-                state.index.insert_chain_relation(c_id, i_id);
+                state.relational.insert_chain_relation(c_id, i_id);
                 if let Some(s) = i.instance_statements() {
                     for m in s.children() {
                         let m_id = state.source.allocate_instance_member(&m);
-                        state.index.insert_instance_relation(i_id, m_id);
+                        state.relational.insert_instance_relation(i_id, m_id);
                     }
                 }
             }
@@ -100,7 +100,7 @@ pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaratio
             let id = state.source.allocate_class_declaration(d);
             let token = d.class_head().and_then(|h| h.name_token());
 
-            let item_id = index_type_declaration(
+            let type_id = index_type_declaration(
                 state,
                 id,
                 token,
@@ -118,8 +118,8 @@ pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaratio
             if let Some(s) = d.class_statements() {
                 for c in s.children() {
                     let id = state.source.allocate_class_member(&c);
-                    index_class_member(state, id, &c);
-                    state.index.insert_class_relation(item_id, id);
+                    let term_id = index_class_member(state, id, &c);
+                    state.relational.insert_class_relation(type_id, term_id);
                 }
             }
         }
@@ -152,7 +152,8 @@ pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaratio
         cst::Declaration::NewtypeEquation(e) => {
             let id = state.source.allocate_newtype_equation(e);
             let token = e.name_token();
-            index_type_declaration(
+
+            let type_id = index_type_declaration(
                 state,
                 id,
                 token,
@@ -169,7 +170,8 @@ pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaratio
 
             for c in e.data_constructors() {
                 let id = state.source.allocate_data_constructor(&c);
-                index_data_constructor(state, id, &c);
+                let term_id = index_data_constructor(state, id, &c);
+                state.relational.insert_data_relation(type_id, term_id);
             }
         }
         cst::Declaration::DataSignature(s) => {
@@ -211,8 +213,8 @@ pub(super) fn index_declaration(state: &mut State, declaration: &cst::Declaratio
 
             for c in e.data_constructors() {
                 let id = state.source.allocate_data_constructor(&c);
-                index_data_constructor(state, id, &c);
-                state.index.insert_data_relation(item_id, id);
+                let term_id = index_data_constructor(state, id, &c);
+                state.relational.insert_data_relation(item_id, term_id);
             }
         }
         cst::Declaration::DeriveDeclaration(d) => {
@@ -484,7 +486,11 @@ fn index_type_role(state: &mut State, id: TypeRoleId, cst: &cst::TypeRoleDeclara
     }
 }
 
-fn index_data_constructor(state: &mut State, id: DataConstructorId, cst: &cst::DataConstructor) {
+fn index_data_constructor(
+    state: &mut State,
+    id: DataConstructorId,
+    cst: &cst::DataConstructor,
+) -> TermItemId {
     let name = cst.name_token().map(|t| {
         let text = t.text();
         SmolStr::from(text)
@@ -493,21 +499,26 @@ fn index_data_constructor(state: &mut State, id: DataConstructorId, cst: &cst::D
     let item = TermItem::Constructor { id };
 
     let Some(name) = name else {
-        state.index.insert_term_item(None, item);
-        return;
+        return state.index.insert_term_item(None, item);
     };
 
     let Some((_, existing)) = state.index.term_item_mut(&name) else {
-        state.index.insert_term_item(Some(name), item);
-        return;
+        return state.index.insert_term_item(Some(name), item);
     };
 
-    let kind = ItemKind::Constructor(id);
-    let existing = ExistingKind::Term(existing);
-    state.error.push(IndexError::DuplicateItem { kind, existing });
+    state.error.push(IndexError::DuplicateItem {
+        kind: ItemKind::Constructor(id),
+        existing: ExistingKind::Term(existing),
+    });
+
+    existing
 }
 
-fn index_class_member(state: &mut State, id: ClassMemberId, cst: &cst::ClassMemberStatement) {
+fn index_class_member(
+    state: &mut State,
+    id: ClassMemberId,
+    cst: &cst::ClassMemberStatement,
+) -> TermItemId {
     let name = cst.name_token().map(|t| {
         let text = t.text();
         SmolStr::from(text)
@@ -516,18 +527,19 @@ fn index_class_member(state: &mut State, id: ClassMemberId, cst: &cst::ClassMemb
     let item = TermItem::ClassMember { id };
 
     let Some(name) = name else {
-        state.index.insert_term_item(None, item);
-        return;
+        return state.index.insert_term_item(None, item);
     };
 
     let Some((_, existing)) = state.index.term_item_mut(&name) else {
-        state.index.insert_term_item(Some(name), item);
-        return;
+        return state.index.insert_term_item(Some(name), item);
     };
 
-    let kind = ItemKind::ClassMember(id);
-    let existing = ExistingKind::Term(existing);
-    state.error.push(IndexError::DuplicateItem { kind, existing });
+    state.error.push(IndexError::DuplicateItem {
+        kind: ItemKind::ClassMember(id),
+        existing: ExistingKind::Term(existing),
+    });
+
+    existing
 }
 
 fn index_instance(state: &mut State, id: InstanceId, cst: &cst::InstanceDeclaration) {
