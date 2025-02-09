@@ -1,0 +1,676 @@
+---
+source: crates/indexing/tests/indexing.rs
+expression: snapshot
+snapshot_kind: text
+---
+Index {
+    term_item: Arena {
+        len: 10,
+        data: [
+            Value {
+                signature: Some(
+                    Idx::<ValueSignature>>(0),
+                ),
+                equations: [
+                    Idx::<ValueEquation>>(0),
+                ],
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(0),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(1),
+            },
+            Constructor {
+                id: Idx::<DataConstructor>>(2),
+            },
+            ClassMember {
+                id: Idx::<ClassMemberStatement>>(0),
+            },
+            Instance {
+                id: Idx::<InstanceDeclaration>>(0),
+            },
+            Instance {
+                id: Idx::<InstanceDeclaration>>(1),
+            },
+            Derive {
+                id: Idx::<DeriveDeclaration>>(0),
+            },
+            Foreign {
+                id: Idx::<ForeignImportValueDeclaration>>(0),
+            },
+            Operator {
+                id: Idx::<InfixDeclaration>>(0),
+            },
+        ],
+    },
+    type_item: Arena {
+        len: 6,
+        data: [
+            Data {
+                signature: Some(
+                    Idx::<DataSignature>>(0),
+                ),
+                equation: Some(
+                    Idx::<DataEquation>>(0),
+                ),
+                role: None,
+            },
+            Newtype {
+                signature: Some(
+                    Idx::<NewtypeSignature>>(0),
+                ),
+                equation: Some(
+                    Idx::<NewtypeEquation>>(0),
+                ),
+                role: Some(
+                    Idx::<TypeRoleDeclaration>>(0),
+                ),
+            },
+            Synonym {
+                signature: Some(
+                    Idx::<TypeSynonymSignature>>(0),
+                ),
+                equation: Some(
+                    Idx::<TypeSynonymEquation>>(0),
+                ),
+            },
+            Class {
+                signature: Some(
+                    Idx::<ClassSignature>>(0),
+                ),
+                declaration: Some(
+                    Idx::<ClassDeclaration>>(0),
+                ),
+            },
+            Foreign {
+                id: Idx::<ForeignImportDataDeclaration>>(0),
+            },
+            Operator {
+                id: Idx::<InfixDeclaration>>(1),
+            },
+        ],
+    },
+    term_export: ArenaMap {
+        v: [
+            Some(
+                Idx::<ExportItem>>(0),
+            ),
+            Some(
+                Idx::<ExportItem>>(6),
+            ),
+            Some(
+                Idx::<ExportItem>>(6),
+            ),
+            Some(
+                Idx::<ExportItem>>(8),
+            ),
+            None,
+            None,
+            None,
+            None,
+            Some(
+                Idx::<ExportItem>>(2),
+            ),
+            Some(
+                Idx::<ExportItem>>(14),
+            ),
+        ],
+        _ty: PhantomData<la_arena::Idx<indexing::index::TermItem>>,
+    },
+    type_export: ArenaMap {
+        v: [
+            Some(
+                Idx::<ExportItem>>(6),
+            ),
+            Some(
+                Idx::<ExportItem>>(8),
+            ),
+            Some(
+                Idx::<ExportItem>>(10),
+            ),
+            Some(
+                Idx::<ExportItem>>(4),
+            ),
+            Some(
+                Idx::<ExportItem>>(12),
+            ),
+            Some(
+                Idx::<ExportItem>>(16),
+            ),
+        ],
+        _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
+    },
+    import_nominal: {
+        "Exports": [
+            Idx::<ImportStatement>>(2),
+            Idx::<ImportStatement>>(3),
+        ],
+        "List": [
+            Idx::<ImportStatement>>(1),
+        ],
+    },
+    term_nominal: {
+        "+": Idx::<TermItem>(9),
+        "unit": Idx::<TermItem>(8),
+        "eqId": Idx::<TermItem>(7),
+        "eq": Idx::<TermItem>(4),
+        "id": Idx::<TermItem>(0),
+        "Just": Idx::<TermItem>(1),
+        "Id": Idx::<TermItem>(3),
+        "Nothing": Idx::<TermItem>(2),
+        "eqInt": Idx::<TermItem>(5),
+    },
+    type_nominal: {
+        "MaybeId": Idx::<TypeItem>(2),
+        "Unit": Idx::<TypeItem>(4),
+        "Id": Idx::<TypeItem>(1),
+        "Eq": Idx::<TypeItem>(3),
+        "Maybe": Idx::<TypeItem>(0),
+        "+": Idx::<TypeItem>(5),
+    },
+}
+Relational {
+    data: [
+        (
+            Idx::<TypeItem>(0),
+            Idx::<TermItem>(1),
+        ),
+        (
+            Idx::<TypeItem>(0),
+            Idx::<TermItem>(2),
+        ),
+        (
+            Idx::<TypeItem>(1),
+            Idx::<TermItem>(3),
+        ),
+    ],
+    class: [
+        (
+            Idx::<TypeItem>(3),
+            Idx::<TermItem>(4),
+        ),
+    ],
+    chain: [
+        (
+            Idx::<InstanceChain>>(0),
+            Idx::<InstanceDeclaration>>(0),
+        ),
+        (
+            Idx::<InstanceChain>>(1),
+            Idx::<InstanceDeclaration>>(1),
+        ),
+    ],
+    instance: [
+        (
+            Idx::<InstanceDeclaration>>(0),
+            Idx::<InstanceMemberStatement>>(0),
+        ),
+        (
+            Idx::<InstanceDeclaration>>(1),
+            Idx::<InstanceMemberStatement>>(1),
+        ),
+    ],
+}
+Source {
+    export: Arena {
+        len: 20,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportValue,
+                    range: 16..19,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportValue,
+                    range: 23..26,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportValue,
+                    range: 30..35,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportValue,
+                    range: 39..44,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportClass,
+                    range: 48..57,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportClass,
+                    range: 61..70,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 74..84,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 88..98,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 102..109,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 113..120,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 124..132,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 136..144,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 148..153,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportType,
+                    range: 157..162,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportOperator,
+                    range: 166..170,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportOperator,
+                    range: 174..178,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportTypeOperator,
+                    range: 182..191,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportTypeOperator,
+                    range: 195..204,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportModule,
+                    range: 208..223,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ExportModule,
+                    range: 227..242,
+                },
+            },
+        ],
+    },
+    import: Arena {
+        len: 4,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ImportStatement,
+                    range: 252..268,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ImportStatement,
+                    range: 268..293,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ImportStatement,
+                    range: 293..320,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ImportStatement,
+                    range: 320..347,
+                },
+            },
+        ],
+    },
+    data_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataSignature,
+                    range: 380..408,
+                },
+            },
+        ],
+    },
+    data_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataEquation,
+                    range: 408..440,
+                },
+            },
+        ],
+    },
+    data_constructor: Arena {
+        len: 3,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 423..430,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 432..440,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DataConstructor,
+                    range: 483..490,
+                },
+            },
+        ],
+    },
+    newtype_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: NewtypeSignature,
+                    range: 440..468,
+                },
+            },
+        ],
+    },
+    newtype_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: NewtypeEquation,
+                    range: 468..490,
+                },
+            },
+        ],
+    },
+    type_role: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeRoleDeclaration,
+                    range: 490..512,
+                },
+            },
+        ],
+    },
+    type_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeSynonymSignature,
+                    range: 512..534,
+                },
+            },
+        ],
+    },
+    type_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: TypeSynonymEquation,
+                    range: 534..558,
+                },
+            },
+        ],
+    },
+    class_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ClassSignature,
+                    range: 558..590,
+                },
+            },
+        ],
+    },
+    class_declaration: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ClassDeclaration,
+                    range: 590..633,
+                },
+            },
+        ],
+    },
+    class_member: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ClassMemberStatement,
+                    range: 607..633,
+                },
+            },
+        ],
+    },
+    value_signature: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ValueSignature,
+                    range: 347..371,
+                },
+            },
+        ],
+    },
+    value_equation: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ValueEquation,
+                    range: 371..380,
+                },
+            },
+        ],
+    },
+    chain: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceChain,
+                    range: 633..682,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceChain,
+                    range: 682..733,
+                },
+            },
+        ],
+    },
+    instance: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceDeclaration,
+                    range: 633..682,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceDeclaration,
+                    range: 682..733,
+                },
+            },
+        ],
+    },
+    instance_member: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceEquationStatement,
+                    range: 665..682,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InstanceEquationStatement,
+                    range: 706..733,
+                },
+            },
+        ],
+    },
+    derive: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: DeriveDeclaration,
+                    range: 733..764,
+                },
+            },
+        ],
+    },
+    infix: Arena {
+        len: 2,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InfixDeclaration,
+                    range: 826..844,
+                },
+            },
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: InfixDeclaration,
+                    range: 844..868,
+                },
+            },
+        ],
+    },
+    foreign_data: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ForeignImportDataDeclaration,
+                    range: 793..826,
+                },
+            },
+        ],
+    },
+    foreign_value: Arena {
+        len: 1,
+        data: [
+            AstPtr {
+                raw: SyntaxNodePtr {
+                    kind: ForeignImportValueDeclaration,
+                    range: 764..793,
+                },
+            },
+        ],
+    },
+}
+[
+    DuplicateExport {
+        id: Idx::<ExportItem>>(1),
+        existing: Idx::<ExportItem>>(0),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(3),
+        existing: Idx::<ExportItem>>(2),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(5),
+        existing: Idx::<ExportItem>>(4),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(7),
+        existing: Idx::<ExportItem>>(6),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(7),
+        existing: Idx::<ExportItem>>(6),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(7),
+        existing: Idx::<ExportItem>>(6),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(9),
+        existing: Idx::<ExportItem>>(8),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(9),
+        existing: Idx::<ExportItem>>(8),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(11),
+        existing: Idx::<ExportItem>>(10),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(13),
+        existing: Idx::<ExportItem>>(12),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(15),
+        existing: Idx::<ExportItem>>(14),
+    },
+    DuplicateExport {
+        id: Idx::<ExportItem>>(17),
+        existing: Idx::<ExportItem>>(16),
+    },
+]
