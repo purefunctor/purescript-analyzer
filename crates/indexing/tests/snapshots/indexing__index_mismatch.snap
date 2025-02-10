@@ -120,223 +120,319 @@ Relational {
     instance: [],
 }
 Source {
-    export: Arena {
-        len: 0,
-        data: [],
+    export: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    import: Arena {
-        len: 0,
-        data: [],
+    import: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    data_signature: Arena {
-        len: 4,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataSignature,
-                    range: 64..87,
+    data_signature: AstPtrMap {
+        arena: Arena {
+            len: 4,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataSignature,
+                        range: 64..87,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataSignature,
-                    range: 87..109,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataSignature,
+                        range: 87..109,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataSignature,
-                    range: 135..157,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataSignature,
+                        range: 135..157,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataSignature,
-                    range: 157..179,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataSignature,
+                        range: 157..179,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<DataSignature>>(1),
+            Idx::<DataSignature>>(2),
+            Idx::<DataSignature>>(3),
+            Idx::<DataSignature>>(0),
+        },
     },
-    data_equation: Arena {
-        len: 3,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataEquation,
-                    range: 109..135,
+    data_equation: AstPtrMap {
+        arena: Arena {
+            len: 3,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataEquation,
+                        range: 109..135,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataEquation,
-                    range: 203..229,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataEquation,
+                        range: 203..229,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataEquation,
-                    range: 287..303,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataEquation,
+                        range: 287..303,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<DataEquation>>(1),
+            Idx::<DataEquation>>(0),
+            Idx::<DataEquation>>(2),
+        },
     },
-    data_constructor: Arena {
-        len: 3,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataConstructor,
-                    range: 126..135,
+    data_constructor: AstPtrMap {
+        arena: Arena {
+            len: 3,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataConstructor,
+                        range: 126..135,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataConstructor,
-                    range: 220..229,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataConstructor,
+                        range: 220..229,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: DataConstructor,
-                    range: 248..258,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: DataConstructor,
+                        range: 248..258,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<DataConstructor>>(0),
+            Idx::<DataConstructor>>(2),
+            Idx::<DataConstructor>>(1),
+        },
     },
-    newtype_signature: Arena {
-        len: 1,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: NewtypeSignature,
-                    range: 179..203,
+    newtype_signature: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: NewtypeSignature,
+                        range: 179..203,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<NewtypeSignature>>(0),
+        },
     },
-    newtype_equation: Arena {
-        len: 1,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: NewtypeEquation,
-                    range: 229..258,
+    newtype_equation: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: NewtypeEquation,
+                        range: 229..258,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<NewtypeEquation>>(0),
+        },
     },
-    type_role: Arena {
-        len: 4,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: TypeRoleDeclaration,
-                    range: 258..287,
+    type_role: AstPtrMap {
+        arena: Arena {
+            len: 4,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: TypeRoleDeclaration,
+                        range: 258..287,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: TypeRoleDeclaration,
-                    range: 303..330,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: TypeRoleDeclaration,
+                        range: 303..330,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: TypeRoleDeclaration,
-                    range: 330..356,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: TypeRoleDeclaration,
+                        range: 330..356,
+                    },
                 },
-            },
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: TypeRoleDeclaration,
-                    range: 377..408,
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: TypeRoleDeclaration,
+                        range: 377..408,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<TypeRoleDeclaration>>(2),
+            Idx::<TypeRoleDeclaration>>(0),
+            Idx::<TypeRoleDeclaration>>(1),
+            Idx::<TypeRoleDeclaration>>(3),
+        },
     },
-    type_signature: Arena {
-        len: 0,
-        data: [],
+    type_signature: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    type_equation: Arena {
-        len: 1,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: TypeSynonymEquation,
-                    range: 356..377,
+    type_equation: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: TypeSynonymEquation,
+                        range: 356..377,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<TypeSynonymEquation>>(0),
+        },
     },
-    class_signature: Arena {
-        len: 0,
-        data: [],
+    class_signature: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    class_declaration: Arena {
-        len: 0,
-        data: [],
+    class_declaration: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    class_member: Arena {
-        len: 0,
-        data: [],
+    class_member: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    value_signature: Arena {
-        len: 1,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: ValueSignature,
-                    range: 43..64,
+    value_signature: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ValueSignature,
+                        range: 43..64,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<ValueSignature>>(0),
+        },
     },
-    value_equation: Arena {
-        len: 0,
-        data: [],
+    value_equation: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    chain: Arena {
-        len: 1,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: InstanceChain,
-                    range: 17..43,
+    chain: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: InstanceChain,
+                        range: 17..43,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<InstanceChain>>(0),
+        },
     },
-    instance: Arena {
-        len: 1,
-        data: [
-            AstPtr {
-                raw: SyntaxNodePtr {
-                    kind: InstanceDeclaration,
-                    range: 17..43,
+    instance: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: InstanceDeclaration,
+                        range: 17..43,
+                    },
                 },
-            },
-        ],
+            ],
+        },
+        table: {
+            Idx::<InstanceDeclaration>>(0),
+        },
     },
-    instance_member: Arena {
-        len: 0,
-        data: [],
+    instance_member: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    derive: Arena {
-        len: 0,
-        data: [],
+    derive: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    infix: Arena {
-        len: 0,
-        data: [],
+    infix: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    foreign_data: Arena {
-        len: 0,
-        data: [],
+    foreign_data: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
-    foreign_value: Arena {
-        len: 0,
-        data: [],
+    foreign_value: AstPtrMap {
+        arena: Arena {
+            len: 0,
+            data: [],
+        },
+        table: {},
     },
 }
 [

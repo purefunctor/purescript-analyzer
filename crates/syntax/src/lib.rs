@@ -1,6 +1,11 @@
 pub mod cst;
+
+#[macro_use]
+pub mod map;
+
 mod token_set;
 
+pub use map::AstPtrMap;
 pub use token_set::TokenSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -612,8 +612,11 @@ dependencies = [
 name = "syntax"
 version = "0.1.0"
 dependencies = [
+ "hashbrown 0.15.2",
+ "la-arena",
  "paste",
  "rowan",
+ "rustc-hash 2.1.1",
 ]
 
 [[package]]
