@@ -1,0 +1,24 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeVariable,
+                range: 24..26,
+            },
+        }: Variable {
+            name: Some(
+                "a",
+            ),
+        },
+    },
+    binders: {},
+    expressions: {},
+    let_bindings: {},
+    let_bindings_grouped: [],
+    do_statements: {},
+}

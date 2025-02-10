@@ -1,0 +1,73 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeConstructor,
+                range: 24..26,
+            },
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "A",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeConstructor,
+                range: 29..31,
+            },
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "B",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeConstructor,
+                range: 34..36,
+            },
+        }: Constructor {
+            qualifier: None,
+            name: Some(
+                "C",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeConstrained,
+                range: 29..36,
+            },
+        }: Constrained {
+            constraint: Some(
+                Id<syntax::cst::Type>(1),
+            ),
+            constrained: Some(
+                Id<syntax::cst::Type>(2),
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeConstrained,
+                range: 24..36,
+            },
+        }: Constrained {
+            constraint: Some(
+                Id<syntax::cst::Type>(0),
+            ),
+            constrained: Some(
+                Id<syntax::cst::Type>(3),
+            ),
+        },
+    },
+    binders: {},
+    expressions: {},
+    let_bindings: {},
+    let_bindings_grouped: [],
+    do_statements: {},
+}

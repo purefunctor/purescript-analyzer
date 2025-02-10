@@ -1,0 +1,63 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {},
+    binders: {},
+    expressions: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 34..36,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 41..43,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "b",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 48..50,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "c",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionIfThenElse,
+                range: 31..50,
+            },
+        }: IfThenElse {
+            if: Some(
+                Id<syntax::cst::Expression>(0),
+            ),
+            then: Some(
+                Id<syntax::cst::Expression>(1),
+            ),
+            else: Some(
+                Id<syntax::cst::Expression>(2),
+            ),
+        },
+    },
+    let_bindings: {},
+    let_bindings_grouped: [],
+    do_statements: {},
+}

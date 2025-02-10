@@ -1,0 +1,48 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.lowering_map"
+snapshot_kind: text
+---
+LoweringMap {
+    expr_item: {
+        Id<indexing_v1::indexes::ExprItem>(0): Value {
+            signature: None,
+            equations: [
+                LoweredEquation {
+                    binders: [
+                        Id<syntax::cst::Binder>(0),
+                    ],
+                    guarded: Some(
+                        Unconditional {
+                            where_expression: Some(
+                                WhereExpression {
+                                    expression: Some(
+                                        Id<syntax::cst::Expression>(0),
+                                    ),
+                                    bindings: [],
+                                },
+                            ),
+                        },
+                    ),
+                },
+                LoweredEquation {
+                    binders: [
+                        Id<syntax::cst::Binder>(1),
+                    ],
+                    guarded: Some(
+                        Unconditional {
+                            where_expression: Some(
+                                WhereExpression {
+                                    expression: Some(
+                                        Id<syntax::cst::Expression>(1),
+                                    ),
+                                    bindings: [],
+                                },
+                            ),
+                        },
+                    ),
+                },
+            ],
+        },
+    },
+}

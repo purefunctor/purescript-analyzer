@@ -1,0 +1,14 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.lowering_map"
+snapshot_kind: text
+---
+LoweringMap {
+    expr_item: {
+        Id<indexing_v1::indexes::ExprItem>(0): ClassMember {
+            signature: Some(
+                Id<syntax::cst::Type>(4),
+            ),
+        },
+    },
+}

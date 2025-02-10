@@ -1,0 +1,100 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeVariable,
+                range: 31..32,
+            },
+        }: Variable {
+            name: Some(
+                "a",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: TypeVariable,
+                range: 34..35,
+            },
+        }: Variable {
+            name: Some(
+                "b",
+            ),
+        },
+    },
+    binders: {},
+    expressions: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 27..29,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "f",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 35..37,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "a",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionVariable,
+                range: 37..39,
+            },
+        }: Variable {
+            qualifier: None,
+            name: Some(
+                "b",
+            ),
+        },
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionApplicationChain,
+                range: 27..39,
+            },
+        }: ApplicationChain {
+            head: Some(
+                Id<syntax::cst::Expression>(0),
+            ),
+            tail: [
+                Type(
+                    Some(
+                        Id<syntax::cst::Type>(0),
+                    ),
+                ),
+                Type(
+                    Some(
+                        Id<syntax::cst::Type>(1),
+                    ),
+                ),
+                Expression(
+                    Some(
+                        Id<syntax::cst::Expression>(1),
+                    ),
+                ),
+                Expression(
+                    Some(
+                        Id<syntax::cst::Expression>(2),
+                    ),
+                ),
+            ],
+        },
+    },
+    let_bindings: {},
+    let_bindings_grouped: [],
+    do_statements: {},
+}

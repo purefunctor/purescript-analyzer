@@ -1,0 +1,30 @@
+---
+source: crates/lowering_v1/tests/concrete.rs
+expression: "&lower.source_map"
+snapshot_kind: text
+---
+SourceMap {
+    types: {},
+    binders: {},
+    expressions: {
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionInteger,
+                range: 29..30,
+            },
+        }: Integer,
+        AstPtr {
+            raw: SyntaxNodePtr {
+                kind: ExpressionNegate,
+                range: 27..30,
+            },
+        }: Negate {
+            expression: Some(
+                Id<syntax::cst::Expression>(0),
+            ),
+        },
+    },
+    let_bindings: {},
+    let_bindings_grouped: [],
+    do_statements: {},
+}
