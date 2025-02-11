@@ -20,7 +20,7 @@
 use syntax::cst;
 
 syntax::create_source! {
-    pub struct Source {
+    pub struct IndexingSource {
         export: cst::ExportItem as ExportItem,
         import: cst::ImportStatement as Import,
 

@@ -4,13 +4,13 @@ mod export;
 use smol_str::SmolStrBuilder;
 use syntax::cst;
 
-use crate::{Index, IndexError, Relational, Source};
+use crate::{Index, IndexError, Relational, IndexingSource};
 
 #[derive(Debug, Default)]
 pub(super) struct State {
     pub(super) index: Index,
     pub(super) relational: Relational,
-    pub(super) source: Source,
+    pub(super) source: IndexingSource,
     pub(super) error: Vec<IndexError>,
 }
 

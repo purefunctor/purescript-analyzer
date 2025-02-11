@@ -1,10 +1,10 @@
-use indexing::{index_module, Index, IndexError, Relational, Source};
+use indexing::{index_module, Index, IndexError, Relational, IndexingSource};
 use rowan::ast::AstNode;
 use std::fmt::Write;
 use syntax::cst;
 use test_each_file::test_each_file;
 
-fn index_source(source: &str) -> (cst::Module, Index, Relational, Source, Vec<IndexError>) {
+fn index_source(source: &str) -> (cst::Module, Index, Relational, IndexingSource, Vec<IndexError>) {
     let lexed = lexing::lex(source);
     let tokens = lexing::layout(&lexed);
 
