@@ -14,6 +14,11 @@ use rustc_hash::FxBuildHasher;
 /// where they make sense. For instance, indexing uses it to assign stable
 /// IDs to top-level declarations, while lowering uses it to assign stable
 /// IDs to recursive structures like expressions, binders, and types.
+///
+/// [`create_association`] can then be used to associate these [`Idx`] to
+/// the semantic information that the compiler collects. For instance in
+/// lowering, this is used to identify the kind of a syntax node, as well
+/// as to identify which scope graph node it resolved local names from.
 #[derive(Debug)]
 pub struct AstPtrMap<N: AstNode> {
     arena: Arena<AstPtr<N>>,
@@ -107,7 +112,7 @@ macro_rules! create_source {
                 )*
             }
 
-            impl Source {
+            impl $t {
                 $(
                     pub fn [<allocate_ $field>](&mut self, ptr: &$cst) -> [<$name Id>] {
                         self.$field.allocate(ptr)
