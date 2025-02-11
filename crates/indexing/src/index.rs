@@ -58,6 +58,22 @@ pub struct Index {
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
 }
 
+impl std::ops::Index<TermItemId> for Index {
+    type Output = TermItem;
+
+    fn index(&self, id: TermItemId) -> &TermItem {
+        &self.term_item[id]
+    }
+}
+
+impl std::ops::Index<TypeItemId> for Index {
+    type Output = TypeItem;
+
+    fn index(&self, id: TypeItemId) -> &TypeItem {
+        &self.type_item[id]
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Relational {
     data: Vec<(TypeItemId, TermItemId)>,
@@ -110,6 +126,14 @@ impl Index {
     pub(crate) fn insert_import_item(&mut self, k: SmolStr, v: ImportId) {
         self.import_nominal.entry(k).or_default().push(v);
     }
+
+    pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {
+        self.term_item.iter()
+    }
+
+    pub fn iter_type_item(&self) -> impl Iterator<Item = (TypeItemId, &TypeItem)> {
+        self.type_item.iter()
+    }
 }
 
 impl Relational {
@@ -129,8 +153,20 @@ impl Relational {
         self.instance.push((i_id, m_id));
     }
 
-    pub(crate) fn constructors_of(&self, id: TypeItemId) -> impl Iterator<Item = TermItemId> + '_ {
+    pub fn constructors_of(&self, id: TypeItemId) -> impl Iterator<Item = TermItemId> + '_ {
         self.data.iter().filter_map(
+            move |(type_id, term_id)| {
+                if id == *type_id {
+                    Some(*term_id)
+                } else {
+                    None
+                }
+            },
+        )
+    }
+
+    pub fn class_members_of(&self, id: TypeItemId) -> impl Iterator<Item = TermItemId> + '_ {
+        self.class.iter().filter_map(
             move |(type_id, term_id)| {
                 if id == *type_id {
                     Some(*term_id)
