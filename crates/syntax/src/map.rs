@@ -181,18 +181,12 @@ macro_rules! create_association {
                     pub fn [<insert_ $field>](&mut self, k: $id, v: $v) {
                         self.$field.insert(k, v);
                     }
+
+                    pub fn [<index_ $field>](&self, k: $id) -> Option<&$v> {
+                        self.$field.get(k)
+                    }
                 )*
             }
-
-            $(
-                impl std::ops::Index<$id> for $name {
-                    type Output = $v;
-
-                    fn index(&self, id: $id) -> &$v {
-                        &self.$field[id]
-                    }
-                }
-            )*
         }
     };
 }
