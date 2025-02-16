@@ -38,7 +38,7 @@ impl<N: AstNode> AstPtrMap<N> {
         let id = self.arena.alloc(ptr);
         self.table.insert_unique(hash, id, |&id| {
             let ptr = &self.arena[id];
-            FxBuildHasher.hash_one(&ptr)
+            FxBuildHasher.hash_one(ptr)
         });
         id
     }
@@ -53,7 +53,7 @@ impl<N: AstNode> AstPtrMap<N> {
         self.arena.shrink_to_fit();
         self.table.shrink_to_fit(|&id| {
             let ptr = &self.arena[id];
-            FxBuildHasher.hash_one(&ptr)
+            FxBuildHasher.hash_one(ptr)
         });
     }
 }

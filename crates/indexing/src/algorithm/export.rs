@@ -36,7 +36,7 @@ pub(super) fn index(state: &mut State, cst: &cst::ExportItem) {
             index_type_export(state, id, name, None);
         }
         cst::ExportItem::ExportModule(m) => {
-            index_module_export(&m);
+            index_module_export(m);
         }
     }
 }
