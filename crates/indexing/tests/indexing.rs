@@ -1,4 +1,4 @@
-use indexing::{index_module, Index, IndexError, Relational, IndexingSource};
+use indexing::{index_module, Index, IndexError, IndexingSource, Relational};
 use rowan::ast::AstNode;
 use std::fmt::Write;
 use syntax::cst;

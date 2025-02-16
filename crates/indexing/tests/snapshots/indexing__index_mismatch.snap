@@ -119,7 +119,7 @@ Relational {
     ],
     instance: [],
 }
-Source {
+IndexingSource {
     export: AstPtrMap {
         arena: Arena {
             len: 0,

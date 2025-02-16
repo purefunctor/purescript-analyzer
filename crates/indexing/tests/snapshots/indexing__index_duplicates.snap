@@ -162,7 +162,7 @@ Relational {
         ),
     ],
 }
-Source {
+IndexingSource {
     export: AstPtrMap {
         arena: Arena {
             len: 0,

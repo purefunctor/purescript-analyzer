@@ -802,7 +802,7 @@ has_child!(
 has_child!(
     BinderTyped
     | binder() -> Binder
-    | signature() -> Type
+    | r#type() -> Type
 );
 
 has_child!(

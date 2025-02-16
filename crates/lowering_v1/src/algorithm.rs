@@ -192,7 +192,7 @@ fn lower_binder(state: &mut State, cst: &cst::Binder) -> BinderId {
     let kind = match cst {
         cst::Binder::BinderTyped(t) => {
             let binder = t.binder().map(|b| lower_binder(state, &b));
-            let signature = t.signature().map(|s| lower_type(state, &s));
+            let signature = t.r#type().map(|s| lower_type(state, &s));
             BinderKind::Typed { binder, signature }
         }
         cst::Binder::BinderOperatorChain(o) => {

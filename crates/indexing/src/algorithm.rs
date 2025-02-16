@@ -4,7 +4,7 @@ mod export;
 use smol_str::SmolStrBuilder;
 use syntax::cst;
 
-use crate::{Index, IndexError, Relational, IndexingSource};
+use crate::{Index, IndexError, IndexingSource, Relational};
 
 #[derive(Debug, Default)]
 pub(super) struct State {
