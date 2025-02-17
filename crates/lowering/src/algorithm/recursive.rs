@@ -199,7 +199,8 @@ pub(super) fn lower_expression(
             let lower_case_branch = |s: &mut State, e: &Environment, cst: &cst::CaseBranch| {
                 let binders = cst
                     .binders()
-                    .map_or(vec![], |b| b.children().map(|cst| lower_binder(s, e, &cst)).collect());
+                    .map(|b| b.children().map(|cst| lower_binder(s, e, &cst)).collect())
+                    .unwrap_or_default();
                 let guarded_expression =
                     cst.guarded_expression().map(|cst| lower_guarded(s, e, &cst));
                 CaseBranch { binders, guarded_expression }

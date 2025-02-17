@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{source::*, RootResolutionId, TermResolution};
-use indexing::source::*;
+use indexing::TermItemId;
 use smol_str::SmolStr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -42,7 +42,7 @@ pub enum RecordUpdate {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct CaseBranch {
-    pub binders: Vec<BinderId>,
+    pub binders: Arc<[BinderId]>,
     pub guarded_expression: Option<GuardedExpression>,
 }
 
@@ -226,9 +226,8 @@ pub struct InfixPair<T> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ValueEquation {
-    pub signature: Option<TypeId>,
-    pub equations: Arc<[Equation]>,
+pub enum TermItemIr {
+    ValueGroup { signature: Option<TypeId>, equations: Arc<[Equation]> },
 }
 
 syntax::create_association! {
@@ -236,7 +235,6 @@ syntax::create_association! {
         binder_kind: BinderId => BinderKind,
         expression_kind: ExpressionId => ExpressionKind,
         type_kind: TypeId => TypeKind,
-        value_signature: ValueSignatureId => TypeId,
-        value_equation: ValueEquationId => Equation,
+        term_item: TermItemId => TermItemIr,
     }
 }

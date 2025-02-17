@@ -153,7 +153,7 @@ pub(super) fn lower_module(
     state
 }
 
-fn lower_term_item(s: &mut State, e: &Environment, _: TermItemId, item: &TermItem) {
+fn lower_term_item(s: &mut State, e: &Environment, id: TermItemId, item: &TermItem) {
     let root = e.module.syntax();
     match item {
         TermItem::ClassMember { .. } => (), // See lower_type_item
@@ -186,7 +186,8 @@ fn lower_term_item(s: &mut State, e: &Environment, _: TermItemId, item: &TermIte
                     )
                 })
                 .collect();
-            let _ = ValueEquation { signature, equations };
+            let kind = TermItemIr::ValueGroup { signature, equations };
+            s.intermediate.insert_term_item(id, kind);
         }
     }
 }
