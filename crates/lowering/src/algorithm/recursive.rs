@@ -3,11 +3,8 @@ use std::sync::Arc;
 use itertools::Itertools;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
-use smol_str::{SmolStr, SmolStrBuilder};
-use syntax::{
-    cst::{self, Expression},
-    SyntaxKind, SyntaxToken,
-};
+use smol_str::SmolStr;
+use syntax::{cst, SyntaxToken};
 
 use crate::*;
 

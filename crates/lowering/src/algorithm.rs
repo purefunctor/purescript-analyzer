@@ -90,7 +90,7 @@ impl State {
         qualifier: Option<SmolStr>,
         name: Option<SmolStr>,
     ) -> Option<TermResolution> {
-        if let Some(_) = qualifier {
+        if qualifier.is_some() {
             let r = self.resolve_root(ResolutionDomain::Term, qualifier, name);
             Some(TermResolution::Root(r))
         } else {
