@@ -1,3 +1,4 @@
+use indexing::FullModuleIndex;
 use lowering::{Graph, Intermediate, LoweringSource};
 use rowan::ast::AstNode;
 use syntax::cst;
@@ -9,7 +10,7 @@ fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource, Gra
     let (module, _) = parsing::parse(&lexed, &tokens);
     let module = cst::Module::cast(module).unwrap();
 
-    let (index, relational, source, _) = indexing::index_module(&module);
+    let FullModuleIndex { index, relational, source, .. } = indexing::index_module(&module);
     let (ir, source, graph) = lowering::lower_module(&module, &index, &relational, &source);
 
     (module, ir, source, graph)

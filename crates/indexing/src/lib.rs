@@ -8,6 +8,7 @@ pub use source::*;
 
 use syntax::cst;
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct FullModuleIndex {
     pub index: Index,
     pub relational: Relational,
