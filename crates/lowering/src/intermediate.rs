@@ -236,7 +236,6 @@ syntax::create_association! {
         binder_kind: BinderId => BinderKind,
         expression_kind: ExpressionId => ExpressionKind,
         type_kind: TypeId => TypeKind,
-        do_statement: DoStatementId => DoStatement,
         value_signature: ValueSignatureId => TypeId,
         value_equation: ValueEquationId => Equation,
     }
