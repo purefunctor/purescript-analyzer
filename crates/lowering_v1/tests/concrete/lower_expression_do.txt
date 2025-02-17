@@ -1,8 +1,0 @@
-module Main where
-
-main = Hooks.do
-  pure unit
-  _ <- pure unit
-  let
-    a = pure b
-  pure unit

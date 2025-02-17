@@ -1,9 +1,0 @@
--- @lowering_map
-module Main where
-
-id a
-  | b <- c
-  , d <- e
-  , f <- g = 0
-  | true = 1
-  | false = 1

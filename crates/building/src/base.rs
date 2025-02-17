@@ -1,6 +1,6 @@
 use std::{mem, sync::Arc};
 
-use indexing_v1::IndexingResult;
+use indexing::FullModuleIndex;
 use rowan::ast::AstNode;
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::cst;
@@ -38,7 +38,7 @@ pub struct Runtime {
 
     content: FxHashMap<FileId, Arc<str>>,
     parse: FxHashMap<FileId, cst::Module>,
-    index: FxHashMap<FileId, Arc<IndexingResult>>,
+    index: FxHashMap<FileId, Arc<FullModuleIndex>>,
 
     parent: Option<QueryKey>,
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
@@ -164,13 +164,13 @@ impl Runtime {
         )
     }
 
-    pub fn index(&mut self, id: FileId) -> Arc<IndexingResult> {
+    pub fn index(&mut self, id: FileId) -> Arc<FullModuleIndex> {
         let k = QueryKey::Index(id);
         self.query(
             k,
             |this| {
                 let module = this.parse(id);
-                let (result, _) = indexing_v1::index(&module);
+                let result = indexing::index_module(&module);
                 Arc::new(result)
             },
             |this| {

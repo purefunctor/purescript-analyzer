@@ -8,7 +8,14 @@ pub use source::*;
 
 use syntax::cst;
 
-pub fn index_module(module: &cst::Module) -> (Index, Relational, IndexingSource, Vec<IndexError>) {
+pub struct FullModuleIndex {
+    pub index: Index,
+    pub relational: Relational,
+    pub source: IndexingSource,
+    pub error: Vec<IndexError>,
+}
+
+pub fn index_module(module: &cst::Module) -> FullModuleIndex {
     let algorithm::State { index, relational, source, error } = algorithm::index_module(module);
-    (index, relational, source, error)
+    FullModuleIndex { index, relational, source, error }
 }

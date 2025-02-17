@@ -35,7 +35,7 @@ version = "0.1.0"
 dependencies = [
  "dashmap",
  "id",
- "indexing_v1",
+ "indexing",
  "indexmap",
  "lexing",
  "parking_lot",
@@ -242,25 +242,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexing_v1"
-version = "0.1.0"
-dependencies = [
- "hashbrown 0.15.2",
- "id",
- "indexmap",
- "insta",
- "itertools",
- "la-arena",
- "lexing",
- "parsing",
- "petgraph",
- "rowan",
- "rustc-hash 2.1.1",
- "smol_str",
- "syntax",
-]
-
-[[package]]
 name = "indexmap"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -362,23 +343,6 @@ dependencies = [
  "rustc-hash 2.1.1",
  "smol_str",
  "syntax",
-]
-
-[[package]]
-name = "lowering_v1"
-version = "0.1.0"
-dependencies = [
- "id",
- "indexing_v1",
- "indexmap",
- "insta",
- "lexing",
- "parsing",
- "rowan",
- "rustc-hash 2.1.1",
- "smol_str",
- "syntax",
- "test_each_file",
 ]
 
 [[package]]

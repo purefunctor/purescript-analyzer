@@ -1,3 +1,0 @@
-module Main where
-
-negate = -1

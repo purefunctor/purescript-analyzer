@@ -1,3 +1,0 @@
-module Main where
-
-negate = f @a @b a b

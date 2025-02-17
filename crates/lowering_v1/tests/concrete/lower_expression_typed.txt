@@ -1,4 +1,0 @@
-module Main where
-
-four = 4 :: Int
-five = 5 ::

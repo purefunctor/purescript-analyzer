@@ -1,4 +1,0 @@
--- @lowering_map
-module Main where
-
-foreign import id :: a -> a

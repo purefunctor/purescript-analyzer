@@ -1,4 +1,0 @@
--- @lowering_map
-module Main where
-
-infix 5 Prelude.add as +

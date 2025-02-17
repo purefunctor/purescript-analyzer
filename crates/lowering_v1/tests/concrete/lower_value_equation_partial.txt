@@ -1,5 +1,0 @@
--- @lowering_map
-module Main where
-
-id a = ;
-id b = b

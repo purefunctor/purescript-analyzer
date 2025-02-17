@@ -1,3 +1,0 @@
-module Main where
-
-chain = a `for` b `for` c

@@ -1,3 +1,0 @@
-module Main where
-
-id :: forall a @b (c :: KindC) (@d :: KindD). a -> b -> c -> d
