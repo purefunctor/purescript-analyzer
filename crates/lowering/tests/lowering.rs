@@ -22,11 +22,7 @@ fn wtf() {
         r#"
 module Main where
 
-main = do
-  a <- do
-    b <- 0
-    pure b
-  a + b
+foreign import unit :: Unit
 "#,
     );
     dbg!((ir, source, graph));

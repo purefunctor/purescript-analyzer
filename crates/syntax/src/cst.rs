@@ -971,5 +971,15 @@ has_child!(
 
 has_child!(
     ForeignImportValueDeclaration
-    | signature() -> Type
+    | r#type() -> Type
+);
+
+has_token!(
+    InfixDeclaration
+    | precedence() -> INTEGER
+);
+
+has_child!(
+    InfixDeclaration
+    | name() -> QualifiedName
 );

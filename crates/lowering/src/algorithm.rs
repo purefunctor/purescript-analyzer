@@ -153,7 +153,7 @@ pub(super) fn lower_module(
     state
 }
 
-fn lower_term_item(s: &mut State, e: &Environment, id: TermItemId, item: &TermItem) {
+fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &TermItem) {
     let root = e.module.syntax();
     match item {
         TermItem::ClassMember { .. } => (), // See lower_type_item
@@ -161,12 +161,27 @@ fn lower_term_item(s: &mut State, e: &Environment, id: TermItemId, item: &TermIt
         TermItem::Derive { .. } => (),
         TermItem::Foreign { id } => {
             let cst = &e.source[*id].to_node(root);
-            dbg!(cst);
+            let signature = cst.r#type().map(|t| recursive::lower_type(s, e, &t));
+            let kind = TermItemIr::Foreign { signature };
+            s.intermediate.insert_term_item(item_id, kind);
         }
         TermItem::Instance { .. } => (),
         TermItem::Operator { id } => {
             let cst = &e.source[*id].to_node(root);
-            dbg!(cst);
+
+            let (qualifier, name) = cst
+                .qualified()
+                .map(|q| recursive::lower_qualified_name(&q, cst::QualifiedName::lower))
+                .unwrap_or_default();
+
+            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            let precedence = cst.precedence().and_then(|t| {
+                let text = t.text();
+                u16::from_str_radix(text, 10).ok()
+            });
+
+            let kind = TermItemIr::Operator { resolution, precedence };
+            s.intermediate.insert_term_item(item_id, kind);
         }
         TermItem::Value { signature, equations } => {
             let signature = signature.and_then(|id| {
@@ -187,12 +202,12 @@ fn lower_term_item(s: &mut State, e: &Environment, id: TermItemId, item: &TermIt
                 })
                 .collect();
             let kind = TermItemIr::ValueGroup { signature, equations };
-            s.intermediate.insert_term_item(id, kind);
+            s.intermediate.insert_term_item(item_id, kind);
         }
     }
 }
 
-fn lower_type_item(s: &mut State, e: &Environment, id: TypeItemId, item: &TypeItem) {
+fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &TypeItem) {
     let root = e.module.syntax();
     match item {
         TypeItem::Data { signature, equation, .. } => {
@@ -204,7 +219,7 @@ fn lower_type_item(s: &mut State, e: &Environment, id: TypeItemId, item: &TypeIt
                 let cst = &e.source[id].to_node(root);
                 dbg!(cst);
             });
-            lower_constructors(s, e, id);
+            lower_constructors(s, e, item_id);
         }
         TypeItem::Newtype { signature, equation, .. } => {
             signature.map(|id| {
@@ -215,7 +230,7 @@ fn lower_type_item(s: &mut State, e: &Environment, id: TypeItemId, item: &TypeIt
                 let cst = &e.source[id].to_node(root);
                 dbg!(cst);
             });
-            lower_constructors(s, e, id);
+            lower_constructors(s, e, item_id);
         }
         TypeItem::Synonym { signature, equation } => {
             signature.map(|id| {
@@ -236,7 +251,7 @@ fn lower_type_item(s: &mut State, e: &Environment, id: TypeItemId, item: &TypeIt
                 let cst = &e.source[id].to_node(root);
                 dbg!(cst);
             });
-            for id in e.relational.class_members_of(id) {
+            for id in e.relational.class_members_of(item_id) {
                 let TermItem::ClassMember { id } = e.index[id] else {
                     unreachable!("invariant violated: expected TermItem::ClassMember");
                 };

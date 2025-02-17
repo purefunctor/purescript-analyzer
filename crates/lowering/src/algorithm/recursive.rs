@@ -614,7 +614,7 @@ fn lower_record_updates(
         .collect()
 }
 
-fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
+pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     let id = s.source.allocate_ty(cst);
     let kind = match cst {
         cst::Type::TypeApplicationChain(a) => {
@@ -735,7 +735,7 @@ fn lower_pair<T>(
     OperatorPair { resolution, element }
 }
 
-fn lower_qualified_name(
+pub(super) fn lower_qualified_name(
     cst: &cst::QualifiedName,
     token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
 ) -> (Option<SmolStr>, Option<SmolStr>) {

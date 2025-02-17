@@ -227,6 +227,8 @@ pub struct InfixPair<T> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TermItemIr {
+    Foreign { signature: Option<TypeId> },
+    Operator { resolution: RootResolutionId, precedence: Option<u16> },
     ValueGroup { signature: Option<TypeId>, equations: Arc<[Equation]> },
 }
 
