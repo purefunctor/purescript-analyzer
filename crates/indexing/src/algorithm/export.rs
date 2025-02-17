@@ -26,13 +26,13 @@ pub(super) fn index(state: &mut State, cst: &cst::ExportItem) {
         cst::ExportItem::ExportOperator(o) => {
             let Some(name) = o.name_token() else { return };
             let name = name.text();
-            let Some(name) = operator_name(name) else { return };
+            let name = operator_name(name);
             index_term_export(state, id, name);
         }
         cst::ExportItem::ExportTypeOperator(o) => {
             let Some(name) = o.name_token() else { return };
             let name = name.text();
-            let Some(name) = operator_name(name) else { return };
+            let name = operator_name(name);
             index_type_export(state, id, name, None);
         }
         cst::ExportItem::ExportModule(m) => {
@@ -41,15 +41,8 @@ pub(super) fn index(state: &mut State, cst: &cst::ExportItem) {
     }
 }
 
-fn operator_name(name: &str) -> Option<&str> {
-    let mut chars = name.chars();
-    if chars.next() != Some('(') {
-        return None;
-    }
-    if chars.next_back() != Some(')') {
-        return None;
-    }
-    Some(chars.as_str())
+fn operator_name(name: &str) -> &str {
+    name.trim_start_matches("(").trim_end_matches(")")
 }
 
 fn index_term_export(state: &mut State, id: ExportItemId, name: &str) {

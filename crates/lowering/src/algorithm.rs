@@ -8,11 +8,7 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
-use crate::{
-    BinderId, BinderKind, Equation, Graph, GraphNode, GraphNodeId, GraphNodeInfo, Intermediate,
-    LoweringSource, ResolutionDomain, RootResolution, RootResolutionId, TypeId, TypeKind,
-    TypeVariableBindingId, ValueEquation,
-};
+use crate::*;
 
 #[derive(Default)]
 pub(super) struct State {
@@ -31,18 +27,11 @@ struct Environment<'e> {
 }
 
 impl State {
-    fn with_root_scope<T>(&mut self, f: impl Fn(&mut State) -> T) -> T {
-        self.graph_scope = None;
-        f(self)
-    }
-
-    fn allocate_resolution(
-        &mut self,
-        domain: ResolutionDomain,
-        qualifier: Option<SmolStr>,
-        name: Option<SmolStr>,
-    ) -> RootResolutionId {
-        self.graph.root.alloc(RootResolution { domain, qualifier, name })
+    fn with_scope<T>(&mut self, mut f: impl FnMut(&mut State) -> T) -> T {
+        let graph_scope = self.graph_scope;
+        let result = f(self);
+        self.graph_scope = graph_scope;
+        result
     }
 
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
@@ -87,14 +76,48 @@ impl State {
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
-    fn with_forall_scope<T>(&mut self, f: impl FnOnce(&mut State) -> T) -> T {
-        let parent = self.push_forall_scope();
-        let result = f(self);
-        self.graph_scope = parent;
-        result
+    fn resolve_root(
+        &mut self,
+        domain: ResolutionDomain,
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+    ) -> RootResolutionId {
+        self.graph.root.alloc(RootResolution { domain, qualifier, name })
     }
 
-    fn resolve_type(&mut self, name: &str) -> Option<TypeVariableBindingId> {
+    fn resolve_term(
+        &mut self,
+        qualifier: Option<SmolStr>,
+        name: Option<SmolStr>,
+    ) -> Option<TermResolution> {
+        if let Some(_) = qualifier {
+            let r = self.resolve_root(ResolutionDomain::Term, qualifier, name);
+            Some(TermResolution::Root(r))
+        } else {
+            let name = name?;
+            self.resolve_term_local(&name).or_else(|| {
+                let r = self.resolve_root(ResolutionDomain::Term, None, Some(name));
+                Some(TermResolution::Root(r))
+            })
+        }
+    }
+
+    fn resolve_term_local(&mut self, name: &str) -> Option<TermResolution> {
+        let id = self.graph_scope?;
+        self.graph.traverse(id).find_map(|graph| match graph {
+            GraphNode::Binder { bindings, .. } => {
+                let r = *bindings.get(name)?;
+                Some(TermResolution::Binder(r))
+            }
+            GraphNode::Let { bindings, .. } => {
+                let r = bindings.get(name)?.clone();
+                Some(TermResolution::Let(r))
+            }
+            _ => None,
+        })
+    }
+
+    fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableBindingId> {
         let id = self.graph_scope?;
         self.graph.traverse(id).find_map(|graph| {
             if let GraphNode::Forall { bindings, .. } = graph {
@@ -116,13 +139,13 @@ pub(super) fn lower_module(
     let environment = Environment { module, index, relational, source };
 
     for (id, item) in environment.index.iter_term_item() {
-        state.with_root_scope(|state| {
+        state.with_scope(|state| {
             lower_term_item(state, &environment, id, item);
         });
     }
 
     for (id, item) in environment.index.iter_type_item() {
-        state.with_root_scope(|state| {
+        state.with_scope(|state| {
             lower_type_item(state, &environment, id, item);
         })
     }
@@ -147,23 +170,23 @@ fn lower_term_item(s: &mut State, e: &Environment, _: TermItemId, item: &TermIte
         }
         TermItem::Value { signature, equations } => {
             let signature = signature.and_then(|id| {
-                let cst = &e.source[id].to_node(root);
+                let cst = e.source[id].to_node(root);
                 cst.signature().map(|t| recursive::lower_forall(s, e, &t))
             });
-            s.push_binder_scope();
             let equations = equations
                 .iter()
                 .map(|id| {
-                    let cst = &e.source[*id].to_node(root);
-                    let binders = cst
-                        .function_binders()
-                        .map(|b| b.children().map(|b| recursive::lower_binder(s, e, &b)).collect())
-                        .unwrap_or_default();
-                    let guarded = None;
-                    Equation { binders, guarded }
+                    let cst = e.source[*id].to_node(root);
+                    recursive::lower_equation_like(
+                        s,
+                        e,
+                        cst,
+                        cst::ValueEquation::function_binders,
+                        cst::ValueEquation::guarded_expression,
+                    )
                 })
                 .collect();
-            dbg!(ValueEquation { signature, equations });
+            let _ = ValueEquation { signature, equations };
         }
     }
 }

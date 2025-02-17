@@ -15,9 +15,8 @@ pub fn lower_module(
     index: &indexing::Index,
     relational: &indexing::Relational,
     source: &indexing::IndexingSource,
-) -> (Intermediate, LoweringSource) {
+) -> (Intermediate, LoweringSource, Graph) {
     let algorithm::State { intermediate, source, graph, .. } =
         algorithm::lower_module(module, index, relational, source);
-    dbg!(graph);
-    (intermediate, source)
+    (intermediate, source, graph)
 }

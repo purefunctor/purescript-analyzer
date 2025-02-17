@@ -353,6 +353,7 @@ version = "0.1.0"
 dependencies = [
  "hashbrown 0.15.2",
  "indexing",
+ "itertools",
  "la-arena",
  "lexing",
  "parsing",

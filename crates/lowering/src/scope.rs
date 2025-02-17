@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, sync::Arc};
 
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
@@ -7,18 +7,24 @@ use syntax::create_association;
 
 use crate::source::*;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum ResolutionKind {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TermResolution {
     Root(RootResolutionId),
     Binder(BinderId),
-    Let(LetBindingId),
+    Let(LetBindingResolution),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LetBindingResolution {
+    pub signature: Option<LetBindingSignatureId>,
+    pub equations: Arc<[LetBindingEquationId]>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
     Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
-    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, Vec<LetBindingId>> },
+    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
     Forked { left: Option<GraphNodeId>, right: Option<GraphNodeId> },
 }
 
@@ -58,6 +64,7 @@ create_association! {
         bd: BinderId => GraphNodeId,
         ex: ExpressionId => GraphNodeId,
         ty: TypeId => GraphNodeId,
+        ds: DoStatementId => GraphNodeId,
     }
 }
 

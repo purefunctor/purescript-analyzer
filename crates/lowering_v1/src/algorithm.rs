@@ -291,7 +291,7 @@ fn lower_expression(state: &mut State, cst: &cst::Expression) -> ExpressionId {
         cst::Expression::ExpressionApplicationChain(a) => {
             let lower_argument = |state: &mut State, a: &cst::ExpressionArgument| match a {
                 cst::ExpressionArgument::ExpressionTypeArgument(t) => {
-                    let t = t.type_argument().map(|t| lower_type(state, &t));
+                    let t = t.r#type().map(|t| lower_type(state, &t));
                     ExpressionArgument::Type(t)
                 }
                 cst::ExpressionArgument::ExpressionTermArgument(t) => {

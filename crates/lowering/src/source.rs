@@ -5,6 +5,7 @@ syntax::create_source! {
         ty: syntax::cst::Type as Type,
         tv: syntax::cst::TypeVariableBinding as TypeVariableBinding,
         ds: syntax::cst::DoStatement as DoStatement,
-        lb: syntax::cst::LetBinding as LetBinding,
+        ls: syntax::cst::LetBindingSignature as LetBindingSignature,
+        le: syntax::cst::LetBindingEquation as LetBindingEquation,
     }
 }

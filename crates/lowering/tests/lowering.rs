@@ -1,8 +1,8 @@
-use lowering::{Intermediate, LoweringSource};
+use lowering::{Graph, Intermediate, LoweringSource};
 use rowan::ast::AstNode;
 use syntax::cst;
 
-fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource) {
+fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource, Graph) {
     let lexed = lexing::lex(source);
     let tokens = lexing::layout(&lexed);
 
@@ -10,21 +10,23 @@ fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource) {
     let module = cst::Module::cast(module).unwrap();
 
     let (index, relational, source, _) = indexing::index_module(&module);
-    let (ir, source) = lowering::lower_module(&module, &index, &relational, &source);
+    let (ir, source, graph) = lowering::lower_module(&module, &index, &relational, &source);
 
-    (module, ir, source)
+    (module, ir, source, graph)
 }
 
 #[test]
 fn wtf() {
-    let (_, ir, source) = index_source(
+    let (_, ir, source, graph) = index_source(
         r#"
 module Main where
 
-const :: forall a. forall b. a -> b -> a
-const a _ = a
+main = do
+  a <- do
+    b <- 0
+    pure b
+  a + b
 "#,
     );
-
-    dbg!((ir, source));
+    dbg!((ir, source, graph));
 }

@@ -1,10 +1,15 @@
-use smol_str::SmolStr;
-use syntax::{cst, SyntaxToken};
+use std::sync::Arc;
 
-use crate::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, OperatorPair, RecordItem, ResolutionDomain,
-    TypeId, TypeKind, TypeRowItem, TypeVariableBinding,
+use itertools::Itertools;
+use rowan::ast::AstNode;
+use rustc_hash::FxHashMap;
+use smol_str::{SmolStr, SmolStrBuilder};
+use syntax::{
+    cst::{self, Expression},
+    SyntaxKind, SyntaxToken,
 };
+
+use crate::*;
 
 use super::{Environment, State};
 
@@ -34,7 +39,7 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
             let (qualifier, name) = c
                 .name()
                 .map_or((None, None), |n| lower_qualified_name(&n, cst::QualifiedName::upper));
-            let resolution = s.allocate_resolution(ResolutionDomain::Term, qualifier, name);
+            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
             let arguments = c.children().map(|b| lower_binder(s, e, &b)).collect();
             BinderKind::Constructor { resolution, arguments }
         }
@@ -77,7 +82,7 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
                         Some(SmolStr::from(text))
                     });
                     let value = f.binder().map(|b| lower_binder(s, e, &b));
-                    RecordItem::RecordField { name, value }
+                    BinderRecordItem::RecordField { name, value }
                 }
                 cst::RecordItem::RecordPun(p) => {
                     let name = p.name().and_then(|t| {
@@ -85,10 +90,7 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
-                    if let Some(name) = &name {
-                        s.insert_binder(name, id);
-                    }
-                    RecordItem::RecordPun { name }
+                    BinderRecordItem::RecordPun { name }
                 }
             };
             let record = r.children().map(lower_item).collect();
@@ -110,42 +112,511 @@ pub(super) fn lower_expression(
 ) -> ExpressionId {
     let id = s.source.allocate_ex(cst);
     let kind = match cst {
-        cst::Expression::ExpressionTyped(_) => todo!(),
-        cst::Expression::ExpressionOperatorChain(_) => todo!(),
-        cst::Expression::ExpressionInfixChain(_) => todo!(),
-        cst::Expression::ExpressionNegate(_) => todo!(),
-        cst::Expression::ExpressionApplicationChain(_) => todo!(),
-        cst::Expression::ExpressionIfThenElse(_) => todo!(),
-        cst::Expression::ExpressionLetIn(_) => todo!(),
-        cst::Expression::ExpressionLambda(_) => todo!(),
-        cst::Expression::ExpressionCaseOf(_) => todo!(),
-        cst::Expression::ExpressionDo(_) => todo!(),
-        cst::Expression::ExpressionAdo(_) => todo!(),
-        cst::Expression::ExpressionConstructor(_) => todo!(),
-        cst::Expression::ExpressionVariable(_) => todo!(),
-        cst::Expression::ExpressionOperatorName(_) => todo!(),
-        cst::Expression::ExpressionSection(_) => todo!(),
-        cst::Expression::ExpressionHole(_) => todo!(),
-        cst::Expression::ExpressionString(_) => todo!(),
-        cst::Expression::ExpressionChar(_) => todo!(),
-        cst::Expression::ExpressionTrue(_) => todo!(),
-        cst::Expression::ExpressionFalse(_) => todo!(),
-        cst::Expression::ExpressionInteger(_) => todo!(),
-        cst::Expression::ExpressionNumber(_) => todo!(),
-        cst::Expression::ExpressionArray(_) => todo!(),
-        cst::Expression::ExpressionRecord(_) => todo!(),
+        cst::Expression::ExpressionTyped(t) => {
+            let expression = t.expression().map(|cst| lower_expression(s, e, &cst));
+            let r#type = t.signature().map(|cst| lower_type(s, e, &cst));
+            ExpressionKind::Typed { expression, r#type }
+        }
+        cst::Expression::ExpressionOperatorChain(o) => {
+            let head = o.expression().map(|cst| lower_expression(s, e, &cst));
+            let tail = o
+                .children()
+                .map(|p| {
+                    let qualified = p.qualified();
+                    let expression = p.expression().map(|cst| lower_expression(s, e, &cst));
+                    lower_pair(s, ResolutionDomain::Term, qualified, expression)
+                })
+                .collect();
+            ExpressionKind::OperatorChain { head, tail }
+        }
+        cst::Expression::ExpressionInfixChain(i) => {
+            let head = i.expression().map(|cst| lower_expression(s, e, &cst));
+            let tail = i
+                .children()
+                .map(|p| {
+                    let tick = p.tick().and_then(|cst| {
+                        let cst = cst.expression()?;
+                        Some(lower_expression(s, e, &cst))
+                    });
+                    let element = p.expression().map(|cst| lower_expression(s, e, &cst));
+                    InfixPair { tick, element }
+                })
+                .collect();
+            ExpressionKind::InfixChain { head, tail }
+        }
+        cst::Expression::ExpressionNegate(n) => {
+            let expression = n.expression().map(|cst| lower_expression(s, e, &cst));
+            ExpressionKind::Negate { expression }
+        }
+        cst::Expression::ExpressionApplicationChain(a) => {
+            let lower_argument =
+                |s: &mut State, e: &Environment, cst: &cst::ExpressionArgument| match cst {
+                    cst::ExpressionArgument::ExpressionTypeArgument(t) => {
+                        let id = t.r#type().map(|cst| lower_type(s, e, &cst));
+                        ExpressionArgument::Type(id)
+                    }
+                    cst::ExpressionArgument::ExpressionTermArgument(t) => {
+                        let id = t.expression().map(|cst| lower_expression(s, e, &cst));
+                        ExpressionArgument::Term(id)
+                    }
+                };
+
+            let function = a.expression().map(|cst| lower_expression(s, e, &cst));
+            let arguments = a.children().map(|cst| lower_argument(s, e, &cst)).collect();
+
+            ExpressionKind::Application { function, arguments }
+        }
+        cst::Expression::ExpressionIfThenElse(i) => {
+            let r#if = i.r#if().and_then(|cst| {
+                let cst = cst.expression()?;
+                Some(lower_expression(s, e, &cst))
+            });
+            let then = i.then().and_then(|cst| {
+                let cst = cst.expression()?;
+                Some(lower_expression(s, e, &cst))
+            });
+            let r#else = i.r#else().and_then(|cst| {
+                let cst = cst.expression()?;
+                Some(lower_expression(s, e, &cst))
+            });
+            ExpressionKind::IfThenElse { r#if, then, r#else }
+        }
+        cst::Expression::ExpressionLetIn(l) => s.with_scope(|s| {
+            let bindings = l.bindings().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
+            let expression = l.expression().map(|cst| lower_expression(s, e, &cst));
+            ExpressionKind::LetIn { bindings, expression }
+        }),
+        cst::Expression::ExpressionLambda(l) => s.with_scope(|s| {
+            s.push_binder_scope();
+            let binders = l
+                .function_binders()
+                .map(|b| {
+                    let children = b.children();
+                    children.map(|cst| lower_binder(s, e, &cst)).collect()
+                })
+                .unwrap_or_default();
+            let expression = l.expression().map(|cst| lower_expression(s, e, &cst));
+            ExpressionKind::Lambda { binders, expression }
+        }),
+        cst::Expression::ExpressionCaseOf(c) => {
+            let lower_case_branch = |s: &mut State, e: &Environment, cst: &cst::CaseBranch| {
+                let binders = cst
+                    .binders()
+                    .map_or(vec![], |b| b.children().map(|cst| lower_binder(s, e, &cst)).collect());
+                let guarded_expression =
+                    cst.guarded_expression().map(|cst| lower_guarded(s, e, &cst));
+                CaseBranch { binders, guarded_expression }
+            };
+
+            let trunk = c
+                .trunk()
+                .map(|t| t.children().map(|cst| lower_expression(s, e, &cst)).collect())
+                .unwrap_or_default();
+            let branches = c
+                .branches()
+                .map(|b| b.children().map(|cst| lower_case_branch(s, e, &cst)).collect())
+                .unwrap_or_default();
+
+            ExpressionKind::CaseOf { trunk, branches }
+        }
+        cst::Expression::ExpressionDo(d) => s.with_scope(|s| {
+            let qualifier = d.qualifier().and_then(|q| {
+                let token = q.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+
+            const BIND: Option<SmolStr> = Some(SmolStr::new_inline("bind"));
+            const DISCARD: Option<SmolStr> = Some(SmolStr::new_inline("discard"));
+
+            let bind = s.resolve_term(qualifier.clone(), BIND);
+            let discard = s.resolve_term(qualifier.clone(), DISCARD);
+
+            let statements = d
+                .statements()
+                .map(|cst| cst.children().map(|cst| lower_do_statement(s, e, &cst)).collect())
+                .unwrap_or_default();
+
+            ExpressionKind::Do { bind, discard, statements }
+        }),
+        cst::Expression::ExpressionAdo(a) => s.with_scope(|s| {
+            let qualifier = a.qualifier().and_then(|q| {
+                let token = q.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+
+            const MAP: Option<SmolStr> = Some(SmolStr::new_inline("map"));
+            const APPLY: Option<SmolStr> = Some(SmolStr::new_inline("apply"));
+
+            let map = s.resolve_term(qualifier.clone(), MAP);
+            let apply = s.resolve_term(qualifier.clone(), APPLY);
+
+            let statements = a
+                .statements()
+                .map(|cst| cst.children().map(|cst| lower_do_statement(s, e, &cst)).collect())
+                .unwrap_or_default();
+            let expression = a.expression().map(|cst| lower_expression(s, e, &cst));
+
+            ExpressionKind::Ado { map, apply, statements, expression }
+        }),
+        cst::Expression::ExpressionConstructor(c) => {
+            let (qualifier, name) = c
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            ExpressionKind::Constructor { resolution }
+        }
+        cst::Expression::ExpressionVariable(v) => {
+            let (qualifier, name) = v
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::lower))
+                .unwrap_or_default();
+            let resolution = s.resolve_term(qualifier, name);
+            ExpressionKind::Variable { resolution }
+        }
+        cst::Expression::ExpressionOperatorName(o) => {
+            let (qualifier, name) = o
+                .name()
+                .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
+                .unwrap_or_default();
+            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            ExpressionKind::OperatorName { resolution }
+        }
+        cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
+        cst::Expression::ExpressionHole(_) => ExpressionKind::Hole,
+        cst::Expression::ExpressionString(_) => ExpressionKind::String,
+        cst::Expression::ExpressionChar(_) => ExpressionKind::Char,
+        cst::Expression::ExpressionTrue(_) => ExpressionKind::Boolean { boolean: true },
+        cst::Expression::ExpressionFalse(_) => ExpressionKind::Boolean { boolean: false },
+        cst::Expression::ExpressionInteger(_) => ExpressionKind::Integer,
+        cst::Expression::ExpressionNumber(_) => ExpressionKind::Number,
+        cst::Expression::ExpressionArray(a) => {
+            let array = a.children().map(|cst| lower_expression(s, e, &cst)).collect();
+            ExpressionKind::Array { array }
+        }
+        cst::Expression::ExpressionRecord(r) => {
+            let lower_item = |s: &mut State, i| match i {
+                cst::RecordItem::RecordField(f) => {
+                    let name = f.name().and_then(|t| {
+                        let token = t.text()?;
+                        let text = token.text();
+                        Some(SmolStr::from(text))
+                    });
+                    let value = f.expression().map(|cst| lower_expression(s, e, &cst));
+                    ExpressionRecordItem::RecordField { name, value }
+                }
+                cst::RecordItem::RecordPun(p) => {
+                    let name = p.name().and_then(|t| {
+                        let token = t.text()?;
+                        let text = token.text();
+                        Some(SmolStr::from(text))
+                    });
+                    let resolution = s.resolve_term(None, name.clone());
+                    ExpressionRecordItem::RecordPun { name, resolution }
+                }
+            };
+            let record = r.children().map(|cst| lower_item(s, cst)).collect();
+            ExpressionKind::Record { record }
+        }
         cst::Expression::ExpressionParenthesized(p) => {
             let parenthesized = p.expression().map(|p| lower_expression(s, e, &p));
             ExpressionKind::Parenthesized { parenthesized }
         }
-        cst::Expression::ExpressionRecordAccess(_) => todo!(),
-        cst::Expression::ExpressionRecordUpdate(_) => todo!(),
+        cst::Expression::ExpressionRecordAccess(r) => {
+            let record = r.expression().map(|cst| lower_expression(s, e, &cst));
+            let labels = r
+                .children()
+                .map(|t| {
+                    let token = t.text()?;
+                    let text = token.text();
+                    Some(SmolStr::from(text))
+                })
+                .collect();
+            ExpressionKind::RecordAccess { record, labels }
+        }
+        cst::Expression::ExpressionRecordUpdate(r) => {
+            let updates =
+                r.record_updates().map(|cst| lower_record_updates(s, e, &cst)).unwrap_or_default();
+            ExpressionKind::RecordUpdate { updates }
+        }
     };
     s.intermediate.insert_expression_kind(id, kind);
     id
 }
 
-pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
+fn lower_guarded(
+    s: &mut State,
+    e: &Environment,
+    cst: &cst::GuardedExpression,
+) -> GuardedExpression {
+    match cst {
+        cst::GuardedExpression::Unconditional(u) => {
+            let where_expression = u.where_expression().map(|w| lower_where_expression(s, e, &w));
+            GuardedExpression::Unconditional { where_expression }
+        }
+        cst::GuardedExpression::Conditionals(c) => {
+            let pattern_guarded = c.children().map(|p| lower_pattern_guarded(s, e, &p)).collect();
+            GuardedExpression::Conditionals { pattern_guarded }
+        }
+    }
+}
+
+fn lower_where_expression(
+    s: &mut State,
+    e: &Environment,
+    cst: &cst::WhereExpression,
+) -> WhereExpression {
+    s.with_scope(|s| {
+        let bindings = cst.bindings().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
+        let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
+        WhereExpression { expression, bindings }
+    })
+}
+
+fn lower_pattern_guarded(
+    s: &mut State,
+    e: &Environment,
+    cst: &cst::PatternGuarded,
+) -> PatternGuarded {
+    // ```
+    // guarded a b
+    //   | Just c <- a = c
+    //   | Just d <- b = d
+    // ```
+    s.with_scope(|s| {
+        let pattern_guards = cst.children().map(|p| lower_pattern_guard(s, e, &p)).collect();
+        let where_expression = cst.where_expression().map(|w| lower_where_expression(s, e, &w));
+        PatternGuarded { pattern_guards, where_expression }
+    })
+}
+
+fn lower_pattern_guard(s: &mut State, e: &Environment, cst: &cst::PatternGuard) -> PatternGuard {
+    match cst {
+        cst::PatternGuard::PatternGuardBinder(cst) => {
+            s.push_binder_scope();
+            let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            PatternGuard { binder, expression }
+        }
+        cst::PatternGuard::PatternGuardExpression(cst) => {
+            let binder = None;
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            PatternGuard { binder, expression }
+        }
+    }
+}
+
+fn lower_bindings(
+    s: &mut State,
+    e: &Environment,
+    cst: &cst::LetBindingStatements,
+) -> Arc<[LetBinding]> {
+    #[derive(Debug, PartialEq, Eq)]
+    enum Chunk {
+        Pattern,
+        Equation,
+    }
+
+    let chunks = cst.children().chunk_by(|b| match b {
+        cst::LetBinding::LetBindingPattern(_) => Chunk::Pattern,
+        cst::LetBinding::LetBindingSignature(_) => Chunk::Equation,
+        cst::LetBinding::LetBindingEquation(_) => Chunk::Equation,
+    });
+
+    let mut bindings = vec![];
+    for (kind, children) in chunks.into_iter() {
+        match kind {
+            Chunk::Pattern => {
+                lower_pattern_bindings(s, e, &mut bindings, children);
+            }
+            Chunk::Equation => {
+                lower_equation_bindings(s, e, &mut bindings, children);
+            }
+        }
+    }
+
+    Arc::from(bindings)
+}
+
+fn lower_pattern_bindings(
+    s: &mut State,
+    e: &Environment,
+    bindings: &mut Vec<LetBinding>,
+    children: impl Iterator<Item = cst::LetBinding>,
+) {
+    bindings.extend(children.map(|pattern| {
+        let cst::LetBinding::LetBindingPattern(pattern) = &pattern else {
+            unreachable!("invariant violated: expected LetBindingPattern");
+        };
+        let where_expression = pattern.where_expression().map(|w| lower_where_expression(s, e, &w));
+        s.push_binder_scope();
+        let binder = pattern.binder().map(|b| lower_binder(s, e, &b));
+        LetBinding::Pattern { binder, where_expression }
+    }))
+}
+
+fn lower_equation_bindings(
+    s: &mut State,
+    e: &Environment,
+    bindings: &mut Vec<LetBinding>,
+    children: impl Iterator<Item = cst::LetBinding>,
+) {
+    let children = children.chunk_by(|b| match b {
+        cst::LetBinding::LetBindingPattern(_) => {
+            unreachable!("invariant violated: expected LetBindingSignature / LetBindingEquation");
+        }
+        cst::LetBinding::LetBindingSignature(s) => s.name_token().map(|t| {
+            let text = t.text();
+            SmolStr::from(text)
+        }),
+        cst::LetBinding::LetBindingEquation(e) => e.name_token().map(|t| {
+            let text = t.text();
+            SmolStr::from(text)
+        }),
+    });
+
+    let mut in_scope = FxHashMap::default();
+    for (name, mut children) in children.into_iter() {
+        let mut signature = None;
+        let mut equations = vec![];
+
+        if let Some(binding) = children.next() {
+            match binding {
+                cst::LetBinding::LetBindingPattern(_) => {
+                    unreachable!(
+                        "invariant violated: expected LetBindingSignature / LetBindingEquation"
+                    );
+                }
+                cst::LetBinding::LetBindingSignature(cst) => {
+                    let id = s.source.allocate_ls(&cst);
+                    signature = Some(id);
+                }
+                cst::LetBinding::LetBindingEquation(cst) => {
+                    let id = s.source.allocate_le(&cst);
+                    equations.push(id);
+                }
+            }
+        }
+
+        children.for_each(|binding| {
+            if let cst::LetBinding::LetBindingEquation(cst) = binding {
+                let id = s.source.allocate_le(&cst);
+                equations.push(id);
+            }
+        });
+
+        let equations = equations.into();
+        let resolution = LetBindingResolution { signature, equations };
+
+        if let Some(name) = name {
+            in_scope.insert(name, resolution);
+        }
+    }
+
+    let parent = s.graph_scope;
+    let to_traverse = in_scope.values().cloned().collect_vec();
+
+    let id = s.graph.inner.alloc(GraphNode::Let { parent, bindings: in_scope });
+    s.graph_scope = Some(id);
+
+    let root = e.module.syntax();
+    bindings.extend(to_traverse.into_iter().map(|resolution| {
+        s.with_scope(|s| {
+            let signature = resolution.signature.and_then(|id| {
+                let cst = s.source[id].to_node(root);
+                cst.signature().map(|t| lower_forall(s, e, &t))
+            });
+            let equations = resolution
+                .equations
+                .iter()
+                .map(|&id| {
+                    let cst = s.source[id].to_node(root);
+                    lower_equation_like(
+                        s,
+                        e,
+                        cst,
+                        cst::LetBindingEquation::function_binders,
+                        cst::LetBindingEquation::guarded_expression,
+                    )
+                })
+                .collect();
+            LetBinding::Name { signature, equations }
+        })
+    }));
+}
+
+pub(super) fn lower_equation_like<T: AstNode>(
+    s: &mut State,
+    e: &Environment,
+    equation: T,
+    binders: impl Fn(&T) -> Option<cst::FunctionBinders>,
+    guarded: impl Fn(&T) -> Option<cst::GuardedExpression>,
+) -> Equation {
+    s.with_scope(|s| {
+        s.push_binder_scope();
+        let binders = binders(&equation)
+            .map(|b| b.children().map(|b| lower_binder(s, e, &b)).collect())
+            .unwrap_or_default();
+        let guarded = guarded(&equation).map(|g| lower_guarded(s, e, &g));
+        Equation { binders, guarded }
+    })
+}
+
+fn lower_do_statement(s: &mut State, e: &Environment, cst: &cst::DoStatement) -> DoStatement {
+    match cst {
+        cst::DoStatement::DoStatementBind(b) => {
+            s.push_binder_scope();
+            let binder = b.binder().map(|cst| lower_binder(s, e, &cst));
+            let expression = b.expression().map(|cst| lower_expression(s, e, &cst));
+            DoStatement::Bind { binder, expression }
+        }
+        cst::DoStatement::DoStatementLet(l) => {
+            let statements =
+                l.statements().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
+            DoStatement::Let { statements }
+        }
+        cst::DoStatement::DoStatementDiscard(d) => {
+            let expression = d.expression().map(|cst| lower_expression(s, e, &cst));
+            DoStatement::Discard { expression }
+        }
+    }
+}
+
+fn lower_record_updates(
+    s: &mut State,
+    e: &Environment,
+    cst: &cst::RecordUpdates,
+) -> Arc<[RecordUpdate]> {
+    cst.children()
+        .map(|u| match u {
+            cst::RecordUpdate::RecordUpdateLeaf(l) => {
+                let name = l.name().and_then(|l| {
+                    let token = l.text()?;
+                    let text = token.text();
+                    Some(SmolStr::from(text))
+                });
+                let expression = l.expression().map(|cst| lower_expression(s, e, &cst));
+                RecordUpdate::Leaf { name, expression }
+            }
+            cst::RecordUpdate::RecordUpdateBranch(b) => {
+                let name = b.name().and_then(|l| {
+                    let token = l.text()?;
+                    let text = token.text();
+                    Some(SmolStr::from(text))
+                });
+                let updates = b
+                    .record_updates()
+                    .map(|cst| lower_record_updates(s, e, &cst))
+                    .unwrap_or_default();
+                RecordUpdate::Branch { name, updates }
+            }
+        })
+        .collect()
+}
+
+fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     let id = s.source.allocate_ty(cst);
     let kind = match cst {
         cst::Type::TypeApplicationChain(a) => {
@@ -170,10 +641,12 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
             let (qualifier, name) = c
                 .name()
                 .map_or((None, None), |n| lower_qualified_name(&n, cst::QualifiedName::upper));
-            let resolution = s.allocate_resolution(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
             TypeKind::Constructor { resolution }
         }
-        cst::Type::TypeForall(f) => s.with_forall_scope(|s| {
+        // Rank-N Types must be scoped. See `lower_forall`.
+        cst::Type::TypeForall(f) => s.with_scope(|s| {
+            s.push_forall_scope();
             let bindings = f.children().map(|b| lower_type_variable_binding(s, e, &b)).collect();
             let r#type = f.r#type().map(|t| lower_type(s, e, &t));
             TypeKind::Forall { bindings, r#type }
@@ -191,7 +664,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
                 .name()
                 .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
-            let resolution = s.allocate_resolution(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
             TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(o) => {
@@ -210,7 +683,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
         cst::Type::TypeVariable(v) => {
             let resolution = v.name_token().and_then(|t| {
                 let name = t.text();
-                s.resolve_type(name)
+                s.resolve_type_variable(name)
             });
             TypeKind::Variable { resolution }
         }
@@ -235,6 +708,10 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
 }
 
 pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
+    // To enable lexically-scoped type variables, we avoid calling `with_scope`
+    // as to not reset to the parent scope once all the top-level `forall` have
+    // been lowered. In `lower_type`, the `TypeForall` branch explicitly calls
+    // `with_scope` in order to scope Rank-N type variables.
     if let cst::Type::TypeForall(f) = cst {
         let id = s.source.allocate_ty(cst);
         s.push_forall_scope();
@@ -256,7 +733,7 @@ fn lower_pair<T>(
 ) -> OperatorPair<T> {
     let (qualifier, operator) =
         qualified.map_or((None, None), |q| lower_qualified_name(&q, cst::QualifiedName::operator));
-    let resolution = s.allocate_resolution(domain, qualifier, operator);
+    let resolution = s.resolve_root(domain, qualifier, operator);
     OperatorPair { resolution, element }
 }
 
@@ -270,7 +747,7 @@ fn lower_qualified_name(
         Some(SmolStr::from(text))
     });
     let name = token(cst).map(|t| {
-        let text = t.text();
+        let text = t.text().trim_start_matches("(").trim_end_matches(")");
         SmolStr::from(text)
     });
     (qualifier, name)

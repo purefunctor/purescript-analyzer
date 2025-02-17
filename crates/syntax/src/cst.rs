@@ -589,7 +589,7 @@ has_children!(
 
 has_child!(
     ExpressionTypeArgument
-    | type_argument() -> Type
+    | r#type() -> Type
 );
 
 has_child!(
