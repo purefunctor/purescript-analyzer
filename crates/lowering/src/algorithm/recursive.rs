@@ -524,7 +524,7 @@ fn lower_equation_bindings(
         s.with_scope(|s| {
             let signature = resolution.signature.and_then(|id| {
                 let cst = s.source[id].to_node(root);
-                cst.signature().map(|t| lower_forall(s, e, &t))
+                cst.r#type().map(|t| lower_forall(s, e, &t))
             });
             let equations = resolution
                 .equations

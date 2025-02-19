@@ -701,7 +701,7 @@ has_token!(
 
 has_child!(
     LetBindingSignature
-    | signature() -> Type
+    | r#type() -> Type
 );
 
 has_token!(
