@@ -111,7 +111,7 @@ impl State {
         }
     }
 
-    fn resolve_term_local(&mut self, name: &str) -> Option<TermResolution> {
+    fn resolve_term_local(&self, name: &str) -> Option<TermResolution> {
         let id = self.graph_scope?;
         self.graph.traverse(id).find_map(|graph| match graph {
             GraphNode::Binder { bindings, .. } => {
@@ -126,17 +126,49 @@ impl State {
         })
     }
 
-    fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableResolution> {
+    fn resolve_type_variable(
+        &mut self,
+        name: &str,
+        type_id: TypeId,
+    ) -> Option<TypeVariableResolution> {
         let id = self.graph_scope?;
-        self.graph.traverse(id).find_map(|graph| match graph {
-            GraphNode::Forall { bindings, .. } => {
-                bindings.get(name).copied().map(TypeVariableResolution::Forall)
-            }
-            GraphNode::Constraint { bindings, .. } => {
-                bindings.get(name).copied().map(TypeVariableResolution::ConstraintUse)
-            }
-            _ => None,
-        })
+        // TODO: Instead of type ID, should the constraint scope refer to the
+        // instance declaration instead? Consider the following declaration.
+        // Our current scheme effectively overrides bindings between the two
+        // occurrences of `a`, but what we really mean here is an implicit
+        // quantification with a forall:
+        //
+        // instance FooBar (FooBar a (Bar a))
+        //
+        // instance FooBar (forall a. FooBar a (Bar a))
+        //
+        // Instead of a attaching a specific TypeId to each variable, this
+        // could be simplified by attaching the InstanceId instead? So in
+        // the constraint graph node we'll have:
+        //
+        // bindings: FxHashSet<SmolStr>
+        // instance_id: InstanceId
+        //
+        // With the premise that we _know_ any variable in the bindings is
+        // bound implicitly by the instance head. Once it comes down to lowering
+        // the instance head to the core type inference representation, we'll
+        // simply take the bindings associated to the type head and create a
+        // forall with it
+        if let GraphNode::Constraint { bindings, .. } = &mut self.graph.inner[id] {
+            let name = SmolStr::from(name);
+            bindings.insert(name, type_id);
+            Some(TypeVariableResolution::ConstraintBind)
+        } else {
+            self.graph.traverse(id).find_map(|graph| match graph {
+                GraphNode::Forall { bindings, .. } => {
+                    bindings.get(name).copied().map(TypeVariableResolution::Forall)
+                }
+                GraphNode::Constraint { bindings, .. } => {
+                    bindings.get(name).copied().map(TypeVariableResolution::ConstraintUse)
+                }
+                _ => None,
+            })
+        }
     }
 }
 

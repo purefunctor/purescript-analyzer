@@ -679,24 +679,10 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
         }
         cst::Type::TypeString(_) => TypeKind::String,
         cst::Type::TypeVariable(v) => {
-            // Something like this!
-            let resolution = if let Some(graph_scope) = s.graph_scope {
-                if let GraphNode::Constraint { bindings, .. } = &mut s.graph.inner[graph_scope] {
-                    v.name_token().and_then(|t| {
-                        let text = t.text();
-                        let name = SmolStr::from(text);
-                        bindings.insert(name, id);
-                        Some(TypeVariableResolution::ConstraintBind)
-                    })
-                } else {
-                    v.name_token().and_then(|t| {
-                        let name = t.text();
-                        s.resolve_type_variable(name)
-                    })
-                }
-            } else {
-                None
-            };
+            let resolution = v.name_token().and_then(|t| {
+                let name = t.text();
+                s.resolve_type_variable(name, id)
+            });
             TypeKind::Variable { resolution }
         }
         cst::Type::TypeWildcard(_) => TypeKind::Wildcard,
