@@ -1,0 +1,16 @@
+---
+source: crates/lowering/tests/scope.rs
+expression: snapshot
+snapshot_kind: text
+---
+Expressions:
+
+
+Types:
+
+38..40
+  resolves to 35..37
+61..63
+  resolves to 35..37
+72..74
+  resolves to 55..64

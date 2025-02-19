@@ -8,13 +8,11 @@ Expressions:
 
 Types:
 
-38..40
+36..38
   resolves to 29..31
-74..76
-  resolves to 63..65
-84..86
-  resolves to 65..67
-111..113
-  resolves to 108..110
-138..140
-  resolves to 108..110
+62..64
+  resolves to 59..61
+88..90
+  resolves to 59..61
+102..104
+  resolves to 82..91

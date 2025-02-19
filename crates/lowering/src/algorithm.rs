@@ -213,7 +213,8 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItem::Data { signature, equation, .. } => {
             let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
+                s.push_forall_scope();
+                cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
             let variables = equation
                 .map(|id| {
@@ -234,7 +235,8 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItem::Newtype { signature, equation, .. } => {
             let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
+                s.push_forall_scope();
+                cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
             let variables = equation
                 .map(|id| {
@@ -255,7 +257,8 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItem::Synonym { signature, equation } => {
             let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
+                s.push_forall_scope();
+                cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
             let variables = equation
                 .map(|id| {
@@ -278,7 +281,8 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItem::Class { signature, declaration } => {
             let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
+                s.push_forall_scope();
+                cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
             let variables = declaration
                 .and_then(|id| {
