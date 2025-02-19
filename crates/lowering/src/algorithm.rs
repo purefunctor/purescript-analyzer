@@ -188,16 +188,8 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         }
         TermItem::Instance { id } => {
             let cst = &e.source[*id].to_node(root);
-            // FIXME: We want to implement lowering for instance heads where type variables are
-            // implicitly quantified universally. To do this, we'll need to collect free type
-            // variables as an effect somehow. It should be possible to do this by recording which
-            // names didn't resolve while lowering a type variable. Actually, a better way to do
-            // this would be to introduce a new type of scope, specifically for instance and class
-            // heads. Suppose we'll call this scope node a ConstraintHead. The idea would be that
-            // if we're at a constraint head, encountering a variable would instead push into the
-            // scope instead of demand for it to be resolved. This would allow us to keep our
-            // traversal code untouched, or at least most of it.
-            let _: Vec<_> = cst
+
+            let arguments = cst
                 .instance_head()
                 .map(|cst| {
                     s.push_constraint_scope(*id);
@@ -209,7 +201,8 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .instance_statements()
                 .map(|cst| lower_instance_statements(s, e, &cst))
                 .unwrap_or_default();
-            let kind = TermItemIr::Instance { members };
+
+            let kind = TermItemIr::Instance { arguments, members };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItem::Operator { id } => {
