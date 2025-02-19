@@ -22,9 +22,9 @@ fn wtf() {
         r#"
 module Main where
 
-foreign import data Unit :: Type
-
-infix 5 type Add as +
+class Eq :: Type -> Constraint
+class Eq (a :: Type) where
+  eq :: a -> a -> Boolean
 "#,
     );
     dbg!((ir, source, graph,));

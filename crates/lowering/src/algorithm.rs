@@ -276,21 +276,27 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
             s.intermediate.insert_type_item(item_id, kind);
         }
         TypeItem::Class { signature, declaration } => {
-            signature.map(|id| {
+            let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                dbg!(cst);
+                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
             });
-            declaration.map(|id| {
-                let cst = &e.source[id].to_node(root);
-                dbg!(cst);
-            });
-            for id in e.relational.class_members_of(item_id) {
-                let TermItem::ClassMember { id } = e.index[id] else {
-                    unreachable!("invariant violated: expected TermItem::ClassMember");
-                };
-                let cst = &e.source[id].to_node(root);
-                dbg!(cst);
-            }
+            let variables = declaration
+                .and_then(|id| {
+                    let cst = &e.source[id].to_node(root);
+                    s.push_forall_scope();
+                    cst.class_head().map(|h| {
+                        h.children()
+                            .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+                            .collect()
+                    })
+                })
+                .unwrap_or_default();
+
+            let group = TypeGroupIr { signature, variables };
+            let kind = TypeItemIr::ClassGroup { group };
+            s.intermediate.insert_type_item(item_id, kind);
+
+            lower_class_members(s, e, item_id);
         }
         TypeItem::Foreign { id } => {
             let cst = &e.source[*id].to_node(root);
@@ -330,6 +336,21 @@ fn lower_constructors(s: &mut State, e: &Environment, id: TypeItemId) {
         let arguments = cst.children().map(|t| recursive::lower_type(s, e, &t)).collect();
 
         let kind = TermItemIr::Constructor { arguments };
+        s.intermediate.insert_term_item(item_id, kind);
+    }
+}
+
+fn lower_class_members(s: &mut State, e: &Environment, id: TypeItemId) {
+    let root = e.module.syntax();
+    for item_id in e.relational.class_members_of(id) {
+        let TermItem::ClassMember { id } = e.index[item_id] else {
+            unreachable!("invariant violated: expected TermItem::ClassMember");
+        };
+
+        let cst = &e.source[id].to_node(root);
+        let signature = cst.r#type().map(|t| recursive::lower_type(s, e, &t));
+
+        let kind = TermItemIr::ClassMember { signature };
         s.intermediate.insert_term_item(item_id, kind);
     }
 }

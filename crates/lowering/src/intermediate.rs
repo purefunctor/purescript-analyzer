@@ -227,6 +227,7 @@ pub struct InfixPair<T> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TermItemIr {
+    ClassMember { signature: Option<TypeId> },
     Constructor { arguments: Arc<[TypeId]> },
     Foreign { signature: Option<TypeId> },
     Operator { resolution: RootResolutionId, precedence: Option<u16> },
@@ -244,6 +245,7 @@ pub enum TypeItemIr {
     DataGroup { group: TypeGroupIr },
     NewtypeGroup { group: TypeGroupIr },
     SynonymGroup { group: TypeGroupIr, r#type: Option<TypeId> },
+    ClassGroup { group: TypeGroupIr },
     Foreign { signature: Option<TypeId> },
     Operator { resolution: RootResolutionId, precedence: Option<u16> },
 }

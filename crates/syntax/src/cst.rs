@@ -446,6 +446,11 @@ has_token!(
 );
 
 has_child!(
+    ClassSignature
+    | r#type() -> Type
+);
+
+has_child!(
     ClassDeclaration
     | class_head() -> ClassHead
     | class_statements() -> ClassStatements
@@ -454,6 +459,11 @@ has_child!(
 has_token!(
     ClassHead
     | name_token() -> UPPER
+);
+
+has_children!(
+    ClassHead
+    | children() -> TypeVariableBinding
 );
 
 has_children!(
@@ -468,7 +478,7 @@ has_token!(
 
 has_child!(
     ClassMemberStatement
-    | signature() -> Type
+    | r#type() -> Type
 );
 
 has_token!(
