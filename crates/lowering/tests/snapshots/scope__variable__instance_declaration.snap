@@ -9,6 +9,8 @@ Expressions:
   resolves to top-level name
 169..181
   resolves to top-level name
+256..258
+  resolved to binder 252..254
 
 Types:
 
@@ -18,3 +20,15 @@ Types:
   resolves to constraint variable 87..181
 149..151
   resolves to constraint variable 87..181
+202..204
+  introduces constraint variable
+204..206
+  introduces constraint variable
+233..235
+  resolves to forall 230..232
+235..237
+  resolves to constraint variable 181..258
+240..242
+  resolves to forall 230..232
+242..244
+  resolves to constraint variable 181..258

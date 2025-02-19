@@ -7,3 +7,7 @@ instance Eq Int where
 instance Eq a => Eq (Maybe a) where
   eq :: Maybe a -> Maybe a -> Boolean
   eq = eqMaybeImpl
+
+instance TypeEquals a a where
+  proof :: forall p. p a -> p a
+  proof a = a
