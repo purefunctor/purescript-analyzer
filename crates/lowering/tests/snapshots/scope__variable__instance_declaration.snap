@@ -10,7 +10,7 @@ Expressions:
 169..181
   resolves to top-level name
 256..258
-  resolved to binder 252..254
+  resolves to binder 252..254
 
 Types:
 

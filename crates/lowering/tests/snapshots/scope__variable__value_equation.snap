@@ -6,9 +6,9 @@ snapshot_kind: text
 Expressions:
 
 57..58
-  resolved to binder 46..47
+  resolves to binder 46..47
 137..139
-  resolved to binder 104..106
+  resolves to binder 104..106
 144..150
   resolves to signature 116..129
   resolves to equation 129..139

@@ -29,7 +29,7 @@ fn variable_scope_check(content: &str) -> String {
                 TermResolution::Binder(binder) => {
                     let cst = &source[*binder];
                     let range = cst.syntax_node_ptr().text_range();
-                    writeln!(snapshot, "  resolved to binder {:?}", range).unwrap();
+                    writeln!(snapshot, "  resolves to binder {:?}", range).unwrap();
                 }
                 TermResolution::Let(LetBindingResolution { signature, equations }) => {
                     if let Some(signature) = signature {
