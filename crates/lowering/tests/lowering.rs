@@ -22,8 +22,10 @@ fn wtf() {
         r#"
 module Main where
 
-foreign import unit :: Unit
+foreign import data Unit :: Type
+
+infix 5 type Add as +
 "#,
     );
-    dbg!((ir, source, graph));
+    dbg!((ir, source, graph,));
 }

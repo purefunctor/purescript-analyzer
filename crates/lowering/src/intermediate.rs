@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{source::*, RootResolutionId, TermResolution};
-use indexing::TermItemId;
+use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -227,9 +227,25 @@ pub struct InfixPair<T> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TermItemIr {
+    Constructor { arguments: Arc<[TypeId]> },
     Foreign { signature: Option<TypeId> },
     Operator { resolution: RootResolutionId, precedence: Option<u16> },
     ValueGroup { signature: Option<TypeId>, equations: Arc<[Equation]> },
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct TypeGroupIr {
+    pub signature: Option<TypeId>,
+    pub variables: Arc<[TypeVariableBinding]>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum TypeItemIr {
+    DataGroup { group: TypeGroupIr },
+    NewtypeGroup { group: TypeGroupIr },
+    SynonymGroup { group: TypeGroupIr, r#type: Option<TypeId> },
+    Foreign { signature: Option<TypeId> },
+    Operator { resolution: RootResolutionId, precedence: Option<u16> },
 }
 
 syntax::create_association! {
@@ -238,5 +254,6 @@ syntax::create_association! {
         expression_kind: ExpressionId => ExpressionKind,
         type_kind: TypeId => TypeKind,
         term_item: TermItemId => TermItemIr,
+        type_item: TypeItemId => TypeItemIr,
     }
 }

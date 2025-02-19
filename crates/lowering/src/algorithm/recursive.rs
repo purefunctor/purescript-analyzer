@@ -751,7 +751,7 @@ pub(super) fn lower_qualified_name(
     (qualifier, name)
 }
 
-fn lower_type_variable_binding(
+pub(super) fn lower_type_variable_binding(
     s: &mut State,
     e: &Environment,
     cst: &cst::TypeVariableBinding,

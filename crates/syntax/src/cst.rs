@@ -420,9 +420,24 @@ has_token!(
     | name_token() -> UPPER
 );
 
+has_child!(
+    TypeSynonymSignature
+    | r#type() -> Type
+);
+
 has_token!(
     TypeSynonymEquation
     | name_token() -> UPPER
+);
+
+has_child!(
+    TypeSynonymEquation
+    | r#type() -> Type
+);
+
+has_children!(
+    TypeSynonymEquation
+    | children() -> TypeVariableBinding
 );
 
 has_token!(
@@ -461,6 +476,11 @@ has_token!(
     | name_token() -> UPPER
 );
 
+has_child!(
+    NewtypeSignature
+    | r#type() -> Type
+);
+
 has_token!(
     NewtypeEquation
     | name_token() -> UPPER
@@ -468,6 +488,7 @@ has_token!(
 
 has_children!(
     NewtypeEquation
+    | type_variables() -> TypeVariableBinding
     | data_constructors() -> DataConstructor
 );
 
@@ -476,6 +497,11 @@ has_token!(
     | name_token() -> UPPER
 );
 
+has_child!(
+    DataSignature
+    | r#type() -> Type
+);
+
 has_token!(
     DataEquation
     | name_token() -> UPPER
@@ -483,6 +509,7 @@ has_token!(
 
 has_children!(
     DataEquation
+    | type_variables() -> TypeVariableBinding
     | data_constructors() -> DataConstructor
 );
 
@@ -501,9 +528,19 @@ has_token!(
     | name_token() -> UPPER
 );
 
+has_child!(
+    ForeignImportDataDeclaration
+    | r#type() -> Type
+);
+
 has_token!(
     ForeignImportValueDeclaration
     | name_token() -> LOWER
+);
+
+has_child!(
+    ForeignImportValueDeclaration
+    | r#type() -> Type
 );
 
 has_child!(
@@ -966,11 +1003,6 @@ has_child!(
 
 has_child!(
     TypeParenthesized
-    | r#type() -> Type
-);
-
-has_child!(
-    ForeignImportValueDeclaration
     | r#type() -> Type
 );
 

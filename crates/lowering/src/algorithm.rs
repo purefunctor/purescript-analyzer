@@ -211,36 +211,69 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
     let root = e.module.syntax();
     match item {
         TypeItem::Data { signature, equation, .. } => {
-            signature.map(|id| {
+            let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                dbg!(cst);
+                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
             });
-            equation.map(|id| {
-                let cst = &e.source[id].to_node(root);
-                dbg!(cst);
-            });
+            let variables = equation
+                .map(|id| {
+                    let cst = &e.source[id].to_node(root);
+                    s.push_forall_scope();
+                    cst.type_variables()
+                        .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let group = TypeGroupIr { signature, variables };
+            let kind = TypeItemIr::DataGroup { group };
+            s.intermediate.insert_type_item(item_id, kind);
+
             lower_constructors(s, e, item_id);
         }
         TypeItem::Newtype { signature, equation, .. } => {
-            signature.map(|id| {
+            let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                dbg!(cst);
+                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
             });
-            equation.map(|id| {
-                let cst = &e.source[id].to_node(root);
-                dbg!(cst);
-            });
+            let variables = equation
+                .map(|id| {
+                    let cst = &e.source[id].to_node(root);
+                    s.push_forall_scope();
+                    cst.type_variables()
+                        .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let group = TypeGroupIr { signature, variables };
+            let kind = TypeItemIr::NewtypeGroup { group };
+            s.intermediate.insert_type_item(item_id, kind);
+
             lower_constructors(s, e, item_id);
         }
         TypeItem::Synonym { signature, equation } => {
-            signature.map(|id| {
+            let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                dbg!(cst);
+                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
             });
-            equation.map(|id| {
+            let variables = equation
+                .map(|id| {
+                    let cst = &e.source[id].to_node(root);
+                    s.push_forall_scope();
+                    cst.children()
+                        .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let r#type = equation.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
-                dbg!(cst);
+                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
             });
+
+            let group = TypeGroupIr { signature, variables };
+            let kind = TypeItemIr::SynonymGroup { group, r#type };
+            s.intermediate.insert_type_item(item_id, kind);
         }
         TypeItem::Class { signature, declaration } => {
             signature.map(|id| {
@@ -261,22 +294,42 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         }
         TypeItem::Foreign { id } => {
             let cst = &e.source[*id].to_node(root);
-            dbg!(cst);
+            let signature = cst.r#type().map(|t| recursive::lower_type(s, e, &t));
+
+            let kind = TypeItemIr::Foreign { signature };
+            s.intermediate.insert_type_item(item_id, kind);
         }
         TypeItem::Operator { id } => {
             let cst = &e.source[*id].to_node(root);
-            dbg!(cst);
+
+            let (qualifier, name) = cst
+                .qualified()
+                .map(|q| recursive::lower_qualified_name(&q, cst::QualifiedName::upper))
+                .unwrap_or_default();
+
+            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+            let precedence = cst.precedence().and_then(|t| {
+                let text = t.text();
+                u16::from_str_radix(text, 10).ok()
+            });
+
+            let kind = TypeItemIr::Operator { resolution, precedence };
+            s.intermediate.insert_type_item(item_id, kind);
         }
     }
 }
 
-fn lower_constructors(_: &mut State, e: &Environment, id: TypeItemId) {
+fn lower_constructors(s: &mut State, e: &Environment, id: TypeItemId) {
     let root = e.module.syntax();
-    for id in e.relational.constructors_of(id) {
-        let TermItem::Constructor { id } = e.index[id] else {
+    for item_id in e.relational.constructors_of(id) {
+        let TermItem::Constructor { id } = e.index[item_id] else {
             unreachable!("invariant violated: expected TermItem::Constructor");
         };
+
         let cst = &e.source[id].to_node(root);
-        dbg!(cst);
+        let arguments = cst.children().map(|t| recursive::lower_type(s, e, &t)).collect();
+
+        let kind = TermItemIr::Constructor { arguments };
+        s.intermediate.insert_term_item(item_id, kind);
     }
 }
