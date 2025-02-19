@@ -226,10 +226,17 @@ pub struct InfixPair<T> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct InstanceMemberGroup {
+    pub signature: Option<TypeId>,
+    pub equations: Arc<[Equation]>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum TermItemIr {
     ClassMember { signature: Option<TypeId> },
     Constructor { arguments: Arc<[TypeId]> },
     Foreign { signature: Option<TypeId> },
+    Instance { members: Arc<[InstanceMemberGroup]> },
     Operator { resolution: RootResolutionId, precedence: Option<u16> },
     ValueGroup { signature: Option<TypeId>, equations: Arc<[Equation]> },
 }

@@ -1,8 +1,10 @@
 mod recursive;
 
-use std::mem;
+use std::{mem, sync::Arc};
 
-use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
+use indexing::{Index, InstanceId, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
+use itertools::Itertools;
+use recursive::lower_equation_like;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -165,7 +167,15 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let kind = TermItemIr::Foreign { signature };
             s.intermediate.insert_term_item(item_id, kind);
         }
-        TermItem::Instance { .. } => (),
+        TermItem::Instance { id } => {
+            let cst = &e.source[*id].to_node(root);
+            let members = cst
+                .instance_statements()
+                .map(|cst| lower_instance_statements(s, e, &cst))
+                .unwrap_or_default();
+            let kind = TermItemIr::Instance { members };
+            s.intermediate.insert_term_item(item_id, kind);
+        }
         TermItem::Operator { id } => {
             let cst = &e.source[*id].to_node(root);
 
@@ -357,4 +367,78 @@ fn lower_class_members(s: &mut State, e: &Environment, id: TypeItemId) {
         let kind = TermItemIr::ClassMember { signature };
         s.intermediate.insert_term_item(item_id, kind);
     }
+}
+
+fn lower_instance_statements(
+    s: &mut State,
+    e: &Environment,
+    cst: &cst::InstanceStatements,
+) -> Arc<[InstanceMemberGroup]> {
+    let children = cst.children().chunk_by(|statement| match statement {
+        cst::InstanceMemberStatement::InstanceSignatureStatement(s) => s.name_token().map(|t| {
+            let text = t.text();
+            SmolStr::from(text)
+        }),
+        cst::InstanceMemberStatement::InstanceEquationStatement(e) => e.name_token().map(|t| {
+            let text = t.text();
+            SmolStr::from(text)
+        }),
+    });
+
+    let mut in_scope = FxHashMap::default();
+    for (name, mut children) in children.into_iter() {
+        let mut signature = None;
+        let mut equations = vec![];
+
+        if let Some(statement) = children.next() {
+            match statement {
+                cst::InstanceMemberStatement::InstanceSignatureStatement(cst) => {
+                    let id = s.source.allocate_is(&cst);
+                    signature = Some(id);
+                }
+                cst::InstanceMemberStatement::InstanceEquationStatement(cst) => {
+                    let id = s.source.allocate_ie(&cst);
+                    equations.push(id);
+                }
+            }
+        }
+
+        children.for_each(|statement| {
+            if let cst::InstanceMemberStatement::InstanceEquationStatement(cst) = statement {
+                let id = s.source.allocate_ie(&cst);
+                equations.push(id);
+            }
+        });
+
+        if let Some(name) = name {
+            in_scope.insert(name, (signature, equations));
+        }
+    }
+
+    let root = e.module.syntax();
+    in_scope
+        .into_iter()
+        .map(|(_, (signature, equations))| {
+            s.with_scope(|s| {
+                let signature = signature.and_then(|id| {
+                    let cst = s.source[id].to_node(root);
+                    cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
+                });
+                let equations = equations
+                    .iter()
+                    .map(|&id| {
+                        let cst = s.source[id].to_node(root);
+                        lower_equation_like(
+                            s,
+                            e,
+                            cst,
+                            cst::InstanceEquationStatement::function_binders,
+                            cst::InstanceEquationStatement::guarded_expression,
+                        )
+                    })
+                    .collect();
+                InstanceMemberGroup { signature, equations }
+            })
+        })
+        .collect()
 }

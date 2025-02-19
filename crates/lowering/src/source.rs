@@ -7,5 +7,7 @@ syntax::create_source! {
         ds: syntax::cst::DoStatement as DoStatement,
         ls: syntax::cst::LetBindingSignature as LetBindingSignature,
         le: syntax::cst::LetBindingEquation as LetBindingEquation,
+        is: syntax::cst::InstanceSignatureStatement as InstanceSignature,
+        ie: syntax::cst::InstanceEquationStatement as InstanceEquation,
     }
 }

@@ -410,9 +410,20 @@ has_token!(
     | name_token() -> LOWER
 );
 
+has_child!(
+    InstanceSignatureStatement
+    | r#type() -> Type
+);
+
 has_token!(
     InstanceEquationStatement
     | name_token() -> LOWER
+);
+
+has_child!(
+    InstanceEquationStatement
+    | function_binders() -> FunctionBinders
+    | guarded_expression() -> GuardedExpression
 );
 
 has_token!(

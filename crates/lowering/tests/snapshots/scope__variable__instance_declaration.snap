@@ -1,0 +1,18 @@
+---
+source: crates/lowering/tests/scope.rs
+expression: snapshot
+snapshot_kind: text
+---
+Expressions:
+
+77..87
+  resolves to top-level name
+169..181
+  resolves to top-level name
+
+Types:
+
+138..140
+  resolves to nothing
+149..151
+  resolves to nothing
