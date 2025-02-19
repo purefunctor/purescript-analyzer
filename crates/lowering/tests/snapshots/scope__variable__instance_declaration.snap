@@ -12,7 +12,9 @@ Expressions:
 
 Types:
 
+115..117
+  introduces constraint variable
 138..140
-  resolves to nothing
+  resolves to constraint variable 115..117
 149..151
-  resolves to nothing
+  resolves to constraint variable 115..117

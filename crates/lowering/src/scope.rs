@@ -20,12 +20,19 @@ pub struct LetBindingResolution {
     pub equations: Arc<[LetBindingEquationId]>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TypeVariableResolution {
+    Forall(TypeVariableBindingId),
+    ConstraintUse(TypeId),
+    ConstraintBind,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
     Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
     Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
-    Forked { left: Option<GraphNodeId>, right: Option<GraphNodeId> },
+    Constraint { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeId> },
 }
 
 pub type GraphNodeId = Idx<GraphNode>;
@@ -82,16 +89,9 @@ impl<'a> Iterator for GraphIter<'a> {
         match &item {
             GraphNode::Binder { parent, .. }
             | GraphNode::Forall { parent, .. }
-            | GraphNode::Let { parent, .. } => {
+            | GraphNode::Let { parent, .. }
+            | GraphNode::Constraint { parent, .. } => {
                 parent.map(|id| {
-                    self.queue.push_front(id);
-                });
-            }
-            GraphNode::Forked { left, right } => {
-                left.map(|id| {
-                    self.queue.push_front(id);
-                });
-                right.map(|id| {
                     self.queue.push_front(id);
                 });
             }

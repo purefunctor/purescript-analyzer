@@ -1,6 +1,8 @@
 mod shared;
 
-use lowering::{ExpressionKind, LetBindingResolution, TermResolution, TypeKind};
+use lowering::{
+    ExpressionKind, LetBindingResolution, TermResolution, TypeKind, TypeVariableResolution,
+};
 use std::fmt::Write;
 use test_each_file::test_each_file;
 
@@ -57,9 +59,21 @@ fn variable_scope_check(content: &str) -> String {
         let range = cst.syntax_node_ptr().text_range();
         writeln!(snapshot, "{:?}", range).unwrap();
         if let Some(resolution) = resolution {
-            let cst = &source[*resolution];
-            let range = cst.syntax_node_ptr().text_range();
-            writeln!(snapshot, "  resolves to {:?}", range).unwrap();
+            match resolution {
+                TypeVariableResolution::Forall(id) => {
+                    let cst = &source[*id];
+                    let range = cst.syntax_node_ptr().text_range();
+                    writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
+                }
+                TypeVariableResolution::ConstraintUse(id) => {
+                    let cst = &source[*id];
+                    let range = cst.syntax_node_ptr().text_range();
+                    writeln!(snapshot, "  resolves to constraint variable {:?}", range).unwrap();
+                }
+                TypeVariableResolution::ConstraintBind => {
+                    writeln!(snapshot, "  introduces constraint variable").unwrap();
+                }
+            }
         } else {
             writeln!(snapshot, "  resolves to nothing").unwrap();
         }

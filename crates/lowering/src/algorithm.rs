@@ -2,7 +2,7 @@ mod recursive;
 
 use std::{mem, sync::Arc};
 
-use indexing::{Index, InstanceId, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
+use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
@@ -56,14 +56,7 @@ impl State {
         bindings.insert(name, id);
     }
 
-    fn push_binder_scope(&mut self) -> Option<GraphNodeId> {
-        let parent = mem::take(&mut self.graph_scope);
-        let bindings = FxHashMap::default();
-        let id = self.graph.inner.alloc(GraphNode::Binder { parent, bindings });
-        mem::replace(&mut self.graph_scope, Some(id))
-    }
-
-    fn insert_type(&mut self, name: &str, id: TypeVariableBindingId) {
+    fn insert_bound_variable(&mut self, name: &str, id: TypeVariableBindingId) {
         let Some(node) = self.graph_scope else { return };
         let GraphNode::Forall { bindings, .. } = &mut self.graph.inner[node] else { return };
 
@@ -71,10 +64,24 @@ impl State {
         bindings.insert(name, id);
     }
 
+    fn push_binder_scope(&mut self) -> Option<GraphNodeId> {
+        let parent = mem::take(&mut self.graph_scope);
+        let bindings = FxHashMap::default();
+        let id = self.graph.inner.alloc(GraphNode::Binder { parent, bindings });
+        mem::replace(&mut self.graph_scope, Some(id))
+    }
+
     fn push_forall_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let bindings = FxHashMap::default();
         let id = self.graph.inner.alloc(GraphNode::Forall { parent, bindings });
+        mem::replace(&mut self.graph_scope, Some(id))
+    }
+
+    fn push_constraint_scope(&mut self) -> Option<GraphNodeId> {
+        let parent = mem::take(&mut self.graph_scope);
+        let bindings = FxHashMap::default();
+        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, bindings });
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
@@ -119,14 +126,16 @@ impl State {
         })
     }
 
-    fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableBindingId> {
+    fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableResolution> {
         let id = self.graph_scope?;
-        self.graph.traverse(id).find_map(|graph| {
-            if let GraphNode::Forall { bindings, .. } = graph {
-                bindings.get(name).copied()
-            } else {
-                None
+        self.graph.traverse(id).find_map(|graph| match graph {
+            GraphNode::Forall { bindings, .. } => {
+                bindings.get(name).copied().map(TypeVariableResolution::Forall)
             }
+            GraphNode::Constraint { bindings, .. } => {
+                bindings.get(name).copied().map(TypeVariableResolution::ConstraintUse)
+            }
+            _ => None,
         })
     }
 }
@@ -169,6 +178,23 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         }
         TermItem::Instance { id } => {
             let cst = &e.source[*id].to_node(root);
+            // FIXME: We want to implement lowering for instance heads where type variables are
+            // implicitly quantified universally. To do this, we'll need to collect free type
+            // variables as an effect somehow. It should be possible to do this by recording which
+            // names didn't resolve while lowering a type variable. Actually, a better way to do
+            // this would be to introduce a new type of scope, specifically for instance and class
+            // heads. Suppose we'll call this scope node a ConstraintHead. The idea would be that
+            // if we're at a constraint head, encountering a variable would instead push into the
+            // scope instead of demand for it to be resolved. This would allow us to keep our
+            // traversal code untouched, or at least most of it.
+            let _: Vec<_> = cst
+                .instance_head()
+                .map(|cst| {
+                    s.push_constraint_scope();
+                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                })
+                .unwrap_or_default();
+
             let members = cst
                 .instance_statements()
                 .map(|cst| lower_instance_statements(s, e, &cst))
@@ -420,6 +446,7 @@ fn lower_instance_statements(
         .into_iter()
         .map(|(_, (signature, equations))| {
             s.with_scope(|s| {
+                s.push_forall_scope();
                 let signature = signature.and_then(|id| {
                     let cst = s.source[id].to_node(root);
                     cst.r#type().map(|t| recursive::lower_forall(s, e, &t))

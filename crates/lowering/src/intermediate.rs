@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{source::*, RootResolutionId, TermResolution};
+use crate::{source::*, RootResolutionId, TermResolution, TypeVariableResolution};
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
@@ -170,7 +170,7 @@ pub enum TypeKind {
     Operator { resolution: RootResolutionId },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
-    Variable { resolution: Option<TypeVariableBindingId> },
+    Variable { resolution: Option<TypeVariableResolution> },
     Wildcard,
     Record { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
     Row { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
