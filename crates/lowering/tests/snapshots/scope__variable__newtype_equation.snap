@@ -9,10 +9,10 @@ Expressions:
 Types:
 
 36..38
-  resolves to 29..31
+  resolves to forall 29..31
 62..64
-  resolves to 59..61
+  resolves to forall 59..61
 88..90
-  resolves to 59..61
+  resolves to forall 59..61
 102..104
-  resolves to 82..91
+  resolves to forall 82..91

@@ -9,18 +9,18 @@ Expressions:
 Types:
 
 44..46
-  resolves to 41..43
+  resolves to forall 41..43
 49..51
-  resolves to 41..43
+  resolves to forall 41..43
 84..86
-  resolves to 41..43
+  resolves to forall 41..43
 93..95
-  resolves to 41..43
+  resolves to forall 41..43
 123..125
-  resolves to 120..122
+  resolves to forall 120..122
 125..127
-  resolves to 78..87
+  resolves to forall 78..87
 130..132
-  resolves to 120..122
+  resolves to forall 120..122
 132..134
-  resolves to 87..96
+  resolves to forall 87..96

@@ -18,16 +18,16 @@ Expressions:
 Types:
 
 34..36
-  resolves to 31..33
+  resolves to forall 31..33
 39..41
-  resolves to 31..33
+  resolves to forall 31..33
 50..52
-  resolves to 31..33
+  resolves to forall 31..33
 61..63
-  resolves to 31..33
+  resolves to forall 31..33
 86..88
-  resolves to 81..83
+  resolves to forall 81..83
 91..93
-  resolves to 83..85
+  resolves to forall 83..85
 96..98
-  resolves to 81..83
+  resolves to forall 81..83
