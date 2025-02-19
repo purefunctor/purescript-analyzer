@@ -40,7 +40,7 @@ snapshot_kind: text
             Annotation@58..59
               TEXT@58..59 " "
             UPPER@59..70 "Applicative"
-            TypeVariable@70..72
+            TypeVariableBinding@70..72
               Annotation@70..71
                 TEXT@70..71 " "
               LOWER@71..72 "f"
@@ -119,7 +119,7 @@ snapshot_kind: text
             Annotation@144..145
               TEXT@144..145 " "
             UPPER@145..150 "Monad"
-            TypeVariable@150..152
+            TypeVariableBinding@150..152
               Annotation@150..151
                 TEXT@150..151 " "
               LOWER@151..152 "f"

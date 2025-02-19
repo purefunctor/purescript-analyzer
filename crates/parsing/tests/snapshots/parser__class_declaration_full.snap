@@ -44,11 +44,11 @@ snapshot_kind: text
             Annotation@58..59
               TEXT@58..59 " "
             UPPER@59..69 "TypeEquals"
-            TypeVariable@69..71
+            TypeVariableBinding@69..71
               Annotation@69..70
                 TEXT@69..70 " "
               LOWER@70..71 "a"
-            TypeVariable@71..73
+            TypeVariableBinding@71..73
               Annotation@71..72
                 TEXT@71..72 " "
               LOWER@72..73 "b"
@@ -146,11 +146,11 @@ snapshot_kind: text
             Annotation@157..158
               TEXT@157..158 " "
             UPPER@158..168 "TypeEquals"
-            TypeVariable@168..170
+            TypeVariableBinding@168..170
               Annotation@168..169
                 TEXT@168..169 " "
               LOWER@169..170 "a"
-            TypeVariable@170..172
+            TypeVariableBinding@170..172
               Annotation@170..171
                 TEXT@170..171 " "
               LOWER@171..172 "c"

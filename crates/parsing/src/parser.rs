@@ -665,9 +665,7 @@ fn class_constraints(p: &mut Parser) {
 fn class_head(p: &mut Parser) {
     let mut m = p.start();
     p.expect(SyntaxKind::UPPER);
-    while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
-        types::type_atom(p);
-    }
+    type_variable_bindings(p);
     m.end(p, SyntaxKind::ClassHead);
 }
 
@@ -927,8 +925,13 @@ fn data_constructor(p: &mut Parser) {
 const TYPE_VARIABLE_BINDING_START: TokenSet =
     TokenSet::new(&[SyntaxKind::LEFT_PARENTHESIS]).union(names::LOWER);
 
-const TYPE_VARIABLE_BINDING_END: TokenSet =
-    TokenSet::new(&[SyntaxKind::EQUAL, SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
+const TYPE_VARIABLE_BINDING_END: TokenSet = TokenSet::new(&[
+    SyntaxKind::EQUAL,
+    SyntaxKind::PIPE,
+    SyntaxKind::WHERE,
+    SyntaxKind::LAYOUT_SEPARATOR,
+    SyntaxKind::LAYOUT_END,
+]);
 
 const TYPE_VARIABLE_BINDING_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);

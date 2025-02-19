@@ -26,11 +26,11 @@ snapshot_kind: text
             Annotation@58..59
               TEXT@58..59 " "
             UPPER@59..69 "TypeEquals"
-            TypeVariable@69..71
+            TypeVariableBinding@69..71
               Annotation@69..70
                 TEXT@69..70 " "
               LOWER@70..71 "a"
-            TypeVariable@71..73
+            TypeVariableBinding@71..73
               Annotation@71..72
                 TEXT@71..72 " "
               LOWER@72..73 "b"
@@ -93,7 +93,7 @@ snapshot_kind: text
             Annotation@121..122
               TEXT@121..122 " "
             UPPER@122..132 "Determined"
-            TypeVariable@132..134
+            TypeVariableBinding@132..134
               Annotation@132..133
                 TEXT@132..133 " "
               LOWER@133..134 "a"
@@ -134,7 +134,7 @@ snapshot_kind: text
             Annotation@172..173
               TEXT@172..173 " "
             UPPER@173..178 "Empty"
-            TypeVariable@178..180
+            TypeVariableBinding@178..180
               Annotation@178..179
                 TEXT@178..179 " "
               LOWER@179..180 "a"

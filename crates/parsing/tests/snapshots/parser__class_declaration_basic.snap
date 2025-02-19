@@ -26,7 +26,7 @@ snapshot_kind: text
             Annotation@36..37
               TEXT@36..37 " "
             UPPER@37..44 "Functor"
-            TypeVariable@44..46
+            TypeVariableBinding@44..46
               Annotation@44..45
                 TEXT@44..45 " "
               LOWER@45..46 "f"
@@ -106,7 +106,7 @@ snapshot_kind: text
             Annotation@103..104
               TEXT@103..104 " "
             UPPER@104..109 "Monad"
-            TypeVariable@109..111
+            TypeVariableBinding@109..111
               Annotation@109..110
                 TEXT@109..110 " "
               LOWER@110..111 "m"
