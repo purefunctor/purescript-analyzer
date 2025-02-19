@@ -34,9 +34,9 @@ name = "building"
 version = "0.1.0"
 dependencies = [
  "dashmap",
- "id",
  "indexing",
  "indexmap",
+ "la-arena",
  "lexing",
  "parking_lot",
  "parsing",
@@ -220,10 +220,6 @@ dependencies = [
  "equivalent",
  "foldhash",
 ]
-
-[[package]]
-name = "id"
-version = "0.1.0"
 
 [[package]]
 name = "indexing"
