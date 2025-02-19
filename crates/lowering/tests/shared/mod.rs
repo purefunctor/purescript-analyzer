@@ -3,7 +3,7 @@ use lowering::{Graph, Intermediate, LoweringSource};
 use rowan::ast::AstNode;
 use syntax::cst;
 
-fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource, Graph) {
+pub fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource, Graph) {
     let lexed = lexing::lex(source);
     let tokens = lexing::layout(&lexed);
 
@@ -14,18 +14,4 @@ fn index_source(source: &str) -> (cst::Module, Intermediate, LoweringSource, Gra
     let (ir, source, graph) = lowering::lower_module(&module, &index, &relational, &source);
 
     (module, ir, source, graph)
-}
-
-#[test]
-fn wtf() {
-    let (_, ir, source, graph) = index_source(
-        r#"
-module Main where
-
-class Eq :: Type -> Constraint
-class Eq (a :: Type) where
-  eq :: a -> a -> Boolean
-"#,
-    );
-    dbg!((ir, source, graph,));
 }

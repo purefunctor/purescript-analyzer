@@ -259,3 +259,17 @@ syntax::create_association! {
         type_item: TypeItemId => TypeItemIr,
     }
 }
+
+impl Intermediate {
+    pub fn iter_binder(&self) -> impl Iterator<Item = (BinderId, &BinderKind)> {
+        self.binder_kind.iter()
+    }
+
+    pub fn iter_expression(&self) -> impl Iterator<Item = (ExpressionId, &ExpressionKind)> {
+        self.expression_kind.iter()
+    }
+
+    pub fn iter_type(&self) -> impl Iterator<Item = (TypeId, &TypeKind)> {
+        self.type_kind.iter()
+    }
+}

@@ -330,6 +330,7 @@ version = "0.1.0"
 dependencies = [
  "hashbrown 0.15.2",
  "indexing",
+ "insta",
  "itertools",
  "la-arena",
  "lexing",
@@ -339,6 +340,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "smol_str",
  "syntax",
+ "test_each_file",
 ]
 
 [[package]]
