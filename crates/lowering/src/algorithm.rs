@@ -2,11 +2,11 @@ mod recursive;
 
 use std::{mem, sync::Arc};
 
-use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
+use indexing::{Index, InstanceId, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use smol_str::SmolStr;
 use syntax::cst;
 
@@ -78,10 +78,10 @@ impl State {
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
-    fn push_constraint_scope(&mut self) -> Option<GraphNodeId> {
+    fn push_constraint_scope(&mut self, id: InstanceId) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
-        let bindings = FxHashMap::default();
-        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, bindings });
+        let bindings = FxHashSet::default();
+        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, bindings, id });
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
@@ -126,45 +126,23 @@ impl State {
         })
     }
 
-    fn resolve_type_variable(
-        &mut self,
-        name: &str,
-        type_id: TypeId,
-    ) -> Option<TypeVariableResolution> {
+    fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableResolution> {
         let id = self.graph_scope?;
-        // TODO: Instead of type ID, should the constraint scope refer to the
-        // instance declaration instead? Consider the following declaration.
-        // Our current scheme effectively overrides bindings between the two
-        // occurrences of `a`, but what we really mean here is an implicit
-        // quantification with a forall:
-        //
-        // instance FooBar (FooBar a (Bar a))
-        //
-        // instance FooBar (forall a. FooBar a (Bar a))
-        //
-        // Instead of a attaching a specific TypeId to each variable, this
-        // could be simplified by attaching the InstanceId instead? So in
-        // the constraint graph node we'll have:
-        //
-        // bindings: FxHashSet<SmolStr>
-        // instance_id: InstanceId
-        //
-        // With the premise that we _know_ any variable in the bindings is
-        // bound implicitly by the instance head. Once it comes down to lowering
-        // the instance head to the core type inference representation, we'll
-        // simply take the bindings associated to the type head and create a
-        // forall with it
         if let GraphNode::Constraint { bindings, .. } = &mut self.graph.inner[id] {
             let name = SmolStr::from(name);
-            bindings.insert(name, type_id);
+            bindings.insert(name);
             Some(TypeVariableResolution::ConstraintBind)
         } else {
             self.graph.traverse(id).find_map(|graph| match graph {
                 GraphNode::Forall { bindings, .. } => {
                     bindings.get(name).copied().map(TypeVariableResolution::Forall)
                 }
-                GraphNode::Constraint { bindings, .. } => {
-                    bindings.get(name).copied().map(TypeVariableResolution::ConstraintUse)
+                GraphNode::Constraint { bindings, id, .. } => {
+                    if bindings.contains(name) {
+                        Some(TypeVariableResolution::ConstraintRef(*id))
+                    } else {
+                        None
+                    }
                 }
                 _ => None,
             })
@@ -222,7 +200,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let _: Vec<_> = cst
                 .instance_head()
                 .map(|cst| {
-                    s.push_constraint_scope();
+                    s.push_constraint_scope(*id);
                     cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
                 })
                 .unwrap_or_default();

@@ -7,7 +7,7 @@ use std::fmt::Write;
 use test_each_file::test_each_file;
 
 fn variable_scope_check(content: &str) -> String {
-    let (_, ir, source, _) = shared::index_source(content);
+    let (_, index, ir, source, _) = shared::lower_source(content);
 
     let mut snapshot = String::default();
 
@@ -65,8 +65,8 @@ fn variable_scope_check(content: &str) -> String {
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
                 }
-                TypeVariableResolution::ConstraintUse(id) => {
-                    let cst = &source[*id];
+                TypeVariableResolution::ConstraintRef(id) => {
+                    let cst = &index.source[*id];
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to constraint variable {:?}", range).unwrap();
                 }
