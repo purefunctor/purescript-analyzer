@@ -2,7 +2,7 @@ mod recursive;
 
 use std::{mem, sync::Arc};
 
-use indexing::{Index, InstanceId, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
+use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
@@ -78,7 +78,7 @@ impl State {
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
-    fn push_constraint_scope(&mut self, id: InstanceId) -> Option<GraphNodeId> {
+    fn push_constraint_scope(&mut self, id: InstanceKind) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let collecting = true;
         let bindings = FxHashSet::default();
@@ -194,7 +194,28 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
     match item {
         TermItem::ClassMember { .. } => (), // See lower_type_item
         TermItem::Constructor { .. } => (), // See lower_type_item
-        TermItem::Derive { .. } => (),
+        TermItem::Derive { id } => {
+            let cst = &e.source[*id].to_node(root);
+
+            let arguments = cst
+                .instance_head()
+                .map(|cst| {
+                    s.push_constraint_scope(InstanceKind::Derive(*id));
+                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                })
+                .unwrap_or_default();
+
+            let constraints = cst
+                .instance_constraints()
+                .map(|cst| {
+                    s.finish_constraint_scope();
+                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                })
+                .unwrap_or_default();
+
+            let kind = TermItemIr::Derive { constraints, arguments };
+            s.intermediate.insert_term_item(item_id, kind);
+        }
         TermItem::Foreign { id } => {
             let cst = &e.source[*id].to_node(root);
             let signature = cst.r#type().map(|t| recursive::lower_type(s, e, &t));
@@ -207,7 +228,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
-                    s.push_constraint_scope(*id);
+                    s.push_constraint_scope(InstanceKind::Instance(*id));
                     cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
                 })
                 .unwrap_or_default();

@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc};
 
-use indexing::InstanceId;
+use indexing::{DeriveId, InstanceId};
 use la_arena::{Arena, Idx};
 use rustc_hash::{FxHashMap, FxHashSet};
 use smol_str::SmolStr;
@@ -21,10 +21,16 @@ pub struct LetBindingResolution {
     pub equations: Arc<[LetBindingEquationId]>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InstanceKind {
+    Instance(InstanceId),
+    Derive(DeriveId),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    ConstraintRef(InstanceId),
+    ConstraintRef(InstanceKind),
     ConstraintBind,
 }
 
@@ -46,7 +52,7 @@ pub enum GraphNode {
         parent: Option<GraphNodeId>,
         collecting: bool,
         bindings: FxHashSet<SmolStr>,
-        id: InstanceId,
+        id: InstanceKind,
     },
 }
 

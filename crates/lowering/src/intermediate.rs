@@ -239,6 +239,10 @@ pub enum TermItemIr {
     Constructor {
         arguments: Arc<[TypeId]>,
     },
+    Derive {
+        constraints: Arc<[TypeId]>,
+        arguments: Arc<[TypeId]>,
+    },
     Foreign {
         signature: Option<TypeId>,
     },

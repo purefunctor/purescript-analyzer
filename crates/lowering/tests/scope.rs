@@ -66,8 +66,16 @@ fn variable_scope_check(content: &str) -> String {
                     writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
                 }
                 TypeVariableResolution::ConstraintRef(id) => {
-                    let cst = &index.source[*id];
-                    let range = cst.syntax_node_ptr().text_range();
+                    let range = match id {
+                        lowering::InstanceKind::Instance(id) => {
+                            let cst = &index.source[*id];
+                            cst.syntax_node_ptr().text_range()
+                        }
+                        lowering::InstanceKind::Derive(id) => {
+                            let cst = &index.source[*id];
+                            cst.syntax_node_ptr().text_range()
+                        }
+                    };
                     writeln!(snapshot, "  resolves to constraint variable {:?}", range).unwrap();
                 }
                 TypeVariableResolution::ConstraintBind => {
