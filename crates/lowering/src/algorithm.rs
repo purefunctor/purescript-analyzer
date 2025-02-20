@@ -276,10 +276,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .unwrap_or_default();
 
             let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
-            let precedence = cst.precedence().and_then(|t| {
-                let text = t.text();
-                u16::from_str_radix(text, 10).ok()
-            });
+            let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
             let kind = TermItemIr::Operator { resolution, precedence };
             s.intermediate.insert_term_item(item_id, kind);
@@ -438,10 +435,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 .unwrap_or_default();
 
             let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
-            let precedence = cst.precedence().and_then(|t| {
-                let text = t.text();
-                u16::from_str_radix(text, 10).ok()
-            });
+            let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
             let kind = TypeItemIr::Operator { resolution, precedence };
             s.intermediate.insert_type_item(item_id, kind);
