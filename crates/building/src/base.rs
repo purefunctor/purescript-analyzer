@@ -1,6 +1,7 @@
 use std::{mem, sync::Arc};
 
 use indexing::FullModuleIndex;
+use lowering::FullModuleLower;
 use rowan::ast::AstNode;
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::cst;
@@ -12,6 +13,7 @@ pub enum QueryKey {
     Content(FileId),
     Parse(FileId),
     Index(FileId),
+    Lower(FileId),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -39,6 +41,7 @@ pub struct Runtime {
     content: FxHashMap<FileId, Arc<str>>,
     parse: FxHashMap<FileId, cst::Module>,
     index: FxHashMap<FileId, Arc<FullModuleIndex>>,
+    lower: FxHashMap<FileId, Arc<FullModuleLower>>,
 
     parent: Option<QueryKey>,
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
@@ -99,7 +102,12 @@ impl Runtime {
                         QueryKey::Parse(id) => {
                             self.parse(*id);
                         }
-                        QueryKey::Index(_) => (),
+                        QueryKey::Index(id) => {
+                            self.index(*id);
+                        }
+                        QueryKey::Lower(id) => {
+                            self.lower(*id);
+                        }
                     }
                     if let Some(dependency) = self.traces.get(dependency) {
                         latest = latest.max(dependency.changed);
@@ -183,10 +191,34 @@ impl Runtime {
             },
         )
     }
+
+    pub fn lower(&mut self, id: FileId) -> Arc<FullModuleLower> {
+        let k = QueryKey::Lower(id);
+        self.query(
+            k,
+            |this| {
+                let module = this.parse(id);
+                let index = this.index(id);
+                let lower =
+                    lowering::lower_module(&module, &index.index, &index.relational, &index.source);
+                Arc::new(lower)
+            },
+            |this| {
+                let value = this.lower.get(&id).cloned()?;
+                let trace = this.traces.get(&k)?;
+                Some((value, trace))
+            },
+            |this, value| {
+                this.lower.insert(id, value);
+            },
+        )
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::files::Files;
 
     use super::Runtime;
@@ -200,11 +232,21 @@ mod tests {
         let content = files.content(id);
 
         runtime.set_content(id, content);
-        dbg!(runtime.index(id));
-        dbg!(runtime.index(id));
+        let index_a = runtime.index(id);
+        let index_b = runtime.index(id);
+        assert!(Arc::ptr_eq(&index_a, &index_b));
+
+        let lower_a = runtime.lower(id);
+        let lower_b = runtime.lower(id);
+        assert!(Arc::ptr_eq(&lower_a, &lower_b));
 
         runtime.set_content(id, "module Main where\n\n\n\nlife   =   42".into());
-        dbg!(runtime.index(id));
-        dbg!(runtime.index(id));
+        let index_a = runtime.index(id);
+        let index_b = runtime.index(id);
+        assert!(Arc::ptr_eq(&index_a, &index_b));
+
+        let lower_a = runtime.lower(id);
+        let lower_b = runtime.lower(id);
+        assert!(Arc::ptr_eq(&lower_a, &lower_b));
     }
 }

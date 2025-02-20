@@ -38,6 +38,7 @@ dependencies = [
  "indexmap",
  "la-arena",
  "lexing",
+ "lowering",
  "parking_lot",
  "parsing",
  "petgraph",
