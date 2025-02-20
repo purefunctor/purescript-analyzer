@@ -278,18 +278,20 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 s.push_forall_scope();
                 cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
-            let variables = equation
-                .map(|id| {
-                    let cst = &e.source[id].to_node(root);
-                    s.push_forall_scope();
-                    cst.type_variables()
-                        .map(|t| recursive::lower_type_variable_binding(s, e, &t))
-                        .collect()
-                })
-                .unwrap_or_default();
 
-            let group = TypeGroupIr { signature, variables };
-            let kind = TypeItemIr::DataGroup { group };
+            let data = equation.map(|id| {
+                let cst = &e.source[id].to_node(root);
+
+                s.push_forall_scope();
+                let variables = cst
+                    .type_variables()
+                    .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+                    .collect();
+
+                DataIr { variables }
+            });
+
+            let kind = TypeItemIr::DataGroup { signature, data };
             s.intermediate.insert_type_item(item_id, kind);
 
             lower_constructors(s, e, item_id);
@@ -300,18 +302,20 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 s.push_forall_scope();
                 cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
-            let variables = equation
-                .map(|id| {
-                    let cst = &e.source[id].to_node(root);
-                    s.push_forall_scope();
-                    cst.type_variables()
-                        .map(|t| recursive::lower_type_variable_binding(s, e, &t))
-                        .collect()
-                })
-                .unwrap_or_default();
 
-            let group = TypeGroupIr { signature, variables };
-            let kind = TypeItemIr::NewtypeGroup { group };
+            let newtype = equation.map(|id| {
+                let cst = &e.source[id].to_node(root);
+
+                s.push_forall_scope();
+                let variables = cst
+                    .type_variables()
+                    .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+                    .collect();
+
+                NewtypeIr { variables }
+            });
+
+            let kind = TypeItemIr::NewtypeGroup { signature, newtype };
             s.intermediate.insert_type_item(item_id, kind);
 
             lower_constructors(s, e, item_id);
@@ -322,22 +326,22 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 s.push_forall_scope();
                 cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
-            let variables = equation
-                .map(|id| {
-                    let cst = &e.source[id].to_node(root);
-                    s.push_forall_scope();
-                    cst.children()
-                        .map(|t| recursive::lower_type_variable_binding(s, e, &t))
-                        .collect()
-                })
-                .unwrap_or_default();
-            let r#type = equation.and_then(|id| {
+
+            let synonym = equation.map(|id| {
                 let cst = &e.source[id].to_node(root);
-                cst.r#type().map(|t| recursive::lower_type(s, e, &t))
+
+                s.push_forall_scope();
+                let variables = cst
+                    .children()
+                    .map(|cst| recursive::lower_type_variable_binding(s, e, &cst))
+                    .collect();
+
+                let r#type = cst.r#type().map(|cst| recursive::lower_type(s, e, &cst));
+
+                SynonymIr { variables, r#type }
             });
 
-            let group = TypeGroupIr { signature, variables };
-            let kind = TypeItemIr::SynonymGroup { group, r#type };
+            let kind = TypeItemIr::SynonymGroup { signature, synonym };
             s.intermediate.insert_type_item(item_id, kind);
         }
         TypeItem::Class { signature, declaration } => {
@@ -349,8 +353,8 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
 
             let class = declaration.map(|id| {
                 let cst = &e.source[id].to_node(root);
-                s.push_forall_scope();
 
+                s.push_forall_scope();
                 let variables = cst
                     .class_head()
                     .map(|cst| {
