@@ -31,9 +31,10 @@ snapshot_kind: text
                 TEXT@49..50 " "
               DOUBLE_COLON@50..52 "::"
             InstanceHead@52..67
-              Annotation@52..53
-                TEXT@52..53 " "
-              UPPER@53..60 "Functor"
+              QualifiedName@52..60
+                Annotation@52..53
+                  TEXT@52..53 " "
+                UPPER@53..60 "Functor"
               TypeConstructor@60..67
                 QualifiedName@60..67
                   Annotation@60..61

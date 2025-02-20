@@ -24,9 +24,10 @@ snapshot_kind: text
               TEXT@37..111 "\n\n-- Instance chains  ..."
             INSTANCE@111..119 "instance"
             InstanceHead@119..127
-              Annotation@119..120
-                TEXT@119..120 " "
-              UPPER@120..123 "Foo"
+              QualifiedName@119..123
+                Annotation@119..120
+                  TEXT@119..120 " "
+                UPPER@120..123 "Foo"
               TypeConstructor@123..127
                 QualifiedName@123..127
                   Annotation@123..124
@@ -41,9 +42,10 @@ snapshot_kind: text
               TEXT@132..133 "\n"
             INSTANCE@133..141 "instance"
             InstanceHead@141..149
-              Annotation@141..142
-                TEXT@141..142 " "
-              UPPER@142..145 "Foo"
+              QualifiedName@141..145
+                Annotation@141..142
+                  TEXT@141..142 " "
+                UPPER@142..145 "Foo"
               TypeConstructor@145..149
                 QualifiedName@145..149
                   Annotation@145..146

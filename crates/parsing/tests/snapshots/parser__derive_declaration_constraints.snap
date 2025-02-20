@@ -41,9 +41,10 @@ snapshot_kind: text
               TEXT@72..73 " "
             RIGHT_THICK_ARROW@73..75 "=>"
           InstanceHead@75..90
-            Annotation@75..76
-              TEXT@75..76 " "
-            UPPER@76..83 "Functor"
+            QualifiedName@75..83
+              Annotation@75..76
+                TEXT@75..76 " "
+              UPPER@76..83 "Functor"
             TypeConstructor@83..90
               QualifiedName@83..90
                 Annotation@83..84
@@ -76,9 +77,10 @@ snapshot_kind: text
               TEXT@128..129 " "
             RIGHT_THICK_ARROW@129..131 "=>"
           InstanceHead@131..146
-            Annotation@131..132
-              TEXT@131..132 " "
-            UPPER@132..139 "Functor"
+            QualifiedName@131..139
+              Annotation@131..132
+                TEXT@131..132 " "
+              UPPER@132..139 "Functor"
             TypeConstructor@139..146
               QualifiedName@139..146
                 Annotation@139..140
@@ -120,9 +122,10 @@ snapshot_kind: text
               TEXT@184..185 " "
             RIGHT_THICK_ARROW@185..187 "=>"
           InstanceHead@187..206
-            Annotation@187..188
-              TEXT@187..188 " "
-            UPPER@188..194 "Monoid"
+            QualifiedName@187..194
+              Annotation@187..188
+                TEXT@187..188 " "
+              UPPER@188..194 "Monoid"
             TypeParenthesized@194..206
               Annotation@194..195
                 TEXT@194..195 " "
@@ -179,9 +182,10 @@ snapshot_kind: text
               TEXT@251..252 " "
             RIGHT_THICK_ARROW@252..254 "=>"
           InstanceHead@254..273
-            Annotation@254..255
-              TEXT@254..255 " "
-            UPPER@255..261 "Monoid"
+            QualifiedName@254..261
+              Annotation@254..255
+                TEXT@254..255 " "
+              UPPER@255..261 "Monoid"
             TypeParenthesized@261..273
               Annotation@261..262
                 TEXT@261..262 " "

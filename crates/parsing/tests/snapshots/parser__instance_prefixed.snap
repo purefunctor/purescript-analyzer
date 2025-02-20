@@ -24,11 +24,12 @@ snapshot_kind: text
               TEXT@29..31 "\n\n"
             INSTANCE@31..39 "instance"
             InstanceHead@39..54
-              Annotation@39..40
-                TEXT@39..40 " "
-              Qualifier@40..48
-                TEXT@40..48 "Data.Eq."
-              UPPER@48..50 "Eq"
+              QualifiedName@39..50
+                Annotation@39..40
+                  TEXT@39..40 " "
+                Qualifier@40..48
+                  TEXT@40..48 "Data.Eq."
+                UPPER@48..50 "Eq"
               TypeConstructor@50..54
                 QualifiedName@50..54
                   Annotation@50..51

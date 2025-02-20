@@ -38,9 +38,10 @@ snapshot_kind: text
                 TEXT@54..55 " "
               RIGHT_THICK_ARROW@55..57 "=>"
             InstanceHead@57..79
-              Annotation@57..58
-                TEXT@57..58 " "
-              UPPER@58..67 "Serialise"
+              QualifiedName@57..67
+                Annotation@57..58
+                  TEXT@57..58 " "
+                UPPER@58..67 "Serialise"
               TypeVariable@67..69
                 Annotation@67..68
                   TEXT@67..68 " "
@@ -93,9 +94,10 @@ snapshot_kind: text
                 TEXT@120..121 " "
               RIGHT_THICK_ARROW@121..123 "=>"
             InstanceHead@123..148
-              Annotation@123..124
-                TEXT@123..124 " "
-              UPPER@124..133 "Serialise"
+              QualifiedName@123..133
+                Annotation@123..124
+                  TEXT@123..124 " "
+                UPPER@124..133 "Serialise"
               TypeVariable@133..135
                 Annotation@133..134
                   TEXT@133..134 " "

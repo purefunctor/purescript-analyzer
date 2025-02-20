@@ -33,9 +33,10 @@ snapshot_kind: text
               TEXT@66..67 " "
             DOUBLE_COLON@67..69 "::"
           InstanceHead@69..84
-            Annotation@69..70
-              TEXT@69..70 " "
-            UPPER@70..77 "Functor"
+            QualifiedName@69..77
+              Annotation@69..70
+                TEXT@69..70 " "
+              UPPER@70..77 "Functor"
             TypeConstructor@77..84
               QualifiedName@77..84
                 Annotation@77..78
@@ -60,9 +61,10 @@ snapshot_kind: text
               TEXT@122..123 " "
             DOUBLE_COLON@123..125 "::"
           InstanceHead@125..140
-            Annotation@125..126
-              TEXT@125..126 " "
-            UPPER@126..133 "Functor"
+            QualifiedName@125..133
+              Annotation@125..126
+                TEXT@125..126 " "
+              UPPER@126..133 "Functor"
             TypeConstructor@133..140
               QualifiedName@133..140
                 Annotation@133..134

@@ -26,9 +26,10 @@ snapshot_kind: text
             TEXT@38..39 " "
           INSTANCE@39..47 "instance"
           InstanceHead@47..62
-            Annotation@47..48
-              TEXT@47..48 " "
-            UPPER@48..55 "Functor"
+            QualifiedName@47..55
+              Annotation@47..48
+                TEXT@47..48 " "
+              UPPER@48..55 "Functor"
             TypeConstructor@55..62
               QualifiedName@55..62
                 Annotation@55..56
@@ -46,9 +47,10 @@ snapshot_kind: text
             TEXT@77..78 " "
           INSTANCE@78..86 "instance"
           InstanceHead@86..101
-            Annotation@86..87
-              TEXT@86..87 " "
-            UPPER@87..94 "Functor"
+            QualifiedName@86..94
+              Annotation@86..87
+                TEXT@86..87 " "
+              UPPER@87..94 "Functor"
             TypeConstructor@94..101
               QualifiedName@94..101
                 Annotation@94..95

@@ -812,7 +812,7 @@ fn instance_constraints(p: &mut Parser) {
 
 fn instance_head(p: &mut Parser) {
     let mut m = p.start();
-    p.expect(SyntaxKind::UPPER);
+    names::upper(p);
     while p.at_in(types::TYPE_ATOM_START) && !p.at_eof() {
         types::type_atom(p);
     }

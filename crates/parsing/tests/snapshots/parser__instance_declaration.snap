@@ -24,9 +24,10 @@ snapshot_kind: text
               TEXT@32..34 "\n\n"
             INSTANCE@34..42 "instance"
             InstanceHead@42..56
-              Annotation@42..43
-                TEXT@42..43 " "
-              UPPER@43..50 "Functor"
+              QualifiedName@42..50
+                Annotation@42..43
+                  TEXT@42..43 " "
+                UPPER@43..50 "Functor"
               TypeConstructor@50..56
                 QualifiedName@50..56
                   Annotation@50..51

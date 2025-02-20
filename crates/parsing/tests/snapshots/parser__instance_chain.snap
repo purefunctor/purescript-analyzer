@@ -24,9 +24,10 @@ snapshot_kind: text
               TEXT@26..28 "\n\n"
             INSTANCE@28..36 "instance"
             InstanceHead@36..52
-              Annotation@36..37
-                TEXT@36..37 " "
-              UPPER@37..46 "Serialise"
+              QualifiedName@36..46
+                Annotation@36..37
+                  TEXT@36..37 " "
+                UPPER@37..46 "Serialise"
               TypeVariable@46..48
                 Annotation@46..47
                   TEXT@46..47 " "
@@ -44,9 +45,10 @@ snapshot_kind: text
               TEXT@57..58 " "
             INSTANCE@58..66 "instance"
             InstanceHead@66..85
-              Annotation@66..67
-                TEXT@66..67 " "
-              UPPER@67..76 "Serialise"
+              QualifiedName@66..76
+                Annotation@66..67
+                  TEXT@66..67 " "
+                UPPER@67..76 "Serialise"
               TypeVariable@76..78
                 Annotation@76..77
                   TEXT@76..77 " "
