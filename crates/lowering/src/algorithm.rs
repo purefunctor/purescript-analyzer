@@ -197,6 +197,16 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItem::Derive { id } => {
             let cst = &e.source[*id].to_node(root);
 
+            let (qualifier, name) = cst
+                .instance_head()
+                .and_then(|cst| {
+                    cst.qualified()
+                        .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
+                })
+                .unwrap_or_default();
+
+            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
@@ -213,7 +223,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 })
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Derive { constraints, arguments };
+            let kind = TermItemIr::Derive { resolution, constraints, arguments };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItem::Foreign { id } => {
@@ -224,6 +234,16 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         }
         TermItem::Instance { id } => {
             let cst = &e.source[*id].to_node(root);
+
+            let (qualifier, name) = cst
+                .instance_head()
+                .and_then(|cst| {
+                    cst.qualified()
+                        .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
+                })
+                .unwrap_or_default();
+
+            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
 
             let arguments = cst
                 .instance_head()
@@ -246,7 +266,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .map(|cst| lower_instance_statements(s, e, &cst))
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Instance { constraints, arguments, members };
+            let kind = TermItemIr::Instance { resolution, constraints, arguments, members };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItem::Operator { id } => {

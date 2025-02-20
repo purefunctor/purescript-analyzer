@@ -240,6 +240,7 @@ pub enum TermItemIr {
         arguments: Arc<[TypeId]>,
     },
     Derive {
+        resolution: RootResolutionId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
     },
@@ -247,6 +248,7 @@ pub enum TermItemIr {
         signature: Option<TypeId>,
     },
     Instance {
+        resolution: RootResolutionId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,

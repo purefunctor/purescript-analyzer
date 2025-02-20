@@ -385,14 +385,9 @@ has_token!(
     | name_token() -> LOWER
 );
 
-has_token!(
-    InstanceHead
-    | type_name_token() -> UPPER
-);
-
 has_child!(
     InstanceHead
-    | qualifier() -> Qualifier
+    | qualified() -> QualifiedName
 );
 
 has_children!(
