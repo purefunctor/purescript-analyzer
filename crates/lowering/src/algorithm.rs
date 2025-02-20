@@ -2,7 +2,7 @@ mod recursive;
 
 use std::{mem, sync::Arc};
 
-use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId};
+use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId, TypeRoleId};
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
@@ -140,12 +140,10 @@ impl State {
                 let name = SmolStr::from(name);
                 bindings.insert(name);
                 Some(TypeVariableResolution::ConstraintBind)
+            } else if bindings.contains(name) {
+                Some(TypeVariableResolution::ConstraintRef(*id))
             } else {
-                if bindings.contains(name) {
-                    Some(TypeVariableResolution::ConstraintRef(*id))
-                } else {
-                    None
-                }
+                None
             }
         } else {
             self.graph.traverse(id).find_map(|graph| match graph {
@@ -313,7 +311,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
 fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &TypeItem) {
     let root = e.module.syntax();
     match item {
-        TypeItem::Data { signature, equation, .. } => {
+        TypeItem::Data { signature, equation, role } => {
             let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
                 s.push_forall_scope();
@@ -332,12 +330,14 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 DataIr { variables }
             });
 
-            let kind = TypeItemIr::DataGroup { signature, data };
+            let roles = role.map(|id| lower_roles(e, id)).unwrap_or_default();
+
+            let kind = TypeItemIr::DataGroup { signature, data, roles };
             s.intermediate.insert_type_item(item_id, kind);
 
             lower_constructors(s, e, item_id);
         }
-        TypeItem::Newtype { signature, equation, .. } => {
+        TypeItem::Newtype { signature, equation, role } => {
             let signature = signature.and_then(|id| {
                 let cst = &e.source[id].to_node(root);
                 s.push_forall_scope();
@@ -356,7 +356,9 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 NewtypeIr { variables }
             });
 
-            let kind = TypeItemIr::NewtypeGroup { signature, newtype };
+            let roles = role.map(|id| lower_roles(e, id)).unwrap_or_default();
+
+            let kind = TypeItemIr::NewtypeGroup { signature, newtype, roles };
             s.intermediate.insert_type_item(item_id, kind);
 
             lower_constructors(s, e, item_id);
@@ -548,6 +550,24 @@ fn lower_instance_statements(
                     .collect();
                 InstanceMemberGroup { signature, equations }
             })
+        })
+        .collect()
+}
+
+fn lower_roles(e: &Environment, id: TypeRoleId) -> Arc<[Role]> {
+    let root = e.module.syntax();
+    let cst = &e.source[id].to_node(root);
+    cst.children()
+        .map(|cst| {
+            if cst.nominal().is_some() {
+                Role::Nominal
+            } else if cst.representational().is_some() {
+                Role::Representational
+            } else if cst.phantom().is_some() {
+                Role::Phantom
+            } else {
+                Role::Unknown
+            }
         })
         .collect()
 }

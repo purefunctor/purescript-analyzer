@@ -264,6 +264,14 @@ pub enum TermItemIr {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub enum Role {
+    Nominal,
+    Representational,
+    Phantom,
+    Unknown,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct DataIr {
     pub variables: Arc<[TypeVariableBinding]>,
 }
@@ -287,8 +295,8 @@ pub struct ClassIr {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeItemIr {
-    DataGroup { signature: Option<TypeId>, data: Option<DataIr> },
-    NewtypeGroup { signature: Option<TypeId>, newtype: Option<NewtypeIr> },
+    DataGroup { signature: Option<TypeId>, data: Option<DataIr>, roles: Arc<[Role]> },
+    NewtypeGroup { signature: Option<TypeId>, newtype: Option<NewtypeIr>, roles: Arc<[Role]> },
     SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
     ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
     Foreign { signature: Option<TypeId> },

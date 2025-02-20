@@ -577,6 +577,18 @@ has_token!(
     | name_token() -> UPPER
 );
 
+has_children!(
+    TypeRoleDeclaration
+    | children() -> TypeRole
+);
+
+has_token!(
+    TypeRole
+    | nominal() -> NOMINAL
+    | representational() -> REPRESENTATIONAL
+    | phantom() -> PHANTOM
+);
+
 has_token!(
     InfixDeclaration
     | type_token() -> TYPE
