@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 dashmap = "6.1.0"
+hashbrown = "0.15.2"
 indexing = { version = "0.1.0", path = "../indexing" }
 indexmap = "2.7.1"
 la-arena = "0.3.1"

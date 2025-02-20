@@ -34,6 +34,7 @@ name = "building"
 version = "0.1.0"
 dependencies = [
  "dashmap",
+ "hashbrown 0.15.2",
  "indexing",
  "indexmap",
  "la-arena",
