@@ -346,20 +346,31 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 s.push_forall_scope();
                 cst.r#type().map(|t| recursive::lower_forall(s, e, &t))
             });
-            let variables = declaration
-                .and_then(|id| {
-                    let cst = &e.source[id].to_node(root);
-                    s.push_forall_scope();
-                    cst.class_head().map(|h| {
-                        h.children()
-                            .map(|t| recursive::lower_type_variable_binding(s, e, &t))
+
+            let class = declaration.map(|id| {
+                let cst = &e.source[id].to_node(root);
+                s.push_forall_scope();
+
+                let variables = cst
+                    .class_head()
+                    .map(|cst| {
+                        cst.children()
+                            .map(|cst| recursive::lower_type_variable_binding(s, e, &cst))
                             .collect()
                     })
-                })
-                .unwrap_or_default();
+                    .unwrap_or_default();
 
-            let group = TypeGroupIr { signature, variables };
-            let kind = TypeItemIr::ClassGroup { group };
+                let constraints = cst
+                    .class_constraints()
+                    .map(|cst| {
+                        cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                    })
+                    .unwrap_or_default();
+
+                ClassIr { constraints, variables }
+            });
+
+            let kind = TypeItemIr::ClassGroup { signature, class };
             s.intermediate.insert_type_item(item_id, kind);
 
             lower_class_members(s, e, item_id);

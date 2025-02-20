@@ -463,8 +463,14 @@ has_child!(
 
 has_child!(
     ClassDeclaration
+    | class_constraints() -> ClassConstraints
     | class_head() -> ClassHead
     | class_statements() -> ClassStatements
+);
+
+has_children!(
+    ClassConstraints
+    | children() -> Type
 );
 
 has_token!(

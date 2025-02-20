@@ -264,11 +264,17 @@ pub struct TypeGroupIr {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct ClassIr {
+    pub constraints: Arc<[TypeId]>,
+    pub variables: Arc<[TypeVariableBinding]>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum TypeItemIr {
     DataGroup { group: TypeGroupIr },
     NewtypeGroup { group: TypeGroupIr },
     SynonymGroup { group: TypeGroupIr, r#type: Option<TypeId> },
-    ClassGroup { group: TypeGroupIr },
+    ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
     Foreign { signature: Option<TypeId> },
     Operator { resolution: RootResolutionId, precedence: Option<u16> },
 }
