@@ -1,20 +1,21 @@
 mod shared;
 
 use lowering::{
-    ExpressionKind, LetBindingResolution, TermResolution, TypeKind, TypeVariableResolution,
+    ExpressionKind, FullModuleLower, LetBindingResolution, TermResolution, TypeKind,
+    TypeVariableResolution,
 };
 use std::fmt::Write;
 use test_each_file::test_each_file;
 
 fn variable_scope_check(content: &str) -> String {
-    let (_, index, ir, source, _) = shared::lower_source(content);
+    let (_, index, FullModuleLower { intermediate, source, .. }) = shared::lower_source(content);
 
     let mut snapshot = String::default();
 
     writeln!(snapshot, "Expressions:").unwrap();
     writeln!(snapshot).unwrap();
-    for (expression_id, _) in ir.iter_expression() {
-        let Some(ExpressionKind::Variable { resolution }) = ir.index_expression_kind(expression_id)
+    for (expression_id, _) in intermediate.iter_expression() {
+        let Some(ExpressionKind::Variable { resolution }) = intermediate.index_expression_kind(expression_id)
         else {
             continue;
         };
@@ -51,8 +52,8 @@ fn variable_scope_check(content: &str) -> String {
 
     writeln!(snapshot, "\nTypes:\n").unwrap();
 
-    for (type_id, _) in ir.iter_type() {
-        let Some(TypeKind::Variable { resolution }) = ir.index_type_kind(type_id) else {
+    for (type_id, _) in intermediate.iter_type() {
+        let Some(TypeKind::Variable { resolution }) = intermediate.index_type_kind(type_id) else {
             continue;
         };
         let cst = &source[type_id];

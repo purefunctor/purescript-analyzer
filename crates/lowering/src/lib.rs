@@ -10,13 +10,20 @@ pub use source::*;
 
 use syntax::cst;
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct FullModuleLower {
+    pub intermediate: Intermediate,
+    pub source: LoweringSource,
+    pub graph: Graph,
+}
+
 pub fn lower_module(
     module: &cst::Module,
     index: &indexing::Index,
     relational: &indexing::Relational,
     source: &indexing::IndexingSource,
-) -> (Intermediate, LoweringSource, Graph) {
+) -> FullModuleLower {
     let algorithm::State { intermediate, source, graph, .. } =
         algorithm::lower_module(module, index, relational, source);
-    (intermediate, source, graph)
+    FullModuleLower { intermediate, source, graph }
 }

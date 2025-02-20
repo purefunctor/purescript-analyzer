@@ -1,11 +1,9 @@
 use indexing::FullModuleIndex;
-use lowering::{Graph, Intermediate, LoweringSource};
+use lowering::FullModuleLower;
 use rowan::ast::AstNode;
 use syntax::cst;
 
-pub fn lower_source(
-    source: &str,
-) -> (cst::Module, FullModuleIndex, Intermediate, LoweringSource, Graph) {
+pub fn lower_source(source: &str) -> (cst::Module, FullModuleIndex, FullModuleLower) {
     let lexed = lexing::lex(source);
     let tokens = lexing::layout(&lexed);
 
@@ -13,12 +11,12 @@ pub fn lower_source(
     let module = cst::Module::cast(module).unwrap();
 
     let full_module_index = indexing::index_module(&module);
-    let (ir, source, graph) = lowering::lower_module(
+    let full_module_lower = lowering::lower_module(
         &module,
         &full_module_index.index,
         &full_module_index.relational,
         &full_module_index.source,
     );
 
-    (module, full_module_index, ir, source, graph)
+    (module, full_module_index, full_module_lower)
 }
