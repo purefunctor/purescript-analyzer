@@ -15,7 +15,8 @@ fn variable_scope_check(content: &str) -> String {
     writeln!(snapshot, "Expressions:").unwrap();
     writeln!(snapshot).unwrap();
     for (expression_id, _) in intermediate.iter_expression() {
-        let Some(ExpressionKind::Variable { resolution }) = intermediate.index_expression_kind(expression_id)
+        let Some(ExpressionKind::Variable { resolution }) =
+            intermediate.index_expression_kind(expression_id)
         else {
             continue;
         };
