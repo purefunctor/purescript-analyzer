@@ -16,6 +16,8 @@ Types:
 
 115..117
   introduces constraint variable
+100..102
+  resolves to constraint variable 87..181
 138..140
   resolves to constraint variable 87..181
 149..151

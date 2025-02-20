@@ -30,10 +30,24 @@ pub enum TypeVariableResolution {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
-    Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
-    Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
-    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
-    Constraint { parent: Option<GraphNodeId>, bindings: FxHashSet<SmolStr>, id: InstanceId },
+    Binder {
+        parent: Option<GraphNodeId>,
+        bindings: FxHashMap<SmolStr, BinderId>,
+    },
+    Forall {
+        parent: Option<GraphNodeId>,
+        bindings: FxHashMap<SmolStr, TypeVariableBindingId>,
+    },
+    Let {
+        parent: Option<GraphNodeId>,
+        bindings: FxHashMap<SmolStr, LetBindingResolution>,
+    },
+    Constraint {
+        parent: Option<GraphNodeId>,
+        collecting: bool,
+        bindings: FxHashSet<SmolStr>,
+        id: InstanceId,
+    },
 }
 
 pub type GraphNodeId = Idx<GraphNode>;

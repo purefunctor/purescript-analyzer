@@ -80,9 +80,16 @@ impl State {
 
     fn push_constraint_scope(&mut self, id: InstanceId) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
+        let collecting = true;
         let bindings = FxHashSet::default();
-        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, bindings, id });
+        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, collecting, bindings, id });
         mem::replace(&mut self.graph_scope, Some(id))
+    }
+
+    fn finish_constraint_scope(&mut self) {
+        let Some(id) = self.graph_scope else { return };
+        let GraphNode::Constraint { collecting, .. } = &mut self.graph.inner[id] else { return };
+        *collecting = false;
     }
 
     fn resolve_root(
@@ -128,10 +135,18 @@ impl State {
 
     fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableResolution> {
         let id = self.graph_scope?;
-        if let GraphNode::Constraint { bindings, .. } = &mut self.graph.inner[id] {
-            let name = SmolStr::from(name);
-            bindings.insert(name);
-            Some(TypeVariableResolution::ConstraintBind)
+        if let GraphNode::Constraint { collecting, bindings, id, .. } = &mut self.graph.inner[id] {
+            if *collecting {
+                let name = SmolStr::from(name);
+                bindings.insert(name);
+                Some(TypeVariableResolution::ConstraintBind)
+            } else {
+                if bindings.contains(name) {
+                    Some(TypeVariableResolution::ConstraintRef(*id))
+                } else {
+                    None
+                }
+            }
         } else {
             self.graph.traverse(id).find_map(|graph| match graph {
                 GraphNode::Forall { bindings, .. } => {
@@ -197,12 +212,20 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 })
                 .unwrap_or_default();
 
+            let constraints = cst
+                .instance_constraints()
+                .map(|cst| {
+                    s.finish_constraint_scope();
+                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                })
+                .unwrap_or_default();
+
             let members = cst
                 .instance_statements()
                 .map(|cst| lower_instance_statements(s, e, &cst))
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Instance { arguments, members };
+            let kind = TermItemIr::Instance { constraints, arguments, members };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItem::Operator { id } => {

@@ -233,12 +233,28 @@ pub struct InstanceMemberGroup {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TermItemIr {
-    ClassMember { signature: Option<TypeId> },
-    Constructor { arguments: Arc<[TypeId]> },
-    Foreign { signature: Option<TypeId> },
-    Instance { arguments: Arc<[TypeId]>, members: Arc<[InstanceMemberGroup]> },
-    Operator { resolution: RootResolutionId, precedence: Option<u16> },
-    ValueGroup { signature: Option<TypeId>, equations: Arc<[Equation]> },
+    ClassMember {
+        signature: Option<TypeId>,
+    },
+    Constructor {
+        arguments: Arc<[TypeId]>,
+    },
+    Foreign {
+        signature: Option<TypeId>,
+    },
+    Instance {
+        constraints: Arc<[TypeId]>,
+        arguments: Arc<[TypeId]>,
+        members: Arc<[InstanceMemberGroup]>,
+    },
+    Operator {
+        resolution: RootResolutionId,
+        precedence: Option<u16>,
+    },
+    ValueGroup {
+        signature: Option<TypeId>,
+        equations: Arc<[Equation]>,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
