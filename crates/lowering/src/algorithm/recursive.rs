@@ -435,7 +435,7 @@ fn lower_bindings(
         }
     }
 
-    Arc::from(bindings)
+    bindings.into()
 }
 
 fn lower_pattern_bindings(
