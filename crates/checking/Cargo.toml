@@ -1,21 +1,15 @@
 [package]
-name = "building"
+name = "checking"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-dashmap = "6.1.0"
 files = { version = "0.1.0", path = "../files" }
-hashbrown = "0.15.2"
 indexing = { version = "0.1.0", path = "../indexing" }
-indexmap = "2.7.1"
+interner = { version = "0.1.0", path = "../interner" }
 la-arena = "0.3.1"
 lexing = { version = "0.1.0", path = "../lexing" }
 lowering = { version = "0.1.0", path = "../lowering" }
-parking_lot = "0.12.3"
 parsing = { version = "0.1.0", path = "../parsing" }
-petgraph = "0.7.1"
-rayon = "1.10.0"
 rowan = "0.16.1"
-rustc-hash = "2.1.0"
 syntax = { version = "0.1.0", path = "../syntax" }
