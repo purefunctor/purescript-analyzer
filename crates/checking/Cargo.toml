@@ -12,4 +12,5 @@ lexing = { version = "0.1.0", path = "../lexing" }
 lowering = { version = "0.1.0", path = "../lowering" }
 parsing = { version = "0.1.0", path = "../parsing" }
 rowan = "0.16.1"
+smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }

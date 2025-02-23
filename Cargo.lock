@@ -89,6 +89,7 @@ dependencies = [
  "lowering",
  "parsing",
  "rowan",
+ "smol_str",
  "syntax",
 ]
 

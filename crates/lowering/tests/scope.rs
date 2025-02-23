@@ -54,7 +54,8 @@ fn variable_scope_check(content: &str) -> String {
     writeln!(snapshot, "\nTypes:\n").unwrap();
 
     for (type_id, _) in intermediate.iter_type() {
-        let Some(TypeKind::Variable { resolution }) = intermediate.index_type_kind(type_id) else {
+        let Some(TypeKind::Variable { resolution, .. }) = intermediate.index_type_kind(type_id)
+        else {
             continue;
         };
         let cst = &source[type_id];

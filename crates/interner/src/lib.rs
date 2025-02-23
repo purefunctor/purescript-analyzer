@@ -7,10 +7,18 @@ use hashbrown::HashTable;
 use la_arena::{Idx, RawIdx};
 use rustc_hash::FxBuildHasher;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Interner<T> {
     inner: Vec<T>,
     table: HashTable<usize>,
+}
+
+impl<T> Default for Interner<T> {
+    fn default() -> Interner<T> {
+        let inner = vec![];
+        let table = HashTable::default();
+        Interner { inner, table }
+    }
 }
 
 impl<T: PartialEq> PartialEq for Interner<T> {
@@ -36,6 +44,11 @@ impl<T: Eq + Hash> Interner<T> {
             index
         });
         Idx::from_raw(RawIdx::from_u32(index as u32))
+    }
+
+    pub fn index(&self, id: Idx<T>) -> &T {
+        let index = id.into_raw().into_u32() as usize;
+        &self.inner[index]
     }
 }
 

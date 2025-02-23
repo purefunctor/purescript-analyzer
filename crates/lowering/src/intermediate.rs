@@ -144,14 +144,14 @@ pub enum ExpressionKind {
     },
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TypeVariableBinding {
     pub visible: bool,
     pub name: Option<SmolStr>,
     pub kind: Option<TypeId>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TypeRowItem {
     pub name: Option<SmolStr>,
     pub r#type: Option<TypeId>,
@@ -170,7 +170,7 @@ pub enum TypeKind {
     Operator { resolution: RootResolutionId },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
-    Variable { resolution: Option<TypeVariableResolution> },
+    Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
     Wildcard,
     Record { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
     Row { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },

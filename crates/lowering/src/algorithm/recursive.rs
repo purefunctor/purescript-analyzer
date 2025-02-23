@@ -679,11 +679,15 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
         }
         cst::Type::TypeString(_) => TypeKind::String,
         cst::Type::TypeVariable(v) => {
-            let resolution = v.name_token().and_then(|t| {
-                let name = t.text();
-                s.resolve_type_variable(name)
+            let name = v.name_token().map(|t| {
+                let text = t.text();
+                SmolStr::from(text)
             });
-            TypeKind::Variable { resolution }
+            let resolution = v.name_token().and_then(|t| {
+                let text = t.text();
+                s.resolve_type_variable(&text)
+            });
+            TypeKind::Variable { name, resolution }
         }
         cst::Type::TypeWildcard(_) => TypeKind::Wildcard,
         cst::Type::TypeRecord(r) => {
