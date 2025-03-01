@@ -770,7 +770,7 @@ pub(super) fn lower_type_variable_binding(
     if let Some(name) = &name {
         s.insert_bound_variable(name, id);
     }
-    TypeVariableBinding { visible, name, kind }
+    TypeVariableBinding { visible, id, name, kind }
 }
 
 fn lower_row_item(s: &mut State, e: &Environment, cst: &cst::TypeRowItem) -> TypeRowItem {

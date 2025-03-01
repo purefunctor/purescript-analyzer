@@ -147,6 +147,7 @@ pub enum ExpressionKind {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TypeVariableBinding {
     pub visible: bool,
+    pub id: TypeVariableBindingId,
     pub name: Option<SmolStr>,
     pub kind: Option<TypeId>,
 }
