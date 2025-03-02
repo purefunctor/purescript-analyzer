@@ -30,8 +30,8 @@ pub enum InstanceKind {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    ConstraintRef(InstanceKind),
-    ConstraintBind,
+    Instance(InstanceKind),
+    InstanceBinder,
 }
 
 #[derive(Debug, PartialEq, Eq)]

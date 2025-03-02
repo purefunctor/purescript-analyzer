@@ -3,6 +3,8 @@ use indexing::TypeItemId;
 use la_arena::Idx;
 use smol_str::SmolStr;
 
+use crate::debruijn;
+
 pub trait CoreStorage {
     fn unknown(&self) -> TypeId;
 
@@ -28,6 +30,7 @@ pub enum Constructor {
 pub struct ForallBinder {
     pub visible: bool,
     pub name: SmolStr,
+    pub level: debruijn::Level,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -43,7 +46,7 @@ pub enum Type {
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
     Unification(Unification),
-    Variable(SmolStr),
+    Variable(debruijn::Index),
     Unknown,
 }
 

@@ -139,9 +139,9 @@ impl State {
             if *collecting {
                 let name = SmolStr::from(name);
                 bindings.insert(name);
-                Some(TypeVariableResolution::ConstraintBind)
+                Some(TypeVariableResolution::InstanceBinder)
             } else if bindings.contains(name) {
-                Some(TypeVariableResolution::ConstraintRef(*id))
+                Some(TypeVariableResolution::Instance(*id))
             } else {
                 None
             }
@@ -152,7 +152,7 @@ impl State {
                 }
                 GraphNode::Constraint { bindings, id, .. } => {
                     if bindings.contains(name) {
-                        Some(TypeVariableResolution::ConstraintRef(*id))
+                        Some(TypeVariableResolution::Instance(*id))
                     } else {
                         None
                     }

@@ -58,6 +58,9 @@ fn check_source(source: &str) -> (cst::Module, FullModuleIndex, FullModuleLower)
 fn test_basic() {
     let (_, _, _) = check_source(
         r#"module Main where
-foreign import unit :: forall a. a -> a"#,
+-- foreign import const :: forall a b. a -> b -> a
+
+instance Eq a
+"#,
     );
 }

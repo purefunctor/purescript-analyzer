@@ -84,6 +84,7 @@ dependencies = [
  "files",
  "indexing",
  "interner",
+ "itertools",
  "la-arena",
  "lexing",
  "lowering",
