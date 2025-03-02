@@ -1,14 +1,14 @@
 mod shared;
 
 use lowering::{
-    ExpressionKind, FullModuleLower, LetBindingResolution, TermResolution, TypeKind,
+    ExpressionKind, FullModuleLower, GraphNode, LetBindingResolution, TermResolution, TypeKind,
     TypeVariableResolution,
 };
 use std::fmt::Write;
 use test_each_file::test_each_file;
 
 fn variable_scope_check(content: &str) -> String {
-    let (_, index, FullModuleLower { intermediate, source, .. }) = shared::lower_source(content);
+    let (_, index, FullModuleLower { intermediate, source, graph }) = shared::lower_source(content);
 
     let mut snapshot = String::default();
 
@@ -68,21 +68,19 @@ fn variable_scope_check(content: &str) -> String {
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
                 }
-                TypeVariableResolution::Instance(id) => {
-                    let range = match id {
-                        lowering::InstanceKind::Instance(id) => {
-                            let cst = &index.source[*id];
-                            cst.syntax_node_ptr().text_range()
+                TypeVariableResolution::Instance { binding, node_id, name_id } => {
+                    if let GraphNode::Constraint { bindings, .. } = dbg!(&graph[*node_id]) {
+                        let name = bindings.index(*name_id);
+                        if *binding {
+                            writeln!(snapshot, " introduces a constraint variable {:?}", name)
+                                .unwrap();
+                        } else {
+                            writeln!(snapshot, " resolves to a constraint variable {:?}", name)
+                                .unwrap();
                         }
-                        lowering::InstanceKind::Derive(id) => {
-                            let cst = &index.source[*id];
-                            cst.syntax_node_ptr().text_range()
-                        }
-                    };
-                    writeln!(snapshot, "  resolves to constraint variable {:?}", range).unwrap();
-                }
-                TypeVariableResolution::InstanceBinder => {
-                    writeln!(snapshot, "  introduces constraint variable").unwrap();
+                    } else {
+                        writeln!(snapshot, " did not resolve to constraint variable!").unwrap();
+                    }
                 }
             }
         } else {

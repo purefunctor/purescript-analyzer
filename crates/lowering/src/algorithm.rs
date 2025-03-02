@@ -3,10 +3,11 @@ mod recursive;
 use std::{mem, sync::Arc};
 
 use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId, TypeRoleId};
+use interner::Interner;
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
@@ -78,11 +79,11 @@ impl State {
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
-    fn push_constraint_scope(&mut self, id: InstanceKind) -> Option<GraphNodeId> {
+    fn push_constraint_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let collecting = true;
-        let bindings = FxHashSet::default();
-        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, collecting, bindings, id });
+        let bindings = Interner::default();
+        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, collecting, bindings });
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
@@ -120,7 +121,7 @@ impl State {
 
     fn resolve_term_local(&self, name: &str) -> Option<TermResolution> {
         let id = self.graph_scope?;
-        self.graph.traverse(id).find_map(|graph| match graph {
+        self.graph.traverse(id).find_map(|(_, graph)| match graph {
             GraphNode::Binder { bindings, .. } => {
                 let r = *bindings.get(name)?;
                 Some(TermResolution::Binder(r))
@@ -135,24 +136,24 @@ impl State {
 
     fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableResolution> {
         let id = self.graph_scope?;
-        if let GraphNode::Constraint { collecting, bindings, id, .. } = &mut self.graph.inner[id] {
+        if let GraphNode::Constraint { collecting, bindings, .. } = &mut self.graph.inner[id] {
             if *collecting {
                 let name = SmolStr::from(name);
-                bindings.insert(name);
-                Some(TypeVariableResolution::InstanceBinder)
-            } else if bindings.contains(name) {
-                Some(TypeVariableResolution::Instance(*id))
+                let name_id = bindings.intern(name);
+                Some(TypeVariableResolution::Instance { binding: true, node_id: id, name_id })
+            } else if let Some(name_id) = bindings.get(name) {
+                Some(TypeVariableResolution::Instance { binding: false, node_id: id, name_id })
             } else {
                 None
             }
         } else {
-            self.graph.traverse(id).find_map(|graph| match graph {
+            self.graph.traverse(id).find_map(|(node_id, graph)| match graph {
                 GraphNode::Forall { bindings, .. } => {
                     bindings.get(name).copied().map(TypeVariableResolution::Forall)
                 }
-                GraphNode::Constraint { bindings, id, .. } => {
-                    if bindings.contains(name) {
-                        Some(TypeVariableResolution::Instance(*id))
+                GraphNode::Constraint { bindings, .. } => {
+                    if let Some(name_id) = bindings.get(name) {
+                        Some(TypeVariableResolution::Instance { binding: false, node_id, name_id })
                     } else {
                         None
                     }
@@ -208,17 +209,17 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
-                    s.push_constraint_scope(InstanceKind::Derive(*id));
-                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                    s.push_constraint_scope();
+                    let arguments =
+                        cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect();
+                    s.finish_constraint_scope();
+                    arguments
                 })
                 .unwrap_or_default();
 
             let constraints = cst
                 .instance_constraints()
-                .map(|cst| {
-                    s.finish_constraint_scope();
-                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
-                })
+                .map(|cst| cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect())
                 .unwrap_or_default();
 
             let kind = TermItemIr::Derive { resolution, constraints, arguments };
@@ -246,17 +247,17 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
-                    s.push_constraint_scope(InstanceKind::Instance(*id));
-                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
+                    s.push_constraint_scope();
+                    let arguments: Arc<[_]> =
+                        cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect();
+                    s.finish_constraint_scope();
+                    arguments
                 })
                 .unwrap_or_default();
 
             let constraints = cst
                 .instance_constraints()
-                .map(|cst| {
-                    s.finish_constraint_scope();
-                    cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect()
-                })
+                .map(|cst| cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect())
                 .unwrap_or_default();
 
             let members = cst

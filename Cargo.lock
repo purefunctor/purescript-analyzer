@@ -369,6 +369,7 @@ dependencies = [
  "hashbrown 0.15.2",
  "indexing",
  "insta",
+ "interner",
  "itertools",
  "la-arena",
  "lexing",

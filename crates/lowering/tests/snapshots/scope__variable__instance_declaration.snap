@@ -7,30 +7,28 @@ Expressions:
 
 77..87
   resolves to top-level name
-169..181
+168..180
   resolves to top-level name
-256..258
-  resolves to binder 252..254
+255..257
+  resolves to binder 251..253
 
 Types:
 
-115..117
-  introduces constraint variable
-100..102
-  resolves to constraint variable 87..181
-138..140
-  resolves to constraint variable 87..181
-149..151
-  resolves to constraint variable 87..181
-202..204
-  introduces constraint variable
-204..206
-  introduces constraint variable
-233..235
-  resolves to forall 230..232
-235..237
-  resolves to constraint variable 181..258
-240..242
-  resolves to forall 230..232
-242..244
-  resolves to constraint variable 181..258
+114..116
+ introduces a constraint variable "a"
+137..139
+ resolves to a constraint variable "a"
+148..150
+ resolves to a constraint variable "a"
+201..203
+ introduces a constraint variable "b"
+203..205
+ introduces a constraint variable "b"
+232..234
+  resolves to forall 229..231
+234..236
+ resolves to a constraint variable "b"
+239..241
+  resolves to forall 229..231
+241..243
+ resolves to a constraint variable "b"

@@ -3,7 +3,7 @@ use std::{
     ops,
 };
 
-use hashbrown::HashTable;
+use hashbrown::{Equivalent, HashTable};
 use la_arena::{Idx, RawIdx};
 use rustc_hash::FxBuildHasher;
 
@@ -27,6 +27,8 @@ impl<T: PartialEq> PartialEq for Interner<T> {
     }
 }
 
+impl<T: Eq> Eq for Interner<T> {}
+
 impl<T: Eq + Hash> Interner<T> {
     pub fn intern(&mut self, value: T) -> Idx<T> {
         let hash = FxBuildHasher.hash_one(&value);
@@ -49,6 +51,18 @@ impl<T: Eq + Hash> Interner<T> {
     pub fn index(&self, id: Idx<T>) -> &T {
         let index = id.into_raw().into_u32() as usize;
         &self.inner[index]
+    }
+
+    pub fn get<Q>(&self, value: &Q) -> Option<Idx<T>>
+    where
+        Q: ?Sized + Hash + Equivalent<T>,
+    {
+        let hash = FxBuildHasher.hash_one(value);
+        let index = *self.table.find(hash, |&index| {
+            let inner = &self.inner[index];
+            value.equivalent(inner)
+        })?;
+        Some(Idx::from_raw(RawIdx::from_u32(index as u32)))
     }
 }
 

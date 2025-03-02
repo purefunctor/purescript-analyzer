@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use indexing::{FullModuleIndex, TermItem, TypeItem};
+use indexing::{FullModuleIndex, TermItem};
 use itertools::Itertools;
 use lowering::FullModuleLower;
 
@@ -87,43 +87,8 @@ fn core_of_cst<S: CoreStorage>(
                     let index = c.bound.index_of(*id);
                     c.storage.allocate(Type::Variable(index))
                 }
-                lowering::TypeVariableResolution::Instance(_) => c.storage.unknown(),
-                lowering::TypeVariableResolution::InstanceBinder => c.storage.unknown(),
+                lowering::TypeVariableResolution::Instance { .. } => c.storage.unknown(),
             }
-            // TODO: Implement binding for Instance/InstanceBinder. Here are some cases to handle:
-            //
-            // instance Eq a
-            //
-            // instance TypeEq a a
-            //
-            // instance Ord a => Eq a
-            //
-            // We'll first encounter InstanceBinder when checking the instance head. If we were to
-            // bind the names naively, we'll encounter a case where a name would have already been
-            // bound (see TypeEq a a). We'll need to do some additional bookkeeping to manage
-            // implicit foralls.
-            //
-            // The first time we see an InstanceBinder, we push it into the scope, giving us a de
-            // Bruijn index. Subsequent usages of the InstanceBinder would simply return that de
-            // Bruijn index. Likewise, any usage of Instance would refer back to that type
-            // variable.
-            //
-            // Unlike explicitly-bound type variables, we have no identity to anchor to for
-            // implicit type variables. As such, we must create them on the fly when lowering types
-            // for instance heads. Although, we sort of do in a way? If we used an interner in the
-            // Constraint graph node, we could obtain an ID that's specific to that scope. That
-            // should be a sufficient anchor for de Bruijn indices _that is not_ SmolStr.
-            //
-            // Although, what if type variables didn't resolve to TypeVariableBindingId directly,
-            // but to the scope nodes that they were allocated in? Then, we'll need to perform the
-            // resolution _here_
-            //
-            // Wait, are we cooking something here?
-            //
-            // Forall(GraphNodeId, usize)
-            // Constraint(GraphNodeId, usize)
-            //
-            // These are very good anchors, no?
         }
         lowering::TypeKind::Wildcard => c.storage.unknown(),
         lowering::TypeKind::Record { .. } => c.storage.unknown(),

@@ -1,8 +1,8 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::{collections::VecDeque, ops, sync::Arc};
 
-use indexing::{DeriveId, InstanceId};
+use interner::Interner;
 use la_arena::{Arena, Idx};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::create_association;
 
@@ -21,42 +21,22 @@ pub struct LetBindingResolution {
     pub equations: Arc<[LetBindingEquationId]>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum InstanceKind {
-    Instance(InstanceId),
-    Derive(DeriveId),
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    Instance(InstanceKind),
-    InstanceBinder,
+    Instance { binding: bool, node_id: GraphNodeId, name_id: SmolStrId },
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
-    Binder {
-        parent: Option<GraphNodeId>,
-        bindings: FxHashMap<SmolStr, BinderId>,
-    },
-    Forall {
-        parent: Option<GraphNodeId>,
-        bindings: FxHashMap<SmolStr, TypeVariableBindingId>,
-    },
-    Let {
-        parent: Option<GraphNodeId>,
-        bindings: FxHashMap<SmolStr, LetBindingResolution>,
-    },
-    Constraint {
-        parent: Option<GraphNodeId>,
-        collecting: bool,
-        bindings: FxHashSet<SmolStr>,
-        id: InstanceKind,
-    },
+    Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
+    Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
+    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
+    Constraint { parent: Option<GraphNodeId>, collecting: bool, bindings: Interner<SmolStr> },
 }
 
 pub type GraphNodeId = Idx<GraphNode>;
+pub type SmolStrId = Idx<SmolStr>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ResolutionDomain {
@@ -87,6 +67,14 @@ impl Graph {
     }
 }
 
+impl ops::Index<GraphNodeId> for Graph {
+    type Output = GraphNode;
+
+    fn index(&self, index: GraphNodeId) -> &Self::Output {
+        &self.inner[index]
+    }
+}
+
 create_association! {
     pub struct GraphNodeInfo {
         bd: BinderId => GraphNodeId,
@@ -102,7 +90,7 @@ pub(crate) struct GraphIter<'a> {
 }
 
 impl<'a> Iterator for GraphIter<'a> {
-    type Item = &'a GraphNode;
+    type Item = (Idx<GraphNode>, &'a GraphNode);
 
     fn next(&mut self) -> Option<Self::Item> {
         let id = self.queue.pop_back()?;
@@ -117,6 +105,6 @@ impl<'a> Iterator for GraphIter<'a> {
                 });
             }
         };
-        Some(item)
+        Some((id, item))
     }
 }
