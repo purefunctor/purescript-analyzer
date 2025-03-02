@@ -8,15 +8,18 @@
 //! information, offsets and structures. Non-semantic edits will always
 //! change the offsets but only semantic edits can change the structure.
 //!
-//! The [`Source`] provides offset-independent indices [`Idx`] which can
-//! be used in place of text ranges [`AstPtr`]. These indices are solely
-//! dependent on the structure bit of the syntax tree—they're unaffected
-//! by non-semantic edits in a source file.
+//! The [`IndexingSource`] provides offset-independent indices [`Idx`]
+//! which can be used in place of text ranges [`AstPtr`]. These indices
+//! are solely dependent on the structure bit of the syntax tree—they're
+//! unaffected by non-semantic edits in a source file.
 //!
 //! An incremental compiler such as this project takes advantage of this
 //! property for caching. The information that it collects is entirely
 //! dependent on the structure bit of a source file, eliminating most
 //! cache misses arising from shifting offsets.
+//!
+//! [`Idx`]: la_arena::Idx
+//! [`AstPtr`]: rowan::ast::AstPtr
 use syntax::cst;
 
 syntax::create_source! {

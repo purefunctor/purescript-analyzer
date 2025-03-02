@@ -19,6 +19,9 @@ use rustc_hash::FxBuildHasher;
 /// the semantic information that the compiler collects. For instance in
 /// lowering, this is used to identify the kind of a syntax node, as well
 /// as to identify which scope graph node it resolved local names from.
+///
+/// [`create_source`]: crate::create_source
+/// [`create_association`]: crate::create_association
 #[derive(Debug)]
 pub struct AstPtrMap<N: AstNode> {
     arena: Arena<AstPtr<N>>,
