@@ -68,18 +68,24 @@ fn variable_scope_check(content: &str) -> String {
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
                 }
-                TypeVariableResolution::Instance { binding, node_id, name_id } => {
-                    if let GraphNode::Constraint { bindings, .. } = dbg!(&graph[*node_id]) {
-                        let name = bindings.index(*name_id);
+                TypeVariableResolution::Instance { binding, node, index } => {
+                    if let GraphNode::Constraint { bindings, .. } = &graph[*node] {
+                        let (name, type_ids) =
+                            bindings.get_index(*index).expect("invariant violated: invalid index");
                         if *binding {
-                            writeln!(snapshot, " introduces a constraint variable {:?}", name)
+                            writeln!(snapshot, "  introduces a constraint variable {:?}", name)
                                 .unwrap();
                         } else {
-                            writeln!(snapshot, " resolves to a constraint variable {:?}", name)
+                            writeln!(snapshot, "  resolves to a constraint variable {:?}", name)
                                 .unwrap();
+                            for &type_id in type_ids {
+                                let cst = &source[type_id];
+                                let range = cst.syntax_node_ptr().text_range();
+                                writeln!(snapshot, "    {:?}", range).unwrap();
+                            }
                         }
                     } else {
-                        writeln!(snapshot, " did not resolve to constraint variable!").unwrap();
+                        writeln!(snapshot, "  did not resolve to constraint variable!").unwrap();
                     }
                 }
             }

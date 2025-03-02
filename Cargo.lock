@@ -368,8 +368,8 @@ version = "0.1.0"
 dependencies = [
  "hashbrown 0.15.2",
  "indexing",
+ "indexmap",
  "insta",
- "interner",
  "itertools",
  "la-arena",
  "lexing",

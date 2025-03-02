@@ -3,7 +3,7 @@ mod recursive;
 use std::{mem, sync::Arc};
 
 use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId, TypeRoleId};
-use interner::Interner;
+use indexmap::IndexMap;
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
@@ -82,7 +82,7 @@ impl State {
     fn push_constraint_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let collecting = true;
-        let bindings = Interner::default();
+        let bindings = IndexMap::default();
         let id = self.graph.inner.alloc(GraphNode::Constraint { parent, collecting, bindings });
         mem::replace(&mut self.graph_scope, Some(id))
     }
@@ -134,26 +134,28 @@ impl State {
         })
     }
 
-    fn resolve_type_variable(&mut self, name: &str) -> Option<TypeVariableResolution> {
-        let id = self.graph_scope?;
-        if let GraphNode::Constraint { collecting, bindings, .. } = &mut self.graph.inner[id] {
+    fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
+        let node = self.graph_scope?;
+        if let GraphNode::Constraint { collecting, bindings, .. } = &mut self.graph.inner[node] {
             if *collecting {
                 let name = SmolStr::from(name);
-                let name_id = bindings.intern(name);
-                Some(TypeVariableResolution::Instance { binding: true, node_id: id, name_id })
-            } else if let Some(name_id) = bindings.get(name) {
-                Some(TypeVariableResolution::Instance { binding: false, node_id: id, name_id })
+                let entry = bindings.entry(name);
+                let index = entry.index();
+                entry.or_default().push(id);
+                Some(TypeVariableResolution::Instance { binding: true, node, index })
+            } else if let Some(index) = bindings.get_index_of(name) {
+                Some(TypeVariableResolution::Instance { binding: false, node, index })
             } else {
                 None
             }
         } else {
-            self.graph.traverse(id).find_map(|(node_id, graph)| match graph {
+            self.graph.traverse(node).find_map(|(node, graph)| match graph {
                 GraphNode::Forall { bindings, .. } => {
                     bindings.get(name).copied().map(TypeVariableResolution::Forall)
                 }
                 GraphNode::Constraint { bindings, .. } => {
-                    if let Some(name_id) = bindings.get(name) {
-                        Some(TypeVariableResolution::Instance { binding: false, node_id, name_id })
+                    if let Some(index) = bindings.get_index_of(name) {
+                        Some(TypeVariableResolution::Instance { binding: false, node, index })
                     } else {
                         None
                     }

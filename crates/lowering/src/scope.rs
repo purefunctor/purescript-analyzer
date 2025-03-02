@@ -1,8 +1,8 @@
 use std::{collections::VecDeque, ops, sync::Arc};
 
-use interner::Interner;
+use indexmap::IndexMap;
 use la_arena::{Arena, Idx};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
 use syntax::create_association;
 
@@ -24,19 +24,31 @@ pub struct LetBindingResolution {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    Instance { binding: bool, node_id: GraphNodeId, name_id: SmolStrId },
+    Instance { binding: bool, node: GraphNodeId, index: usize },
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
-    Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
-    Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
-    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
-    Constraint { parent: Option<GraphNodeId>, collecting: bool, bindings: Interner<SmolStr> },
+    Binder {
+        parent: Option<GraphNodeId>,
+        bindings: FxHashMap<SmolStr, BinderId>,
+    },
+    Forall {
+        parent: Option<GraphNodeId>,
+        bindings: FxHashMap<SmolStr, TypeVariableBindingId>,
+    },
+    Let {
+        parent: Option<GraphNodeId>,
+        bindings: FxHashMap<SmolStr, LetBindingResolution>,
+    },
+    Constraint {
+        parent: Option<GraphNodeId>,
+        collecting: bool,
+        bindings: IndexMap<SmolStr, Vec<TypeId>, FxBuildHasher>,
+    },
 }
 
 pub type GraphNodeId = Idx<GraphNode>;
-pub type SmolStrId = Idx<SmolStr>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ResolutionDomain {
