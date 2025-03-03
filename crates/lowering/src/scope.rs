@@ -66,12 +66,12 @@ impl ImplicitBindings {
         Idx::from_raw(RawIdx::from_u32(index as u32))
     }
 
-    pub fn lookup(&self, name: &str) -> Option<ImplicitTypeVariableBindingId> {
+    pub fn get(&self, name: &str) -> Option<ImplicitTypeVariableBindingId> {
         let (index, _, _) = self.inner.get_full(name)?;
         Some(Idx::from_raw(RawIdx::from_u32(index as u32)))
     }
 
-    pub fn index(&self, index: ImplicitTypeVariableBindingId) -> Option<(&str, &[TypeId])> {
+    pub fn get_index(&self, index: ImplicitTypeVariableBindingId) -> Option<(&str, &[TypeId])> {
         let index = index.into_raw().into_u32() as usize;
         let (name, ids) = self.inner.get_index(index)?;
         Some((name, ids))

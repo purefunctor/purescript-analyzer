@@ -29,7 +29,7 @@ impl core::CoreStorage for InlineStorage {
     }
 
     fn index(&self, id: core::TypeId) -> &core::Type {
-        self.inner.index(id)
+        &self.inner[id]
     }
 }
 
@@ -49,7 +49,7 @@ fn check_source(source: &str) -> (cst::Module, FullModuleIndex, FullModuleLower)
     );
 
     let mut storage = InlineStorage::default();
-    let _ = check::check_module(&mut storage, &full_module_index, &full_module_lower);
+    check::check_module(&mut storage, &full_module_index, &full_module_lower);
 
     (module, full_module_index, full_module_lower)
 }

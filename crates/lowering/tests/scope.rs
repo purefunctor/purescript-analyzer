@@ -71,7 +71,7 @@ fn variable_scope_check(content: &str) -> String {
                 TypeVariableResolution::Instance { binding, node, id } => {
                     if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
                         let (name, type_ids) =
-                            bindings.index(*id).expect("invariant violated: invalid index");
+                            bindings.get_index(*id).expect("invariant violated: invalid index");
                         if *binding {
                             writeln!(snapshot, "  introduces a constraint variable {:?}", name)
                                 .unwrap();

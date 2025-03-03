@@ -39,7 +39,7 @@ impl Bound {
         let length = self.inner.len() as u32;
         let Index(index) = self.index_of(value);
         let level = length - index - 1;
-        Level(level as u32)
+        Level(level)
     }
 
     /// Find the De Bruijn [`Index`] of a bound type variable.
@@ -68,7 +68,7 @@ impl ops::Index<Index> for Bound {
     fn index(&self, Index(index): Index) -> &Self::Output {
         let length = self.inner.len();
         let index = length - index as usize - 1;
-        &self.inner[index as usize]
+        &self.inner[index]
     }
 }
 

@@ -139,10 +139,9 @@ impl State {
             if *collecting {
                 let id = bindings.bind(name, id);
                 Some(TypeVariableResolution::Instance { binding: true, node, id })
-            } else if let Some(id) = bindings.lookup(name) {
-                Some(TypeVariableResolution::Instance { binding: false, node, id })
             } else {
-                None
+                let id = bindings.get(name)?;
+                Some(TypeVariableResolution::Instance { binding: false, node, id })
             }
         } else {
             self.graph.traverse(node).find_map(|(node, graph)| match graph {
@@ -150,11 +149,8 @@ impl State {
                     bindings.get(name).copied().map(TypeVariableResolution::Forall)
                 }
                 GraphNode::Implicit { bindings, .. } => {
-                    if let Some(id) = bindings.lookup(name) {
-                        Some(TypeVariableResolution::Instance { binding: false, node, id })
-                    } else {
-                        None
-                    }
+                    let id = bindings.get(name)?;
+                    Some(TypeVariableResolution::Instance { binding: false, node, id })
                 }
                 _ => None,
             })

@@ -685,7 +685,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
             });
             let resolution = v.name_token().and_then(|t| {
                 let text = t.text();
-                s.resolve_type_variable(id, &text)
+                s.resolve_type_variable(id, text)
             });
             TypeKind::Variable { name, resolution }
         }
