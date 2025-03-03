@@ -59,7 +59,7 @@ pub enum GraphNode {
     /// Names bound by `let`.
     Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
     /// Implicitly quantified type variables.
-    Constraint {
+    Implicit {
         parent: Option<GraphNodeId>,
         collecting: bool,
         bindings: IndexMap<SmolStr, Vec<TypeId>, FxBuildHasher>,
@@ -135,7 +135,7 @@ impl<'a> Iterator for GraphIter<'a> {
             GraphNode::Binder { parent, .. }
             | GraphNode::Forall { parent, .. }
             | GraphNode::Let { parent, .. }
-            | GraphNode::Constraint { parent, .. } => {
+            | GraphNode::Implicit { parent, .. } => {
                 parent.map(|id| {
                     self.queue.push_front(id);
                 });

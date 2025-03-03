@@ -69,7 +69,7 @@ fn variable_scope_check(content: &str) -> String {
                     writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
                 }
                 TypeVariableResolution::Instance { binding, node, index } => {
-                    if let GraphNode::Constraint { bindings, .. } = &graph[*node] {
+                    if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
                         let (name, type_ids) =
                             bindings.get_index(*index).expect("invariant violated: invalid index");
                         if *binding {

@@ -79,17 +79,17 @@ impl State {
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
-    fn push_constraint_scope(&mut self) -> Option<GraphNodeId> {
+    fn push_implicit_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let collecting = true;
         let bindings = IndexMap::default();
-        let id = self.graph.inner.alloc(GraphNode::Constraint { parent, collecting, bindings });
+        let id = self.graph.inner.alloc(GraphNode::Implicit { parent, collecting, bindings });
         mem::replace(&mut self.graph_scope, Some(id))
     }
 
-    fn finish_constraint_scope(&mut self) {
+    fn finish_implicit_scope(&mut self) {
         let Some(id) = self.graph_scope else { return };
-        let GraphNode::Constraint { collecting, .. } = &mut self.graph.inner[id] else { return };
+        let GraphNode::Implicit { collecting, .. } = &mut self.graph.inner[id] else { return };
         *collecting = false;
     }
 
@@ -136,7 +136,7 @@ impl State {
 
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
         let node = self.graph_scope?;
-        if let GraphNode::Constraint { collecting, bindings, .. } = &mut self.graph.inner[node] {
+        if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
             if *collecting {
                 let name = SmolStr::from(name);
                 let entry = bindings.entry(name);
@@ -153,7 +153,7 @@ impl State {
                 GraphNode::Forall { bindings, .. } => {
                     bindings.get(name).copied().map(TypeVariableResolution::Forall)
                 }
-                GraphNode::Constraint { bindings, .. } => {
+                GraphNode::Implicit { bindings, .. } => {
                     if let Some(index) = bindings.get_index_of(name) {
                         Some(TypeVariableResolution::Instance { binding: false, node, index })
                     } else {
@@ -211,10 +211,10 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
-                    s.push_constraint_scope();
+                    s.push_implicit_scope();
                     let arguments =
                         cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect();
-                    s.finish_constraint_scope();
+                    s.finish_implicit_scope();
                     arguments
                 })
                 .unwrap_or_default();
@@ -249,10 +249,10 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
-                    s.push_constraint_scope();
+                    s.push_implicit_scope();
                     let arguments: Arc<[_]> =
                         cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect();
-                    s.finish_constraint_scope();
+                    s.finish_implicit_scope();
                     arguments
                 })
                 .unwrap_or_default();
