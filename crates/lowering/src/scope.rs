@@ -94,7 +94,7 @@ pub struct Graph {
 
 impl Graph {
     /// Initialise a traversal starting from a [`GraphNodeId`].
-    pub(crate) fn traverse(&self, id: GraphNodeId) -> GraphIter<'_> {
+    pub fn traverse(&self, id: GraphNodeId) -> GraphIter<'_> {
         let inner = &self.inner;
         let queue = VecDeque::from([id]);
         GraphIter { inner, queue }
@@ -120,7 +120,7 @@ create_association! {
 }
 
 /// An iterator that traverses the [`Graph`].
-pub(crate) struct GraphIter<'a> {
+pub struct GraphIter<'a> {
     inner: &'a Arena<GraphNode>,
     queue: VecDeque<GraphNodeId>,
 }
