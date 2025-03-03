@@ -1,3 +1,10 @@
+//! Scope Graphs for PureScript
+//!
+//! This module implements a [scope graph] for PureScript. Scope graphs are
+//! a novel take on name resolution which allow resolution semantics to be
+//! represented independent of the language using graphs and graph traversals.
+//!
+//! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
 use std::{collections::VecDeque, ops, sync::Arc};
 
 use indexmap::IndexMap;
