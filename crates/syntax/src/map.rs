@@ -170,8 +170,9 @@ macro_rules! create_source {
 /// [`ArenaMap`]: la_arena::ArenaMap
 #[macro_export]
 macro_rules! create_association {
-    (pub struct $name:ident { $($field:ident: $id:ty => $v:ty),* $(,)? }) => {
+    ($(#[$outer:meta])* pub struct $name:ident { $($field:ident: $id:ty => $v:ty),* $(,)? }) => {
         paste::paste! {
+            $(#[$outer])*
             #[derive(Debug, Default, PartialEq, Eq)]
             pub struct $name {
                 $(
