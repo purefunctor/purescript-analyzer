@@ -46,7 +46,7 @@ pub struct LetBindingResolution {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    Instance { binding: bool, node: GraphNodeId, id: ImplicitTypeVariableBindingId },
+    Implicit { binding: bool, node: GraphNodeId, id: ImplicitTypeVariableBindingId },
 }
 
 /// See documentation for [`GraphNode::Implicit`].

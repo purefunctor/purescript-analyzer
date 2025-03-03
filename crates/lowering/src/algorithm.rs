@@ -138,10 +138,10 @@ impl State {
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
             if *collecting {
                 let id = bindings.bind(name, id);
-                Some(TypeVariableResolution::Instance { binding: true, node, id })
+                Some(TypeVariableResolution::Implicit { binding: true, node, id })
             } else {
                 let id = bindings.get(name)?;
-                Some(TypeVariableResolution::Instance { binding: false, node, id })
+                Some(TypeVariableResolution::Implicit { binding: false, node, id })
             }
         } else {
             self.graph.traverse(node).find_map(|(node, graph)| match graph {
@@ -150,7 +150,7 @@ impl State {
                 }
                 GraphNode::Implicit { bindings, .. } => {
                     let id = bindings.get(name)?;
-                    Some(TypeVariableResolution::Instance { binding: false, node, id })
+                    Some(TypeVariableResolution::Implicit { binding: false, node, id })
                 }
                 _ => None,
             })

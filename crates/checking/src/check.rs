@@ -87,7 +87,7 @@ fn core_of_cst<S: CoreStorage>(
                     let index = c.bound.index_of(*id);
                     c.storage.allocate(Type::Variable(index))
                 }
-                lowering::TypeVariableResolution::Instance { .. } => c.storage.unknown(),
+                lowering::TypeVariableResolution::Implicit { .. } => c.storage.unknown(),
             }
         }
         lowering::TypeKind::Wildcard => c.storage.unknown(),
