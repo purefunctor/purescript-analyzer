@@ -20,7 +20,7 @@
 use std::{collections::VecDeque, ops, sync::Arc};
 
 use indexmap::IndexMap;
-use la_arena::{Arena, Idx};
+use la_arena::{Arena, Idx, RawIdx};
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
 use syntax::create_association;
@@ -46,7 +46,36 @@ pub struct LetBindingResolution {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    Instance { binding: bool, node: GraphNodeId, index: usize },
+    Instance { binding: bool, node: GraphNodeId, id: ImplicitTypeVariableBindingId },
+}
+
+/// See documentation for [`GraphNode::Implicit`].
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ImplicitBindings {
+    inner: IndexMap<SmolStr, Vec<TypeId>, FxBuildHasher>,
+}
+
+pub type ImplicitTypeVariableBindingId = Idx<SmolStr>;
+
+impl ImplicitBindings {
+    pub(crate) fn bind(&mut self, name: &str, id: TypeId) -> ImplicitTypeVariableBindingId {
+        let name = SmolStr::from(name);
+        let entry = self.inner.entry(name);
+        let index = entry.index();
+        entry.or_default().push(id);
+        Idx::from_raw(RawIdx::from_u32(index as u32))
+    }
+
+    pub fn lookup(&self, name: &str) -> Option<ImplicitTypeVariableBindingId> {
+        let (index, _, _) = self.inner.get_full(name)?;
+        Some(Idx::from_raw(RawIdx::from_u32(index as u32)))
+    }
+
+    pub fn index(&self, index: ImplicitTypeVariableBindingId) -> Option<(&str, &[TypeId])> {
+        let index = index.into_raw().into_u32() as usize;
+        let (name, ids) = self.inner.get_index(index)?;
+        Some((name, ids))
+    }
 }
 
 /// A node in the [`Graph`].
@@ -61,8 +90,35 @@ pub enum GraphNode {
     /// Implicitly quantified type variables.
     Implicit {
         parent: Option<GraphNodeId>,
+        /// If this implicit scope is collecting type variables.
         collecting: bool,
-        bindings: IndexMap<SmolStr, Vec<TypeId>, FxBuildHasher>,
+        /// Mapping from names to the type variables that introduced them.
+        ///
+        /// Implicitly quantified type variables do not have an intrinsic ID
+        /// which uniquely identifies them. Instead, we use an [`IndexMap`]
+        /// to allocate stable IDs to the [`SmolStr`] bindings in scope.
+        /// Additionally, we also track the [`TypeId`] of the type variables
+        /// that introduced these names in scope.
+        ///
+        /// In PureScript, implicit type variables currently only appear in
+        /// instance declarations, like the following:
+        ///
+        /// ```text
+        /// instance Eq a => Ord a
+        /// ```
+        ///
+        /// This would create the binding when traversing `Ord a`:
+        ///
+        /// ```text
+        /// "a" / SmolStrId(0) => [TypeId(0)]
+        /// ```
+        ///
+        /// Subsequently, traversing `Eq a` would create the resolution:
+        ///
+        /// ```text
+        /// TypeId(1) => GraphNodeId(0) + SmolStrId(0)
+        /// ```
+        bindings: ImplicitBindings,
     },
 }
 

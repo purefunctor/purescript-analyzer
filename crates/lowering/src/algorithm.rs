@@ -3,7 +3,6 @@ mod recursive;
 use std::{mem, sync::Arc};
 
 use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId, TypeRoleId};
-use indexmap::IndexMap;
 use itertools::Itertools;
 use recursive::lower_equation_like;
 use rowan::ast::AstNode;
@@ -82,7 +81,7 @@ impl State {
     fn push_implicit_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let collecting = true;
-        let bindings = IndexMap::default();
+        let bindings = ImplicitBindings::default();
         let id = self.graph.inner.alloc(GraphNode::Implicit { parent, collecting, bindings });
         mem::replace(&mut self.graph_scope, Some(id))
     }
@@ -138,13 +137,10 @@ impl State {
         let node = self.graph_scope?;
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
             if *collecting {
-                let name = SmolStr::from(name);
-                let entry = bindings.entry(name);
-                let index = entry.index();
-                entry.or_default().push(id);
-                Some(TypeVariableResolution::Instance { binding: true, node, index })
-            } else if let Some(index) = bindings.get_index_of(name) {
-                Some(TypeVariableResolution::Instance { binding: false, node, index })
+                let id = bindings.bind(name, id);
+                Some(TypeVariableResolution::Instance { binding: true, node, id })
+            } else if let Some(id) = bindings.lookup(name) {
+                Some(TypeVariableResolution::Instance { binding: false, node, id })
             } else {
                 None
             }
@@ -154,8 +150,8 @@ impl State {
                     bindings.get(name).copied().map(TypeVariableResolution::Forall)
                 }
                 GraphNode::Implicit { bindings, .. } => {
-                    if let Some(index) = bindings.get_index_of(name) {
-                        Some(TypeVariableResolution::Instance { binding: false, node, index })
+                    if let Some(id) = bindings.lookup(name) {
+                        Some(TypeVariableResolution::Instance { binding: false, node, id })
                     } else {
                         None
                     }

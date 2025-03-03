@@ -68,10 +68,10 @@ fn variable_scope_check(content: &str) -> String {
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
                 }
-                TypeVariableResolution::Instance { binding, node, index } => {
+                TypeVariableResolution::Instance { binding, node, id } => {
                     if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
                         let (name, type_ids) =
-                            bindings.get_index(*index).expect("invariant violated: invalid index");
+                            bindings.index(*id).expect("invariant violated: invalid index");
                         if *binding {
                             writeln!(snapshot, "  introduces a constraint variable {:?}", name)
                                 .unwrap();
