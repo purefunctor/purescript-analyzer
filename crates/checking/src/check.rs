@@ -50,7 +50,11 @@ fn core_of_cst<S: CoreStorage>(
         return c.storage.unknown();
     };
     match kind {
-        lowering::TypeKind::ApplicationChain { .. } => c.storage.unknown(),
+        lowering::TypeKind::ApplicationChain { function, arguments } => {
+            let _ = function.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
+            let _ = arguments.iter().copied().map(|id| core_of_cst(c, e, id)).collect_vec();
+            c.storage.unknown()
+        }
         lowering::TypeKind::Arrow { argument, result } => {
             let argument =
                 argument.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
@@ -64,7 +68,8 @@ fn core_of_cst<S: CoreStorage>(
             let binders = bindings.iter().filter_map(|binding| {
                 let visible = binding.visible;
                 let name = binding.name.clone()?;
-                let level = c.bound.bind(binding.id);
+                let id = debruijn::Binding::Forall(binding.id);
+                let level = c.bound.bind(id);
                 Some(ForallBinder { visible, name, level })
             });
             let binders = binders.collect_vec().into_iter();
@@ -84,16 +89,31 @@ fn core_of_cst<S: CoreStorage>(
             };
             match resolution {
                 lowering::TypeVariableResolution::Forall(id) => {
-                    let index = c.bound.index_of(*id);
+                    let id = debruijn::Binding::Forall(*id);
+                    let index = c.bound.index_of(id);
                     c.storage.allocate(Type::Variable(index))
                 }
-                lowering::TypeVariableResolution::Implicit { .. } => c.storage.unknown(),
+                lowering::TypeVariableResolution::Implicit { binding, node, id } => {
+                    let id = debruijn::Binding::Implicit(*node, *id);
+                    if *binding {
+                        let level = c.bound.bind(id);
+                        c.storage.allocate(Type::ImplicitBinder(level))
+                    } else {
+                        let index = c.bound.index_of(id);
+                        c.storage.allocate(Type::ImplicitVariable(index))
+                    }
+                }
             }
         }
         lowering::TypeKind::Wildcard => c.storage.unknown(),
         lowering::TypeKind::Record { .. } => c.storage.unknown(),
         lowering::TypeKind::Row { .. } => c.storage.unknown(),
-        lowering::TypeKind::Parenthesized { .. } => c.storage.unknown(),
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            let _ = parenthesized
+                .map(|id| core_of_cst(c, e, id))
+                .unwrap_or_else(|| c.storage.unknown());
+            c.storage.unknown()
+        }
     }
 }
 
@@ -123,12 +143,15 @@ pub fn check_module(
     }
 
     for id in instance {
-        if let Some(lowering::TermItemIr::Instance { arguments, .. }) =
+        if let Some(lowering::TermItemIr::Instance { arguments, constraints, .. }) =
             lower.intermediate.index_term_item(id)
         {
             arguments.iter().for_each(|id| {
                 core_of_cst(&mut context, &environment, *id);
             });
+            constraints.iter().for_each(|id| {
+                core_of_cst(&mut context, &environment, *id);
+            })
         }
     }
 

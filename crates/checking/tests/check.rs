@@ -60,7 +60,9 @@ fn test_basic() {
         r#"module Main where
 -- foreign import const :: forall a b. a -> b -> a
 
-instance Eq a
+-- instance Eq a => Ord a
+
+instance (Eq a, Eq b) => Ord (Either a b)
 "#,
     );
 }

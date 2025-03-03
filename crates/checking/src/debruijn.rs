@@ -1,11 +1,17 @@
 use std::ops;
 
-use lowering::TypeVariableBindingId;
+use lowering::{GraphNodeId, ImplicitTypeVariableBindingId, TypeVariableBindingId};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Binding {
+    Forall(TypeVariableBindingId),
+    Implicit(GraphNodeId, ImplicitTypeVariableBindingId),
+}
 
 /// Allocates De Bruijn indices for bound type variables.
 #[derive(Debug, Default)]
 pub struct Bound {
-    inner: Vec<TypeVariableBindingId>,
+    inner: Vec<Binding>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -21,8 +27,8 @@ impl Bound {
         Level(level as u32)
     }
 
-    /// Bind a well-scoped [`TypeVariableBindingId`].
-    pub fn bind(&mut self, value: TypeVariableBindingId) -> Level {
+    /// Bind a well-scoped [`Binding`].
+    pub fn bind(&mut self, value: Binding) -> Level {
         let level = self.inner.len();
         self.inner.push(value);
         Level(level as u32)
@@ -35,7 +41,7 @@ impl Bound {
     }
 
     /// Find the De Bruijn [`Level`] of a bound type variable.
-    pub fn level_of(&self, value: TypeVariableBindingId) -> Level {
+    pub fn level_of(&self, value: Binding) -> Level {
         let length = self.inner.len() as u32;
         let Index(index) = self.index_of(value);
         let level = length - index - 1;
@@ -43,7 +49,7 @@ impl Bound {
     }
 
     /// Find the De Bruijn [`Index`] of a bound type variable.
-    pub fn index_of(&self, value: TypeVariableBindingId) -> Index {
+    pub fn index_of(&self, value: Binding) -> Index {
         let index = self
             .inner
             .iter()
@@ -55,7 +61,7 @@ impl Bound {
 }
 
 impl ops::Index<Level> for Bound {
-    type Output = TypeVariableBindingId;
+    type Output = Binding;
 
     fn index(&self, Level(index): Level) -> &Self::Output {
         &self.inner[index as usize]
@@ -63,7 +69,7 @@ impl ops::Index<Level> for Bound {
 }
 
 impl ops::Index<Index> for Bound {
-    type Output = TypeVariableBindingId;
+    type Output = Binding;
 
     fn index(&self, Index(index): Index) -> &Self::Output {
         let length = self.inner.len();
@@ -75,12 +81,11 @@ impl ops::Index<Index> for Bound {
 #[cfg(test)]
 mod tests {
     use la_arena::{Idx, RawIdx};
-    use lowering::TypeVariableBindingId;
 
-    use super::{Bound, Index, Level};
+    use super::{Binding, Bound, Index, Level};
 
-    const ZERO: TypeVariableBindingId = Idx::from_raw(RawIdx::from_u32(0));
-    const ONE: TypeVariableBindingId = Idx::from_raw(RawIdx::from_u32(1));
+    const ZERO: Binding = Binding::Forall(Idx::from_raw(RawIdx::from_u32(0)));
+    const ONE: Binding = Binding::Forall(Idx::from_raw(RawIdx::from_u32(1)));
 
     #[test]
     fn test_index_level() {

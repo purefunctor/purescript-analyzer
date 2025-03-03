@@ -47,6 +47,8 @@ pub enum Type {
     Function(TypeId, TypeId),
     Unification(Unification),
     Variable(debruijn::Index),
+    ImplicitBinder(debruijn::Level),
+    ImplicitVariable(debruijn::Index),
     Unknown,
 }
 
