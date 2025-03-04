@@ -97,10 +97,10 @@ fn core_of_cst<S: CoreStorage>(
                     let id = debruijn::Binding::Implicit(*node, *id);
                     if *binding {
                         let level = c.bound.bind(id);
-                        c.storage.allocate(Type::ImplicitBinder(level))
+                        c.storage.allocate(Type::Implicit(level))
                     } else {
                         let index = c.bound.index_of(id);
-                        c.storage.allocate(Type::ImplicitVariable(index))
+                        c.storage.allocate(Type::Variable(index))
                     }
                 }
             }
@@ -143,7 +143,7 @@ pub fn check_module(
     }
 
     for id in instance {
-        if let Some(lowering::TermItemIr::Instance { arguments, constraints, .. }) =
+        if let Some(lowering::TermItemIr::Instance { arguments, constraints, members, .. }) =
             lower.intermediate.index_term_item(id)
         {
             arguments.iter().for_each(|id| {
@@ -151,7 +151,12 @@ pub fn check_module(
             });
             constraints.iter().for_each(|id| {
                 core_of_cst(&mut context, &environment, *id);
-            })
+            });
+            members.iter().for_each(|group| {
+                group.signature.map(|id| {
+                    core_of_cst(&mut context, &environment, id);
+                });
+            });
         }
     }
 

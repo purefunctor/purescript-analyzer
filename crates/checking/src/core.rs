@@ -45,10 +45,9 @@ pub enum Type {
     Constructor(Constructor),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
+    Implicit(debruijn::Level),
     Unification(Unification),
     Variable(debruijn::Index),
-    ImplicitBinder(debruijn::Level),
-    ImplicitVariable(debruijn::Index),
     Unknown,
 }
 

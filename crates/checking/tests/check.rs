@@ -62,7 +62,11 @@ fn test_basic() {
 
 -- instance Eq a => Ord a
 
-instance (Eq a, Eq b) => Ord (Either a b)
+-- instance (Eq a, Eq b) => Ord (Either a b)
+
+instance TypeEquals x y where
+  proof :: forall p. p x -> p y
+  proof = proofImpl
 "#,
     );
 }
