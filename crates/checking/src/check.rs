@@ -51,9 +51,12 @@ fn core_of_cst<S: CoreStorage>(
     };
     match kind {
         lowering::TypeKind::ApplicationChain { function, arguments } => {
-            let _ = function.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
-            let _ = arguments.iter().copied().map(|id| core_of_cst(c, e, id)).collect_vec();
-            c.storage.unknown()
+            let function =
+                function.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
+            arguments.iter().fold(function, |function, argument| {
+                let argument = core_of_cst(c, e, *argument);
+                c.storage.allocate(Type::Application(function, argument))
+            })
         }
         lowering::TypeKind::Arrow { argument, result } => {
             let argument =
@@ -109,10 +112,7 @@ fn core_of_cst<S: CoreStorage>(
         lowering::TypeKind::Record { .. } => c.storage.unknown(),
         lowering::TypeKind::Row { .. } => c.storage.unknown(),
         lowering::TypeKind::Parenthesized { parenthesized } => {
-            let _ = parenthesized
-                .map(|id| core_of_cst(c, e, id))
-                .unwrap_or_else(|| c.storage.unknown());
-            c.storage.unknown()
+            parenthesized.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown())
         }
     }
 }
