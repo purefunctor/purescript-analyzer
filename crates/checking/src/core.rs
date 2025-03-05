@@ -31,6 +31,7 @@ pub struct ForallBinder {
     pub visible: bool,
     pub name: SmolStr,
     pub level: debruijn::Level,
+    pub kind: TypeId,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

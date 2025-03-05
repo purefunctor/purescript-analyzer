@@ -71,9 +71,13 @@ fn core_of_cst<S: CoreStorage>(
             let binders = bindings.iter().filter_map(|binding| {
                 let visible = binding.visible;
                 let name = binding.name.clone()?;
+                let kind = binding
+                    .kind
+                    .map(|id| core_of_cst(c, e, id))
+                    .unwrap_or_else(|| c.storage.unknown());
                 let id = debruijn::Binding::Forall(binding.id);
                 let level = c.bound.bind(id);
-                Some(ForallBinder { visible, name, level })
+                Some(ForallBinder { visible, name, level, kind })
             });
             let binders = binders.collect_vec().into_iter();
             let inner = r#type.map(|id| core_of_cst(c, e, id));
