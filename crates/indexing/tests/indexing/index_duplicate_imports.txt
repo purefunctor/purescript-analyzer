@@ -1,0 +1,3 @@
+module Main where
+
+import Lib (value, value, class Class, class Class, Type, Type, (+), (+), type (+), type (+))
