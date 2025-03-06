@@ -1,5 +1,3 @@
 module Main where
 
-import Prelude
-
-import Effect (Effect)
+import Lib (value, class Class, Type, Data(..), (+), type (+))

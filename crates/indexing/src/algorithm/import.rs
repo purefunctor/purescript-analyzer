@@ -4,7 +4,7 @@ use syntax::cst;
 use super::State;
 
 pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
-    let import_id = state.source.allocate_import_statement(cst);
+    let id = state.source.allocate_import_statement(cst);
 
     if let Some(imports) = cst.import_list() {
         for import in imports.children() {
@@ -13,12 +13,29 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     }
 
     if let Some(alias) = extract_alias(cst) {
-        state.index.insert_import_alias(alias, import_id);
+        state.index.insert_import_alias(alias, id);
     }
 }
 
-fn index_import(state: &mut State, import: &cst::ImportItem) {
-    dbg!(import);
+fn index_import(state: &mut State, cst: &cst::ImportItem) {
+    let id = state.source.allocate_import(cst);
+    match cst {
+        cst::ImportItem::ImportValue(v) => {
+            dbg!(v);
+        }
+        cst::ImportItem::ImportClass(c) => {
+            dbg!(c);
+        }
+        cst::ImportItem::ImportType(t) => {
+            dbg!(t);
+        }
+        cst::ImportItem::ImportOperator(o) => {
+            dbg!(o);
+        }
+        cst::ImportItem::ImportTypeOperator(o) => {
+            dbg!(o);
+        }
+    }
 }
 
 fn extract_alias(cst: &cst::ImportStatement) -> Option<SmolStr> {

@@ -38,26 +38,70 @@ IndexingSource {
         },
         table: {},
     },
-    import_statement: AstPtrMap {
+    import: AstPtrMap {
         arena: Arena {
-            len: 2,
+            len: 6,
             data: [
                 AstPtr {
                     raw: SyntaxNodePtr {
-                        kind: ImportStatement,
-                        range: 17..33,
+                        kind: ImportValue,
+                        range: 31..36,
                     },
                 },
                 AstPtr {
                     raw: SyntaxNodePtr {
-                        kind: ImportStatement,
-                        range: 33..57,
+                        kind: ImportClass,
+                        range: 37..49,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ImportType,
+                        range: 50..55,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ImportType,
+                        range: 56..65,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ImportOperator,
+                        range: 66..70,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ImportTypeOperator,
+                        range: 71..80,
                     },
                 },
             ],
         },
         table: {
-            Idx::<ImportStatement>>(1),
+            Idx::<ImportItem>>(5),
+            Idx::<ImportItem>>(0),
+            Idx::<ImportItem>>(1),
+            Idx::<ImportItem>>(2),
+            Idx::<ImportItem>>(3),
+            Idx::<ImportItem>>(4),
+        },
+    },
+    import_statement: AstPtrMap {
+        arena: Arena {
+            len: 1,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ImportStatement,
+                        range: 17..81,
+                    },
+                },
+            ],
+        },
+        table: {
             Idx::<ImportStatement>>(0),
         },
     },

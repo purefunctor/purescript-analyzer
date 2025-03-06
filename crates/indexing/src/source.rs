@@ -25,6 +25,7 @@ use syntax::cst;
 syntax::create_source! {
     pub struct IndexingSource {
         export: cst::ExportItem as ExportItem,
+        import: cst::ImportItem as ImportItem,
         import_statement: cst::ImportStatement as Import,
 
         data_signature: cst::DataSignature as DataSignature,
