@@ -38,7 +38,7 @@ IndexingSource {
         },
         table: {},
     },
-    import: AstPtrMap {
+    import_statement: AstPtrMap {
         arena: Arena {
             len: 2,
             data: [

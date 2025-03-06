@@ -292,7 +292,7 @@ IndexingSource {
             Idx::<ExportItem>>(6),
         },
     },
-    import: AstPtrMap {
+    import_statement: AstPtrMap {
         arena: Arena {
             len: 4,
             data: [

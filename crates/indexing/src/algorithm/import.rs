@@ -4,7 +4,7 @@ use syntax::cst;
 use super::State;
 
 pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
-    let import_id = state.source.allocate_import(cst);
+    let import_id = state.source.allocate_import_statement(cst);
 
     if let Some(imports) = cst.import_list() {
         for import in imports.children() {
