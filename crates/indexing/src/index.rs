@@ -53,7 +53,7 @@ pub struct Index {
     type_item: Arena<TypeItem>,
     term_export: ArenaMap<TermItemId, ExportItemId>,
     type_export: ArenaMap<TypeItemId, ExportItemId>,
-    import_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
+    alias_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
 }
@@ -123,8 +123,8 @@ impl Index {
         self.type_export.get(id).copied()
     }
 
-    pub(crate) fn insert_import_item(&mut self, k: SmolStr, v: ImportId) {
-        self.import_nominal.entry(k).or_default().push(v);
+    pub(crate) fn insert_import_alias(&mut self, k: SmolStr, v: ImportId) {
+        self.alias_nominal.entry(k).or_default().push(v);
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {

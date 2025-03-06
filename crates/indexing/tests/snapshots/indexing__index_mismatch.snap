@@ -79,7 +79,7 @@ Index {
         v: [],
         _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
     },
-    import_nominal: {},
+    alias_nominal: {},
     term_nominal: {
         "DiffDecl": Idx::<TermItem>(2),
         "LateData": Idx::<TermItem>(1),

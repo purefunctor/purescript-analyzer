@@ -141,7 +141,7 @@ Index {
         ],
         _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
     },
-    import_nominal: {
+    alias_nominal: {
         "Exports": [
             Idx::<ImportStatement>>(2),
             Idx::<ImportStatement>>(3),

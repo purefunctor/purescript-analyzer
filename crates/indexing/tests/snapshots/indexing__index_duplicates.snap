@@ -84,7 +84,7 @@ Index {
         v: [],
         _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
     },
-    import_nominal: {},
+    alias_nominal: {},
     term_nominal: {
         "+": Idx::<TermItem>(10),
         "unit": Idx::<TermItem>(9),

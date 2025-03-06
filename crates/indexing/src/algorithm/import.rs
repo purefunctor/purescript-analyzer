@@ -13,7 +13,7 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     }
 
     if let Some(alias) = extract_alias(cst) {
-        state.index.insert_import_item(alias, import_id);
+        state.index.insert_import_alias(alias, import_id);
     }
 }
 
