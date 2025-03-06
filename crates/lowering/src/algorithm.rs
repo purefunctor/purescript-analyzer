@@ -92,13 +92,13 @@ impl State {
         *collecting = false;
     }
 
-    fn resolve_root(
+    fn resolve_deferred(
         &mut self,
         domain: ResolutionDomain,
         qualifier: Option<SmolStr>,
         name: Option<SmolStr>,
-    ) -> RootResolutionId {
-        self.graph.root.alloc(RootResolution { domain, qualifier, name })
+    ) -> DeferredResolutionId {
+        self.graph.deferred.alloc(DeferredResolution { domain, qualifier, name })
     }
 
     fn resolve_term(
@@ -107,13 +107,13 @@ impl State {
         name: Option<SmolStr>,
     ) -> Option<TermResolution> {
         if qualifier.is_some() {
-            let r = self.resolve_root(ResolutionDomain::Term, qualifier, name);
-            Some(TermResolution::Root(r))
+            let r = self.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+            Some(TermResolution::Deferred(r))
         } else {
             let name = name?;
             self.resolve_term_local(&name).or_else(|| {
-                let r = self.resolve_root(ResolutionDomain::Term, None, Some(name));
-                Some(TermResolution::Root(r))
+                let r = self.resolve_deferred(ResolutionDomain::Term, None, Some(name));
+                Some(TermResolution::Deferred(r))
             })
         }
     }
@@ -198,7 +198,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 })
                 .unwrap_or_default();
 
-            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
 
             let arguments = cst
                 .instance_head()
@@ -236,7 +236,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 })
                 .unwrap_or_default();
 
-            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
 
             let arguments = cst
                 .instance_head()
@@ -270,7 +270,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .map(|q| recursive::lower_qualified_name(&q, cst::QualifiedName::lower))
                 .unwrap_or_default();
 
-            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
             let kind = TermItemIr::Operator { resolution, precedence };
@@ -429,7 +429,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 .map(|q| recursive::lower_qualified_name(&q, cst::QualifiedName::upper))
                 .unwrap_or_default();
 
-            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
             let kind = TypeItemIr::Operator { resolution, precedence };

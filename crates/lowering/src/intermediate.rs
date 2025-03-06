@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{source::*, RootResolutionId, TermResolution, TypeVariableResolution};
+use crate::{source::*, DeferredResolutionId, TermResolution, TypeVariableResolution};
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
@@ -16,7 +16,7 @@ pub enum BinderKind {
     OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<BinderId>]> },
     Integer,
     Number,
-    Constructor { resolution: RootResolutionId, arguments: Arc<[BinderId]> },
+    Constructor { resolution: DeferredResolutionId, arguments: Arc<[BinderId]> },
     Variable { variable: Option<SmolStr> },
     Named { named: Option<SmolStr>, binder: Option<BinderId> },
     Wildcard,
@@ -109,13 +109,13 @@ pub enum ExpressionKind {
         expression: Option<ExpressionId>,
     },
     Constructor {
-        resolution: RootResolutionId,
+        resolution: DeferredResolutionId,
     },
     Variable {
         resolution: Option<TermResolution>,
     },
     OperatorName {
-        resolution: RootResolutionId,
+        resolution: DeferredResolutionId,
     },
     Section,
     Hole,
@@ -163,12 +163,12 @@ pub enum TypeKind {
     ApplicationChain { function: Option<TypeId>, arguments: Arc<[TypeId]> },
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
-    Constructor { resolution: RootResolutionId },
+    Constructor { resolution: DeferredResolutionId },
     Forall { bindings: Arc<[TypeVariableBinding]>, r#type: Option<TypeId> },
     Hole,
     Integer,
     Kinded { r#type: Option<TypeId>, kind: Option<TypeId> },
-    Operator { resolution: RootResolutionId },
+    Operator { resolution: DeferredResolutionId },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
@@ -216,7 +216,7 @@ pub struct PatternGuard {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct OperatorPair<T> {
-    pub resolution: RootResolutionId,
+    pub resolution: DeferredResolutionId,
     pub element: Option<T>,
 }
 
@@ -241,7 +241,7 @@ pub enum TermItemIr {
         arguments: Arc<[TypeId]>,
     },
     Derive {
-        resolution: RootResolutionId,
+        resolution: DeferredResolutionId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
     },
@@ -249,13 +249,13 @@ pub enum TermItemIr {
         signature: Option<TypeId>,
     },
     Instance {
-        resolution: RootResolutionId,
+        resolution: DeferredResolutionId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },
     Operator {
-        resolution: RootResolutionId,
+        resolution: DeferredResolutionId,
         precedence: Option<u16>,
     },
     ValueGroup {
@@ -301,7 +301,7 @@ pub enum TypeItemIr {
     SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
     ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
     Foreign { signature: Option<TypeId> },
-    Operator { resolution: RootResolutionId, precedence: Option<u16> },
+    Operator { resolution: DeferredResolutionId, precedence: Option<u16> },
 }
 
 syntax::create_association! {

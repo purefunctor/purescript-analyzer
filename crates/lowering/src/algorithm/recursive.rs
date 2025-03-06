@@ -36,7 +36,7 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
             let (qualifier, name) = c
                 .name()
                 .map_or((None, None), |n| lower_qualified_name(&n, cst::QualifiedName::upper));
-            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             let arguments = c.children().map(|b| lower_binder(s, e, &b)).collect();
             BinderKind::Constructor { resolution, arguments }
         }
@@ -263,7 +263,7 @@ pub(super) fn lower_expression(
                 .name()
                 .map(|n| lower_qualified_name(&n, cst::QualifiedName::upper))
                 .unwrap_or_default();
-            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             ExpressionKind::Constructor { resolution }
         }
         cst::Expression::ExpressionVariable(v) => {
@@ -279,7 +279,7 @@ pub(super) fn lower_expression(
                 .name()
                 .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
-            let resolution = s.resolve_root(ResolutionDomain::Term, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             ExpressionKind::OperatorName { resolution }
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
@@ -639,7 +639,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
             let (qualifier, name) = c
                 .name()
                 .map_or((None, None), |n| lower_qualified_name(&n, cst::QualifiedName::upper));
-            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             TypeKind::Constructor { resolution }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
@@ -662,7 +662,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
                 .name()
                 .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
-            let resolution = s.resolve_root(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(o) => {
@@ -735,7 +735,7 @@ fn lower_pair<T>(
 ) -> OperatorPair<T> {
     let (qualifier, operator) =
         qualified.map_or((None, None), |q| lower_qualified_name(&q, cst::QualifiedName::operator));
-    let resolution = s.resolve_root(domain, qualifier, operator);
+    let resolution = s.resolve_deferred(domain, qualifier, operator);
     OperatorPair { resolution, element }
 }
 

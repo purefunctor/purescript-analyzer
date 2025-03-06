@@ -10,13 +10,13 @@
 //! information to resolved nodes. For instance, knowing the type of a variable
 //! can be as easy as obtaining the type of a [`BinderId`].
 //!
-//! Names that cannot be resolved locally become [root resolutions]—they depend
-//! on the module-level context in order to be resolved. For instance, knowing
-//! the type of an imported value depends on type checking that module first,
-//! then associating the type to the [`RootResolutionId`].
+//! Names that cannot be resolved locally become [deferred resolutions]—they
+//! depend on the module-level context in order to be resolved. For instance,
+//! knowing the type of an imported value depends on type checking that module
+//! first, then associating the type to the [`DeferredResolutionId`].
 //!
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
-//! [root resolutions]: RootResolution
+//! [deferred resolutions]: DeferredResolution
 use std::{collections::VecDeque, ops, sync::Arc};
 
 use indexmap::IndexMap;
@@ -30,7 +30,7 @@ use crate::source::*;
 /// A resolution for term names.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermResolution {
-    Root(RootResolutionId),
+    Deferred(DeferredResolutionId),
     Binder(BinderId),
     Let(LetBindingResolution),
 }
@@ -133,19 +133,19 @@ pub enum ResolutionDomain {
 
 /// A resolution to a non-local binding.
 #[derive(Debug, PartialEq, Eq)]
-pub struct RootResolution {
+pub struct DeferredResolution {
     pub domain: ResolutionDomain,
     pub qualifier: Option<SmolStr>,
     pub name: Option<SmolStr>,
 }
 
-pub type RootResolutionId = Idx<RootResolution>;
+pub type DeferredResolutionId = Idx<DeferredResolution>;
 
 /// A scope graph for PureScript.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Graph {
     pub(crate) inner: Arena<GraphNode>,
-    pub(crate) root: Arena<RootResolution>,
+    pub(crate) deferred: Arena<DeferredResolution>,
 }
 
 impl Graph {

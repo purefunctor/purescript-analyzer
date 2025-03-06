@@ -25,7 +25,7 @@ fn variable_scope_check(content: &str) -> String {
         writeln!(snapshot, "{:?}", range).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
-                TermResolution::Root(_) => {
+                TermResolution::Deferred(_) => {
                     writeln!(snapshot, "  resolves to top-level name").unwrap();
                 }
                 TermResolution::Binder(binder) => {
