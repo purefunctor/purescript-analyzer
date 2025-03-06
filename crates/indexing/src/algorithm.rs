@@ -1,7 +1,7 @@
 mod declaration;
 mod export;
+mod import;
 
-use smol_str::SmolStrBuilder;
 use syntax::cst;
 
 use crate::{Index, IndexError, IndexingSource, Relational};
@@ -19,7 +19,7 @@ pub(super) fn index_module(module: &cst::Module) -> State {
 
     if let Some(imports) = module.imports() {
         for import in imports.children() {
-            index_import(&mut state, &import);
+            import::index(&mut state, &import);
         }
     }
 
@@ -38,24 +38,4 @@ pub(super) fn index_module(module: &cst::Module) -> State {
     }
 
     state
-}
-
-fn index_import(state: &mut State, import: &cst::ImportStatement) {
-    let import_id = state.source.allocate_import(import);
-
-    let Some(import_alias) = import.import_alias() else { return };
-    let Some(module_name) = import_alias.module_name() else { return };
-
-    let mut buffer = SmolStrBuilder::default();
-    if let Some(qualifier) = module_name.qualifier() {
-        if let Some(token) = qualifier.text() {
-            buffer.push_str(token.text());
-        }
-    }
-
-    let Some(token) = module_name.name_token() else { return };
-    buffer.push_str(token.text());
-
-    let name = buffer.finish();
-    state.index.insert_import_item(name, import_id);
 }

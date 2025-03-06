@@ -277,6 +277,12 @@ has_children!(
 has_child!(
     ImportStatement
     | import_alias() -> ImportAlias
+    | import_list() -> ImportList
+);
+
+has_children!(
+    ImportList
+    | children() -> ImportItem
 );
 
 has_child!(
