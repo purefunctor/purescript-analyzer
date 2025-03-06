@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -47,6 +49,21 @@ pub enum TypeItem {
 
 pub type TypeItemId = Idx<TypeItem>;
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum TypeItems {
+    All,
+    List(Arc<[SmolStr]>),
+}
+
+pub type ImportedTerms = FxHashMap<SmolStr, ImportItemId>;
+pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<TypeItems>)>;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportedItems {
+    pub terms: ImportedTerms,
+    pub types: ImportedTypes,
+}
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Index {
     term_item: Arena<TermItem>,
@@ -54,6 +71,7 @@ pub struct Index {
     term_export: ArenaMap<TermItemId, ExportItemId>,
     type_export: ArenaMap<TypeItemId, ExportItemId>,
     alias_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
+    imported_items: FxHashMap<ImportId, ImportedItems>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
 }
@@ -125,6 +143,10 @@ impl Index {
 
     pub(crate) fn insert_import_alias(&mut self, k: SmolStr, v: ImportId) {
         self.alias_nominal.entry(k).or_default().push(v);
+    }
+
+    pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportedItems) {
+        self.imported_items.insert(k, v);
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {
@@ -216,4 +238,5 @@ pub enum IndexError {
     InvalidRole { id: TypeRoleId, existing: Option<TypeItemId> },
     InvalidExport { id: ExportItemId },
     DuplicateExport { id: ExportItemId, existing: ExportItemId },
+    DuplicateImport { id: ImportItemId, existing: ImportItemId },
 }

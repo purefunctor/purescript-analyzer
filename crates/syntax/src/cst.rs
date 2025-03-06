@@ -290,6 +290,36 @@ has_child!(
     | module_name() -> ModuleName
 );
 
+has_token!(
+    ImportValue
+    | name_token() -> LOWER
+);
+
+has_token!(
+    ImportClass
+    | name_token() -> UPPER
+);
+
+has_token!(
+    ImportType
+    | name_token() -> UPPER
+);
+
+has_child!(
+    ImportType
+    | type_items() -> TypeItems
+);
+
+has_token!(
+    ImportOperator
+    | name_token() -> OPERATOR_NAME
+);
+
+has_token!(
+    ImportTypeOperator
+    | name_token() -> OPERATOR_NAME
+);
+
 has_child!(
     ModuleName
     | qualifier() -> Qualifier

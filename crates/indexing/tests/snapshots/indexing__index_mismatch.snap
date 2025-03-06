@@ -80,6 +80,7 @@ Index {
         _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
     },
     alias_nominal: {},
+    imported_items: {},
     term_nominal: {
         "DiffDecl": Idx::<TermItem>(2),
         "LateData": Idx::<TermItem>(1),

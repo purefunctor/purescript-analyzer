@@ -21,6 +21,45 @@ Index {
         _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
     },
     alias_nominal: {},
+    imported_items: {
+        Idx::<ImportStatement>>(0): ImportedItems {
+            terms: {
+                "value": Idx::<ImportItem>>(0),
+                "(+)": Idx::<ImportItem>>(5),
+            },
+            types: {
+                "Class": (
+                    Idx::<ImportItem>>(1),
+                    None,
+                ),
+                "Type": (
+                    Idx::<ImportItem>>(2),
+                    None,
+                ),
+                "Data": (
+                    Idx::<ImportItem>>(3),
+                    Some(
+                        All,
+                    ),
+                ),
+                "Maybe": (
+                    Idx::<ImportItem>>(4),
+                    Some(
+                        List(
+                            [
+                                "Just",
+                                "Nothing",
+                            ],
+                        ),
+                    ),
+                ),
+                "(+)": (
+                    Idx::<ImportItem>>(6),
+                    None,
+                ),
+            },
+        },
+    },
     term_nominal: {},
     type_nominal: {},
 }
@@ -40,7 +79,7 @@ IndexingSource {
     },
     import: AstPtrMap {
         arena: Arena {
-            len: 6,
+            len: 7,
             data: [
                 AstPtr {
                     raw: SyntaxNodePtr {
@@ -68,25 +107,32 @@ IndexingSource {
                 },
                 AstPtr {
                     raw: SyntaxNodePtr {
+                        kind: ImportType,
+                        range: 66..87,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
                         kind: ImportOperator,
-                        range: 66..70,
+                        range: 88..92,
                     },
                 },
                 AstPtr {
                     raw: SyntaxNodePtr {
                         kind: ImportTypeOperator,
-                        range: 71..80,
+                        range: 93..102,
                     },
                 },
             ],
         },
         table: {
-            Idx::<ImportItem>>(5),
+            Idx::<ImportItem>>(6),
             Idx::<ImportItem>>(0),
             Idx::<ImportItem>>(1),
             Idx::<ImportItem>>(2),
             Idx::<ImportItem>>(3),
             Idx::<ImportItem>>(4),
+            Idx::<ImportItem>>(5),
         },
     },
     import_statement: AstPtrMap {
@@ -96,7 +142,7 @@ IndexingSource {
                 AstPtr {
                     raw: SyntaxNodePtr {
                         kind: ImportStatement,
-                        range: 17..81,
+                        range: 17..103,
                     },
                 },
             ],

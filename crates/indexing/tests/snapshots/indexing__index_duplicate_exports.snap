@@ -150,6 +150,24 @@ Index {
             Idx::<ImportStatement>>(1),
         ],
     },
+    imported_items: {
+        Idx::<ImportStatement>>(0): ImportedItems {
+            terms: {},
+            types: {},
+        },
+        Idx::<ImportStatement>>(3): ImportedItems {
+            terms: {},
+            types: {},
+        },
+        Idx::<ImportStatement>>(1): ImportedItems {
+            terms: {},
+            types: {},
+        },
+        Idx::<ImportStatement>>(2): ImportedItems {
+            terms: {},
+            types: {},
+        },
+    },
     term_nominal: {
         "+": Idx::<TermItem>(9),
         "unit": Idx::<TermItem>(8),
