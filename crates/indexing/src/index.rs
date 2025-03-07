@@ -50,13 +50,13 @@ pub enum TypeItem {
 pub type TypeItemId = Idx<TypeItem>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum TypeItems {
-    All,
-    List(Arc<[SmolStr]>),
+pub enum ImplicitItems {
+    Everything,
+    Enumerated(Arc<[SmolStr]>),
 }
 
 pub type ImportedTerms = FxHashMap<SmolStr, ImportItemId>;
-pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<TypeItems>)>;
+pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<ImplicitItems>)>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportedItems {

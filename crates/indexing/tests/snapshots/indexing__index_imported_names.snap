@@ -25,6 +25,8 @@ Index {
         Idx::<ImportStatement>>(0): ImportedItems {
             terms: {
                 "value": Idx::<ImportItem>>(0),
+                "Just": Idx::<ImportItem>>(4),
+                "Nothing": Idx::<ImportItem>>(4),
                 "(+)": Idx::<ImportItem>>(5),
             },
             types: {
@@ -39,13 +41,13 @@ Index {
                 "Data": (
                     Idx::<ImportItem>>(3),
                     Some(
-                        All,
+                        Everything,
                     ),
                 ),
                 "Maybe": (
                     Idx::<ImportItem>>(4),
                     Some(
-                        List(
+                        Enumerated(
                             [
                                 "Just",
                                 "Nothing",
