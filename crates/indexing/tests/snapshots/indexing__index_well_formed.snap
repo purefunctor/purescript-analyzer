@@ -154,18 +154,22 @@ Index {
         Idx::<ImportStatement>>(0): ImportedItems {
             terms: {},
             types: {},
+            exported: false,
         },
         Idx::<ImportStatement>>(3): ImportedItems {
             terms: {},
             types: {},
+            exported: true,
         },
         Idx::<ImportStatement>>(1): ImportedItems {
             terms: {},
             types: {},
+            exported: false,
         },
         Idx::<ImportStatement>>(2): ImportedItems {
             terms: {},
             types: {},
+            exported: true,
         },
     },
     term_nominal: {

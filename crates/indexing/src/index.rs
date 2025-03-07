@@ -62,6 +62,7 @@ pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<ImplicitItems>
 pub struct ImportedItems {
     pub terms: ImportedTerms,
     pub types: ImportedTypes,
+    pub exported: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -145,8 +146,22 @@ impl Index {
         self.alias_nominal.entry(k).or_default().push(v);
     }
 
+    pub(crate) fn export_import_alias(&mut self, k: &str) {
+        if let Some(imports) = self.alias_nominal.get(k) {
+            for import in imports {
+                if let Some(items) = self.imported_items.get_mut(import) {
+                    items.exported = true;
+                }
+            }
+        }
+    }
+
     pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportedItems) {
         self.imported_items.insert(k, v);
+    }
+
+    pub fn lookup_import_alias(&self, k: &str) -> Option<&[ImportId]> {
+        Some(self.alias_nominal.get(k)?)
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {

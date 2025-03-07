@@ -36,7 +36,7 @@ pub(super) fn index(state: &mut State, cst: &cst::ExportItem) {
             index_type_export(state, id, name, None);
         }
         cst::ExportItem::ExportModule(m) => {
-            index_module_export(m);
+            index_module_export(state, m);
         }
     }
 }
@@ -106,7 +106,13 @@ fn index_item_export(
     }
 }
 
-fn index_module_export(cst: &cst::ExportModule) -> Option<SmolStr> {
+fn index_module_export(state: &mut State, cst: &cst::ExportModule) {
+    if let Some(name) = extracted_exported_module(cst) {
+        state.index.export_import_alias(&name);
+    }
+}
+
+fn extracted_exported_module(cst: &cst::ExportModule) -> Option<SmolStr> {
     let module_name = cst.module_name()?;
 
     let mut buffer = SmolStrBuilder::default();

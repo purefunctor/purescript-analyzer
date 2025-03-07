@@ -15,7 +15,7 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
         for import in imports.children() {
             index_import(state, &mut terms, &mut types, &import);
         }
-        let imported_items = ImportedItems { terms, types };
+        let imported_items = ImportedItems { terms, types, exported: false };
         state.index.insert_imported_items(id, imported_items);
     }
 
