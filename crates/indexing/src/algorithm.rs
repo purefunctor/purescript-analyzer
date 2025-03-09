@@ -32,7 +32,7 @@ pub(super) fn index_module(module: &cst::Module) -> State {
 
     if let Some(header) = module.header() {
         if let Some(exports) = header.exports() {
-            state.index.has_export_list = true;
+            state.index.has_exports = true;
             for export in exports.children() {
                 export::index(&mut state, &export);
             }

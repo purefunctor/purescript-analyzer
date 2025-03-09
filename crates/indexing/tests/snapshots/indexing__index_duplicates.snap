@@ -4,7 +4,7 @@ expression: snapshot
 snapshot_kind: text
 ---
 Index {
-    has_export_list: false,
+    has_exports: false,
     term_item: Arena {
         len: 11,
         data: [
@@ -79,9 +79,9 @@ Index {
     },
     term_export: {},
     type_export: {},
+    import_name: {},
+    import_items: {},
     alias_nominal: {},
-    imported_module_names: {},
-    imported_items: {},
     term_nominal: {
         "+": Idx::<TermItem>(10),
         "unit": Idx::<TermItem>(9),

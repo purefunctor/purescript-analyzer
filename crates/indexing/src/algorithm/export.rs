@@ -49,6 +49,7 @@ fn index_term_export(state: &mut State, id: ExportItemId, name: &str) {
     let Some((_, item_id)) = state.index.term_item_mut(name) else {
         return state.error.push(IndexError::InvalidExport { id });
     };
+
     let Some(existing) = state.index.term_item_export(item_id) else {
         return state.index.export_term_item(item_id, id);
     };

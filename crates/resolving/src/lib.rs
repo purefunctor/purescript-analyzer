@@ -19,7 +19,7 @@ pub fn resolve(external: &mut impl External, index: &FullModuleIndex, lower: &Fu
         let Some(ids) = index.index.lookup_import_alias(alias) else { continue };
 
         for &id in ids {
-            let Some(name) = index.index.import_module_name(id) else { continue };
+            let Some(name) = index.index.index_import_name(id) else { continue };
             let Some(file) = external.lookup_module_name(name) else { continue };
 
             let index = external.index(file);

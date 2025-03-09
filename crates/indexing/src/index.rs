@@ -67,14 +67,18 @@ pub struct ImportedItems {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Index {
-    pub(crate) has_export_list: bool,
+    pub(crate) has_exports: bool,
+
     term_item: Arena<TermItem>,
     type_item: Arena<TypeItem>,
+
     term_export: FxHashMap<TermItemId, ExportItemId>,
     type_export: FxHashMap<TypeItemId, ExportItemId>,
+
+    import_name: FxHashMap<ImportId, SmolStr>,
+    import_items: FxHashMap<ImportId, ImportedItems>,
+
     alias_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
-    imported_module_names: FxHashMap<ImportId, SmolStr>,
-    imported_items: FxHashMap<ImportId, ImportedItems>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
 }
@@ -151,7 +155,7 @@ impl Index {
     pub(crate) fn export_import_alias(&mut self, k: &str) {
         if let Some(imports) = self.alias_nominal.get(k) {
             for import in imports {
-                if let Some(items) = self.imported_items.get_mut(import) {
+                if let Some(items) = self.import_items.get_mut(import) {
                     items.exported = true;
                 }
             }
@@ -159,23 +163,58 @@ impl Index {
     }
 
     pub(crate) fn insert_imported_module_name(&mut self, k: ImportId, v: SmolStr) {
-        self.imported_module_names.insert(k, v);
+        self.import_name.insert(k, v);
     }
 
     pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportedItems) {
-        self.imported_items.insert(k, v);
+        self.import_items.insert(k, v);
+    }
+}
+
+#[derive(Debug)]
+pub enum ExportKind {
+    Implicit,
+    Explicit,
+    Hidden,
+}
+
+impl Index {
+    pub fn lookup_term_item(&self, k: &str) -> Option<(ExportKind, TermItemId, &TermItem)> {
+        let &id = self.term_nominal.get(k)?;
+        let item = &self.term_item[id];
+        let kind = if self.has_exports {
+            if let Some(_) = self.term_export.get(&id) {
+                ExportKind::Explicit
+            } else {
+                ExportKind::Hidden
+            }
+        } else {
+            ExportKind::Implicit
+        };
+        Some((kind, id, item))
     }
 
-    pub fn has_exports(&self) -> bool {
-        !(self.term_export.is_empty() && self.type_export.is_empty())
+    pub fn lookup_type_item(&self, k: &str) -> Option<(ExportKind, TypeItemId, &TypeItem)> {
+        let &id = self.type_nominal.get(k)?;
+        let item = &self.type_item[id];
+        let kind = if self.has_exports {
+            if let Some(_) = self.type_export.get(&id) {
+                ExportKind::Explicit
+            } else {
+                ExportKind::Hidden
+            }
+        } else {
+            ExportKind::Implicit
+        };
+        Some((kind, id, item))
     }
 
     pub fn lookup_import_alias(&self, k: &str) -> Option<&[ImportId]> {
         Some(self.alias_nominal.get(k)?)
     }
 
-    pub fn import_module_name(&self, k: ImportId) -> Option<&str> {
-        Some(self.imported_module_names.get(&k)?)
+    pub fn index_import_name(&self, k: ImportId) -> Option<&str> {
+        Some(self.import_name.get(&k)?)
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {
@@ -184,31 +223,6 @@ impl Index {
 
     pub fn iter_type_item(&self) -> impl Iterator<Item = (TypeItemId, &TypeItem)> {
         self.type_item.iter()
-    }
-}
-
-#[derive(Debug)]
-pub enum LookupInfo {
-    Implicit,
-    Explicit,
-    Hidden,
-}
-
-impl Index {
-    pub fn lookup_term_item(&self, name: &str) -> Option<(LookupInfo, TermItemId, &TermItem)> {
-        let &id = self.term_nominal.get(name)?;
-        let item = &self.term_item[id];
-        dbg!(self.term_export.is_empty(), self.type_export.is_empty());
-        let info = if self.has_exports() {
-            if let Some(_) = self.term_export.get(&id) {
-                LookupInfo::Explicit
-            } else {
-                LookupInfo::Hidden
-            }
-        } else {
-            LookupInfo::Implicit
-        };
-        Some((info, id, item))
     }
 }
 
@@ -228,7 +242,9 @@ impl Relational {
     pub(crate) fn insert_instance_relation(&mut self, i_id: InstanceId, m_id: InstanceMemberId) {
         self.instance.push((i_id, m_id));
     }
+}
 
+impl Relational {
     pub fn constructors_of(&self, id: TypeItemId) -> impl Iterator<Item = TermItemId> + '_ {
         self.data.iter().filter_map(
             move |(type_id, term_id)| {

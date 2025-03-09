@@ -16,7 +16,7 @@ import Lib as Lib
 
 eq = Lib.eqIntImpl"#;
 
-const LIB: &str = r#"module Lib (eqInt) where
+const LIB: &str = r#"module Lib (eqIntImpl) where
 
 eqInt _ _ = false
 
