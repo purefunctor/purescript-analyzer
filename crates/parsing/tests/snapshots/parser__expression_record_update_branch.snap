@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..35 "ExpressionRecordUpdat ..."
-        ExportList@35..35
         Annotation@35..36
           TEXT@35..36 " "
         WHERE@36..41 "where"

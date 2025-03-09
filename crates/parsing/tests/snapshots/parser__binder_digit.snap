@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..18 "BinderDigit"
-        ExportList@18..18
         Annotation@18..19
           TEXT@18..19 " "
         WHERE@19..24 "where"

@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..15 "TypeHole"
-        ExportList@15..15
         Annotation@15..16
           TEXT@15..16 " "
         WHERE@16..21 "where"

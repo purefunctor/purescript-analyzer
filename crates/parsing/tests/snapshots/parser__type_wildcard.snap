@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..19 "TypeWildcard"
-        ExportList@19..19
         Annotation@19..20
           TEXT@19..20 " "
         WHERE@20..25 "where"

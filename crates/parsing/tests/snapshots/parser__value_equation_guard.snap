@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..25 "ValueEquationGuard"
-        ExportList@25..25
         Annotation@25..26
           TEXT@25..26 " "
         WHERE@26..31 "where"

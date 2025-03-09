@@ -13,7 +13,6 @@ snapshot_kind: text
           Qualifier@17..29
             TEXT@17..29 "Comment.Pre."
           UPPER@29..33 "Post"
-        ExportList@33..33
         Annotation@33..45
           TEXT@33..45 " {- Post -} "
         WHERE@45..50 "where"

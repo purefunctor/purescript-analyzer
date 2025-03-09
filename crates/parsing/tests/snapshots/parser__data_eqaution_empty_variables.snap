@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..36 "DataDeclarationEmptyV ..."
-        ExportList@36..36
         Annotation@36..37
           TEXT@36..37 " "
         WHERE@37..42 "where"

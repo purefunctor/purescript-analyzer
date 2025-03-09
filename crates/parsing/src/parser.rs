@@ -239,7 +239,9 @@ fn module_header(p: &mut Parser) {
 
     p.expect(SyntaxKind::MODULE);
     names::module_name(p);
-    export_list(p);
+    if p.at(SyntaxKind::LEFT_PARENTHESIS) {
+        export_list(p);
+    }
     p.expect(SyntaxKind::WHERE);
 
     m.end(p, SyntaxKind::ModuleHeader);
@@ -248,9 +250,7 @@ fn module_header(p: &mut Parser) {
 fn export_list(p: &mut Parser) {
     let mut m = p.start();
 
-    if !p.eat(SyntaxKind::LEFT_PARENTHESIS) {
-        return m.end(p, SyntaxKind::ExportList);
-    }
+    p.expect(SyntaxKind::LEFT_PARENTHESIS);
 
     if p.at(SyntaxKind::RIGHT_PARENTHESIS) {
         p.error("Empty export list");

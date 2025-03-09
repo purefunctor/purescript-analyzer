@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..22 "NewtypeEquation"
-        ExportList@22..22
         Annotation@22..23
           TEXT@22..23 " "
         WHERE@23..28 "where"

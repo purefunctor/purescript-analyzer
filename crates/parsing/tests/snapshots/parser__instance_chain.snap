@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..20 "InstanceChain"
-        ExportList@20..20
         Annotation@20..21
           TEXT@20..21 " "
         WHERE@21..26 "where"

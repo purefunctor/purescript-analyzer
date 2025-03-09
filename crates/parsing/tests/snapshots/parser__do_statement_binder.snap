@@ -11,7 +11,6 @@ snapshot_kind: text
           Annotation@6..7
             TEXT@6..7 " "
           UPPER@7..29 "DoStatementTupleBinder"
-        ExportList@29..29
         Annotation@29..30
           TEXT@29..30 " "
         WHERE@30..35 "where"
