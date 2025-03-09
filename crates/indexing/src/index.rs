@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use la_arena::{Arena, ArenaMap, Idx};
+use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
@@ -67,11 +67,13 @@ pub struct ImportedItems {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Index {
+    pub(crate) has_export_list: bool,
     term_item: Arena<TermItem>,
     type_item: Arena<TypeItem>,
-    term_export: ArenaMap<TermItemId, ExportItemId>,
-    type_export: ArenaMap<TypeItemId, ExportItemId>,
+    term_export: FxHashMap<TermItemId, ExportItemId>,
+    type_export: FxHashMap<TypeItemId, ExportItemId>,
     alias_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
+    imported_module_names: FxHashMap<ImportId, SmolStr>,
     imported_items: FxHashMap<ImportId, ImportedItems>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
@@ -119,7 +121,7 @@ impl Index {
     }
 
     pub(crate) fn term_item_export(&self, id: TermItemId) -> Option<ExportItemId> {
-        self.term_export.get(id).copied()
+        self.term_export.get(&id).copied()
     }
 
     pub(crate) fn insert_type_item(&mut self, k: Option<SmolStr>, v: TypeItem) -> TypeItemId {
@@ -139,7 +141,7 @@ impl Index {
     }
 
     pub(crate) fn type_item_export(&self, id: TypeItemId) -> Option<ExportItemId> {
-        self.type_export.get(id).copied()
+        self.type_export.get(&id).copied()
     }
 
     pub(crate) fn insert_import_alias(&mut self, k: SmolStr, v: ImportId) {
@@ -156,12 +158,24 @@ impl Index {
         }
     }
 
+    pub(crate) fn insert_imported_module_name(&mut self, k: ImportId, v: SmolStr) {
+        self.imported_module_names.insert(k, v);
+    }
+
     pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportedItems) {
         self.imported_items.insert(k, v);
     }
 
+    pub fn has_exports(&self) -> bool {
+        !(self.term_export.is_empty() && self.type_export.is_empty())
+    }
+
     pub fn lookup_import_alias(&self, k: &str) -> Option<&[ImportId]> {
         Some(self.alias_nominal.get(k)?)
+    }
+
+    pub fn import_module_name(&self, k: ImportId) -> Option<&str> {
+        Some(self.imported_module_names.get(&k)?)
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {
@@ -170,6 +184,31 @@ impl Index {
 
     pub fn iter_type_item(&self) -> impl Iterator<Item = (TypeItemId, &TypeItem)> {
         self.type_item.iter()
+    }
+}
+
+#[derive(Debug)]
+pub enum LookupInfo {
+    Implicit,
+    Explicit,
+    Hidden,
+}
+
+impl Index {
+    pub fn lookup_term_item(&self, name: &str) -> Option<(LookupInfo, TermItemId, &TermItem)> {
+        let &id = self.term_nominal.get(name)?;
+        let item = &self.term_item[id];
+        dbg!(self.term_export.is_empty(), self.type_export.is_empty());
+        let info = if self.has_exports() {
+            if let Some(_) = self.term_export.get(&id) {
+                LookupInfo::Explicit
+            } else {
+                LookupInfo::Hidden
+            }
+        } else {
+            LookupInfo::Implicit
+        };
+        Some((info, id, item))
     }
 }
 

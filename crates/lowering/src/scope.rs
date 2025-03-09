@@ -155,6 +155,11 @@ impl Graph {
         let queue = VecDeque::from([id]);
         GraphIter { inner, queue }
     }
+
+    /// An iterator over the current set of [`DeferredResolution`].
+    pub fn deferred(&self) -> impl Iterator<Item = (DeferredResolutionId, &DeferredResolution)> {
+        self.deferred.iter()
+    }
 }
 
 impl ops::Index<GraphNodeId> for Graph {

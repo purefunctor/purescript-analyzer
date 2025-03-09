@@ -276,6 +276,7 @@ has_children!(
 
 has_child!(
     ImportStatement
+    | module_name() -> ModuleName
     | import_alias() -> ImportAlias
     | import_list() -> ImportList
 );

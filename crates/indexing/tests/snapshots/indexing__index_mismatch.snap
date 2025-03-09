@@ -4,6 +4,7 @@ expression: snapshot
 snapshot_kind: text
 ---
 Index {
+    has_export_list: false,
     term_item: Arena {
         len: 4,
         data: [
@@ -71,15 +72,10 @@ Index {
             },
         ],
     },
-    term_export: ArenaMap {
-        v: [],
-        _ty: PhantomData<la_arena::Idx<indexing::index::TermItem>>,
-    },
-    type_export: ArenaMap {
-        v: [],
-        _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
-    },
+    term_export: {},
+    type_export: {},
     alias_nominal: {},
+    imported_module_names: {},
     imported_items: {},
     term_nominal: {
         "DiffDecl": Idx::<TermItem>(2),

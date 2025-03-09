@@ -1,13 +1,17 @@
 use rustc_hash::FxHashMap;
-use smol_str::{SmolStr, SmolStrBuilder};
+use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{ImplicitItems, ImportItemId, ImportedItems, ImportedTerms, ImportedTypes, IndexError};
 
-use super::State;
+use super::{common::extract_module_name, State};
 
 pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     let id = state.source.allocate_import_statement(cst);
+
+    if let Some(name) = cst.module_name().as_ref().and_then(extract_module_name) {
+        state.index.insert_imported_module_name(id, name);
+    }
 
     if let Some(imports) = cst.import_list() {
         let mut terms = FxHashMap::default();
@@ -110,14 +114,5 @@ fn index_type_items(
 fn extract_alias(cst: &cst::ImportStatement) -> Option<SmolStr> {
     let cst = cst.import_alias()?;
     let cst = cst.module_name()?;
-
-    let mut buffer = SmolStrBuilder::default();
-    if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-        buffer.push_str(token.text());
-    }
-
-    let token = cst.name_token()?;
-    buffer.push_str(token.text());
-
-    Some(buffer.finish())
+    extract_module_name(&cst)
 }

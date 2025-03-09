@@ -4,6 +4,7 @@ expression: snapshot
 snapshot_kind: text
 ---
 Index {
+    has_export_list: true,
     term_item: Arena {
         len: 10,
         data: [
@@ -91,55 +92,21 @@ Index {
             },
         ],
     },
-    term_export: ArenaMap {
-        v: [
-            Some(
-                Idx::<ExportItem>>(0),
-            ),
-            Some(
-                Idx::<ExportItem>>(6),
-            ),
-            Some(
-                Idx::<ExportItem>>(6),
-            ),
-            Some(
-                Idx::<ExportItem>>(8),
-            ),
-            None,
-            None,
-            None,
-            None,
-            Some(
-                Idx::<ExportItem>>(2),
-            ),
-            Some(
-                Idx::<ExportItem>>(14),
-            ),
-        ],
-        _ty: PhantomData<la_arena::Idx<indexing::index::TermItem>>,
+    term_export: {
+        Idx::<TermItem>(0): Idx::<ExportItem>>(0),
+        Idx::<TermItem>(9): Idx::<ExportItem>>(14),
+        Idx::<TermItem>(3): Idx::<ExportItem>>(8),
+        Idx::<TermItem>(1): Idx::<ExportItem>>(6),
+        Idx::<TermItem>(8): Idx::<ExportItem>>(2),
+        Idx::<TermItem>(2): Idx::<ExportItem>>(6),
     },
-    type_export: ArenaMap {
-        v: [
-            Some(
-                Idx::<ExportItem>>(6),
-            ),
-            Some(
-                Idx::<ExportItem>>(8),
-            ),
-            Some(
-                Idx::<ExportItem>>(10),
-            ),
-            Some(
-                Idx::<ExportItem>>(4),
-            ),
-            Some(
-                Idx::<ExportItem>>(12),
-            ),
-            Some(
-                Idx::<ExportItem>>(16),
-            ),
-        ],
-        _ty: PhantomData<la_arena::Idx<indexing::index::TypeItem>>,
+    type_export: {
+        Idx::<TypeItem>(0): Idx::<ExportItem>>(6),
+        Idx::<TypeItem>(3): Idx::<ExportItem>>(4),
+        Idx::<TypeItem>(1): Idx::<ExportItem>>(8),
+        Idx::<TypeItem>(5): Idx::<ExportItem>>(16),
+        Idx::<TypeItem>(4): Idx::<ExportItem>>(12),
+        Idx::<TypeItem>(2): Idx::<ExportItem>>(10),
     },
     alias_nominal: {
         "Exports": [
@@ -149,6 +116,12 @@ Index {
         "List": [
             Idx::<ImportStatement>>(1),
         ],
+    },
+    imported_module_names: {
+        Idx::<ImportStatement>>(0): "Prelude",
+        Idx::<ImportStatement>>(3): "Data.Map",
+        Idx::<ImportStatement>>(1): "Data.List",
+        Idx::<ImportStatement>>(2): "Data.Set",
     },
     imported_items: {
         Idx::<ImportStatement>>(0): ImportedItems {

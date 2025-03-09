@@ -1,3 +1,4 @@
+mod common;
 mod declaration;
 mod export;
 mod import;
@@ -31,6 +32,7 @@ pub(super) fn index_module(module: &cst::Module) -> State {
 
     if let Some(header) = module.header() {
         if let Some(exports) = header.exports() {
+            state.index.has_export_list = true;
             for export in exports.children() {
                 export::index(&mut state, &export);
             }
