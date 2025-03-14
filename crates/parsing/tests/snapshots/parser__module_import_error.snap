@@ -22,7 +22,6 @@ snapshot_kind: text
           IMPORT@32..38 "import"
           ModuleName@38..38
             ERROR@38..38 ""
-          ImportList@38..38
           ImportAlias@38..38
         ERROR@38..46
           ERROR@38..38 ""
@@ -40,7 +39,6 @@ snapshot_kind: text
             Qualifier@54..59
               TEXT@54..59 "Data."
             UPPER@59..63 "List"
-          ImportList@63..63
           ImportAlias@63..63
         LAYOUT_SEPARATOR@63..63 ""
         ImportStatement@63..98
@@ -160,7 +158,6 @@ snapshot_kind: text
             Qualifier@197..202
               TEXT@197..202 "Data."
             UPPER@202..206 "List"
-          ImportList@206..206
           ImportAlias@206..206
         ERROR@206..218
           ERROR@206..206 ""
@@ -183,7 +180,6 @@ snapshot_kind: text
             Qualifier@226..236
               TEXT@226..236 "Recovered."
             UPPER@236..242 "Import"
-          ImportList@242..242
           ImportAlias@242..242
       ModuleStatements@242..242
       LAYOUT_END@242..242 ""

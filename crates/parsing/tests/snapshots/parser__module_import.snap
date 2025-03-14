@@ -24,7 +24,6 @@ snapshot_kind: text
             Annotation@33..34
               TEXT@33..34 " "
             UPPER@34..41 "Prelude"
-          ImportList@41..41
           ImportAlias@41..41
         LAYOUT_SEPARATOR@41..41 ""
         ImportStatement@41..58
@@ -37,7 +36,6 @@ snapshot_kind: text
             Qualifier@49..54
               TEXT@49..54 "Data."
             UPPER@54..58 "List"
-          ImportList@58..58
           ImportAlias@58..58
         LAYOUT_SEPARATOR@58..58 ""
         ImportStatement@58..79
@@ -146,7 +144,6 @@ snapshot_kind: text
             Annotation@187..188
               TEXT@187..188 " "
             UPPER@188..192 "Prim"
-          ImportList@192..192
           ImportAlias@192..200
             Annotation@192..193
               TEXT@192..193 " "

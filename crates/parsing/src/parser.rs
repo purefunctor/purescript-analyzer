@@ -405,11 +405,16 @@ fn import_statement(p: &mut Parser) {
 
     p.expect(SyntaxKind::IMPORT);
     names::module_name(p);
-    import_list(p);
+    if p.at_in(IMPORT_LIST_START) {
+        import_list(p);
+    }
     import_alias(p);
 
     m.end(p, SyntaxKind::ImportStatement);
 }
+
+const IMPORT_LIST_START: TokenSet =
+    TokenSet::new(&[SyntaxKind::HIDING, SyntaxKind::LEFT_PARENTHESIS]);
 
 fn import_list(p: &mut Parser) {
     let mut m = p.start();
