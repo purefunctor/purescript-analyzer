@@ -2,7 +2,10 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
-use crate::{ImplicitItems, ImportItemId, ImportedItems, ImportedTerms, ImportedTypes, IndexError};
+use crate::{
+    ImplicitItems, ImportExportKind, ImportItemId, ImportedItems, ImportedTerms, ImportedTypes,
+    IndexError,
+};
 
 use super::{common::extract_module_name, State};
 
@@ -13,15 +16,21 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
         state.index.insert_imported_module_name(id, name);
     }
 
-    if let Some(imports) = cst.import_list() {
-        let mut terms = FxHashMap::default();
-        let mut types = FxHashMap::default();
-        for import in imports.children() {
-            index_import(state, &mut terms, &mut types, &import);
+    let mut imported_items = ImportedItems {
+        kind: ImportExportKind::Implicit,
+        terms: FxHashMap::default(),
+        types: FxHashMap::default(),
+        exported: false,
+    };
+
+    if let Some(import_list) = cst.import_list() {
+        imported_items.kind = ImportExportKind::Explicit;
+        for import in import_list.children() {
+            index_import(state, &mut imported_items.terms, &mut imported_items.types, &import);
         }
-        let imported_items = ImportedItems { terms, types, exported: false };
-        state.index.insert_imported_items(id, imported_items);
     }
+
+    state.index.insert_imported_items(id, imported_items);
 
     if let Some(alias) = extract_alias(cst) {
         state.index.insert_import_alias(alias, id);

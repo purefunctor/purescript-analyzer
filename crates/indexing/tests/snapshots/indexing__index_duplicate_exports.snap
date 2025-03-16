@@ -116,21 +116,25 @@ Index {
     },
     import_items: {
         Idx::<ImportStatement>>(0): ImportedItems {
+            kind: Implicit,
             terms: {},
             types: {},
             exported: false,
         },
         Idx::<ImportStatement>>(3): ImportedItems {
+            kind: Implicit,
             terms: {},
             types: {},
             exported: true,
         },
         Idx::<ImportStatement>>(1): ImportedItems {
+            kind: Implicit,
             terms: {},
             types: {},
             exported: false,
         },
         Idx::<ImportStatement>>(2): ImportedItems {
+            kind: Implicit,
             terms: {},
             types: {},
             exported: true,

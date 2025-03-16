@@ -20,6 +20,7 @@ Index {
     },
     import_items: {
         Idx::<ImportStatement>>(0): ImportedItems {
+            kind: Explicit,
             terms: {
                 "value": Idx::<ImportItem>>(0),
                 "Just": Idx::<ImportItem>>(4),

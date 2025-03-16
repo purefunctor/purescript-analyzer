@@ -125,7 +125,7 @@ pub enum GraphNode {
 pub type GraphNodeId = Idx<GraphNode>;
 
 /// The domain of a root resolution.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResolutionDomain {
     Term,
     Type,

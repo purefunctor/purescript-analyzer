@@ -60,6 +60,7 @@ pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<ImplicitItems>
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportedItems {
+    pub kind: ImportExportKind,
     pub terms: ImportedTerms,
     pub types: ImportedTypes,
     pub exported: bool,
@@ -171,40 +172,36 @@ impl Index {
     }
 }
 
-#[derive(Debug)]
-pub enum ExportKind {
+#[derive(Debug, PartialEq, Eq)]
+pub enum ImportExportKind {
     Implicit,
     Explicit,
     Hidden,
 }
 
 impl Index {
-    pub fn lookup_term_item(&self, k: &str) -> Option<(ExportKind, TermItemId, &TermItem)> {
+    pub fn lookup_term_item(&self, k: &str) -> Option<(ImportExportKind, TermItemId, &TermItem)> {
         let &id = self.term_nominal.get(k)?;
         let item = &self.term_item[id];
-        let kind = if self.has_exports {
-            if let Some(_) = self.term_export.get(&id) {
-                ExportKind::Explicit
-            } else {
-                ExportKind::Hidden
-            }
+        let kind = if !self.has_exports {
+            ImportExportKind::Implicit
+        } else if self.term_export.contains_key(&id) {
+            ImportExportKind::Explicit
         } else {
-            ExportKind::Implicit
+            ImportExportKind::Hidden
         };
         Some((kind, id, item))
     }
 
-    pub fn lookup_type_item(&self, k: &str) -> Option<(ExportKind, TypeItemId, &TypeItem)> {
+    pub fn lookup_type_item(&self, k: &str) -> Option<(ImportExportKind, TypeItemId, &TypeItem)> {
         let &id = self.type_nominal.get(k)?;
         let item = &self.type_item[id];
-        let kind = if self.has_exports {
-            if let Some(_) = self.type_export.get(&id) {
-                ExportKind::Explicit
-            } else {
-                ExportKind::Hidden
-            }
+        let kind = if !self.has_exports {
+            ImportExportKind::Implicit
+        } else if self.type_export.contains_key(&id) {
+            ImportExportKind::Explicit
         } else {
-            ExportKind::Implicit
+            ImportExportKind::Hidden
         };
         Some((kind, id, item))
     }
@@ -215,6 +212,10 @@ impl Index {
 
     pub fn index_import_name(&self, k: ImportId) -> Option<&str> {
         Some(self.import_name.get(&k)?)
+    }
+
+    pub fn iter_import_items(&self) -> impl Iterator<Item = (ImportId, &ImportedItems)> {
+        self.import_items.iter().map(|(k, v)| (*k, v))
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {
