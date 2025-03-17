@@ -4,7 +4,6 @@ use std::{mem, sync::Arc};
 
 use indexing::{Index, Relational, TermItem, TermItemId, TypeItem, TypeItemId, TypeRoleId};
 use itertools::Itertools;
-use recursive::lower_equation_like;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -528,7 +527,7 @@ fn lower_instance_statements(
                     .iter()
                     .map(|&id| {
                         let cst = s.source[id].to_node(root);
-                        lower_equation_like(
+                        recursive::lower_equation_like(
                             s,
                             e,
                             cst,
