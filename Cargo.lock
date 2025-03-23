@@ -523,20 +523,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "resolving"
-version = "0.1.0"
-dependencies = [
- "files",
- "indexing",
- "la-arena",
- "lexing",
- "lowering",
- "parsing",
- "rowan",
- "syntax",
-]
-
-[[package]]
 name = "rowan"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
