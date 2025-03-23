@@ -108,46 +108,49 @@ Index {
         Idx::<TypeItem>(4): Idx::<ExportItem>>(12),
         Idx::<TypeItem>(2): Idx::<ExportItem>>(10),
     },
-    import_name: {
-        Idx::<ImportStatement>>(0): "Prelude",
-        Idx::<ImportStatement>>(3): "Data.Map",
-        Idx::<ImportStatement>>(1): "Data.List",
-        Idx::<ImportStatement>>(2): "Data.Set",
-    },
     import_items: {
         Idx::<ImportStatement>>(0): ImportedItems {
+            name: Some(
+                "Prelude",
+            ),
+            alias: None,
             kind: Implicit,
             terms: {},
             types: {},
-            exported: false,
         },
         Idx::<ImportStatement>>(3): ImportedItems {
+            name: Some(
+                "Data.Map",
+            ),
+            alias: Some(
+                "Exports",
+            ),
             kind: Implicit,
             terms: {},
             types: {},
-            exported: true,
         },
         Idx::<ImportStatement>>(1): ImportedItems {
+            name: Some(
+                "Data.List",
+            ),
+            alias: Some(
+                "List",
+            ),
             kind: Implicit,
             terms: {},
             types: {},
-            exported: false,
         },
         Idx::<ImportStatement>>(2): ImportedItems {
+            name: Some(
+                "Data.Set",
+            ),
+            alias: Some(
+                "Exports",
+            ),
             kind: Implicit,
             terms: {},
             types: {},
-            exported: true,
         },
-    },
-    alias_nominal: {
-        "Exports": [
-            Idx::<ImportStatement>>(2),
-            Idx::<ImportStatement>>(3),
-        ],
-        "List": [
-            Idx::<ImportStatement>>(1),
-        ],
     },
     term_nominal: {
         "+": Idx::<TermItem>(9),

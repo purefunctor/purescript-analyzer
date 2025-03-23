@@ -15,11 +15,12 @@ Index {
     },
     term_export: {},
     type_export: {},
-    import_name: {
-        Idx::<ImportStatement>>(0): "Lib",
-    },
     import_items: {
         Idx::<ImportStatement>>(0): ImportedItems {
+            name: Some(
+                "Lib",
+            ),
+            alias: None,
             kind: Explicit,
             terms: {
                 "value": Idx::<ImportItem>>(0),
@@ -39,10 +40,8 @@ Index {
                     None,
                 ),
             },
-            exported: false,
         },
     },
-    alias_nominal: {},
     term_nominal: {},
     type_nominal: {},
 }

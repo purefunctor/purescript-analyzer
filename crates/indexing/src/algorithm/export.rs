@@ -109,7 +109,14 @@ fn index_item_export(
 
 fn index_module_export(state: &mut State, cst: &cst::ExportModule) {
     if let Some(name) = extracted_exported_module(cst) {
-        state.index.export_import_alias(&name);
+        // Self-export e.g.
+        //
+        // module Main (module Main) where
+        if state.name.as_ref() == Some(&name) {
+            dbg!("self export");
+        } else {
+            dbg!("other export");
+        }
     }
 }
 

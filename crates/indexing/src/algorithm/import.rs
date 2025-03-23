@@ -12,15 +12,15 @@ use super::{common::extract_module_name, State};
 pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     let id = state.source.allocate_import_statement(cst);
 
-    if let Some(name) = cst.module_name().as_ref().and_then(extract_module_name) {
-        state.index.insert_imported_module_name(id, name);
-    }
+    let name = extract_name(cst);
+    let alias = extract_alias(cst);
 
     let mut imported_items = ImportedItems {
+        name,
+        alias,
         kind: ImportExportKind::Implicit,
         terms: FxHashMap::default(),
         types: FxHashMap::default(),
-        exported: false,
     };
 
     if let Some(import_list) = cst.import_list() {
@@ -31,10 +31,6 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     }
 
     state.index.insert_imported_items(id, imported_items);
-
-    if let Some(alias) = extract_alias(cst) {
-        state.index.insert_import_alias(alias, id);
-    }
 }
 
 fn index_import(
@@ -118,6 +114,11 @@ fn index_type_items(
             ImplicitItems::Enumerated(enumerated)
         }
     }
+}
+
+fn extract_name(cst: &cst::ImportStatement) -> Option<SmolStr> {
+    let cst = cst.module_name()?;
+    extract_module_name(&cst)
 }
 
 fn extract_alias(cst: &cst::ImportStatement) -> Option<SmolStr> {

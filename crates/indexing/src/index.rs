@@ -60,10 +60,11 @@ pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<ImplicitItems>
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportedItems {
+    pub name: Option<SmolStr>,
+    pub alias: Option<SmolStr>,
     pub kind: ImportExportKind,
     pub terms: ImportedTerms,
     pub types: ImportedTypes,
-    pub exported: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -76,10 +77,7 @@ pub struct Index {
     term_export: FxHashMap<TermItemId, ExportItemId>,
     type_export: FxHashMap<TypeItemId, ExportItemId>,
 
-    import_name: FxHashMap<ImportId, SmolStr>,
     import_items: FxHashMap<ImportId, ImportedItems>,
-
-    alias_nominal: FxHashMap<SmolStr, Vec<ImportId>>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
 }
@@ -149,24 +147,6 @@ impl Index {
         self.type_export.get(&id).copied()
     }
 
-    pub(crate) fn insert_import_alias(&mut self, k: SmolStr, v: ImportId) {
-        self.alias_nominal.entry(k).or_default().push(v);
-    }
-
-    pub(crate) fn export_import_alias(&mut self, k: &str) {
-        if let Some(imports) = self.alias_nominal.get(k) {
-            for import in imports {
-                if let Some(items) = self.import_items.get_mut(import) {
-                    items.exported = true;
-                }
-            }
-        }
-    }
-
-    pub(crate) fn insert_imported_module_name(&mut self, k: ImportId, v: SmolStr) {
-        self.import_name.insert(k, v);
-    }
-
     pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportedItems) {
         self.import_items.insert(k, v);
     }
@@ -204,14 +184,6 @@ impl Index {
             ImportExportKind::Hidden
         };
         Some((kind, id, item))
-    }
-
-    pub fn lookup_import_alias(&self, k: &str) -> Option<&[ImportId]> {
-        Some(self.alias_nominal.get(k)?)
-    }
-
-    pub fn index_import_name(&self, k: ImportId) -> Option<&str> {
-        Some(self.import_name.get(&k)?)
     }
 
     pub fn iter_import_items(&self) -> impl Iterator<Item = (ImportId, &ImportedItems)> {

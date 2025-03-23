@@ -74,9 +74,7 @@ Index {
     },
     term_export: {},
     type_export: {},
-    import_name: {},
     import_items: {},
-    alias_nominal: {},
     term_nominal: {
         "DiffDecl": Idx::<TermItem>(2),
         "LateData": Idx::<TermItem>(1),

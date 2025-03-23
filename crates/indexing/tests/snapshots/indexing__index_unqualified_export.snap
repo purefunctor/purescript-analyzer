@@ -4,7 +4,7 @@ expression: snapshot
 snapshot_kind: text
 ---
 Index {
-    has_exports: false,
+    has_exports: true,
     term_item: Arena {
         len: 0,
         data: [],
@@ -18,47 +18,23 @@ Index {
     import_items: {
         Idx::<ImportStatement>>(0): ImportedItems {
             name: Some(
-                "Lib",
+                "Implicit",
+            ),
+            alias: None,
+            kind: Implicit,
+            terms: {},
+            types: {},
+        },
+        Idx::<ImportStatement>>(1): ImportedItems {
+            name: Some(
+                "Explicit",
             ),
             alias: None,
             kind: Explicit,
             terms: {
-                "value": Idx::<ImportItem>>(0),
-                "Just": Idx::<ImportItem>>(4),
-                "Nothing": Idx::<ImportItem>>(4),
-                "(+)": Idx::<ImportItem>>(5),
+                "explicit": Idx::<ImportItem>>(0),
             },
-            types: {
-                "Class": (
-                    Idx::<ImportItem>>(1),
-                    None,
-                ),
-                "Type": (
-                    Idx::<ImportItem>>(2),
-                    None,
-                ),
-                "Data": (
-                    Idx::<ImportItem>>(3),
-                    Some(
-                        Everything,
-                    ),
-                ),
-                "Maybe": (
-                    Idx::<ImportItem>>(4),
-                    Some(
-                        Enumerated(
-                            [
-                                "Just",
-                                "Nothing",
-                            ],
-                        ),
-                    ),
-                ),
-                "(+)": (
-                    Idx::<ImportItem>>(6),
-                    None,
-                ),
-            },
+            types: {},
         },
     },
     term_nominal: {},
@@ -73,83 +49,64 @@ Relational {
 IndexingSource {
     export: AstPtrMap {
         arena: Arena {
-            len: 0,
-            data: [],
-        },
-        table: {},
-    },
-    import: AstPtrMap {
-        arena: Arena {
-            len: 7,
+            len: 2,
             data: [
                 AstPtr {
                     raw: SyntaxNodePtr {
-                        kind: ImportValue,
-                        range: 31..36,
+                        kind: ExportModule,
+                        range: 13..28,
                     },
                 },
                 AstPtr {
                     raw: SyntaxNodePtr {
-                        kind: ImportClass,
-                        range: 37..49,
-                    },
-                },
-                AstPtr {
-                    raw: SyntaxNodePtr {
-                        kind: ImportType,
-                        range: 50..55,
-                    },
-                },
-                AstPtr {
-                    raw: SyntaxNodePtr {
-                        kind: ImportType,
-                        range: 56..65,
-                    },
-                },
-                AstPtr {
-                    raw: SyntaxNodePtr {
-                        kind: ImportType,
-                        range: 66..87,
-                    },
-                },
-                AstPtr {
-                    raw: SyntaxNodePtr {
-                        kind: ImportOperator,
-                        range: 88..92,
-                    },
-                },
-                AstPtr {
-                    raw: SyntaxNodePtr {
-                        kind: ImportTypeOperator,
-                        range: 93..102,
+                        kind: ExportModule,
+                        range: 29..45,
                     },
                 },
             ],
         },
         table: {
-            Idx::<ImportItem>>(6),
-            Idx::<ImportItem>>(0),
-            Idx::<ImportItem>>(1),
-            Idx::<ImportItem>>(2),
-            Idx::<ImportItem>>(3),
-            Idx::<ImportItem>>(4),
-            Idx::<ImportItem>>(5),
+            Idx::<ExportItem>>(0),
+            Idx::<ExportItem>>(1),
         },
     },
-    import_statement: AstPtrMap {
+    import: AstPtrMap {
         arena: Arena {
             len: 1,
             data: [
                 AstPtr {
                     raw: SyntaxNodePtr {
+                        kind: ImportValue,
+                        range: 87..95,
+                    },
+                },
+            ],
+        },
+        table: {
+            Idx::<ImportItem>>(0),
+        },
+    },
+    import_statement: AstPtrMap {
+        arena: Arena {
+            len: 2,
+            data: [
+                AstPtr {
+                    raw: SyntaxNodePtr {
                         kind: ImportStatement,
-                        range: 17..103,
+                        range: 52..69,
+                    },
+                },
+                AstPtr {
+                    raw: SyntaxNodePtr {
+                        kind: ImportStatement,
+                        range: 69..96,
                     },
                 },
             ],
         },
         table: {
             Idx::<ImportStatement>>(0),
+            Idx::<ImportStatement>>(1),
         },
     },
     data_signature: AstPtrMap {

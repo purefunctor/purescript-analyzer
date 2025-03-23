@@ -17,6 +17,6 @@ pub struct FullModuleIndex {
 }
 
 pub fn index_module(module: &cst::Module) -> FullModuleIndex {
-    let algorithm::State { index, relational, source, error } = algorithm::index_module(module);
+    let algorithm::State { index, relational, source, error, .. } = algorithm::index_module(module);
     FullModuleIndex { index, relational, source, error }
 }

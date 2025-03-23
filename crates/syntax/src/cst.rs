@@ -221,6 +221,7 @@ has_child!(
 
 has_child!(
     ModuleHeader
+    | name() -> ModuleName
     | exports() -> ExportList
 );
 

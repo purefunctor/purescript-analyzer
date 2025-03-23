@@ -79,9 +79,7 @@ Index {
     },
     term_export: {},
     type_export: {},
-    import_name: {},
     import_items: {},
-    alias_nominal: {},
     term_nominal: {
         "+": Idx::<TermItem>(10),
         "unit": Idx::<TermItem>(9),

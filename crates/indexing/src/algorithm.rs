@@ -3,20 +3,37 @@ mod declaration;
 mod export;
 mod import;
 
+use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{Index, IndexError, IndexingSource, Relational};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct State {
+    name: Option<SmolStr>,
     pub(super) index: Index,
     pub(super) relational: Relational,
     pub(super) source: IndexingSource,
     pub(super) error: Vec<IndexError>,
 }
 
+impl State {
+    fn new(name: Option<SmolStr>) -> State {
+        let index = Index::default();
+        let relational = Relational::default();
+        let source = IndexingSource::default();
+        let error = vec![];
+        State { name, index, relational, source, error }
+    }
+}
+
 pub(super) fn index_module(module: &cst::Module) -> State {
-    let mut state = State::default();
+    let name = module.header().and_then(|cst| {
+        let name = cst.name()?;
+        common::extract_module_name(&name)
+    });
+
+    let mut state = State::new(name);
 
     if let Some(imports) = module.imports() {
         for import in imports.children() {
