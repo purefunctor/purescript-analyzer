@@ -59,7 +59,7 @@ pub type ImportedTerms = FxHashMap<SmolStr, ImportItemId>;
 pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<ImplicitItems>)>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ImportedItems {
+pub struct ImportItems {
     pub name: Option<SmolStr>,
     pub alias: Option<SmolStr>,
     pub kind: ImportExportKind,
@@ -77,7 +77,7 @@ pub struct Index {
     term_export: FxHashMap<TermItemId, ExportItemId>,
     type_export: FxHashMap<TypeItemId, ExportItemId>,
 
-    import_items: FxHashMap<ImportId, ImportedItems>,
+    import_items: FxHashMap<ImportId, ImportItems>,
     term_nominal: FxHashMap<SmolStr, TermItemId>,
     type_nominal: FxHashMap<SmolStr, TypeItemId>,
 }
@@ -147,7 +147,7 @@ impl Index {
         self.type_export.get(&id).copied()
     }
 
-    pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportedItems) {
+    pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportItems) {
         self.import_items.insert(k, v);
     }
 }
@@ -186,7 +186,7 @@ impl Index {
         Some((kind, id, item))
     }
 
-    pub fn iter_import_items(&self) -> impl Iterator<Item = (ImportId, &ImportedItems)> {
+    pub fn iter_import_items(&self) -> impl Iterator<Item = (ImportId, &ImportItems)> {
         self.import_items.iter().map(|(k, v)| (*k, v))
     }
 

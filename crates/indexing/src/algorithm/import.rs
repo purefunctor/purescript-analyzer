@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    ImplicitItems, ImportExportKind, ImportItemId, ImportedItems, ImportedTerms, ImportedTypes,
+    ImplicitItems, ImportExportKind, ImportItemId, ImportItems, ImportedTerms, ImportedTypes,
     IndexError,
 };
 
@@ -15,7 +15,7 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     let name = extract_name(cst);
     let alias = extract_alias(cst);
 
-    let mut imported_items = ImportedItems {
+    let mut imported_items = ImportItems {
         name,
         alias,
         kind: ImportExportKind::Implicit,
