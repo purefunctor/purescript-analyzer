@@ -190,9 +190,11 @@ impl Index {
         for (_, items) in self.import_items.iter_mut() {
             let alias = items.alias.as_deref();
             let name = items.name.as_deref();
-            if alias == Some(k) {
-                items.exported = true;
-            } else if name == Some(k) && alias.is_none() {
+
+            let using_alias = alias == Some(k);
+            let using_name = alias.is_none() && name == Some(k);
+
+            if using_alias || using_name {
                 items.exported = true;
             }
         }

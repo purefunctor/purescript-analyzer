@@ -157,9 +157,9 @@ pub fn check_module(
                 core_of_cst(&mut context, &environment, *id);
             });
             members.iter().for_each(|group| {
-                group.signature.map(|id| {
+                if let Some(id) = group.signature {
                     core_of_cst(&mut context, &environment, id);
-                });
+                }
             });
         }
     }
