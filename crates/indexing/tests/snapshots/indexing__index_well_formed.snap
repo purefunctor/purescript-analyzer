@@ -109,7 +109,7 @@ Index {
         Idx::<TypeItem>(2): Idx::<ExportItem>>(5),
     },
     import_items: {
-        Idx::<ImportStatement>>(0): ImportedItems {
+        Idx::<ImportStatement>>(0): ImportItems {
             name: Some(
                 "Prelude",
             ),
@@ -118,7 +118,7 @@ Index {
             terms: {},
             types: {},
         },
-        Idx::<ImportStatement>>(3): ImportedItems {
+        Idx::<ImportStatement>>(3): ImportItems {
             name: Some(
                 "Data.Map",
             ),
@@ -129,7 +129,7 @@ Index {
             terms: {},
             types: {},
         },
-        Idx::<ImportStatement>>(1): ImportedItems {
+        Idx::<ImportStatement>>(1): ImportItems {
             name: Some(
                 "Data.List",
             ),
@@ -140,7 +140,7 @@ Index {
             terms: {},
             types: {},
         },
-        Idx::<ImportStatement>>(2): ImportedItems {
+        Idx::<ImportStatement>>(2): ImportItems {
             name: Some(
                 "Data.Set",
             ),
