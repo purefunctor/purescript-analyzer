@@ -2,8 +2,7 @@ use smol_str::SmolStr;
 use syntax::cst;
 
 use crate::{
-    ImplicitItems, ImportExportKind, ImportItemId, ImportItems, ImportedTerms, ImportedTypes,
-    IndexError,
+    ImplicitItems, ImportItemId, ImportItems, ImportKind, ImportedTerms, ImportedTypes, IndexError,
 };
 
 use super::{common::extract_module_name, State};
@@ -17,7 +16,7 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     let mut import_items = ImportItems::new(name, alias);
 
     if let Some(import_list) = cst.import_list() {
-        import_items.kind = ImportExportKind::Explicit;
+        import_items.kind = ImportKind::Explicit;
         for import in import_list.children() {
             index_import(state, &mut import_items.terms, &mut import_items.types, &import);
         }

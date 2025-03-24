@@ -6,7 +6,7 @@ mod import;
 use smol_str::SmolStr;
 use syntax::cst;
 
-use crate::{Index, IndexError, IndexingSource, Relational};
+use crate::{ExportKind, Index, IndexError, IndexingSource, Relational};
 
 #[derive(Debug)]
 pub(super) struct State {
@@ -49,7 +49,7 @@ pub(super) fn index_module(module: &cst::Module) -> State {
 
     if let Some(header) = module.header() {
         if let Some(exports) = header.exports() {
-            state.index.has_exports = true;
+            state.index.export_kind = ExportKind::Explicit;
             for export in exports.children() {
                 export::index(&mut state, &export);
             }

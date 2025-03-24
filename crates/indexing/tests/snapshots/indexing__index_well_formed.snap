@@ -4,7 +4,7 @@ expression: snapshot
 snapshot_kind: text
 ---
 Index {
-    has_exports: true,
+    export_kind: Explicit,
     term_item: Arena {
         len: 10,
         data: [

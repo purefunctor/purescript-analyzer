@@ -1,7 +1,7 @@
 use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::cst;
 
-use crate::{ExportItemId, IndexError, TypeItem, TypeItemId};
+use crate::{ExportItemId, ExportKind, IndexError, TypeItem, TypeItemId};
 
 use super::State;
 
@@ -109,11 +109,8 @@ fn index_item_export(
 
 fn index_module_export(state: &mut State, cst: &cst::ExportModule) {
     if let Some(name) = extracted_exported_module(cst) {
-        // Self-export e.g.
-        //
-        // module Main (module Main) where
         if state.name.as_ref() == Some(&name) {
-            dbg!("self export");
+            state.index.export_kind = ExportKind::ExplicitSelf;
         } else {
             state.index.export_import_items(&name);
         }

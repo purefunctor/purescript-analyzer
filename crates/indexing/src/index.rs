@@ -58,11 +58,11 @@ pub enum ImplicitItems {
 pub type ImportedTerms = FxHashMap<SmolStr, ImportItemId>;
 pub type ImportedTypes = FxHashMap<SmolStr, (ImportItemId, Option<ImplicitItems>)>;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ImportItems {
     pub name: Option<SmolStr>,
     pub alias: Option<SmolStr>,
-    pub kind: ImportExportKind,
+    pub kind: ImportKind,
     pub terms: ImportedTerms,
     pub types: ImportedTypes,
     pub exported: bool,
@@ -70,17 +70,13 @@ pub struct ImportItems {
 
 impl ImportItems {
     pub(crate) fn new(name: Option<SmolStr>, alias: Option<SmolStr>) -> ImportItems {
-        let kind = ImportExportKind::Implicit;
-        let terms = ImportedTerms::default();
-        let types = ImportedTypes::default();
-        let exported = false;
-        ImportItems { name, alias, kind, terms, types, exported }
+        ImportItems { name, alias, ..Default::default() }
     }
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Index {
-    pub(crate) has_exports: bool,
+    pub(crate) export_kind: ExportKind,
 
     term_item: Arena<TermItem>,
     type_item: Arena<TypeItem>,
@@ -203,12 +199,26 @@ impl Index {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum ImportExportKind {
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum ImportKind {
+    #[default]
+    /// import Lib
     Implicit,
+    /// import Lib (value, Type, ...)
     Explicit,
+    /// import Lib hiding (value, Type, ...)
     Hidden,
-    Everything,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum ExportKind {
+    #[default]
+    /// module Main where
+    Implicit,
+    /// module Main (value, Type, ...) where
+    Explicit,
+    /// module Main (module Main, ...) where
+    ExplicitSelf,
 }
 
 impl Index {
