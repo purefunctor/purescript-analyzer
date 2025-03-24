@@ -59,6 +59,7 @@ Index {
                     None,
                 ),
             },
+            exported: false,
         },
     },
     term_nominal: {},

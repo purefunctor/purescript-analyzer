@@ -1,4 +1,3 @@
-use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
@@ -15,22 +14,16 @@ pub(super) fn index(state: &mut State, cst: &cst::ImportStatement) {
     let name = extract_name(cst);
     let alias = extract_alias(cst);
 
-    let mut imported_items = ImportItems {
-        name,
-        alias,
-        kind: ImportExportKind::Implicit,
-        terms: FxHashMap::default(),
-        types: FxHashMap::default(),
-    };
+    let mut import_items = ImportItems::new(name, alias);
 
     if let Some(import_list) = cst.import_list() {
-        imported_items.kind = ImportExportKind::Explicit;
+        import_items.kind = ImportExportKind::Explicit;
         for import in import_list.children() {
-            index_import(state, &mut imported_items.terms, &mut imported_items.types, &import);
+            index_import(state, &mut import_items.terms, &mut import_items.types, &import);
         }
     }
 
-    state.index.insert_imported_items(id, imported_items);
+    state.index.insert_import_items(id, import_items);
 }
 
 fn index_import(

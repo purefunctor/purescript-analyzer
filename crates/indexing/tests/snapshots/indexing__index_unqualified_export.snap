@@ -24,6 +24,7 @@ Index {
             kind: Implicit,
             terms: {},
             types: {},
+            exported: true,
         },
         Idx::<ImportStatement>>(1): ImportItems {
             name: Some(
@@ -35,6 +36,7 @@ Index {
                 "explicit": Idx::<ImportItem>>(0),
             },
             types: {},
+            exported: true,
         },
     },
     term_nominal: {},

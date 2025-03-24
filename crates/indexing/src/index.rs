@@ -65,6 +65,17 @@ pub struct ImportItems {
     pub kind: ImportExportKind,
     pub terms: ImportedTerms,
     pub types: ImportedTypes,
+    pub exported: bool,
+}
+
+impl ImportItems {
+    pub(crate) fn new(name: Option<SmolStr>, alias: Option<SmolStr>) -> ImportItems {
+        let kind = ImportExportKind::Implicit;
+        let terms = ImportedTerms::default();
+        let types = ImportedTypes::default();
+        let exported = false;
+        ImportItems { name, alias, kind, terms, types, exported }
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -147,8 +158,48 @@ impl Index {
         self.type_export.get(&id).copied()
     }
 
-    pub(crate) fn insert_imported_items(&mut self, k: ImportId, v: ImportItems) {
+    pub(crate) fn insert_import_items(&mut self, k: ImportId, v: ImportItems) {
         self.import_items.insert(k, v);
+    }
+
+    /// Marks [`ImportItems`] matching a module name as exported.
+    ///
+    /// PureScript supports the following export forms:
+    ///
+    /// 1. Using the alias:
+    ///
+    /// ```purescript
+    /// module Main (module Maybe) where
+    ///
+    /// import Data.Maybe as Maybe
+    /// ```
+    ///
+    /// 2. Using the name:
+    ///
+    /// ```purescript
+    /// module Main (module Data.Maybe) where
+    ///
+    /// import Data.Maybe (isJust)
+    /// ```
+    ///
+    /// Modules can only be exported using its full name if it's not aliased.
+    /// As a result, the following export form is invalid:
+    ///
+    /// ```purescript
+    /// module Main (module Data.Maybe) where
+    ///
+    /// import Data.Maybe as Maybe
+    /// ```
+    pub(crate) fn export_import_items(&mut self, k: &str) {
+        for (_, items) in self.import_items.iter_mut() {
+            let alias = items.alias.as_deref();
+            let name = items.name.as_deref();
+            if alias == Some(k) {
+                items.exported = true;
+            } else if name == Some(k) && alias.is_none() {
+                items.exported = true;
+            }
+        }
     }
 }
 
@@ -157,35 +208,10 @@ pub enum ImportExportKind {
     Implicit,
     Explicit,
     Hidden,
+    Everything,
 }
 
 impl Index {
-    pub fn lookup_term_item(&self, k: &str) -> Option<(ImportExportKind, TermItemId, &TermItem)> {
-        let &id = self.term_nominal.get(k)?;
-        let item = &self.term_item[id];
-        let kind = if !self.has_exports {
-            ImportExportKind::Implicit
-        } else if self.term_export.contains_key(&id) {
-            ImportExportKind::Explicit
-        } else {
-            ImportExportKind::Hidden
-        };
-        Some((kind, id, item))
-    }
-
-    pub fn lookup_type_item(&self, k: &str) -> Option<(ImportExportKind, TypeItemId, &TypeItem)> {
-        let &id = self.type_nominal.get(k)?;
-        let item = &self.type_item[id];
-        let kind = if !self.has_exports {
-            ImportExportKind::Implicit
-        } else if self.type_export.contains_key(&id) {
-            ImportExportKind::Explicit
-        } else {
-            ImportExportKind::Hidden
-        };
-        Some((kind, id, item))
-    }
-
     pub fn iter_import_items(&self) -> impl Iterator<Item = (ImportId, &ImportItems)> {
         self.import_items.iter().map(|(k, v)| (*k, v))
     }

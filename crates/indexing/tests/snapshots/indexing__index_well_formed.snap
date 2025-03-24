@@ -117,6 +117,7 @@ Index {
             kind: Implicit,
             terms: {},
             types: {},
+            exported: false,
         },
         Idx::<ImportStatement>>(3): ImportItems {
             name: Some(
@@ -128,6 +129,7 @@ Index {
             kind: Implicit,
             terms: {},
             types: {},
+            exported: true,
         },
         Idx::<ImportStatement>>(1): ImportItems {
             name: Some(
@@ -139,6 +141,7 @@ Index {
             kind: Implicit,
             terms: {},
             types: {},
+            exported: false,
         },
         Idx::<ImportStatement>>(2): ImportItems {
             name: Some(
@@ -150,6 +153,7 @@ Index {
             kind: Implicit,
             terms: {},
             types: {},
+            exported: true,
         },
     },
     term_nominal: {

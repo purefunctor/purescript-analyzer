@@ -115,7 +115,7 @@ fn index_module_export(state: &mut State, cst: &cst::ExportModule) {
         if state.name.as_ref() == Some(&name) {
             dbg!("self export");
         } else {
-            dbg!("other export");
+            state.index.export_import_items(&name);
         }
     }
 }
