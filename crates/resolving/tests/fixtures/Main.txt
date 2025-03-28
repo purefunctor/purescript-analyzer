@@ -1,0 +1,5 @@
+module Main (module Main) where
+
+life = 42
+
+data Maybe a = Just a | Nothing

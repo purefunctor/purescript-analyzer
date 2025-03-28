@@ -76,7 +76,7 @@ impl ImportItems {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Index {
-    pub(crate) export_kind: ExportKind,
+    pub export_kind: ExportKind,
 
     term_item: Arena<TermItem>,
     type_item: Arena<TypeItem>,
@@ -226,6 +226,14 @@ pub enum ExportKind {
 impl Index {
     pub fn iter_import_items(&self) -> impl Iterator<Item = (ImportId, &ImportItems)> {
         self.import_items.iter().map(|(k, v)| (*k, v))
+    }
+
+    pub fn iter_term_nominal(&self) -> impl Iterator<Item = (&str, TermItemId)> {
+        self.term_nominal.iter().map(|(k, v)| (k.as_str(), *v))
+    }
+
+    pub fn iter_type_nominal(&self) -> impl Iterator<Item = (&str, TypeItemId)> {
+        self.type_nominal.iter().map(|(k, v)| (k.as_str(), *v))
     }
 
     pub fn iter_term_item(&self) -> impl Iterator<Item = (TermItemId, &TermItem)> {
