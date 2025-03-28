@@ -44,9 +44,9 @@ impl State {
         let k = SmolStr::from(name);
         match self.terms.entry(k) {
             Entry::Occupied(o) => {
-                let &(e_file, e_id) = o.get();
-                self.errors
-                    .push(Error::ExistingTerm { existing: (e_file, e_id), duplicate: (file, id) });
+                let existing = *o.get();
+                let duplicate = (file, id);
+                self.errors.push(Error::ExistingTerm { existing, duplicate });
             }
             Entry::Vacant(v) => {
                 v.insert((file, id));
@@ -58,9 +58,9 @@ impl State {
         let k = SmolStr::from(name);
         match self.types.entry(k) {
             Entry::Occupied(o) => {
-                let &(e_file, e_id) = o.get();
-                self.errors
-                    .push(Error::ExistingType { existing: (e_file, e_id), duplicate: (file, id) });
+                let existing = *o.get();
+                let duplicate = (file, id);
+                self.errors.push(Error::ExistingType { existing, duplicate });
             }
             Entry::Vacant(v) => {
                 v.insert((file, id));
