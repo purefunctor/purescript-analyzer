@@ -3,7 +3,7 @@ use std::sync::Arc;
 use files::FileId;
 use indexing::FullModuleIndex;
 use la_arena::RawIdx;
-use resolving::External;
+use resolving::{External, FullModuleExports};
 use rowan::ast::AstNode;
 use syntax::cst;
 
@@ -33,6 +33,11 @@ impl External for TestExternal {
         let index = indexing::index_module(&module);
         Arc::new(index)
     }
+
+    fn exports(&mut self, id: FileId) -> Arc<FullModuleExports> {
+        let exports = resolving::module_exports(self, id);
+        Arc::new(exports)
+    }
 }
 
 macro_rules! file {
@@ -44,5 +49,5 @@ macro_rules! file {
 #[test]
 fn test_basic() {
     let mut external = TestExternal;
-    resolving::exports(&mut external, file!(0));
+    dbg!(external.exports(file!(0)));
 }
