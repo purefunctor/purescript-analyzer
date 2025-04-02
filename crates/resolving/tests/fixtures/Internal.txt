@@ -1,0 +1,3 @@
+module Internal (internal) where
+
+internal = 42

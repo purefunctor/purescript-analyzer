@@ -1,0 +1,5 @@
+module Lib (life, module Exports) where
+
+import Internal as Exports
+
+life = 42

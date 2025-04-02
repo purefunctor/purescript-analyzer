@@ -243,6 +243,14 @@ impl Index {
     pub fn iter_type_item(&self) -> impl Iterator<Item = (TypeItemId, &TypeItem)> {
         self.type_item.iter()
     }
+
+    pub fn iter_exported_terms(&self) -> impl Iterator<Item = (&str, TermItemId)> {
+        self.iter_term_nominal().filter(|(_, id)| self.term_export.contains_key(id))
+    }
+
+    pub fn iter_exported_types(&self) -> impl Iterator<Item = (&str, TypeItemId)> {
+        self.iter_type_nominal().filter(|(_, id)| self.type_export.contains_key(id))
+    }
 }
 
 impl Relational {

@@ -11,6 +11,8 @@ pub trait External {
     fn index(&mut self, id: FileId) -> Arc<FullModuleIndex>;
 
     fn exports(&mut self, id: FileId) -> Arc<FullModuleExports>;
+
+    fn file_id(&mut self, name: &str) -> FileId;
 }
 
 /// The kind of errors produced during name resolution.

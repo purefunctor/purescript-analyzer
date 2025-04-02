@@ -8,11 +8,21 @@ use rowan::ast::AstNode;
 use syntax::cst;
 
 pub const MAIN: &'static str = include_str!("fixtures/Main.txt");
+pub const LIB: &'static str = include_str!("fixtures/Lib.txt");
+pub const INTERNAL: &'static str = include_str!("fixtures/Internal.txt");
+
+macro_rules! file {
+    ($id:expr) => {
+        FileId::from_raw(RawIdx::from_u32($id))
+    };
+}
 
 pub fn parse(id: FileId) -> cst::Module {
     let id = id.into_raw().into_u32();
     let source = match id {
         0 => MAIN,
+        1 => LIB,
+        2 => INTERNAL,
         _ => unreachable!(),
     };
 
@@ -38,12 +48,15 @@ impl External for TestExternal {
         let exports = resolving::module_exports(self, id);
         Arc::new(exports)
     }
-}
 
-macro_rules! file {
-    ($id:expr) => {
-        FileId::from_raw(RawIdx::from_u32($id))
-    };
+    fn file_id(&mut self, name: &str) -> FileId {
+        match name {
+            "Main" => file!(0),
+            "Lib" => file!(1),
+            "Internal" => file!(2),
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[test]
