@@ -201,7 +201,7 @@ impl Index {
     }
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum ImportKind {
     #[default]
     /// import Lib
