@@ -1,3 +1,5 @@
-module Internal (internal) where
+module Internal (internal, Either(..)) where
 
 internal = 42
+
+data Either = Left | Right

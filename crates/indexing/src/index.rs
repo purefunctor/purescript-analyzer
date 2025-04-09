@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops, sync::Arc};
 
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
@@ -49,7 +49,7 @@ pub enum TypeItem {
 
 pub type TypeItemId = Idx<TypeItem>;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImplicitItems {
     Everything,
     Enumerated(Arc<[SmolStr]>),

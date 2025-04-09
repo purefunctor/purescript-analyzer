@@ -4,7 +4,7 @@ pub use exports::*;
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::{FullModuleIndex, TermItemId, TypeItemId};
+use indexing::{FullModuleIndex, ImportItemId, TermItemId, TypeItemId};
 
 /// External dependencies used in name resolution.
 pub trait External {
@@ -20,4 +20,5 @@ pub trait External {
 pub enum Error {
     ExistingTerm { existing: (FileId, TermItemId), duplicate: (FileId, TermItemId) },
     ExistingType { existing: (FileId, TypeItemId), duplicate: (FileId, TypeItemId) },
+    InvalidImport { id: ImportItemId },
 }
