@@ -1,4 +1,4 @@
-use std::{ops, sync::Arc};
+use std::sync::Arc;
 
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;

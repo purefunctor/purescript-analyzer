@@ -3,13 +3,13 @@ use std::sync::Arc;
 use files::FileId;
 use indexing::FullModuleIndex;
 use la_arena::RawIdx;
-use resolving::{External, FullModuleExports};
+use resolving::{External, FullResolvedModule};
 use rowan::ast::AstNode;
 use syntax::cst;
 
-pub const MAIN: &'static str = include_str!("fixtures/Main.txt");
-pub const LIB: &'static str = include_str!("fixtures/Lib.txt");
-pub const INTERNAL: &'static str = include_str!("fixtures/Internal.txt");
+pub const MAIN: &str = include_str!("fixtures/Main.txt");
+pub const LIB: &str = include_str!("fixtures/Lib.txt");
+pub const INTERNAL: &str = include_str!("fixtures/Internal.txt");
 
 macro_rules! file {
     ($id:expr) => {
@@ -30,9 +30,9 @@ pub fn parse(id: FileId) -> cst::Module {
     let tokens = lexing::layout(&lexed);
 
     let (module, _) = parsing::parse(&lexed, &tokens);
-    let module = cst::Module::cast(module).unwrap();
+    
 
-    module
+    cst::Module::cast(module).unwrap()
 }
 
 struct TestExternal;
@@ -44,8 +44,8 @@ impl External for TestExternal {
         Arc::new(index)
     }
 
-    fn exports(&mut self, id: FileId) -> Arc<FullModuleExports> {
-        let exports = resolving::module_exports(self, id);
+    fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule> {
+        let exports = resolving::resolve_module(self, id);
         Arc::new(exports)
     }
 
@@ -62,5 +62,5 @@ impl External for TestExternal {
 #[test]
 fn test_basic() {
     let mut external = TestExternal;
-    dbg!(external.exports(file!(0)));
+    dbg!(external.resolved(file!(0)));
 }
