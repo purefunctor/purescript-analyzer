@@ -282,6 +282,11 @@ has_child!(
     | import_list() -> ImportList
 );
 
+has_token!(
+    ImportList
+    | hiding() -> HIDING
+);
+
 has_children!(
     ImportList
     | children() -> ImportItem
