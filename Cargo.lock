@@ -530,6 +530,7 @@ dependencies = [
  "indexing",
  "la-arena",
  "lexing",
+ "lowering",
  "parsing",
  "rowan",
  "rustc-hash 2.1.1",

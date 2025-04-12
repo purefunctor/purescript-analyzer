@@ -1,19 +1,19 @@
 mod algorithm;
 
+use lowering::FullModuleLower;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::{
-    FullModuleIndex, ImportId, ImportItemId, ImportKind,
-    TermItemId, TypeItemId,
-};
+use indexing::{FullModuleIndex, ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
 
 /// External dependencies used in name resolution.
 pub trait External {
-    fn index(&mut self, id: FileId) -> Arc<FullModuleIndex>;
+    fn indexed(&mut self, id: FileId) -> Arc<FullModuleIndex>;
+
+    fn lowered(&mut self, id: FileId) -> Arc<FullModuleLower>;
 
     fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule>;
 
@@ -27,14 +27,19 @@ pub enum Error {
     ExistingType { existing: (FileId, TypeItemId), duplicate: (FileId, TypeItemId) },
     InvalidImportStatement { id: ImportId },
     InvalidImportItem { id: ImportItemId },
+    DuplicateImportItem { id: ImportItemId },
 }
+
+type UnqualifiedResolvedImports = Vec<ResolvedImport>;
+type QualifiedResolvedImports = FxHashMap<SmolStr, ResolvedImport>;
 
 type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;
 type TypeMap = FxHashMap<SmolStr, (FileId, TypeItemId)>;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct FullResolvedModule {
-    imports: Vec<ResolvedImport>,
+    unqualified: UnqualifiedResolvedImports,
+    qualified: QualifiedResolvedImports,
     exports: ResolvedExports,
     errors: Vec<Error>,
 }
@@ -73,6 +78,12 @@ pub struct ResolvedImport {
 }
 
 impl ResolvedImport {
+    fn new(file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
+        let terms = TermMap::default();
+        let types = TypeMap::default();
+        ResolvedImport { file, kind, exported, terms, types }
+    }
+
     pub fn contains_term(&self, name: &str) -> bool {
         self.terms.contains_key(name)
     }
@@ -90,12 +101,14 @@ impl ResolvedImport {
     }
 }
 
-pub fn resolve_module(external: &mut impl External, id: FileId) -> FullResolvedModule {
+pub fn resolve_module(external: &mut impl External, file: FileId) -> FullResolvedModule {
     let mut errors = vec![];
 
-    let index = external.index(id);
-    let imports = algorithm::resolve_imports(external, &mut errors, &index.index);
-    let exports = algorithm::resolve_exports(external, &mut errors, &index.index, id, &imports);
+    let index = external.indexed(file);
+    let (unqualified, qualified) = algorithm::resolve_imports(external, &mut errors, &index.index);
 
-    FullResolvedModule { imports, exports, errors }
+    let imports = unqualified.iter().chain(qualified.values());
+    let exports = algorithm::resolve_exports(external, &mut errors, &index.index, imports, file);
+
+    FullResolvedModule { unqualified, qualified, exports, errors }
 }
