@@ -1,0 +1,23 @@
+---
+source: crates/indexing_v2/tests/indexing.rs
+expression: snapshot
+snapshot_kind: text
+---
+MismatchedItem
+  88..113 - type Mismatch = Mismatch
+  65..88 - data Mismatch :: Type
+InvalidRole
+  113..144 - type role InvalidRole nominal
+InvalidRole
+  196..228 - type role ExistingRole phantom
+  144..196 - data ExistingRole a
+type role ExistingRole phantom
+DuplicateItem
+  58..65 - data F
+  43..51 - data F
+DuplicateImport
+  40..42 - a
+  38..39 - a
+DuplicateExport
+  15..17 - F
+  13..14 - F

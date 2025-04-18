@@ -267,6 +267,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexing_v2"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "itertools",
+ "la-arena",
+ "lexing",
+ "parsing",
+ "paste",
+ "rowan",
+ "rustc-hash 2.1.1",
+ "smol_str",
+ "syntax",
+ "test_each_file",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

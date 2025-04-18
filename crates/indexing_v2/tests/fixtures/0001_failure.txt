@@ -1,0 +1,17 @@
+module Main (F, F) where
+
+import Lib (a, a)
+
+data F
+data G
+data F
+
+data Mismatch :: Type
+type Mismatch = Mismatch
+
+type role InvalidRole nominal
+
+data ExistingRole a
+type role ExistingRole phantom
+
+type role ExistingRole phantom

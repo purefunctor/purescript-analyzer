@@ -221,6 +221,7 @@ has_child!(
 
 has_child!(
     ModuleHeader
+    | annotation() -> Annotation
     | name() -> ModuleName
     | exports() -> ExportList
 );

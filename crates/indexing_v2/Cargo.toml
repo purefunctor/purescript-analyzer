@@ -1,0 +1,19 @@
+[package]
+name = "indexing_v2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+itertools = "0.14.0"
+la-arena = "0.3.1"
+paste = "1.0.15"
+rowan = "0.16.1"
+rustc-hash = "2.1.1"
+smol_str = "0.3.2"
+syntax = { version = "0.1.0", path = "../syntax" }
+
+[dev-dependencies]
+insta = "1.42.1"
+lexing = { path = "../lexing" }
+parsing = { path = "../parsing" }
+test_each_file = "0.3.4"
