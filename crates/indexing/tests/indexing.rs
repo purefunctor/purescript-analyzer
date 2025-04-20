@@ -41,7 +41,7 @@ fn test_0000_success() {
         })
         .unwrap_or_default();
 
-    for (_, item) in indexed.items.terms {
+    for (_, item) in indexed.items.iter_terms() {
         if matches!(item.kind, TermItemKind::Instance { .. }) {
             assert!(item.exported, "Instances are always exported");
         }
@@ -57,7 +57,7 @@ fn test_0000_success() {
         }
     }
 
-    for (_, item) in indexed.items.types {
+    for (_, item) in indexed.items.iter_types() {
         let Some(name) = &item.name else { continue };
         if ty.contains(name) {
             assert!(item.exported, "Expected type '{}' to be exported.", name);

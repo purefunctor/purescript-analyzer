@@ -436,7 +436,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
 fn lower_constructors(s: &mut State, e: &Environment, id: TypeItemId) {
     let root = e.module.syntax();
     for item_id in e.indexed.pairs.data_constructors(id) {
-        let TermItemKind::Constructor { id } = e.indexed.items.terms[item_id].kind else {
+        let TermItemKind::Constructor { id } = e.indexed.items[item_id].kind else {
             unreachable!("invariant violated: expected TermItemKind::Constructor");
         };
 
@@ -451,7 +451,7 @@ fn lower_constructors(s: &mut State, e: &Environment, id: TypeItemId) {
 fn lower_class_members(s: &mut State, e: &Environment, id: TypeItemId) {
     let root = e.module.syntax();
     for item_id in e.indexed.pairs.class_members(id) {
-        let TermItemKind::ClassMember { id } = e.indexed.items.terms[item_id].kind else {
+        let TermItemKind::ClassMember { id } = e.indexed.items[item_id].kind else {
             unreachable!("invariant violated: expected TermItemKind::ClassMember");
         };
 

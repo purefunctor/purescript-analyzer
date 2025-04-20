@@ -7,6 +7,8 @@ pub use error::*;
 pub use items::*;
 pub use source::*;
 
+use std::ops;
+
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -24,8 +26,8 @@ pub struct FullIndexedModule {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct IndexingItems {
-    pub terms: Arena<TermItem>,
-    pub types: Arena<TypeItem>,
+    terms: Arena<TermItem>,
+    types: Arena<TypeItem>,
 }
 
 impl IndexingItems {
@@ -35,6 +37,22 @@ impl IndexingItems {
 
     pub fn iter_types(&self) -> impl Iterator<Item = (TypeItemId, &TypeItem)> {
         self.types.iter()
+    }
+}
+
+impl ops::Index<TermItemId> for IndexingItems {
+    type Output = TermItem;
+
+    fn index(&self, index: TermItemId) -> &TermItem {
+        &self.terms[index]
+    }
+}
+
+impl ops::Index<TypeItemId> for IndexingItems {
+    type Output = TypeItem;
+
+    fn index(&self, index: TypeItemId) -> &TypeItem {
+        &self.types[index]
     }
 }
 
