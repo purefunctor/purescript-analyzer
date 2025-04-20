@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
-use indexing::{FullModuleIndex, TermItem};
+use indexing::{FullIndexedModule, TermItemKind};
 use itertools::Itertools;
-use lowering::FullModuleLower;
+use lowering::FullLoweredModule;
 
 use crate::{
     core::{CoreStorage, ForallBinder, Type, TypeId},
@@ -15,6 +15,7 @@ where
     S: CoreStorage,
 {
     storage: &'s mut S,
+    #[allow(unused)]
     unique: u32,
     bound: debruijn::Bound,
 }
@@ -31,12 +32,13 @@ where
 }
 
 pub struct Environment<'e> {
-    index: &'e FullModuleIndex,
-    lower: &'e FullModuleLower,
+    #[allow(unused)]
+    index: &'e FullIndexedModule,
+    lower: &'e FullLoweredModule,
 }
 
 impl<'e> Environment<'e> {
-    pub fn new(index: &'e FullModuleIndex, lower: &'e FullModuleLower) -> Environment<'e> {
+    pub fn new(index: &'e FullIndexedModule, lower: &'e FullLoweredModule) -> Environment<'e> {
         Environment { index, lower }
     }
 }
@@ -123,16 +125,15 @@ fn core_of_cst<S: CoreStorage>(
 
 pub fn check_module(
     storage: &mut (impl CoreStorage + Debug),
-    index: &FullModuleIndex,
-    lower: &FullModuleLower,
+    index: &FullIndexedModule,
+    lower: &FullLoweredModule,
 ) {
-    let foreign = index
-        .index
-        .iter_term_item()
-        .filter_map(|(item, id)| if let TermItem::Foreign { .. } = id { Some(item) } else { None });
+    let foreign = index.items.iter_terms().filter_map(|(id, item)| {
+        if let TermItemKind::Foreign { .. } = item.kind { Some(id) } else { None }
+    });
 
-    let instance = index.index.iter_term_item().filter_map(|(item, id)| {
-        if let TermItem::Instance { .. } = id { Some(item) } else { None }
+    let instance = index.items.iter_terms().filter_map(|(id, item)| {
+        if let TermItemKind::Instance { .. } = item.kind { Some(id) } else { None }
     });
 
     let mut context = Context::new(storage);

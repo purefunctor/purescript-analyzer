@@ -1,47 +1,32 @@
 mod algorithm;
+mod error;
 
-use lowering::FullModuleLower;
-use rustc_hash::FxHashMap;
-use smol_str::SmolStr;
-
-use std::sync::Arc;
+pub use error::*;
 
 use files::FileId;
-use indexing::{FullModuleIndex, ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
+use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId};
+use lowering::FullLoweredModule;
+use rustc_hash::FxHashMap;
+use smol_str::SmolStr;
+use std::sync::Arc;
 
 /// External dependencies used in name resolution.
 pub trait External {
-    fn indexed(&mut self, id: FileId) -> Arc<FullModuleIndex>;
+    fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule>;
 
-    fn lowered(&mut self, id: FileId) -> Arc<FullModuleLower>;
+    fn lowered(&mut self, id: FileId) -> Arc<FullLoweredModule>;
 
     fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule>;
 
     fn file_id(&mut self, name: &str) -> FileId;
 }
 
-/// The kind of errors produced during name resolution.
-#[derive(Debug, PartialEq, Eq)]
-pub enum Error {
-    ExistingTerm { existing: (FileId, TermItemId), duplicate: (FileId, TermItemId) },
-    ExistingType { existing: (FileId, TypeItemId), duplicate: (FileId, TypeItemId) },
-    InvalidImportStatement { id: ImportId },
-    InvalidImportItem { id: ImportItemId },
-    DuplicateImportItem { id: ImportItemId },
-}
-
-type UnqualifiedResolvedImports = Vec<ResolvedImport>;
-type QualifiedResolvedImports = FxHashMap<SmolStr, ResolvedImport>;
-
-type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;
-type TypeMap = FxHashMap<SmolStr, (FileId, TypeItemId)>;
-
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct FullResolvedModule {
-    unqualified: UnqualifiedResolvedImports,
-    qualified: QualifiedResolvedImports,
+    unqualified: ResolvedImportsUnqualified,
+    qualified: ResolvedImportsQualified,
     exports: ResolvedExports,
-    errors: Vec<Error>,
+    errors: Vec<ResolvingError>,
 }
 
 impl FullResolvedModule {
@@ -49,18 +34,24 @@ impl FullResolvedModule {
         self.exports.terms.get(name).copied()
     }
 
-    pub fn iter_terms(&self) -> impl Iterator<Item = (&str, FileId, TermItemId)> {
-        self.exports.terms.iter().map(|(k, (f, i))| (k.as_str(), *f, *i))
+    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+        self.exports.terms.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 
     pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
         self.exports.types.get(name).copied()
     }
 
-    pub fn iter_types(&self) -> impl Iterator<Item = (&str, FileId, TypeItemId)> {
-        self.exports.types.iter().map(|(k, (f, i))| (k.as_str(), *f, *i))
+    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.exports.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 }
+
+type ResolvedImportsUnqualified = Vec<ResolvedImport>;
+type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
+
+type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;
+type TypeMap = FxHashMap<SmolStr, (FileId, TypeItemId)>;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ResolvedExports {
@@ -84,31 +75,25 @@ impl ResolvedImport {
         ResolvedImport { file, kind, exported, terms, types }
     }
 
-    pub fn contains_term(&self, name: &str) -> bool {
+    fn contains_term(&self, name: &str) -> bool {
         self.terms.contains_key(name)
     }
 
-    pub fn iter_terms(&self) -> impl Iterator<Item = (&str, FileId, TermItemId)> {
-        self.terms.iter().map(|(k, (f, i))| (k.as_str(), *f, *i))
+    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+        self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 
-    pub fn contains_type(&self, name: &str) -> bool {
+    fn contains_type(&self, name: &str) -> bool {
         self.types.contains_key(name)
     }
 
-    pub fn iter_types(&self) -> impl Iterator<Item = (&str, FileId, TypeItemId)> {
-        self.types.iter().map(|(k, (f, i))| (k.as_str(), *f, *i))
+    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 }
 
 pub fn resolve_module(external: &mut impl External, file: FileId) -> FullResolvedModule {
-    let mut errors = vec![];
-
-    let index = external.indexed(file);
-    let (unqualified, qualified) = algorithm::resolve_imports(external, &mut errors, &index.index);
-
-    let imports = unqualified.iter().chain(qualified.values());
-    let exports = algorithm::resolve_exports(external, &mut errors, &index.index, imports, file);
-
+    let algorithm::State { unqualified, qualified, exports, errors } =
+        algorithm::resolve_module(external, file);
     FullResolvedModule { unqualified, qualified, exports, errors }
 }

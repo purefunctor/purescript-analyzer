@@ -143,12 +143,12 @@ pub type DeferredResolutionId = Idx<DeferredResolution>;
 
 /// A scope graph for PureScript.
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct Graph {
+pub struct LoweringGraph {
     pub(crate) inner: Arena<GraphNode>,
     pub(crate) deferred: Arena<DeferredResolution>,
 }
 
-impl Graph {
+impl LoweringGraph {
     /// Initialise a traversal starting from a [`GraphNodeId`].
     pub fn traverse(&self, id: GraphNodeId) -> GraphIter<'_> {
         let inner = &self.inner;
@@ -162,7 +162,7 @@ impl Graph {
     }
 }
 
-impl ops::Index<GraphNodeId> for Graph {
+impl ops::Index<GraphNodeId> for LoweringGraph {
     type Output = GraphNode;
 
     fn index(&self, index: GraphNodeId) -> &Self::Output {

@@ -1,8 +1,8 @@
 use std::{mem, sync::Arc};
 
 use files::FileId;
-use indexing::FullModuleIndex;
-use lowering::FullModuleLower;
+use indexing::FullIndexedModule;
+use lowering::FullLoweredModule;
 use rowan::ast::AstNode;
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::cst;
@@ -39,8 +39,8 @@ pub struct Runtime {
 
     content: FxHashMap<FileId, Arc<str>>,
     parse: FxHashMap<FileId, cst::Module>,
-    index: FxHashMap<FileId, Arc<FullModuleIndex>>,
-    lower: FxHashMap<FileId, Arc<FullModuleLower>>,
+    index: FxHashMap<FileId, Arc<FullIndexedModule>>,
+    lower: FxHashMap<FileId, Arc<FullLoweredModule>>,
 
     parent: Option<QueryKey>,
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
@@ -171,7 +171,7 @@ impl Runtime {
         )
     }
 
-    pub fn index(&mut self, id: FileId) -> Arc<FullModuleIndex> {
+    pub fn index(&mut self, id: FileId) -> Arc<FullIndexedModule> {
         let k = QueryKey::Index(id);
         self.query(
             k,
@@ -191,15 +191,14 @@ impl Runtime {
         )
     }
 
-    pub fn lower(&mut self, id: FileId) -> Arc<FullModuleLower> {
+    pub fn lower(&mut self, id: FileId) -> Arc<FullLoweredModule> {
         let k = QueryKey::Lower(id);
         self.query(
             k,
             |this| {
                 let module = this.parse(id);
-                let index = this.index(id);
-                let lower =
-                    lowering::lower_module(&module, &index.index, &index.relational, &index.source);
+                let indexed = this.index(id);
+                let lower = lowering::lower_module(&module, &indexed);
                 Arc::new(lower)
             },
             |this| {

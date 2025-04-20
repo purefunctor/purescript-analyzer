@@ -1,14 +1,14 @@
 mod shared;
 
 use lowering::{
-    ExpressionKind, FullModuleLower, GraphNode, LetBindingResolution, TermResolution, TypeKind,
+    ExpressionKind, FullLoweredModule, GraphNode, LetBindingResolution, TermResolution, TypeKind,
     TypeVariableResolution,
 };
 use std::fmt::Write;
 use test_each_file::test_each_file;
 
 fn variable_scope_check(content: &str) -> String {
-    let (_, index, FullModuleLower { intermediate, source, graph }) = shared::lower_source(content);
+    let (_, index, FullLoweredModule { intermediate, source, graph }) = shared::lower_source(content);
 
     let mut snapshot = String::default();
 

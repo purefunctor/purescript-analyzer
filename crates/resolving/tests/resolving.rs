@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::FullModuleIndex;
+use indexing::FullIndexedModule;
 use la_arena::RawIdx;
-use lowering::FullModuleLower;
+use lowering::FullLoweredModule;
 use resolving::{External, FullResolvedModule};
 use rowan::ast::AstNode;
 use syntax::cst;
@@ -38,17 +38,16 @@ pub fn parse(id: FileId) -> cst::Module {
 struct TestExternal;
 
 impl External for TestExternal {
-    fn indexed(&mut self, id: FileId) -> Arc<FullModuleIndex> {
+    fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule> {
         let module = parse(id);
         let index = indexing::index_module(&module);
         Arc::new(index)
     }
 
-    fn lowered(&mut self, id: FileId) -> Arc<FullModuleLower> {
+    fn lowered(&mut self, id: FileId) -> Arc<FullLoweredModule> {
         let module = parse(id);
-        let index = self.indexed(id);
-        let lowered =
-            lowering::lower_module(&module, &index.index, &index.relational, &index.source);
+        let indexed = self.indexed(id);
+        let lowered = lowering::lower_module(&module, &indexed);
         Arc::new(lowered)
     }
 
