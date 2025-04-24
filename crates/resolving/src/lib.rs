@@ -22,7 +22,8 @@ pub trait External {
 pub struct FullResolvedModule {
     unqualified: ResolvedImportsUnqualified,
     qualified: ResolvedImportsQualified,
-    exports: ResolvedExports,
+    exports: ResolvedItems,
+    locals: ResolvedItems,
     errors: Vec<ResolvingError>,
 }
 
@@ -33,12 +34,12 @@ type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;
 type TypeMap = FxHashMap<SmolStr, (FileId, TypeItemId)>;
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct ResolvedExports {
+pub struct ResolvedItems {
     terms: TermMap,
     types: TypeMap,
 }
 
-impl ResolvedExports {
+impl ResolvedItems {
     fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId)> {
         self.terms.get(name).copied()
     }
@@ -61,36 +62,34 @@ pub struct ResolvedImport {
     pub file: FileId,
     pub kind: ImportKind,
     pub exported: bool,
-    terms: TermMap,
-    types: TypeMap,
+    items: ResolvedItems,
 }
 
 impl ResolvedImport {
     fn new(file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
-        let terms = TermMap::default();
-        let types = TypeMap::default();
-        ResolvedImport { file, kind, exported, terms, types }
+        let items = ResolvedItems::default();
+        ResolvedImport { file, kind, exported, items }
     }
 
     fn contains_term(&self, name: &str) -> bool {
-        self.terms.contains_key(name)
+        self.items.terms.contains_key(name)
     }
 
     fn contains_type(&self, name: &str) -> bool {
-        self.types.contains_key(name)
+        self.items.types.contains_key(name)
     }
 
     fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
-        self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
+        self.items.terms.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 
     fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
-        self.types.iter().map(|(k, (f, i))| (k, *f, *i))
+        self.items.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 }
 
 pub fn resolve_module(external: &mut impl External, file: FileId) -> FullResolvedModule {
-    let algorithm::State { unqualified, qualified, exports, errors } =
+    let algorithm::State { unqualified, qualified, exports, locals, errors } =
         algorithm::resolve_module(external, file);
-    FullResolvedModule { unqualified, qualified, exports, errors }
+    FullResolvedModule { unqualified, qualified, exports, locals, errors }
 }
