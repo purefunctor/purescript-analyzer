@@ -30,6 +30,10 @@ pub(super) struct State {
 }
 
 impl State {
+    fn new(name: Option<SmolStr>) -> State {
+        State { name, ..Default::default() }
+    }
+
     fn active_term(&mut self, name: &Option<SmolStr>) -> Option<(TermItemId, &mut TermItem)> {
         let Current::Term(id) = self.current? else {
             return None;
@@ -66,12 +70,12 @@ impl State {
 }
 
 pub(super) fn index_module(cst: &cst::Module) -> State {
-    let mut state = State::default();
-
-    state.name = cst.header().and_then(|cst| {
+    let name = cst.header().and_then(|cst| {
         let cst = cst.name()?;
         extract_module_name(&cst)
     });
+
+    let mut state = State::new(name);
 
     if let Some(statements) = cst.statements() {
         for declaration in statements.children() {
