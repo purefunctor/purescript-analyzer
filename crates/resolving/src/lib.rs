@@ -26,16 +26,6 @@ pub struct FullResolvedModule {
     errors: Vec<ResolvingError>,
 }
 
-impl FullResolvedModule {
-    pub fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId)> {
-        self.exports.terms.get(name).copied()
-    }
-
-    pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
-        self.exports.types.get(name).copied()
-    }
-}
-
 type ResolvedImportsUnqualified = Vec<ResolvedImport>;
 type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
 
@@ -49,6 +39,14 @@ pub struct ResolvedExports {
 }
 
 impl ResolvedExports {
+    fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId)> {
+        self.terms.get(name).copied()
+    }
+
+    fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.types.get(name).copied()
+    }
+
     fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
         self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
     }
@@ -78,12 +76,12 @@ impl ResolvedImport {
         self.terms.contains_key(name)
     }
 
-    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
-        self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
-    }
-
     fn contains_type(&self, name: &str) -> bool {
         self.types.contains_key(name)
+    }
+
+    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+        self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 
     fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {

@@ -112,7 +112,7 @@ fn resolve_import(
     indexing_import: &IndexingImport,
 ) {
     for (name, &id) in &indexing_import.terms {
-        if let Some(item) = import_resolved.lookup_term(name) {
+        if let Some(item) = import_resolved.exports.lookup_term(name) {
             add_imported_term(errors, resolved, name, id, item);
         } else {
             errors.push(ResolvingError::InvalidImportItem { id });
@@ -120,7 +120,7 @@ fn resolve_import(
     }
 
     for (name, &(id, ref implicit)) in &indexing_import.types {
-        if let Some(item) = import_resolved.lookup_type(name) {
+        if let Some(item) = import_resolved.exports.lookup_type(name) {
             add_imported_type(errors, resolved, name, id, item);
         } else {
             errors.push(ResolvingError::InvalidImportItem { id });
@@ -142,7 +142,7 @@ fn resolve_implicit(
 ) {
     match implicit {
         ImplicitItems::Everything => {
-            if let Some((_, type_id)) = import_resolved.lookup_type(name) {
+            if let Some((_, type_id)) = import_resolved.exports.lookup_type(name) {
                 let constructors: FxHashSet<_> =
                     import_indexed.pairs.data_constructors(type_id).collect();
                 let constructors = import_resolved
@@ -158,7 +158,7 @@ fn resolve_implicit(
         }
         ImplicitItems::Enumerated(names) => {
             for name in names.iter() {
-                if let Some(item) = import_resolved.lookup_term(name) {
+                if let Some(item) = import_resolved.exports.lookup_term(name) {
                     add_imported_term(errors, resolved, name, id, item);
                 } else {
                     errors.push(ResolvingError::InvalidImportItem { id });

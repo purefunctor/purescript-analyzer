@@ -73,20 +73,22 @@ fn test_basic() {
     let mut external = TestExternal;
 
     let lowered = external.lowered(file!(0));
-    let resolved = external.resolved(file!(0));
+    let _ = external.resolved(file!(0));
 
-    for (id, deferred) in lowered.graph.deferred() {
+    for (_, deferred) in lowered.graph.deferred() {
         match deferred.domain {
             lowering::ResolutionDomain::Term => {
                 if let Some(name) = &deferred.name {
-                    let r = resolved.lookup_term(name);
-                    println!("{:?} = {:?}", id, r);
+                    dbg!(name);
+                    // let r = resolved.lookup_term(name);
+                    // println!("{:?} = {:?}", id, r);
                 }
             }
             lowering::ResolutionDomain::Type => {
                 if let Some(name) = &deferred.name {
-                    let r = resolved.lookup_type(name);
-                    println!("{:?} = {:?}", id, r);
+                    dbg!(name);
+                    // let r = resolved.lookup_type(name);
+                    // println!("{:?} = {:?}", id, r);
                 }
             }
         }
