@@ -31,16 +31,8 @@ impl FullResolvedModule {
         self.exports.terms.get(name).copied()
     }
 
-    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
-        self.exports.terms.iter().map(|(k, (f, i))| (k, *f, *i))
-    }
-
     pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
         self.exports.types.get(name).copied()
-    }
-
-    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
-        self.exports.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 }
 
@@ -54,6 +46,16 @@ type TypeMap = FxHashMap<SmolStr, (FileId, TypeItemId)>;
 pub struct ResolvedExports {
     terms: TermMap,
     types: TypeMap,
+}
+
+impl ResolvedExports {
+    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+        self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
+    }
+
+    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.types.iter().map(|(k, (f, i))| (k, *f, *i))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

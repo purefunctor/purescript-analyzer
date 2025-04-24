@@ -145,8 +145,10 @@ fn resolve_implicit(
             if let Some((_, type_id)) = import_resolved.lookup_type(name) {
                 let constructors: FxHashSet<_> =
                     import_indexed.pairs.data_constructors(type_id).collect();
-                let constructors =
-                    import_resolved.iter_terms().filter(|(_, _, id)| constructors.contains(id));
+                let constructors = import_resolved
+                    .exports
+                    .iter_terms()
+                    .filter(|(_, _, id)| constructors.contains(id));
                 for (name, term_file, term_id) in constructors {
                     add_imported_term(errors, resolved, name, id, (term_file, term_id));
                 }
@@ -285,8 +287,8 @@ fn export_module_imports(
         match import.kind {
             ImportKind::Implicit => {
                 let resolved = external.resolved(import.file);
-                let terms = resolved.iter_terms();
-                let types = resolved.iter_types();
+                let terms = resolved.exports.iter_terms();
+                let types = resolved.exports.iter_types();
                 add_exported_terms(&mut state.exports, &mut state.errors, terms);
                 add_exported_types(&mut state.exports, &mut state.errors, types);
             }
@@ -298,8 +300,10 @@ fn export_module_imports(
             }
             ImportKind::Hidden => {
                 let resolved = external.resolved(import.file);
-                let terms = resolved.iter_terms().filter(|(k, _, _)| !import.contains_term(k));
-                let types = resolved.iter_types().filter(|(k, _, _)| !import.contains_type(k));
+                let terms =
+                    resolved.exports.iter_terms().filter(|(k, _, _)| !import.contains_term(k));
+                let types =
+                    resolved.exports.iter_types().filter(|(k, _, _)| !import.contains_type(k));
                 add_exported_terms(&mut state.exports, &mut state.errors, terms);
                 add_exported_types(&mut state.exports, &mut state.errors, types);
             }
