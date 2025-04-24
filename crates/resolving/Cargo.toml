@@ -7,12 +7,12 @@ edition = "2024"
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
 la-arena = "0.3.1"
-lowering = { version = "0.1.0", path = "../lowering" }
 rustc-hash = "2.1.1"
 smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]
 lexing = { path = "../lexing" }
+lowering = { path = "../lowering" }
 parsing = { path = "../parsing" }
 rowan = "0.16.1"

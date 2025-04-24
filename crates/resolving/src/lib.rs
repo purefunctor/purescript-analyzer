@@ -5,7 +5,6 @@ pub use error::*;
 
 use files::FileId;
 use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId};
-use lowering::FullLoweredModule;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use std::sync::Arc;
@@ -13,8 +12,6 @@ use std::sync::Arc;
 /// External dependencies used in name resolution.
 pub trait External {
     fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule>;
-
-    fn lowered(&mut self, id: FileId) -> Arc<FullLoweredModule>;
 
     fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule>;
 

@@ -37,18 +37,20 @@ pub fn parse(id: FileId) -> cst::Module {
 
 struct TestExternal;
 
-impl External for TestExternal {
-    fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule> {
-        let module = parse(id);
-        let index = indexing::index_module(&module);
-        Arc::new(index)
-    }
-
+impl TestExternal {
     fn lowered(&mut self, id: FileId) -> Arc<FullLoweredModule> {
         let module = parse(id);
         let indexed = self.indexed(id);
         let lowered = lowering::lower_module(&module, &indexed);
         Arc::new(lowered)
+    }
+}
+
+impl External for TestExternal {
+    fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule> {
+        let module = parse(id);
+        let index = indexing::index_module(&module);
+        Arc::new(index)
     }
 
     fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule> {
