@@ -19,8 +19,8 @@ enum Current {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(super) struct State {
-    current: Option<Current>,
     name: Option<SmolStr>,
+    current: Option<Current>,
     pub(super) kind: ExportKind,
     pub(super) items: IndexingItems,
     pub(super) imports: IndexingImports,
@@ -67,6 +67,11 @@ impl State {
 
 pub(super) fn index_module(cst: &cst::Module) -> State {
     let mut state = State::default();
+
+    state.name = cst.header().and_then(|cst| {
+        let cst = cst.name()?;
+        extract_module_name(&cst)
+    });
 
     if let Some(statements) = cst.statements() {
         for declaration in statements.children() {
