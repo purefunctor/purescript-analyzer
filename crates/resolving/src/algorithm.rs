@@ -3,7 +3,6 @@ use indexing::{
     ExportKind, FullIndexedModule, ImplicitItems, ImportItemId, ImportKind, IndexingImport,
     IndexingImports, TermItemId, TermItemKind, TypeItemId,
 };
-use rustc_hash::FxHashSet;
 use smol_str::SmolStr;
 
 use crate::{
@@ -25,7 +24,7 @@ pub(super) fn resolve_module(external: &mut impl External, file: FileId) -> Stat
 
     let mut state = State::default();
     resolve_imports(external, &mut state, &indexed.imports);
-    resolve_exports(external, &mut state, &indexed, file);
+    resolve_exports(&mut state, &indexed, file);
 
     state
 }
@@ -65,44 +64,6 @@ fn resolve_imports(external: &mut impl External, state: &mut State, imports: &In
     }
 }
 
-fn add_imported_term(
-    errors: &mut Vec<ResolvingError>,
-    resolved: &mut ResolvedImport,
-    name: &SmolStr,
-    id: ImportItemId,
-    item: (FileId, TermItemId),
-) {
-    if let Some(existing) = resolved.items.terms.get(name) {
-        if item != *existing {
-            errors.push(ResolvingError::InvalidImportItem { id });
-        } else {
-            errors.push(ResolvingError::DuplicateImportItem { id });
-        }
-    } else {
-        let name = SmolStr::clone(name);
-        resolved.items.terms.insert(name, item);
-    }
-}
-
-fn add_imported_type(
-    errors: &mut Vec<ResolvingError>,
-    resolved: &mut ResolvedImport,
-    name: &SmolStr,
-    id: ImportItemId,
-    item: (FileId, TypeItemId),
-) {
-    if let Some(existing) = resolved.items.types.get(name) {
-        if item != *existing {
-            errors.push(ResolvingError::InvalidImportItem { id });
-        } else {
-            errors.push(ResolvingError::DuplicateImportItem { id });
-        }
-    } else {
-        let name = SmolStr::clone(name);
-        resolved.items.types.insert(name, item);
-    }
-}
-
 fn resolve_import(
     errors: &mut Vec<ResolvingError>,
     resolved: &mut ResolvedImport,
@@ -110,23 +71,47 @@ fn resolve_import(
     import_resolved: &FullResolvedModule,
     indexing_import: &IndexingImport,
 ) {
+    let kind = match indexing_import.kind {
+        ImportKind::Implicit => ImportKind::Implicit,
+        ImportKind::Explicit => ImportKind::Hidden,
+        ImportKind::Hidden => ImportKind::Implicit,
+    };
+
+    let terms = import_resolved.exports.iter_terms().map(|(name, file, id)| (name, file, id, kind));
+    let types = import_resolved.exports.iter_types().map(|(name, file, id)| (name, file, id, kind));
+
+    add_imported_terms(errors, resolved, terms);
+    add_imported_types(errors, resolved, types);
+
+    if matches!(indexing_import.kind, ImportKind::Implicit) {
+        return;
+    }
+
     for (name, &id) in &indexing_import.terms {
-        if let Some(item) = import_resolved.exports.lookup_term(name) {
-            add_imported_term(errors, resolved, name, id, item);
+        if let Some((_, _, kind)) = resolved.terms.get_mut(name) {
+            *kind = indexing_import.kind;
         } else {
             errors.push(ResolvingError::InvalidImportItem { id });
         }
     }
 
     for (name, &(id, ref implicit)) in &indexing_import.types {
-        if let Some(item) = import_resolved.exports.lookup_type(name) {
-            add_imported_type(errors, resolved, name, id, item);
+        if let Some((_, _, kind)) = resolved.types.get_mut(name) {
+            *kind = indexing_import.kind;
         } else {
             errors.push(ResolvingError::InvalidImportItem { id });
         }
-        if let Some(implicit) = implicit {
-            resolve_implicit(errors, resolved, import_indexed, import_resolved, name, id, implicit);
-        }
+        let Some(implicit) = implicit else {
+            continue;
+        };
+        resolve_implicit(
+            errors,
+            resolved,
+            import_indexed,
+            import_resolved,
+            indexing_import,
+            (name, id, implicit),
+        );
     }
 }
 
@@ -135,30 +120,35 @@ fn resolve_implicit(
     resolved: &mut ResolvedImport,
     import_indexed: &FullIndexedModule,
     import_resolved: &FullResolvedModule,
-    name: &SmolStr,
-    id: ImportItemId,
-    implicit: &ImplicitItems,
+    indexing_import: &IndexingImport,
+    item: (&SmolStr, ImportItemId, &ImplicitItems),
 ) {
+    let (name, id, implicit) = item;
     match implicit {
         ImplicitItems::Everything => {
-            if let Some((_, type_id)) = import_resolved.exports.lookup_type(name) {
-                let constructors: FxHashSet<_> =
-                    import_indexed.pairs.data_constructors(type_id).collect();
-                let constructors = import_resolved
-                    .exports
-                    .iter_terms()
-                    .filter(|(_, _, id)| constructors.contains(id));
-                for (name, term_file, term_id) in constructors {
-                    add_imported_term(errors, resolved, name, id, (term_file, term_id));
+            if let Some(&(_, type_id)) = import_resolved.exports.types.get(name) {
+                for term_id in import_indexed.pairs.data_constructors(type_id) {
+                    let item = &import_indexed.items[term_id];
+                    if !item.exported {
+                        continue;
+                    }
+                    let Some(name) = &item.name else {
+                        continue;
+                    };
+                    if let Some((_, _, kind)) = resolved.terms.get_mut(name) {
+                        *kind = indexing_import.kind;
+                    } else {
+                        errors.push(ResolvingError::InvalidImportItem { id });
+                    }
                 }
             } else {
                 errors.push(ResolvingError::InvalidImportItem { id });
             }
         }
         ImplicitItems::Enumerated(names) => {
-            for name in names.iter() {
-                if let Some(item) = import_resolved.exports.lookup_term(name) {
-                    add_imported_term(errors, resolved, name, id, item);
+            for name in names {
+                if let Some((_, _, kind)) = resolved.terms.get_mut(name) {
+                    *kind = indexing_import.kind;
                 } else {
                     errors.push(ResolvingError::InvalidImportItem { id });
                 }
@@ -167,14 +157,73 @@ fn resolve_implicit(
     }
 }
 
-fn resolve_exports(
-    external: &mut impl External,
-    state: &mut State,
-    import_indexed: &FullIndexedModule,
-    file: FileId,
+fn add_imported_terms<'a>(
+    errors: &mut Vec<ResolvingError>,
+    resolved: &mut ResolvedImport,
+    terms: impl Iterator<Item = (&'a SmolStr, FileId, TermItemId, ImportKind)>,
 ) {
+    let (additional, _) = terms.size_hint();
+    resolved.terms.reserve(additional);
+    terms.for_each(|(name, file, term, kind)| {
+        add_imported_term(errors, resolved, name, file, term, kind);
+    });
+}
+
+fn add_imported_types<'a>(
+    errors: &mut Vec<ResolvingError>,
+    resolved: &mut ResolvedImport,
+    terms: impl Iterator<Item = (&'a SmolStr, FileId, TypeItemId, ImportKind)>,
+) {
+    let (additional, _) = terms.size_hint();
+    resolved.terms.reserve(additional);
+    terms.for_each(|(name, file, id, kind)| {
+        add_imported_type(errors, resolved, name, file, id, kind);
+    });
+}
+
+fn add_imported_term(
+    errors: &mut Vec<ResolvingError>,
+    resolved: &mut ResolvedImport,
+    name: &SmolStr,
+    file: FileId,
+    id: TermItemId,
+    kind: ImportKind,
+) {
+    if let Some((existing_file, existing_term, _)) = resolved.terms.get(name) {
+        let duplicate = (file, id);
+        let existing = (*existing_file, *existing_term);
+        if duplicate != existing {
+            errors.push(ResolvingError::ExistingTerm { existing, duplicate });
+        }
+    } else {
+        let name = SmolStr::clone(name);
+        resolved.terms.insert(name, (file, id, kind));
+    }
+}
+
+fn add_imported_type(
+    errors: &mut Vec<ResolvingError>,
+    resolved: &mut ResolvedImport,
+    name: &SmolStr,
+    file: FileId,
+    id: TypeItemId,
+    kind: ImportKind,
+) {
+    if let Some((existing_file, existing_term, _)) = resolved.types.get(name) {
+        let duplicate = (file, id);
+        let existing = (*existing_file, *existing_term);
+        if duplicate != existing {
+            errors.push(ResolvingError::ExistingType { existing, duplicate });
+        }
+    } else {
+        let name = SmolStr::clone(name);
+        resolved.types.insert(name, (file, id, kind));
+    }
+}
+
+fn resolve_exports(state: &mut State, import_indexed: &FullIndexedModule, file: FileId) {
     export_module_items(state, import_indexed, file);
-    export_module_imports(external, state, import_indexed);
+    export_module_imports(state, import_indexed);
 }
 
 fn add_resolved_terms<'k>(
@@ -276,11 +325,7 @@ fn export_module_items(state: &mut State, import_indexed: &FullIndexedModule, fi
     add_resolved_types(&mut state.exports, &mut state.errors, exported_types);
 }
 
-fn export_module_imports(
-    external: &mut impl External,
-    state: &mut State,
-    import_indexed: &FullIndexedModule,
-) {
+fn export_module_imports(state: &mut State, import_indexed: &FullIndexedModule) {
     if matches!(import_indexed.kind, ExportKind::Implicit) {
         return;
     }
@@ -290,29 +335,21 @@ fn export_module_imports(
     let imports = unqualified.chain(qualified);
 
     for import in imports {
-        match import.kind {
-            ImportKind::Implicit => {
-                let resolved = external.resolved(import.file);
-                let terms = resolved.exports.iter_terms();
-                let types = resolved.exports.iter_types();
-                add_resolved_terms(&mut state.exports, &mut state.errors, terms);
-                add_resolved_types(&mut state.exports, &mut state.errors, types);
+        let terms = import.iter_terms().filter_map(|(k, f, i, d)| {
+            if matches!(d, ImportKind::Implicit | ImportKind::Explicit) {
+                Some((k, f, i))
+            } else {
+                None
             }
-            ImportKind::Explicit => {
-                let terms = import.iter_terms();
-                let types = import.iter_types();
-                add_resolved_terms(&mut state.exports, &mut state.errors, terms);
-                add_resolved_types(&mut state.exports, &mut state.errors, types);
+        });
+        let types = import.iter_types().filter_map(|(k, f, i, d)| {
+            if matches!(d, ImportKind::Implicit | ImportKind::Explicit) {
+                Some((k, f, i))
+            } else {
+                None
             }
-            ImportKind::Hidden => {
-                let resolved = external.resolved(import.file);
-                let terms =
-                    resolved.exports.iter_terms().filter(|(k, _, _)| !import.contains_term(k));
-                let types =
-                    resolved.exports.iter_types().filter(|(k, _, _)| !import.contains_type(k));
-                add_resolved_terms(&mut state.exports, &mut state.errors, terms);
-                add_resolved_types(&mut state.exports, &mut state.errors, types);
-            }
-        }
+        });
+        add_resolved_terms(&mut state.exports, &mut state.errors, terms);
+        add_resolved_types(&mut state.exports, &mut state.errors, types);
     }
 }

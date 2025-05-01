@@ -20,11 +20,45 @@ pub trait External {
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct FullResolvedModule {
-    unqualified: ResolvedImportsUnqualified,
-    qualified: ResolvedImportsQualified,
-    exports: ResolvedItems,
-    locals: ResolvedItems,
-    errors: Vec<ResolvingError>,
+    pub unqualified: ResolvedImportsUnqualified,
+    pub qualified: ResolvedImportsQualified,
+    pub exports: ResolvedItems,
+    pub locals: ResolvedItems,
+    pub errors: Vec<ResolvingError>,
+}
+
+impl FullResolvedModule {
+    pub fn lookup_term(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
+        if let Some(prefix) = prefix {
+            let import = self.qualified.get(prefix)?;
+            let (file, id, kind) = import.lookup_term(name)?;
+            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+        } else {
+            let local = self.locals.lookup_term(name);
+            let unqualified = || {
+                let mut imports = self.unqualified.iter();
+                let (file, id, kind) = imports.find_map(|import| import.lookup_term(name))?;
+                if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            };
+            local.or_else(unqualified)
+        }
+    }
+
+    pub fn lookup_type(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TypeItemId)> {
+        if let Some(prefix) = prefix {
+            let import = self.qualified.get(prefix)?;
+            let (file, id, kind) = import.lookup_type(name)?;
+            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+        } else {
+            let local = self.locals.lookup_type(name);
+            let unqualified = || {
+                let mut imports = self.unqualified.iter();
+                let (file, id, kind) = imports.find_map(|import| import.lookup_type(name))?;
+                if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            };
+            local.or_else(unqualified)
+        }
+    }
 }
 
 type ResolvedImportsUnqualified = Vec<ResolvedImport>;
@@ -62,29 +96,31 @@ pub struct ResolvedImport {
     pub file: FileId,
     pub kind: ImportKind,
     pub exported: bool,
-    items: ResolvedItems,
+    terms: FxHashMap<SmolStr, (FileId, TermItemId, ImportKind)>,
+    types: FxHashMap<SmolStr, (FileId, TypeItemId, ImportKind)>,
 }
 
 impl ResolvedImport {
     fn new(file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
-        let items = ResolvedItems::default();
-        ResolvedImport { file, kind, exported, items }
+        let terms = FxHashMap::default();
+        let types = FxHashMap::default();
+        ResolvedImport { file, kind, exported, terms, types }
     }
 
-    fn contains_term(&self, name: &str) -> bool {
-        self.items.terms.contains_key(name)
+    fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId, ImportKind)> {
+        self.terms.get(name).copied()
     }
 
-    fn contains_type(&self, name: &str) -> bool {
-        self.items.types.contains_key(name)
+    fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId, ImportKind)> {
+        self.types.get(name).copied()
     }
 
-    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
-        self.items.terms.iter().map(|(k, (f, i))| (k, *f, *i))
+    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId, ImportKind)> {
+        self.terms.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
     }
 
-    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
-        self.items.types.iter().map(|(k, (f, i))| (k, *f, *i))
+    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
+        self.types.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
     }
 }
 

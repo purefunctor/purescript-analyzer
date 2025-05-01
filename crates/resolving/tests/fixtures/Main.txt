@@ -1,6 +1,7 @@
 module Main (module Main, module Internal) where
 
 import Internal hiding (Either(..))
+import Lib (duplicate)
 
 life = internal
 
