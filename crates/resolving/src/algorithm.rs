@@ -335,6 +335,9 @@ fn export_module_imports(state: &mut State, import_indexed: &FullIndexedModule) 
     let imports = unqualified.chain(qualified);
 
     for import in imports {
+        if !import.exported {
+            continue;
+        }
         let terms = import.iter_terms().filter_map(|(k, f, i, d)| {
             if matches!(d, ImportKind::Implicit | ImportKind::Explicit) {
                 Some((k, f, i))
