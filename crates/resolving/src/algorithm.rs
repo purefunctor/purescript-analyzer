@@ -221,9 +221,9 @@ fn add_imported_type(
     }
 }
 
-fn resolve_exports(state: &mut State, import_indexed: &FullIndexedModule, file: FileId) {
-    export_module_items(state, import_indexed, file);
-    export_module_imports(state, import_indexed);
+fn resolve_exports(state: &mut State, indexed: &FullIndexedModule, file: FileId) {
+    export_module_items(state, indexed, file);
+    export_module_imports(state, indexed);
 }
 
 fn add_resolved_terms<'k>(
@@ -286,13 +286,13 @@ fn add_resolved_type(
     }
 }
 
-fn export_module_items(state: &mut State, import_indexed: &FullIndexedModule, file: FileId) {
-    let local_terms = import_indexed.items.iter_terms().filter_map(|(id, item)| {
+fn export_module_items(state: &mut State, indexed: &FullIndexedModule, file: FileId) {
+    let local_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
         let name = item.name.as_ref()?;
         Some((name, file, id))
     });
 
-    let local_types = import_indexed.items.iter_types().filter_map(|(id, item)| {
+    let local_types = indexed.items.iter_types().filter_map(|(id, item)| {
         let name = item.name.as_ref()?;
         Some((name, file, id))
     });
@@ -300,21 +300,21 @@ fn export_module_items(state: &mut State, import_indexed: &FullIndexedModule, fi
     add_resolved_terms(&mut state.locals, &mut state.errors, local_terms);
     add_resolved_types(&mut state.locals, &mut state.errors, local_types);
 
-    let exported_terms = import_indexed.items.iter_terms().filter_map(|(id, item)| {
+    let exported_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
         // Instances cannot be to referred directly by their given name yet.
         // They're simply assumed to exist in a global context for coherence.
         if matches!(item.kind, TermItemKind::Instance { .. } | TermItemKind::Derive { .. }) {
             return None;
         }
-        if matches!(import_indexed.kind, ExportKind::Explicit) && !item.exported {
+        if matches!(indexed.kind, ExportKind::Explicit) && !item.exported {
             return None;
         }
         let name = item.name.as_ref()?;
         Some((name, file, id))
     });
 
-    let exported_types = import_indexed.items.iter_types().filter_map(|(id, item)| {
-        if matches!(import_indexed.kind, ExportKind::Explicit) && !item.exported {
+    let exported_types = indexed.items.iter_types().filter_map(|(id, item)| {
+        if matches!(indexed.kind, ExportKind::Explicit) && !item.exported {
             return None;
         }
         let name = item.name.as_ref()?;
@@ -325,8 +325,8 @@ fn export_module_items(state: &mut State, import_indexed: &FullIndexedModule, fi
     add_resolved_types(&mut state.exports, &mut state.errors, exported_types);
 }
 
-fn export_module_imports(state: &mut State, import_indexed: &FullIndexedModule) {
-    if matches!(import_indexed.kind, ExportKind::Implicit) {
+fn export_module_imports(state: &mut State, indexed: &FullIndexedModule) {
+    if matches!(indexed.kind, ExportKind::Implicit) {
         return;
     }
 
