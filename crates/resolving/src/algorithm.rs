@@ -1,7 +1,7 @@
 use files::FileId;
 use indexing::{
     ExportKind, FullIndexedModule, ImplicitItems, ImportItemId, ImportKind, IndexingImport,
-    IndexingImports, TermItemId, TermItemKind, TypeItemId,
+    TermItemId, TermItemKind, TypeItemId,
 };
 use smol_str::SmolStr;
 
@@ -23,14 +23,14 @@ pub(super) fn resolve_module(external: &mut impl External, file: FileId) -> Stat
     let indexed = external.indexed(file);
 
     let mut state = State::default();
-    resolve_imports(external, &mut state, &indexed.imports);
+    resolve_imports(external, &mut state, &indexed);
     resolve_exports(&mut state, &indexed, file);
 
     state
 }
 
-fn resolve_imports(external: &mut impl External, state: &mut State, imports: &IndexingImports) {
-    for (&id, import) in imports {
+fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &FullIndexedModule) {
+    for (&id, import) in &indexed.imports {
         let Some(name) = &import.name else {
             state.errors.push(ResolvingError::InvalidImportStatement { id });
             continue;
