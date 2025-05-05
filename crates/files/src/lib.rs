@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use la_arena::{Idx, RawIdx};
 use rustc_hash::FxBuildHasher;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Files {
     files: IndexMap<Arc<str>, Arc<str>, FxBuildHasher>,
 }
