@@ -1,0 +1,122 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: external.resolved(id)
+snapshot_kind: text
+---
+FullResolvedModule {
+    unqualified: [],
+    qualified: {},
+    exports: ResolvedItems {
+        terms: {
+            "value": (
+                Idx::<File>(0),
+                Idx::<TermItem>(0),
+            ),
+            "Just": (
+                Idx::<File>(0),
+                Idx::<TermItem>(1),
+            ),
+            "Id": (
+                Idx::<File>(0),
+                Idx::<TermItem>(3),
+            ),
+            "Nothing": (
+                Idx::<File>(0),
+                Idx::<TermItem>(2),
+            ),
+            "eq": (
+                Idx::<File>(0),
+                Idx::<TermItem>(4),
+            ),
+        },
+        types: {
+            "HiddenConstructor": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(4),
+            ),
+            "Id": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(2),
+            ),
+            "Eq": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(3),
+            ),
+            "Synonym": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(0),
+            ),
+            "Maybe": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(1),
+            ),
+        },
+    },
+    locals: ResolvedItems {
+        terms: {
+            "value": (
+                Idx::<File>(0),
+                Idx::<TermItem>(0),
+            ),
+            "eqMaybe": (
+                Idx::<File>(0),
+                Idx::<TermItem>(5),
+            ),
+            "eqId": (
+                Idx::<File>(0),
+                Idx::<TermItem>(6),
+            ),
+            "eq": (
+                Idx::<File>(0),
+                Idx::<TermItem>(4),
+            ),
+            "HiddenType": (
+                Idx::<File>(0),
+                Idx::<TermItem>(8),
+            ),
+            "Just": (
+                Idx::<File>(0),
+                Idx::<TermItem>(1),
+            ),
+            "Id": (
+                Idx::<File>(0),
+                Idx::<TermItem>(3),
+            ),
+            "Nothing": (
+                Idx::<File>(0),
+                Idx::<TermItem>(2),
+            ),
+            "HiddenConstructor": (
+                Idx::<File>(0),
+                Idx::<TermItem>(7),
+            ),
+        },
+        types: {
+            "HiddenConstructor": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(4),
+            ),
+            "HiddenType": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(5),
+            ),
+            "Id": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(2),
+            ),
+            "Eq": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(3),
+            ),
+            "Synonym": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(0),
+            ),
+            "Maybe": (
+                Idx::<File>(0),
+                Idx::<TypeItem>(1),
+            ),
+        },
+    },
+    errors: [],
+}

@@ -1,7 +1,0 @@
-module Internal (internal, Either(..)) where
-
-duplicate = 42
-
-internal = 42
-
-data Either = Left | Right

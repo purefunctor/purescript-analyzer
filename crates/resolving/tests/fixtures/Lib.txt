@@ -1,7 +1,0 @@
-module Lib (life, module Exports) where
-
-import Internal as Exports
-
-duplicate = 42
-
-life = 42
