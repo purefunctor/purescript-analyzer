@@ -115,11 +115,11 @@ impl ResolvedImport {
         self.types.get(name).copied()
     }
 
-    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId, ImportKind)> {
+    pub fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId, ImportKind)> {
         self.terms.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
     }
 
-    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
+    pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
         self.types.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
     }
 }
