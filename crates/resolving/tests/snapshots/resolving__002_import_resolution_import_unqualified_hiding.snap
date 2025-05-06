@@ -1,0 +1,25 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module ImportUnqualifiedHiding
+
+Unqualified Imports:
+
+Terms:
+  - libFn is Implicit
+  - hideMe is Hidden
+
+Terms:
+
+Qualified Imports:
+
+Exported Terms:
+  - libFn
+
+Exported Types:
+
+Local Terms:
+
+Local Types:

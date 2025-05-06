@@ -5,6 +5,10 @@ snapshot_kind: text
 ---
 module Explicit
 
+Unqualified Imports:
+
+Qualified Imports:
+
 Exported Terms:
   - value
   - Just

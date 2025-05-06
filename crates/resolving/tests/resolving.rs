@@ -74,26 +74,63 @@ fn create_external(folder: &str) -> IntegrationTestExternal {
 fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
     let mut buffer = String::default();
     writeln!(buffer, "module {}", name).unwrap();
+
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Unqualified Imports:").unwrap();
+    for import in &resolved.unqualified {
+        writeln!(buffer).unwrap();
+        writeln!(buffer, "Terms:").unwrap();
+        for (name, _, _, kind) in import.iter_terms() {
+            writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
+        }
+
+        writeln!(buffer).unwrap();
+        writeln!(buffer, "Terms:").unwrap();
+        for (name, _, _, kind) in import.iter_types() {
+            writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
+        }
+    }
+
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Qualified Imports:").unwrap();
+    for (name, import) in &resolved.qualified {
+        writeln!(buffer).unwrap();
+        writeln!(buffer, "{} Terms:", name).unwrap();
+        for (name, _, _, kind) in import.iter_terms() {
+            writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
+        }
+
+        writeln!(buffer).unwrap();
+        writeln!(buffer, "{} Types:", name).unwrap();
+        for (name, _, _, kind) in import.iter_types() {
+            writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
+        }
+    }
+
     writeln!(buffer).unwrap();
     writeln!(buffer, "Exported Terms:").unwrap();
     for (name, _, _) in resolved.exports.iter_terms() {
         writeln!(buffer, "  - {}", name).unwrap();
     }
+
     writeln!(buffer).unwrap();
     writeln!(buffer, "Exported Types:").unwrap();
     for (name, _, _) in resolved.exports.iter_types() {
         writeln!(buffer, "  - {}", name).unwrap();
     }
+
     writeln!(buffer).unwrap();
     writeln!(buffer, "Local Terms:").unwrap();
     for (name, _, _) in resolved.locals.iter_terms() {
         writeln!(buffer, "  - {}", name).unwrap();
     }
+
     writeln!(buffer).unwrap();
     writeln!(buffer, "Local Types:").unwrap();
     for (name, _, _) in resolved.locals.iter_types() {
         writeln!(buffer, "  - {}", name).unwrap();
     }
+
     buffer
 }
 
@@ -123,4 +160,15 @@ test_case! {
         | Explicit
         | ExplicitSelf
         | Implicit
+}
+
+test_case! {
+    002_import_resolution
+        | ImportQualifiedExplicit
+        | ImportQualifiedHiding
+        | ImportQualifiedImplicit
+        | ImportUnqualifiedExplicit
+        | ImportUnqualifiedHiding
+        | ImportUnqualifiedImplicit
+        | Library
 }

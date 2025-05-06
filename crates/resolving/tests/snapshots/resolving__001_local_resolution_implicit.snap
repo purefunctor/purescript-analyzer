@@ -5,6 +5,10 @@ snapshot_kind: text
 ---
 module Implicit
 
+Unqualified Imports:
+
+Qualified Imports:
+
 Exported Terms:
   - value
   - HiddenType
