@@ -82,11 +82,11 @@ impl ResolvedItems {
         self.types.get(name).copied()
     }
 
-    fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+    pub fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
         self.terms.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 
-    fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+    pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
         self.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
 }

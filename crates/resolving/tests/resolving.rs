@@ -1,4 +1,4 @@
-use std::{fs, path::Path, sync::Arc};
+use std::{fmt::Write, fs, path::Path, sync::Arc};
 
 use files::FileId;
 use indexing::FullIndexedModule;
@@ -71,9 +71,41 @@ fn create_external(folder: &str) -> IntegrationTestExternal {
     external
 }
 
+fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
+    let mut buffer = String::default();
+    writeln!(buffer, "module {}", name).unwrap();
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Exported Terms:").unwrap();
+    for (name, _, _) in resolved.exports.iter_terms() {
+        writeln!(buffer, "  - {}", name).unwrap();
+    }
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Exported Types:").unwrap();
+    for (name, _, _) in resolved.exports.iter_types() {
+        writeln!(buffer, "  - {}", name).unwrap();
+    }
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Local Terms:").unwrap();
+    for (name, _, _) in resolved.locals.iter_terms() {
+        writeln!(buffer, "  - {}", name).unwrap();
+    }
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Local Types:").unwrap();
+    for (name, _, _) in resolved.locals.iter_types() {
+        writeln!(buffer, "  - {}", name).unwrap();
+    }
+    buffer
+}
+
+fn test_case(folder: &str, main: &str) -> String {
+    let mut external = create_external(folder);
+    let id = external.file_id(main);
+    let resolved = external.resolved(id);
+    report_result(main, &resolved)
+}
+
 #[test]
 fn test_001_local_resolution() {
-    let mut external = create_external("001_local_resolution");
-    let id = external.file_id("Main");
-    insta::assert_debug_snapshot!(external.resolved(id));
+    let report = test_case("001_local_resolution", "Main");
+    insta::assert_snapshot!(report);
 }
