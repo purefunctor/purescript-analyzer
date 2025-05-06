@@ -16,4 +16,5 @@ syntax = { version = "0.1.0", path = "../syntax" }
 lexing = { path = "../lexing" }
 lowering = { path = "../lowering" }
 parsing = { path = "../parsing" }
+paste = "1.0.15"
 rowan = "0.16.1"

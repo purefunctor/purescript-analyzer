@@ -1,4 +1,4 @@
-module Main (value, Synonym, Maybe(..), Id(..), class Eq, HiddenConstructor) where
+module Explicit (value, Synonym, Maybe(..), Id(..), class Eq, HiddenConstructor) where
 
 value = 123
 

@@ -507,6 +507,7 @@ dependencies = [
  "lexing",
  "lowering",
  "parsing",
+ "paste",
  "rowan",
  "rustc-hash 2.1.1",
  "smol_str",

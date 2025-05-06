@@ -104,8 +104,23 @@ fn test_case(folder: &str, main: &str) -> String {
     report_result(main, &resolved)
 }
 
-#[test]
-fn test_001_local_resolution() {
-    let report = test_case("001_local_resolution", "Main");
-    insta::assert_snapshot!(report);
+macro_rules! test_case {
+    ($folder:tt $(| $module:tt)+) => {
+        paste::paste! {
+            $(
+                #[test]
+                fn [<test_ $folder _ $module:snake>]() {
+                    let report = test_case(stringify!($folder), stringify!($module));
+                    insta::assert_snapshot!(report);
+                }
+            )+
+        }
+    };
+}
+
+test_case! {
+    001_local_resolution
+        | Explicit
+        | ExplicitSelf
+        | Implicit
 }

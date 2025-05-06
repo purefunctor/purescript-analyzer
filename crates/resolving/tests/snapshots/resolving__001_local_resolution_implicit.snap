@@ -1,0 +1,42 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module Implicit
+
+Exported Terms:
+  - value
+  - HiddenType
+  - Just
+  - Id
+  - Nothing
+  - HiddenConstructor
+  - eq
+
+Exported Types:
+  - HiddenConstructor
+  - HiddenType
+  - Id
+  - Eq
+  - Synonym
+  - Maybe
+
+Local Terms:
+  - value
+  - eqMaybe
+  - eqId
+  - eq
+  - HiddenType
+  - Just
+  - Id
+  - Nothing
+  - HiddenConstructor
+
+Local Types:
+  - HiddenConstructor
+  - HiddenType
+  - Id
+  - Eq
+  - Synonym
+  - Maybe
