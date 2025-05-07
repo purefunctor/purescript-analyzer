@@ -129,7 +129,7 @@ fn resolve_implicit(
             if let Some(&(_, type_id)) = import_resolved.exports.types.get(name) {
                 for term_id in import_indexed.pairs.data_constructors(type_id) {
                     let item = &import_indexed.items[term_id];
-                    if !item.exported {
+                    if matches!(import_indexed.kind, ExportKind::Explicit) && !item.exported {
                         continue;
                     }
                     let Some(name) = &item.name else {
