@@ -8,17 +8,23 @@ module ImportUnqualifiedHiding
 Unqualified Imports:
 
 Terms:
+  - MkHideTy is Hidden
   - libFn is Implicit
+  - MkLibTy is Implicit
   - hideMe is Hidden
 
 Types:
+  - LibTy is Implicit
+  - HideTy is Hidden
 
 Qualified Imports:
 
 Exported Terms:
   - libFn
+  - MkLibTy
 
 Exported Types:
+  - LibTy
 
 Local Terms:
 

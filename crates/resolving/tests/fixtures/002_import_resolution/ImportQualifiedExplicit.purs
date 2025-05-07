@@ -1,3 +1,3 @@
 module ImportQualifiedExplicit (module L) where
 
-import Library (libFn) as L
+import Library (libFn, LibTy(..)) as L

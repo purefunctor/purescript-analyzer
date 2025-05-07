@@ -10,15 +10,21 @@ Unqualified Imports:
 Qualified Imports:
 
 L Terms:
+  - MkHideTy is Hidden
   - libFn is Explicit
+  - MkLibTy is Explicit
   - hideMe is Hidden
 
 L Types:
+  - LibTy is Explicit
+  - HideTy is Hidden
 
 Exported Terms:
   - libFn
+  - MkLibTy
 
 Exported Types:
+  - LibTy
 
 Local Terms:
 

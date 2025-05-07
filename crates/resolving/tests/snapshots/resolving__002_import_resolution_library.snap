@@ -10,13 +10,21 @@ Unqualified Imports:
 Qualified Imports:
 
 Exported Terms:
+  - MkHideTy
   - libFn
+  - MkLibTy
   - hideMe
 
 Exported Types:
+  - LibTy
+  - HideTy
 
 Local Terms:
+  - MkHideTy
   - libFn
+  - MkLibTy
   - hideMe
 
 Local Types:
+  - LibTy
+  - HideTy

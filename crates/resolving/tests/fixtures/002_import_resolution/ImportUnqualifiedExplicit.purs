@@ -1,3 +1,3 @@
 module ImportUnqualifiedExplicit (module Library) where
 
-import Library (libFn)
+import Library (libFn, LibTy(..))
