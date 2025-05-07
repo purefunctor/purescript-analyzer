@@ -85,7 +85,7 @@ fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
         }
 
         writeln!(buffer).unwrap();
-        writeln!(buffer, "Terms:").unwrap();
+        writeln!(buffer, "Types:").unwrap();
         for (name, _, _, kind) in import.iter_types() {
             writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
         }
