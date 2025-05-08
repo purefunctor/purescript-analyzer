@@ -1,0 +1,30 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module InvalidImport
+
+Unqualified Imports:
+
+Terms:
+
+Types:
+  - Css is Explicit
+  - Html is Explicit
+
+Qualified Imports:
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Errors:
+  - InvalidImportStatement { id: Idx::<ImportStatement>>(0) }
+  - InvalidImportItem { id: Idx::<ImportItem>>(2) }
+  - InvalidImportItem { id: Idx::<ImportItem>>(0) }
+  - InvalidImportItem { id: Idx::<ImportItem>>(1) }

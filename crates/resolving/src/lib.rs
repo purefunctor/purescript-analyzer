@@ -15,7 +15,7 @@ pub trait External {
 
     fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule>;
 
-    fn file_id(&mut self, name: &str) -> FileId;
+    fn file_id(&mut self, name: &str) -> Option<FileId>;
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]

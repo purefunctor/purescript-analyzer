@@ -34,8 +34,8 @@ impl External for IntegrationTestExternal {
         Arc::new(resolving::resolve_module(self, id))
     }
 
-    fn file_id(&mut self, name: &str) -> FileId {
-        *self.names.get(name).unwrap()
+    fn file_id(&mut self, name: &str) -> Option<FileId> {
+        self.names.get(name).copied()
     }
 }
 
@@ -154,7 +154,7 @@ fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
 
 fn test_case(folder: &str, main: &str) -> String {
     let mut external = create_external(folder);
-    let id = external.file_id(main);
+    let id = external.file_id(main).unwrap();
     let resolved = external.resolved(id);
     report_result(main, &resolved)
 }
@@ -195,6 +195,7 @@ test_case! {
     003_import_errors
         | DuplicateLocal
         | DuplicateQualifiedImport
+        | InvalidImport
         | LibraryA
         | LibraryB
 }

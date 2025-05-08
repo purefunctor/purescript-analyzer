@@ -22,7 +22,7 @@ Local Types:
   - Data
 
 Errors:
-  - ExistingTerm { existing: (Idx::<File>(3), Idx::<TermItem>(0)), duplicate: (Idx::<File>(3), Idx::<TermItem>(1)) }
-  - ExistingType { existing: (Idx::<File>(3), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(3), Idx::<TypeItem>(1)) }
-  - ExistingTerm { existing: (Idx::<File>(3), Idx::<TermItem>(0)), duplicate: (Idx::<File>(3), Idx::<TermItem>(1)) }
-  - ExistingType { existing: (Idx::<File>(3), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(3), Idx::<TypeItem>(1)) }
+  - ExistingTerm { existing: (Idx::<File>(4), Idx::<TermItem>(0)), duplicate: (Idx::<File>(4), Idx::<TermItem>(1)) }
+  - ExistingType { existing: (Idx::<File>(4), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(4), Idx::<TypeItem>(1)) }
+  - ExistingTerm { existing: (Idx::<File>(4), Idx::<TermItem>(0)), duplicate: (Idx::<File>(4), Idx::<TermItem>(1)) }
+  - ExistingType { existing: (Idx::<File>(4), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(4), Idx::<TypeItem>(1)) }
