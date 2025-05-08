@@ -1,0 +1,28 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module DuplicateQualifiedImport
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Library Terms:
+  - html is Implicit
+
+Library Types:
+  - Html is Implicit
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Errors:
+  - ExistingTerm { existing: (Idx::<File>(2), Idx::<TermItem>(0)), duplicate: (Idx::<File>(1), Idx::<TermItem>(0)) }
+  - ExistingType { existing: (Idx::<File>(2), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(1), Idx::<TypeItem>(0)) }

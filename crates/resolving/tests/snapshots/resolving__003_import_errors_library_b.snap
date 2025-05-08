@@ -1,0 +1,24 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module LibraryB
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+  - html
+
+Exported Types:
+  - Html
+
+Local Terms:
+  - html
+
+Local Types:
+  - Html
+
+Errors:

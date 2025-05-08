@@ -143,6 +143,12 @@ fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
         writeln!(buffer, "  - {}", name).unwrap();
     }
 
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Errors:").unwrap();
+    for error in &resolved.errors {
+        writeln!(buffer, "  - {:?}", error).unwrap();
+    }
+
     buffer
 }
 
@@ -183,4 +189,12 @@ test_case! {
         | ImportUnqualifiedHiding
         | ImportUnqualifiedImplicit
         | Library
+}
+
+test_case! {
+    003_import_errors
+        | DuplicateLocal
+        | DuplicateQualifiedImport
+        | LibraryA
+        | LibraryB
 }

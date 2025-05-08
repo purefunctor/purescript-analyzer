@@ -1,0 +1,28 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module DuplicateLocal
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+  - value
+
+Exported Types:
+  - Data
+
+Local Terms:
+  - value
+
+Local Types:
+  - Data
+
+Errors:
+  - ExistingTerm { existing: (Idx::<File>(3), Idx::<TermItem>(0)), duplicate: (Idx::<File>(3), Idx::<TermItem>(1)) }
+  - ExistingType { existing: (Idx::<File>(3), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(3), Idx::<TypeItem>(1)) }
+  - ExistingTerm { existing: (Idx::<File>(3), Idx::<TermItem>(0)), duplicate: (Idx::<File>(3), Idx::<TermItem>(1)) }
+  - ExistingType { existing: (Idx::<File>(3), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(3), Idx::<TypeItem>(1)) }
