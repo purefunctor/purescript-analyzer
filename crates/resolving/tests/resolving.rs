@@ -184,6 +184,7 @@ test_case! {
     002_import_resolution
         | ImportExplicit
         | ImportForLocalOnly
+        | ImportHiddenConstructor
         | ImportQualifiedExplicit
         | ImportQualifiedHiding
         | ImportQualifiedImplicit

@@ -3,25 +3,23 @@ source: crates/resolving/tests/resolving.rs
 expression: report
 snapshot_kind: text
 ---
-module LibraryExplicit
+module ImportHiddenConstructor
 
 Unqualified Imports:
+
+Terms:
+
+Types:
+  - Hidden is Explicit
 
 Qualified Imports:
 
 Exported Terms:
-  - Id
 
 Exported Types:
-  - Hidden
-  - Id
 
 Local Terms:
-  - Hidden
-  - Id
 
 Local Types:
-  - Hidden
-  - Id
 
 Errors:
