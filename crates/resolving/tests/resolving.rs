@@ -1,7 +1,7 @@
 use std::{fmt::Write, fs, path::Path, sync::Arc};
 
 use files::FileId;
-use indexing::FullIndexedModule;
+use indexing::{FullIndexedModule, ImportKind};
 use resolving::{External, FullResolvedModule};
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
@@ -81,12 +81,18 @@ fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
         writeln!(buffer).unwrap();
         writeln!(buffer, "Terms:").unwrap();
         for (name, _, _, kind) in import.iter_terms() {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
             writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
         }
 
         writeln!(buffer).unwrap();
         writeln!(buffer, "Types:").unwrap();
         for (name, _, _, kind) in import.iter_types() {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
             writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
         }
     }
@@ -97,12 +103,18 @@ fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
         writeln!(buffer).unwrap();
         writeln!(buffer, "{} Terms:", name).unwrap();
         for (name, _, _, kind) in import.iter_terms() {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
             writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
         }
 
         writeln!(buffer).unwrap();
         writeln!(buffer, "{} Types:", name).unwrap();
         for (name, _, _, kind) in import.iter_types() {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
             writeln!(buffer, "  - {} is {:?}", name, kind).unwrap();
         }
     }
