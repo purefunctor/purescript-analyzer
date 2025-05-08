@@ -17,6 +17,7 @@ L Terms:
 
 L Types:
   - LibTy is Implicit
+  - TypeOnly is Implicit
 
 Exported Terms:
   - libFn
@@ -26,6 +27,7 @@ Exported Terms:
 
 Exported Types:
   - LibTy
+  - TypeOnly
 
 Local Terms:
 

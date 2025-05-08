@@ -19,6 +19,7 @@ Terms:
 Types:
   - LibTy is Implicit
   - MultiTy is Implicit
+  - TypeOnly is Implicit
   - HideTy is Implicit
 
 Qualified Imports:
@@ -35,6 +36,7 @@ Exported Terms:
 Exported Types:
   - LibTy
   - MultiTy
+  - TypeOnly
   - HideTy
 
 Local Terms:

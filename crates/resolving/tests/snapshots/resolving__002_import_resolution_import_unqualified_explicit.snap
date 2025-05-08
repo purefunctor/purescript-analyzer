@@ -16,6 +16,7 @@ Terms:
 Types:
   - LibTy is Explicit
   - MultiTy is Explicit
+  - TypeOnly is Explicit
 
 Qualified Imports:
 
@@ -28,6 +29,7 @@ Exported Terms:
 Exported Types:
   - LibTy
   - MultiTy
+  - TypeOnly
 
 Local Terms:
 

@@ -9,3 +9,5 @@ data LibTy = MkLibTy
 data HideTy = MkHideTy
 
 data MultiTy = Ctor1 | Ctor2 | Ctor3
+
+data TypeOnly

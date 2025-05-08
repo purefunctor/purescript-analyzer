@@ -18,6 +18,7 @@ L Terms:
 L Types:
   - LibTy is Explicit
   - MultiTy is Explicit
+  - TypeOnly is Explicit
 
 Exported Terms:
   - libFn
@@ -28,6 +29,7 @@ Exported Terms:
 Exported Types:
   - LibTy
   - MultiTy
+  - TypeOnly
 
 Local Terms:
 

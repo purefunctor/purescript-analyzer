@@ -21,6 +21,7 @@ Exported Terms:
 Exported Types:
   - LibTy
   - MultiTy
+  - TypeOnly
   - HideTy
 
 Local Terms:
@@ -35,4 +36,5 @@ Local Terms:
 Local Types:
   - LibTy
   - MultiTy
+  - TypeOnly
   - HideTy

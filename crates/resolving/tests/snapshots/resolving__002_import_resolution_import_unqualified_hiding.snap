@@ -15,6 +15,7 @@ Terms:
 
 Types:
   - LibTy is Implicit
+  - TypeOnly is Implicit
 
 Qualified Imports:
 
@@ -26,6 +27,7 @@ Exported Terms:
 
 Exported Types:
   - LibTy
+  - TypeOnly
 
 Local Terms:
 
