@@ -25,5 +25,5 @@ Local Terms:
 Local Types:
 
 Errors:
-  - ExistingTerm { existing: (Idx::<File>(3), Idx::<TermItem>(0)), duplicate: (Idx::<File>(2), Idx::<TermItem>(0)) }
-  - ExistingType { existing: (Idx::<File>(3), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(2), Idx::<TypeItem>(0)) }
+  - ExistingTerm { existing: (Idx::<File>(4), Idx::<TermItem>(0)), duplicate: (Idx::<File>(5), Idx::<TermItem>(0)) }
+  - ExistingType { existing: (Idx::<File>(4), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(5), Idx::<TypeItem>(0)) }

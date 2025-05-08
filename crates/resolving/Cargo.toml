@@ -13,6 +13,7 @@ smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]
+itertools = "0.14.0"
 lexing = { path = "../lexing" }
 lowering = { path = "../lowering" }
 parsing = { path = "../parsing" }

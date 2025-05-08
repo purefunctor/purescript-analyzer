@@ -503,6 +503,7 @@ dependencies = [
  "files",
  "indexing",
  "insta",
+ "itertools",
  "la-arena",
  "lexing",
  "lowering",

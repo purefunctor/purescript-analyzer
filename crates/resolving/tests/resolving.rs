@@ -2,6 +2,7 @@ use std::{fmt::Write, fs, path::Path, sync::Arc};
 
 use files::FileId;
 use indexing::{FullIndexedModule, ImportKind};
+use itertools::Itertools;
 use resolving::{External, FullResolvedModule};
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
@@ -45,8 +46,15 @@ fn create_external(folder: &str) -> IntegrationTestExternal {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     let folder = manifest.join("tests/fixtures").join(folder);
 
-    for entry in folder.read_dir().unwrap() {
-        let Ok(entry) = entry else { continue };
+    // `read_dir` may not always return files in the same sorting order,
+    // especially across different operating systems.
+    let entries = folder
+        .read_dir()
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .sorted_by_key(|entry| entry.path());
+
+    for entry in entries {
         let path = entry.path();
 
         let k = format!("file://{}", path.to_str().unwrap());
