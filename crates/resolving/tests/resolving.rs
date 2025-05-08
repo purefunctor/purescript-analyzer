@@ -183,6 +183,7 @@ test_case! {
 test_case! {
     002_import_resolution
         | ImportExplicit
+        | ImportForLocalOnly
         | ImportQualifiedExplicit
         | ImportQualifiedHiding
         | ImportQualifiedImplicit
