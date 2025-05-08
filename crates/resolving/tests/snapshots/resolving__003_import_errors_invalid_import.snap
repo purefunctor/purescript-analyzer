@@ -28,3 +28,4 @@ Errors:
   - InvalidImportItem { id: Idx::<ImportItem>>(2) }
   - InvalidImportItem { id: Idx::<ImportItem>>(0) }
   - InvalidImportItem { id: Idx::<ImportItem>>(1) }
+  - InvalidImportStatement { id: Idx::<ImportStatement>>(1) }
