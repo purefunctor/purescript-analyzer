@@ -28,7 +28,7 @@ jobs:
         uses: Swatinem/rust-cache@e8e63cdbf2788df3801e6f9a81516b2ca8391886
         with:
           cache-bin: "false"
-          prefix-key: "v2-maho"
+          prefix-key: "v3-maho"
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.10.7
