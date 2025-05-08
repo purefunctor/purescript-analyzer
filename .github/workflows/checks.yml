@@ -24,11 +24,11 @@ jobs:
       - name: Install Rust toolchain
         run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
 
-      # - name: Cache build artifacts
-      #   uses: Swatinem/rust-cache@e8e63cdbf2788df3801e6f9a81516b2ca8391886
-      #   with:
-      #     cache-bin: "false"
-      #     prefix-key: "v3-maho"
+      - name: Cache build artifacts
+        uses: Swatinem/rust-cache@v2.7.8
+        with:
+          cache-bin: "false"
+          prefix-key: "v4-maho"
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.10.7
