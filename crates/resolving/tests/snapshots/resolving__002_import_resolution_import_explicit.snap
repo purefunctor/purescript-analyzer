@@ -1,0 +1,44 @@
+---
+source: crates/resolving/tests/resolving.rs
+expression: report
+snapshot_kind: text
+---
+module ImportExplicit
+
+Unqualified Imports:
+
+Terms:
+  - Id is Explicit
+
+Types:
+  - Id is Explicit
+
+Terms:
+  - Id is Implicit
+
+Types:
+  - Id is Implicit
+
+Qualified Imports:
+
+QualifiedExplicit Terms:
+  - Id is Explicit
+
+QualifiedExplicit Types:
+  - Id is Explicit
+
+QualifiedImplicit Terms:
+  - Id is Implicit
+
+QualifiedImplicit Types:
+  - Id is Implicit
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Errors:

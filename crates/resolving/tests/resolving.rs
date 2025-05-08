@@ -182,6 +182,7 @@ test_case! {
 
 test_case! {
     002_import_resolution
+        | ImportExplicit
         | ImportQualifiedExplicit
         | ImportQualifiedHiding
         | ImportQualifiedImplicit
@@ -189,6 +190,7 @@ test_case! {
         | ImportUnqualifiedHiding
         | ImportUnqualifiedImplicit
         | Library
+        | LibraryExplicit
 }
 
 test_case! {
