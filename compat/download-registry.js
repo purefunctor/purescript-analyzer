@@ -4,7 +4,7 @@ import axios from "axios";
 import * as tar from "tar";
 
 const PACKAGE_SET_URL =
-  "https://raw.githubusercontent.com/purescript/registry/refs/heads/main/package-sets/62.2.1.json";
+  "https://raw.githubusercontent.com/purescript/registry/refs/heads/main/package-sets/64.7.1.json";
 
 const PACKAGE_TARBALLS = join(import.meta.dirname, "packages", "_downloads");
 

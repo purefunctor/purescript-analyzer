@@ -1,3 +1,4 @@
 packages:
+  - 'compat'
   - 'docs'
   - 'docs/src/wasm/pkg'
