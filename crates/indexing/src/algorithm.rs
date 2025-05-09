@@ -653,11 +653,13 @@ fn index_import_items(state: &mut State, import: &mut IndexingImport, cst: &cst:
         cst::ImportItem::ImportOperator(o) => {
             let Some(token) = o.name_token() else { return };
             let name = token.text();
+            let name = operator_name(name);
             index_term_import(state, import, name, id);
         }
         cst::ImportItem::ImportTypeOperator(o) => {
             let Some(token) = o.name_token() else { return };
             let name = token.text();
+            let name = operator_name(name);
             index_type_import(state, import, name, id, None);
         }
     }
