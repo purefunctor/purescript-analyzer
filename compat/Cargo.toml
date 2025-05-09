@@ -4,6 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+building = { version = "0.1.0", path = "../crates/building" }
+files = { version = "0.1.0", path = "../crates/files" }
 glob = "0.3.2"
+itertools = "0.14.0"
 lexing = { version = "0.1.0", path = "../crates/lexing" }
 parsing = { version = "0.1.0", path = "../crates/parsing" }
+resolving = { version = "0.1.0", path = "../crates/resolving" }
+rowan = "0.16.1"
+rustc-hash = "2.1.1"
+smol_str = "0.3.2"

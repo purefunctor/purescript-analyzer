@@ -9,6 +9,7 @@ files = { version = "0.1.0", path = "../files" }
 hashbrown = "0.15.2"
 indexing = { version = "0.1.0", path = "../indexing" }
 indexmap = "2.7.1"
+interner = { version = "0.1.0", path = "../interner" }
 la-arena = "0.3.1"
 lexing = { version = "0.1.0", path = "../lexing" }
 lowering = { version = "0.1.0", path = "../lowering" }
@@ -16,6 +17,8 @@ parking_lot = "0.12.3"
 parsing = { version = "0.1.0", path = "../parsing" }
 petgraph = "0.7.1"
 rayon = "1.10.0"
+resolving = { version = "0.1.0", path = "../resolving" }
 rowan = "0.16.1"
 rustc-hash = "2.1.0"
+smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }

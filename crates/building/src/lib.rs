@@ -2,16 +2,23 @@ use std::{mem, sync::Arc};
 
 use files::FileId;
 use indexing::FullIndexedModule;
+use interner::Interner;
+use la_arena::Idx;
 use lowering::FullLoweredModule;
+use resolving::FullResolvedModule;
 use rowan::ast::AstNode;
 use rustc_hash::{FxHashMap, FxHashSet};
+use smol_str::SmolStr;
 use syntax::cst;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryKey {
     Content(FileId),
+    Module(ModuleNameId),
+
     Parse(FileId),
     Index(FileId),
+    Resolve(FileId),
     Lower(FileId),
 }
 
@@ -32,14 +39,23 @@ impl Trace {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct ModuleName(SmolStr);
+
+pub type ModuleNameId = Idx<ModuleName>;
+
 #[derive(Default)]
 pub struct Runtime {
     revision: usize,
     traces: FxHashMap<QueryKey, Trace>,
+    interner: Interner<ModuleName>,
 
     content: FxHashMap<FileId, Arc<str>>,
+    modules: FxHashMap<ModuleNameId, FileId>,
+
     parse: FxHashMap<FileId, cst::Module>,
     index: FxHashMap<FileId, Arc<FullIndexedModule>>,
+    resolve: FxHashMap<FileId, Arc<FullResolvedModule>>,
     lower: FxHashMap<FileId, Arc<FullLoweredModule>>,
 
     parent: Option<QueryKey>,
@@ -98,11 +114,15 @@ impl Runtime {
                 for dependency in dependencies.iter() {
                     match dependency {
                         QueryKey::Content(_) => (),
+                        QueryKey::Module(_) => (),
                         QueryKey::Parse(id) => {
                             self.parse(*id);
                         }
                         QueryKey::Index(id) => {
                             self.index(*id);
+                        }
+                        QueryKey::Resolve(id) => {
+                            self.resolve(*id);
                         }
                         QueryKey::Lower(id) => {
                             self.lower(*id);
@@ -145,6 +165,27 @@ impl Runtime {
         }
         let v = self.content.get(&id).expect("invalid violated: invalid query key");
         Arc::clone(v)
+    }
+
+    pub fn set_module(&mut self, module: SmolStr, file: FileId) {
+        let module = self.interner.intern(ModuleName(module));
+        self.modules.insert(module, file);
+
+        self.revision += 1;
+        let revision = self.revision;
+
+        let k = QueryKey::Module(module);
+        let v = Trace::create_input(revision);
+        self.traces.insert(k, v);
+    }
+
+    pub fn module(&mut self, module: &str) -> Option<FileId> {
+        let id = self.interner.intern(ModuleName(module.into()));
+        let k = QueryKey::Module(id);
+        if let Some(parent) = self.parent {
+            self.dependencies.entry(parent).or_default().insert(k);
+        }
+        self.modules.get(&id).copied()
     }
 
     pub fn parse(&mut self, id: FileId) -> cst::Module {
@@ -191,6 +232,22 @@ impl Runtime {
         )
     }
 
+    pub fn resolve(&mut self, id: FileId) -> Arc<FullResolvedModule> {
+        let k = QueryKey::Resolve(id);
+        self.query(
+            k,
+            |this| Arc::new(resolving::resolve_module(this, id)),
+            |this| {
+                let value = this.resolve.get(&id).cloned()?;
+                let trace = this.traces.get(&k)?;
+                Some((value, trace))
+            },
+            |this, value| {
+                this.resolve.insert(id, value);
+            },
+        )
+    }
+
     pub fn lower(&mut self, id: FileId) -> Arc<FullLoweredModule> {
         let k = QueryKey::Lower(id);
         self.query(
@@ -210,6 +267,20 @@ impl Runtime {
                 this.lower.insert(id, value);
             },
         )
+    }
+}
+
+impl resolving::External for Runtime {
+    fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule> {
+        Runtime::index(self, id)
+    }
+
+    fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule> {
+        Runtime::resolve(self, id)
+    }
+
+    fn file_id(&mut self, name: &str) -> Option<FileId> {
+        Runtime::module(self, name)
     }
 }
 
