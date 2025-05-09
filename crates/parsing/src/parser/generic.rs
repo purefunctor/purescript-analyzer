@@ -112,8 +112,7 @@ fn pattern_guards(p: &mut Parser, s: SyntaxKind) {
     }
 }
 
-const PATTERN_GUARD_START: TokenSet =
-    binders::BINDER_ATOM_START.union(expressions::EXPRESSION_START);
+const PATTERN_GUARD_START: TokenSet = binders::BINDER_START.union(expressions::EXPRESSION_START);
 
 const PATTERN_GUARD_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
@@ -124,7 +123,7 @@ fn pattern_guard(p: &mut Parser) {
 
 fn pattern_guard_binder(p: &mut Parser) {
     let mut m = p.start();
-    binders::binder_atom(p);
+    binders::binder(p);
     p.expect(SyntaxKind::LEFT_ARROW);
     expressions::expression(p);
     m.end(p, SyntaxKind::PatternGuardBinder);
