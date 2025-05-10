@@ -231,8 +231,8 @@ impl Runtime {
         self.query(
             k,
             |this| {
-                let value = resolving::resolve_module(this, id);
-                Arc::new(value)
+                let result = resolving::resolve_module(this, id);
+                Arc::new(result)
             },
             |this| {
                 let value = this.resolve.get(&id).cloned()?;
