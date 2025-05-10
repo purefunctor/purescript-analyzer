@@ -141,45 +141,38 @@ impl Runtime {
         }
     }
 
-    pub fn set_content(&mut self, id: FileId, content: Arc<str>) {
-        self.content.insert(id, content);
-
+    fn input_set(&mut self, k: QueryKey) {
         self.revision += 1;
         let revision = self.revision;
-
-        let k = QueryKey::FileContent(id);
         let v = Trace::create_input(revision);
         self.traces.insert(k, v);
     }
 
-    pub fn content(&mut self, id: FileId) -> Arc<str> {
-        let k = QueryKey::FileContent(id);
+    fn input_get(&mut self, k: QueryKey) {
         if let Some(parent) = self.parent {
             self.dependencies.entry(parent).or_default().insert(k);
         }
+    }
+
+    pub fn set_content(&mut self, id: FileId, content: Arc<str>) {
+        self.content.insert(id, content);
+        self.input_set(QueryKey::FileContent(id));
+    }
+
+    pub fn content(&mut self, id: FileId) -> Arc<str> {
+        self.input_get(QueryKey::FileContent(id));
         let v = self.content.get(&id).expect("invalid violated: invalid query key");
         Arc::clone(v)
     }
 
     pub fn set_module_file(&mut self, name: &str, file: FileId) {
         let id = self.modules.intern_with_file(name, file);
-
-        self.revision += 1;
-        let revision = self.revision;
-
-        let k = QueryKey::ModuleFile(id);
-        let v = Trace::create_input(revision);
-        self.traces.insert(k, v);
+        self.input_set(QueryKey::ModuleFile(id));
     }
 
     pub fn module_file(&mut self, name: &str) -> Option<FileId> {
         let id = self.modules.intern(name);
-
-        let k = QueryKey::ModuleFile(id);
-        if let Some(parent) = self.parent {
-            self.dependencies.entry(parent).or_default().insert(k);
-        }
-
+        self.input_get(QueryKey::ModuleFile(id));
         self.modules.file_id(id)
     }
 
