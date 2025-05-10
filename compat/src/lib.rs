@@ -37,7 +37,7 @@ pub fn create_compiler() -> CompatibilityCompiler {
                 builder.push_str(token.text());
             }
             let name = builder.finish();
-            compiler.runtime.set_module(name, id);
+            compiler.runtime.set_module(&name, id);
         }
     }
 

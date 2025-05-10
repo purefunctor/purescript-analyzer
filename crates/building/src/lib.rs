@@ -1,21 +1,20 @@
+pub mod module_name_map;
+
 use std::{mem, sync::Arc};
 
 use files::FileId;
 use indexing::FullIndexedModule;
-use interner::Interner;
-use la_arena::Idx;
 use lowering::FullLoweredModule;
+use module_name_map::{ModuleNameId, ModuleNameMap};
 use resolving::FullResolvedModule;
 use rowan::ast::AstNode;
 use rustc_hash::{FxHashMap, FxHashSet};
-use smol_str::SmolStr;
 use syntax::cst;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryKey {
     Content(FileId),
     Module(ModuleNameId),
-
     Parse(FileId),
     Index(FileId),
     Resolve(FileId),
@@ -39,19 +38,13 @@ impl Trace {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ModuleName(SmolStr);
-
-pub type ModuleNameId = Idx<ModuleName>;
-
 #[derive(Default)]
 pub struct Runtime {
     revision: usize,
     traces: FxHashMap<QueryKey, Trace>,
-    interner: Interner<ModuleName>,
 
     content: FxHashMap<FileId, Arc<str>>,
-    modules: FxHashMap<ModuleNameId, FileId>,
+    modules: ModuleNameMap,
 
     parse: FxHashMap<FileId, cst::Module>,
     index: FxHashMap<FileId, Arc<FullIndexedModule>>,
@@ -167,25 +160,26 @@ impl Runtime {
         Arc::clone(v)
     }
 
-    pub fn set_module(&mut self, module: SmolStr, file: FileId) {
-        let module = self.interner.intern(ModuleName(module));
-        self.modules.insert(module, file);
+    pub fn set_module(&mut self, name: &str, file: FileId) {
+        let id = self.modules.intern_with_file(name, file);
 
         self.revision += 1;
         let revision = self.revision;
 
-        let k = QueryKey::Module(module);
+        let k = QueryKey::Module(id);
         let v = Trace::create_input(revision);
         self.traces.insert(k, v);
     }
 
-    pub fn module(&mut self, module: &str) -> Option<FileId> {
-        let id = self.interner.intern(ModuleName(module.into()));
+    pub fn module(&mut self, name: &str) -> Option<FileId> {
+        let id = self.modules.intern(name);
+
         let k = QueryKey::Module(id);
         if let Some(parent) = self.parent {
             self.dependencies.entry(parent).or_default().insert(k);
         }
-        self.modules.get(&id).copied()
+
+        self.modules.file_id(id)
     }
 
     pub fn parse(&mut self, id: FileId) -> cst::Module {
@@ -236,7 +230,10 @@ impl Runtime {
         let k = QueryKey::Resolve(id);
         self.query(
             k,
-            |this| Arc::new(resolving::resolve_module(this, id)),
+            |this| {
+                let value = resolving::resolve_module(this, id);
+                Arc::new(value)
+            },
             |this| {
                 let value = this.resolve.get(&id).cloned()?;
                 let trace = this.traces.get(&k)?;
