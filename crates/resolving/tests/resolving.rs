@@ -35,7 +35,7 @@ impl External for IntegrationTestExternal {
         Arc::new(resolving::resolve_module(self, id))
     }
 
-    fn file_id(&mut self, name: &str) -> Option<FileId> {
+    fn module_file(&mut self, name: &str) -> Option<FileId> {
         self.names.get(name).copied()
     }
 }
@@ -162,7 +162,7 @@ fn report_result(name: &str, resolved: &FullResolvedModule) -> String {
 
 fn test_case(folder: &str, main: &str) -> String {
     let mut external = create_external(folder);
-    let id = external.file_id(main).unwrap();
+    let id = external.module_file(main).unwrap();
     let resolved = external.resolved(id);
     report_result(main, &resolved)
 }

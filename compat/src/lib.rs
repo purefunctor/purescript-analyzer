@@ -37,7 +37,7 @@ pub fn create_compiler() -> CompatibilityCompiler {
                 builder.push_str(token.text());
             }
             let name = builder.finish();
-            compiler.runtime.set_module(&name, id);
+            compiler.runtime.set_module_file(&name, id);
         }
     }
 
@@ -47,6 +47,6 @@ pub fn create_compiler() -> CompatibilityCompiler {
 #[test]
 fn test_basic() {
     let mut compiler = create_compiler();
-    let Some(id) = compiler.runtime.module("Data.Array") else { return };
+    let Some(id) = compiler.runtime.module_file("Data.Array") else { return };
     dbg!(compiler.runtime.resolve(id));
 }

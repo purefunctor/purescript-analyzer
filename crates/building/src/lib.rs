@@ -13,12 +13,13 @@ use syntax::cst;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryKey {
-    Content(FileId),
-    Module(ModuleNameId),
-    Parse(FileId),
-    Index(FileId),
-    Resolve(FileId),
-    Lower(FileId),
+    FileContent(FileId),
+    ModuleFile(ModuleNameId),
+
+    Parsed(FileId),
+    Indexed(FileId),
+    Resolved(FileId),
+    Lowered(FileId),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -106,18 +107,18 @@ impl Runtime {
                 let mut latest = 0;
                 for dependency in dependencies.iter() {
                     match dependency {
-                        QueryKey::Content(_) => (),
-                        QueryKey::Module(_) => (),
-                        QueryKey::Parse(id) => {
+                        QueryKey::FileContent(_) => (),
+                        QueryKey::ModuleFile(_) => (),
+                        QueryKey::Parsed(id) => {
                             self.parse(*id);
                         }
-                        QueryKey::Index(id) => {
+                        QueryKey::Indexed(id) => {
                             self.index(*id);
                         }
-                        QueryKey::Resolve(id) => {
+                        QueryKey::Resolved(id) => {
                             self.resolve(*id);
                         }
-                        QueryKey::Lower(id) => {
+                        QueryKey::Lowered(id) => {
                             self.lower(*id);
                         }
                     }
@@ -146,13 +147,13 @@ impl Runtime {
         self.revision += 1;
         let revision = self.revision;
 
-        let k = QueryKey::Content(id);
+        let k = QueryKey::FileContent(id);
         let v = Trace::create_input(revision);
         self.traces.insert(k, v);
     }
 
     pub fn content(&mut self, id: FileId) -> Arc<str> {
-        let k = QueryKey::Content(id);
+        let k = QueryKey::FileContent(id);
         if let Some(parent) = self.parent {
             self.dependencies.entry(parent).or_default().insert(k);
         }
@@ -160,21 +161,21 @@ impl Runtime {
         Arc::clone(v)
     }
 
-    pub fn set_module(&mut self, name: &str, file: FileId) {
+    pub fn set_module_file(&mut self, name: &str, file: FileId) {
         let id = self.modules.intern_with_file(name, file);
 
         self.revision += 1;
         let revision = self.revision;
 
-        let k = QueryKey::Module(id);
+        let k = QueryKey::ModuleFile(id);
         let v = Trace::create_input(revision);
         self.traces.insert(k, v);
     }
 
-    pub fn module(&mut self, name: &str) -> Option<FileId> {
+    pub fn module_file(&mut self, name: &str) -> Option<FileId> {
         let id = self.modules.intern(name);
 
-        let k = QueryKey::Module(id);
+        let k = QueryKey::ModuleFile(id);
         if let Some(parent) = self.parent {
             self.dependencies.entry(parent).or_default().insert(k);
         }
@@ -183,7 +184,7 @@ impl Runtime {
     }
 
     pub fn parse(&mut self, id: FileId) -> cst::Module {
-        let k = QueryKey::Parse(id);
+        let k = QueryKey::Parsed(id);
         self.query(
             k,
             |this| {
@@ -207,7 +208,7 @@ impl Runtime {
     }
 
     pub fn index(&mut self, id: FileId) -> Arc<FullIndexedModule> {
-        let k = QueryKey::Index(id);
+        let k = QueryKey::Indexed(id);
         self.query(
             k,
             |this| {
@@ -227,7 +228,7 @@ impl Runtime {
     }
 
     pub fn resolve(&mut self, id: FileId) -> Arc<FullResolvedModule> {
-        let k = QueryKey::Resolve(id);
+        let k = QueryKey::Resolved(id);
         self.query(
             k,
             |this| {
@@ -246,7 +247,7 @@ impl Runtime {
     }
 
     pub fn lower(&mut self, id: FileId) -> Arc<FullLoweredModule> {
-        let k = QueryKey::Lower(id);
+        let k = QueryKey::Lowered(id);
         self.query(
             k,
             |this| {
@@ -276,8 +277,8 @@ impl resolving::External for Runtime {
         Runtime::resolve(self, id)
     }
 
-    fn file_id(&mut self, name: &str) -> Option<FileId> {
-        Runtime::module(self, name)
+    fn module_file(&mut self, name: &str) -> Option<FileId> {
+        Runtime::module_file(self, name)
     }
 }
 

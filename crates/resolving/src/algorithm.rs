@@ -36,7 +36,7 @@ fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &Fu
             continue;
         };
 
-        let Some(import_file_id) = external.file_id(name) else {
+        let Some(import_file_id) = external.module_file(name) else {
             state.errors.push(ResolvingError::InvalidImportStatement { id });
             continue;
         };
