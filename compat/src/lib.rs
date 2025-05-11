@@ -48,5 +48,5 @@ pub fn create_compiler() -> CompatibilityCompiler {
 fn test_basic() {
     let mut compiler = create_compiler();
     let Some(id) = compiler.runtime.module_file("Data.Array") else { return };
-    dbg!(compiler.runtime.resolve(id));
+    dbg!(compiler.runtime.resolved(id));
 }
