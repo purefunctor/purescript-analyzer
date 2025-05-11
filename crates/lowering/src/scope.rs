@@ -78,7 +78,7 @@ impl ImplicitBindings {
     }
 }
 
-/// A node in the [`Graph`].
+/// A node in the [`LoweringGraph`].
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
     /// Names bound by patterns.
@@ -180,7 +180,7 @@ create_association! {
     }
 }
 
-/// An iterator that traverses the [`Graph`].
+/// An iterator that traverses the [`LoweringGraph`].
 pub struct GraphIter<'a> {
     inner: &'a Arena<GraphNode>,
     queue: VecDeque<GraphNodeId>,

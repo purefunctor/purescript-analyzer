@@ -25,6 +25,7 @@ use syntax::cst;
 
 use super::{ModuleNameId, ModuleNameMap};
 
+/// A unified type for query keys.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryKey {
     FileContent(FileId),
@@ -35,10 +36,13 @@ pub enum QueryKey {
     Lowered(FileId),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// A verifying step trace.
 pub struct Trace {
+    /// Timestamp of when the query was last called.
     built: usize,
+    /// Timestamp of when the query was last recomputed.
     changed: usize,
+    /// The dependencies used to build the query.
     dependencies: Arc<[QueryKey]>,
 }
 
@@ -54,6 +58,7 @@ impl Trace {
 
 type Content = FxHashMap<FileId, Arc<str>>;
 
+/// The runtime's core state.
 #[derive(Default)]
 pub struct Runtime {
     revision: usize,
@@ -71,14 +76,15 @@ pub struct Runtime {
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
 }
 
+/// Core functions for queries.
 impl Runtime {
     fn compute<T: Clone>(
         &mut self,
-        k: QueryKey,
+        key: QueryKey,
         compute: impl Fn(&mut Runtime) -> T,
         set_storage: impl Fn(&mut Runtime, T),
     ) -> T {
-        let parent = mem::replace(&mut self.parent, Some(k));
+        let parent = mem::replace(&mut self.parent, Some(key));
         let value = compute(self);
 
         self.revision += 1;
@@ -86,13 +92,13 @@ impl Runtime {
 
         let dependencies = self
             .dependencies
-            .get(&k)
+            .get(&key)
             .map(|dependencies| dependencies.iter().copied())
             .unwrap_or_default()
             .collect();
 
         let v = Trace::create_fresh(revision, dependencies);
-        self.traces.insert(k, v);
+        self.traces.insert(key, v);
 
         self.parent = parent;
 
@@ -102,13 +108,13 @@ impl Runtime {
 
     fn query<T: Clone>(
         &mut self,
-        k: QueryKey,
+        key: QueryKey,
         compute: impl Fn(&mut Runtime) -> T,
         get_storage: impl Fn(&Runtime) -> Option<(T, &Trace)>,
         set_storage: impl Fn(&mut Runtime, T),
     ) -> T {
         if let Some(parent) = self.parent {
-            self.dependencies.entry(parent).or_default().insert(k);
+            self.dependencies.entry(parent).or_default().insert(key);
         }
 
         let revision = self.revision;
@@ -125,7 +131,7 @@ impl Runtime {
                         QueryKey::FileContent(_) => (),
                         QueryKey::ModuleFile(_) => (),
                         QueryKey::Parsed(id) => {
-                            self.parse(*id);
+                            self.parsed(*id);
                         }
                         QueryKey::Indexed(id) => {
                             self.indexed(*id);
@@ -143,33 +149,34 @@ impl Runtime {
                 }
 
                 if built >= latest {
-                    if let Some(trace) = self.traces.get_mut(&k) {
+                    if let Some(trace) = self.traces.get_mut(&key) {
                         trace.built = revision;
                     }
                     value
                 } else {
-                    self.compute(k, compute, set_storage)
+                    self.compute(key, compute, set_storage)
                 }
             }
         } else {
-            self.compute(k, compute, set_storage)
+            self.compute(key, compute, set_storage)
         }
     }
 
-    fn input_set(&mut self, k: QueryKey) {
+    fn input_set(&mut self, key: QueryKey) {
         self.revision += 1;
         let revision = self.revision;
         let v = Trace::create_input(revision);
-        self.traces.insert(k, v);
+        self.traces.insert(key, v);
     }
 
-    fn input_get(&mut self, k: QueryKey) {
+    fn input_get(&mut self, key: QueryKey) {
         if let Some(parent) = self.parent {
-            self.dependencies.entry(parent).or_default().insert(k);
+            self.dependencies.entry(parent).or_default().insert(key);
         }
     }
 }
 
+/// Core functions for input queries.
 impl Runtime {
     pub fn set_content(&mut self, id: FileId, content: Arc<str>) {
         self.content.insert(id, content);
@@ -194,8 +201,9 @@ impl Runtime {
     }
 }
 
+/// Core functions for derived queries.
 impl Runtime {
-    pub fn parse(&mut self, id: FileId) -> cst::Module {
+    pub fn parsed(&mut self, id: FileId) -> cst::Module {
         let k = QueryKey::Parsed(id);
         self.query(
             k,
@@ -224,7 +232,7 @@ impl Runtime {
         self.query(
             k,
             |this| {
-                let module = this.parse(id);
+                let module = this.parsed(id);
                 let indexed = indexing::index_module(&module);
                 Arc::new(indexed)
             },
@@ -263,7 +271,7 @@ impl Runtime {
         self.query(
             k,
             |this| {
-                let module = this.parse(id);
+                let module = this.parsed(id);
                 let indexed = this.indexed(id);
                 let lowered = lowering::lower_module(&module, &indexed);
                 Arc::new(lowered)

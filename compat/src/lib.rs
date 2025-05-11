@@ -26,7 +26,7 @@ pub fn create_compiler() -> CompatibilityCompiler {
         let content = compiler.files.content(id);
 
         compiler.runtime.set_content(id, content);
-        let cst = compiler.runtime.parse(id);
+        let cst = compiler.runtime.parsed(id);
 
         if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
             let mut builder = SmolStrBuilder::default();
