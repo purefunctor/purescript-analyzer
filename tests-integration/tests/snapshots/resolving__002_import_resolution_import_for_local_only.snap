@@ -1,22 +1,30 @@
 ---
-source: crates/resolving/tests/resolving.rs
+source: tests-integration/tests/resolving.rs
 expression: report
 snapshot_kind: text
 ---
-module ImportHiddenConstructor
+module ImportForLocalOnly
 
 Unqualified Imports:
 
 Terms:
+  - libFn is Explicit
 
 Types:
-  - Hidden is Explicit
+
+Terms:
+  - Id is Explicit
+
+Types:
+  - Id is Explicit
 
 Qualified Imports:
 
 Exported Terms:
+  - Id
 
 Exported Types:
+  - Id
 
 Local Terms:
 

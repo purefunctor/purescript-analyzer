@@ -1,9 +1,9 @@
 ---
-source: crates/resolving/tests/resolving.rs
+source: tests-integration/tests/resolving.rs
 expression: report
 snapshot_kind: text
 ---
-module LibraryA
+module LibraryB
 
 Unqualified Imports:
 
@@ -13,14 +13,12 @@ Exported Terms:
   - html
 
 Exported Types:
-  - Css
   - Html
 
 Local Terms:
   - html
 
 Local Types:
-  - Css
   - Html
 
 Errors:

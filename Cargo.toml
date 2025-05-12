@@ -1,6 +1,6 @@
 [workspace]
-members = ["compat", "crates/*", "docs/src/wasm"]
-default-members = ["crates/*"]
+members = ["compat", "tests-integration", "crates/*", "docs/src/wasm"]
+default-members = ["crates/*", "tests-integration"]
 resolver = "1"
 
 [profile.dev.package.insta]

@@ -1,9 +1,9 @@
 ---
-source: crates/resolving/tests/resolving.rs
+source: tests-integration/tests/resolving.rs
 expression: report
 snapshot_kind: text
 ---
-module ExplicitSelf
+module Implicit
 
 Unqualified Imports:
 

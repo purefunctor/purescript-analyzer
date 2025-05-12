@@ -1,15 +1,13 @@
 ---
-source: crates/resolving/tests/resolving.rs
+source: tests-integration/tests/resolving.rs
 expression: report
 snapshot_kind: text
 ---
-module ImportQualifiedImplicit
+module ImportUnqualifiedImplicit
 
 Unqualified Imports:
 
-Qualified Imports:
-
-L Terms:
+Terms:
   - MkLibTy is Implicit
   - Ctor2 is Implicit
   - hideMe is Implicit
@@ -18,11 +16,13 @@ L Terms:
   - libFn is Implicit
   - Ctor1 is Implicit
 
-L Types:
+Types:
   - LibTy is Implicit
   - MultiTy is Implicit
   - TypeOnly is Implicit
   - HideTy is Implicit
+
+Qualified Imports:
 
 Exported Terms:
   - MkHideTy

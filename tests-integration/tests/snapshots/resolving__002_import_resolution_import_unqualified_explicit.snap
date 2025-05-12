@@ -1,24 +1,24 @@
 ---
-source: crates/resolving/tests/resolving.rs
+source: tests-integration/tests/resolving.rs
 expression: report
 snapshot_kind: text
 ---
-module ImportQualifiedExplicit
+module ImportUnqualifiedExplicit
 
 Unqualified Imports:
 
-Qualified Imports:
-
-L Terms:
+Terms:
   - MkLibTy is Explicit
   - Ctor3 is Explicit
   - libFn is Explicit
   - Ctor1 is Explicit
 
-L Types:
+Types:
   - LibTy is Explicit
   - MultiTy is Explicit
   - TypeOnly is Explicit
+
+Qualified Imports:
 
 Exported Terms:
   - libFn
