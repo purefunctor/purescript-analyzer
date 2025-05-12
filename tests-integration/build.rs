@@ -12,6 +12,10 @@ fn read_dir<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<'output
 }
 
 fn main() {
+    generate_resolving();
+}
+
+fn generate_resolving() {
     println!("cargo:rerun-if-changed=fixtures");
 
     let resolving = Path::new("./fixtures/resolving");
