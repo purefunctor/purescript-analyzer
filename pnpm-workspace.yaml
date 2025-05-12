@@ -1,4 +1,4 @@
 packages:
-  - 'compat'
   - 'docs'
   - 'docs/src/wasm/pkg'
+  - 'tests-package-set'

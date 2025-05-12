@@ -13,6 +13,10 @@ test-s:
 test-c:
     cargo llvm-cov nextest --html
 
+[doc('Run tests against package set')]
+test-p:
+    cargo nextest run -p tests-package-set --release
+
 [doc("Generate documentation")]
 @doc flag="":
     cargo doc --document-private-items {{flag}}

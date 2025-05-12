@@ -6,15 +6,6 @@ settings:
 
 importers:
 
-  compat:
-    dependencies:
-      axios:
-        specifier: ^1.7.9
-        version: 1.9.0
-      tar:
-        specifier: ^7.4.3
-        version: 7.4.3
-
   docs:
     devDependencies:
       '@fontsource-variable/montserrat':
@@ -52,6 +43,15 @@ importers:
         version: 5.4.19
 
   docs/src/wasm/pkg: {}
+
+  tests-package-set:
+    dependencies:
+      axios:
+        specifier: ^1.7.9
+        version: 1.9.0
+      tar:
+        specifier: ^7.4.3
+        version: 7.4.3
 
 packages:
 

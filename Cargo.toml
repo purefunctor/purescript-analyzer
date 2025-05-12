@@ -1,5 +1,10 @@
 [workspace]
-members = ["compat", "tests-integration", "crates/*", "docs/src/wasm"]
+members = [
+  "crates/*", 
+  "docs/src/wasm", 
+  "tests-integration", 
+  "tests-package-set",
+]
 default-members = ["crates/*", "tests-integration"]
 resolver = "1"
 
