@@ -678,6 +678,11 @@ dependencies = [
 [[package]]
 name = "tests-package-set"
 version = "0.1.0"
+dependencies = [
+ "glob",
+ "lexing",
+ "parsing",
+]
 
 [[package]]
 name = "text-size"

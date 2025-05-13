@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+use std::path::{Path, PathBuf};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use glob::glob;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub fn all_source_files() -> Vec<PathBuf> {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let pattern = format!("{}/packages/**/*.purs", manifest.to_str().unwrap());
+    glob(&pattern).unwrap().filter_map(Result::ok).collect()
 }
