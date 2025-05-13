@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use lexing::Lexed;
 use rowan::GreenNodeBuilder;
-use syntax::{SyntaxKind, SyntaxNode};
+use syntax::SyntaxKind;
 
-use crate::ParseError;
+use crate::{ParseError, ParsedModule};
 
 #[derive(Debug)]
 pub(crate) enum Output {
@@ -29,8 +29,9 @@ impl<'l, 's> Builder<'l, 's> {
         Builder { lexed, index, builder, errors }
     }
 
-    fn build(self) -> (SyntaxNode, Vec<ParseError>) {
-        (SyntaxNode::new_root(self.builder.finish()), self.errors)
+    fn build(self) -> (ParsedModule, Vec<ParseError>) {
+        let node = self.builder.finish();
+        (ParsedModule::new(node), self.errors)
     }
 
     fn start(&mut self, kind: SyntaxKind) {
@@ -80,7 +81,7 @@ impl<'l, 's> Builder<'l, 's> {
     }
 }
 
-pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (SyntaxNode, Vec<ParseError>) {
+pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (ParsedModule, Vec<ParseError>) {
     let mut builder = Builder::new(lexed);
 
     for event in output {

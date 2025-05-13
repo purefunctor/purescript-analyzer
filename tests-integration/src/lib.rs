@@ -26,7 +26,7 @@ impl IntegrationTestCompiler {
         let content = self.files.content(id);
 
         self.runtime.set_content(id, content);
-        let cst = self.runtime.parsed(id);
+        let cst = self.runtime.parsed(id).cst();
 
         if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
             let mut builder = SmolStrBuilder::default();

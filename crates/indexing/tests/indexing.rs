@@ -10,8 +10,8 @@ fn index_source(source: &str) -> (cst::Module, FullIndexedModule) {
     let lexed = lexing::lex(source);
     let tokens = lexing::layout(&lexed);
 
-    let (module, _) = parsing::parse(&lexed, &tokens);
-    let module = cst::Module::cast(module).unwrap();
+    let (parsed, _) = parsing::parse(&lexed, &tokens);
+    let module = parsed.cst();
 
     let indexed = index_module(&module);
     (module, indexed)
