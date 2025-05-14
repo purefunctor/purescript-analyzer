@@ -39,9 +39,9 @@ pub fn parse(source: &str) -> ParseResult {
 
     let start = performance.now();
     let (parsed, _) = parsing::parse(&lexed, &tokens);
-    let cst = parsed.cst();
+    let node = parsed.syntax_node();
     let parse = performance.now() - start;
 
-    let output = format!("{:#?}", cst);
+    let output = format!("{:#?}", node);
     ParseResult { output, lex, layout, parse }
 }
