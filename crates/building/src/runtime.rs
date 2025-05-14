@@ -19,7 +19,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use files::FileId;
 use indexing::FullIndexedModule;
 use lowering::FullLoweredModule;
-use parsing::ParsedModule;
+use parsing::{ParseError, ParsedModule};
 use resolving::FullResolvedModule;
 
 use super::{ModuleNameId, ModuleNameMap};
@@ -66,7 +66,7 @@ pub struct Runtime {
     content: Content,
     modules: ModuleNameMap,
 
-    parsed: FxHashMap<FileId, ParsedModule>,
+    parsed: FxHashMap<FileId, (ParsedModule, Arc<[ParseError]>)>,
     indexed: FxHashMap<FileId, Arc<FullIndexedModule>>,
     resolved: FxHashMap<FileId, Arc<FullResolvedModule>>,
     lowered: FxHashMap<FileId, Arc<FullLoweredModule>>,
@@ -202,7 +202,7 @@ impl Runtime {
 
 /// Core functions for derived queries.
 impl Runtime {
-    pub fn parsed(&mut self, id: FileId) -> ParsedModule {
+    pub fn parsed(&mut self, id: FileId) -> (ParsedModule, Arc<[ParseError]>) {
         let k = QueryKey::Parsed(id);
         self.query(
             k,
@@ -212,8 +212,8 @@ impl Runtime {
                 let lexed = lexing::lex(&content);
                 let tokens = lexing::layout(&lexed);
 
-                let (parsed, _) = parsing::parse(&lexed, &tokens);
-                parsed
+                let (parsed, errors) = parsing::parse(&lexed, &tokens);
+                (parsed, Arc::from(errors))
             },
             |this| {
                 let value = this.parsed.get(&id).cloned()?;
@@ -231,7 +231,8 @@ impl Runtime {
         self.query(
             k,
             |this| {
-                let module = this.parsed(id).cst();
+                let (parsed, _) = this.parsed(id);
+                let module = parsed.cst();
                 let indexed = indexing::index_module(&module);
                 Arc::new(indexed)
             },
@@ -270,7 +271,8 @@ impl Runtime {
         self.query(
             k,
             |this| {
-                let module = this.parsed(id).cst();
+                let (parsed, _) = this.parsed(id);
+                let module = parsed.cst();
                 let indexed = this.indexed(id);
                 let lowered = lowering::lower_module(&module, &indexed);
                 Arc::new(lowered)
