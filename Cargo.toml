@@ -2,6 +2,7 @@
 members = [
   "crates/*", 
   "docs/src/wasm", 
+  "lsp", 
   "tests-integration", 
   "tests-package-set",
 ]
