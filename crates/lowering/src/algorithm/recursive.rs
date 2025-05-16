@@ -13,18 +13,18 @@ use super::{Environment, State};
 pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) -> BinderId {
     let id = s.source.allocate_bd(cst);
     let kind = match cst {
-        cst::Binder::BinderTyped(t) => {
-            let binder = t.binder().map(|b| lower_binder(s, e, &b));
-            let r#type = t.r#type().map(|t| lower_type(s, e, &t));
+        cst::Binder::BinderTyped(cst) => {
+            let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
+            let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
             BinderKind::Typed { binder, r#type }
         }
-        cst::Binder::BinderOperatorChain(o) => {
-            let head = o.binder().map(|b| lower_binder(s, e, &b));
-            let tail = o
+        cst::Binder::BinderOperatorChain(cst) => {
+            let head = cst.binder().map(|cst| lower_binder(s, e, &cst));
+            let tail = cst
                 .children()
-                .map(|p| {
-                    let qualified = p.qualified();
-                    let binder = p.binder().map(|b| lower_binder(s, e, &b));
+                .map(|cst| {
+                    let qualified = cst.qualified();
+                    let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
                     lower_pair(s, ResolutionDomain::Term, qualified, binder)
                 })
                 .collect();
@@ -32,17 +32,18 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
         }
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
-        cst::Binder::BinderConstructor(c) => {
-            let (qualifier, name) = c
+        cst::Binder::BinderConstructor(cst) => {
+            let (qualifier, name) = cst
                 .name()
-                .map_or((None, None), |n| lower_qualified_name(&n, cst::QualifiedName::upper));
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
-            let arguments = c.children().map(|b| lower_binder(s, e, &b)).collect();
+            let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
             BinderKind::Constructor { resolution, arguments }
         }
-        cst::Binder::BinderVariable(v) => {
-            let variable = v.name_token().map(|t| {
-                let text = t.text();
+        cst::Binder::BinderVariable(cst) => {
+            let variable = cst.name_token().map(|cst| {
+                let text = cst.text();
                 SmolStr::from(text)
             });
             if let Some(name) = &variable {
@@ -50,15 +51,15 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
             }
             BinderKind::Variable { variable }
         }
-        cst::Binder::BinderNamed(n) => {
-            let named = n.name_token().map(|t| {
-                let text = t.text();
+        cst::Binder::BinderNamed(cst) => {
+            let named = cst.name_token().map(|cst| {
+                let text = cst.text();
                 SmolStr::from(text)
             });
             if let Some(name) = &named {
                 s.insert_binder(name, id);
             }
-            let binder = n.binder().map(|b| lower_binder(s, e, &b));
+            let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
             BinderKind::Named { named, binder }
         }
         cst::Binder::BinderWildcard(_) => BinderKind::Wildcard,
@@ -66,35 +67,35 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
         cst::Binder::BinderChar(_) => BinderKind::Char,
         cst::Binder::BinderTrue(_) => BinderKind::Boolean { boolean: true },
         cst::Binder::BinderFalse(_) => BinderKind::Boolean { boolean: false },
-        cst::Binder::BinderArray(a) => {
-            let array = a.children().map(|b| lower_binder(s, e, &b)).collect();
+        cst::Binder::BinderArray(cst) => {
+            let array = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
             BinderKind::Array { array }
         }
-        cst::Binder::BinderRecord(r) => {
+        cst::Binder::BinderRecord(cst) => {
             let lower_item = |i| match i {
-                cst::RecordItem::RecordField(f) => {
-                    let name = f.name().and_then(|t| {
-                        let token = t.text()?;
+                cst::RecordItem::RecordField(cst) => {
+                    let name = cst.name().and_then(|cst| {
+                        let token = cst.text()?;
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
-                    let value = f.binder().map(|b| lower_binder(s, e, &b));
+                    let value = cst.binder().map(|cst| lower_binder(s, e, &cst));
                     BinderRecordItem::RecordField { name, value }
                 }
-                cst::RecordItem::RecordPun(p) => {
-                    let name = p.name().and_then(|t| {
-                        let token = t.text()?;
+                cst::RecordItem::RecordPun(cst) => {
+                    let name = cst.name().and_then(|cst| {
+                        let token = cst.text()?;
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
                     BinderRecordItem::RecordPun { name }
                 }
             };
-            let record = r.children().map(lower_item).collect();
+            let record = cst.children().map(lower_item).collect();
             BinderKind::Record { record }
         }
-        cst::Binder::BinderParenthesized(p) => {
-            let parenthesized = p.binder().map(|b| lower_binder(s, e, &b));
+        cst::Binder::BinderParenthesized(cst) => {
+            let parenthesized = cst.binder().map(|cst| lower_binder(s, e, &cst));
             BinderKind::Parenthesized { parenthesized }
         }
     };
@@ -109,14 +110,14 @@ pub(super) fn lower_expression(
 ) -> ExpressionId {
     let id = s.source.allocate_ex(cst);
     let kind = match cst {
-        cst::Expression::ExpressionTyped(t) => {
-            let expression = t.expression().map(|cst| lower_expression(s, e, &cst));
-            let r#type = t.signature().map(|cst| lower_type(s, e, &cst));
+        cst::Expression::ExpressionTyped(cst) => {
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            let r#type = cst.signature().map(|cst| lower_type(s, e, &cst));
             ExpressionKind::Typed { expression, r#type }
         }
-        cst::Expression::ExpressionOperatorChain(o) => {
-            let head = o.expression().map(|cst| lower_expression(s, e, &cst));
-            let tail = o
+        cst::Expression::ExpressionOperatorChain(cst) => {
+            let head = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            let tail = cst
                 .children()
                 .map(|p| {
                     let qualified = p.qualified();
@@ -126,100 +127,100 @@ pub(super) fn lower_expression(
                 .collect();
             ExpressionKind::OperatorChain { head, tail }
         }
-        cst::Expression::ExpressionInfixChain(i) => {
-            let head = i.expression().map(|cst| lower_expression(s, e, &cst));
-            let tail = i
+        cst::Expression::ExpressionInfixChain(cst) => {
+            let head = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            let tail = cst
                 .children()
-                .map(|p| {
-                    let tick = p.tick().and_then(|cst| {
+                .map(|cst| {
+                    let tick = cst.tick().and_then(|cst| {
                         let cst = cst.expression()?;
                         Some(lower_expression(s, e, &cst))
                     });
-                    let element = p.expression().map(|cst| lower_expression(s, e, &cst));
+                    let element = cst.expression().map(|cst| lower_expression(s, e, &cst));
                     InfixPair { tick, element }
                 })
                 .collect();
             ExpressionKind::InfixChain { head, tail }
         }
-        cst::Expression::ExpressionNegate(n) => {
-            let expression = n.expression().map(|cst| lower_expression(s, e, &cst));
+        cst::Expression::ExpressionNegate(cst) => {
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             ExpressionKind::Negate { expression }
         }
-        cst::Expression::ExpressionApplicationChain(a) => {
+        cst::Expression::ExpressionApplicationChain(cst) => {
             let lower_argument =
                 |s: &mut State, e: &Environment, cst: &cst::ExpressionArgument| match cst {
-                    cst::ExpressionArgument::ExpressionTypeArgument(t) => {
-                        let id = t.r#type().map(|cst| lower_type(s, e, &cst));
+                    cst::ExpressionArgument::ExpressionTypeArgument(cst) => {
+                        let id = cst.r#type().map(|cst| lower_type(s, e, &cst));
                         ExpressionArgument::Type(id)
                     }
-                    cst::ExpressionArgument::ExpressionTermArgument(t) => {
-                        let id = t.expression().map(|cst| lower_expression(s, e, &cst));
+                    cst::ExpressionArgument::ExpressionTermArgument(cst) => {
+                        let id = cst.expression().map(|cst| lower_expression(s, e, &cst));
                         ExpressionArgument::Term(id)
                     }
                 };
 
-            let function = a.expression().map(|cst| lower_expression(s, e, &cst));
-            let arguments = a.children().map(|cst| lower_argument(s, e, &cst)).collect();
+            let function = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            let arguments = cst.children().map(|cst| lower_argument(s, e, &cst)).collect();
 
             ExpressionKind::Application { function, arguments }
         }
-        cst::Expression::ExpressionIfThenElse(i) => {
-            let r#if = i.r#if().and_then(|cst| {
+        cst::Expression::ExpressionIfThenElse(cst) => {
+            let r#if = cst.r#if().and_then(|cst| {
                 let cst = cst.expression()?;
                 Some(lower_expression(s, e, &cst))
             });
-            let then = i.then().and_then(|cst| {
+            let then = cst.then().and_then(|cst| {
                 let cst = cst.expression()?;
                 Some(lower_expression(s, e, &cst))
             });
-            let r#else = i.r#else().and_then(|cst| {
+            let r#else = cst.r#else().and_then(|cst| {
                 let cst = cst.expression()?;
                 Some(lower_expression(s, e, &cst))
             });
             ExpressionKind::IfThenElse { r#if, then, r#else }
         }
-        cst::Expression::ExpressionLetIn(l) => s.with_scope(|s| {
-            let bindings = l.bindings().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
-            let expression = l.expression().map(|cst| lower_expression(s, e, &cst));
+        cst::Expression::ExpressionLetIn(cst) => s.with_scope(|s| {
+            let bindings = cst.bindings().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             ExpressionKind::LetIn { bindings, expression }
         }),
-        cst::Expression::ExpressionLambda(l) => s.with_scope(|s| {
+        cst::Expression::ExpressionLambda(cst) => s.with_scope(|s| {
             s.push_binder_scope();
-            let binders = l
+            let binders = cst
                 .function_binders()
-                .map(|b| {
-                    let children = b.children();
+                .map(|cst| {
+                    let children = cst.children();
                     children.map(|cst| lower_binder(s, e, &cst)).collect()
                 })
                 .unwrap_or_default();
-            let expression = l.expression().map(|cst| lower_expression(s, e, &cst));
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             ExpressionKind::Lambda { binders, expression }
         }),
-        cst::Expression::ExpressionCaseOf(c) => {
+        cst::Expression::ExpressionCaseOf(cst) => {
             let lower_case_branch = |s: &mut State, e: &Environment, cst: &cst::CaseBranch| {
                 let binders = cst
                     .binders()
-                    .map(|b| b.children().map(|cst| lower_binder(s, e, &cst)).collect())
+                    .map(|cst| cst.children().map(|cst| lower_binder(s, e, &cst)).collect())
                     .unwrap_or_default();
                 let guarded_expression =
                     cst.guarded_expression().map(|cst| lower_guarded(s, e, &cst));
                 CaseBranch { binders, guarded_expression }
             };
 
-            let trunk = c
+            let trunk = cst
                 .trunk()
-                .map(|t| t.children().map(|cst| lower_expression(s, e, &cst)).collect())
+                .map(|cst| cst.children().map(|cst| lower_expression(s, e, &cst)).collect())
                 .unwrap_or_default();
-            let branches = c
+            let branches = cst
                 .branches()
-                .map(|b| b.children().map(|cst| lower_case_branch(s, e, &cst)).collect())
+                .map(|cst| cst.children().map(|cst| lower_case_branch(s, e, &cst)).collect())
                 .unwrap_or_default();
 
             ExpressionKind::CaseOf { trunk, branches }
         }
-        cst::Expression::ExpressionDo(d) => s.with_scope(|s| {
-            let qualifier = d.qualifier().and_then(|q| {
-                let token = q.text()?;
+        cst::Expression::ExpressionDo(cst) => s.with_scope(|s| {
+            let qualifier = cst.qualifier().and_then(|cst| {
+                let token = cst.text()?;
                 let text = token.text();
                 Some(SmolStr::from(text))
             });
@@ -230,16 +231,16 @@ pub(super) fn lower_expression(
             let bind = s.resolve_term(qualifier.clone(), BIND);
             let discard = s.resolve_term(qualifier.clone(), DISCARD);
 
-            let statements = d
+            let statements = cst
                 .statements()
                 .map(|cst| cst.children().map(|cst| lower_do_statement(s, e, &cst)).collect())
                 .unwrap_or_default();
 
             ExpressionKind::Do { bind, discard, statements }
         }),
-        cst::Expression::ExpressionAdo(a) => s.with_scope(|s| {
-            let qualifier = a.qualifier().and_then(|q| {
-                let token = q.text()?;
+        cst::Expression::ExpressionAdo(cst) => s.with_scope(|s| {
+            let qualifier = cst.qualifier().and_then(|cst| {
+                let token = cst.text()?;
                 let text = token.text();
                 Some(SmolStr::from(text))
             });
@@ -250,34 +251,34 @@ pub(super) fn lower_expression(
             let map = s.resolve_term(qualifier.clone(), MAP);
             let apply = s.resolve_term(qualifier.clone(), APPLY);
 
-            let statements = a
+            let statements = cst
                 .statements()
                 .map(|cst| cst.children().map(|cst| lower_do_statement(s, e, &cst)).collect())
                 .unwrap_or_default();
-            let expression = a.expression().map(|cst| lower_expression(s, e, &cst));
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
 
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
-        cst::Expression::ExpressionConstructor(c) => {
-            let (qualifier, name) = c
+        cst::Expression::ExpressionConstructor(cst) => {
+            let (qualifier, name) = cst
                 .name()
-                .map(|n| lower_qualified_name(&n, cst::QualifiedName::upper))
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
                 .unwrap_or_default();
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             ExpressionKind::Constructor { resolution }
         }
-        cst::Expression::ExpressionVariable(v) => {
-            let (qualifier, name) = v
+        cst::Expression::ExpressionVariable(cst) => {
+            let (qualifier, name) = cst
                 .name()
-                .map(|n| lower_qualified_name(&n, cst::QualifiedName::lower))
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::lower))
                 .unwrap_or_default();
             let resolution = s.resolve_term(qualifier, name);
             ExpressionKind::Variable { resolution }
         }
-        cst::Expression::ExpressionOperatorName(o) => {
-            let (qualifier, name) = o
+        cst::Expression::ExpressionOperatorName(cst) => {
+            let (qualifier, name) = cst
                 .name()
-                .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             ExpressionKind::OperatorName { resolution }
@@ -290,24 +291,24 @@ pub(super) fn lower_expression(
         cst::Expression::ExpressionFalse(_) => ExpressionKind::Boolean { boolean: false },
         cst::Expression::ExpressionInteger(_) => ExpressionKind::Integer,
         cst::Expression::ExpressionNumber(_) => ExpressionKind::Number,
-        cst::Expression::ExpressionArray(a) => {
-            let array = a.children().map(|cst| lower_expression(s, e, &cst)).collect();
+        cst::Expression::ExpressionArray(cst) => {
+            let array = cst.children().map(|cst| lower_expression(s, e, &cst)).collect();
             ExpressionKind::Array { array }
         }
-        cst::Expression::ExpressionRecord(r) => {
-            let lower_item = |s: &mut State, i| match i {
-                cst::RecordItem::RecordField(f) => {
-                    let name = f.name().and_then(|t| {
-                        let token = t.text()?;
+        cst::Expression::ExpressionRecord(cst) => {
+            let lower_item = |s: &mut State, cst| match cst {
+                cst::RecordItem::RecordField(cst) => {
+                    let name = cst.name().and_then(|cst| {
+                        let token = cst.text()?;
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
-                    let value = f.expression().map(|cst| lower_expression(s, e, &cst));
+                    let value = cst.expression().map(|cst| lower_expression(s, e, &cst));
                     ExpressionRecordItem::RecordField { name, value }
                 }
-                cst::RecordItem::RecordPun(p) => {
-                    let name = p.name().and_then(|t| {
-                        let token = t.text()?;
+                cst::RecordItem::RecordPun(cst) => {
+                    let name = cst.name().and_then(|cst| {
+                        let token = cst.text()?;
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
@@ -315,28 +316,30 @@ pub(super) fn lower_expression(
                     ExpressionRecordItem::RecordPun { name, resolution }
                 }
             };
-            let record = r.children().map(|cst| lower_item(s, cst)).collect();
+            let record = cst.children().map(|cst| lower_item(s, cst)).collect();
             ExpressionKind::Record { record }
         }
-        cst::Expression::ExpressionParenthesized(p) => {
-            let parenthesized = p.expression().map(|p| lower_expression(s, e, &p));
+        cst::Expression::ExpressionParenthesized(cst) => {
+            let parenthesized = cst.expression().map(|cst| lower_expression(s, e, &cst));
             ExpressionKind::Parenthesized { parenthesized }
         }
-        cst::Expression::ExpressionRecordAccess(r) => {
-            let record = r.expression().map(|cst| lower_expression(s, e, &cst));
-            let labels = r
+        cst::Expression::ExpressionRecordAccess(cst) => {
+            let record = cst.expression().map(|cst| lower_expression(s, e, &cst));
+            let labels = cst
                 .children()
-                .map(|t| {
-                    let token = t.text()?;
+                .map(|cst| {
+                    let token = cst.text()?;
                     let text = token.text();
                     Some(SmolStr::from(text))
                 })
                 .collect();
             ExpressionKind::RecordAccess { record, labels }
         }
-        cst::Expression::ExpressionRecordUpdate(r) => {
-            let updates =
-                r.record_updates().map(|cst| lower_record_updates(s, e, &cst)).unwrap_or_default();
+        cst::Expression::ExpressionRecordUpdate(cst) => {
+            let updates = cst
+                .record_updates()
+                .map(|cst| lower_record_updates(s, e, &cst))
+                .unwrap_or_default();
             ExpressionKind::RecordUpdate { updates }
         }
     };
@@ -350,12 +353,14 @@ fn lower_guarded(
     cst: &cst::GuardedExpression,
 ) -> GuardedExpression {
     match cst {
-        cst::GuardedExpression::Unconditional(u) => {
-            let where_expression = u.where_expression().map(|w| lower_where_expression(s, e, &w));
+        cst::GuardedExpression::Unconditional(cst) => {
+            let where_expression =
+                cst.where_expression().map(|cst| lower_where_expression(s, e, &cst));
             GuardedExpression::Unconditional { where_expression }
         }
-        cst::GuardedExpression::Conditionals(c) => {
-            let pattern_guarded = c.children().map(|p| lower_pattern_guarded(s, e, &p)).collect();
+        cst::GuardedExpression::Conditionals(cst) => {
+            let pattern_guarded =
+                cst.children().map(|cst| lower_pattern_guarded(s, e, &cst)).collect();
             GuardedExpression::Conditionals { pattern_guarded }
         }
     }
@@ -384,8 +389,8 @@ fn lower_pattern_guarded(
     //   | Just d <- b = d
     // ```
     s.with_scope(|s| {
-        let pattern_guards = cst.children().map(|p| lower_pattern_guard(s, e, &p)).collect();
-        let where_expression = cst.where_expression().map(|w| lower_where_expression(s, e, &w));
+        let pattern_guards = cst.children().map(|cst| lower_pattern_guard(s, e, &cst)).collect();
+        let where_expression = cst.where_expression().map(|cst| lower_where_expression(s, e, &cst));
         PatternGuarded { pattern_guards, where_expression }
     })
 }
@@ -417,7 +422,7 @@ fn lower_bindings(
         Equation,
     }
 
-    let chunks = cst.children().chunk_by(|b| match b {
+    let chunks = cst.children().chunk_by(|cst| match cst {
         cst::LetBinding::LetBindingPattern(_) => Chunk::Pattern,
         cst::LetBinding::LetBindingSignature(_) => Chunk::Equation,
         cst::LetBinding::LetBindingEquation(_) => Chunk::Equation,
@@ -448,9 +453,10 @@ fn lower_pattern_bindings(
         let cst::LetBinding::LetBindingPattern(pattern) = &pattern else {
             unreachable!("invariant violated: expected LetBindingPattern");
         };
-        let where_expression = pattern.where_expression().map(|w| lower_where_expression(s, e, &w));
+        let where_expression =
+            pattern.where_expression().map(|cst| lower_where_expression(s, e, &cst));
         s.push_binder_scope();
-        let binder = pattern.binder().map(|b| lower_binder(s, e, &b));
+        let binder = pattern.binder().map(|cst| lower_binder(s, e, &cst));
         LetBinding::Pattern { binder, where_expression }
     }))
 }
@@ -461,16 +467,16 @@ fn lower_equation_bindings(
     bindings: &mut Vec<LetBinding>,
     children: impl Iterator<Item = cst::LetBinding>,
 ) {
-    let children = children.chunk_by(|b| match b {
+    let children = children.chunk_by(|cst| match cst {
         cst::LetBinding::LetBindingPattern(_) => {
             unreachable!("invariant violated: expected LetBindingSignature / LetBindingEquation");
         }
-        cst::LetBinding::LetBindingSignature(s) => s.name_token().map(|t| {
-            let text = t.text();
+        cst::LetBinding::LetBindingSignature(cst) => cst.name_token().map(|cst| {
+            let text = cst.text();
             SmolStr::from(text)
         }),
-        cst::LetBinding::LetBindingEquation(e) => e.name_token().map(|t| {
-            let text = t.text();
+        cst::LetBinding::LetBindingEquation(cst) => cst.name_token().map(|cst| {
+            let text = cst.text();
             SmolStr::from(text)
         }),
     });
@@ -480,8 +486,8 @@ fn lower_equation_bindings(
         let mut signature = None;
         let mut equations = vec![];
 
-        if let Some(binding) = children.next() {
-            match binding {
+        if let Some(cst) = children.next() {
+            match cst {
                 cst::LetBinding::LetBindingPattern(_) => {
                     unreachable!(
                         "invariant violated: expected LetBindingSignature / LetBindingEquation"
@@ -498,8 +504,8 @@ fn lower_equation_bindings(
             }
         }
 
-        children.for_each(|binding| {
-            if let cst::LetBinding::LetBindingEquation(cst) = binding {
+        children.for_each(|cst| {
+            if let cst::LetBinding::LetBindingEquation(cst) = cst {
                 let id = s.source.allocate_le(&cst);
                 equations.push(id);
             }
@@ -555,28 +561,28 @@ pub(super) fn lower_equation_like<T: AstNode>(
     s.with_scope(|s| {
         s.push_binder_scope();
         let binders = binders(&equation)
-            .map(|b| b.children().map(|b| lower_binder(s, e, &b)).collect())
+            .map(|cst| cst.children().map(|cst| lower_binder(s, e, &cst)).collect())
             .unwrap_or_default();
-        let guarded = guarded(&equation).map(|g| lower_guarded(s, e, &g));
+        let guarded = guarded(&equation).map(|cst| lower_guarded(s, e, &cst));
         Equation { binders, guarded }
     })
 }
 
 fn lower_do_statement(s: &mut State, e: &Environment, cst: &cst::DoStatement) -> DoStatement {
     match cst {
-        cst::DoStatement::DoStatementBind(b) => {
+        cst::DoStatement::DoStatementBind(cst) => {
             s.push_binder_scope();
-            let binder = b.binder().map(|cst| lower_binder(s, e, &cst));
-            let expression = b.expression().map(|cst| lower_expression(s, e, &cst));
+            let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             DoStatement::Bind { binder, expression }
         }
-        cst::DoStatement::DoStatementLet(l) => {
+        cst::DoStatement::DoStatementLet(cst) => {
             let statements =
-                l.statements().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
+                cst.statements().map(|cst| lower_bindings(s, e, &cst)).unwrap_or_default();
             DoStatement::Let { statements }
         }
-        cst::DoStatement::DoStatementDiscard(d) => {
-            let expression = d.expression().map(|cst| lower_expression(s, e, &cst));
+        cst::DoStatement::DoStatementDiscard(cst) => {
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             DoStatement::Discard { expression }
         }
     }
@@ -588,23 +594,23 @@ fn lower_record_updates(
     cst: &cst::RecordUpdates,
 ) -> Arc<[RecordUpdate]> {
     cst.children()
-        .map(|u| match u {
-            cst::RecordUpdate::RecordUpdateLeaf(l) => {
-                let name = l.name().and_then(|l| {
-                    let token = l.text()?;
+        .map(|cst| match cst {
+            cst::RecordUpdate::RecordUpdateLeaf(cst) => {
+                let name = cst.name().and_then(|cst| {
+                    let token = cst.text()?;
                     let text = token.text();
                     Some(SmolStr::from(text))
                 });
-                let expression = l.expression().map(|cst| lower_expression(s, e, &cst));
+                let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
                 RecordUpdate::Leaf { name, expression }
             }
-            cst::RecordUpdate::RecordUpdateBranch(b) => {
-                let name = b.name().and_then(|l| {
-                    let token = l.text()?;
+            cst::RecordUpdate::RecordUpdateBranch(cst) => {
+                let name = cst.name().and_then(|cst| {
+                    let token = cst.text()?;
                     let text = token.text();
                     Some(SmolStr::from(text))
                 });
-                let updates = b
+                let updates = cst
                     .record_updates()
                     .map(|cst| lower_record_updates(s, e, &cst))
                     .unwrap_or_default();
@@ -617,91 +623,99 @@ fn lower_record_updates(
 pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     let id = s.source.allocate_ty(cst);
     let kind = match cst {
-        cst::Type::TypeApplicationChain(a) => {
-            let mut children = a.children().map(|t| lower_type(s, e, &t));
+        cst::Type::TypeApplicationChain(cst) => {
+            let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
             let function = children.next();
             let arguments = children.collect();
             TypeKind::ApplicationChain { function, arguments }
         }
-        cst::Type::TypeArrow(a) => {
-            let mut children = a.children().map(|t| lower_type(s, e, &t));
+        cst::Type::TypeArrow(cst) => {
+            let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
             let argument = children.next();
             let result = children.next();
             TypeKind::Arrow { argument, result }
         }
-        cst::Type::TypeConstrained(c) => {
-            let mut children = c.children().map(|t| lower_type(s, e, &t));
+        cst::Type::TypeConstrained(cst) => {
+            let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
             let constraint = children.next();
             let constrained = children.next();
             TypeKind::Constrained { constraint, constrained }
         }
-        cst::Type::TypeConstructor(c) => {
-            let (qualifier, name) = c
+        cst::Type::TypeConstructor(cst) => {
+            let (qualifier, name) = cst
                 .name()
-                .map_or((None, None), |n| lower_qualified_name(&n, cst::QualifiedName::upper));
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             TypeKind::Constructor { resolution }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
-        cst::Type::TypeForall(f) => s.with_scope(|s| {
+        cst::Type::TypeForall(cst) => s.with_scope(|s| {
             s.push_forall_scope();
-            let bindings = f.children().map(|b| lower_type_variable_binding(s, e, &b)).collect();
-            let r#type = f.r#type().map(|t| lower_type(s, e, &t));
+            let bindings =
+                cst.children().map(|cst| lower_type_variable_binding(s, e, &cst)).collect();
+            let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
             TypeKind::Forall { bindings, r#type }
         }),
         cst::Type::TypeHole(_) => TypeKind::Hole,
         cst::Type::TypeInteger(_) => TypeKind::Integer,
-        cst::Type::TypeKinded(k) => {
-            let mut children = k.children().map(|t| lower_type(s, e, &t));
+        cst::Type::TypeKinded(cst) => {
+            let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
             let r#type = children.next();
             let kind = children.next();
             TypeKind::Kinded { r#type, kind }
         }
-        cst::Type::TypeOperator(o) => {
-            let (qualifier, name) = o
+        cst::Type::TypeOperator(cst) => {
+            let (qualifier, name) = cst
                 .name()
-                .map(|n| lower_qualified_name(&n, cst::QualifiedName::operator_name))
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             TypeKind::Operator { resolution }
         }
-        cst::Type::TypeOperatorChain(o) => {
-            let head = o.r#type().map(|t| lower_type(s, e, &t));
-            let tail = o
+        cst::Type::TypeOperatorChain(cst) => {
+            let head = cst.r#type().map(|cst| lower_type(s, e, &cst));
+            let tail = cst
                 .children()
-                .map(|p| {
-                    let qualified = p.qualified();
-                    let r#type = p.r#type().map(|t| lower_type(s, e, &t));
+                .map(|cst| {
+                    let qualified = cst.qualified();
+                    let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
                     lower_pair(s, ResolutionDomain::Type, qualified, r#type)
                 })
                 .collect();
             TypeKind::OperatorChain { head, tail }
         }
         cst::Type::TypeString(_) => TypeKind::String,
-        cst::Type::TypeVariable(v) => {
-            let name = v.name_token().map(|t| {
-                let text = t.text();
+        cst::Type::TypeVariable(cst) => {
+            let name = cst.name_token().map(|cst| {
+                let text = cst.text();
                 SmolStr::from(text)
             });
-            let resolution = v.name_token().and_then(|t| {
-                let text = t.text();
+            let resolution = cst.name_token().and_then(|cst| {
+                let text = cst.text();
                 s.resolve_type_variable(id, text)
             });
             TypeKind::Variable { name, resolution }
         }
         cst::Type::TypeWildcard(_) => TypeKind::Wildcard,
-        cst::Type::TypeRecord(r) => {
-            let items = r.children().map(|i| lower_row_item(s, e, &i)).collect();
-            let tail = r.tail().and_then(|t| t.r#type()).map(|t| lower_type(s, e, &t));
+        cst::Type::TypeRecord(cst) => {
+            let items = cst.children().map(|cst| lower_row_item(s, e, &cst)).collect();
+            let tail = cst.tail().and_then(|cst| {
+                let cst = cst.r#type()?;
+                Some(lower_type(s, e, &cst))
+            });
             TypeKind::Record { items, tail }
         }
-        cst::Type::TypeRow(r) => {
-            let items = r.children().map(|i| lower_row_item(s, e, &i)).collect();
-            let tail = r.tail().and_then(|t| t.r#type()).map(|t| lower_type(s, e, &t));
+        cst::Type::TypeRow(cst) => {
+            let items = cst.children().map(|cst| lower_row_item(s, e, &cst)).collect();
+            let tail = cst.tail().and_then(|cst| {
+                let cst = cst.r#type()?;
+                Some(lower_type(s, e, &cst))
+            });
             TypeKind::Row { items, tail }
         }
-        cst::Type::TypeParenthesized(p) => {
-            let parenthesized = p.r#type().map(|p| lower_type(s, e, &p));
+        cst::Type::TypeParenthesized(cst) => {
+            let parenthesized = cst.r#type().map(|cst| lower_type(s, e, &cst));
             TypeKind::Parenthesized { parenthesized }
         }
     };
@@ -717,8 +731,8 @@ pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> T
     if let cst::Type::TypeForall(f) = cst {
         let id = s.source.allocate_ty(cst);
         s.push_forall_scope();
-        let bindings = f.children().map(|b| lower_type_variable_binding(s, e, &b)).collect();
-        let r#type = f.r#type().map(|t| lower_forall(s, e, &t));
+        let bindings = f.children().map(|cst| lower_type_variable_binding(s, e, &cst)).collect();
+        let r#type = f.r#type().map(|cst| lower_forall(s, e, &cst));
         let kind = TypeKind::Forall { bindings, r#type };
         s.associate_type_info(id, kind);
         id
@@ -733,8 +747,9 @@ fn lower_pair<T>(
     qualified: Option<cst::QualifiedName>,
     element: Option<T>,
 ) -> OperatorPair<T> {
-    let (qualifier, operator) =
-        qualified.map_or((None, None), |q| lower_qualified_name(&q, cst::QualifiedName::operator));
+    let (qualifier, operator) = qualified
+        .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator))
+        .unwrap_or_default();
     let resolution = s.resolve_deferred(domain, qualifier, operator);
     OperatorPair { resolution, element }
 }
@@ -743,13 +758,13 @@ pub(super) fn lower_qualified_name(
     cst: &cst::QualifiedName,
     token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
 ) -> (Option<SmolStr>, Option<SmolStr>) {
-    let qualifier = cst.qualifier().and_then(|q| {
-        let q = q.text()?;
-        let text = q.text();
+    let qualifier = cst.qualifier().and_then(|cst| {
+        let token = cst.text()?;
+        let text = token.text();
         Some(SmolStr::from(text))
     });
-    let name = token(cst).map(|t| {
-        let text = t.text().trim_start_matches("(").trim_end_matches(")");
+    let name = token(cst).map(|cst| {
+        let text = cst.text().trim_start_matches("(").trim_end_matches(")");
         SmolStr::from(text)
     });
     (qualifier, name)
@@ -762,11 +777,11 @@ pub(super) fn lower_type_variable_binding(
 ) -> TypeVariableBinding {
     let id = s.source.allocate_tv(cst);
     let visible = cst.at().is_some();
-    let name = cst.name().map(|t| {
-        let text = t.text();
+    let name = cst.name().map(|cst| {
+        let text = cst.text();
         SmolStr::from(text)
     });
-    let kind = cst.kind().map(|k| lower_type(s, e, &k));
+    let kind = cst.kind().map(|cst| lower_type(s, e, &cst));
     if let Some(name) = &name {
         s.insert_bound_variable(name, id);
     }
@@ -774,8 +789,8 @@ pub(super) fn lower_type_variable_binding(
 }
 
 fn lower_row_item(s: &mut State, e: &Environment, cst: &cst::TypeRowItem) -> TypeRowItem {
-    let name = cst.name().and_then(|l| {
-        let token = l.text()?;
+    let name = cst.name().and_then(|cst| {
+        let token = cst.text()?;
         let text = token.text();
         Some(SmolStr::from(text))
     });

@@ -188,8 +188,8 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let (qualifier, name) = cst
                 .instance_head()
                 .and_then(|cst| {
-                    cst.qualified()
-                        .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
+                    let cst = cst.qualified()?;
+                    Some(recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
                 })
                 .unwrap_or_default();
 
@@ -226,8 +226,8 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let (qualifier, name) = cst
                 .instance_head()
                 .and_then(|cst| {
-                    cst.qualified()
-                        .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
+                    let cst = cst.qualified()?;
+                    Some(recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
                 })
                 .unwrap_or_default();
 
@@ -262,7 +262,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
 
             let (qualifier, name) = cst
                 .qualified()
-                .map(|q| recursive::lower_qualified_name(&q, cst::QualifiedName::lower))
+                .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::lower))
                 .unwrap_or_default();
 
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
@@ -421,7 +421,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
 
             let (qualifier, name) = cst
                 .qualified()
-                .map(|q| recursive::lower_qualified_name(&q, cst::QualifiedName::upper))
+                .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
                 .unwrap_or_default();
 
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
