@@ -896,16 +896,14 @@ fn index_module_export(state: &mut State, cst: &cst::ExportModule) {
 }
 
 fn extracted_exported_module(cst: &cst::ExportModule) -> Option<SmolStr> {
-    let module_name = cst.module_name()?;
+    let cst = cst.module_name()?;
 
     let mut buffer = SmolStrBuilder::default();
-    if let Some(qualifier) = module_name.qualifier() {
-        if let Some(token) = qualifier.text() {
-            buffer.push_str(token.text());
-        }
+    if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
+        buffer.push_str(token.text());
     }
 
-    let token = module_name.name_token()?;
+    let token = cst.name_token()?;
     buffer.push_str(token.text());
 
     Some(buffer.finish())
