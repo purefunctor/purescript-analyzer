@@ -6,6 +6,8 @@ settings:
 
 importers:
 
+  .: {}
+
   docs:
     devDependencies:
       '@fontsource-variable/montserrat':
