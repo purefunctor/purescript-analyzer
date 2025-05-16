@@ -760,7 +760,7 @@ pub(super) fn lower_qualified_name(
 ) -> (Option<SmolStr>, Option<SmolStr>) {
     let qualifier = cst.qualifier().and_then(|cst| {
         let token = cst.text()?;
-        let text = token.text();
+        let text = token.text().trim_end_matches(".");
         Some(SmolStr::from(text))
     });
     let name = token(cst).map(|cst| {
