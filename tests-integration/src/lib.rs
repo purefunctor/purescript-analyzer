@@ -5,16 +5,19 @@ use std::{
 };
 
 use building::Runtime;
-use files::Files;
+use files::{FileId, Files};
 use glob::glob;
 use indexing::ImportKind;
+use lowering::ResolutionDomain;
 use resolving::FullResolvedModule;
-use smol_str::SmolStrBuilder;
+use rustc_hash::FxHashMap;
+use smol_str::{SmolStr, SmolStrBuilder};
 
 #[derive(Default)]
 pub struct IntegrationTestCompiler {
     pub files: Files,
     pub runtime: Runtime,
+    file_module: FxHashMap<FileId, SmolStr>,
 }
 
 impl IntegrationTestCompiler {
@@ -39,6 +42,7 @@ impl IntegrationTestCompiler {
             }
             let name = builder.finish();
             self.runtime.set_module_file(&name, id);
+            self.file_module.insert(id, name);
         }
     }
 }
@@ -134,6 +138,46 @@ pub fn report_resolved(name: &str, resolved: &FullResolvedModule) -> String {
     writeln!(buffer, "Errors:").unwrap();
     for error in &resolved.errors {
         writeln!(buffer, "  - {:?}", error).unwrap();
+    }
+
+    buffer
+}
+
+pub fn report_deferred_resolution(compiler: &mut IntegrationTestCompiler, id: FileId) -> String {
+    let resolved = compiler.runtime.resolved(id);
+    let lowered = compiler.runtime.lowered(id);
+
+    let mut buffer = String::default();
+    for (id, deferred) in lowered.graph.deferred() {
+        let prefix = deferred.qualifier.as_ref().map(|name| name.as_str());
+        let Some(name) = &deferred.name else { continue };
+
+        match deferred.domain {
+            ResolutionDomain::Term => {
+                let Some((f_id, t_id)) = resolved.lookup_term(prefix, name) else { continue };
+                let module = compiler.file_module.get(&f_id).unwrap();
+
+                let indexed = compiler.runtime.indexed(f_id);
+                let item = &indexed.items[t_id];
+
+                let Some(item) = &item.name else { continue };
+                writeln!(buffer, "{:?} = {}.{}", id, module, item).unwrap();
+            }
+            ResolutionDomain::Type => {
+                let Some((f_id, t_id)) = resolved.lookup_type(prefix, name) else { continue };
+                let module = compiler.file_module.get(&f_id).unwrap();
+
+                let indexed = compiler.runtime.indexed(f_id);
+                let item = &indexed.items[t_id];
+
+                let Some(item) = &item.name else { continue };
+                writeln!(buffer, "{:?} = {}.{}", id, module, item).unwrap();
+            }
+        }
+    }
+
+    if buffer.is_empty() {
+        writeln!(buffer, "<empty>").unwrap()
     }
 
     buffer

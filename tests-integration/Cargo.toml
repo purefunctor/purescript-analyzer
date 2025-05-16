@@ -13,6 +13,7 @@ lexing = { version = "0.1.0", path = "../crates/lexing" }
 lowering = { version = "0.1.0", path = "../crates/lowering" }
 parsing = { version = "0.1.0", path = "../crates/parsing" }
 resolving = { version = "0.1.0", path = "../crates/resolving" }
+rustc-hash = "2.1.1"
 smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../crates/syntax" }
 
