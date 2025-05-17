@@ -4,6 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+criterion = { version = "0.6.0", features = ["html_reports"] }
 glob = "0.3.2"
 lexing = { version = "0.1.0", path = "../crates/lexing" }
 parsing = { version = "0.1.0", path = "../crates/parsing" }
+rayon = "1.10.0"
+
+[[bench]]
+name = "parsing"
+harness = false
