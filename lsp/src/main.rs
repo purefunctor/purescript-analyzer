@@ -142,7 +142,9 @@ impl Backend {
 
                 let qualifier = cst.qualifier().and_then(|cst| {
                     let token = cst.text()?;
-                    Some(SmolStr::from(token.text()))
+                    let text = token.text();
+                    let text = text.trim_end_matches(".");
+                    Some(SmolStr::from(text))
                 });
 
                 let token = cst.lower()?;
