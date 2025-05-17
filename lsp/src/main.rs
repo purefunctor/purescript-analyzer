@@ -9,7 +9,7 @@ use files::Files;
 use lsp::spago;
 use rowan::{TextSize, TokenAtOffset, ast::AstNode};
 use smol_str::{SmolStr, SmolStrBuilder};
-use syntax::cst;
+use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::{Client, LanguageServer, LspService, Server, jsonrpc::Result, lsp_types::*};
 
 struct Backend {
@@ -154,24 +154,49 @@ impl Backend {
 
                 let uri = Url::parse(&self.files.lock().unwrap().path(f_id)).ok()?;
                 let content = self.runtime.lock().unwrap().content(f_id);
+                let (parsed, _) = self.runtime.lock().unwrap().parsed(f_id);
                 let indexed = self.runtime.lock().unwrap().indexed(f_id);
 
-                let range = indexed.term_item_range(t_id);
-
-                let start: u32 = range.start().into();
-                let end: u32 = range.end().into();
-
-                let start = position_from_offset(&content, start);
-                let end = position_from_offset(&content, end);
-                let range = Range { start, end };
-
-                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                let t_ptr = indexed.term_item_ptr(t_id);
+                match &t_ptr[..] {
+                    [ptr] => {
+                        let root = parsed.syntax_node();
+                        let range = find_range(content, ptr, root)?;
+                        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                    }
+                    [start, .., end] => {
+                        let root = parsed.syntax_node();
+                        let start = find_range(content.clone(), start, root.clone())?;
+                        let end = find_range(content.clone(), end, root.clone())?;
+                        let range = Range { start: start.start, end: end.end };
+                        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                    }
+                    [] => None,
+                }
             }
             TokenAtOffset::Between(left, right) => {
                 panic!("{:?} - {:?} - {:?} - {:?}", position, offset, left.text(), right.text());
             }
         }
     }
+}
+
+fn find_range(content: Arc<str>, ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<Range> {
+    let node = ptr.to_node(&root);
+    let mut children = node.children_with_tokens().peekable();
+    if let Some(child) = children.peek() {
+        if matches!(child.kind(), SyntaxKind::Annotation) {
+            children.next();
+        }
+    }
+    let start = children.next()?.text_range();
+    let end = children.last().map_or(start, |child| child.text_range());
+    let start: u32 = start.start().into();
+    let end: u32 = end.end().into();
+    let start = position_from_offset(&content, start);
+    let end = position_from_offset(&content, end);
+    let range = Range { start, end };
+    Some(range)
 }
 
 fn position_from_offset(source: &str, offset: u32) -> Position {

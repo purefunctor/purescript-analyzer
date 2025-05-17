@@ -1,4 +1,5 @@
 use rowan::TextRange;
+use syntax::SyntaxNodePtr;
 
 use crate::{FullIndexedModule, TermItemId, TermItemKind, TypeItemId, source::*};
 
@@ -88,6 +89,23 @@ impl FullIndexedModule {
                     .zip(equations)
                     .map(|(signature, equations)| signature.cover(equations))
                     .expect("invariant violated: no signature and no equation")
+            }
+        }
+    }
+
+    pub fn term_item_ptr(&self, id: TermItemId) -> Vec<SyntaxNodePtr> {
+        let item = &self.items[id];
+        match &item.kind {
+            TermItemKind::ClassMember { id } => vec![self.source[*id].syntax_node_ptr()],
+            TermItemKind::Constructor { id } => vec![self.source[*id].syntax_node_ptr()],
+            TermItemKind::Derive { id } => vec![self.source[*id].syntax_node_ptr()],
+            TermItemKind::Foreign { id } => vec![self.source[*id].syntax_node_ptr()],
+            TermItemKind::Instance { id } => vec![self.source[*id].syntax_node_ptr()],
+            TermItemKind::Operator { id } => vec![self.source[*id].syntax_node_ptr()],
+            TermItemKind::Value { signature, equations } => {
+                let signature = signature.map(|id| self.source[id].syntax_node_ptr()).into_iter();
+                let equations = equations.iter().map(|&id| self.source[id].syntax_node_ptr());
+                signature.chain(equations).collect()
             }
         }
     }
