@@ -88,6 +88,9 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
+                    if let Some(name) = &name {
+                        s.insert_binder(name, id);
+                    }
                     BinderRecordItem::RecordPun { name }
                 }
             };
