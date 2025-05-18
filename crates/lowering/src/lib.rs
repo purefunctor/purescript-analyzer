@@ -16,10 +16,11 @@ pub struct FullLoweredModule {
     pub intermediate: Intermediate,
     pub source: LoweringSource,
     pub graph: LoweringGraph,
+    pub graph_info: LoweringGraphInfo,
 }
 
 pub fn lower_module(module: &cst::Module, indexed: &FullIndexedModule) -> FullLoweredModule {
-    let algorithm::State { intermediate, source, graph, .. } =
+    let algorithm::State { intermediate, source, graph, graph_info, .. } =
         algorithm::lower_module(module, indexed);
-    FullLoweredModule { intermediate, source, graph }
+    FullLoweredModule { intermediate, source, graph, graph_info }
 }

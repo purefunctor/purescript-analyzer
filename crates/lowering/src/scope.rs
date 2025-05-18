@@ -170,9 +170,17 @@ impl ops::Index<GraphNodeId> for LoweringGraph {
     }
 }
 
+impl ops::Index<DeferredResolutionId> for LoweringGraph {
+    type Output = DeferredResolution;
+
+    fn index(&self, index: DeferredResolutionId) -> &Self::Output {
+        &self.deferred[index]
+    }
+}
+
 create_association! {
     /// Tracks [`GraphNodeId`] for IR nodes.
-    pub struct GraphNodeInfo {
+    pub struct LoweringGraphInfo {
         bd: BinderId => GraphNodeId,
         ex: ExpressionId => GraphNodeId,
         ty: TypeId => GraphNodeId,

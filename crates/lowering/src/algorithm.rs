@@ -19,7 +19,7 @@ pub(super) struct State {
     pub(super) intermediate: Intermediate,
     pub(super) source: LoweringSource,
     pub(super) graph: LoweringGraph,
-    pub(super) graph_info: GraphNodeInfo,
+    pub(super) graph_info: LoweringGraphInfo,
     pub(super) graph_scope: Option<GraphNodeId>,
 }
 

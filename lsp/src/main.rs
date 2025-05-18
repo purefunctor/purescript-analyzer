@@ -134,7 +134,7 @@ impl Backend {
             (resolved, parsed)
         };
 
-        let thing = locate::thing_at_position(&content, parsed, position);
+        let thing = locate::thing_at_position(&content, &parsed, position);
         let cst = thing.as_qualified_name()?;
 
         let qualifier_token = cst.qualifier().and_then(|cst| cst.text());
@@ -155,7 +155,7 @@ impl Backend {
         let t_ptr = indexed.term_item_ptr(t_id);
         if let [t_ptr, ..] = &t_ptr[..] {
             let root = parsed.syntax_node();
-            let value = find_annotation(t_ptr, root)?;
+            let value = find_annotation(t_ptr, &root)?;
             Some(Hover {
                 contents: HoverContents::Markup(MarkupContent {
                     kind: MarkupKind::Markdown,
@@ -169,67 +169,119 @@ impl Backend {
     }
 
     async fn definition(&self, uri: Url, position: Position) -> Option<GotoDefinitionResponse> {
-        let uri = uri.as_str();
-
         let (id, content) = {
             let files = self.files.lock().unwrap();
+            let uri = uri.as_str();
             let id = files.id(uri)?;
             let content = files.content(id);
             (id, content)
         };
 
-        let (resolved, parsed) = {
+        let (parsed, resolved, lowered) = {
             let mut runtime = self.runtime.lock().unwrap();
-            let resolved = runtime.resolved(id);
             let (parsed, _) = runtime.parsed(id);
-            (resolved, parsed)
+            let resolved = runtime.resolved(id);
+            let lowered = runtime.lowered(id);
+            (parsed, resolved, lowered)
         };
 
-        let thing = locate::thing_at_position(&content, parsed, position);
-        let cst = thing.as_qualified_name()?;
+        let thing = locate::thing_at_position(&content, &parsed, position);
 
-        let qualifier_token = cst.qualifier().and_then(|cst| cst.text());
-        let name_token = cst.lower().or_else(|| cst.upper())?;
+        if let locate::Thing::Expression(cst) = dbg!(thing) {
+            let e_id = lowered.source.lookup_ex(&cst)?;
+            let e_kind = lowered.intermediate.index_expression_kind(e_id)?;
+            if let lowering::ExpressionKind::Variable { resolution: Some(resolution) } =
+                dbg!(e_kind)
+            {
+                match resolution {
+                    lowering::TermResolution::Deferred(deferred) => {
+                        let deferred = &lowered.graph[*deferred];
+                        let prefix = deferred.qualifier.as_deref();
+                        let name = deferred.name.as_deref()?;
 
-        let prefix = qualifier_token.as_ref().map(|cst| cst.text().trim_end_matches("."));
-        let name = name_token.text();
+                        let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
 
-        let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+                        let uri = {
+                            let files = self.files.lock().unwrap();
+                            let path = files.path(f_id);
+                            Url::parse(&path).ok()?
+                        };
 
-        let uri = {
-            let files = self.files.lock().unwrap();
-            let path = files.path(f_id);
-            Url::parse(&path).ok()?
-        };
+                        let (content, parsed, indexed) = {
+                            let mut runtime = self.runtime.lock().unwrap();
+                            let content = runtime.content(f_id);
+                            let (parsed, _) = runtime.parsed(f_id);
+                            let indexed = runtime.indexed(f_id);
+                            (content, parsed, indexed)
+                        };
 
-        let (content, parsed, indexed) = {
-            let mut runtime = self.runtime.lock().unwrap();
-            let content = runtime.content(f_id);
-            let (parsed, _) = runtime.parsed(f_id);
-            let indexed = runtime.indexed(f_id);
-            (content, parsed, indexed)
-        };
+                        let t_ptr = indexed.term_item_ptr(t_id);
+                        match &t_ptr[..] {
+                            [t_ptr] => {
+                                let root = parsed.syntax_node();
+                                let range = find_range(&content, t_ptr, &root)?;
+                                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                            }
+                            [s_ptr, .., e_ptr] => {
+                                let root = parsed.syntax_node();
+                                let start = find_range(&content, s_ptr, &root)?;
+                                let end = find_range(&content, e_ptr, &root)?;
+                                let range = Range { start: start.start, end: end.end };
+                                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                            }
+                            [] => None,
+                        }
+                    }
+                    lowering::TermResolution::Binder(binder) => {
+                        let root = parsed.syntax_node();
+                        let ptr = &lowered.source[*binder].syntax_node_ptr();
+                        let range = find_range(&content, ptr, &root)?;
+                        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                    }
+                    lowering::TermResolution::Let(binding) => {
+                        let root = parsed.syntax_node();
 
-        let t_ptr = indexed.term_item_ptr(t_id);
-        match &t_ptr[..] {
-            [t_ptr] => {
-                let root = parsed.syntax_node();
-                let range = find_range(content, t_ptr, root)?;
-                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                        let signature_range = binding.signature.and_then(|id| {
+                            let ptr = lowered.source[id].syntax_node_ptr();
+                            find_range(&content, &ptr, &root)
+                        });
+
+                        let first_equation_range = binding.equations.last().and_then(|&id| {
+                            let ptr = lowered.source[id].syntax_node_ptr();
+                            find_range(&content, &ptr, &root)
+                        });
+
+                        let last_equation_range = binding.equations.last().and_then(|&id| {
+                            let ptr = lowered.source[id].syntax_node_ptr();
+                            find_range(&content, &ptr, &root)
+                        });
+
+                        let start = signature_range.or(first_equation_range)?;
+                        let end = last_equation_range?;
+
+                        let range = Range { start: start.start, end: end.end };
+                        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                    }
+                }
+            } else {
+                None
             }
-            [s_ptr, .., e_ptr] => {
-                let root = parsed.syntax_node();
-                let start = find_range(content.clone(), s_ptr, root.clone())?;
-                let end = find_range(content.clone(), e_ptr, root.clone())?;
-                let range = Range { start: start.start, end: end.end };
-                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
-            }
-            [] => None,
+        } else {
+            None
         }
+
+        // This is good and frankly works as we intended it to! Which is pretty amazing to think
+        // about. However, we haven't considered local variables yet, which I think should be
+        // pretty easy to implement now that we have the `thing_at_position` abstraction.
+        //
+        // First, we take the syntax pointer of the current expression and exchange with
+        // an expression id. We can then use this expression id to get the lowered version
+        // of that node, which may resolve to local bindings or deferred for the global
+        // state.
     }
 }
 
-fn find_annotation(ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<String> {
+fn find_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<String> {
     let node = ptr.to_node(&root);
     let mut children = node.children();
     let annotation = children.find_map(cst::Annotation::cast)?;
@@ -238,7 +290,7 @@ fn find_annotation(ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<String> {
     Some(text.lines().map(|line| line.trim_start_matches("-- | ")).collect::<Vec<_>>().join("\n"))
 }
 
-fn find_range(content: Arc<str>, ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<Range> {
+fn find_range(content: &str, ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<Range> {
     let node = ptr.to_node(&root);
     let mut children = node.children_with_tokens().peekable();
     if let Some(child) = children.peek() {

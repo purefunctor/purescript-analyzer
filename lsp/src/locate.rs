@@ -25,12 +25,12 @@ pub enum Thing {
     Nothing,
 }
 
-pub fn thing_at_position(content: &str, parsed: ParsedModule, position: Position) -> Thing {
+pub fn thing_at_position(content: &str, parsed: &ParsedModule, position: Position) -> Thing {
     let Some(offset) = position_to_offset(content, position) else {
         return Thing::Nothing;
     };
 
-    let node = parsed.syntax_node();
+    let node = parsed.clone().syntax_node();
     let token = node.token_at_offset(offset);
 
     match token {
