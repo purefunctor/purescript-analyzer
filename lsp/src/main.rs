@@ -5,10 +5,9 @@ use std::{
 
 use building::Runtime;
 use files::Files;
-
 use lsp::{locate, spago};
-use rowan::{TokenAtOffset, ast::AstNode};
-use smol_str::{SmolStr, SmolStrBuilder};
+use rowan::ast::AstNode;
+use smol_str::SmolStrBuilder;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::{Client, LanguageServer, LspService, Server, jsonrpc::Result, lsp_types::*};
 
@@ -28,7 +27,7 @@ impl Backend {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, p: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -119,109 +118,113 @@ impl Backend {
     }
 
     async fn hover(&self, uri: Url, position: Position) -> Option<Hover> {
-        let id = self.files.lock().unwrap().id(uri.as_str())?;
-        let content = self.files.lock().unwrap().content(id);
-        let resolved = self.runtime.lock().unwrap().resolved(id);
-        let offset = locate::position_to_offset(&content, position)?;
-        let (parsed, _) = self.runtime.lock().unwrap().parsed(id);
-        let node = parsed.syntax_node();
-        let token = node.token_at_offset(offset);
-        match token {
-            TokenAtOffset::None => None,
-            TokenAtOffset::Single(token) => {
-                let node = token.parent()?;
-                let cst = cst::QualifiedName::cast(node)?;
+        let uri = uri.as_str();
 
-                let qualifier = cst.qualifier().and_then(|cst| {
-                    let token = cst.text()?;
-                    let text = token.text();
-                    let text = text.trim_end_matches(".");
-                    Some(SmolStr::from(text))
-                });
+        let (id, content) = {
+            let files = self.files.lock().unwrap();
+            let id = files.id(uri)?;
+            let content = files.content(id);
+            (id, content)
+        };
 
-                let token = cst.lower()?;
-                let name = token.text();
+        let (resolved, parsed) = {
+            let mut runtime = self.runtime.lock().unwrap();
+            let resolved = runtime.resolved(id);
+            let (parsed, _) = runtime.parsed(id);
+            (resolved, parsed)
+        };
 
-                let (f_id, t_id) = resolved.lookup_term(qualifier.as_deref(), name)?;
+        let thing = locate::thing_at_position(&content, parsed, position);
+        let cst = thing.as_qualified_name()?;
 
-                let (parsed, _) = self.runtime.lock().unwrap().parsed(f_id);
-                let indexed = self.runtime.lock().unwrap().indexed(f_id);
+        let qualifier_token = cst.qualifier().and_then(|cst| cst.text());
+        let name_token = cst.lower().or_else(|| cst.upper())?;
 
-                let t_ptr = indexed.term_item_ptr(t_id);
-                match &t_ptr[..] {
-                    [ptr, ..] => {
-                        let root = parsed.syntax_node();
-                        let value = find_annotation(ptr, root)?;
-                        Some(Hover {
-                            contents: HoverContents::Markup(MarkupContent {
-                                kind: MarkupKind::Markdown,
-                                value,
-                            }),
-                            range: None,
-                        })
-                    }
-                    _ => None,
-                }
-            }
-            TokenAtOffset::Between(_, _) => {
-                // panic!("{:?} - {:?} - {:?} - {:?}", position, offset, left.text(), right.text());
-                None
-            }
+        let prefix = qualifier_token.as_ref().map(|cst| cst.text().trim_end_matches("."));
+        let name = name_token.text();
+
+        let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+
+        let (parsed, indexed) = {
+            let mut runtime = self.runtime.lock().unwrap();
+            let (parsed, _) = runtime.parsed(f_id);
+            let indexed = runtime.indexed(f_id);
+            (parsed, indexed)
+        };
+
+        let t_ptr = indexed.term_item_ptr(t_id);
+        if let [t_ptr, ..] = &t_ptr[..] {
+            let root = parsed.syntax_node();
+            let value = find_annotation(t_ptr, root)?;
+            Some(Hover {
+                contents: HoverContents::Markup(MarkupContent {
+                    kind: MarkupKind::Markdown,
+                    value,
+                }),
+                range: None,
+            })
+        } else {
+            None
         }
     }
 
     async fn definition(&self, uri: Url, position: Position) -> Option<GotoDefinitionResponse> {
-        let id = self.files.lock().unwrap().id(uri.as_str())?;
-        let content = self.files.lock().unwrap().content(id);
-        let resolved = self.runtime.lock().unwrap().resolved(id);
-        let offset = locate::position_to_offset(&content, position)?;
-        let (parsed, _) = self.runtime.lock().unwrap().parsed(id);
-        let node = parsed.syntax_node();
-        let token = node.token_at_offset(offset);
-        match token {
-            TokenAtOffset::None => None,
-            TokenAtOffset::Single(token) => {
-                let node = token.parent()?;
-                let cst = cst::QualifiedName::cast(node)?;
+        let uri = uri.as_str();
 
-                let qualifier = cst.qualifier().and_then(|cst| {
-                    let token = cst.text()?;
-                    let text = token.text();
-                    let text = text.trim_end_matches(".");
-                    Some(SmolStr::from(text))
-                });
+        let (id, content) = {
+            let files = self.files.lock().unwrap();
+            let id = files.id(uri)?;
+            let content = files.content(id);
+            (id, content)
+        };
 
-                let token = cst.lower()?;
-                let name = token.text();
+        let (resolved, parsed) = {
+            let mut runtime = self.runtime.lock().unwrap();
+            let resolved = runtime.resolved(id);
+            let (parsed, _) = runtime.parsed(id);
+            (resolved, parsed)
+        };
 
-                let (f_id, t_id) = resolved.lookup_term(qualifier.as_deref(), name)?;
+        let thing = locate::thing_at_position(&content, parsed, position);
+        let cst = thing.as_qualified_name()?;
 
-                let uri = Url::parse(&self.files.lock().unwrap().path(f_id)).ok()?;
-                let content = self.runtime.lock().unwrap().content(f_id);
-                let (parsed, _) = self.runtime.lock().unwrap().parsed(f_id);
-                let indexed = self.runtime.lock().unwrap().indexed(f_id);
+        let qualifier_token = cst.qualifier().and_then(|cst| cst.text());
+        let name_token = cst.lower().or_else(|| cst.upper())?;
 
-                let t_ptr = indexed.term_item_ptr(t_id);
-                match &t_ptr[..] {
-                    [ptr] => {
-                        let root = parsed.syntax_node();
-                        let range = find_range(content, ptr, root)?;
-                        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
-                    }
-                    [start, .., end] => {
-                        let root = parsed.syntax_node();
-                        let start = find_range(content.clone(), start, root.clone())?;
-                        let end = find_range(content.clone(), end, root.clone())?;
-                        let range = Range { start: start.start, end: end.end };
-                        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
-                    }
-                    [] => None,
-                }
+        let prefix = qualifier_token.as_ref().map(|cst| cst.text().trim_end_matches("."));
+        let name = name_token.text();
+
+        let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+
+        let uri = {
+            let files = self.files.lock().unwrap();
+            let path = files.path(f_id);
+            Url::parse(&path).ok()?
+        };
+
+        let (content, parsed, indexed) = {
+            let mut runtime = self.runtime.lock().unwrap();
+            let content = runtime.content(f_id);
+            let (parsed, _) = runtime.parsed(f_id);
+            let indexed = runtime.indexed(f_id);
+            (content, parsed, indexed)
+        };
+
+        let t_ptr = indexed.term_item_ptr(t_id);
+        match &t_ptr[..] {
+            [t_ptr] => {
+                let root = parsed.syntax_node();
+                let range = find_range(content, t_ptr, root)?;
+                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
             }
-            TokenAtOffset::Between(_, _) => {
-                // panic!("{:?} - {:?} - {:?} - {:?}", position, offset, left.text(), right.text());
-                None
+            [s_ptr, .., e_ptr] => {
+                let root = parsed.syntax_node();
+                let start = find_range(content.clone(), s_ptr, root.clone())?;
+                let end = find_range(content.clone(), e_ptr, root.clone())?;
+                let range = Range { start: start.start, end: end.end };
+                Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
             }
+            [] => None,
         }
     }
 }
@@ -229,7 +232,7 @@ impl Backend {
 fn find_annotation(ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<String> {
     let node = ptr.to_node(&root);
     let mut children = node.children();
-    let annotation = children.find_map(|child| cst::Annotation::cast(child))?;
+    let annotation = children.find_map(cst::Annotation::cast)?;
     let token = annotation.text()?;
     let text = token.text().trim();
     Some(text.lines().map(|line| line.trim_start_matches("-- | ")).collect::<Vec<_>>().join("\n"))
@@ -258,6 +261,6 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
     tracing_subscriber::fmt().init();
-    let (service, socket) = LspService::new(|client| Backend::new(client));
+    let (service, socket) = LspService::new(Backend::new);
     Server::new(stdin, stdout, socket).serve(service).await;
 }

@@ -1093,3 +1093,13 @@ has_child!(
     InfixDeclaration
     | name() -> QualifiedName
 );
+
+has_child!(
+    ExpressionConstructor
+    | qualified() -> QualifiedName
+);
+
+has_child!(
+    ExpressionVariable
+    | qualified() -> QualifiedName
+);

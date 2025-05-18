@@ -67,3 +67,13 @@ fn thing_from_between(left: SyntaxToken, right: SyntaxToken) -> Thing {
         (_, _) => right,
     }
 }
+
+impl Thing {
+    pub fn as_qualified_name(&self) -> Option<cst::QualifiedName> {
+        match self {
+            Thing::Expression(cst::Expression::ExpressionConstructor(cst)) => cst.qualified(),
+            Thing::Expression(cst::Expression::ExpressionVariable(cst)) => cst.qualified(),
+            _ => None,
+        }
+    }
+}
