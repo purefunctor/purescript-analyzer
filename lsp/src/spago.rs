@@ -1,3 +1,5 @@
+//! Spago integration
+
 use std::path::PathBuf;
 
 use anyhow::Ok;

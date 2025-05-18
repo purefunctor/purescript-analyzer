@@ -6,8 +6,8 @@ use std::{
 use building::Runtime;
 use files::Files;
 
-use lsp::spago;
-use rowan::{TextSize, TokenAtOffset, ast::AstNode};
+use lsp::{locate, spago};
+use rowan::{TokenAtOffset, ast::AstNode};
 use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::{Client, LanguageServer, LspService, Server, jsonrpc::Result, lsp_types::*};
@@ -28,7 +28,7 @@ impl Backend {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, p: InitializeParams) -> Result<InitializeResult> {
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -122,26 +122,10 @@ impl Backend {
         let id = self.files.lock().unwrap().id(uri.as_str())?;
         let content = self.files.lock().unwrap().content(id);
         let resolved = self.runtime.lock().unwrap().resolved(id);
-
-        let offset = 'offset: {
-            let mut current_line = 0;
-            let mut absolute_offset = 0;
-
-            for line in content.split_inclusive("\n") {
-                if current_line == position.line {
-                    break 'offset absolute_offset + position.character;
-                }
-
-                absolute_offset += line.len() as u32;
-                current_line += 1;
-            }
-
-            return None;
-        };
-
+        let offset = locate::position_to_offset(&content, position)?;
         let (parsed, _) = self.runtime.lock().unwrap().parsed(id);
         let node = parsed.syntax_node();
-        let token = node.token_at_offset(TextSize::new(offset));
+        let token = node.token_at_offset(offset);
         match token {
             TokenAtOffset::None => None,
             TokenAtOffset::Single(token) => {
@@ -190,26 +174,10 @@ impl Backend {
         let id = self.files.lock().unwrap().id(uri.as_str())?;
         let content = self.files.lock().unwrap().content(id);
         let resolved = self.runtime.lock().unwrap().resolved(id);
-
-        let offset = 'offset: {
-            let mut current_line = 0;
-            let mut absolute_offset = 0;
-
-            for line in content.split_inclusive("\n") {
-                if current_line == position.line {
-                    break 'offset absolute_offset + position.character;
-                }
-
-                absolute_offset += line.len() as u32;
-                current_line += 1;
-            }
-
-            return None;
-        };
-
+        let offset = locate::position_to_offset(&content, position)?;
         let (parsed, _) = self.runtime.lock().unwrap().parsed(id);
         let node = parsed.syntax_node();
-        let token = node.token_at_offset(TextSize::new(offset));
+        let token = node.token_at_offset(offset);
         match token {
             TokenAtOffset::None => None,
             TokenAtOffset::Single(token) => {
@@ -277,41 +245,19 @@ fn find_range(content: Arc<str>, ptr: &SyntaxNodePtr, root: SyntaxNode) -> Optio
     }
     let start = children.next()?.text_range();
     let end = children.last().map_or(start, |child| child.text_range());
-    let start: u32 = start.start().into();
-    let end: u32 = end.end().into();
-    let start = position_from_offset(&content, start);
-    let end = position_from_offset(&content, end);
+    let start = start.start();
+    let end = end.end();
+    let start = locate::offset_to_position(&content, start);
+    let end = locate::offset_to_position(&content, end);
     let range = Range { start, end };
     Some(range)
-}
-
-fn position_from_offset(source: &str, offset: u32) -> Position {
-    let mut current_offset = 0;
-    let mut line_number = 0;
-
-    for line in source.split_inclusive('\n') {
-        let line_length = line.len() as u32;
-
-        if current_offset + line_length > offset {
-            let line_offset = offset - current_offset;
-            return Position::new(line_number, line_offset);
-        }
-
-        current_offset += line_length;
-        line_number += 1;
-    }
-
-    if let Some(last_line) = source.split_inclusive('\n').last() {
-        return Position::new(line_number - 1, last_line.len() as u32);
-    }
-
-    Position::new(0, 0)
 }
 
 #[tokio::main]
 async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
+    tracing_subscriber::fmt().init();
     let (service, socket) = LspService::new(|client| Backend::new(client));
     Server::new(stdin, stdout, socket).serve(service).await;
 }
