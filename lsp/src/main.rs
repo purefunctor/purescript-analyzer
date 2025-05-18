@@ -1,5 +1,5 @@
 use std::{
-    fs, panic,
+    fs,
     sync::{Arc, Mutex},
 };
 
@@ -33,6 +33,7 @@ impl LanguageServer for Backend {
             server_info: None,
             capabilities: ServerCapabilities {
                 definition_provider: Some(OneOf::Left(true)),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
@@ -86,6 +87,13 @@ impl LanguageServer for Backend {
         let result = self.definition(uri, position).await;
         Result::Ok(result)
     }
+
+    async fn hover(&self, p: HoverParams) -> Result<Option<Hover>> {
+        let uri = p.text_document_position_params.text_document.uri;
+        let position = p.text_document_position_params.position;
+        let result = self.hover(uri, position).await;
+        Result::Ok(result)
+    }
 }
 
 impl Backend {
@@ -106,6 +114,74 @@ impl Backend {
                 }
                 let name = builder.finish();
                 self.runtime.lock().unwrap().set_module_file(&name, id);
+            }
+        }
+    }
+
+    async fn hover(&self, uri: Url, position: Position) -> Option<Hover> {
+        let id = self.files.lock().unwrap().id(uri.as_str())?;
+        let content = self.files.lock().unwrap().content(id);
+        let resolved = self.runtime.lock().unwrap().resolved(id);
+
+        let offset = 'offset: {
+            let mut current_line = 0;
+            let mut absolute_offset = 0;
+
+            for line in content.split_inclusive("\n") {
+                if current_line == position.line {
+                    break 'offset absolute_offset + position.character;
+                }
+
+                absolute_offset += line.len() as u32;
+                current_line += 1;
+            }
+
+            return None;
+        };
+
+        let (parsed, _) = self.runtime.lock().unwrap().parsed(id);
+        let node = parsed.syntax_node();
+        let token = node.token_at_offset(TextSize::new(offset));
+        match token {
+            TokenAtOffset::None => None,
+            TokenAtOffset::Single(token) => {
+                let node = token.parent()?;
+                let cst = cst::QualifiedName::cast(node)?;
+
+                let qualifier = cst.qualifier().and_then(|cst| {
+                    let token = cst.text()?;
+                    let text = token.text();
+                    let text = text.trim_end_matches(".");
+                    Some(SmolStr::from(text))
+                });
+
+                let token = cst.lower()?;
+                let name = token.text();
+
+                let (f_id, t_id) = resolved.lookup_term(qualifier.as_deref(), name)?;
+
+                let (parsed, _) = self.runtime.lock().unwrap().parsed(f_id);
+                let indexed = self.runtime.lock().unwrap().indexed(f_id);
+
+                let t_ptr = indexed.term_item_ptr(t_id);
+                match &t_ptr[..] {
+                    [ptr, ..] => {
+                        let root = parsed.syntax_node();
+                        let value = find_annotation(ptr, root)?;
+                        Some(Hover {
+                            contents: HoverContents::Markup(MarkupContent {
+                                kind: MarkupKind::Markdown,
+                                value,
+                            }),
+                            range: None,
+                        })
+                    }
+                    _ => None,
+                }
+            }
+            TokenAtOffset::Between(_, _) => {
+                // panic!("{:?} - {:?} - {:?} - {:?}", position, offset, left.text(), right.text());
+                None
             }
         }
     }
@@ -174,11 +250,21 @@ impl Backend {
                     [] => None,
                 }
             }
-            TokenAtOffset::Between(left, right) => {
-                panic!("{:?} - {:?} - {:?} - {:?}", position, offset, left.text(), right.text());
+            TokenAtOffset::Between(_, _) => {
+                // panic!("{:?} - {:?} - {:?} - {:?}", position, offset, left.text(), right.text());
+                None
             }
         }
     }
+}
+
+fn find_annotation(ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<String> {
+    let node = ptr.to_node(&root);
+    let mut children = node.children();
+    let annotation = children.find_map(|child| cst::Annotation::cast(child))?;
+    let token = annotation.text()?;
+    let text = token.text().trim();
+    Some(text.lines().map(|line| line.trim_start_matches("-- | ")).collect::<Vec<_>>().join("\n"))
 }
 
 fn find_range(content: Arc<str>, ptr: &SyntaxNodePtr, root: SyntaxNode) -> Option<Range> {
