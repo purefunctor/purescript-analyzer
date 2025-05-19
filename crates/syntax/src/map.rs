@@ -46,8 +46,7 @@ impl<N: AstNode> AstPtrMap<N> {
         id
     }
 
-    pub fn lookup(&self, ptr: &N) -> Option<Idx<AstPtr<N>>> {
-        let ptr = AstPtr::new(ptr);
+    pub fn lookup(&self, ptr: AstPtr<N>) -> Option<Idx<AstPtr<N>>> {
         let hash = FxBuildHasher.hash_one(&ptr);
         self.table.find(hash, |&id| self.arena[id] == ptr).copied()
     }
@@ -124,7 +123,7 @@ macro_rules! create_source {
 
 
                 $(
-                    pub fn [<lookup_ $field>](&self, ptr: &$cst) -> Option<[<$name Id>]> {
+                    pub fn [<lookup_ $field>](&self, ptr: [<$name Ptr>]) -> Option<[<$name Id>]> {
                         self.$field.lookup(ptr)
                     }
                 )*
