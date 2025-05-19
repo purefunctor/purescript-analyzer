@@ -3,7 +3,7 @@
 use line_index::{LineCol, LineIndex};
 use parsing::ParsedModule;
 use rowan::{TextSize, TokenAtOffset, ast::AstNode};
-use syntax::{SyntaxNode, SyntaxToken, cst};
+use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 use tower_lsp::lsp_types::*;
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
@@ -20,8 +20,9 @@ pub fn offset_to_position(content: &str, offset: TextSize) -> Position {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Thing {
-    Annotation(cst::Annotation),
-    Expression(cst::Expression),
+    Annotation(SyntaxNodePtr),
+    Expression(SyntaxNodePtr),
+    Type(SyntaxNodePtr),
     Nothing,
 }
 
@@ -46,10 +47,13 @@ fn thing_from_single(token: SyntaxToken) -> Thing {
 
 fn thing_classify_node(node: SyntaxNode) -> Option<Thing> {
     let kind = node.kind();
+    let ptr = SyntaxNodePtr::new(&node);
     if cst::Annotation::can_cast(kind) {
-        cst::Annotation::cast(node).map(Thing::Annotation)
+        Some(Thing::Annotation(ptr))
     } else if cst::Expression::can_cast(kind) {
-        cst::Expression::cast(node).map(Thing::Expression)
+        Some(Thing::Expression(ptr))
+    } else if cst::Type::can_cast(kind) {
+        Some(Thing::Type(ptr))
     } else {
         None
     }
@@ -65,15 +69,5 @@ fn thing_from_between(left: SyntaxToken, right: SyntaxToken) -> Thing {
         (Thing::Nothing, _) => right,
         // otherwise, lean towards the right.
         (_, _) => right,
-    }
-}
-
-impl Thing {
-    pub fn as_qualified_name(&self) -> Option<cst::QualifiedName> {
-        match self {
-            Thing::Expression(cst::Expression::ExpressionConstructor(cst)) => cst.qualified(),
-            Thing::Expression(cst::Expression::ExpressionVariable(cst)) => cst.qualified(),
-            _ => None,
-        }
     }
 }
