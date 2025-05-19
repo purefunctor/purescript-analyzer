@@ -33,7 +33,6 @@ impl LanguageServer for Backend {
             server_info: None,
             capabilities: ServerCapabilities {
                 definition_provider: Some(OneOf::Left(true)),
-                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
@@ -87,13 +86,6 @@ impl LanguageServer for Backend {
         let result = self.definition(uri, position).await;
         Result::Ok(result)
     }
-
-    async fn hover(&self, p: HoverParams) -> Result<Option<Hover>> {
-        let uri = p.text_document_position_params.text_document.uri;
-        let position = p.text_document_position_params.position;
-        let result = self.hover(uri, position).await;
-        Result::Ok(result)
-    }
 }
 
 impl Backend {
@@ -116,58 +108,6 @@ impl Backend {
                 self.runtime.lock().unwrap().set_module_file(&name, id);
             }
         }
-    }
-
-    async fn hover(&self, _: Url, _: Position) -> Option<Hover> {
-        None
-        // let uri = uri.as_str();
-        //
-        // let (id, content) = {
-        //     let files = self.files.lock().unwrap();
-        //     let id = files.id(uri)?;
-        //     let content = files.content(id);
-        //     (id, content)
-        // };
-        //
-        // let (resolved, parsed) = {
-        //     let mut runtime = self.runtime.lock().unwrap();
-        //     let resolved = runtime.resolved(id);
-        //     let (parsed, _) = runtime.parsed(id);
-        //     (resolved, parsed)
-        // };
-        //
-        // let thing = locate::thing_at_position(&content, &parsed, position);
-        // let cst = thing.as_qualified_name()?;
-        //
-        // let qualifier_token = cst.qualifier().and_then(|cst| cst.text());
-        // let name_token = cst.lower().or_else(|| cst.upper())?;
-        //
-        // let prefix = qualifier_token.as_ref().map(|cst| cst.text().trim_end_matches("."));
-        // let name = name_token.text();
-        //
-        // let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
-        //
-        // let (parsed, indexed) = {
-        //     let mut runtime = self.runtime.lock().unwrap();
-        //     let (parsed, _) = runtime.parsed(f_id);
-        //     let indexed = runtime.indexed(f_id);
-        //     (parsed, indexed)
-        // };
-        //
-        // let t_ptr = indexed.term_item_ptr(t_id);
-        // if let [t_ptr, ..] = &t_ptr[..] {
-        //     let root = parsed.syntax_node();
-        //     let value = find_annotation(t_ptr, &root)?;
-        //     Some(Hover {
-        //         contents: HoverContents::Markup(MarkupContent {
-        //             kind: MarkupKind::Markdown,
-        //             value,
-        //         }),
-        //         range: None,
-        //     })
-        // } else {
-        //     None
-        // }
     }
 
     async fn definition(&self, uri: Url, position: Position) -> Option<GotoDefinitionResponse> {
