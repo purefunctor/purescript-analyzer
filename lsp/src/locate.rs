@@ -2,7 +2,10 @@
 
 use line_index::{LineCol, LineIndex};
 use parsing::ParsedModule;
-use rowan::{TextSize, TokenAtOffset, ast::AstNode};
+use rowan::{
+    TextSize, TokenAtOffset,
+    ast::{AstNode, AstPtr},
+};
 use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 use tower_lsp::lsp_types::*;
 
@@ -20,9 +23,9 @@ pub fn offset_to_position(content: &str, offset: TextSize) -> Position {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Thing {
-    Annotation(SyntaxNodePtr),
-    Expression(SyntaxNodePtr),
-    Type(SyntaxNodePtr),
+    Annotation(AstPtr<cst::Annotation>),
+    Expression(AstPtr<cst::Expression>),
+    Type(AstPtr<cst::Type>),
     Nothing,
 }
 
@@ -49,10 +52,13 @@ fn thing_classify_node(node: SyntaxNode) -> Option<Thing> {
     let kind = node.kind();
     let ptr = SyntaxNodePtr::new(&node);
     if cst::Annotation::can_cast(kind) {
+        let ptr = ptr.cast()?;
         Some(Thing::Annotation(ptr))
     } else if cst::Expression::can_cast(kind) {
+        let ptr = ptr.cast()?;
         Some(Thing::Expression(ptr))
     } else if cst::Type::can_cast(kind) {
+        let ptr = ptr.cast()?;
         Some(Thing::Type(ptr))
     } else {
         None

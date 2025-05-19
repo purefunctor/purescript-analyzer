@@ -1,10 +1,11 @@
 use files::FileId;
 use lowering::{
     DeferredResolutionId, ExpressionKind, FullLoweredModule, ResolutionDomain, TermResolution,
+    TypeVariableResolution,
 };
 use parsing::ParsedModule;
 use resolving::FullResolvedModule;
-use rowan::ast::AstNode;
+use rowan::ast::AstPtr;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::lsp_types::*;
 
@@ -38,7 +39,7 @@ pub(super) async fn definition(
         locate::Thing::Expression(ptr) => {
             definition_expression(server, uri, id, &content, parsed, ptr).await
         }
-        locate::Thing::Type(ptr) => definition_type(server, id, ptr).await,
+        locate::Thing::Type(ptr) => definition_type(server, uri, id, &content, parsed, ptr).await,
         locate::Thing::Nothing => None,
     }
 }
@@ -49,7 +50,7 @@ async fn definition_expression(
     id: FileId,
     content: &str,
     parsed: ParsedModule,
-    ptr: SyntaxNodePtr,
+    ptr: AstPtr<cst::Expression>,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
         let mut runtime = server.runtime.lock().unwrap();
@@ -58,16 +59,7 @@ async fn definition_expression(
         (resolved, lowered)
     };
 
-    let id = {
-        // TODO: lookup_ex should just accept AstPtr
-        // instead of node references--this is not
-        // efficient.
-        let root = parsed.clone().syntax_node();
-        let node = ptr.to_node(&root);
-        let cst = cst::Expression::cast(node)?;
-        lowered.source.lookup_ex(&cst)?
-    };
-
+    let id = lowered.source.lookup_ex(ptr)?;
     let kind = lowered.intermediate.index_expression_kind(id)?;
 
     match kind {
@@ -118,11 +110,44 @@ async fn definition_expression(
 }
 
 async fn definition_type(
-    _server: &PureScriptServer,
-    _id: FileId,
-    _node: SyntaxNodePtr,
+    server: &PureScriptServer,
+    uri: Url,
+    id: FileId,
+    content: &str,
+    parsed: ParsedModule,
+    ptr: AstPtr<cst::Type>,
 ) -> Option<GotoDefinitionResponse> {
-    None
+    let (resolved, lowered) = {
+        let mut runtime = server.runtime.lock().unwrap();
+        let resolved = runtime.resolved(id);
+        let lowered = runtime.lowered(id);
+        (resolved, lowered)
+    };
+
+    let id = lowered.source.lookup_ty(ptr)?;
+    let kind = lowered.intermediate.index_type_kind(id)?;
+
+    match kind {
+        lowering::TypeKind::Constructor { resolution } => {
+            definition_deferred(server, &resolved, &lowered, *resolution).await
+        }
+        lowering::TypeKind::Operator { resolution } => {
+            definition_deferred(server, &resolved, &lowered, *resolution).await
+        }
+        lowering::TypeKind::Variable { resolution, .. } => {
+            let resolution = resolution.as_ref()?;
+            match resolution {
+                TypeVariableResolution::Forall(binding) => {
+                    let root = parsed.syntax_node();
+                    let ptr = &lowered.source[*binding].syntax_node_ptr();
+                    let range = range_without_annotation(&content, ptr, &root)?;
+                    Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+                }
+                TypeVariableResolution::Implicit { .. } => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 async fn definition_deferred(

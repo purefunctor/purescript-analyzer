@@ -7,12 +7,10 @@ use std::{
 
 use building::Runtime;
 use files::Files;
-use rowan::ast::AstNode;
 use smol_str::SmolStrBuilder;
-use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::{Client, LanguageServer, jsonrpc::Result, lsp_types::*};
 
-use crate::{locate, spago};
+use crate::spago;
 
 pub struct PureScriptServer {
     files: Arc<Mutex<Files>>,
