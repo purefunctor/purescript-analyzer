@@ -8,7 +8,8 @@ use std::fmt::Write;
 use test_each_file::test_each_file;
 
 fn variable_scope_check(content: &str) -> String {
-    let (_, _, FullLoweredModule { intermediate, source, graph }) = shared::lower_source(content);
+    let (_, _, FullLoweredModule { intermediate, source, graph, .. }) =
+        shared::lower_source(content);
 
     let mut snapshot = String::default();
 
