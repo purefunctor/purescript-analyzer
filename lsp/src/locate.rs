@@ -24,6 +24,7 @@ pub fn offset_to_position(content: &str, offset: TextSize) -> Position {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Thing {
     Annotation(AstPtr<cst::Annotation>),
+    Binder(AstPtr<cst::Binder>),
     Expression(AstPtr<cst::Expression>),
     Type(AstPtr<cst::Type>),
     Nothing,
@@ -54,6 +55,9 @@ fn thing_classify_node(node: SyntaxNode) -> Option<Thing> {
     if cst::Annotation::can_cast(kind) {
         let ptr = ptr.cast()?;
         Some(Thing::Annotation(ptr))
+    } else if cst::Binder::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        Some(Thing::Binder(ptr))
     } else if cst::Expression::can_cast(kind) {
         let ptr = ptr.cast()?;
         Some(Thing::Expression(ptr))

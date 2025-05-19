@@ -1,7 +1,7 @@
 use files::FileId;
 use lowering::{
-    DeferredResolutionId, ExpressionKind, FullLoweredModule, ResolutionDomain, TermResolution,
-    TypeVariableResolution,
+    BinderKind, DeferredResolutionId, ExpressionKind, FullLoweredModule, ResolutionDomain,
+    TermResolution, TypeVariableResolution,
 };
 use parsing::ParsedModule;
 use resolving::FullResolvedModule;
@@ -36,11 +36,35 @@ pub(super) async fn definition(
 
     match thing {
         locate::Thing::Annotation(_) => None,
+        locate::Thing::Binder(ptr) => definition_binder(server, id, ptr).await,
         locate::Thing::Expression(ptr) => {
             definition_expression(server, uri, id, &content, parsed, ptr).await
         }
         locate::Thing::Type(ptr) => definition_type(server, uri, id, &content, parsed, ptr).await,
         locate::Thing::Nothing => None,
+    }
+}
+
+async fn definition_binder(
+    server: &PureScriptServer,
+    id: FileId,
+    ptr: AstPtr<cst::Binder>,
+) -> Option<GotoDefinitionResponse> {
+    let (resolved, lowered) = {
+        let mut runtime = server.runtime.lock().unwrap();
+        let resolved = runtime.resolved(id);
+        let lowered = runtime.lowered(id);
+        (resolved, lowered)
+    };
+
+    let id = lowered.source.lookup_bd(ptr)?;
+    let kind = lowered.intermediate.index_binder_kind(id)?;
+
+    match kind {
+        BinderKind::Constructor { resolution, .. } => {
+            definition_deferred(server, &resolved, &lowered, *resolution).await
+        }
+        _ => None,
     }
 }
 
