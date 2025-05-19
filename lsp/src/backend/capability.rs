@@ -75,7 +75,7 @@ async fn definition_expression(
                 TermResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
                     let ptr = &lowered.source[*binder].syntax_node_ptr();
-                    let range = range_without_annotation(&content, ptr, &root)?;
+                    let range = range_without_annotation(content, ptr, &root)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
                 TermResolution::Let(binding) => {
@@ -140,7 +140,7 @@ async fn definition_type(
                 TypeVariableResolution::Forall(binding) => {
                     let root = parsed.syntax_node();
                     let ptr = &lowered.source[*binding].syntax_node_ptr();
-                    let range = range_without_annotation(&content, ptr, &root)?;
+                    let range = range_without_annotation(content, ptr, &root)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
                 TypeVariableResolution::Implicit { .. } => None,
@@ -222,7 +222,7 @@ fn range_without_annotation(
     ptr: &SyntaxNodePtr,
     root: &SyntaxNode,
 ) -> Option<Range> {
-    let node = ptr.to_node(&root);
+    let node = ptr.to_node(root);
     let mut children = node.children_with_tokens().peekable();
 
     if let Some(child) = children.peek() {
@@ -234,8 +234,8 @@ fn range_without_annotation(
     let start = children.next()?.text_range().start();
     let end = children.last().map_or(start, |child| child.text_range().end());
 
-    let start = locate::offset_to_position(&content, start);
-    let end = locate::offset_to_position(&content, end);
+    let start = locate::offset_to_position(content, start);
+    let end = locate::offset_to_position(content, end);
 
     Some(Range { start, end })
 }
