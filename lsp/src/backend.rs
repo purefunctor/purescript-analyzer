@@ -12,22 +12,22 @@ use tower_lsp::{Client, LanguageServer, jsonrpc::Result, lsp_types::*};
 
 use crate::spago;
 
-pub struct PureScriptServer {
+pub struct Backend {
     files: Arc<Mutex<Files>>,
     runtime: Arc<Mutex<Runtime>>,
     client: Client,
 }
 
-impl PureScriptServer {
-    pub fn new(client: Client) -> PureScriptServer {
+impl Backend {
+    pub fn new(client: Client) -> Backend {
         let files = Arc::new(Mutex::new(Files::default()));
         let runtime = Arc::new(Mutex::new(Runtime::default()));
-        PureScriptServer { files, runtime, client }
+        Backend { files, runtime, client }
     }
 }
 
 #[tower_lsp::async_trait]
-impl LanguageServer for PureScriptServer {
+impl LanguageServer for Backend {
     async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
         Ok(InitializeResult {
             server_info: None,
@@ -96,7 +96,7 @@ impl LanguageServer for PureScriptServer {
     }
 }
 
-impl PureScriptServer {
+impl Backend {
     async fn on_change(&self, uri: &str, text: Arc<str>) {
         let id = self.files.lock().unwrap().insert(uri, text);
         let content = self.files.lock().unwrap().content(id);

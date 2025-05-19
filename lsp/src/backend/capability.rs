@@ -11,15 +11,15 @@ use tower_lsp::lsp_types::*;
 
 use crate::locate;
 
-use super::PureScriptServer;
+use super::Backend;
 
 pub(super) async fn definition(
-    server: &PureScriptServer,
+    backend: &Backend,
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
     let (id, content) = {
-        let files = server.files.lock().unwrap();
+        let files = backend.files.lock().unwrap();
         let uri = uri.as_str();
         let id = files.id(uri)?;
         let content = files.content(id);
@@ -27,7 +27,7 @@ pub(super) async fn definition(
     };
 
     let parsed = {
-        let mut runtime = server.runtime.lock().unwrap();
+        let mut runtime = backend.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(id);
         parsed
     };
@@ -36,22 +36,22 @@ pub(super) async fn definition(
 
     match thing {
         locate::Thing::Annotation(_) => None,
-        locate::Thing::Binder(ptr) => definition_binder(server, id, ptr).await,
+        locate::Thing::Binder(ptr) => definition_binder(backend, id, ptr).await,
         locate::Thing::Expression(ptr) => {
-            definition_expression(server, uri, id, &content, parsed, ptr).await
+            definition_expression(backend, uri, id, &content, parsed, ptr).await
         }
-        locate::Thing::Type(ptr) => definition_type(server, uri, id, &content, parsed, ptr).await,
+        locate::Thing::Type(ptr) => definition_type(backend, uri, id, &content, parsed, ptr).await,
         locate::Thing::Nothing => None,
     }
 }
 
 async fn definition_binder(
-    server: &PureScriptServer,
+    backend: &Backend,
     id: FileId,
     ptr: AstPtr<cst::Binder>,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
-        let mut runtime = server.runtime.lock().unwrap();
+        let mut runtime = backend.runtime.lock().unwrap();
         let resolved = runtime.resolved(id);
         let lowered = runtime.lowered(id);
         (resolved, lowered)
@@ -62,14 +62,14 @@ async fn definition_binder(
 
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            definition_deferred(server, &resolved, &lowered, *resolution).await
+            definition_deferred(backend, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
 async fn definition_expression(
-    server: &PureScriptServer,
+    backend: &Backend,
     uri: Url,
     id: FileId,
     content: &str,
@@ -77,7 +77,7 @@ async fn definition_expression(
     ptr: AstPtr<cst::Expression>,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
-        let mut runtime = server.runtime.lock().unwrap();
+        let mut runtime = backend.runtime.lock().unwrap();
         let resolved = runtime.resolved(id);
         let lowered = runtime.lowered(id);
         (resolved, lowered)
@@ -88,13 +88,13 @@ async fn definition_expression(
 
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            definition_deferred(server, &resolved, &lowered, *resolution).await
+            definition_deferred(backend, &resolved, &lowered, *resolution).await
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => {
-                    definition_deferred(server, &resolved, &lowered, *id).await
+                    definition_deferred(backend, &resolved, &lowered, *id).await
                 }
                 TermResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
@@ -127,14 +127,14 @@ async fn definition_expression(
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            definition_deferred(server, &resolved, &lowered, *resolution).await
+            definition_deferred(backend, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
 async fn definition_type(
-    server: &PureScriptServer,
+    backend: &Backend,
     uri: Url,
     id: FileId,
     content: &str,
@@ -142,7 +142,7 @@ async fn definition_type(
     ptr: AstPtr<cst::Type>,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
-        let mut runtime = server.runtime.lock().unwrap();
+        let mut runtime = backend.runtime.lock().unwrap();
         let resolved = runtime.resolved(id);
         let lowered = runtime.lowered(id);
         (resolved, lowered)
@@ -153,10 +153,10 @@ async fn definition_type(
 
     match kind {
         lowering::TypeKind::Constructor { resolution } => {
-            definition_deferred(server, &resolved, &lowered, *resolution).await
+            definition_deferred(backend, &resolved, &lowered, *resolution).await
         }
         lowering::TypeKind::Operator { resolution } => {
-            definition_deferred(server, &resolved, &lowered, *resolution).await
+            definition_deferred(backend, &resolved, &lowered, *resolution).await
         }
         lowering::TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -175,7 +175,7 @@ async fn definition_type(
 }
 
 async fn definition_deferred(
-    server: &PureScriptServer,
+    backend: &Backend,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -188,13 +188,13 @@ async fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
 
             let uri = {
-                let files = server.files.lock().unwrap();
+                let files = backend.files.lock().unwrap();
                 let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let mut runtime = server.runtime.lock().unwrap();
+                let mut runtime = backend.runtime.lock().unwrap();
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);
@@ -216,13 +216,13 @@ async fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
 
             let uri = {
-                let files = server.files.lock().unwrap();
+                let files = backend.files.lock().unwrap();
                 let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let mut runtime = server.runtime.lock().unwrap();
+                let mut runtime = backend.runtime.lock().unwrap();
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);
