@@ -23,3 +23,6 @@ tower-lsp = "0.20.0"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
 walkdir = "2.5.0"
+
+[[bin]]
+name = "purescript-analyzer"
