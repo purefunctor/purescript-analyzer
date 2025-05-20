@@ -163,23 +163,23 @@ impl FullIndexedModule {
                 let signature = signature.map(|id| self.source[id].syntax_node_ptr());
                 let equation = equation.map(|id| self.source[id].syntax_node_ptr());
                 let role = role.map(|id| self.source[id].syntax_node_ptr());
-                [signature, equation, role].into_iter().filter_map(|ptr| ptr).collect()
+                [signature, equation, role].into_iter().flatten().collect()
             }
             crate::TypeItemKind::Newtype { signature, equation, role } => {
                 let signature = signature.map(|id| self.source[id].syntax_node_ptr());
                 let equation = equation.map(|id| self.source[id].syntax_node_ptr());
                 let role = role.map(|id| self.source[id].syntax_node_ptr());
-                [signature, equation, role].into_iter().filter_map(|ptr| ptr).collect()
+                [signature, equation, role].into_iter().flatten().collect()
             }
             crate::TypeItemKind::Synonym { signature, equation } => {
                 let signature = signature.map(|id| self.source[id].syntax_node_ptr());
                 let equation = equation.map(|id| self.source[id].syntax_node_ptr());
-                [signature, equation].into_iter().filter_map(|ptr| ptr).collect()
+                [signature, equation].into_iter().flatten().collect()
             }
             crate::TypeItemKind::Class { signature, declaration } => {
                 let signature = signature.map(|id| self.source[id].syntax_node_ptr());
                 let equation = declaration.map(|id| self.source[id].syntax_node_ptr());
-                [signature, equation].into_iter().filter_map(|ptr| ptr).collect()
+                [signature, equation].into_iter().flatten().collect()
             }
             crate::TypeItemKind::Foreign { id } => vec![self.source[*id].syntax_node_ptr()],
             crate::TypeItemKind::Operator { id } => vec![self.source[*id].syntax_node_ptr()],
