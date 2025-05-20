@@ -86,4 +86,25 @@ mod tests {
         assert!(indexed_b == indexed_d);
         assert!(!Arc::ptr_eq(&indexed_b, &indexed_d));
     }
+
+    #[test]
+    fn test_ptr_eq_deeper_query() {
+        let mut runtime = Runtime::default();
+        let mut files = Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let lowered_a = runtime.lowered(id);
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42\n\n");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let lowered_b = runtime.lowered(id);
+
+        assert!(lowered_a == lowered_b);
+        assert!(Arc::ptr_eq(&lowered_a, &lowered_b));
+    }
 }
