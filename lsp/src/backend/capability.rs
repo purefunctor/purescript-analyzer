@@ -57,7 +57,7 @@ async fn definition_binder(
         (resolved, lowered)
     };
 
-    let id = lowered.source.lookup_bd(ptr)?;
+    let id = lowered.source.lookup_bd(&ptr)?;
     let kind = lowered.intermediate.index_binder_kind(id)?;
 
     match kind {
@@ -83,7 +83,7 @@ async fn definition_expression(
         (resolved, lowered)
     };
 
-    let id = lowered.source.lookup_ex(ptr)?;
+    let id = lowered.source.lookup_ex(&ptr)?;
     let kind = lowered.intermediate.index_expression_kind(id)?;
 
     match kind {
@@ -148,7 +148,7 @@ async fn definition_type(
         (resolved, lowered)
     };
 
-    let id = lowered.source.lookup_ty(ptr)?;
+    let id = lowered.source.lookup_ty(&ptr)?;
     let kind = lowered.intermediate.index_type_kind(id)?;
 
     match kind {
