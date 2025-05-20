@@ -58,7 +58,8 @@ mod tests {
         let content = files.content(id);
 
         runtime.set_content(id, content);
-        let _ = runtime.lowered(id);
+        let indexed_a = runtime.indexed(id);
+        let lowered_a = runtime.lowered(id);
         let resolved_a = runtime.resolved(id);
 
         assert_trace!(FileContent(id) => { built: 1, changed: 1 });
@@ -107,5 +108,10 @@ mod tests {
         assert!(Arc::ptr_eq(&resolved_a, &resolved_b));
         assert!(Arc::ptr_eq(&resolved_b, &resolved_c));
         assert!(Arc::ptr_eq(&resolved_a, &resolved_c));
+
+        assert!(!Arc::ptr_eq(&indexed_a, &indexed_b));
+        assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
+        assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
+        assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
     }
 }
