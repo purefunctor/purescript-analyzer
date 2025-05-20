@@ -36,13 +36,14 @@ pub enum QueryKey {
 }
 
 /// A verifying step trace.
+#[derive(Debug)]
 pub struct Trace {
     /// Timestamp of when the query was last called.
-    built: usize,
+    pub(crate) built: usize,
     /// Timestamp of when the query was last recomputed.
-    changed: usize,
+    pub(crate) changed: usize,
     /// The dependencies used to build the query.
-    dependencies: Arc<[QueryKey]>,
+    pub(crate) dependencies: Arc<[QueryKey]>,
 }
 
 impl Trace {
@@ -69,6 +70,12 @@ pub struct Runtime {
 
     parent: Option<QueryKey>,
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
+}
+
+impl Runtime {
+    pub fn trace(&self, key: QueryKey) -> Option<&Trace> {
+        self.traces.get(&key)
+    }
 }
 
 /// Core functions for queries.
