@@ -114,4 +114,61 @@ mod tests {
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
     }
+
+    #[test]
+    fn test_resolved_is_stable() {
+        let mut runtime = super::Runtime::default();
+        let mut files = files::Files::default();
+
+        let main_id = files.insert("./src/Main.purs", "module Main where\n\nimport Lib");
+        let main_content = files.content(main_id);
+
+        let lib_id = files.insert("./src/Lib.purs", "module Lib where\n\nlife = 42");
+        let lib_content = files.content(lib_id);
+
+        runtime.set_content(main_id, main_content);
+        runtime.set_content(lib_id, lib_content);
+        runtime.set_module_file("Main", main_id);
+        runtime.set_module_file("Lib", lib_id);
+
+        let main_resolved_a = runtime.resolved(main_id);
+        let lib_resolved_a = runtime.resolved(lib_id);
+
+        let lib_id = files.insert("./src/Lib.purs", "module Lib where\n\n\n\nlife = 42");
+        let lib_content = files.content(lib_id);
+        runtime.set_content(lib_id, lib_content);
+
+        let main_resolved_b = runtime.resolved(main_id);
+        let lib_resolved_b = runtime.resolved(lib_id);
+
+        let lib_id = files.insert("./src/Lib.purs", "module Lib where\n\n\n\nlife = 42\n\n");
+        let lib_content = files.content(lib_id);
+        runtime.set_content(lib_id, lib_content);
+
+        let main_resolved_c = runtime.resolved(main_id);
+        let lib_resolved_c = runtime.resolved(lib_id);
+
+        let lib_id = files.insert("./src/Lib.purs", "module Lib where\n\n\n\nlife = 42\n\n\n\n");
+        let lib_content = files.content(lib_id);
+        runtime.set_content(lib_id, lib_content);
+
+        let main_resolved_d = runtime.resolved(main_id);
+        let lib_resolved_d = runtime.resolved(lib_id);
+
+        assert!(Arc::ptr_eq(&main_resolved_a, &main_resolved_b));
+        assert!(Arc::ptr_eq(&main_resolved_b, &main_resolved_c));
+        assert!(Arc::ptr_eq(&main_resolved_c, &main_resolved_d));
+        assert!(Arc::ptr_eq(&lib_resolved_a, &lib_resolved_b));
+        assert!(Arc::ptr_eq(&lib_resolved_b, &lib_resolved_c));
+        assert!(Arc::ptr_eq(&lib_resolved_c, &lib_resolved_d));
+
+        let main_resolved_t = runtime.trace(crate::QueryKey::Resolved(main_id)).unwrap();
+        let lib_resolved_t = runtime.trace(crate::QueryKey::Resolved(lib_id)).unwrap();
+
+        assert_eq!(main_resolved_t.built, 7);
+        assert_eq!(main_resolved_t.changed, 4);
+
+        assert_eq!(main_resolved_t.built, 7);
+        assert_eq!(lib_resolved_t.changed, 4);
+    }
 }
