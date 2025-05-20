@@ -79,6 +79,8 @@ impl LanguageServer for Backend {
         self.on_change(uri, text).await
     }
 
+    async fn did_close(&self, _p: DidCloseTextDocumentParams) {}
+
     async fn goto_definition(
         &self,
         p: GotoDefinitionParams,
