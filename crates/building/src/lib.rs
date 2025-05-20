@@ -13,7 +13,7 @@ mod tests {
     use super::Runtime;
 
     #[test]
-    fn test_within_revision() {
+    fn test_ptr_eq_same_revision() {
         let mut runtime = Runtime::default();
         let mut files = Files::default();
 
@@ -43,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn test_insignificant_change() {
+    fn test_ptr_eq_across_revision() {
         let mut runtime = Runtime::default();
         let mut files = Files::default();
 
@@ -59,14 +59,31 @@ mod tests {
         runtime.set_content(id, content);
         let indexed_b = runtime.indexed(id);
 
+        // indexed_b would have been recomputed, but since the existing value
+        // is equivalent then we return it, thus making the pointers the same.
+        assert!(indexed_a == indexed_b);
+        assert!(Arc::ptr_eq(&indexed_a, &indexed_b));
+
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
         let content = files.content(id);
 
         runtime.set_content(id, content);
         let indexed_c = runtime.indexed(id);
 
-        assert!(indexed_a == indexed_b);
         assert!(indexed_a != indexed_c);
+        assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
+
         assert!(indexed_b != indexed_c);
+        assert!(!Arc::ptr_eq(&indexed_b, &indexed_c));
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42\n\n");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let indexed_d = runtime.indexed(id);
+
+        // indexed_b and indexed_d are equal, but they're different objects.
+        assert!(indexed_b == indexed_d);
+        assert!(!Arc::ptr_eq(&indexed_b, &indexed_d));
     }
 }
