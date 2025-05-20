@@ -71,6 +71,8 @@ impl LanguageServer for Backend {
         Ok(())
     }
 
+    async fn did_open(&self, _: DidOpenTextDocumentParams) {}
+
     async fn did_change(&self, p: DidChangeTextDocumentParams) {
         let uri = p.text_document.uri.as_str();
         let text = p.content_changes[0].text.as_str().into();
