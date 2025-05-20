@@ -46,12 +46,8 @@ pub struct Trace {
 }
 
 impl Trace {
-    pub fn create_input(revision: usize) -> Trace {
+    pub fn input(revision: usize) -> Trace {
         Trace { built: revision, changed: revision, dependencies: [].into() }
-    }
-
-    pub fn create_fresh(revision: usize, dependencies: Arc<[QueryKey]>) -> Trace {
-        Trace { built: revision, changed: revision, dependencies }
     }
 }
 
@@ -77,18 +73,19 @@ pub struct Runtime {
 
 /// Core functions for queries.
 impl Runtime {
-    fn compute<T: Clone>(
+    fn compute<T: Clone + Eq>(
         &mut self,
         key: QueryKey,
+        existing: Option<(T, usize)>,
         compute: impl Fn(&mut Runtime) -> T,
         set_storage: impl Fn(&mut Runtime, T),
     ) -> T {
         let parent = mem::replace(&mut self.parent, Some(key));
         let value = compute(self);
+        self.parent = parent;
 
-        self.revision += 1;
-        let revision = self.revision;
-
+        let built = self.revision;
+        let changed = self.revision;
         let dependencies = self
             .dependencies
             .get(&key)
@@ -96,16 +93,20 @@ impl Runtime {
             .unwrap_or_default()
             .collect();
 
-        let v = Trace::create_fresh(revision, dependencies);
-        self.traces.insert(key, v);
-
-        self.parent = parent;
-
-        set_storage(self, T::clone(&value));
-        value
+        match existing {
+            Some((existing, changed)) if value == existing => {
+                self.traces.insert(key, Trace { built, changed, dependencies });
+                existing
+            }
+            _ => {
+                self.traces.insert(key, Trace { built, changed, dependencies });
+                set_storage(self, T::clone(&value));
+                value
+            }
+        }
     }
 
-    fn query<T: Clone>(
+    fn query<T: Clone + Eq>(
         &mut self,
         key: QueryKey,
         compute: impl Fn(&mut Runtime) -> T,
@@ -116,12 +117,12 @@ impl Runtime {
             self.dependencies.entry(parent).or_default().insert(key);
         }
 
-        let revision = self.revision;
         if let Some((value, trace)) = get_storage(self) {
-            if trace.built == revision {
+            if trace.built == self.revision {
                 value
             } else {
                 let built = trace.built;
+                let changed = trace.changed;
                 let dependencies = Arc::clone(&trace.dependencies);
 
                 let mut latest = 0;
@@ -149,23 +150,23 @@ impl Runtime {
 
                 if built >= latest {
                     if let Some(trace) = self.traces.get_mut(&key) {
-                        trace.built = revision;
+                        trace.built = self.revision;
                     }
                     value
                 } else {
-                    self.compute(key, compute, set_storage)
+                    self.compute(key, Some((value, changed)), compute, set_storage)
                 }
             }
         } else {
-            self.compute(key, compute, set_storage)
+            self.compute(key, None, compute, set_storage)
         }
     }
 
     fn input_set(&mut self, key: QueryKey) {
         self.revision += 1;
         let revision = self.revision;
-        let v = Trace::create_input(revision);
-        self.traces.insert(key, v);
+        let trace = Trace::input(revision);
+        self.traces.insert(key, trace);
     }
 
     fn input_get(&mut self, key: QueryKey) {
@@ -184,8 +185,8 @@ impl Runtime {
 
     pub fn content(&mut self, id: FileId) -> Arc<str> {
         self.input_get(QueryKey::FileContent(id));
-        let v = self.content.get(&id).expect("invalid violated: invalid query key");
-        Arc::clone(v)
+        let content = self.content.get(&id).expect("invalid violated: invalid query key");
+        Arc::clone(content)
     }
 
     pub fn set_module_file(&mut self, name: &str, file: FileId) {

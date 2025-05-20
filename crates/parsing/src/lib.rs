@@ -7,14 +7,14 @@ use syntax::{cst, SyntaxKind, SyntaxNode};
 mod builder;
 mod parser;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ParseError {
     pub offset: usize,
     pub position: Position,
     pub message: Arc<str>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParsedModule {
     node: GreenNode,
 }

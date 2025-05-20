@@ -6,7 +6,7 @@ mod lexer;
 pub use lexed::Lexed;
 use syntax::SyntaxKind;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
     pub line: u32,
     pub column: u32,
