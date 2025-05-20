@@ -36,9 +36,12 @@ impl FullResolvedModule {
         } else {
             let local = self.locals.lookup_term(name);
             let unqualified = || {
-                let mut imports = self.unqualified.iter();
-                let (file, id, kind) = imports.find_map(|import| import.lookup_term(name))?;
-                if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+                let imports = self.unqualified.iter();
+                // Collect candidates first then match the first non-Hidden.
+                let (file, id, _) = imports
+                    .filter_map(|import| import.lookup_term(name))
+                    .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                Some((file, id))
             };
             local.or_else(unqualified)
         }
@@ -52,9 +55,12 @@ impl FullResolvedModule {
         } else {
             let local = self.locals.lookup_type(name);
             let unqualified = || {
-                let mut imports = self.unqualified.iter();
-                let (file, id, kind) = imports.find_map(|import| import.lookup_type(name))?;
-                if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+                let imports = self.unqualified.iter();
+                // Collect candidates first then match the first non-Hidden.
+                let (file, id, _) = imports
+                    .filter_map(|import| import.lookup_type(name))
+                    .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                Some((file, id))
             };
             local.or_else(unqualified)
         }
