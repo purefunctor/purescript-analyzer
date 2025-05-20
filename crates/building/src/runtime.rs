@@ -2,9 +2,9 @@
 //!
 //! Our implementation is inspired by the verifying step traces described in
 //! the [Build systems à la carte: Theory and practice] paper. However, it
-//! diverges from the original implementation with two key differences. For 
-//! one, we only retain the latest step trace for any given query key; and 
-//! more significantly, we use equality rather than hashing to compare cached 
+//! diverges from the original implementation with two key differences. For
+//! one, we only retain the latest step trace for any given query key; and
+//! more significantly, we use equality rather than hashing to compare cached
 //! and computed values.
 //!
 //! Our queries are designed to be pure and hermetic—the only cause for them
