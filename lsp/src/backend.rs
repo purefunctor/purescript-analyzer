@@ -1,4 +1,6 @@
-mod capability;
+mod definition;
+mod hover;
+mod locate;
 
 use std::{
     fs,
@@ -125,10 +127,10 @@ impl Backend {
     }
 
     async fn definition(&self, uri: Url, position: Position) -> Option<GotoDefinitionResponse> {
-        capability::definition(self, uri, position).await
+        definition::definition(self, uri, position).await
     }
 
     async fn hover(&self, uri: Url, position: Position) -> Option<Hover> {
-        capability::hover(self, uri, position).await
+        hover::hover(self, uri, position).await
     }
 }
