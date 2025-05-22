@@ -33,6 +33,7 @@ impl LanguageServer for Backend {
             server_info: None,
             capabilities: ServerCapabilities {
                 definition_provider: Some(OneOf::Left(true)),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
@@ -92,6 +93,13 @@ impl LanguageServer for Backend {
         let result = self.definition(uri, position).await;
         Result::Ok(result)
     }
+
+    async fn hover(&self, p: HoverParams) -> Result<Option<Hover>> {
+        let uri = p.text_document_position_params.text_document.uri;
+        let position = p.text_document_position_params.position;
+        let result = self.hover(uri, position).await;
+        Result::Ok(result)
+    }
 }
 
 impl Backend {
@@ -118,5 +126,9 @@ impl Backend {
 
     async fn definition(&self, uri: Url, position: Position) -> Option<GotoDefinitionResponse> {
         capability::definition(self, uri, position).await
+    }
+
+    async fn hover(&self, uri: Url, position: Position) -> Option<Hover> {
+        capability::hover(self, uri, position).await
     }
 }

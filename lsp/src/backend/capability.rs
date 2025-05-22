@@ -1,11 +1,15 @@
 use files::FileId;
+use indexing::{TermItemKind, TypeItemKind};
 use lowering::{
     BinderKind, DeferredResolutionId, ExpressionKind, FullLoweredModule, ResolutionDomain,
     TermResolution, TypeVariableResolution,
 };
 use parsing::ParsedModule;
 use resolving::FullResolvedModule;
-use rowan::ast::AstPtr;
+use rowan::{
+    SyntaxText, TextRange,
+    ast::{AstChildren, AstNode, AstPtr},
+};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::lsp_types::*;
 
@@ -246,6 +250,15 @@ fn range_without_annotation(
     ptr: &SyntaxNodePtr,
     root: &SyntaxNode,
 ) -> Option<Range> {
+    let range = text_range_after_annotation(ptr, root)?;
+
+    let start = locate::offset_to_position(content, range.start());
+    let end = locate::offset_to_position(content, range.end());
+
+    Some(Range { start, end })
+}
+
+fn text_range_after_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<TextRange> {
     let node = ptr.to_node(root);
     let mut children = node.children_with_tokens().peekable();
 
@@ -258,8 +271,176 @@ fn range_without_annotation(
     let start = children.next()?.text_range().start();
     let end = children.last().map_or(start, |child| child.text_range().end());
 
-    let start = locate::offset_to_position(content, start);
-    let end = locate::offset_to_position(content, end);
+    Some(TextRange::new(start, end))
+}
 
-    Some(Range { start, end })
+fn annotation_text(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<SyntaxText> {
+    let node = ptr.to_node(root);
+    let node = node.first_child_by_kind(&|kind| matches!(kind, SyntaxKind::Annotation))?;
+    Some(node.text())
+}
+
+// TODO: Consider implementing a generic visitor pattern for Thing, or alternatively consider
+// extracting more Thing-like enums to make traversals themselves generic and dispatchable.
+pub(super) async fn hover(backend: &Backend, uri: Url, position: Position) -> Option<Hover> {
+    let (id, content) = {
+        let files = backend.files.lock().unwrap();
+        let uri = uri.as_str();
+        let id = files.id(uri)?;
+        let content = files.content(id);
+        (id, content)
+    };
+
+    let parsed = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let (parsed, _) = runtime.parsed(id);
+        parsed
+    };
+
+    let thing = locate::thing_at_position(&content, &parsed, position);
+
+    match thing {
+        locate::Thing::Annotation(_) => None,
+        locate::Thing::Binder(_) => None,
+        locate::Thing::Expression(ptr) => {
+            hover_expression(backend, uri, id, &content, parsed, ptr).await
+        }
+        locate::Thing::Type(_) => None,
+        locate::Thing::Nothing => None,
+    }
+}
+
+async fn hover_expression(
+    backend: &Backend,
+    uri: Url,
+    id: FileId,
+    content: &str,
+    parsed: ParsedModule,
+    ptr: AstPtr<cst::Expression>,
+) -> Option<Hover> {
+    let (resolved, lowered) = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let resolved = runtime.resolved(id);
+        let lowered = runtime.lowered(id);
+        (resolved, lowered)
+    };
+
+    let id = lowered.source.lookup_ex(&ptr)?;
+    let kind = lowered.intermediate.index_expression_kind(id)?;
+
+    match kind {
+        ExpressionKind::Constructor { resolution } => {
+            hover_deferred(backend, &resolved, &lowered, *resolution).await
+        }
+        ExpressionKind::Variable { resolution } => {
+            let resolution = resolution.as_ref()?;
+            match resolution {
+                TermResolution::Deferred(id) => {
+                    hover_deferred(backend, &resolved, &lowered, *id).await
+                }
+                TermResolution::Binder(_) => None,
+                TermResolution::Let(_) => None,
+            }
+        }
+        ExpressionKind::OperatorName { resolution } => {
+            hover_deferred(backend, &resolved, &lowered, *resolution).await
+        }
+        _ => None,
+    }
+}
+
+async fn hover_deferred(
+    backend: &Backend,
+    resolved: &FullResolvedModule,
+    lowered: &FullLoweredModule,
+    id: DeferredResolutionId,
+) -> Option<Hover> {
+    let deferred = &lowered.graph[id];
+    let prefix = deferred.qualifier.as_deref();
+    let name = deferred.name.as_deref()?;
+
+    match deferred.domain {
+        ResolutionDomain::Term => {
+            let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+
+            let uri = {
+                let files = backend.files.lock().unwrap();
+                let path = files.path(f_id);
+                Url::parse(&path).ok()?
+            };
+
+            let (content, parsed, indexed) = {
+                let mut runtime = backend.runtime.lock().unwrap();
+                let content = runtime.content(f_id);
+                let (parsed, _) = runtime.parsed(f_id);
+                let indexed = runtime.indexed(f_id);
+                (content, parsed, indexed)
+            };
+
+            let root = parsed.syntax_node();
+            let item = &indexed.items[t_id];
+
+            match &item.kind {
+                TermItemKind::ClassMember { .. } => None,
+                TermItemKind::Constructor { .. } => None,
+                TermItemKind::Derive { .. } => None,
+                TermItemKind::Foreign { .. } => None,
+                TermItemKind::Instance { .. } => None,
+                TermItemKind::Operator { .. } => None,
+                TermItemKind::Value { signature, .. } => {
+                    let s = signature.and_then(|id| {
+                        let ptr = &indexed.source[id].syntax_node_ptr();
+                        let range = text_range_after_annotation(ptr, &root)?;
+                        let value = root.text().slice(range).to_string();
+                        Some(MarkedString::LanguageString(LanguageString {
+                            language: "purescript".to_string(),
+                            value,
+                        }))
+                    });
+                    let a = signature.and_then(|id| {
+                        let ptr = &indexed.source[id].syntax_node_ptr();
+                        let text = annotation_text(ptr, &root)?;
+                        let text = text.to_string();
+                        let markdown = text
+                            .trim()
+                            .lines()
+                            .take_while(|line| line.starts_with("-- |"))
+                            .map(|line| line.trim_start_matches("-- |").trim().to_string())
+                            .reduce(|a, b| format!("\n{}\n{}", a, b).to_string())?;
+                        Some(MarkedString::String(format!("---\n{}", markdown)))
+                    });
+                    let array: Vec<_> = [s, a].into_iter().flatten().collect();
+                    Some(Hover { contents: HoverContents::Array(array), range: None })
+                }
+            }
+        }
+        ResolutionDomain::Type => {
+            let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
+
+            let uri = {
+                let files = backend.files.lock().unwrap();
+                let path = files.path(f_id);
+                Url::parse(&path).ok()?
+            };
+
+            let (content, parsed, indexed) = {
+                let mut runtime = backend.runtime.lock().unwrap();
+                let content = runtime.content(f_id);
+                let (parsed, _) = runtime.parsed(f_id);
+                let indexed = runtime.indexed(f_id);
+                (content, parsed, indexed)
+            };
+
+            let item = &indexed.items[t_id];
+
+            match &item.kind {
+                TypeItemKind::Data { .. } => None,
+                TypeItemKind::Newtype { .. } => None,
+                TypeItemKind::Synonym { .. } => None,
+                TypeItemKind::Class { .. } => None,
+                TypeItemKind::Foreign { .. } => None,
+                TypeItemKind::Operator { .. } => None,
+            }
+        }
+    }
 }
