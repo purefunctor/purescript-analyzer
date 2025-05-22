@@ -73,11 +73,15 @@ impl LanguageServer for Backend {
 
     async fn did_open(&self, _: DidOpenTextDocumentParams) {}
 
+    async fn did_save(&self, _: DidSaveTextDocumentParams) {}
+
     async fn did_change(&self, p: DidChangeTextDocumentParams) {
         let uri = p.text_document.uri.as_str();
         let text = p.content_changes[0].text.as_str().into();
         self.on_change(uri, text).await
     }
+
+    async fn did_close(&self, _p: DidCloseTextDocumentParams) {}
 
     async fn goto_definition(
         &self,
