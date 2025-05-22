@@ -24,8 +24,9 @@ impl ParsedModule {
         ParsedModule { node }
     }
 
-    pub fn syntax_node(self) -> SyntaxNode {
-        SyntaxNode::new_root(self.node)
+    pub fn syntax_node(&self) -> SyntaxNode {
+        let node = self.node.clone();
+        SyntaxNode::new_root(node)
     }
 
     pub fn cst(self) -> cst::Module {
