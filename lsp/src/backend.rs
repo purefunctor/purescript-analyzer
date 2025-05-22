@@ -13,9 +13,9 @@ use tower_lsp::{Client, LanguageServer, jsonrpc::Result, lsp_types::*};
 use crate::spago;
 
 pub struct Backend {
-    files: Arc<Mutex<Files>>,
-    runtime: Arc<Mutex<Runtime>>,
-    client: Client,
+    pub(crate) files: Arc<Mutex<Files>>,
+    pub(crate) runtime: Arc<Mutex<Runtime>>,
+    pub(crate) client: Client,
 }
 
 impl Backend {

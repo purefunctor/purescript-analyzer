@@ -1,15 +1,12 @@
 use files::FileId;
 use indexing::{TermItemKind, TypeItemKind};
 use lowering::{
-    BinderKind, DeferredResolutionId, ExpressionKind, FullLoweredModule, ResolutionDomain,
-    TermResolution, TypeVariableResolution,
+    BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
+    ResolutionDomain, TermResolution, TypeVariableResolution,
 };
 use parsing::ParsedModule;
 use resolving::FullResolvedModule;
-use rowan::{
-    SyntaxText, TextRange,
-    ast::{AstChildren, AstNode, AstPtr},
-};
+use rowan::{SyntaxText, TextRange, ast::AstPtr};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 use tower_lsp::lsp_types::*;
 
@@ -283,51 +280,31 @@ fn annotation_text(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<SyntaxText>
 // TODO: Consider implementing a generic visitor pattern for Thing, or alternatively consider
 // extracting more Thing-like enums to make traversals themselves generic and dispatchable.
 pub(super) async fn hover(backend: &Backend, uri: Url, position: Position) -> Option<Hover> {
-    let (id, content) = {
+    let f_id = {
         let files = backend.files.lock().unwrap();
         let uri = uri.as_str();
-        let id = files.id(uri)?;
-        let content = files.content(id);
-        (id, content)
+        files.id(uri)?
     };
 
-    let parsed = {
-        let mut runtime = backend.runtime.lock().unwrap();
-        let (parsed, _) = runtime.parsed(id);
-        parsed
-    };
+    let located = locate::locate(backend, f_id, position);
 
-    let thing = locate::thing_at_position(&content, &parsed, position);
-
-    match thing {
-        locate::Thing::Annotation(_) => None,
-        locate::Thing::Binder(_) => None,
-        locate::Thing::Expression(ptr) => {
-            hover_expression(backend, uri, id, &content, parsed, ptr).await
-        }
-        locate::Thing::Type(_) => None,
-        locate::Thing::Nothing => None,
+    match located {
+        locate::Located::Binder(_) => None,
+        locate::Located::Expression(e_id) => hover_expression(backend, f_id, e_id).await,
+        locate::Located::Type(_) => None,
+        locate::Located::Nothing => None,
     }
 }
 
-async fn hover_expression(
-    backend: &Backend,
-    uri: Url,
-    id: FileId,
-    content: &str,
-    parsed: ParsedModule,
-    ptr: AstPtr<cst::Expression>,
-) -> Option<Hover> {
+async fn hover_expression(backend: &Backend, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
         let mut runtime = backend.runtime.lock().unwrap();
-        let resolved = runtime.resolved(id);
-        let lowered = runtime.lowered(id);
+        let resolved = runtime.resolved(f_id);
+        let lowered = runtime.lowered(f_id);
         (resolved, lowered)
     };
 
-    let id = lowered.source.lookup_ex(&ptr)?;
-    let kind = lowered.intermediate.index_expression_kind(id)?;
-
+    let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
             hover_deferred(backend, &resolved, &lowered, *resolution).await
@@ -363,18 +340,11 @@ async fn hover_deferred(
         ResolutionDomain::Term => {
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
 
-            let uri = {
-                let files = backend.files.lock().unwrap();
-                let path = files.path(f_id);
-                Url::parse(&path).ok()?
-            };
-
-            let (content, parsed, indexed) = {
+            let (parsed, indexed) = {
                 let mut runtime = backend.runtime.lock().unwrap();
-                let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);
-                (content, parsed, indexed)
+                (parsed, indexed)
             };
 
             let root = parsed.syntax_node();
@@ -417,13 +387,13 @@ async fn hover_deferred(
         ResolutionDomain::Type => {
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
 
-            let uri = {
+            let _uri = {
                 let files = backend.files.lock().unwrap();
                 let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
-            let (content, parsed, indexed) = {
+            let (_content, _parsed, indexed) = {
                 let mut runtime = backend.runtime.lock().unwrap();
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
