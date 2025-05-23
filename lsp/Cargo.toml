@@ -11,6 +11,7 @@ glob = "0.3.2"
 globset = "0.4.16"
 indexing = { version = "0.1.0", path = "../crates/indexing" }
 itertools = "0.14.0"
+la-arena = "0.3.1"
 lexing = { version = "0.1.0", path = "../crates/lexing" }
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../crates/lowering" }
