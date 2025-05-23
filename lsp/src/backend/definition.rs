@@ -65,14 +65,9 @@ async fn definition_import(
         buffer.finish()
     };
 
-    let import_id = {
-        let mut runtime = backend.runtime.lock().unwrap();
-        runtime.module_file(&module)?
-    };
-
     let import_resolved = {
         let mut runtime = backend.runtime.lock().unwrap();
-        
+        let import_id = runtime.module_file(&module)?;
         runtime.resolved(import_id)
     };
 

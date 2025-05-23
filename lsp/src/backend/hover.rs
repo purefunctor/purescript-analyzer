@@ -69,14 +69,9 @@ async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Op
         buffer.finish()
     };
 
-    let import_id = {
-        let mut runtime = backend.runtime.lock().unwrap();
-        runtime.module_file(&module)?
-    };
-
     let import_resolved = {
         let mut runtime = backend.runtime.lock().unwrap();
-        
+        let import_id = runtime.module_file(&module)?;
         runtime.resolved(import_id)
     };
 
@@ -208,77 +203,31 @@ fn hover_file_term(backend: &Backend, f_id: FileId, t_id: TermItemId) -> Option<
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];
 
-    match &item.kind {
+    let (annotation, syntax) = match &item.kind {
         TermItemKind::ClassMember { id } => {
-            let ptr = indexed.source[*id].syntax_node_ptr();
-            let (annotation, syntax) = locate::annotation_syntax_range(&root, ptr);
-
-            let annotation = annotation.map(|range| render_annotation(&root, range));
-            let syntax = syntax.map(|range| render_syntax(&root, range));
-            let separator = annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
-            let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
-            let contents = HoverContents::Array(array);
-            let range = None;
-
-            Some(Hover { contents, range })
+            annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
         }
         TermItemKind::Constructor { id } => {
-            let ptr = indexed.source[*id].syntax_node_ptr();
-            let (annotation, syntax) = locate::annotation_syntax_range(&root, ptr);
-
-            let annotation = annotation.map(|range| render_annotation(&root, range));
-            let syntax = syntax.map(|range| render_syntax(&root, range));
-            let separator = annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
-            let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
-            let contents = HoverContents::Array(array);
-            let range = None;
-
-            Some(Hover { contents, range })
+            annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
         }
-        TermItemKind::Derive { .. } => None,
-        TermItemKind::Foreign { id } => {
-            let ptr = indexed.source[*id].syntax_node_ptr();
-            let (annotation, syntax) = locate::annotation_syntax_range(&root, ptr);
-
-            let annotation = annotation.map(|range| render_annotation(&root, range));
-            let syntax = syntax.map(|range| render_syntax(&root, range));
-            let separator = annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
-            let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
-            let contents = HoverContents::Array(array);
-            let range = None;
-
-            Some(Hover { contents, range })
-        }
-        TermItemKind::Instance { .. } => None,
-        TermItemKind::Operator { .. } => None,
+        TermItemKind::Derive { .. } => return None,
+        TermItemKind::Foreign { id } => annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?,
+        TermItemKind::Instance { .. } => return None,
+        TermItemKind::Operator { .. } => return None,
         TermItemKind::Value { signature, equations } => {
-            let signature = signature.map(|id| {
-                let ptr = indexed.source[id].syntax_node_ptr();
-                locate::annotation_syntax_range(&root, ptr)
-            });
-
-            let equation = || {
-                let id = equations.first()?;
-                let ptr = indexed.source[*id].syntax_node_ptr();
-                let (annotation, _) = locate::annotation_syntax_range(&root, ptr);
-                Some((annotation, None))
-            };
-
-            let (annotation, syntax) = signature.or_else(equation)?;
-
-            let annotation = annotation.map(|range| render_annotation(&root, range));
-
-            let separator = annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
-
-            let syntax = syntax.map(|range| render_syntax(&root, range));
-
-            let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
-            let contents = HoverContents::Array(array);
-            let range = None;
-
-            Some(Hover { contents, range })
+            let equation = equations.first().copied();
+            annotation_syntax(&indexed, &root, signature, &equation)?
         }
-    }
+    };
+
+    let annotation = annotation.map(|range| render_annotation(&root, range));
+    let syntax = syntax.map(|range| render_syntax(&root, range));
+
+    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+    let contents = HoverContents::Array(array);
+    let range = None;
+
+    Some(Hover { contents, range })
 }
 
 fn hover_file_type(
@@ -315,10 +264,9 @@ fn hover_file_type(
     };
 
     let annotation = annotation.map(|range| render_annotation(&root, range));
-    let separator = annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
     let syntax = syntax.map(|range| render_syntax(&root, range));
 
-    let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
+    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
     let contents = HoverContents::Array(array);
     let range = None;
 
@@ -350,15 +298,19 @@ where
     signature.or_else(equation)
 }
 
-fn render_annotation(root: &SyntaxNode, range: TextRange) -> MarkedString {
+fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
     let source = root.text().slice(range).to_string();
     let source = source.trim();
     let cleaned = source.lines().map(|line| line.trim_start_matches("-- |").trim()).join("\n");
-    MarkedString::String(cleaned)
+    if cleaned.is_empty() {
+        vec![]
+    } else {
+        vec![MarkedString::String("---".to_string()), MarkedString::String(cleaned)]
+    }
 }
 
-fn render_syntax(root: &SyntaxNode, range: TextRange) -> MarkedString {
+fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
     let source = root.text().slice(range).to_string();
     let value = source.trim().to_string();
-    MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })
+    vec![MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })]
 }
