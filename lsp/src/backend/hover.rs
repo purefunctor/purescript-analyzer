@@ -6,6 +6,8 @@ use lowering::{
     TermResolution,
 };
 use resolving::FullResolvedModule;
+use rowan::TextRange;
+use syntax::SyntaxNode;
 use tower_lsp::lsp_types::*;
 
 use super::{Backend, locate};
@@ -84,8 +86,34 @@ async fn hover_deferred(
             let item = &indexed.items[t_id];
 
             match &item.kind {
-                TermItemKind::ClassMember { .. } => None,
-                TermItemKind::Constructor { .. } => None,
+                TermItemKind::ClassMember { id } => {
+                    let ptr = indexed.source[*id].syntax_node_ptr();
+                    let (annotation, syntax) = locate::annotation_syntax_range(&root, ptr);
+
+                    let annotation = annotation.map(|range| render_annotation(&root, range));
+                    let syntax = syntax.map(|range| render_syntax(&root, range));
+                    let separator =
+                        annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
+                    let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
+                    let contents = HoverContents::Array(array);
+                    let range = None;
+
+                    Some(Hover { contents, range })
+                }
+                TermItemKind::Constructor { id } => {
+                    let ptr = indexed.source[*id].syntax_node_ptr();
+                    let (annotation, syntax) = locate::annotation_syntax_range(&root, ptr);
+
+                    let annotation = annotation.map(|range| render_annotation(&root, range));
+                    let syntax = syntax.map(|range| render_syntax(&root, range));
+                    let separator =
+                        annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
+                    let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
+                    let contents = HoverContents::Array(array);
+                    let range = None;
+
+                    Some(Hover { contents, range })
+                }
                 TermItemKind::Derive { .. } => None,
                 TermItemKind::Foreign { .. } => None,
                 TermItemKind::Instance { .. } => None,
@@ -105,27 +133,12 @@ async fn hover_deferred(
 
                     let (annotation, syntax) = signature.or_else(equation)?;
 
-                    let annotation = annotation.map(|range| {
-                        let source = root.text().slice(range).to_string();
-                        let source = source.trim();
-                        let cleaned = source
-                            .lines()
-                            .map(|line| line.trim_start_matches("-- |").trim())
-                            .join("\n");
-                        MarkedString::String(cleaned)
-                    });
+                    let annotation = annotation.map(|range| render_annotation(&root, range));
 
                     let separator =
                         annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
 
-                    let syntax = syntax.map(|range| {
-                        let source = root.text().slice(range).to_string();
-                        let value = source.trim().to_string();
-                        MarkedString::LanguageString(LanguageString {
-                            language: "purescript".to_string(),
-                            value,
-                        })
-                    });
+                    let syntax = syntax.map(|range| render_syntax(&root, range));
 
                     let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
                     let contents = HoverContents::Array(array);
@@ -163,4 +176,17 @@ async fn hover_deferred(
             }
         }
     }
+}
+
+fn render_annotation(root: &SyntaxNode, range: TextRange) -> MarkedString {
+    let source = root.text().slice(range).to_string();
+    let source = source.trim();
+    let cleaned = source.lines().map(|line| line.trim_start_matches("-- |").trim()).join("\n");
+    MarkedString::String(cleaned)
+}
+
+fn render_syntax(root: &SyntaxNode, range: TextRange) -> MarkedString {
+    let source = root.text().slice(range).to_string();
+    let value = source.trim().to_string();
+    MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })
 }
