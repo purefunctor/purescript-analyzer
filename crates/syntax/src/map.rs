@@ -82,94 +82,6 @@ impl<N: AstNode> PartialEq for AstPtrMap<N> {
 
 impl<N: AstNode> Eq for AstPtrMap<N> {}
 
-#[cfg(test)]
-mod tests {
-    use rowan::{ast::AstNode, GreenNode, GreenToken, NodeOrToken};
-
-    use crate::{cst, SyntaxKind, SyntaxNode};
-
-    use super::AstPtrMap;
-
-    #[test]
-    fn test_equality() {
-        let zero = SyntaxNode::new_root(GreenNode::new(
-            SyntaxKind::Annotation.into(),
-            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "ZERO"))],
-        ));
-        let one = SyntaxNode::new_root(GreenNode::new(
-            SyntaxKind::Annotation.into(),
-            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "ONE"))],
-        ));
-        let two = SyntaxNode::new_root(GreenNode::new(
-            SyntaxKind::Annotation.into(),
-            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "TWO TWO"))],
-        ));
-
-        let zero = cst::Annotation::cast(zero).unwrap();
-        let one = cst::Annotation::cast(one).unwrap();
-        let two = cst::Annotation::cast(two).unwrap();
-
-        {
-            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-            let mut map_c: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-
-            let _ = map_a.allocate(&zero);
-            let _ = map_b.allocate(&zero);
-            let _ = map_c.allocate(&zero);
-
-            // Symmetric
-            assert!(map_a == map_b);
-            assert!(map_b == map_a);
-
-            // Transitive
-            assert!(map_b == map_c);
-            assert!(map_a == map_c);
-        }
-
-        {
-            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-
-            let _ = map_a.allocate(&zero);
-            let _ = map_a.allocate(&two);
-
-            let _ = map_b.allocate(&one);
-            let _ = map_b.allocate(&two);
-
-            // Symmetric
-            assert!(map_a != map_b);
-            assert!(!(map_a == map_b));
-        }
-
-        {
-            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-
-            let _ = map_a.allocate(&zero);
-            let _ = map_b.allocate(&one);
-            let _ = map_b.allocate(&two);
-
-            // Length check
-            assert!(map_a != map_b);
-        }
-
-        {
-            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
-
-            let _ = map_a.allocate(&zero);
-            let _ = map_a.allocate(&one);
-
-            let _ = map_b.allocate(&one);
-            let _ = map_b.allocate(&zero);
-
-            // Index check
-            assert!(map_a != map_b);
-        }
-    }
-}
-
 /// Creates a collection of [`AstPtrMap`].
 ///
 /// # Example
@@ -277,4 +189,92 @@ macro_rules! create_association {
             }
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use rowan::{ast::AstNode, GreenNode, GreenToken, NodeOrToken};
+
+    use crate::{cst, SyntaxKind, SyntaxNode};
+
+    use super::AstPtrMap;
+
+    #[test]
+    fn test_equality() {
+        let zero = SyntaxNode::new_root(GreenNode::new(
+            SyntaxKind::Annotation.into(),
+            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "ZERO"))],
+        ));
+        let one = SyntaxNode::new_root(GreenNode::new(
+            SyntaxKind::Annotation.into(),
+            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "ONE"))],
+        ));
+        let two = SyntaxNode::new_root(GreenNode::new(
+            SyntaxKind::Annotation.into(),
+            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "TWO TWO"))],
+        ));
+
+        let zero = cst::Annotation::cast(zero).unwrap();
+        let one = cst::Annotation::cast(one).unwrap();
+        let two = cst::Annotation::cast(two).unwrap();
+
+        {
+            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+            let mut map_c: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+
+            let _ = map_a.allocate(&zero);
+            let _ = map_b.allocate(&zero);
+            let _ = map_c.allocate(&zero);
+
+            // Symmetric
+            assert!(map_a == map_b);
+            assert!(map_b == map_a);
+
+            // Transitive
+            assert!(map_b == map_c);
+            assert!(map_a == map_c);
+        }
+
+        {
+            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+
+            let _ = map_a.allocate(&zero);
+            let _ = map_a.allocate(&two);
+
+            let _ = map_b.allocate(&one);
+            let _ = map_b.allocate(&two);
+
+            // Symmetric
+            assert!(map_a != map_b);
+            assert!(!(map_a == map_b));
+        }
+
+        {
+            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+
+            let _ = map_a.allocate(&zero);
+            let _ = map_b.allocate(&one);
+            let _ = map_b.allocate(&two);
+
+            // Length check
+            assert!(map_a != map_b);
+        }
+
+        {
+            let mut map_a: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+            let mut map_b: AstPtrMap<cst::Annotation> = AstPtrMap::default();
+
+            let _ = map_a.allocate(&zero);
+            let _ = map_a.allocate(&one);
+
+            let _ = map_b.allocate(&one);
+            let _ = map_b.allocate(&zero);
+
+            // Index check
+            assert!(map_a != map_b);
+        }
+    }
 }

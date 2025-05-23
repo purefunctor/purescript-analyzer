@@ -49,7 +49,7 @@ async fn definition_import(
     let ptr = &indexed.source[i_id];
     let node = ptr.to_node(&root);
 
-    let statement = node.syntax().ancestors().find_map(|node| cst::ImportStatement::cast(node))?;
+    let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
     let module = statement.module_name()?;
 
     let module = {
@@ -72,8 +72,8 @@ async fn definition_import(
 
     let import_resolved = {
         let mut runtime = backend.runtime.lock().unwrap();
-        let resolved = runtime.resolved(import_id);
-        resolved
+        
+        runtime.resolved(import_id)
     };
 
     let goto_term = |name: &str| {

@@ -14,7 +14,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     g.bench_function("parse-single-core", |b| {
         b.iter(|| {
             files.iter().for_each(|file| {
-                let lexed = lexing::lex(black_box(&file));
+                let lexed = lexing::lex(black_box(file));
                 let tokens = lexing::layout(black_box(&lexed));
                 let parsed = parsing::parse(black_box(&lexed), black_box(&tokens));
                 black_box(parsed);
@@ -26,7 +26,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     g.bench_function("parse-multi-core", |b| {
         b.iter(|| {
             files.par_iter().for_each(|file| {
-                let lexed = lexing::lex(black_box(&file));
+                let lexed = lexing::lex(black_box(file));
                 let tokens = lexing::layout(black_box(&lexed));
                 let parsed = parsing::parse(black_box(&lexed), black_box(&tokens));
                 black_box(parsed);
