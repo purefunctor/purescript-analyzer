@@ -6,8 +6,8 @@ use indexing::{
 use smol_str::SmolStr;
 
 use crate::{
-    External, FullResolvedModule, ResolvedImport, ResolvedImportsQualified,
-    ResolvedImportsUnqualified, ResolvedItems, ResolvingError,
+    External, ResolvedImport, ResolvedImportsQualified, ResolvedImportsUnqualified, ResolvedItems,
+    ResolvingError,
 };
 
 #[derive(Default)]
@@ -30,8 +30,8 @@ pub(super) fn resolve_module(external: &mut impl External, file: FileId) -> Stat
 }
 
 fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &FullIndexedModule) {
-    for (&id, import) in &indexed.imports {
-        let Some(name) = &import.name else {
+    for (&id, indexing_import) in &indexed.imports {
+        let Some(name) = &indexing_import.name else {
             state.errors.push(ResolvingError::InvalidImportStatement { id });
             continue;
         };
@@ -41,27 +41,26 @@ fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &Fu
             continue;
         };
 
-        let import_indexed = external.indexed(import_file_id);
-        let import_resolved = external.resolved(import_file_id);
+        let mut resolved_import =
+            ResolvedImport::new(import_file_id, indexing_import.kind, indexing_import.exported);
 
-        let mut resolved_import = ResolvedImport::new(import_file_id, import.kind, import.exported);
-        if let Some(alias) = &import.alias {
+        if let Some(alias) = &indexing_import.alias {
             let alias = SmolStr::clone(alias);
             let resolved_import = state.qualified.entry(alias).or_insert_with(|| resolved_import);
             resolve_import(
+                external,
                 &mut state.errors,
                 resolved_import,
-                &import_indexed,
-                &import_resolved,
-                import,
+                indexing_import,
+                import_file_id,
             );
         } else {
             resolve_import(
+                external,
                 &mut state.errors,
                 &mut resolved_import,
-                &import_indexed,
-                &import_resolved,
-                import,
+                indexing_import,
+                import_file_id,
             );
             state.unqualified.push(resolved_import);
         }
@@ -69,17 +68,19 @@ fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &Fu
 }
 
 fn resolve_import(
+    external: &mut impl External,
     errors: &mut Vec<ResolvingError>,
     resolved: &mut ResolvedImport,
-    import_indexed: &FullIndexedModule,
-    import_resolved: &FullResolvedModule,
     indexing_import: &IndexingImport,
+    import_file_id: FileId,
 ) {
     let kind = match indexing_import.kind {
         ImportKind::Implicit => ImportKind::Implicit,
         ImportKind::Explicit => ImportKind::Hidden,
         ImportKind::Hidden => ImportKind::Implicit,
     };
+
+    let import_resolved = external.resolved(import_file_id);
 
     let terms = import_resolved.exports.iter_terms().map(|(name, file, id)| (name, file, id, kind));
     let types = import_resolved.exports.iter_types().map(|(name, file, id)| (name, file, id, kind));
@@ -100,11 +101,11 @@ fn resolve_import(
     }
 
     for (name, &(id, ref implicit)) in &indexing_import.types {
-        if let Some((_, id, kind)) = resolved.types.get_mut(name) {
+        if let Some((file, id, kind)) = resolved.types.get_mut(name) {
             *kind = indexing_import.kind;
             let Some(implicit) = implicit else { continue };
-            let item = (*id, implicit);
-            resolve_implicit(resolved, import_indexed, indexing_import, item);
+            let item = (*file, *id, implicit);
+            resolve_implicit(external, resolved, indexing_import, item);
         } else {
             errors.push(ResolvingError::InvalidImportItem { id });
         };
@@ -112,15 +113,16 @@ fn resolve_import(
 }
 
 fn resolve_implicit(
+    external: &mut impl External,
     resolved: &mut ResolvedImport,
-    import_indexed: &FullIndexedModule,
     indexing_import: &IndexingImport,
-    item: (TypeItemId, &ImplicitItems),
+    item: (FileId, TypeItemId, &ImplicitItems),
 ) {
-    let (type_id, implicit) = item;
+    let (f_id, t_id, implicit) = item;
+    let import_indexed = external.indexed(f_id);
     match implicit {
         ImplicitItems::Everything => {
-            for term_id in import_indexed.pairs.data_constructors(type_id) {
+            for term_id in import_indexed.pairs.data_constructors(t_id) {
                 let item = &import_indexed.items[term_id];
                 if matches!(import_indexed.kind, ExportKind::Explicit) && !item.exported {
                     continue;
@@ -150,8 +152,8 @@ fn add_imported_terms<'a>(
 ) {
     let (additional, _) = terms.size_hint();
     resolved.terms.reserve(additional);
-    terms.for_each(|(name, file, term, kind)| {
-        add_imported_term(errors, resolved, name, file, term, kind);
+    terms.for_each(|(name, file, id, kind)| {
+        add_imported_term(errors, resolved, name, file, id, kind);
     });
 }
 

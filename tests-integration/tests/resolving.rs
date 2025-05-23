@@ -239,3 +239,39 @@ fn test_003_import_errors_library_b() {
     let report = tests_integration::report_resolved("LibraryB", &resolved);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_004_import_re_exported_constructor_internal() {
+    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
+    let Some(id) = compiler.runtime.module_file("Internal") else {
+        return;
+    };
+    let resolved = compiler.runtime.resolved(id);
+    let report = tests_integration::report_resolved("Internal", &resolved);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_004_import_re_exported_constructor_library() {
+    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
+    let Some(id) = compiler.runtime.module_file("Library") else {
+        return;
+    };
+    let resolved = compiler.runtime.resolved(id);
+    let report = tests_integration::report_resolved("Library", &resolved);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_004_import_re_exported_constructor_main() {
+    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
+    let Some(id) = compiler.runtime.module_file("Main") else {
+        return;
+    };
+    let resolved = compiler.runtime.resolved(id);
+    let report = tests_integration::report_resolved("Main", &resolved);
+    insta::assert_snapshot!(report);
+}
