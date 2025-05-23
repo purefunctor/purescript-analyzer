@@ -1,5 +1,6 @@
 use files::FileId;
 use indexing::{TermItemKind, TypeItemKind};
+use itertools::Itertools;
 use lowering::{
     DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule, ResolutionDomain,
     TermResolution,
@@ -89,30 +90,48 @@ async fn hover_deferred(
                 TermItemKind::Foreign { .. } => None,
                 TermItemKind::Instance { .. } => None,
                 TermItemKind::Operator { .. } => None,
-                TermItemKind::Value { signature, .. } => {
-                    let s = signature.and_then(|id| {
-                        let ptr = &indexed.source[id].syntax_node_ptr();
-                        let range = locate::text_range_after_annotation(ptr, &root)?;
-                        let value = root.text().slice(range).to_string();
-                        Some(MarkedString::LanguageString(LanguageString {
+                TermItemKind::Value { signature, equations } => {
+                    let signature = signature.map(|id| {
+                        let ptr = indexed.source[id].syntax_node_ptr();
+                        locate::annotation_syntax_range(&root, ptr)
+                    });
+
+                    let equation = || {
+                        let id = equations.first()?;
+                        let ptr = indexed.source[*id].syntax_node_ptr();
+                        let (annotation, _) = locate::annotation_syntax_range(&root, ptr);
+                        Some((annotation, None))
+                    };
+
+                    let (annotation, syntax) = signature.or_else(equation)?;
+
+                    let annotation = annotation.map(|range| {
+                        let source = root.text().slice(range).to_string();
+                        let source = source.trim();
+                        let cleaned = source
+                            .lines()
+                            .map(|line| line.trim_start_matches("-- |").trim())
+                            .join("\n");
+                        MarkedString::String(cleaned)
+                    });
+
+                    let separator =
+                        annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
+
+                    let syntax = syntax.map(|range| {
+                        let source = root.text().slice(range).to_string();
+                        let value = source.trim().to_string();
+                        MarkedString::LanguageString(LanguageString {
                             language: "purescript".to_string(),
                             value,
-                        }))
+                        })
                     });
-                    let a = signature.and_then(|id| {
-                        let ptr = &indexed.source[id].syntax_node_ptr();
-                        let text = locate::annotation_text(ptr, &root)?;
-                        let text = text.to_string();
-                        let markdown = text
-                            .trim()
-                            .lines()
-                            .take_while(|line| line.starts_with("-- |"))
-                            .map(|line| line.trim_start_matches("-- |").trim().to_string())
-                            .reduce(|a, b| format!("\n{}\n{}", a, b).to_string())?;
-                        Some(MarkedString::String(format!("---\n{}", markdown)))
-                    });
-                    let array: Vec<_> = [s, a].into_iter().flatten().collect();
-                    Some(Hover { contents: HoverContents::Array(array), range: None })
+
+                    let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
+                    let contents = HoverContents::Array(array);
+                    let range = None;
+
+                    Some(Hover { contents, range })
                 }
             }
         }

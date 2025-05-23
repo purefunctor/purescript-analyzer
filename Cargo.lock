@@ -886,6 +886,7 @@ dependencies = [
  "glob",
  "globset",
  "indexing",
+ "itertools 0.14.0",
  "lexing",
  "line-index",
  "lowering",
