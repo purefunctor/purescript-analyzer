@@ -31,6 +31,7 @@ pub(super) async fn hover(backend: &Backend, uri: Url, position: Position) -> Op
     let located = locate::locate(backend, f_id, position);
 
     match located {
+        locate::Located::ModuleName(_) => None,
         locate::Located::ImportItem(i_id) => hover_import(backend, f_id, i_id).await,
         locate::Located::Binder(b_id) => hover_binder(backend, f_id, b_id).await,
         locate::Located::Expression(e_id) => hover_expression(backend, f_id, e_id).await,

@@ -5,7 +5,7 @@ use lowering::{
     ResolutionDomain, TermResolution, TypeId, TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
-use rowan::ast::AstNode;
+use rowan::ast::{AstNode, AstPtr};
 use smol_str::SmolStrBuilder;
 use syntax::cst;
 use tower_lsp::lsp_types::*;
@@ -25,12 +25,62 @@ pub(super) async fn definition(
 
     let thing = locate::locate(backend, f_id, position);
     match thing {
+        locate::Located::ModuleName(cst) => definition_module_name(backend, f_id, cst).await,
         locate::Located::ImportItem(i_id) => definition_import(backend, f_id, i_id).await,
         locate::Located::Binder(b_id) => definition_binder(backend, f_id, b_id).await,
         locate::Located::Expression(e_id) => definition_expression(backend, uri, f_id, e_id).await,
         locate::Located::Type(t_id) => definition_type(backend, uri, f_id, t_id).await,
         locate::Located::Nothing => None,
     }
+}
+
+async fn definition_module_name(
+    backend: &Backend,
+    f_id: FileId,
+    cst: AstPtr<cst::ModuleName>,
+) -> Option<GotoDefinitionResponse> {
+    let parsed = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let (parsed, _) = runtime.parsed(f_id);
+        parsed
+    };
+
+    let root = parsed.syntax_node();
+    let module = cst.to_node(&root);
+    let module = {
+        let mut buffer = SmolStrBuilder::default();
+
+        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
+            buffer.push_str(token.text());
+        }
+
+        let token = module.name_token()?;
+        buffer.push_str(token.text());
+
+        buffer.finish()
+    };
+
+    let (uri, range) = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let files = backend.files.lock().unwrap();
+
+        let id = runtime.module_file(&module)?;
+        let content = runtime.content(id);
+        let (parsed, _) = runtime.parsed(id);
+        let root = parsed.syntax_node();
+        let path = files.path(id);
+
+        let range = root.text_range();
+        let start = locate::offset_to_position(&content, range.start());
+        let end = locate::offset_to_position(&content, range.end());
+
+        let uri = Url::parse(&path).ok()?;
+        let range = Range { start, end };
+
+        (uri, range)
+    };
+
+    Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
 }
 
 async fn definition_import(
