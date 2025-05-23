@@ -16,7 +16,7 @@ use rowan::{
     ast::{AstNode, AstPtr},
 };
 use smol_str::SmolStrBuilder;
-use syntax::{SyntaxNode, cst};
+use syntax::{SyntaxKind, SyntaxNode, cst};
 use tower_lsp::lsp_types::*;
 
 use super::{Backend, locate};
@@ -31,13 +31,72 @@ pub(super) async fn hover(backend: &Backend, uri: Url, position: Position) -> Op
     let located = locate::locate(backend, f_id, position);
 
     match located {
-        locate::Located::ModuleName(_) => None,
+        locate::Located::ModuleName(cst) => hover_module_name(backend, f_id, cst).await,
         locate::Located::ImportItem(i_id) => hover_import(backend, f_id, i_id).await,
         locate::Located::Binder(b_id) => hover_binder(backend, f_id, b_id).await,
         locate::Located::Expression(e_id) => hover_expression(backend, f_id, e_id).await,
         locate::Located::Type(t_id) => hover_type(backend, f_id, t_id).await,
         locate::Located::Nothing => None,
     }
+}
+
+async fn hover_module_name(
+    backend: &Backend,
+    f_id: FileId,
+    cst: AstPtr<cst::ModuleName>,
+) -> Option<Hover> {
+    let parsed = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let (parsed, _) = runtime.parsed(f_id);
+        parsed
+    };
+
+    let root = parsed.syntax_node();
+    let module = cst.to_node(&root);
+    let module = {
+        let mut buffer = SmolStrBuilder::default();
+
+        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
+            buffer.push_str(token.text());
+        }
+
+        let token = module.name_token()?;
+        buffer.push_str(token.text());
+
+        buffer.finish()
+    };
+
+    let mut runtime = backend.runtime.lock().unwrap();
+    let id = runtime.module_file(&module)?;
+    let (parsed, _) = runtime.parsed(id);
+    let root = parsed.syntax_node();
+    let header = parsed.cst().header()?;
+    let header = header.syntax();
+
+    let annotation = header.first_child_by_kind(&|kind| matches!(kind, SyntaxKind::Annotation));
+    let annotation = annotation.map(|annotation| {
+        let range = annotation.text_range();
+        render_annotation(&root, range)
+    });
+
+    let not_annotation =
+        header.first_child_or_token_by_kind(&|kind| !matches!(kind, SyntaxKind::Annotation));
+    let not_annotation = not_annotation.map(|not_annotation| {
+        let start = not_annotation.text_range().start();
+        let end = header.text_range().end();
+        let range = TextRange::new(start, end);
+        let value = root.text().slice(range).to_string();
+        vec![MarkedString::LanguageString(LanguageString {
+            language: "purescript".to_string(),
+            value,
+        })]
+    });
+
+    let array = [not_annotation, annotation].into_iter().flatten().flatten().collect_vec();
+    let contents = HoverContents::Array(array);
+    let range = None;
+
+    Some(Hover { contents, range })
 }
 
 async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
