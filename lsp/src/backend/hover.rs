@@ -53,7 +53,7 @@ async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Op
         ptr.to_node(&root)
     };
 
-    let statement = node.syntax().ancestors().find_map(|node| cst::ImportStatement::cast(node))?;
+    let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
     let module = statement.module_name()?;
 
     let module = {
@@ -76,8 +76,8 @@ async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Op
 
     let import_resolved = {
         let mut runtime = backend.runtime.lock().unwrap();
-        let resolved = runtime.resolved(import_id);
-        resolved
+        
+        runtime.resolved(import_id)
     };
 
     let hover_term_import = |name: &str| {
@@ -339,15 +339,15 @@ where
 {
     let signature = signature.map(|id| {
         let ptr = indexed.source[id].syntax_node_ptr();
-        locate::annotation_syntax_range(&root, ptr)
+        locate::annotation_syntax_range(root, ptr)
     });
     let equation = || {
         let id = equation.as_ref()?;
         let ptr = indexed.source[*id].syntax_node_ptr();
-        let (annotation, _) = locate::annotation_syntax_range(&root, ptr);
+        let (annotation, _) = locate::annotation_syntax_range(root, ptr);
         Some((annotation, None))
     };
-    Some(signature.or_else(equation)?)
+    signature.or_else(equation)
 }
 
 fn render_annotation(root: &SyntaxNode, range: TextRange) -> MarkedString {
