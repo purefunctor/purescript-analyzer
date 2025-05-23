@@ -1,9 +1,12 @@
 use files::FileId;
+use indexing::ImportItemId;
 use lowering::{
     BinderId, BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
     ResolutionDomain, TermResolution, TypeId, TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
+use rowan::ast::AstNode;
+use syntax::cst;
 use tower_lsp::lsp_types::*;
 
 use super::{Backend, locate};
@@ -21,10 +24,118 @@ pub(super) async fn definition(
 
     let thing = locate::locate(backend, f_id, position);
     match thing {
+        locate::Located::ImportItem(i_id) => definition_import(backend, f_id, i_id).await,
         locate::Located::Binder(b_id) => definition_binder(backend, f_id, b_id).await,
         locate::Located::Expression(e_id) => definition_expression(backend, uri, f_id, e_id).await,
         locate::Located::Type(t_id) => definition_type(backend, uri, f_id, t_id).await,
         locate::Located::Nothing => None,
+    }
+}
+
+async fn definition_import(
+    backend: &Backend,
+    f_id: FileId,
+    i_id: ImportItemId,
+) -> Option<GotoDefinitionResponse> {
+    let (parsed, indexed) = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let (parsed, _) = runtime.parsed(f_id);
+        let indexed = runtime.indexed(f_id);
+        (parsed, indexed)
+    };
+
+    let root = parsed.syntax_node();
+    let ptr = &indexed.source[i_id];
+    let node = ptr.to_node(&root);
+
+    let statement = node.syntax().ancestors().find_map(|node| cst::ImportStatement::cast(node))?;
+    let module = statement.module_name()?;
+    let module = module.name_token()?;
+    let module = module.text();
+
+    let import_id = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        runtime.module_file(&module)?
+    };
+
+    let import_resolved = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let resolved = runtime.resolved(import_id);
+        resolved
+    };
+
+    let goto_term = |name: &str| {
+        let (f_id, t_id) = import_resolved.lookup_exported_term(name)?;
+
+        let uri = {
+            let files = backend.files.lock().unwrap();
+            let uri = files.path(f_id);
+            Url::parse(&uri).ok()?
+        };
+
+        let (content, parsed, indexed) = {
+            let mut runtime = backend.runtime.lock().unwrap();
+            let content = runtime.content(f_id);
+            let (parsed, _) = runtime.parsed(f_id);
+            let indexed = runtime.indexed(f_id);
+            (content, parsed, indexed)
+        };
+
+        let root = parsed.syntax_node();
+        let ptrs = indexed.term_item_ptr(t_id);
+        let range = ptrs
+            .into_iter()
+            .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+            .reduce(|start, end| Range { start: start.start, end: end.end })?;
+
+        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+    };
+
+    let goto_type = |name: &str| {
+        let (f_id, t_id) = import_resolved.lookup_exported_type(name)?;
+
+        let uri = {
+            let files = backend.files.lock().unwrap();
+            let uri = files.path(f_id);
+            Url::parse(&uri).ok()?
+        };
+
+        let (content, parsed, indexed) = {
+            let mut runtime = backend.runtime.lock().unwrap();
+            let content = runtime.content(f_id);
+            let (parsed, _) = runtime.parsed(f_id);
+            let indexed = runtime.indexed(f_id);
+            (content, parsed, indexed)
+        };
+
+        let root = parsed.syntax_node();
+        let ptrs = indexed.type_item_ptr(t_id);
+        let range = ptrs
+            .into_iter()
+            .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+            .reduce(|start, end| Range { start: start.start, end: end.end })?;
+
+        Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+    };
+
+    match node {
+        cst::ImportItem::ImportValue(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            goto_term(name)
+        }
+        cst::ImportItem::ImportClass(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            goto_type(name)
+        }
+        cst::ImportItem::ImportType(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            goto_type(name)
+        }
+        cst::ImportItem::ImportOperator(_) => None,
+        cst::ImportItem::ImportTypeOperator(_) => None,
     }
 }
 
