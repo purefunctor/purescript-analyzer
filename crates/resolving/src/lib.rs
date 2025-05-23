@@ -28,6 +28,16 @@ pub struct FullResolvedModule {
 }
 
 impl FullResolvedModule {
+    pub fn lookup_exported_term(&self, name: &str) -> Option<(FileId, TermItemId)> {
+        let unqualified = self.unqualified.iter();
+        let qualified = self.qualified.values();
+        let imports = unqualified.chain(qualified);
+        let (file, id, _) = imports
+            .filter_map(|import| import.lookup_term(name))
+            .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+        Some((file, id))
+    }
+
     pub fn lookup_term(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
         if let Some(prefix) = prefix {
             let import = self.qualified.get(prefix)?;
@@ -45,6 +55,16 @@ impl FullResolvedModule {
             };
             local.or_else(unqualified)
         }
+    }
+
+    pub fn lookup_exported_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        let unqualified = self.unqualified.iter();
+        let qualified = self.qualified.values();
+        let imports = unqualified.chain(qualified);
+        let (file, id, _) = imports
+            .filter_map(|import| import.lookup_type(name))
+            .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+        Some((file, id))
     }
 
     pub fn lookup_type(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TypeItemId)> {
