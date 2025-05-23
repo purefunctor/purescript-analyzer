@@ -118,8 +118,25 @@ pub fn text_range_after_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Op
     Some(TextRange::new(start, end))
 }
 
-pub fn annotation_text(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<SyntaxText> {
+pub fn annotation_syntax_range(
+    root: &SyntaxNode,
+    ptr: SyntaxNodePtr,
+) -> (Option<TextRange>, Option<TextRange>) {
     let node = ptr.to_node(root);
-    let node = node.first_child_by_kind(&|kind| matches!(kind, SyntaxKind::Annotation))?;
-    Some(node.text())
+    let mut children = node.children_with_tokens().peekable();
+
+    let annotation = children
+        .next_if(|node| matches!(node.kind(), SyntaxKind::Annotation))
+        .map(|node| node.text_range());
+
+    let first = children.next();
+    let last = children.last();
+
+    let syntax = first.zip(last).map(|(start, end)| {
+        let start = start.text_range().start();
+        let end = end.text_range().end();
+        TextRange::new(start, end)
+    });
+
+    (annotation, syntax)
 }
