@@ -3,7 +3,7 @@
 use files::FileId;
 use line_index::{LineCol, LineIndex};
 use lowering::{BinderId, ExpressionId, FullLoweredModule, TypeId};
-use rowan::{SyntaxText, TextRange, TextSize, TokenAtOffset, ast::AstNode};
+use rowan::{TextRange, TextSize, TokenAtOffset, ast::AstNode};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 use tower_lsp::lsp_types::*;
 

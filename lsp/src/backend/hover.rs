@@ -1,12 +1,18 @@
+use std::ops::Index;
+
 use files::FileId;
-use indexing::{TermItemKind, TypeItemKind};
+use indexing::{FullIndexedModule, IndexingSource, TermItemKind, TypeItemKind};
 use itertools::Itertools;
+use la_arena::Idx;
 use lowering::{
-    DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule, ResolutionDomain,
-    TermResolution,
+    BinderId, BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
+    ResolutionDomain, TermResolution, TypeId, TypeKind,
 };
 use resolving::FullResolvedModule;
-use rowan::TextRange;
+use rowan::{
+    TextRange,
+    ast::{AstNode, AstPtr},
+};
 use syntax::SyntaxNode;
 use tower_lsp::lsp_types::*;
 
@@ -24,10 +30,27 @@ pub(super) async fn hover(backend: &Backend, uri: Url, position: Position) -> Op
     let located = locate::locate(backend, f_id, position);
 
     match located {
-        locate::Located::Binder(_) => None,
+        locate::Located::Binder(b_id) => hover_binder(backend, f_id, b_id).await,
         locate::Located::Expression(e_id) => hover_expression(backend, f_id, e_id).await,
-        locate::Located::Type(_) => None,
+        locate::Located::Type(t_id) => hover_type(backend, f_id, t_id).await,
         locate::Located::Nothing => None,
+    }
+}
+
+async fn hover_binder(backend: &Backend, f_id: FileId, b_id: BinderId) -> Option<Hover> {
+    let (resolved, lowered) = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let resolved = runtime.resolved(f_id);
+        let lowered = runtime.lowered(f_id);
+        (resolved, lowered)
+    };
+
+    let kind = lowered.intermediate.index_binder_kind(b_id)?;
+    match kind {
+        BinderKind::Constructor { resolution, .. } => {
+            hover_deferred(backend, &resolved, &lowered, *resolution).await
+        }
+        _ => None,
     }
 }
 
@@ -55,6 +78,23 @@ async fn hover_expression(backend: &Backend, f_id: FileId, e_id: ExpressionId) -
             }
         }
         ExpressionKind::OperatorName { resolution } => {
+            hover_deferred(backend, &resolved, &lowered, *resolution).await
+        }
+        _ => None,
+    }
+}
+
+async fn hover_type(backend: &Backend, f_id: FileId, t_id: TypeId) -> Option<Hover> {
+    let (resolved, lowered) = {
+        let mut runtime = backend.runtime.lock().unwrap();
+        let resolved = runtime.resolved(f_id);
+        let lowered = runtime.lowered(f_id);
+        (resolved, lowered)
+    };
+
+    let kind = lowered.intermediate.index_type_kind(t_id)?;
+    match kind {
+        TypeKind::Constructor { resolution } => {
             hover_deferred(backend, &resolved, &lowered, *resolution).await
         }
         _ => None,
@@ -115,7 +155,20 @@ async fn hover_deferred(
                     Some(Hover { contents, range })
                 }
                 TermItemKind::Derive { .. } => None,
-                TermItemKind::Foreign { .. } => None,
+                TermItemKind::Foreign { id } => {
+                    let ptr = indexed.source[*id].syntax_node_ptr();
+                    let (annotation, syntax) = locate::annotation_syntax_range(&root, ptr);
+
+                    let annotation = annotation.map(|range| render_annotation(&root, range));
+                    let syntax = syntax.map(|range| render_syntax(&root, range));
+                    let separator =
+                        annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
+                    let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
+                    let contents = HoverContents::Array(array);
+                    let range = None;
+
+                    Some(Hover { contents, range })
+                }
                 TermItemKind::Instance { .. } => None,
                 TermItemKind::Operator { .. } => None,
                 TermItemKind::Value { signature, equations } => {
@@ -151,31 +204,72 @@ async fn hover_deferred(
         ResolutionDomain::Type => {
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
 
-            let _uri = {
-                let files = backend.files.lock().unwrap();
-                let path = files.path(f_id);
-                Url::parse(&path).ok()?
-            };
-
-            let (_content, _parsed, indexed) = {
+            let (parsed, indexed) = {
                 let mut runtime = backend.runtime.lock().unwrap();
-                let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);
-                (content, parsed, indexed)
+                (parsed, indexed)
             };
 
+            let root = parsed.syntax_node();
             let item = &indexed.items[t_id];
-            match &item.kind {
-                TypeItemKind::Data { .. } => None,
-                TypeItemKind::Newtype { .. } => None,
-                TypeItemKind::Synonym { .. } => None,
-                TypeItemKind::Class { .. } => None,
-                TypeItemKind::Foreign { .. } => None,
-                TypeItemKind::Operator { .. } => None,
-            }
+            let (annotation, syntax) = match &item.kind {
+                TypeItemKind::Data { signature, equation, .. } => {
+                    annotation_syntax(&indexed, &root, signature, equation)?
+                }
+                TypeItemKind::Newtype { signature, equation, .. } => {
+                    annotation_syntax(&indexed, &root, signature, equation)?
+                }
+                TypeItemKind::Synonym { signature, equation, .. } => {
+                    annotation_syntax(&indexed, &root, signature, equation)?
+                }
+                TypeItemKind::Class { signature, declaration, .. } => {
+                    annotation_syntax(&indexed, &root, signature, declaration)?
+                }
+                TypeItemKind::Foreign { id } => {
+                    annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
+                }
+                TypeItemKind::Operator { id } => {
+                    annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
+                }
+            };
+
+            let annotation = annotation.map(|range| render_annotation(&root, range));
+            let separator = annotation.as_ref().map(|_| MarkedString::String("---".to_string()));
+            let syntax = syntax.map(|range| render_syntax(&root, range));
+
+            let array = [syntax, separator, annotation].into_iter().flatten().collect_vec();
+            let contents = HoverContents::Array(array);
+            let range = None;
+
+            Some(Hover { contents, range })
         }
     }
+}
+
+fn annotation_syntax<S, E>(
+    indexed: &FullIndexedModule,
+    root: &SyntaxNode,
+    signature: &Option<Idx<AstPtr<S>>>,
+    equation: &Option<Idx<AstPtr<E>>>,
+) -> Option<(Option<TextRange>, Option<TextRange>)>
+where
+    S: AstNode<Language = syntax::PureScript>,
+    E: AstNode<Language = syntax::PureScript>,
+    IndexingSource: Index<Idx<AstPtr<S>>, Output = AstPtr<S>>,
+    IndexingSource: Index<Idx<AstPtr<E>>, Output = AstPtr<E>>,
+{
+    let signature = signature.map(|id| {
+        let ptr = indexed.source[id].syntax_node_ptr();
+        locate::annotation_syntax_range(&root, ptr)
+    });
+    let equation = || {
+        let id = equation.as_ref()?;
+        let ptr = indexed.source[*id].syntax_node_ptr();
+        let (annotation, _) = locate::annotation_syntax_range(&root, ptr);
+        Some((annotation, None))
+    };
+    Some(signature.or_else(equation)?)
 }
 
 fn render_annotation(root: &SyntaxNode, range: TextRange) -> MarkedString {
