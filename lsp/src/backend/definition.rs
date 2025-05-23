@@ -6,6 +6,7 @@ use lowering::{
 };
 use resolving::FullResolvedModule;
 use rowan::ast::AstNode;
+use smol_str::SmolStrBuilder;
 use syntax::cst;
 use tower_lsp::lsp_types::*;
 
@@ -50,8 +51,19 @@ async fn definition_import(
 
     let statement = node.syntax().ancestors().find_map(|node| cst::ImportStatement::cast(node))?;
     let module = statement.module_name()?;
-    let module = module.name_token()?;
-    let module = module.text();
+
+    let module = {
+        let mut buffer = SmolStrBuilder::default();
+
+        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
+            buffer.push_str(token.text());
+        }
+
+        let token = module.name_token()?;
+        buffer.push_str(token.text());
+
+        buffer.finish()
+    };
 
     let import_id = {
         let mut runtime = backend.runtime.lock().unwrap();
@@ -65,7 +77,7 @@ async fn definition_import(
     };
 
     let goto_term = |name: &str| {
-        let (f_id, t_id) = import_resolved.lookup_exported_term(name)?;
+        let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
             let files = backend.files.lock().unwrap();
@@ -92,7 +104,7 @@ async fn definition_import(
     };
 
     let goto_type = |name: &str| {
-        let (f_id, t_id) = import_resolved.lookup_exported_type(name)?;
+        let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
             let files = backend.files.lock().unwrap();
