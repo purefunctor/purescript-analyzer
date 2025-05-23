@@ -4,7 +4,10 @@ use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
 use lowering::{BinderId, ExpressionId, FullLoweredModule, TypeId};
-use rowan::{TextRange, TextSize, TokenAtOffset, ast::AstNode};
+use rowan::{
+    TextRange, TextSize, TokenAtOffset,
+    ast::{AstNode, AstPtr},
+};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 use tower_lsp::lsp_types::*;
 
@@ -24,6 +27,7 @@ pub fn offset_to_position(content: &str, offset: TextSize) -> Position {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Located {
+    ModuleName(AstPtr<cst::ModuleName>),
     ImportItem(ImportItemId),
     Binder(BinderId),
     Expression(ExpressionId),
@@ -73,7 +77,10 @@ fn locate_node(
 ) -> Option<Located> {
     let kind = node.kind();
     let ptr = SyntaxNodePtr::new(&node);
-    if cst::ImportItem::can_cast(kind) {
+    if cst::ModuleName::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        Some(Located::ModuleName(ptr))
+    } else if cst::ImportItem::can_cast(kind) {
         let ptr = ptr.cast()?;
         let id = indexed.source.lookup_import(&ptr)?;
         Some(Located::ImportItem(id))
