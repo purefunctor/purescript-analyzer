@@ -35,10 +35,14 @@ impl ParsedModule {
     }
 }
 
-pub fn parse(lexed: &Lexed<'_>, tokens: &[SyntaxKind]) -> (ParsedModule, Vec<ParseError>) {
+pub type FullParsedModule = (ParsedModule, Arc<[ParseError]>);
+
+pub fn parse(lexed: &Lexed<'_>, tokens: &[SyntaxKind]) -> FullParsedModule {
     let mut parser = parser::Parser::new(tokens);
     parser::module(&mut parser);
 
     let output = parser.finish();
-    builder::build(lexed, output)
+    let (parsed, errors) = builder::build(lexed, output);
+
+    (parsed, Arc::from(errors))
 }

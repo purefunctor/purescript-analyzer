@@ -21,7 +21,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use files::FileId;
 use indexing::FullIndexedModule;
 use lowering::FullLoweredModule;
-use parsing::{ParseError, ParsedModule};
+use parsing::FullParsedModule;
 use resolving::FullResolvedModule;
 
 use super::{ModuleNameId, ModuleNameMap};
@@ -65,7 +65,7 @@ pub struct Runtime {
     content: Content,
     modules: ModuleNameMap,
 
-    parsed: FxHashMap<FileId, (ParsedModule, Arc<[ParseError]>)>,
+    parsed: FxHashMap<FileId, FullParsedModule>,
     indexed: FxHashMap<FileId, Arc<FullIndexedModule>>,
     resolved: FxHashMap<FileId, Arc<FullResolvedModule>>,
     lowered: FxHashMap<FileId, Arc<FullLoweredModule>>,
@@ -212,7 +212,7 @@ impl Runtime {
 
 /// Core functions for derived queries.
 impl Runtime {
-    pub fn parsed(&mut self, id: FileId) -> (ParsedModule, Arc<[ParseError]>) {
+    pub fn parsed(&mut self, id: FileId) -> FullParsedModule {
         let k = QueryKey::Parsed(id);
         self.query(
             k,
@@ -222,8 +222,7 @@ impl Runtime {
                 let lexed = lexing::lex(&content);
                 let tokens = lexing::layout(&lexed);
 
-                let (parsed, errors) = parsing::parse(&lexed, &tokens);
-                (parsed, Arc::from(errors))
+                parsing::parse(&lexed, &tokens)
             },
             |this| {
                 let value = this.parsed.get(&id).cloned()?;
