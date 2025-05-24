@@ -37,7 +37,7 @@ use files::FileId;
 use indexing::FullIndexedModule;
 use lowering::FullLoweredModule;
 use parking_lot::{Mutex, RwLock};
-use parsing::{FullParsedModule, ParseError, ParsedModule};
+use parsing::FullParsedModule;
 use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
 use thread_local::ThreadLocal;
@@ -169,7 +169,7 @@ pub struct ParallelRuntime<'a> {
     content: &'a FxHashMap<FileId, Arc<str>>,
     modules: &'a ModuleNameMap,
 
-    parsed: Arc<RwLock<FxHashMap<FileId, (ParsedModule, Arc<[ParseError]>)>>>,
+    parsed: Arc<RwLock<FxHashMap<FileId, FullParsedModule>>>,
     indexed: Arc<RwLock<FxHashMap<FileId, Arc<FullIndexedModule>>>>,
     resolved: Arc<RwLock<FxHashMap<FileId, Arc<FullResolvedModule>>>>,
     lowered: Arc<RwLock<FxHashMap<FileId, Arc<FullLoweredModule>>>>,
