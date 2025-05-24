@@ -52,6 +52,11 @@ impl ModuleNameMap {
         self.interner.resolve(id)
     }
 
+    /// Look up the ID of a module.
+    pub fn module_id(&self, name: &str) -> Option<ModuleNameId> {
+        self.interner.get(name)
+    }
+
     /// Look up the file of a module.
     pub fn file_id(&self, id: ModuleNameId) -> Option<FileId> {
         self.modules.get(&id).copied()

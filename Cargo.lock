@@ -147,6 +147,7 @@ dependencies = [
  "smol_str",
  "string-interner",
  "syntax",
+ "thread_local",
 ]
 
 [[package]]
@@ -1475,7 +1476,9 @@ dependencies = [
 name = "tests-package-set"
 version = "0.1.0"
 dependencies = [
+ "building",
  "criterion",
+ "files",
  "glob",
  "lexing",
  "parsing",
