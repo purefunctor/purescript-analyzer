@@ -287,7 +287,7 @@ impl ParallelRuntime<'_> {
         self.with_local(|local| local.record_dependency(key));
 
         // If we have a cached result for the query, we have to do some
-        // validation first to determine if it can be used or it needs
+        // validation first to determine if it can be used or if it needs
         // to be updated.
         if let Some((cached, trace)) = get_storage() {
             // This query was already computed or verified at this revision,
