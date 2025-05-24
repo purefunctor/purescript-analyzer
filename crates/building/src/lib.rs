@@ -26,7 +26,7 @@ mod tests {
         let resolve_b = runtime.resolved(id);
         assert!(Arc::ptr_eq(&resolve_a, &resolve_b));
 
-        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42\n\n");
         let content = files.content(id);
 
         runtime.set_content(id, content);
@@ -171,5 +171,56 @@ mod tests {
 
         assert_eq!(main_resolved_t.built, 7);
         assert_eq!(lib_resolved_t.changed, 4);
+    }
+
+    #[test]
+    fn test_parallel_pointer_equality() {
+        let runtime = super::parallel_runtime::SequentialRuntime::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let (index_a, index_b) = runtime.upgraded(|runtime| {
+            let index_a = runtime.indexed(id);
+            let index_b = runtime.indexed(id);
+            (index_a, index_b)
+        });
+        assert!(Arc::ptr_eq(&index_a, &index_b));
+
+        let (resolve_a, resolve_b) = runtime.upgraded(|runtime| {
+            let resolve_a = runtime.resolved(id);
+            let resolve_b = runtime.resolved(id);
+            (resolve_a, resolve_b)
+        });
+        assert!(Arc::ptr_eq(&resolve_a, &resolve_b));
+
+        let old_index_a = index_a;
+        let old_index_b = index_b;
+        let old_resolve_a = resolve_a;
+        let old_resolve_b = resolve_b;
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42\n\n");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let (index_a, index_b) = runtime.upgraded(|runtime| {
+            let index_a = runtime.indexed(id);
+            let index_b = runtime.indexed(id);
+            (index_a, index_b)
+        });
+        assert!(Arc::ptr_eq(&index_a, &index_b));
+        assert!(Arc::ptr_eq(&index_a, &old_index_a));
+        assert!(Arc::ptr_eq(&index_b, &old_index_b));
+
+        let (resolve_a, resolve_b) = runtime.upgraded(|runtime| {
+            let resolve_a = runtime.resolved(id);
+            let resolve_b = runtime.resolved(id);
+            (resolve_a, resolve_b)
+        });
+        assert!(Arc::ptr_eq(&resolve_a, &resolve_b));
+        assert!(Arc::ptr_eq(&resolve_a, &old_resolve_a));
+        assert!(Arc::ptr_eq(&resolve_b, &old_resolve_b));
     }
 }
