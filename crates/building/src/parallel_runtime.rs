@@ -24,7 +24,7 @@
 //!
 //! # Implementation Notes
 //!
-//! We implicitly recommend [`rayon`] when executing queries using the
+//! We implicitly recommend [`rayon`] when _executing_ queries using the
 //! `ParallelRuntime`, which naturally raises some concerns about lock
 //! contention getting in the way of parallel execution.
 //!
@@ -33,22 +33,29 @@
 //! twice, thus wasting work. However, the same query being spammed repeatedly
 //! for an extended period of time is very rare outside of testing scenarios.
 //!
-//! Another concern is with regards to thread exhaustion. For example, suppose
-//! that we have a [`rayon::ThreadPool`] configured with 3 threads, and we
-//! implement [`ParallelRuntime::lowered`] using [`rayon::join`].
+//! One such testing scenario is implementing a fibonacci query that uses
+//! [`rayon::join`]. More specifically, the overlap of dependencies that
+//! `fib(n - 1)` has with `fib(n - 2)` is enough for sufficiently large `n`:
 //!
 //! ```text
-//! Thread 1: lowered(id) => rayon::join(|| parsed(id), || indexed(id))
-//! Thread 2: lowered(id) => waiting for Thread 1
-//! Thread 3: lowered(id) => waiting for Thread 1
+//! fib(48) = fib(47) + fib(46)
+//! . fib(47) = fib(46) + fib(45)
+//!   . fib(46) = fib(45) + fib(44)
+//!   . fib(45) = fib(44) + fib(43)
+//! . fib(46) = fib(45) + fib(44)
+//!   . fib(45) = fib(44) + fib(43)
+//!   . fib(44) = fib(43) + fib(42)
 //! ```
 //!
-//! In this case, the thread tasked with computing the value cannot make
-//! progress because the thread pool cannot allocate more threads for it.
+//! Our hypothesis is that this overlap in tandem with a work-stealing
+//! scheduler is enough to stall the thread pool from making progress.
+//! The exact of mechanism of why this happens is currently unknown;
+//! for the fibonacci query, we've observed that computes for the same
+//! key can occur randomly, even with the synchronization mutex.
 //!
-//! Theoretically, this could be alleviated by calling [`rayon::yield_now`]
-//! to make Thread 2 and Thread 3 do meaningful work rather than simply wait
-//! for Thread 1 to release its lock.
+//! As such, we do not recommend [`rayon`] for _implementing_ queries.
+//!
+//! tl;dr parallel build systems are hard
 //!
 //! [`runtime`]: crate::runtime
 
@@ -478,10 +485,10 @@ impl ParallelRuntime<'_> {
                 let lowered = self.lowered.read();
                 let traces = self.traces.read();
 
-                let indexed = lowered.get(&id)?.clone();
+                let lowered = lowered.get(&id)?.clone();
                 let trace = traces.get(&key)?.clone();
 
-                Some((indexed, trace))
+                Some((lowered, trace))
             },
             |value| {
                 let mut lowered = self.lowered.write();
