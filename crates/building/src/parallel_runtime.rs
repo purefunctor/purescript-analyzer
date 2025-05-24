@@ -147,7 +147,6 @@ pub struct SequentialRuntime {
     resolved: Arc<RwLock<FxHashMap<FileId, Arc<FullResolvedModule>>>>,
     lowered: Arc<RwLock<FxHashMap<FileId, Arc<FullLoweredModule>>>>,
     traces: Arc<RwLock<FxHashMap<QueryKey, Trace>>>,
-    control: Control,
 }
 
 impl Clone for SequentialRuntime {
@@ -162,7 +161,6 @@ impl Clone for SequentialRuntime {
             resolved: self.resolved.clone(),
             lowered: self.lowered.clone(),
             traces: self.traces.clone(),
-            control: self.control.clone(),
         }
     }
 }
