@@ -22,6 +22,34 @@
 //! });
 //! ```
 //!
+//! # Implementation Notes
+//!
+//! We implicitly recommend [`rayon`] when executing queries using the
+//! `ParallelRuntime`, which naturally raises some concerns about lock
+//! contention getting in the way of parallel execution.
+//!
+//! One notable case where contention may be a bottleneck is the query-level
+//! guards that prevent multiple threads from performing the same computation
+//! twice, thus wasting work. However, the same query being spammed repeatedly
+//! for an extended period of time is very rare outside of testing scenarios.
+//!
+//! Another concern is with regards to thread exhaustion. For example, suppose
+//! that we have a [`rayon::ThreadPool`] configured with 3 threads, and we
+//! implement [`ParallelRuntime::lowered`] using [`rayon::join`].
+//!
+//! ```text
+//! Thread 1: lowered(id) => rayon::join(|| parsed(id), || indexed(id))
+//! Thread 2: lowered(id) => waiting for Thread 1
+//! Thread 3: lowered(id) => waiting for Thread 1
+//! ```
+//!
+//! In this case, the thread tasked with computing the value cannot make
+//! progress because the thread pool cannot allocate more threads for it.
+//!
+//! Theoretically, this could be alleviated by calling [`rayon::yield_now`]
+//! to make Thread 2 and Thread 3 do meaningful work rather than simply wait
+//! for Thread 1 to release its lock.
+//!
 //! [`runtime`]: crate::runtime
 
 use std::{
