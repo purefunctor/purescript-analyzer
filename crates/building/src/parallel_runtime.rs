@@ -290,16 +290,16 @@ impl ParallelRuntime<'_> {
         // validation first to determine if it can be used or it needs
         // to be updated.
         if let Some((cached, trace)) = get_storage() {
-            // If the query was built in the current revision, this was
-            // computed very recently and we can use the cached value.
+            // This query was already computed or verified at this revision,
+            // so we can return the cached value immediately. The fast path.
             if trace.built == self.revision {
                 return cached;
             }
 
-            // Otherwise, we start validating its dependencies by running
-            // them. We also keep track of which dependency was `changed`
-            // most recently. Consequently, if we end up having to call
-            // `compute`, its dependencies are likely to be cached.
+            // Otherwise, we start validating the dependencies by running
+            // them, keeping track of which dependency was `changed` most
+            // recently. Consequently, the call to `compute` would have all
+            // of its dependencies up to date.
             let mut latest_changed = 0;
             for dependency in trace.dependencies.iter() {
                 match dependency {
@@ -325,10 +325,9 @@ impl ParallelRuntime<'_> {
 
             // If the cached result was built more recently than its
             // dependencies were changed, we update the `built` timestamp
-            // to the current revision and return the cached value.
-            //
-            // Updating the `built` timestamp to the current revision
-            // allows subsequent queries to skip validating the dependencies.
+            // to the current revision and return the cached value. This
+            // effectively marks the query as "verified" and repeated
+            // calls would use the fast path above.
             if trace.built >= latest_changed {
                 let mut traces = self.traces.write();
                 if let Some(trace) = traces.get_mut(&key) {
