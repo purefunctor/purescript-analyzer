@@ -1,7 +1,9 @@
 use std::{collections::HashMap, fs, path::PathBuf, sync::Arc, time::Instant};
 
 use files::Files;
+use itertools::Itertools;
 use parsing::ParseError;
+use smol_str::SmolStrBuilder;
 use tests_package_set::all_source_files;
 
 type ParseErrorPerFile = HashMap<PathBuf, Arc<[ParseError]>>;
@@ -53,7 +55,31 @@ fn test_parallel_parse_package_set() {
             runtime.parsed(id);
         });
     });
-    println!("Parsing {:?}", start.elapsed());
+    let parsing = start.elapsed();
+    println!("Parsing {:?}", parsing);
+
+    let names = runtime.upgraded(|runtime| {
+        let names = source.iter().filter_map(|&id| {
+            let (parsed, _) = runtime.parsed(id);
+            let cst = parsed.cst();
+            let cst = cst.header().and_then(|cst| cst.name())?;
+
+            let mut builder = SmolStrBuilder::default();
+            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
+                builder.push_str(token.text());
+            }
+            if let Some(token) = cst.name_token() {
+                builder.push_str(token.text());
+            }
+
+            Some((id, builder.finish()))
+        });
+        names.collect_vec()
+    });
+
+    for (file, name) in names {
+        runtime.set_module_file(&name, file);
+    }
 
     let start = Instant::now();
     runtime.upgraded(|runtime| {
@@ -61,7 +87,8 @@ fn test_parallel_parse_package_set() {
             runtime.indexed(id);
         });
     });
-    println!("Indexing {:?}", start.elapsed());
+    let indexing = start.elapsed();
+    println!("Indexing {:?}", indexing);
 
     let start = Instant::now();
     runtime.upgraded(|runtime| {
@@ -69,13 +96,17 @@ fn test_parallel_parse_package_set() {
             runtime.resolved(id);
         });
     });
-    println!("Resolving {:?}", start.elapsed());
+    let resolving = start.elapsed();
+    println!("Resolving {:?}", resolving);
 
     let start = Instant::now();
     runtime.upgraded(|runtime| {
         source.par_iter().for_each(|&id| {
-            rayon::join(|| runtime.lowered(id), || runtime.lowered(id));
+            runtime.lowered(id);
         });
     });
-    println!("Lowering {:?}", start.elapsed());
+    let lowering = start.elapsed();
+    println!("Lowering {:?}", lowering);
+
+    println!("Total {:?}", parsing + indexing + resolving + lowering);
 }

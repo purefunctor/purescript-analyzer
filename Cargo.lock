@@ -1480,9 +1480,11 @@ dependencies = [
  "criterion",
  "files",
  "glob",
+ "itertools 0.14.0",
  "lexing",
  "parsing",
  "rayon",
+ "smol_str",
 ]
 
 [[package]]
