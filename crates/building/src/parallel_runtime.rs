@@ -22,7 +22,7 @@
 //! });
 //! ```
 //!
-//! # Implementation Notes
+//! # Implementation notes
 //!
 //! We implicitly recommend [`rayon`] when _executing_ queries using the
 //! `ParallelRuntime`, which naturally raises some concerns about lock
@@ -33,29 +33,33 @@
 //! twice, thus wasting work. However, the same query being spammed repeatedly
 //! for an extended period of time is very rare outside of testing scenarios.
 //!
-//! One such testing scenario is implementing a fibonacci query that uses
-//! [`rayon::join`]. More specifically, the overlap of dependencies that
-//! `fib(n - 1)` has with `fib(n - 2)` is enough for sufficiently large `n`:
+//! One such testing scenario is implementing a fibonacci query like so, which
+//! more often than not ends up in a deadlock.
 //!
-//! ```text
-//! fib(48) = fib(47) + fib(46)
-//! . fib(47) = fib(46) + fib(45)
-//!   . fib(46) = fib(45) + fib(44)
-//!   . fib(45) = fib(44) + fib(43)
-//! . fib(46) = fib(45) + fib(44)
-//!   . fib(45) = fib(44) + fib(43)
-//!   . fib(44) = fib(43) + fib(42)
+//! ```no_run
+//! rayon::join(|| self.fib(n - 1), || self.fib(n - 2))
 //! ```
 //!
-//! Our hypothesis is that this overlap in tandem with a work-stealing
-//! scheduler is enough to stall the thread pool from making progress.
-//! The exact of mechanism of why this happens is currently unknown;
-//! for the fibonacci query, we've observed that computes for the same
-//! key can occur randomly, even with the synchronization mutex.
+//! The exact mechanism of why this happens is unknown, but the current
+//! hypothesis  is that rayon's work stealing scheduler runs into a state where
+//! the lock is held indefinitely because the thread that's supposed to compute
+//! the value is unable to make progress.
 //!
-//! As such, we do not recommend [`rayon`] for _implementing_ queries.
+//! For now, we do not recommend [`rayon`] for _implementing_ queries, and to
+//! stick with writing efficient single-threaded algorithms.
 //!
 //! tl;dr parallel build systems are hard
+//!
+//! ## Queries are single threaded
+//!
+//! As stated above, queries are implemented with single-threaded execution in
+//! mind, and we don't implement implicit parallelism for computing dependencies.
+//!
+//! For queries like [`resolving`], this would mean that a single thread would
+//! also be responsible to work through all of its dependencies, which is
+//! unideal. A strategy that we can employ is to execute queries we know to not
+//! have dynamic dependencies ahead of time and in parallel to fill up the cache,
+//! allowing the eventual dependent query to utilize cached values instead.
 //!
 //! [`runtime`]: crate::runtime
 
