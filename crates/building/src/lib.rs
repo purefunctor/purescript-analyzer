@@ -59,15 +59,17 @@ mod tests {
         let content = files.content(id);
 
         runtime.set_content(id, content);
+        runtime.set_module_file("Main", id);
+
         let indexed_a = runtime.indexed(id);
         let lowered_a = runtime.lowered(id);
         let resolved_a = runtime.resolved(id);
 
         assert_trace!(FileContent(id) => { built: 1, changed: 1 });
-        assert_trace!(Parsed(id) => { built: 1, changed: 1 });
-        assert_trace!(Indexed(id) => { built: 1, changed: 1 });
-        assert_trace!(Lowered(id) => { built: 1, changed: 1 });
-        assert_trace!(Resolved(id) => { built: 1, changed: 1 });
+        assert_trace!(Parsed(id) => { built: 2, changed: 2 });
+        assert_trace!(Indexed(id) => { built: 2, changed: 2 });
+        assert_trace!(Lowered(id) => { built: 2, changed: 2 });
+        assert_trace!(Resolved(id) => { built: 2, changed: 2 });
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let content = files.content(id);
@@ -77,14 +79,14 @@ mod tests {
         let lowered_b = runtime.lowered(id);
         let resolved_b = runtime.resolved(id);
 
-        assert_trace!(FileContent(id) => { built: 2, changed: 2 });
-        assert_trace!(Parsed(id) => { built: 2, changed: 2 });
+        assert_trace!(FileContent(id) => { built: 3, changed: 3 });
+        assert_trace!(Parsed(id) => { built: 3, changed: 3 });
         // Indexed/Lowered changed because they contain pointers
         // that also change when declarations are shifted down.
-        assert_trace!(Indexed(id) => { built: 2, changed: 2 });
-        assert_trace!(Lowered(id) => { built: 2, changed: 2 });
+        assert_trace!(Indexed(id) => { built: 3, changed: 3 });
+        assert_trace!(Lowered(id) => { built: 3, changed: 3 });
         // Meanwhile, Resolved is very stable because it uses IDs.
-        assert_trace!(Resolved(id) => { built: 2, changed: 1 });
+        assert_trace!(Resolved(id) => { built: 3, changed: 2 });
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
         let content = files.content(id);
@@ -95,14 +97,14 @@ mod tests {
         let resolved_c = runtime.resolved(id);
 
         // FileContent and Parsed will always change.
-        assert_trace!(FileContent(id) => { built: 3, changed: 3 });
-        assert_trace!(Parsed(id) => { built: 3, changed: 3 });
+        assert_trace!(FileContent(id) => { built: 4, changed: 4 });
+        assert_trace!(Parsed(id) => { built: 4, changed: 4 });
         // Indexed/Lowered did not change because the pointers it
         // contains were not affected by theappended whitespace.
-        assert_trace!(Indexed(id) => { built: 3, changed: 2 });
-        assert_trace!(Lowered(id) => { built: 3, changed: 2 });
+        assert_trace!(Indexed(id) => { built: 4, changed: 3 });
+        assert_trace!(Lowered(id) => { built: 4, changed: 3 });
         // Resolved is still very stable against non-semantic edits.
-        assert_trace!(Resolved(id) => { built: 3, changed: 1 });
+        assert_trace!(Resolved(id) => { built: 4, changed: 2 });
 
         assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
         assert!(Arc::ptr_eq(&lowered_b, &lowered_c));
@@ -182,6 +184,8 @@ mod tests {
         let content = files.content(id);
 
         runtime.set_content(id, content);
+        runtime.set_module_file("Main", id);
+
         let (index_a, index_b) = runtime.upgraded(|runtime| {
             let index_a = runtime.indexed(id);
             let index_b = runtime.indexed(id);
@@ -244,6 +248,8 @@ mod tests {
         let content = files.content(id);
 
         runtime.set_content(id, content);
+        runtime.set_module_file("Main", id);
+
         let (indexed_a, lowered_a, resolved_a) = runtime.upgraded(|runtime| {
             let indexed_a = runtime.indexed(id);
             let lowered_a = runtime.lowered(id);
@@ -252,10 +258,10 @@ mod tests {
         });
 
         assert_trace!(FileContent(id) => { built: 1, changed: 1 });
-        assert_trace!(Parsed(id) => { built: 1, changed: 1 });
-        assert_trace!(Indexed(id) => { built: 1, changed: 1 });
-        assert_trace!(Lowered(id) => { built: 1, changed: 1 });
-        assert_trace!(Resolved(id) => { built: 1, changed: 1 });
+        assert_trace!(Parsed(id) => { built: 2, changed: 2 });
+        assert_trace!(Indexed(id) => { built: 2, changed: 2 });
+        assert_trace!(Lowered(id) => { built: 2, changed: 2 });
+        assert_trace!(Resolved(id) => { built: 2, changed: 2 });
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let content = files.content(id);
@@ -268,14 +274,14 @@ mod tests {
             (indexed_b, lowered_b, resolved_b)
         });
 
-        assert_trace!(FileContent(id) => { built: 2, changed: 2 });
-        assert_trace!(Parsed(id) => { built: 2, changed: 2 });
+        assert_trace!(FileContent(id) => { built: 3, changed: 3 });
+        assert_trace!(Parsed(id) => { built: 3, changed: 3 });
         // Indexed/Lowered changed because they contain pointers
         // that also change when declarations are shifted down.
-        assert_trace!(Indexed(id) => { built: 2, changed: 2 });
-        assert_trace!(Lowered(id) => { built: 2, changed: 2 });
+        assert_trace!(Indexed(id) => { built: 3, changed: 3 });
+        assert_trace!(Lowered(id) => { built: 3, changed: 3 });
         // Meanwhile, Resolved is very stable because it uses IDs.
-        assert_trace!(Resolved(id) => { built: 2, changed: 1 });
+        assert_trace!(Resolved(id) => { built: 3, changed: 2 });
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
         let content = files.content(id);
@@ -289,14 +295,14 @@ mod tests {
         });
 
         // FileContent and Parsed will always change.
-        assert_trace!(FileContent(id) => { built: 3, changed: 3 });
-        assert_trace!(Parsed(id) => { built: 3, changed: 3 });
+        assert_trace!(FileContent(id) => { built: 4, changed: 4 });
+        assert_trace!(Parsed(id) => { built: 4, changed: 4 });
         // Indexed/Lowered did not change because the pointers it
         // contains were not affected by theappended whitespace.
-        assert_trace!(Indexed(id) => { built: 3, changed: 2 });
-        assert_trace!(Lowered(id) => { built: 3, changed: 2 });
+        assert_trace!(Indexed(id) => { built: 4, changed: 3 });
+        assert_trace!(Lowered(id) => { built: 4, changed: 3 });
         // Resolved is still very stable against non-semantic edits.
-        assert_trace!(Resolved(id) => { built: 3, changed: 1 });
+        assert_trace!(Resolved(id) => { built: 4, changed: 2 });
 
         assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
         assert!(Arc::ptr_eq(&lowered_b, &lowered_c));
