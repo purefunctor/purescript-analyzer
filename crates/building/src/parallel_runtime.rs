@@ -256,6 +256,10 @@ impl SequentialRuntime {
 
         self.storage.traces.write().insert(QueryKey::ModuleFile(id), Trace::input(revision));
     }
+
+    pub fn trace(&self, key: QueryKey) -> Option<Trace> {
+        self.storage.traces.read().get(&key).cloned()
+    }
 }
 
 impl ParallelRuntime<'_> {
