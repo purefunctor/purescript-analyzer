@@ -13,11 +13,14 @@
 //! the `SequentialRuntime` into a `ParallelRuntime`.
 //!
 //! ```no_run
+//! # use building::parallel_runtime::SequentialRuntime;
+//! # let id_a = files::FileId::from_raw(la_arena::RawIdx::from_u32(0));
+//! # let id_b = files::FileId::from_raw(la_arena::RawIdx::from_u32(1));
 //! let runtime = SequentialRuntime::default();
 //! let (parsed_a, parsed_b) = runtime.upgraded(|runtime| {
 //!     rayon::join(
-//!         || runtime.parsed(id_a)
-//!         || runtime.parsed(id_b)
+//!         || runtime.parsed(id_a),
+//!         || runtime.parsed(id_b),
 //!     )
 //! });
 //! ```
@@ -36,8 +39,8 @@
 //! One such testing scenario is implementing a fibonacci query like so, which
 //! more often than not ends up in a deadlock.
 //!
-//! ```no_run
-//! rayon::join(|| self.fib(n - 1), || self.fib(n - 2))
+//! ```text
+//! rayon::join(|| fib(n - 1), || fib(n - 2))
 //! ```
 //!
 //! The exact mechanism of why this happens is unknown, but the current
