@@ -97,9 +97,9 @@ pub enum QueryKey {
 /// A verifying step trace.
 #[derive(Debug, Clone)]
 pub struct Trace {
-    /// Timestamp of when the query was last built.
+    /// The timestamp of when the query was last asked for.
     pub built: usize,
-    /// Timestasmp of when the query was last changed.
+    /// The timestamp of when the query was last changed.
     pub changed: usize,
     /// The dependencies used to build the query.
     pub dependencies: Arc<[QueryKey]>,
@@ -170,18 +170,22 @@ impl LocalState {
     }
 }
 
+#[derive(Default)]
+struct Storage {
+    parsed: RwLock<FxHashMap<FileId, FullParsedModule>>,
+    indexed: RwLock<FxHashMap<FileId, Arc<FullIndexedModule>>>,
+    resolved: RwLock<FxHashMap<FileId, Arc<FullResolvedModule>>>,
+    lowered: RwLock<FxHashMap<FileId, Arc<FullLoweredModule>>>,
+    traces: RwLock<FxHashMap<QueryKey, Trace>>,
+}
+
 /// See module-level documentation.
 #[derive(Default)]
 pub struct SequentialRuntime {
     revision: AtomicUsize,
     content: Arc<RwLock<FxHashMap<FileId, Arc<str>>>>,
     modules: Arc<RwLock<ModuleNameMap>>,
-
-    parsed: Arc<RwLock<FxHashMap<FileId, FullParsedModule>>>,
-    indexed: Arc<RwLock<FxHashMap<FileId, Arc<FullIndexedModule>>>>,
-    resolved: Arc<RwLock<FxHashMap<FileId, Arc<FullResolvedModule>>>>,
-    lowered: Arc<RwLock<FxHashMap<FileId, Arc<FullLoweredModule>>>>,
-    traces: Arc<RwLock<FxHashMap<QueryKey, Trace>>>,
+    storage: Arc<Storage>,
 }
 
 impl Clone for SequentialRuntime {
@@ -191,11 +195,7 @@ impl Clone for SequentialRuntime {
             revision: AtomicUsize::new(revision),
             content: self.content.clone(),
             modules: self.modules.clone(),
-            parsed: self.parsed.clone(),
-            indexed: self.indexed.clone(),
-            resolved: self.resolved.clone(),
-            lowered: self.lowered.clone(),
-            traces: self.traces.clone(),
+            storage: self.storage.clone(),
         }
     }
 }
@@ -205,14 +205,8 @@ pub struct ParallelRuntime<'a> {
     revision: usize,
     content: &'a FxHashMap<FileId, Arc<str>>,
     modules: &'a ModuleNameMap,
-
-    parsed: Arc<RwLock<FxHashMap<FileId, FullParsedModule>>>,
-    indexed: Arc<RwLock<FxHashMap<FileId, Arc<FullIndexedModule>>>>,
-    resolved: Arc<RwLock<FxHashMap<FileId, Arc<FullResolvedModule>>>>,
-    lowered: Arc<RwLock<FxHashMap<FileId, Arc<FullLoweredModule>>>>,
-    traces: Arc<RwLock<FxHashMap<QueryKey, Trace>>>,
+    storage: Arc<Storage>,
     control: Control,
-
     local: Local,
 }
 
@@ -229,13 +223,9 @@ impl SequentialRuntime {
 
         let parallel = ParallelRuntime {
             revision: self.revision.load(Ordering::SeqCst),
-            content: &*content_guard,
-            modules: &*modules_guard,
-            parsed: self.parsed.clone(),
-            indexed: self.indexed.clone(),
-            resolved: self.resolved.clone(),
-            lowered: self.lowered.clone(),
-            traces: self.traces.clone(),
+            content: &content_guard,
+            modules: &modules_guard,
+            storage: self.storage.clone(),
             local: Local::default(),
             control: Control::default(),
         };
@@ -249,7 +239,7 @@ impl SequentialRuntime {
         self.revision.fetch_add(1, Ordering::SeqCst);
         let revision = self.revision.load(Ordering::SeqCst);
 
-        self.traces.write().insert(QueryKey::FileContent(id), Trace::input(revision));
+        self.storage.traces.write().insert(QueryKey::FileContent(id), Trace::input(revision));
     }
 
     pub fn set_module_file(&self, name: &str, file: FileId) {
@@ -261,7 +251,7 @@ impl SequentialRuntime {
         self.revision.fetch_add(1, Ordering::SeqCst);
         let revision = self.revision.load(Ordering::SeqCst);
 
-        self.traces.write().insert(QueryKey::ModuleFile(id), Trace::input(revision));
+        self.storage.traces.write().insert(QueryKey::ModuleFile(id), Trace::input(revision));
     }
 }
 
@@ -317,7 +307,7 @@ impl ParallelRuntime<'_> {
                         self.lowered(*id);
                     }
                 }
-                let traces = self.traces.read();
+                let traces = self.storage.traces.read();
                 if let Some(trace) = traces.get(dependency) {
                     latest_changed = latest_changed.max(trace.changed);
                 }
@@ -329,7 +319,7 @@ impl ParallelRuntime<'_> {
             // effectively marks the query as "verified" and repeated
             // calls would use the fast path above.
             if trace.built >= latest_changed {
-                let mut traces = self.traces.write();
+                let mut traces = self.storage.traces.write();
                 if let Some(trace) = traces.get_mut(&key) {
                     trace.built = self.revision;
                 }
@@ -367,12 +357,12 @@ impl ParallelRuntime<'_> {
             let value = match get_storage() {
                 Some((cached, Trace { changed, .. })) if value == cached => {
                     let trace = Trace { built, changed, dependencies };
-                    self.traces.write().insert(key, trace);
+                    self.storage.traces.write().insert(key, trace);
                     cached
                 }
                 _ => {
                     let trace = Trace { built, changed, dependencies };
-                    self.traces.write().insert(key, trace);
+                    self.storage.traces.write().insert(key, trace);
                     set_storage(T::clone(&value));
                     value
                 }
@@ -404,16 +394,16 @@ impl ParallelRuntime<'_> {
         self.query(
             key,
             || {
-                let parsed = self.parsed.read();
-                let traces = self.traces.read();
-
+                let parsed = self.storage.parsed.read();
                 let parsed = parsed.get(&id)?.clone();
+
+                let traces = self.storage.traces.read();
                 let trace = traces.get(&key)?.clone();
 
                 Some((parsed, trace))
             },
             |value| {
-                let mut parsed = self.parsed.write();
+                let mut parsed = self.storage.parsed.write();
                 parsed.insert(id, value);
             },
             || {
@@ -432,16 +422,16 @@ impl ParallelRuntime<'_> {
         self.query(
             key,
             || {
-                let indexed = self.indexed.read();
-                let traces = self.traces.read();
-
+                let indexed = self.storage.indexed.read();
                 let indexed = indexed.get(&id)?.clone();
+
+                let traces = self.storage.traces.read();
                 let trace = traces.get(&key)?.clone();
 
                 Some((indexed, trace))
             },
             |value| {
-                let mut indexed = self.indexed.write();
+                let mut indexed = self.storage.indexed.write();
                 indexed.insert(id, value);
             },
             || {
@@ -457,16 +447,16 @@ impl ParallelRuntime<'_> {
         self.query(
             key,
             || {
-                let resolved = self.resolved.read();
-                let traces = self.traces.read();
-
+                let resolved = self.storage.resolved.read();
                 let resolved = resolved.get(&id)?.clone();
+
+                let traces = self.storage.traces.read();
                 let trace = traces.get(&key)?.clone();
 
                 Some((resolved, trace))
             },
             |value| {
-                let mut resolved = self.resolved.write();
+                let mut resolved = self.storage.resolved.write();
                 resolved.insert(id, value);
             },
             || {
@@ -481,8 +471,8 @@ impl ParallelRuntime<'_> {
         self.query(
             key,
             || {
-                let lowered = self.lowered.read();
-                let traces = self.traces.read();
+                let lowered = self.storage.lowered.read();
+                let traces = self.storage.traces.read();
 
                 let lowered = lowered.get(&id)?.clone();
                 let trace = traces.get(&key)?.clone();
@@ -490,7 +480,7 @@ impl ParallelRuntime<'_> {
                 Some((lowered, trace))
             },
             |value| {
-                let mut lowered = self.lowered.write();
+                let mut lowered = self.storage.lowered.write();
                 lowered.insert(id, value);
             },
             || {
