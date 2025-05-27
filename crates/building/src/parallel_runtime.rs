@@ -114,24 +114,20 @@ impl Trace {
 /// Handles work deduplication for the [`ParallelRuntime`].
 #[derive(Default, Clone)]
 struct Control {
-    inner: Arc<RwLock<FxHashMap<QueryKey, Arc<Mutex<()>>>>>,
+    inner: Arc<Mutex<FxHashMap<QueryKey, Arc<Mutex<()>>>>>,
 }
 
 impl Control {
     fn get_or_create(&self, key: QueryKey) -> (Arc<Mutex<()>>, bool) {
-        {
-            let inner = self.inner.read();
-            if let Some(control) = inner.get(&key) {
-                return (Arc::clone(control), false);
-            }
-        }
+        let mut inner = self.inner.lock();
 
-        let mut inner = self.inner.write();
+        let mut fresh = false;
+        let control = inner.entry(key).or_insert_with(|| {
+            fresh = true;
+            Arc::default()
+        });
 
-        let control = Arc::new(Mutex::default());
-        inner.insert(key, Arc::clone(&control));
-
-        (control, true)
+        (Arc::clone(control), fresh)
     }
 }
 
