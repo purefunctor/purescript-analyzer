@@ -115,9 +115,9 @@ impl Trace {
 }
 
 /// Handles work deduplication for the [`ParallelRuntime`].
-#[derive(Default, Clone)]
+#[derive(Default)]
 struct Control {
-    inner: Arc<Mutex<FxHashMap<QueryKey, Arc<Mutex<()>>>>>,
+    inner: Mutex<FxHashMap<QueryKey, Arc<Mutex<()>>>>,
 }
 
 impl Control {
