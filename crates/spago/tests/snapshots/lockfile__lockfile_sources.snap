@@ -3,8 +3,8 @@ source: crates/spago/tests/lockfile.rs
 expression: sources
 snapshot_kind: text
 ---
-./src/**/*.purs
-./test/**/*.purs
+src/**/*.purs
+test/**/*.purs
 .spago/p/affjax-node-1.0.0/src/**/*.purs
 .spago/p/affjax-node-1.0.0/test/**/*.purs
 .spago/p/node-buffer-9.0.0/src/**/*.purs
