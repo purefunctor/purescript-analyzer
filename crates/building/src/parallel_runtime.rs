@@ -186,21 +186,9 @@ struct Storage {
 #[derive(Default)]
 pub struct SequentialRuntime {
     revision: AtomicUsize,
-    content: Arc<RwLock<FxHashMap<FileId, Arc<str>>>>,
-    modules: Arc<RwLock<ModuleNameMap>>,
+    content: RwLock<FxHashMap<FileId, Arc<str>>>,
+    modules: RwLock<ModuleNameMap>,
     storage: Arc<Storage>,
-}
-
-impl Clone for SequentialRuntime {
-    fn clone(&self) -> SequentialRuntime {
-        let revision = self.revision.load(Ordering::SeqCst);
-        SequentialRuntime {
-            revision: AtomicUsize::new(revision),
-            content: self.content.clone(),
-            modules: self.modules.clone(),
-            storage: self.storage.clone(),
-        }
-    }
 }
 
 /// See module-level documentation.
