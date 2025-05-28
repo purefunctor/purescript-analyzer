@@ -13,15 +13,15 @@ use smol_str::SmolStrBuilder;
 use tower_lsp::{Client, LanguageServer, jsonrpc::Result, lsp_types::*};
 
 pub struct Backend {
-    pub(crate) files: Arc<Mutex<Files>>,
-    pub(crate) runtime: Arc<Mutex<Runtime>>,
+    pub(crate) files: Mutex<Files>,
+    pub(crate) runtime: Mutex<Runtime>,
     pub(crate) client: Client,
 }
 
 impl Backend {
     pub fn new(client: Client) -> Backend {
-        let files = Arc::new(Mutex::new(Files::default()));
-        let runtime = Arc::new(Mutex::new(Runtime::default()));
+        let files = Mutex::new(Files::default());
+        let runtime = Mutex::new(Runtime::default());
         Backend { files, runtime, client }
     }
 }
