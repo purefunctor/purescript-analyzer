@@ -1,0 +1,66 @@
+package:
+  name: fixture
+  dependencies:
+    - console
+    - effect
+    - graphql-client
+    - prelude
+  test:
+    main: Test.Main
+    dependencies: []
+workspace:
+  packageSet:
+    registry: 64.10.0
+  extraPackages:
+    graphql-client:
+      dependencies:
+        - aff
+        - affjax
+        - affjax-node
+        - affjax-web
+        - argonaut-codecs
+        - argonaut-core
+        - arrays
+        - bifunctors
+        - console
+        - control
+        - datetime
+        - debug
+        - effect
+        - either
+        - enums
+        - filterable
+        - foldable-traversable
+        - foreign
+        - foreign-object
+        - functions
+        - halogen-subscriptions
+        - heterogeneous
+        - http-methods
+        - integers
+        - lists
+        - maybe
+        - media-types
+        - newtype
+        - now
+        - nullable
+        - numbers
+        - ordered-collections
+        - partial
+        - prelude
+        - psci-support
+        - quickcheck
+        - record
+        - spec
+        - spec-discovery
+        - string-parsers
+        - strings
+        - transformers
+        - tuples
+        - typelevel-lists
+        - unfoldable
+        - unicode
+        - unsafe-coerce
+        - variant
+      git: https://github.com/OxfordAbstracts/purescript-graphql-client.git
+      ref: fe24db5f0a79137edb1019b5757ce70d44efae10

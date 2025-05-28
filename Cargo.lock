@@ -896,6 +896,7 @@ dependencies = [
  "resolving",
  "rowan",
  "smol_str",
+ "spago",
  "syntax",
  "tokio",
  "tower-lsp",
@@ -1392,6 +1393,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "spago"
+version = "0.1.0"
+dependencies = [
+ "globset",
+ "insta",
+ "itertools 0.14.0",
+ "rustc-hash 2.1.1",
+ "serde",
+ "serde_json",
+ "smol_str",
+ "thiserror",
+ "walkdir",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1492,6 +1508,26 @@ name = "text-size"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233"
+
+[[package]]
+name = "thiserror"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "567b8a2dae586314f7be2a752ec7474332959c6460e02bde30d702a66d488708"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "thread_local"

@@ -12,8 +12,6 @@ use files::Files;
 use smol_str::SmolStrBuilder;
 use tower_lsp::{Client, LanguageServer, jsonrpc::Result, lsp_types::*};
 
-use crate::spago;
-
 pub struct Backend {
     pub(crate) files: Arc<Mutex<Files>>,
     pub(crate) runtime: Arc<Mutex<Runtime>>,

@@ -19,6 +19,7 @@ parsing = { version = "0.1.0", path = "../crates/parsing" }
 resolving = { version = "0.1.0", path = "../crates/resolving" }
 rowan = "0.16.1"
 smol_str = "0.3.2"
+spago = { version = "0.1.0", path = "../crates/spago" }
 syntax = { version = "0.1.0", path = "../crates/syntax" }
 tokio = { version = "1.45.0", features = ["full"] }
 tower-lsp = "0.20.0"
