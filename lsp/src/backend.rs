@@ -3,7 +3,7 @@ mod hover;
 mod locate;
 
 use std::{
-    fs,
+    env, fs,
     sync::{Arc, Mutex},
 };
 
@@ -46,7 +46,8 @@ impl LanguageServer for Backend {
         self.client
             .log_message(MessageType::INFO, "purescript-analyzer is looking for files.")
             .await;
-        if let Ok(files) = spago::source_files() {
+        let root = env::current_dir().unwrap();
+        if let Ok(files) = spago::source_files(&root) {
             self.client
                 .log_message(
                     MessageType::INFO,

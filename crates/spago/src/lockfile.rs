@@ -1,8 +1,10 @@
 use std::path::{Path, PathBuf};
 
+use globset::Glob;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 use smol_str::SmolStr;
+use walkdir::WalkDir;
 
 #[derive(Debug, Deserialize)]
 pub struct Lockfile {
@@ -31,30 +33,42 @@ pub enum PackageEntry {
 
 impl Lockfile {
     pub fn sources(&self) -> impl Iterator<Item = PathBuf> {
-        let workspace = self.workspace.packages.values().flat_map(|package| {
-            let path = package.path.strip_prefix("./").unwrap_or(&package.path);
-            let src = Path::new(&path).join("src/**/*.purs");
-            let test = Path::new(&path).join("test/**/*.purs");
-            vec![src, test]
+        let workspace = self.workspace.packages.values().flat_map(move |package| {
+            let src = package.path.join("src");
+            let test = package.path.join("test");
+            [src, test]
         });
 
-        let packages = self.packages.iter().flat_map(|(name, package)| match package {
+        let packages = self.packages.iter().flat_map(move |(name, package)| match package {
             PackageEntry::Git { rev } => {
-                let src = Path::new(".spago/p").join(name).join(rev).join("src/**/*.purs");
-                let test = Path::new(".spago/p").join(name).join(rev).join("test/**/*.purs");
+                let src = Path::new(".spago/p").join(name).join(rev).join("src");
+                let test = Path::new(".spago/p").join(name).join(rev).join("test");
                 [src, test]
             }
             PackageEntry::Registry { version } => {
-                let src = Path::new(".spago/p")
-                    .join(format!("{}-{}", name, version))
-                    .join("src/**/*.purs");
-                let test = Path::new(".spago/p")
-                    .join(format!("{}-{}", name, version))
-                    .join("test/**/*.purs");
+                let name_version = format!("{}-{}", name, version);
+                let src = Path::new(".spago/p").join(&name_version).join("src");
+                let test = Path::new(".spago/p").join(&name_version).join("test");
                 [src, test]
             }
         });
 
         workspace.chain(packages)
     }
+
+    pub fn walk(&self, root: impl AsRef<Path>) -> impl Iterator<Item = PathBuf> {
+        self.sources().filter_map(with_root(root)).flat_map(find_purs_files)
+    }
+}
+
+fn with_root(root: impl AsRef<Path>) -> impl Fn(PathBuf) -> Option<PathBuf> {
+    move |source| root.as_ref().join(source).canonicalize().ok()
+}
+
+fn find_purs_files(root: PathBuf) -> impl Iterator<Item = PathBuf> {
+    let matcher = Glob::new("**/*.purs").unwrap().compile_matcher();
+    WalkDir::new(root).into_iter().filter_map(Result::ok).filter_map(move |entry| {
+        let path = entry.path();
+        if matcher.is_match(path) { Some(path.to_path_buf()) } else { None }
+    })
 }
