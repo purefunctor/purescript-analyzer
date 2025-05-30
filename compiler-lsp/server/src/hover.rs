@@ -21,11 +21,10 @@ use syntax::{SyntaxKind, SyntaxNode, cst};
 
 use super::{State, locate};
 
-pub(super) fn hover(state: &State, uri: Url, position: Position) -> Option<Hover> {
+pub(super) fn implementation(state: &mut State, uri: Url, position: Position) -> Option<Hover> {
     let f_id = {
-        let files = state.files.lock().unwrap();
         let uri = uri.as_str();
-        files.id(uri)?
+        state.files.id(uri)?
     };
 
     let located = locate::locate(state, f_id, position);
@@ -40,12 +39,12 @@ pub(super) fn hover(state: &State, uri: Url, position: Position) -> Option<Hover
     }
 }
 
-fn hover_module_name(state: &State, f_id: FileId, cst: AstPtr<cst::ModuleName>) -> Option<Hover> {
-    let parsed = {
-        let mut runtime = state.runtime.lock().unwrap();
-        let (parsed, _) = runtime.parsed(f_id);
-        parsed
-    };
+fn hover_module_name(
+    state: &mut State,
+    f_id: FileId,
+    cst: AstPtr<cst::ModuleName>,
+) -> Option<Hover> {
+    let (parsed, _) = state.runtime.parsed(f_id);
 
     let root = parsed.syntax_node();
     let module = cst.to_node(&root);
@@ -62,7 +61,7 @@ fn hover_module_name(state: &State, f_id: FileId, cst: AstPtr<cst::ModuleName>) 
         buffer.finish()
     };
 
-    let mut runtime = state.runtime.lock().unwrap();
+    let runtime = &mut state.runtime;
     let id = runtime.module_file(&module)?;
     let (parsed, _) = runtime.parsed(id);
     let root = parsed.syntax_node();
@@ -95,9 +94,9 @@ fn hover_module_name(state: &State, f_id: FileId, cst: AstPtr<cst::ModuleName>) 
     Some(Hover { contents, range })
 }
 
-fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
+fn hover_import(state: &mut State, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
     let (parsed, indexed) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
@@ -126,17 +125,17 @@ fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option<Hover
     };
 
     let import_resolved = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let import_id = runtime.module_file(&module)?;
         runtime.resolved(import_id)
     };
 
-    let hover_term_import = |name: &str| {
+    let hover_term_import = |state: &mut State, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
         hover_file_term(state, f_id, t_id)
     };
 
-    let hover_type_import = |name: &str| {
+    let hover_type_import = |state: &mut State, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
         hover_file_type(state, f_id, t_id)
     };
@@ -145,26 +144,26 @@ fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option<Hover
         cst::ImportItem::ImportValue(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            hover_term_import(name)
+            hover_term_import(state, name)
         }
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            hover_type_import(name)
+            hover_type_import(state, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            hover_type_import(name)
+            hover_type_import(state, name)
         }
         cst::ImportItem::ImportOperator(_) => None,
         cst::ImportItem::ImportTypeOperator(_) => None,
     }
 }
 
-fn hover_binder(state: &State, f_id: FileId, b_id: BinderId) -> Option<Hover> {
+fn hover_binder(state: &mut State, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -179,9 +178,9 @@ fn hover_binder(state: &State, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     }
 }
 
-fn hover_expression(state: &State, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
+fn hover_expression(state: &mut State, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -207,9 +206,9 @@ fn hover_expression(state: &State, f_id: FileId, e_id: ExpressionId) -> Option<H
     }
 }
 
-fn hover_type(state: &State, f_id: FileId, t_id: TypeId) -> Option<Hover> {
+fn hover_type(state: &mut State, f_id: FileId, t_id: TypeId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -225,7 +224,7 @@ fn hover_type(state: &State, f_id: FileId, t_id: TypeId) -> Option<Hover> {
 }
 
 fn hover_deferred(
-    state: &State,
+    state: &mut State,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -246,9 +245,9 @@ fn hover_deferred(
     }
 }
 
-fn hover_file_term(state: &State, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
+fn hover_file_term(state: &mut State, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
     let (parsed, indexed) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
@@ -285,12 +284,12 @@ fn hover_file_term(state: &State, f_id: FileId, t_id: TermItemId) -> Option<Hove
 }
 
 fn hover_file_type(
-    state: &State,
+    state: &mut State,
     f_id: Idx<files::File>,
     t_id: Idx<indexing::TypeItem>,
 ) -> Option<Hover> {
     let (parsed, indexed) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)

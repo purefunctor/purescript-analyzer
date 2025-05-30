@@ -3,11 +3,7 @@ pub mod extension;
 pub mod hover;
 pub mod locate;
 
-use std::{
-    env, fs,
-    ops::ControlFlow,
-    sync::{Arc, Mutex},
-};
+use std::{env, fs, ops::ControlFlow};
 
 use async_lsp::{
     ResponseError, client_monitor::ClientProcessMonitorLayer, concurrency::ConcurrencyLayer,
@@ -16,22 +12,21 @@ use async_lsp::{
 };
 use building::Runtime;
 use files::Files;
-use futures::future::BoxFuture;
 use smol_str::SmolStrBuilder;
 use tower::ServiceBuilder;
 use tracing::Level;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct State {
-    pub runtime: Arc<Mutex<Runtime>>,
-    pub files: Arc<Mutex<Files>>,
+    pub runtime: Runtime,
+    pub files: Files,
 }
 
 fn initialize(
     _: &mut State,
     _: extension::CustomInitializeParams,
-) -> BoxFuture<'static, Result<InitializeResult, ResponseError>> {
-    Box::pin(async move {
+) -> impl Future<Output = Result<InitializeResult, ResponseError>> + use<> {
+    async move {
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -43,7 +38,7 @@ fn initialize(
                 ..ServerCapabilities::default()
             },
         })
-    })
+    }
 }
 
 fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp::Result<()>> {
@@ -63,21 +58,21 @@ fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp
 fn definition(
     state: &mut State,
     p: GotoDefinitionParams,
-) -> BoxFuture<'static, Result<Option<GotoDefinitionResponse>, ResponseError>> {
+) -> impl Future<Output = Result<Option<GotoDefinitionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = definition::definition(state, uri, position);
-    Box::pin(async move { Result::Ok(result) })
+    let result = definition::implementation(state, uri, position);
+    async move { Result::Ok(result) }
 }
 
 fn hover(
     state: &mut State,
     p: HoverParams,
-) -> BoxFuture<'static, Result<Option<Hover>, ResponseError>> {
+) -> impl Future<Output = Result<Option<Hover>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = hover::hover(state, uri, position);
-    Box::pin(async move { Result::Ok(result) })
+    let result = hover::implementation(state, uri, position);
+    async move { Ok(result) }
 }
 
 fn did_change(
@@ -91,11 +86,11 @@ fn did_change(
 }
 
 fn on_change(state: &mut State, uri: &str, text: &str) {
-    let id = state.files.lock().unwrap().insert(uri, text);
-    let content = state.files.lock().unwrap().content(id);
+    let id = state.files.insert(uri, text);
+    let content = state.files.content(id);
 
-    state.runtime.lock().unwrap().set_content(id, content);
-    let (parsed, _) = state.runtime.lock().unwrap().parsed(id);
+    state.runtime.set_content(id, content);
+    let (parsed, _) = state.runtime.parsed(id);
 
     let cst = parsed.cst();
     if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
@@ -107,7 +102,7 @@ fn on_change(state: &mut State, uri: &str, text: &str) {
             builder.push_str(token.text());
         }
         let name = builder.finish();
-        state.runtime.lock().unwrap().set_module_file(&name, id);
+        state.runtime.set_module_file(&name, id);
     }
 }
 
