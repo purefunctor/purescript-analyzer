@@ -1,9 +1,9 @@
 [workspace]
 members = [
-  "crates/*", 
-  "docs/src/wasm", 
-  "lsp", 
-  "tests-integration", 
+  "crates/*",
+  "docs/src/wasm",
+  "lsp",
+  "tests-integration",
   "tests-package-set",
 ]
 default-members = ["crates/*", "tests-integration"]
