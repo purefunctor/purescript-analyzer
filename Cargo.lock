@@ -901,37 +901,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lsp"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-lsp",
- "building",
- "files",
- "futures",
- "glob",
- "globset",
- "indexing",
- "itertools 0.14.0",
- "la-arena",
- "lexing",
- "line-index",
- "lowering",
- "parsing",
- "resolving",
- "rowan",
- "serde",
- "smol_str",
- "spago",
- "syntax",
- "tokio",
- "tower",
- "tracing",
- "tracing-subscriber",
- "walkdir",
-]
-
-[[package]]
 name = "lsp-types"
 version = "0.95.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1344,6 +1313,37 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-lsp",
+ "building",
+ "files",
+ "futures",
+ "glob",
+ "globset",
+ "indexing",
+ "itertools 0.14.0",
+ "la-arena",
+ "lexing",
+ "line-index",
+ "lowering",
+ "parsing",
+ "resolving",
+ "rowan",
+ "serde",
+ "smol_str",
+ "spago",
+ "syntax",
+ "tokio",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
 ]
 
 [[package]]
