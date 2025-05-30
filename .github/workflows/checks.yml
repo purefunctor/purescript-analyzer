@@ -65,12 +65,13 @@ jobs:
         uses: cargo-bins/cargo-binstall@v1.10.7
 
       - name: Install cargo-nextest
-        run: cargo binstall cargo-nextest cargo-llvm-cov
+        run: cargo binstall cargo-nextest cargo-llvm-cov just
 
       - name: Build and Test
         run: |
           cargo build --verbose
-          cargo llvm-cov nextest --codecov --output-path codecov.json --verbose
+          just coverage
+          just coverage-codecov
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5

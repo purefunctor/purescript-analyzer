@@ -1,22 +1,20 @@
 _default:
     just --list
 
-[doc('Run tests')]
-test:
-    cargo nextest run
+[doc("Generate coverage for local tests")]
+coverage:
+  cargo llvm-cov clean --workspace
+  cargo llvm-cov nextest --no-report
+  cargo llvm-cov nextest --no-report -p tests-integration
 
-[doc('Run tests and review')]
-test-s:
-    cargo insta test --test-runner nextest --review
+[doc("Generate coverage with the package set")]
+coverage-full: coverage
+  cargo llvm-cov nextest --no-report -p tests-package-set
 
-[doc('Run tests with coverage')]
-test-c:
-    cargo llvm-cov nextest --html
+[doc("Generate coverage report for Codecov")]
+coverage-codecov:
+  cargo llvm-cov report --codecov --output-path codecov.json
 
-[doc('Run tests against package set')]
-test-p:
-    cargo nextest run -p tests-package-set --release
-
-[doc("Generate documentation")]
-@doc flag="":
-    cargo doc --document-private-items {{flag}}
+[doc("Generate coverage report as HTML")]
+coverage-html:
+  cargo llvm-cov report --html
