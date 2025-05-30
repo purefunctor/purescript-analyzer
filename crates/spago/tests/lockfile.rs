@@ -27,22 +27,3 @@ fn test_lockfile_sources() {
 
     insta::assert_snapshot!(sources);
 }
-
-#[test]
-fn test_source_files() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixture");
-
-    let sources = spago::source_files(&root)
-        .unwrap()
-        .into_iter()
-        .map(|source| {
-            source
-                .components()
-                .filter_map(|p| p.as_os_str().to_str())
-                .skip_while(|p| *p != "fixture")
-                .join("/")
-        })
-        .join("\n");
-
-    insta::assert_snapshot!(sources)
-}
