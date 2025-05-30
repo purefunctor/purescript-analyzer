@@ -1,0 +1,53 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..67
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "ModuleExportData"
+        ExportList@23..61
+          Annotation@23..24
+            TEXT@23..24 " "
+          LEFT_PARENTHESIS@24..25 "("
+          ExportType@25..29
+            UPPER@25..29 "Void"
+          COMMA@29..30 ","
+          ExportType@30..39
+            Annotation@30..31
+              TEXT@30..31 " "
+            UPPER@31..35 "List"
+            TypeItemsAll@35..39
+              DOUBLE_PERIOD_OPERATOR_NAME@35..39 "(..)"
+          COMMA@39..40 ","
+          ExportType@40..60
+            Annotation@40..41
+              TEXT@40..41 " "
+            UPPER@41..47 "Either"
+            TypeItemsList@47..60
+              LEFT_PARENTHESIS@47..48 "("
+              UPPER@48..52 "Left"
+              COMMA@52..53 ","
+              Annotation@53..54
+                TEXT@53..54 " "
+              UPPER@54..59 "Right"
+              RIGHT_PARENTHESIS@59..60 ")"
+          RIGHT_PARENTHESIS@60..61 ")"
+        Annotation@61..62
+          TEXT@61..62 " "
+        WHERE@62..67 "where"
+      LAYOUT_START@67..67 ""
+      ModuleImports@67..67
+      ModuleStatements@67..67
+      LAYOUT_END@67..67 ""
+      Annotation@67..68
+        TEXT@67..68 "\n"
+      END_OF_FILE@68..68 ""
+    ,
+    [],
+)

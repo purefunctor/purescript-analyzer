@@ -1,0 +1,52 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..70
+      ModuleHeader@0..69
+        MODULE@0..6 "module"
+        ModuleName@6..44
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..44 "ModuleExportDataItemA ..."
+        ExportList@44..63
+          Annotation@44..45
+            TEXT@44..45 " "
+          LEFT_PARENTHESIS@45..46 "("
+          ExportType@46..62
+            UPPER@46..50 "List"
+            TypeItemsList@50..62
+              LEFT_PARENTHESIS@50..51 "("
+              UPPER@51..57 "Period"
+              COMMA@57..58 ","
+              ERROR@58..61
+                ERROR@58..58 ""
+                Annotation@58..59
+                  TEXT@58..59 " "
+                DOUBLE_PERIOD@59..61 ".."
+              RIGHT_PARENTHESIS@61..62 ")"
+          RIGHT_PARENTHESIS@62..63 ")"
+        Annotation@63..64
+          TEXT@63..64 " "
+        WHERE@64..69 "where"
+      LAYOUT_START@69..69 ""
+      ModuleImports@69..69
+      ModuleStatements@69..69
+      LAYOUT_END@69..69 ""
+      Annotation@69..70
+        TEXT@69..70 "\n"
+      END_OF_FILE@70..70 ""
+    ,
+    [
+        ParseError {
+            offset: 59,
+            position: Position {
+                line: 1,
+                column: 60,
+            },
+            message: "Unexpected tokens in type items",
+        },
+    ],
+)

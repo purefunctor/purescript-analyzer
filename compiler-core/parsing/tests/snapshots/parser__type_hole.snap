@@ -1,0 +1,37 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..37
+      ModuleHeader@0..21
+        MODULE@0..6 "module"
+        ModuleName@6..15
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..15 "TypeHole"
+        Annotation@15..16
+          TEXT@15..16 " "
+        WHERE@16..21 "where"
+      LAYOUT_START@21..21 ""
+      ModuleImports@21..21
+      ModuleStatements@21..36
+        ValueSignature@21..36
+          Annotation@21..23
+            TEXT@21..23 "\n\n"
+          LOWER@23..27 "hole"
+          Annotation@27..28
+            TEXT@27..28 " "
+          DOUBLE_COLON@28..30 "::"
+          TypeHole@30..36
+            Annotation@30..31
+              TEXT@30..31 " "
+            HOLE@31..36 "?hole"
+      LAYOUT_END@36..36 ""
+      Annotation@36..37
+        TEXT@36..37 "\n"
+      END_OF_FILE@37..37 ""
+    ,
+    [],
+)

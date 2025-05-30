@@ -1,0 +1,72 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..59
+      ModuleHeader@0..58
+        MODULE@0..6 "module"
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..24 "ModuleExportClass"
+        ExportList@24..52
+          Annotation@24..25
+            TEXT@24..25 " "
+          LEFT_PARENTHESIS@25..26 "("
+          ExportClass@26..33
+            CLASS@26..31 "class"
+            Annotation@31..32
+              TEXT@31..32 " "
+            UPPER@32..33 "A"
+          COMMA@33..34 ","
+          ExportClass@34..40
+            Annotation@34..35
+              TEXT@34..35 " "
+            CLASS@35..40 "class"
+            ERROR@40..40 ""
+          ERROR@40..40 ""
+          ExportValue@40..42
+            Annotation@40..41
+              TEXT@40..41 " "
+            LOWER@41..42 "b"
+          COMMA@42..43 ","
+          ExportClass@43..51
+            Annotation@43..44
+              TEXT@43..44 " "
+            CLASS@44..49 "class"
+            Annotation@49..50
+              TEXT@49..50 " "
+            UPPER@50..51 "C"
+          RIGHT_PARENTHESIS@51..52 ")"
+        Annotation@52..53
+          TEXT@52..53 " "
+        WHERE@53..58 "where"
+      LAYOUT_START@58..58 ""
+      ModuleImports@58..58
+      ModuleStatements@58..58
+      LAYOUT_END@58..58 ""
+      Annotation@58..59
+        TEXT@58..59 "\n"
+      END_OF_FILE@59..59 ""
+    ,
+    [
+        ParseError {
+            offset: 41,
+            position: Position {
+                line: 1,
+                column: 42,
+            },
+            message: "Expected UPPER",
+        },
+        ParseError {
+            offset: 41,
+            position: Position {
+                line: 1,
+                column: 42,
+            },
+            message: "Expected COMMA",
+        },
+    ],
+)

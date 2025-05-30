@@ -1,0 +1,44 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..38
+      ModuleHeader@0..23
+        MODULE@0..6 "module"
+        ModuleName@6..17
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..17 "BinderChar"
+        Annotation@17..18
+          TEXT@17..18 " "
+        WHERE@18..23 "where"
+      LAYOUT_START@23..23 ""
+      ModuleImports@23..23
+      ModuleStatements@23..37
+        ValueEquation@23..37
+          Annotation@23..25
+            TEXT@23..25 "\n\n"
+          LOWER@25..29 "char"
+          FunctionBinders@29..33
+            BinderChar@29..33
+              Annotation@29..30
+                TEXT@29..30 " "
+              CHAR@30..33 "'a'"
+          Unconditional@33..37
+            Annotation@33..34
+              TEXT@33..34 " "
+            EQUAL@34..35 "="
+            WhereExpression@35..37
+              ExpressionInteger@35..37
+                Annotation@35..36
+                  TEXT@35..36 " "
+                INTEGER@36..37 "0"
+      LAYOUT_END@37..37 ""
+      Annotation@37..38
+        TEXT@37..38 "\n"
+      END_OF_FILE@38..38 ""
+    ,
+    [],
+)

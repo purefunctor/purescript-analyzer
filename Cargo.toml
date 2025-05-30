@@ -1,12 +1,13 @@
 [workspace]
 members = [
   "crates/*",
+  "compiler-core/*",
   "docs/src/wasm",
   "lsp",
   "tests-integration",
   "tests-package-set",
 ]
-default-members = ["crates/*", "tests-integration"]
+default-members = ["crates/*", "compiler-core/*", "tests-integration"]
 resolver = "3"
 
 [profile.dev.package.insta]

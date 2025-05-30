@@ -1,0 +1,43 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..55
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "InstancePrefixed"
+        Annotation@23..24
+          TEXT@23..24 " "
+        WHERE@24..29 "where"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..54
+        InstanceChain@29..54
+          InstanceDeclaration@29..54
+            Annotation@29..31
+              TEXT@29..31 "\n\n"
+            INSTANCE@31..39 "instance"
+            InstanceHead@39..54
+              QualifiedName@39..50
+                Annotation@39..40
+                  TEXT@39..40 " "
+                Qualifier@40..48
+                  TEXT@40..48 "Data.Eq."
+                UPPER@48..50 "Eq"
+              TypeConstructor@50..54
+                QualifiedName@50..54
+                  Annotation@50..51
+                    TEXT@50..51 " "
+                  UPPER@51..54 "Int"
+      LAYOUT_END@54..54 ""
+      Annotation@54..55
+        TEXT@54..55 "\n"
+      END_OF_FILE@55..55 ""
+    ,
+    [],
+)

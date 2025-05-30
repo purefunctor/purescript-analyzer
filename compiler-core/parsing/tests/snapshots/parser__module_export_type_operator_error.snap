@@ -1,0 +1,81 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..74
+      ModuleHeader@0..73
+        MODULE@0..6 "module"
+        ModuleName@6..36
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..36 "ModuleExportTypeOpera ..."
+        ExportList@36..67
+          Annotation@36..37
+            TEXT@36..37 " "
+          LEFT_PARENTHESIS@37..38 "("
+          ExportTypeOperator@38..46
+            TYPE@38..42 "type"
+            Annotation@42..43
+              TEXT@42..43 " "
+            OPERATOR_NAME@43..46 "(+)"
+          COMMA@46..47 ","
+          ExportTypeOperator@47..52
+            Annotation@47..48
+              TEXT@47..48 " "
+            TYPE@48..52 "type"
+            ERROR@52..52 ""
+          ERROR@52..52 ""
+          ERROR@52..66
+            ERROR@52..52 ""
+            Annotation@52..53
+              TEXT@52..53 " "
+            INTEGER@53..56 "123"
+            COMMA@56..57 ","
+            ExportTypeOperator@57..66
+              Annotation@57..58
+                TEXT@57..58 " "
+              TYPE@58..62 "type"
+              Annotation@62..63
+                TEXT@62..63 " "
+              OPERATOR_NAME@63..66 "(*)"
+          RIGHT_PARENTHESIS@66..67 ")"
+        Annotation@67..68
+          TEXT@67..68 " "
+        WHERE@68..73 "where"
+      LAYOUT_START@73..73 ""
+      ModuleImports@73..73
+      ModuleStatements@73..73
+      LAYOUT_END@73..73 ""
+      Annotation@73..74
+        TEXT@73..74 "\n"
+      END_OF_FILE@74..74 ""
+    ,
+    [
+        ParseError {
+            offset: 53,
+            position: Position {
+                line: 1,
+                column: 54,
+            },
+            message: "Expected OPERATOR_NAME",
+        },
+        ParseError {
+            offset: 53,
+            position: Position {
+                line: 1,
+                column: 54,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 53,
+            position: Position {
+                line: 1,
+                column: 54,
+            },
+            message: "Unexpected tokens in export list",
+        },
+    ],
+)

@@ -1,0 +1,284 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..114
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..22 "RecoverUntilEnd"
+        Annotation@22..23
+          TEXT@22..23 " "
+        WHERE@23..28 "where"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..113
+        ImportStatement@28..113
+          Annotation@28..30
+            TEXT@28..30 "\n\n"
+          IMPORT@30..36 "import"
+          ModuleName@36..44
+            Annotation@36..37
+              TEXT@36..37 " "
+            UPPER@37..44 "Prelude"
+          ImportList@44..113
+            Annotation@44..45
+              TEXT@44..45 " "
+            LEFT_PARENTHESIS@45..46 "("
+            ImportType@46..50
+              UPPER@46..50 "Unit"
+            COMMA@50..51 ","
+            ImportTypeOperator@51..57
+              Annotation@51..53
+                TEXT@51..53 "\n\n"
+              TYPE@53..57 "type"
+              ERROR@57..57 ""
+            ERROR@57..57 ""
+            ImportType@57..59
+              Annotation@57..58
+                TEXT@57..58 " "
+              UPPER@58..59 "T"
+            ERROR@59..59 ""
+            ERROR@59..113
+              ERROR@59..59 ""
+              Annotation@59..60
+                TEXT@59..60 " "
+              EQUAL@60..61 "="
+              ImportType@61..66
+                Annotation@61..62
+                  TEXT@61..62 " "
+                UPPER@62..66 "Unit"
+              ERROR@66..66 ""
+              ImportValue@66..69
+                Annotation@66..68
+                  TEXT@66..68 "\n\n"
+                LOWER@68..69 "f"
+              ERROR@69..69 ""
+              ImportValue@69..71
+                Annotation@69..70
+                  TEXT@69..70 " "
+                LOWER@70..71 "a"
+              ERROR@71..71 ""
+              ImportValue@71..73
+                Annotation@71..72
+                  TEXT@71..72 " "
+                LOWER@72..73 "b"
+              ERROR@73..73 ""
+              Annotation@73..74
+                TEXT@73..74 " "
+              EQUAL@74..75 "="
+              ImportValue@75..77
+                Annotation@75..76
+                  TEXT@75..76 " "
+                LOWER@76..77 "c"
+              ERROR@77..77 ""
+              Annotation@77..80
+                TEXT@77..80 "\n  "
+              WHERE@80..85 "where"
+              LAYOUT_START@85..85 ""
+              ImportValue@85..89
+                Annotation@85..88
+                  TEXT@85..88 "\n  "
+                LOWER@88..89 "c"
+              ERROR@89..89 ""
+              Annotation@89..90
+                TEXT@89..90 " "
+              EQUAL@90..91 "="
+              ImportValue@91..93
+                Annotation@91..92
+                  TEXT@91..92 " "
+                LOWER@92..93 "a"
+              ERROR@93..93 ""
+              Annotation@93..94
+                TEXT@93..94 " "
+              OPERATOR@94..95 "+"
+              ImportValue@95..97
+                Annotation@95..96
+                  TEXT@95..96 " "
+                LOWER@96..97 "b"
+              ERROR@97..97 ""
+              LAYOUT_END@97..97 ""
+              Annotation@97..99
+                TEXT@97..99 "\n\n"
+              DATA@99..103 "data"
+              ImportType@103..105
+                Annotation@103..104
+                  TEXT@103..104 " "
+                UPPER@104..105 "T"
+              ERROR@105..105 ""
+              Annotation@105..106
+                TEXT@105..106 " "
+              EQUAL@106..107 "="
+              ImportType@107..109
+                Annotation@107..108
+                  TEXT@107..108 " "
+                UPPER@108..109 "A"
+              ERROR@109..109 ""
+              Annotation@109..110
+                TEXT@109..110 " "
+              PIPE@110..111 "|"
+              ImportType@111..113
+                Annotation@111..112
+                  TEXT@111..112 " "
+                UPPER@112..113 "B"
+              ERROR@113..113 ""
+              LAYOUT_END@113..113 ""
+            ERROR@113..113 ""
+          ImportAlias@113..113
+        ERROR@113..113 ""
+      ModuleStatements@113..113
+      ERROR@113..113 ""
+      Annotation@113..114
+        TEXT@113..114 "\n"
+      END_OF_FILE@114..114 ""
+    ,
+    [
+        ParseError {
+            offset: 58,
+            position: Position {
+                line: 5,
+                column: 6,
+            },
+            message: "Expected OPERATOR_NAME",
+        },
+        ParseError {
+            offset: 58,
+            position: Position {
+                line: 5,
+                column: 6,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 60,
+            position: Position {
+                line: 5,
+                column: 8,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 60,
+            position: Position {
+                line: 5,
+                column: 8,
+            },
+            message: "Unexpected tokens in import list",
+        },
+        ParseError {
+            offset: 68,
+            position: Position {
+                line: 7,
+                column: 1,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 70,
+            position: Position {
+                line: 7,
+                column: 3,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 72,
+            position: Position {
+                line: 7,
+                column: 5,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 74,
+            position: Position {
+                line: 7,
+                column: 7,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 80,
+            position: Position {
+                line: 8,
+                column: 3,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 90,
+            position: Position {
+                line: 9,
+                column: 5,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 94,
+            position: Position {
+                line: 9,
+                column: 9,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 99,
+            position: Position {
+                line: 11,
+                column: 1,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 106,
+            position: Position {
+                line: 11,
+                column: 8,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 110,
+            position: Position {
+                line: 11,
+                column: 12,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 114,
+            position: Position {
+                line: 12,
+                column: 1,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 114,
+            position: Position {
+                line: 12,
+                column: 1,
+            },
+            message: "Expected RIGHT_PARENTHESIS",
+        },
+        ParseError {
+            offset: 114,
+            position: Position {
+                line: 12,
+                column: 1,
+            },
+            message: "Expected LAYOUT_SEPARATOR",
+        },
+        ParseError {
+            offset: 114,
+            position: Position {
+                line: 12,
+                column: 1,
+            },
+            message: "Expected LAYOUT_END",
+        },
+    ],
+)

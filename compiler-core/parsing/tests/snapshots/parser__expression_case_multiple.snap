@@ -1,0 +1,99 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..87
+      ModuleHeader@0..34
+        MODULE@0..6 "module"
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..28 "ExpressionCaseMultipl"
+        Annotation@28..29
+          TEXT@28..29 " "
+        WHERE@29..34 "where"
+      LAYOUT_START@34..34 ""
+      ModuleImports@34..34
+      ModuleStatements@34..86
+        ValueEquation@34..86
+          Annotation@34..36
+            TEXT@34..36 "\n\n"
+          LOWER@36..40 "main"
+          FunctionBinders@40..40
+          Unconditional@40..86
+            Annotation@40..41
+              TEXT@40..41 " "
+            EQUAL@41..42 "="
+            WhereExpression@42..86
+              ExpressionCaseOf@42..86
+                Annotation@42..43
+                  TEXT@42..43 " "
+                CASE@43..47 "case"
+                CaseTrunk@47..52
+                  ExpressionVariable@47..49
+                    QualifiedName@47..49
+                      Annotation@47..48
+                        TEXT@47..48 " "
+                      LOWER@48..49 "a"
+                  COMMA@49..50 ","
+                  ExpressionVariable@50..52
+                    QualifiedName@50..52
+                      Annotation@50..51
+                        TEXT@50..51 " "
+                      LOWER@51..52 "b"
+                Annotation@52..53
+                  TEXT@52..53 " "
+                OF@53..55 "of"
+                CaseBranches@55..86
+                  LAYOUT_START@55..55 ""
+                  CaseBranch@55..70
+                    CaseBranchBinders@55..62
+                      BinderInteger@55..59
+                        Annotation@55..58
+                          TEXT@55..58 "\n  "
+                        INTEGER@58..59 "0"
+                      COMMA@59..60 ","
+                      BinderInteger@60..62
+                        Annotation@60..61
+                          TEXT@60..61 " "
+                        INTEGER@61..62 "1"
+                    Unconditional@62..70
+                      Annotation@62..63
+                        TEXT@62..63 " "
+                      RIGHT_ARROW@63..65 "->"
+                      WhereExpression@65..70
+                        ExpressionTrue@65..70
+                          Annotation@65..66
+                            TEXT@65..66 " "
+                          TRUE@66..70 "true"
+                  LAYOUT_SEPARATOR@70..70 ""
+                  CaseBranch@70..86
+                    CaseBranchBinders@70..77
+                      BinderWildcard@70..74
+                        Annotation@70..73
+                          TEXT@70..73 "\n  "
+                        UNDERSCORE@73..74 "_"
+                      COMMA@74..75 ","
+                      BinderWildcard@75..77
+                        Annotation@75..76
+                          TEXT@75..76 " "
+                        UNDERSCORE@76..77 "_"
+                    Unconditional@77..86
+                      Annotation@77..78
+                        TEXT@77..78 " "
+                      RIGHT_ARROW@78..80 "->"
+                      WhereExpression@80..86
+                        ExpressionFalse@80..86
+                          Annotation@80..81
+                            TEXT@80..81 " "
+                          FALSE@81..86 "false"
+                  LAYOUT_END@86..86 ""
+      LAYOUT_END@86..86 ""
+      Annotation@86..87
+        TEXT@86..87 "\n"
+      END_OF_FILE@87..87 ""
+    ,
+    [],
+)

@@ -1,0 +1,55 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..58
+      ModuleHeader@0..35
+        MODULE@0..6 "module"
+        ModuleName@6..28
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..28 "ExpressionApplication"
+        Annotation@28..30
+          TEXT@28..30 "  "
+        WHERE@30..35 "where"
+      LAYOUT_START@35..35 ""
+      ModuleImports@35..35
+      ModuleStatements@35..57
+        ValueEquation@35..57
+          Annotation@35..37
+            TEXT@35..37 "\n\n"
+          LOWER@37..48 "application"
+          FunctionBinders@48..48
+          Unconditional@48..57
+            Annotation@48..49
+              TEXT@48..49 " "
+            EQUAL@49..50 "="
+            WhereExpression@50..57
+              ExpressionApplicationChain@50..57
+                ExpressionVariable@50..52
+                  QualifiedName@50..52
+                    Annotation@50..51
+                      TEXT@50..51 " "
+                    LOWER@51..52 "f"
+                ExpressionTypeArgument@52..55
+                  Annotation@52..53
+                    TEXT@52..53 " "
+                  AT@53..54 "@"
+                  TypeConstructor@54..55
+                    QualifiedName@54..55
+                      UPPER@54..55 "T"
+                ExpressionTermArgument@55..57
+                  ExpressionVariable@55..57
+                    QualifiedName@55..57
+                      Annotation@55..56
+                        TEXT@55..56 " "
+                      LOWER@56..57 "t"
+      LAYOUT_END@57..57 ""
+      Annotation@57..58
+        TEXT@57..58 "\n"
+      END_OF_FILE@58..58 ""
+    ,
+    [],
+)

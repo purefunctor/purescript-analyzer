@@ -1,0 +1,55 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..63
+      ModuleHeader@0..30
+        MODULE@0..6 "module"
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..24 "ExpressionBoolean"
+        Annotation@24..25
+          TEXT@24..25 " "
+        WHERE@25..30 "where"
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..30
+      ModuleStatements@30..62
+        ValueEquation@30..46
+          Annotation@30..32
+            TEXT@30..32 "\n\n"
+          LOWER@32..39 "boolean"
+          FunctionBinders@39..39
+          Unconditional@39..46
+            Annotation@39..40
+              TEXT@39..40 " "
+            EQUAL@40..41 "="
+            WhereExpression@41..46
+              ExpressionTrue@41..46
+                Annotation@41..42
+                  TEXT@41..42 " "
+                TRUE@42..46 "true"
+        LAYOUT_SEPARATOR@46..46 ""
+        ValueEquation@46..62
+          Annotation@46..47
+            TEXT@46..47 "\n"
+          LOWER@47..54 "boolean"
+          FunctionBinders@54..54
+          Unconditional@54..62
+            Annotation@54..55
+              TEXT@54..55 " "
+            EQUAL@55..56 "="
+            WhereExpression@56..62
+              ExpressionFalse@56..62
+                Annotation@56..57
+                  TEXT@56..57 " "
+                FALSE@57..62 "false"
+      LAYOUT_END@62..62 ""
+      Annotation@62..63
+        TEXT@62..63 "\n"
+      END_OF_FILE@63..63 ""
+    ,
+    [],
+)

@@ -1,0 +1,157 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..188
+      ModuleHeader@0..51
+        MODULE@0..6 "module"
+        ModuleName@6..45
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..45 "ClassDeclarationFunct ..."
+        Annotation@45..46
+          TEXT@45..46 " "
+        WHERE@46..51 "where"
+      LAYOUT_START@51..51 ""
+      ModuleImports@51..51
+      ModuleStatements@51..187
+        ClassDeclaration@51..114
+          Annotation@51..53
+            TEXT@51..53 "\n\n"
+          CLASS@53..58 "class"
+          ClassHead@58..73
+            Annotation@58..59
+              TEXT@58..59 " "
+            UPPER@59..69 "TypeEquals"
+            TypeVariableBinding@69..71
+              Annotation@69..70
+                TEXT@69..70 " "
+              LOWER@70..71 "a"
+            TypeVariableBinding@71..73
+              Annotation@71..72
+                TEXT@71..72 " "
+              LOWER@72..73 "b"
+          ClassFunctionalDependencies@73..90
+            Annotation@73..74
+              TEXT@73..74 " "
+            PIPE@74..75 "|"
+            FunctionalDependencyDetermines@75..82
+              Annotation@75..76
+                TEXT@75..76 " "
+              LOWER@76..77 "a"
+              Annotation@77..78
+                TEXT@77..78 " "
+              RIGHT_ARROW@78..80 "->"
+              Annotation@80..81
+                TEXT@80..81 " "
+              LOWER@81..82 "b"
+            COMMA@82..83 ","
+            FunctionalDependencyDetermines@83..90
+              Annotation@83..84
+                TEXT@83..84 " "
+              LOWER@84..85 "b"
+              Annotation@85..86
+                TEXT@85..86 " "
+              RIGHT_ARROW@86..88 "->"
+              Annotation@88..89
+                TEXT@88..89 " "
+              LOWER@89..90 "a"
+          Annotation@90..91
+            TEXT@90..91 " "
+          WHERE@91..96 "where"
+          ClassStatements@96..114
+            LAYOUT_START@96..96 ""
+            ClassMemberStatement@96..114
+              Annotation@96..99
+                TEXT@96..99 "\n  "
+              LOWER@99..104 "proof"
+              Annotation@104..105
+                TEXT@104..105 " "
+              DOUBLE_COLON@105..107 "::"
+              TypeArrow@107..114
+                TypeVariable@107..109
+                  Annotation@107..108
+                    TEXT@107..108 " "
+                  LOWER@108..109 "a"
+                Annotation@109..110
+                  TEXT@109..110 " "
+                RIGHT_ARROW@110..112 "->"
+                TypeVariable@112..114
+                  Annotation@112..113
+                    TEXT@112..113 " "
+                  LOWER@113..114 "b"
+            LAYOUT_END@114..114 ""
+        LAYOUT_SEPARATOR@114..114 ""
+        ClassDeclaration@114..165
+          Annotation@114..116
+            TEXT@114..116 "\n\n"
+          CLASS@116..121 "class"
+          ClassHead@121..134
+            Annotation@121..122
+              TEXT@121..122 " "
+            UPPER@122..132 "Determined"
+            TypeVariableBinding@132..134
+              Annotation@132..133
+                TEXT@132..133 " "
+              LOWER@133..134 "a"
+          ClassFunctionalDependencies@134..141
+            Annotation@134..135
+              TEXT@134..135 " "
+            PIPE@135..136 "|"
+            FunctionalDependencyDetermined@136..141
+              Annotation@136..137
+                TEXT@136..137 " "
+              RIGHT_ARROW@137..139 "->"
+              Annotation@139..140
+                TEXT@139..140 " "
+              LOWER@140..141 "a"
+          Annotation@141..142
+            TEXT@141..142 " "
+          WHERE@142..147 "where"
+          ClassStatements@147..165
+            LAYOUT_START@147..147 ""
+            ClassMemberStatement@147..165
+              Annotation@147..150
+                TEXT@147..150 "\n  "
+              LOWER@150..160 "determined"
+              Annotation@160..161
+                TEXT@160..161 " "
+              DOUBLE_COLON@161..163 "::"
+              TypeVariable@163..165
+                Annotation@163..164
+                  TEXT@163..164 " "
+                LOWER@164..165 "a"
+            LAYOUT_END@165..165 ""
+        LAYOUT_SEPARATOR@165..165 ""
+        ClassDeclaration@165..187
+          Annotation@165..167
+            TEXT@165..167 "\n\n"
+          CLASS@167..172 "class"
+          ClassHead@172..180
+            Annotation@172..173
+              TEXT@172..173 " "
+            UPPER@173..178 "Empty"
+            TypeVariableBinding@178..180
+              Annotation@178..179
+                TEXT@178..179 " "
+              LOWER@179..180 "a"
+          ClassFunctionalDependencies@180..187
+            Annotation@180..181
+              TEXT@180..181 " "
+            PIPE@181..182 "|"
+            FunctionalDependencyDetermined@182..187
+              Annotation@182..183
+                TEXT@182..183 " "
+              RIGHT_ARROW@183..185 "->"
+              Annotation@185..186
+                TEXT@185..186 " "
+              LOWER@186..187 "a"
+      LAYOUT_END@187..187 ""
+      Annotation@187..188
+        TEXT@187..188 "\n"
+      END_OF_FILE@188..188 ""
+    ,
+    [],
+)

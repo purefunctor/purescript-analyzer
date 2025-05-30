@@ -1,0 +1,62 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..54
+      ModuleHeader@0..53
+        MODULE@0..6 "module"
+        ModuleName@6..25
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..25 "LexerErrorInserted"
+        ExportList@25..47
+          Annotation@25..26
+            TEXT@25..26 " "
+          LEFT_PARENTHESIS@26..27 "("
+          ExportValue@27..32
+            LOWER@27..32 "hello"
+          COMMA@32..33 ","
+          ERROR@33..46
+            ERROR@33..33 ""
+            Annotation@33..34
+              TEXT@33..34 " "
+            ERROR@34..34 ""
+            INTEGER@34..39 "00123"
+            COMMA@39..40 ","
+            ExportValue@40..46
+              Annotation@40..41
+                TEXT@40..41 " "
+              LOWER@41..46 "world"
+          RIGHT_PARENTHESIS@46..47 ")"
+        Annotation@47..48
+          TEXT@47..48 " "
+        WHERE@48..53 "where"
+      LAYOUT_START@53..53 ""
+      ModuleImports@53..53
+      ModuleStatements@53..53
+      LAYOUT_END@53..53 ""
+      Annotation@53..54
+        TEXT@53..54 "\n"
+      END_OF_FILE@54..54 ""
+    ,
+    [
+        ParseError {
+            offset: 34,
+            position: Position {
+                line: 1,
+                column: 35,
+            },
+            message: "Unexpected tokens in export list",
+        },
+        ParseError {
+            offset: 34,
+            position: Position {
+                line: 1,
+                column: 35,
+            },
+            message: "Too many leading zeros",
+        },
+    ],
+)

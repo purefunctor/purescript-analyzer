@@ -1,0 +1,62 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..63
+      ModuleHeader@0..62
+        MODULE@0..6 "module"
+        ModuleName@6..33
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..33 "ModuleExportDataComma ..."
+        ExportList@33..56
+          Annotation@33..34
+            TEXT@33..34 " "
+          LEFT_PARENTHESIS@34..35 "("
+          ExportType@35..55
+            UPPER@35..41 "Either"
+            TypeItemsList@41..55
+              LEFT_PARENTHESIS@41..42 "("
+              UPPER@42..46 "Left"
+              COMMA@46..47 ","
+              ERROR@47..54
+                ERROR@47..47 ""
+                COMMA@47..48 ","
+                UPPER@48..53 "Right"
+                ERROR@53..54
+                  ERROR@53..53 ""
+                  COMMA@53..54 ","
+              RIGHT_PARENTHESIS@54..55 ")"
+          RIGHT_PARENTHESIS@55..56 ")"
+        Annotation@56..57
+          TEXT@56..57 " "
+        WHERE@57..62 "where"
+      LAYOUT_START@62..62 ""
+      ModuleImports@62..62
+      ModuleStatements@62..62
+      LAYOUT_END@62..62 ""
+      Annotation@62..63
+        TEXT@62..63 "\n"
+      END_OF_FILE@63..63 ""
+    ,
+    [
+        ParseError {
+            offset: 47,
+            position: Position {
+                line: 1,
+                column: 48,
+            },
+            message: "Unexpected tokens in type items",
+        },
+        ParseError {
+            offset: 53,
+            position: Position {
+                line: 1,
+                column: 54,
+            },
+            message: "Trailing comma",
+        },
+    ],
+)

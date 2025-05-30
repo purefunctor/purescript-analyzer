@@ -1,0 +1,170 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..190
+      ModuleHeader@0..40
+        MODULE@0..6 "module"
+        ModuleName@6..34
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..34 "ClassDeclarationConst ..."
+        Annotation@34..35
+          TEXT@34..35 " "
+        WHERE@35..40 "where"
+      LAYOUT_START@40..40 ""
+      ModuleImports@40..40
+      ModuleStatements@40..189
+        ClassDeclaration@40..107
+          Annotation@40..42
+            TEXT@40..42 "\n\n"
+          CLASS@42..47 "class"
+          ClassConstraints@47..58
+            TypeApplicationChain@47..55
+              TypeConstructor@47..53
+                QualifiedName@47..53
+                  Annotation@47..48
+                    TEXT@47..48 " "
+                  UPPER@48..53 "Apply"
+              TypeVariable@53..55
+                Annotation@53..54
+                  TEXT@53..54 " "
+                LOWER@54..55 "f"
+            Annotation@55..56
+              TEXT@55..56 " "
+            LEFT_THICK_ARROW@56..58 "<="
+          ClassHead@58..72
+            Annotation@58..59
+              TEXT@58..59 " "
+            UPPER@59..70 "Applicative"
+            TypeVariableBinding@70..72
+              Annotation@70..71
+                TEXT@70..71 " "
+              LOWER@71..72 "f"
+          Annotation@72..73
+            TEXT@72..73 " "
+          WHERE@73..78 "where"
+          ClassStatements@78..107
+            LAYOUT_START@78..78 ""
+            ClassMemberStatement@78..107
+              Annotation@78..81
+                TEXT@78..81 "\n  "
+              LOWER@81..85 "pure"
+              Annotation@85..86
+                TEXT@85..86 " "
+              DOUBLE_COLON@86..88 "::"
+              TypeForall@88..107
+                Annotation@88..89
+                  TEXT@88..89 " "
+                FORALL@89..95 "forall"
+                TypeVariableBinding@95..97
+                  Annotation@95..96
+                    TEXT@95..96 " "
+                  LOWER@96..97 "a"
+                PERIOD@97..98 "."
+                TypeArrow@98..107
+                  TypeVariable@98..100
+                    Annotation@98..99
+                      TEXT@98..99 " "
+                    LOWER@99..100 "a"
+                  Annotation@100..101
+                    TEXT@100..101 " "
+                  RIGHT_ARROW@101..103 "->"
+                  TypeApplicationChain@103..107
+                    TypeVariable@103..105
+                      Annotation@103..104
+                        TEXT@103..104 " "
+                      LOWER@104..105 "f"
+                    TypeVariable@105..107
+                      Annotation@105..106
+                        TEXT@105..106 " "
+                      LOWER@106..107 "a"
+            LAYOUT_END@107..107 ""
+        LAYOUT_SEPARATOR@107..107 ""
+        ClassDeclaration@107..189
+          Annotation@107..109
+            TEXT@107..109 "\n\n"
+          CLASS@109..114 "class"
+          ClassConstraints@114..144
+            Annotation@114..115
+              TEXT@114..115 " "
+            LEFT_PARENTHESIS@115..116 "("
+            TypeApplicationChain@116..125
+              TypeConstructor@116..123
+                QualifiedName@116..123
+                  UPPER@116..123 "Functor"
+              TypeVariable@123..125
+                Annotation@123..124
+                  TEXT@123..124 " "
+                LOWER@124..125 "f"
+            COMMA@125..126 ","
+            TypeApplicationChain@126..140
+              TypeConstructor@126..138
+                QualifiedName@126..138
+                  Annotation@126..127
+                    TEXT@126..127 " "
+                  UPPER@127..138 "Applicative"
+              TypeVariable@138..140
+                Annotation@138..139
+                  TEXT@138..139 " "
+                LOWER@139..140 "f"
+            RIGHT_PARENTHESIS@140..141 ")"
+            Annotation@141..142
+              TEXT@141..142 " "
+            LEFT_THICK_ARROW@142..144 "<="
+          ClassHead@144..152
+            Annotation@144..145
+              TEXT@144..145 " "
+            UPPER@145..150 "Monad"
+            TypeVariableBinding@150..152
+              Annotation@150..151
+                TEXT@150..151 " "
+              LOWER@151..152 "f"
+          Annotation@152..153
+            TEXT@152..153 " "
+          WHERE@153..158 "where"
+          ClassStatements@158..189
+            LAYOUT_START@158..158 ""
+            ClassMemberStatement@158..189
+              Annotation@158..161
+                TEXT@158..161 "\n  "
+              LOWER@161..167 "return"
+              Annotation@167..168
+                TEXT@167..168 " "
+              DOUBLE_COLON@168..170 "::"
+              TypeForall@170..189
+                Annotation@170..171
+                  TEXT@170..171 " "
+                FORALL@171..177 "forall"
+                TypeVariableBinding@177..179
+                  Annotation@177..178
+                    TEXT@177..178 " "
+                  LOWER@178..179 "a"
+                PERIOD@179..180 "."
+                TypeArrow@180..189
+                  TypeVariable@180..182
+                    Annotation@180..181
+                      TEXT@180..181 " "
+                    LOWER@181..182 "a"
+                  Annotation@182..183
+                    TEXT@182..183 " "
+                  RIGHT_ARROW@183..185 "->"
+                  TypeApplicationChain@185..189
+                    TypeVariable@185..187
+                      Annotation@185..186
+                        TEXT@185..186 " "
+                      LOWER@186..187 "f"
+                    TypeVariable@187..189
+                      Annotation@187..188
+                        TEXT@187..188 " "
+                      LOWER@188..189 "a"
+            LAYOUT_END@189..189 ""
+      LAYOUT_END@189..189 ""
+      Annotation@189..190
+        TEXT@189..190 "\n"
+      END_OF_FILE@190..190 ""
+    ,
+    [],
+)

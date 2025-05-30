@@ -1,0 +1,71 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..64
+      ModuleHeader@0..26
+        MODULE@0..6 "module"
+        ModuleName@6..20
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..20 "TypeRoleError"
+        Annotation@20..21
+          TEXT@20..21 " "
+        WHERE@21..26 "where"
+      LAYOUT_START@26..26 ""
+      ModuleImports@26..26
+      ModuleStatements@26..63
+        TypeRoleDeclaration@26..63
+          Annotation@26..28
+            TEXT@26..28 "\n\n"
+          TYPE@28..32 "type"
+          Annotation@32..33
+            TEXT@32..33 " "
+          ROLE@33..37 "role"
+          Annotation@37..38
+            TEXT@37..38 " "
+          UPPER@38..43 "Error"
+          ERROR@43..45
+            ERROR@43..43 ""
+            Annotation@43..44
+              TEXT@43..44 " "
+            INTEGER@44..45 "1"
+          TypeRole@45..53
+            Annotation@45..46
+              TEXT@45..46 " "
+            NOMINAL@46..53 "nominal"
+          TypeRole@53..61
+            Annotation@53..54
+              TEXT@53..54 " "
+            PHANTOM@54..61 "phantom"
+          ERROR@61..63
+            ERROR@61..61 ""
+            Annotation@61..62
+              TEXT@61..62 " "
+            INTEGER@62..63 "2"
+      LAYOUT_END@63..63 ""
+      Annotation@63..64
+        TEXT@63..64 "\n"
+      END_OF_FILE@64..64 ""
+    ,
+    [
+        ParseError {
+            offset: 44,
+            position: Position {
+                line: 3,
+                column: 17,
+            },
+            message: "Expected NOMINAL, REPRESENTATIONAL, or PHANTOM",
+        },
+        ParseError {
+            offset: 62,
+            position: Position {
+                line: 3,
+                column: 35,
+            },
+            message: "Expected NOMINAL, REPRESENTATIONAL, or PHANTOM",
+        },
+    ],
+)

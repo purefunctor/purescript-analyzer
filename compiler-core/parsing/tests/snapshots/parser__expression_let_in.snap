@@ -1,0 +1,201 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..180
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..22 "ExpressionLetIn"
+        Annotation@22..23
+          TEXT@22..23 " "
+        WHERE@23..28 "where"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..179
+        ValueEquation@28..53
+          Annotation@28..30
+            TEXT@28..30 "\n\n"
+          LOWER@30..36 "let_in"
+          FunctionBinders@36..36
+          Unconditional@36..53
+            Annotation@36..37
+              TEXT@36..37 " "
+            EQUAL@37..38 "="
+            WhereExpression@38..53
+              ExpressionLetIn@38..53
+                Annotation@38..39
+                  TEXT@38..39 " "
+                LET@39..42 "let"
+                LetBindingStatements@42..48
+                  LAYOUT_START@42..42 ""
+                  LetBindingEquation@42..48
+                    Annotation@42..43
+                      TEXT@42..43 " "
+                    LOWER@43..44 "x"
+                    FunctionBinders@44..44
+                    Unconditional@44..48
+                      Annotation@44..45
+                        TEXT@44..45 " "
+                      EQUAL@45..46 "="
+                      WhereExpression@46..48
+                        ExpressionVariable@46..48
+                          QualifiedName@46..48
+                            Annotation@46..47
+                              TEXT@46..47 " "
+                            LOWER@47..48 "y"
+                  LAYOUT_END@48..48 ""
+                Annotation@48..49
+                  TEXT@48..49 " "
+                IN@49..51 "in"
+                ExpressionVariable@51..53
+                  QualifiedName@51..53
+                    Annotation@51..52
+                      TEXT@51..52 " "
+                    LOWER@52..53 "z"
+        LAYOUT_SEPARATOR@53..53 ""
+        ValueEquation@53..82
+          Annotation@53..55
+            TEXT@53..55 "\n\n"
+          LOWER@55..61 "let_in"
+          FunctionBinders@61..61
+          Unconditional@61..82
+            Annotation@61..62
+              TEXT@61..62 " "
+            EQUAL@62..63 "="
+            WhereExpression@63..82
+              ExpressionLetIn@63..82
+                Annotation@63..66
+                  TEXT@63..66 "\n  "
+                LET@66..69 "let"
+                LetBindingStatements@69..75
+                  LAYOUT_START@69..69 ""
+                  LetBindingEquation@69..75
+                    Annotation@69..70
+                      TEXT@69..70 " "
+                    LOWER@70..71 "x"
+                    FunctionBinders@71..71
+                    Unconditional@71..75
+                      Annotation@71..72
+                        TEXT@71..72 " "
+                      EQUAL@72..73 "="
+                      WhereExpression@73..75
+                        ExpressionVariable@73..75
+                          QualifiedName@73..75
+                            Annotation@73..74
+                              TEXT@73..74 " "
+                            LOWER@74..75 "y"
+                  LAYOUT_END@75..75 ""
+                Annotation@75..78
+                  TEXT@75..78 "\n  "
+                IN@78..80 "in"
+                ExpressionVariable@80..82
+                  QualifiedName@80..82
+                    Annotation@80..81
+                      TEXT@80..81 " "
+                    LOWER@81..82 "z"
+        LAYOUT_SEPARATOR@82..82 ""
+        ValueEquation@82..119
+          Annotation@82..84
+            TEXT@82..84 "\n\n"
+          LOWER@84..90 "let_in"
+          FunctionBinders@90..90
+          Unconditional@90..119
+            Annotation@90..91
+              TEXT@90..91 " "
+            EQUAL@91..92 "="
+            WhereExpression@92..119
+              ExpressionLetIn@92..119
+                Annotation@92..95
+                  TEXT@92..95 "\n  "
+                LET@95..98 "let"
+                LetBindingStatements@98..108
+                  LAYOUT_START@98..98 ""
+                  LetBindingEquation@98..108
+                    Annotation@98..103
+                      TEXT@98..103 "\n    "
+                    LOWER@103..104 "x"
+                    FunctionBinders@104..104
+                    Unconditional@104..108
+                      Annotation@104..105
+                        TEXT@104..105 " "
+                      EQUAL@105..106 "="
+                      WhereExpression@106..108
+                        ExpressionVariable@106..108
+                          QualifiedName@106..108
+                            Annotation@106..107
+                              TEXT@106..107 " "
+                            LOWER@107..108 "y"
+                  LAYOUT_END@108..108 ""
+                Annotation@108..111
+                  TEXT@108..111 "\n  "
+                IN@111..113 "in"
+                ExpressionVariable@113..119
+                  QualifiedName@113..119
+                    Annotation@113..118
+                      TEXT@113..118 "\n    "
+                    LOWER@118..119 "z"
+        LAYOUT_SEPARATOR@119..119 ""
+        ValueEquation@119..179
+          Annotation@119..121
+            TEXT@119..121 "\n\n"
+          LOWER@121..127 "let_in"
+          FunctionBinders@127..127
+          Unconditional@127..179
+            Annotation@127..128
+              TEXT@127..128 " "
+            EQUAL@128..129 "="
+            WhereExpression@129..179
+              ExpressionLetIn@129..179
+                Annotation@129..132
+                  TEXT@129..132 "\n  "
+                LET@132..135 "let"
+                LetBindingStatements@135..165
+                  LAYOUT_START@135..135 ""
+                  LetBindingSignature@135..151
+                    Annotation@135..140
+                      TEXT@135..140 "\n    "
+                    LOWER@140..144 "life"
+                    Annotation@144..145
+                      TEXT@144..145 " "
+                    DOUBLE_COLON@145..147 "::"
+                    TypeConstructor@147..151
+                      QualifiedName@147..151
+                        Annotation@147..148
+                          TEXT@147..148 " "
+                        UPPER@148..151 "Int"
+                  LAYOUT_SEPARATOR@151..151 ""
+                  LetBindingEquation@151..165
+                    Annotation@151..156
+                      TEXT@151..156 "\n    "
+                    LOWER@156..160 "life"
+                    FunctionBinders@160..160
+                    Unconditional@160..165
+                      Annotation@160..161
+                        TEXT@160..161 " "
+                      EQUAL@161..162 "="
+                      WhereExpression@162..165
+                        ExpressionInteger@162..165
+                          Annotation@162..163
+                            TEXT@162..163 " "
+                          INTEGER@163..165 "42"
+                  LAYOUT_END@165..165 ""
+                Annotation@165..168
+                  TEXT@165..168 "\n  "
+                IN@168..170 "in"
+                ExpressionVariable@170..179
+                  QualifiedName@170..179
+                    Annotation@170..175
+                      TEXT@170..175 "\n    "
+                    LOWER@175..179 "life"
+      LAYOUT_END@179..179 ""
+      Annotation@179..180
+        TEXT@179..180 "\n"
+      END_OF_FILE@180..180 ""
+    ,
+    [],
+)

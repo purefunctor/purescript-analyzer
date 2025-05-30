@@ -1,0 +1,55 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..56
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..22 "ExpressionDigit"
+        Annotation@22..23
+          TEXT@22..23 " "
+        WHERE@23..28 "where"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..55
+        ValueEquation@28..42
+          Annotation@28..30
+            TEXT@28..30 "\n\n"
+          LOWER@30..37 "integer"
+          FunctionBinders@37..37
+          Unconditional@37..42
+            Annotation@37..38
+              TEXT@37..38 " "
+            EQUAL@38..39 "="
+            WhereExpression@39..42
+              ExpressionInteger@39..42
+                Annotation@39..40
+                  TEXT@39..40 " "
+                INTEGER@40..42 "42"
+        LAYOUT_SEPARATOR@42..42 ""
+        ValueEquation@42..55
+          Annotation@42..43
+            TEXT@42..43 "\n"
+          LOWER@43..49 "number"
+          FunctionBinders@49..49
+          Unconditional@49..55
+            Annotation@49..50
+              TEXT@49..50 " "
+            EQUAL@50..51 "="
+            WhereExpression@51..55
+              ExpressionNumber@51..55
+                Annotation@51..52
+                  TEXT@51..52 " "
+                NUMBER@52..55 "1.0"
+      LAYOUT_END@55..55 ""
+      Annotation@55..56
+        TEXT@55..56 "\n"
+      END_OF_FILE@56..56 ""
+    ,
+    [],
+)

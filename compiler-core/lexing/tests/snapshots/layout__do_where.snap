@@ -1,0 +1,12 @@
+---
+source: compiler-core/lexing/tests/layout.rs
+expression: source
+snapshot_kind: text
+---
+module Test where{
+
+test =
+  do{
+    do{ do{
+        foo}}} where{ bar = baz}}
+<eof>

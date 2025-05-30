@@ -1,0 +1,64 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..102
+      ModuleHeader@0..30
+        MODULE@0..6 "module"
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..24 "DeriveDeclaration"
+        Annotation@24..25
+          TEXT@24..25 " "
+        WHERE@25..30 "where"
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..30
+      ModuleStatements@30..101
+        DeriveDeclaration@30..62
+          Annotation@30..32
+            TEXT@30..32 "\n\n"
+          DERIVE@32..38 "derive"
+          Annotation@38..39
+            TEXT@38..39 " "
+          INSTANCE@39..47 "instance"
+          InstanceHead@47..62
+            QualifiedName@47..55
+              Annotation@47..48
+                TEXT@47..48 " "
+              UPPER@48..55 "Functor"
+            TypeConstructor@55..62
+              QualifiedName@55..62
+                Annotation@55..56
+                  TEXT@55..56 " "
+                UPPER@56..62 "Parser"
+        LAYOUT_SEPARATOR@62..62 ""
+        DeriveDeclaration@62..101
+          Annotation@62..63
+            TEXT@62..63 "\n"
+          DERIVE@63..69 "derive"
+          Annotation@69..70
+            TEXT@69..70 " "
+          NEWTYPE@70..77 "newtype"
+          Annotation@77..78
+            TEXT@77..78 " "
+          INSTANCE@78..86 "instance"
+          InstanceHead@86..101
+            QualifiedName@86..94
+              Annotation@86..87
+                TEXT@86..87 " "
+              UPPER@87..94 "Functor"
+            TypeConstructor@94..101
+              QualifiedName@94..101
+                Annotation@94..95
+                  TEXT@94..95 " "
+                UPPER@95..101 "Parser"
+      LAYOUT_END@101..101 ""
+      Annotation@101..102
+        TEXT@101..102 "\n"
+      END_OF_FILE@102..102 ""
+    ,
+    [],
+)

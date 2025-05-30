@@ -1,0 +1,48 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..25
+        MODULE@0..6 "module"
+        ModuleName@6..19
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..19 "InstanceName"
+        Annotation@19..20
+          TEXT@19..20 " "
+        WHERE@20..25 "where"
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..67
+        InstanceChain@25..67
+          InstanceDeclaration@25..67
+            Annotation@25..27
+              TEXT@25..27 "\n\n"
+            INSTANCE@27..35 "instance"
+            InstanceName@35..52
+              Annotation@35..36
+                TEXT@35..36 " "
+              LOWER@36..49 "functorParser"
+              Annotation@49..50
+                TEXT@49..50 " "
+              DOUBLE_COLON@50..52 "::"
+            InstanceHead@52..67
+              QualifiedName@52..60
+                Annotation@52..53
+                  TEXT@52..53 " "
+                UPPER@53..60 "Functor"
+              TypeConstructor@60..67
+                QualifiedName@60..67
+                  Annotation@60..61
+                    TEXT@60..61 " "
+                  UPPER@61..67 "Parser"
+      LAYOUT_END@67..67 ""
+      Annotation@67..68
+        TEXT@67..68 "\n"
+      END_OF_FILE@68..68 ""
+    ,
+    [],
+)

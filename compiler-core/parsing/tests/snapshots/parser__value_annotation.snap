@@ -1,0 +1,371 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..349
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..22 "ValueAnnotation"
+        Annotation@22..23
+          TEXT@22..23 " "
+        WHERE@23..28 "where"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..348
+        ValueSignature@28..60
+          Annotation@28..32
+            TEXT@28..32 "\n  \n"
+          LOWER@32..40 "identity"
+          Annotation@40..41
+            TEXT@40..41 " "
+          DOUBLE_COLON@41..43 "::"
+          TypeForall@43..60
+            Annotation@43..44
+              TEXT@43..44 " "
+            FORALL@44..50 "forall"
+            TypeVariableBinding@50..52
+              Annotation@50..51
+                TEXT@50..51 " "
+              LOWER@51..52 "a"
+            PERIOD@52..53 "."
+            TypeArrow@53..60
+              TypeVariable@53..55
+                Annotation@53..54
+                  TEXT@53..54 " "
+                LOWER@54..55 "a"
+              Annotation@55..56
+                TEXT@55..56 " "
+              RIGHT_ARROW@56..58 "->"
+              TypeVariable@58..60
+                Annotation@58..59
+                  TEXT@58..59 " "
+                LOWER@59..60 "a"
+        LAYOUT_SEPARATOR@60..60 ""
+        ValueSignature@60..93
+          Annotation@60..61
+            TEXT@60..61 "\n"
+          LOWER@61..66 "const"
+          Annotation@66..67
+            TEXT@66..67 " "
+          DOUBLE_COLON@67..69 "::"
+          TypeForall@69..93
+            Annotation@69..70
+              TEXT@69..70 " "
+            FORALL@70..76 "forall"
+            TypeVariableBinding@76..78
+              Annotation@76..77
+                TEXT@76..77 " "
+              LOWER@77..78 "a"
+            TypeVariableBinding@78..80
+              Annotation@78..79
+                TEXT@78..79 " "
+              LOWER@79..80 "b"
+            PERIOD@80..81 "."
+            TypeArrow@81..93
+              TypeVariable@81..83
+                Annotation@81..82
+                  TEXT@81..82 " "
+                LOWER@82..83 "a"
+              Annotation@83..84
+                TEXT@83..84 " "
+              RIGHT_ARROW@84..86 "->"
+              TypeArrow@86..93
+                TypeVariable@86..88
+                  Annotation@86..87
+                    TEXT@86..87 " "
+                  LOWER@87..88 "b"
+                Annotation@88..89
+                  TEXT@88..89 " "
+                RIGHT_ARROW@89..91 "->"
+                TypeVariable@91..93
+                  Annotation@91..92
+                    TEXT@91..92 " "
+                  LOWER@92..93 "a"
+        LAYOUT_SEPARATOR@93..93 ""
+        ValueSignature@93..133
+          Annotation@93..95
+            TEXT@93..95 "\n\n"
+          LOWER@95..103 "identity"
+          Annotation@103..104
+            TEXT@103..104 " "
+          DOUBLE_COLON@104..106 "::"
+          TypeForall@106..133
+            Annotation@106..107
+              TEXT@106..107 " "
+            FORALL@107..113 "forall"
+            TypeVariableBinding@113..125
+              Annotation@113..114
+                TEXT@113..114 " "
+              LEFT_PARENTHESIS@114..115 "("
+              LOWER@115..116 "a"
+              Annotation@116..117
+                TEXT@116..117 " "
+              DOUBLE_COLON@117..119 "::"
+              TypeConstructor@119..124
+                QualifiedName@119..124
+                  Annotation@119..120
+                    TEXT@119..120 " "
+                  UPPER@120..124 "Type"
+              RIGHT_PARENTHESIS@124..125 ")"
+            PERIOD@125..126 "."
+            TypeArrow@126..133
+              TypeVariable@126..128
+                Annotation@126..127
+                  TEXT@126..127 " "
+                LOWER@127..128 "a"
+              Annotation@128..129
+                TEXT@128..129 " "
+              RIGHT_ARROW@129..131 "->"
+              TypeVariable@131..133
+                Annotation@131..132
+                  TEXT@131..132 " "
+                LOWER@132..133 "a"
+        LAYOUT_SEPARATOR@133..133 ""
+        ValueSignature@133..186
+          Annotation@133..134
+            TEXT@133..134 "\n"
+          LOWER@134..139 "const"
+          Annotation@139..140
+            TEXT@139..140 " "
+          DOUBLE_COLON@140..142 "::"
+          TypeForall@142..186
+            Annotation@142..143
+              TEXT@142..143 " "
+            FORALL@143..149 "forall"
+            TypeVariableBinding@149..161
+              Annotation@149..150
+                TEXT@149..150 " "
+              LEFT_PARENTHESIS@150..151 "("
+              LOWER@151..152 "a"
+              Annotation@152..153
+                TEXT@152..153 " "
+              DOUBLE_COLON@153..155 "::"
+              TypeConstructor@155..160
+                QualifiedName@155..160
+                  Annotation@155..156
+                    TEXT@155..156 " "
+                  UPPER@156..160 "Type"
+              RIGHT_PARENTHESIS@160..161 ")"
+            TypeVariableBinding@161..173
+              Annotation@161..162
+                TEXT@161..162 " "
+              LEFT_PARENTHESIS@162..163 "("
+              LOWER@163..164 "b"
+              Annotation@164..165
+                TEXT@164..165 " "
+              DOUBLE_COLON@165..167 "::"
+              TypeConstructor@167..172
+                QualifiedName@167..172
+                  Annotation@167..168
+                    TEXT@167..168 " "
+                  UPPER@168..172 "Type"
+              RIGHT_PARENTHESIS@172..173 ")"
+            PERIOD@173..174 "."
+            TypeArrow@174..186
+              TypeVariable@174..176
+                Annotation@174..175
+                  TEXT@174..175 " "
+                LOWER@175..176 "a"
+              Annotation@176..177
+                TEXT@176..177 " "
+              RIGHT_ARROW@177..179 "->"
+              TypeArrow@179..186
+                TypeVariable@179..181
+                  Annotation@179..180
+                    TEXT@179..180 " "
+                  LOWER@180..181 "b"
+                Annotation@181..182
+                  TEXT@181..182 " "
+                RIGHT_ARROW@182..184 "->"
+                TypeVariable@184..186
+                  Annotation@184..185
+                    TEXT@184..185 " "
+                  LOWER@185..186 "a"
+        LAYOUT_SEPARATOR@186..186 ""
+        ValueSignature@186..217
+          Annotation@186..188
+            TEXT@186..188 "\n\n"
+          LOWER@188..196 "identity"
+          Annotation@196..197
+            TEXT@196..197 " "
+          DOUBLE_COLON@197..199 "::"
+          TypeForall@199..217
+            Annotation@199..200
+              TEXT@199..200 " "
+            FORALL@200..206 "forall"
+            TypeVariableBinding@206..209
+              Annotation@206..207
+                TEXT@206..207 " "
+              AT@207..208 "@"
+              LOWER@208..209 "a"
+            PERIOD@209..210 "."
+            TypeArrow@210..217
+              TypeVariable@210..212
+                Annotation@210..211
+                  TEXT@210..211 " "
+                LOWER@211..212 "a"
+              Annotation@212..213
+                TEXT@212..213 " "
+              RIGHT_ARROW@213..215 "->"
+              TypeVariable@215..217
+                Annotation@215..216
+                  TEXT@215..216 " "
+                LOWER@216..217 "a"
+        LAYOUT_SEPARATOR@217..217 ""
+        ValueSignature@217..252
+          Annotation@217..218
+            TEXT@217..218 "\n"
+          LOWER@218..223 "const"
+          Annotation@223..224
+            TEXT@223..224 " "
+          DOUBLE_COLON@224..226 "::"
+          TypeForall@226..252
+            Annotation@226..227
+              TEXT@226..227 " "
+            FORALL@227..233 "forall"
+            TypeVariableBinding@233..236
+              Annotation@233..234
+                TEXT@233..234 " "
+              AT@234..235 "@"
+              LOWER@235..236 "a"
+            TypeVariableBinding@236..239
+              Annotation@236..237
+                TEXT@236..237 " "
+              AT@237..238 "@"
+              LOWER@238..239 "b"
+            PERIOD@239..240 "."
+            TypeArrow@240..252
+              TypeVariable@240..242
+                Annotation@240..241
+                  TEXT@240..241 " "
+                LOWER@241..242 "a"
+              Annotation@242..243
+                TEXT@242..243 " "
+              RIGHT_ARROW@243..245 "->"
+              TypeArrow@245..252
+                TypeVariable@245..247
+                  Annotation@245..246
+                    TEXT@245..246 " "
+                  LOWER@246..247 "b"
+                Annotation@247..248
+                  TEXT@247..248 " "
+                RIGHT_ARROW@248..250 "->"
+                TypeVariable@250..252
+                  Annotation@250..251
+                    TEXT@250..251 " "
+                  LOWER@251..252 "a"
+        LAYOUT_SEPARATOR@252..252 ""
+        ValueSignature@252..293
+          Annotation@252..254
+            TEXT@252..254 "\n\n"
+          LOWER@254..262 "identity"
+          Annotation@262..263
+            TEXT@262..263 " "
+          DOUBLE_COLON@263..265 "::"
+          TypeForall@265..293
+            Annotation@265..266
+              TEXT@265..266 " "
+            FORALL@266..272 "forall"
+            TypeVariableBinding@272..285
+              Annotation@272..273
+                TEXT@272..273 " "
+              LEFT_PARENTHESIS@273..274 "("
+              AT@274..275 "@"
+              LOWER@275..276 "a"
+              Annotation@276..277
+                TEXT@276..277 " "
+              DOUBLE_COLON@277..279 "::"
+              TypeConstructor@279..284
+                QualifiedName@279..284
+                  Annotation@279..280
+                    TEXT@279..280 " "
+                  UPPER@280..284 "Type"
+              RIGHT_PARENTHESIS@284..285 ")"
+            PERIOD@285..286 "."
+            TypeArrow@286..293
+              TypeVariable@286..288
+                Annotation@286..287
+                  TEXT@286..287 " "
+                LOWER@287..288 "a"
+              Annotation@288..289
+                TEXT@288..289 " "
+              RIGHT_ARROW@289..291 "->"
+              TypeVariable@291..293
+                Annotation@291..292
+                  TEXT@291..292 " "
+                LOWER@292..293 "a"
+        LAYOUT_SEPARATOR@293..293 ""
+        ValueSignature@293..348
+          Annotation@293..294
+            TEXT@293..294 "\n"
+          LOWER@294..299 "const"
+          Annotation@299..300
+            TEXT@299..300 " "
+          DOUBLE_COLON@300..302 "::"
+          TypeForall@302..348
+            Annotation@302..303
+              TEXT@302..303 " "
+            FORALL@303..309 "forall"
+            TypeVariableBinding@309..322
+              Annotation@309..310
+                TEXT@309..310 " "
+              LEFT_PARENTHESIS@310..311 "("
+              AT@311..312 "@"
+              LOWER@312..313 "a"
+              Annotation@313..314
+                TEXT@313..314 " "
+              DOUBLE_COLON@314..316 "::"
+              TypeConstructor@316..321
+                QualifiedName@316..321
+                  Annotation@316..317
+                    TEXT@316..317 " "
+                  UPPER@317..321 "Type"
+              RIGHT_PARENTHESIS@321..322 ")"
+            TypeVariableBinding@322..335
+              Annotation@322..323
+                TEXT@322..323 " "
+              LEFT_PARENTHESIS@323..324 "("
+              AT@324..325 "@"
+              LOWER@325..326 "b"
+              Annotation@326..327
+                TEXT@326..327 " "
+              DOUBLE_COLON@327..329 "::"
+              TypeConstructor@329..334
+                QualifiedName@329..334
+                  Annotation@329..330
+                    TEXT@329..330 " "
+                  UPPER@330..334 "Type"
+              RIGHT_PARENTHESIS@334..335 ")"
+            PERIOD@335..336 "."
+            TypeArrow@336..348
+              TypeVariable@336..338
+                Annotation@336..337
+                  TEXT@336..337 " "
+                LOWER@337..338 "a"
+              Annotation@338..339
+                TEXT@338..339 " "
+              RIGHT_ARROW@339..341 "->"
+              TypeArrow@341..348
+                TypeVariable@341..343
+                  Annotation@341..342
+                    TEXT@341..342 " "
+                  LOWER@342..343 "b"
+                Annotation@343..344
+                  TEXT@343..344 " "
+                RIGHT_ARROW@344..346 "->"
+                TypeVariable@346..348
+                  Annotation@346..347
+                    TEXT@346..347 " "
+                  LOWER@347..348 "a"
+      LAYOUT_END@348..348 ""
+      Annotation@348..349
+        TEXT@348..349 "\n"
+      END_OF_FILE@349..349 ""
+    ,
+    [],
+)

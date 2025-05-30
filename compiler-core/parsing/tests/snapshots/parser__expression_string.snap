@@ -1,0 +1,55 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..69
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "ExpressionString"
+        Annotation@23..24
+          TEXT@23..24 " "
+        WHERE@24..29 "where"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..68
+        ValueEquation@29..47
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
+          LOWER@31..37 "string"
+          FunctionBinders@37..37
+          Unconditional@37..47
+            Annotation@37..38
+              TEXT@37..38 " "
+            EQUAL@38..39 "="
+            WhereExpression@39..47
+              ExpressionString@39..47
+                Annotation@39..40
+                  TEXT@39..40 " "
+                STRING@40..47 "\"hello\""
+        LAYOUT_SEPARATOR@47..47 ""
+        ValueEquation@47..68
+          Annotation@47..48
+            TEXT@47..48 "\n"
+          LOWER@48..54 "string"
+          FunctionBinders@54..54
+          Unconditional@54..68
+            Annotation@54..55
+              TEXT@54..55 " "
+            EQUAL@55..56 "="
+            WhereExpression@56..68
+              ExpressionString@56..68
+                Annotation@56..57
+                  TEXT@56..57 " "
+                RAW_STRING@57..68 "\"\"\"hello\"\"\""
+      LAYOUT_END@68..68 ""
+      Annotation@68..69
+        TEXT@68..69 "\n"
+      END_OF_FILE@69..69 ""
+    ,
+    [],
+)

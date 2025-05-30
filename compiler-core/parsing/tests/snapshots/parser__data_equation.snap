@@ -1,0 +1,55 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..59
+      ModuleHeader@0..25
+        MODULE@0..6 "module"
+        ModuleName@6..19
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..19 "DataEquation"
+        Annotation@19..20
+          TEXT@19..20 " "
+        WHERE@20..25 "where"
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..58
+        DataEquation@25..58
+          Annotation@25..27
+            TEXT@25..27 "\n\n"
+          DATA@27..31 "data"
+          Annotation@31..32
+            TEXT@31..32 " "
+          UPPER@32..37 "Maybe"
+          TypeVariableBinding@37..39
+            Annotation@37..38
+              TEXT@37..38 " "
+            LOWER@38..39 "a"
+          Annotation@39..40
+            TEXT@39..40 " "
+          EQUAL@40..41 "="
+          DataConstructor@41..48
+            Annotation@41..42
+              TEXT@41..42 " "
+            UPPER@42..46 "Just"
+            TypeVariable@46..48
+              Annotation@46..47
+                TEXT@46..47 " "
+              LOWER@47..48 "a"
+          Annotation@48..49
+            TEXT@48..49 " "
+          PIPE@49..50 "|"
+          DataConstructor@50..58
+            Annotation@50..51
+              TEXT@50..51 " "
+            UPPER@51..58 "Nothing"
+      LAYOUT_END@58..58 ""
+      Annotation@58..59
+        TEXT@58..59 "\n"
+      END_OF_FILE@59..59 ""
+    ,
+    [],
+)

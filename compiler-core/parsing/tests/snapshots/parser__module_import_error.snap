@@ -1,0 +1,248 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..243
+      ModuleHeader@0..30
+        MODULE@0..6 "module"
+        ModuleName@6..24
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..24 "ModuleImportError"
+        Annotation@24..25
+          TEXT@24..25 " "
+        WHERE@25..30 "where"
+      LAYOUT_START@30..30 ""
+      ModuleImports@30..242
+        ImportStatement@30..38
+          Annotation@30..32
+            TEXT@30..32 "\n\n"
+          IMPORT@32..38 "import"
+          ModuleName@38..38
+            ERROR@38..38 ""
+          ImportAlias@38..38
+        ERROR@38..46
+          ERROR@38..38 ""
+          Annotation@38..39
+            TEXT@38..39 " "
+          LOWER@39..46 "prelude"
+        LAYOUT_SEPARATOR@46..46 ""
+        ImportStatement@46..63
+          Annotation@46..47
+            TEXT@46..47 "\n"
+          IMPORT@47..53 "import"
+          ModuleName@53..63
+            Annotation@53..54
+              TEXT@53..54 " "
+            Qualifier@54..59
+              TEXT@54..59 "Data."
+            UPPER@59..63 "List"
+          ImportAlias@63..63
+        LAYOUT_SEPARATOR@63..63 ""
+        ImportStatement@63..98
+          Annotation@63..64
+            TEXT@63..64 "\n"
+          IMPORT@64..70 "import"
+          ModuleName@70..80
+            Annotation@70..71
+              TEXT@70..71 " "
+            Qualifier@71..76
+              TEXT@71..76 "Data."
+            UPPER@76..80 "List"
+          ImportList@80..98
+            Annotation@80..81
+              TEXT@80..81 " "
+            LEFT_PARENTHESIS@81..82 "("
+            ImportType@82..97
+              UPPER@82..86 "List"
+              TypeItemsList@86..97
+                LEFT_PARENTHESIS@86..87 "("
+                ERROR@87..96
+                  ERROR@87..87 ""
+                  LOWER@87..91 "cons"
+                  COMMA@91..92 ","
+                  Annotation@92..93
+                    TEXT@92..93 " "
+                  LOWER@93..96 "nil"
+                RIGHT_PARENTHESIS@96..97 ")"
+            RIGHT_PARENTHESIS@97..98 ")"
+          ImportAlias@98..98
+        LAYOUT_SEPARATOR@98..98 ""
+        ImportStatement@98..132
+          Annotation@98..99
+            TEXT@98..99 "\n"
+          IMPORT@99..105 "import"
+          ModuleName@105..115
+            Annotation@105..106
+              TEXT@105..106 " "
+            Qualifier@106..111
+              TEXT@106..111 "Data."
+            UPPER@111..115 "List"
+          ImportList@115..132
+            Annotation@115..116
+              TEXT@115..116 " "
+            LEFT_PARENTHESIS@116..117 "("
+            ImportType@117..131
+              UPPER@117..121 "List"
+              TypeItemsList@121..131
+                LEFT_PARENTHESIS@121..122 "("
+                UPPER@122..126 "Cons"
+                COMMA@126..127 ","
+                ERROR@127..130
+                  ERROR@127..127 ""
+                  Annotation@127..128
+                    TEXT@127..128 " "
+                  DOUBLE_PERIOD@128..130 ".."
+                RIGHT_PARENTHESIS@130..131 ")"
+            RIGHT_PARENTHESIS@131..132 ")"
+          ImportAlias@132..132
+        LAYOUT_SEPARATOR@132..132 ""
+        ImportStatement@132..166
+          Annotation@132..133
+            TEXT@132..133 "\n"
+          IMPORT@133..139 "import"
+          ModuleName@139..149
+            Annotation@139..140
+              TEXT@139..140 " "
+            Qualifier@140..145
+              TEXT@140..145 "Data."
+            UPPER@145..149 "List"
+          ImportList@149..166
+            Annotation@149..150
+              TEXT@149..150 " "
+            LEFT_PARENTHESIS@150..151 "("
+            ImportType@151..165
+              UPPER@151..155 "List"
+              TypeItemsList@155..165
+                LEFT_PARENTHESIS@155..156 "("
+                ERROR@156..164
+                  ERROR@156..156 ""
+                  DOUBLE_PERIOD@156..158 ".."
+                  COMMA@158..159 ","
+                  Annotation@159..160
+                    TEXT@159..160 " "
+                  UPPER@160..164 "Cons"
+                RIGHT_PARENTHESIS@164..165 ")"
+            RIGHT_PARENTHESIS@165..166 ")"
+          ImportAlias@166..166
+        LAYOUT_SEPARATOR@166..166 ""
+        ImportStatement@166..189
+          Annotation@166..167
+            TEXT@166..167 "\n"
+          IMPORT@167..173 "import"
+          ModuleName@173..183
+            Annotation@173..174
+              TEXT@173..174 " "
+            Qualifier@174..179
+              TEXT@174..179 "Data."
+            UPPER@179..183 "List"
+          ImportList@183..189
+            Annotation@183..184
+              TEXT@183..184 " "
+            LEFT_PARENTHESIS@184..185 "("
+            ERROR@185..188
+              ERROR@185..185 ""
+              INTEGER@185..188 "123"
+            RIGHT_PARENTHESIS@188..189 ")"
+          ImportAlias@189..189
+        LAYOUT_SEPARATOR@189..189 ""
+        ImportStatement@189..206
+          Annotation@189..190
+            TEXT@189..190 "\n"
+          IMPORT@190..196 "import"
+          ModuleName@196..206
+            Annotation@196..197
+              TEXT@196..197 " "
+            Qualifier@197..202
+              TEXT@197..202 "Data."
+            UPPER@202..206 "List"
+          ImportAlias@206..206
+        ERROR@206..218
+          ERROR@206..206 ""
+          Annotation@206..207
+            TEXT@206..207 " "
+          LOWER@207..208 "s"
+          Annotation@208..209
+            TEXT@208..209 " "
+          Qualifier@209..214
+            TEXT@209..214 "Data."
+          UPPER@214..218 "List"
+        LAYOUT_SEPARATOR@218..218 ""
+        ImportStatement@218..242
+          Annotation@218..219
+            TEXT@218..219 "\n"
+          IMPORT@219..225 "import"
+          ModuleName@225..242
+            Annotation@225..226
+              TEXT@225..226 " "
+            Qualifier@226..236
+              TEXT@226..236 "Recovered."
+            UPPER@236..242 "Import"
+          ImportAlias@242..242
+      ModuleStatements@242..242
+      LAYOUT_END@242..242 ""
+      Annotation@242..243
+        TEXT@242..243 "\n"
+      END_OF_FILE@243..243 ""
+    ,
+    [
+        ParseError {
+            offset: 39,
+            position: Position {
+                line: 3,
+                column: 8,
+            },
+            message: "Expected UPPER",
+        },
+        ParseError {
+            offset: 39,
+            position: Position {
+                line: 3,
+                column: 8,
+            },
+            message: "Unexpected tokens in import statement",
+        },
+        ParseError {
+            offset: 87,
+            position: Position {
+                line: 5,
+                column: 24,
+            },
+            message: "Unexpected tokens in type items",
+        },
+        ParseError {
+            offset: 128,
+            position: Position {
+                line: 6,
+                column: 30,
+            },
+            message: "Unexpected tokens in type items",
+        },
+        ParseError {
+            offset: 156,
+            position: Position {
+                line: 7,
+                column: 24,
+            },
+            message: "Unexpected tokens in type items",
+        },
+        ParseError {
+            offset: 185,
+            position: Position {
+                line: 8,
+                column: 19,
+            },
+            message: "Unexpected tokens in import list",
+        },
+        ParseError {
+            offset: 207,
+            position: Position {
+                line: 9,
+                column: 18,
+            },
+            message: "Unexpected tokens in import statement",
+        },
+    ],
+)

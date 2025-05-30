@@ -1,0 +1,59 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..49
+      ModuleHeader@0..25
+        MODULE@0..6 "module"
+        ModuleName@6..19
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..19 "TypeOperator"
+        Annotation@19..20
+          TEXT@19..20 " "
+        WHERE@20..25 "where"
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..48
+        ValueSignature@25..48
+          Annotation@25..27
+            TEXT@25..27 "\n\n"
+          LOWER@27..35 "operator"
+          Annotation@35..36
+            TEXT@35..36 " "
+          DOUBLE_COLON@36..38 "::"
+          TypeOperatorChain@38..48
+            TypeConstructor@38..40
+              QualifiedName@38..40
+                Annotation@38..39
+                  TEXT@38..39 " "
+                UPPER@39..40 "A"
+            TypeOperatorPair@40..44
+              QualifiedName@40..42
+                Annotation@40..41
+                  TEXT@40..41 " "
+                OPERATOR@41..42 "+"
+              TypeConstructor@42..44
+                QualifiedName@42..44
+                  Annotation@42..43
+                    TEXT@42..43 " "
+                  UPPER@43..44 "B"
+            TypeOperatorPair@44..48
+              QualifiedName@44..46
+                Annotation@44..45
+                  TEXT@44..45 " "
+                OPERATOR@45..46 "+"
+              TypeConstructor@46..48
+                QualifiedName@46..48
+                  Annotation@46..47
+                    TEXT@46..47 " "
+                  UPPER@47..48 "C"
+      LAYOUT_END@48..48 ""
+      Annotation@48..49
+        TEXT@48..49 "\n"
+      END_OF_FILE@49..49 ""
+    ,
+    [],
+)
