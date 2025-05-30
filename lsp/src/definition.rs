@@ -12,7 +12,7 @@ use syntax::cst;
 
 use super::{State, locate};
 
-pub(super) async fn definition(
+pub(super) fn definition(
     state: &State,
     uri: Url,
     position: Position,
@@ -25,16 +25,16 @@ pub(super) async fn definition(
 
     let thing = locate::locate(state, f_id, position);
     match thing {
-        locate::Located::ModuleName(cst) => definition_module_name(state, f_id, cst).await,
-        locate::Located::ImportItem(i_id) => definition_import(state, f_id, i_id).await,
-        locate::Located::Binder(b_id) => definition_binder(state, f_id, b_id).await,
-        locate::Located::Expression(e_id) => definition_expression(state, uri, f_id, e_id).await,
-        locate::Located::Type(t_id) => definition_type(state, uri, f_id, t_id).await,
+        locate::Located::ModuleName(cst) => definition_module_name(state, f_id, cst),
+        locate::Located::ImportItem(i_id) => definition_import(state, f_id, i_id),
+        locate::Located::Binder(b_id) => definition_binder(state, f_id, b_id),
+        locate::Located::Expression(e_id) => definition_expression(state, uri, f_id, e_id),
+        locate::Located::Type(t_id) => definition_type(state, uri, f_id, t_id),
         locate::Located::Nothing => None,
     }
 }
 
-async fn definition_module_name(
+fn definition_module_name(
     state: &State,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
@@ -83,7 +83,7 @@ async fn definition_module_name(
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
 }
 
-async fn definition_import(
+fn definition_import(
     state: &State,
     f_id: FileId,
     i_id: ImportItemId,
@@ -196,7 +196,7 @@ async fn definition_import(
     }
 }
 
-async fn definition_binder(
+fn definition_binder(
     state: &State,
     f_id: FileId,
     b_id: BinderId,
@@ -211,13 +211,13 @@ async fn definition_binder(
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            definition_deferred(state, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
-async fn definition_expression(
+fn definition_expression(
     state: &State,
     uri: Url,
     f_id: FileId,
@@ -235,13 +235,13 @@ async fn definition_expression(
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            definition_deferred(state, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution)
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => {
-                    definition_deferred(state, &resolved, &lowered, *id).await
+                    definition_deferred(state, &resolved, &lowered, *id)
                 }
                 TermResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
@@ -274,13 +274,13 @@ async fn definition_expression(
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            definition_deferred(state, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
-async fn definition_type(
+fn definition_type(
     state: &State,
     uri: Url,
     f_id: FileId,
@@ -298,10 +298,10 @@ async fn definition_type(
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
         lowering::TypeKind::Constructor { resolution } => {
-            definition_deferred(state, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution)
         }
         lowering::TypeKind::Operator { resolution } => {
-            definition_deferred(state, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution)
         }
         lowering::TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -319,7 +319,7 @@ async fn definition_type(
     }
 }
 
-async fn definition_deferred(
+fn definition_deferred(
     state: &State,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,

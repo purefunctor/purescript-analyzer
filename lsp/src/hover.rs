@@ -21,7 +21,7 @@ use syntax::{SyntaxKind, SyntaxNode, cst};
 
 use super::{State, locate};
 
-pub(super) async fn hover(state: &State, uri: Url, position: Position) -> Option<Hover> {
+pub(super) fn hover(state: &State, uri: Url, position: Position) -> Option<Hover> {
     let f_id = {
         let files = state.files.lock().unwrap();
         let uri = uri.as_str();
@@ -31,20 +31,16 @@ pub(super) async fn hover(state: &State, uri: Url, position: Position) -> Option
     let located = locate::locate(state, f_id, position);
 
     match located {
-        locate::Located::ModuleName(cst) => hover_module_name(state, f_id, cst).await,
-        locate::Located::ImportItem(i_id) => hover_import(state, f_id, i_id).await,
-        locate::Located::Binder(b_id) => hover_binder(state, f_id, b_id).await,
-        locate::Located::Expression(e_id) => hover_expression(state, f_id, e_id).await,
-        locate::Located::Type(t_id) => hover_type(state, f_id, t_id).await,
+        locate::Located::ModuleName(cst) => hover_module_name(state, f_id, cst),
+        locate::Located::ImportItem(i_id) => hover_import(state, f_id, i_id),
+        locate::Located::Binder(b_id) => hover_binder(state, f_id, b_id),
+        locate::Located::Expression(e_id) => hover_expression(state, f_id, e_id),
+        locate::Located::Type(t_id) => hover_type(state, f_id, t_id),
         locate::Located::Nothing => None,
     }
 }
 
-async fn hover_module_name(
-    state: &State,
-    f_id: FileId,
-    cst: AstPtr<cst::ModuleName>,
-) -> Option<Hover> {
+fn hover_module_name(state: &State, f_id: FileId, cst: AstPtr<cst::ModuleName>) -> Option<Hover> {
     let parsed = {
         let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
@@ -99,7 +95,7 @@ async fn hover_module_name(
     Some(Hover { contents, range })
 }
 
-async fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
+fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
     let (parsed, indexed) = {
         let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
@@ -166,7 +162,7 @@ async fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option
     }
 }
 
-async fn hover_binder(state: &State, f_id: FileId, b_id: BinderId) -> Option<Hover> {
+fn hover_binder(state: &State, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     let (resolved, lowered) = {
         let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
@@ -177,13 +173,13 @@ async fn hover_binder(state: &State, f_id: FileId, b_id: BinderId) -> Option<Hov
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            hover_deferred(state, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
-async fn hover_expression(state: &State, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
+fn hover_expression(state: &State, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
         let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
@@ -194,26 +190,24 @@ async fn hover_expression(state: &State, f_id: FileId, e_id: ExpressionId) -> Op
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            hover_deferred(state, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution)
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Deferred(id) => {
-                    hover_deferred(state, &resolved, &lowered, *id).await
-                }
+                TermResolution::Deferred(id) => hover_deferred(state, &resolved, &lowered, *id),
                 TermResolution::Binder(_) => None,
                 TermResolution::Let(_) => None,
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            hover_deferred(state, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
-async fn hover_type(state: &State, f_id: FileId, t_id: TypeId) -> Option<Hover> {
+fn hover_type(state: &State, f_id: FileId, t_id: TypeId) -> Option<Hover> {
     let (resolved, lowered) = {
         let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
@@ -224,13 +218,13 @@ async fn hover_type(state: &State, f_id: FileId, t_id: TypeId) -> Option<Hover> 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
         TypeKind::Constructor { resolution } => {
-            hover_deferred(state, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
-async fn hover_deferred(
+fn hover_deferred(
     state: &State,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,

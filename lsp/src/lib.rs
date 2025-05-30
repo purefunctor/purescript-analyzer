@@ -66,12 +66,8 @@ fn definition(
 ) -> BoxFuture<'static, Result<Option<GotoDefinitionResponse>, ResponseError>> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-
-    let mut state = state.clone();
-    Box::pin(async move {
-        let result = definition::definition(&mut state, uri, position).await;
-        Result::Ok(result)
-    })
+    let result = definition::definition(state, uri, position);
+    Box::pin(async move { Result::Ok(result) })
 }
 
 fn hover(
@@ -80,12 +76,8 @@ fn hover(
 ) -> BoxFuture<'static, Result<Option<Hover>, ResponseError>> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-
-    let mut state = state.clone();
-    Box::pin(async move {
-        let result = hover::hover(&mut state, uri, position).await;
-        Result::Ok(result)
-    })
+    let result = hover::hover(state, uri, position);
+    Box::pin(async move { Result::Ok(result) })
 }
 
 fn did_change(
