@@ -1,5 +1,5 @@
 ---
-source: crates/spago/tests/lockfile.rs
+source: compiler-lsp/spago/tests/lockfile.rs
 expression: sources
 snapshot_kind: text
 ---
