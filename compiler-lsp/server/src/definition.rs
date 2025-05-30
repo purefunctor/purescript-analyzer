@@ -12,15 +12,14 @@ use syntax::cst;
 
 use super::{State, locate};
 
-pub(super) fn definition(
-    state: &State,
+pub(super) fn implementation(
+    state: &mut State,
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
     let f_id = {
-        let files = state.files.lock().unwrap();
         let uri = uri.as_str();
-        files.id(uri)?
+        state.files.id(uri)?
     };
 
     let thing = locate::locate(state, f_id, position);
@@ -35,15 +34,11 @@ pub(super) fn definition(
 }
 
 fn definition_module_name(
-    state: &State,
+    state: &mut State,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
-    let parsed = {
-        let mut runtime = state.runtime.lock().unwrap();
-        let (parsed, _) = runtime.parsed(f_id);
-        parsed
-    };
+    let (parsed, _) = state.runtime.parsed(f_id);
 
     let root = parsed.syntax_node();
     let module = cst.to_node(&root);
@@ -61,8 +56,8 @@ fn definition_module_name(
     };
 
     let (uri, range) = {
-        let mut runtime = state.runtime.lock().unwrap();
-        let files = state.files.lock().unwrap();
+        let runtime = &mut state.runtime;
+        let files = &state.files;
 
         let id = runtime.module_file(&module)?;
         let content = runtime.content(id);
@@ -84,12 +79,12 @@ fn definition_module_name(
 }
 
 fn definition_import(
-    state: &State,
+    state: &mut State,
     f_id: FileId,
     i_id: ImportItemId,
 ) -> Option<GotoDefinitionResponse> {
     let (parsed, indexed) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
@@ -116,22 +111,21 @@ fn definition_import(
     };
 
     let import_resolved = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let import_id = runtime.module_file(&module)?;
         runtime.resolved(import_id)
     };
 
-    let goto_term = |name: &str| {
+    let goto_term = |state: &mut State, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
-            let files = state.files.lock().unwrap();
-            let uri = files.path(f_id);
+            let uri = state.files.path(f_id);
             Url::parse(&uri).ok()?
         };
 
         let (content, parsed, indexed) = {
-            let mut runtime = state.runtime.lock().unwrap();
+            let runtime = &mut state.runtime;
             let content = runtime.content(f_id);
             let (parsed, _) = runtime.parsed(f_id);
             let indexed = runtime.indexed(f_id);
@@ -148,17 +142,16 @@ fn definition_import(
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
     };
 
-    let goto_type = |name: &str| {
+    let goto_type = |state: &mut State, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
-            let files = state.files.lock().unwrap();
-            let uri = files.path(f_id);
+            let uri = state.files.path(f_id);
             Url::parse(&uri).ok()?
         };
 
         let (content, parsed, indexed) = {
-            let mut runtime = state.runtime.lock().unwrap();
+            let runtime = &mut state.runtime;
             let content = runtime.content(f_id);
             let (parsed, _) = runtime.parsed(f_id);
             let indexed = runtime.indexed(f_id);
@@ -179,17 +172,17 @@ fn definition_import(
         cst::ImportItem::ImportValue(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_term(name)
+            goto_term(state, name)
         }
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_type(name)
+            goto_type(state, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_type(name)
+            goto_type(state, name)
         }
         cst::ImportItem::ImportOperator(_) => None,
         cst::ImportItem::ImportTypeOperator(_) => None,
@@ -197,12 +190,12 @@ fn definition_import(
 }
 
 fn definition_binder(
-    state: &State,
+    state: &mut State,
     f_id: FileId,
     b_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -218,13 +211,13 @@ fn definition_binder(
 }
 
 fn definition_expression(
-    state: &State,
+    state: &mut State,
     uri: Url,
     f_id: FileId,
     e_id: ExpressionId,
 ) -> Option<GotoDefinitionResponse> {
     let (content, parsed, resolved, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let content = runtime.content(f_id);
         let (parsed, _) = runtime.parsed(f_id);
         let resolved = runtime.resolved(f_id);
@@ -281,13 +274,13 @@ fn definition_expression(
 }
 
 fn definition_type(
-    state: &State,
+    state: &mut State,
     uri: Url,
     f_id: FileId,
     t_id: TypeId,
 ) -> Option<GotoDefinitionResponse> {
     let (content, parsed, resolved, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let content = runtime.content(f_id);
         let (parsed, _) = runtime.parsed(f_id);
         let resolved = runtime.resolved(f_id);
@@ -320,7 +313,7 @@ fn definition_type(
 }
 
 fn definition_deferred(
-    state: &State,
+    state: &mut State,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -333,13 +326,12 @@ fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
 
             let uri = {
-                let files = state.files.lock().unwrap();
-                let path = files.path(f_id);
+                let path = state.files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let mut runtime = state.runtime.lock().unwrap();
+                let runtime = &mut state.runtime;
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);
@@ -361,13 +353,12 @@ fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
 
             let uri = {
-                let files = state.files.lock().unwrap();
-                let path = files.path(f_id);
+                let path = state.files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let mut runtime = state.runtime.lock().unwrap();
+                let runtime = &mut state.runtime;
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);

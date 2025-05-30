@@ -35,9 +35,9 @@ pub enum Located {
     Nothing,
 }
 
-pub fn locate(state: &State, id: FileId, position: Position) -> Located {
+pub fn locate(state: &mut State, id: FileId, position: Position) -> Located {
     let (content, parsed, indexed, lowered) = {
-        let mut runtime = state.runtime.lock().unwrap();
+        let runtime = &mut state.runtime;
         let content = runtime.content(id);
         let (parsed, _) = runtime.parsed(id);
         let indexed = runtime.indexed(id);
