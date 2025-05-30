@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use itertools::Itertools;
 use spago::lockfile::Lockfile;
 
@@ -19,6 +17,7 @@ fn test_lockfile_sources() {
     let lockfile = lockfile.unwrap();
     let sources = lockfile
         .sources()
+        .sorted()
         .filter_map(|source| {
             let source = source.to_str()?;
             Some(source.to_string())

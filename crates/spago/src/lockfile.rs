@@ -67,7 +67,8 @@ fn with_root(root: impl AsRef<Path>) -> impl Fn(PathBuf) -> Option<PathBuf> {
 
 fn find_purs_files(root: PathBuf) -> impl Iterator<Item = PathBuf> {
     let matcher = Glob::new("**/*.purs").unwrap().compile_matcher();
-    WalkDir::new(root).into_iter().filter_map(Result::ok).filter_map(move |entry| {
+    WalkDir::new(root).into_iter().filter_map(move |entry| {
+        let entry = entry.ok()?;
         let path = entry.path();
         if matcher.is_match(path) { Some(path.to_path_buf()) } else { None }
     })
