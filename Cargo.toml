@@ -7,7 +7,7 @@ members = [
   "tests-package-set",
 ]
 default-members = ["crates/*", "tests-integration"]
-resolver = "1"
+resolver = "3"
 
 [profile.dev.package.insta]
 opt-level = 3
