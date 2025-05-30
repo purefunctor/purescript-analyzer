@@ -6,9 +6,9 @@ pub mod locate;
 use std::{env, fs, ops::ControlFlow};
 
 use async_lsp::{
-    ResponseError, client_monitor::ClientProcessMonitorLayer, concurrency::ConcurrencyLayer,
-    lsp_types::*, panic::CatchUnwindLayer, router::Router, server::LifecycleLayer,
-    tracing::TracingLayer,
+    ClientSocket, ResponseError, client_monitor::ClientProcessMonitorLayer,
+    concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
+    server::LifecycleLayer, tracing::TracingLayer,
 };
 use building::Runtime;
 use files::Files;
@@ -16,10 +16,18 @@ use smol_str::SmolStrBuilder;
 use tower::ServiceBuilder;
 use tracing::Level;
 
-#[derive(Default)]
 pub struct State {
+    pub client: ClientSocket,
     pub runtime: Runtime,
     pub files: Files,
+}
+
+impl State {
+    fn new(client: ClientSocket) -> State {
+        let runtime = Runtime::default();
+        let files = Files::default();
+        State { client, runtime, files }
+    }
 }
 
 fn initialize(
@@ -108,7 +116,7 @@ fn on_change(state: &mut State, uri: &str, text: &str) {
 
 pub async fn main() {
     let (server, _) = async_lsp::MainLoop::new_server(|client| {
-        let mut router: Router<State, ResponseError> = Router::new(State::default());
+        let mut router: Router<State, ResponseError> = Router::new(State::new(client.clone()));
 
         router
             .request::<extension::CustomInitialize, _>(initialize)

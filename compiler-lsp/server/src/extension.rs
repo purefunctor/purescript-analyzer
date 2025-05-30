@@ -7,8 +7,8 @@ pub enum CustomInitialize {}
 #[serde(rename_all = "camelCase")]
 pub struct CustomInitializeParams {
     #[serde(flatten)]
-    initialize_params: InitializeParams,
-    work_done_token: Option<ProgressToken>,
+    pub initialize_params: InitializeParams,
+    pub work_done_token: Option<ProgressToken>,
 }
 
 impl request::Request for CustomInitialize {
