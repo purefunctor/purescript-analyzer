@@ -1,6 +1,8 @@
 _default:
     just --list
 
+set positional-arguments
+
 [doc("Generate coverage for local tests")]
 coverage:
   cargo llvm-cov clean --workspace
@@ -18,3 +20,6 @@ coverage-codecov:
 [doc("Generate coverage report as HTML")]
 coverage-html:
   cargo llvm-cov report --html
+
+@integration *args="":
+  cargo nextest run -p tests-integration "$@"
