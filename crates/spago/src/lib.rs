@@ -18,7 +18,12 @@ pub enum LockfileGlobSetError {
 pub fn source_files(root: impl AsRef<Path>) -> Result<Vec<PathBuf>, LockfileGlobSetError> {
     let root = root.as_ref();
     let lockfile = root.join("spago.lock");
+
     let lockfile = fs::read_to_string(lockfile)?;
     let lockfile: lockfile::Lockfile = serde_json::from_str(&lockfile)?;
-    Ok(lockfile.walk(root).collect())
+
+    let mut files = lockfile.walk(root).collect::<Vec<_>>();
+    files.sort();
+
+    Ok(files)
 }
