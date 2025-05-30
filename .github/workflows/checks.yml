@@ -33,12 +33,13 @@ jobs:
         uses: cargo-bins/cargo-binstall@v1.10.7
 
       - name: Install cargo-nextest
-        run: cargo binstall cargo-nextest
+        run: cargo binstall cargo-nextest just
 
       - name: Build and Test
         run: |
-          cargo build --verbose
-          cargo nextest run --verbose
+          cargo build --workspace --verbose
+          cargo nextest run
+          just integration
 
   coverage:
     name: Coverage
@@ -69,7 +70,7 @@ jobs:
 
       - name: Build and Test
         run: |
-          cargo build --verbose
+          cargo build --workspace --verbose
           just coverage
           just coverage-codecov
 
