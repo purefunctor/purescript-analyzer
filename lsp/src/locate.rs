@@ -1,5 +1,6 @@
 //! Abstractions for identifying syntax at a given location.
 
+use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
@@ -9,9 +10,8 @@ use rowan::{
     ast::{AstNode, AstPtr},
 };
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
-use tower_lsp::lsp_types::*;
 
-use crate::Backend;
+use super::State;
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);
@@ -35,9 +35,9 @@ pub enum Located {
     Nothing,
 }
 
-pub fn locate(backend: &Backend, id: FileId, position: Position) -> Located {
+pub fn locate(state: &State, id: FileId, position: Position) -> Located {
     let (content, parsed, indexed, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let content = runtime.content(id);
         let (parsed, _) = runtime.parsed(id);
         let indexed = runtime.indexed(id);

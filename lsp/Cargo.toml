@@ -5,8 +5,10 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.98"
+async-lsp = { version = "0.2.2", features = ["tokio"] }
 building = { version = "0.1.0", path = "../crates/building" }
 files = { version = "0.1.0", path = "../crates/files" }
+futures = "0.3.31"
 glob = "0.3.2"
 globset = "0.4.16"
 indexing = { version = "0.1.0", path = "../crates/indexing" }
@@ -18,11 +20,12 @@ lowering = { version = "0.1.0", path = "../crates/lowering" }
 parsing = { version = "0.1.0", path = "../crates/parsing" }
 resolving = { version = "0.1.0", path = "../crates/resolving" }
 rowan = "0.16.1"
+serde = { version = "1.0.219", features = ["derive"] }
 smol_str = "0.3.2"
 spago = { version = "0.1.0", path = "../crates/spago" }
 syntax = { version = "0.1.0", path = "../crates/syntax" }
 tokio = { version = "1.45.0", features = ["full"] }
-tower-lsp = "0.20.0"
+tower = { version = "0.5.2", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
 walkdir = "2.5.0"

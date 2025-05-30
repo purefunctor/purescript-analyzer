@@ -1,3 +1,4 @@
+use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::ImportItemId;
 use lowering::{
@@ -8,39 +9,38 @@ use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::SmolStrBuilder;
 use syntax::cst;
-use tower_lsp::lsp_types::*;
 
-use super::{Backend, locate};
+use super::{State, locate};
 
 pub(super) async fn definition(
-    backend: &Backend,
+    state: &State,
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
     let f_id = {
-        let files = backend.files.lock().unwrap();
+        let files = state.files.lock().unwrap();
         let uri = uri.as_str();
         files.id(uri)?
     };
 
-    let thing = locate::locate(backend, f_id, position);
+    let thing = locate::locate(state, f_id, position);
     match thing {
-        locate::Located::ModuleName(cst) => definition_module_name(backend, f_id, cst).await,
-        locate::Located::ImportItem(i_id) => definition_import(backend, f_id, i_id).await,
-        locate::Located::Binder(b_id) => definition_binder(backend, f_id, b_id).await,
-        locate::Located::Expression(e_id) => definition_expression(backend, uri, f_id, e_id).await,
-        locate::Located::Type(t_id) => definition_type(backend, uri, f_id, t_id).await,
+        locate::Located::ModuleName(cst) => definition_module_name(state, f_id, cst).await,
+        locate::Located::ImportItem(i_id) => definition_import(state, f_id, i_id).await,
+        locate::Located::Binder(b_id) => definition_binder(state, f_id, b_id).await,
+        locate::Located::Expression(e_id) => definition_expression(state, uri, f_id, e_id).await,
+        locate::Located::Type(t_id) => definition_type(state, uri, f_id, t_id).await,
         locate::Located::Nothing => None,
     }
 }
 
 async fn definition_module_name(
-    backend: &Backend,
+    state: &State,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
     let parsed = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
         parsed
     };
@@ -61,8 +61,8 @@ async fn definition_module_name(
     };
 
     let (uri, range) = {
-        let mut runtime = backend.runtime.lock().unwrap();
-        let files = backend.files.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
+        let files = state.files.lock().unwrap();
 
         let id = runtime.module_file(&module)?;
         let content = runtime.content(id);
@@ -84,12 +84,12 @@ async fn definition_module_name(
 }
 
 async fn definition_import(
-    backend: &Backend,
+    state: &State,
     f_id: FileId,
     i_id: ImportItemId,
 ) -> Option<GotoDefinitionResponse> {
     let (parsed, indexed) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
@@ -116,7 +116,7 @@ async fn definition_import(
     };
 
     let import_resolved = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let import_id = runtime.module_file(&module)?;
         runtime.resolved(import_id)
     };
@@ -125,13 +125,13 @@ async fn definition_import(
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
-            let files = backend.files.lock().unwrap();
+            let files = state.files.lock().unwrap();
             let uri = files.path(f_id);
             Url::parse(&uri).ok()?
         };
 
         let (content, parsed, indexed) = {
-            let mut runtime = backend.runtime.lock().unwrap();
+            let mut runtime = state.runtime.lock().unwrap();
             let content = runtime.content(f_id);
             let (parsed, _) = runtime.parsed(f_id);
             let indexed = runtime.indexed(f_id);
@@ -152,13 +152,13 @@ async fn definition_import(
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
-            let files = backend.files.lock().unwrap();
+            let files = state.files.lock().unwrap();
             let uri = files.path(f_id);
             Url::parse(&uri).ok()?
         };
 
         let (content, parsed, indexed) = {
-            let mut runtime = backend.runtime.lock().unwrap();
+            let mut runtime = state.runtime.lock().unwrap();
             let content = runtime.content(f_id);
             let (parsed, _) = runtime.parsed(f_id);
             let indexed = runtime.indexed(f_id);
@@ -197,12 +197,12 @@ async fn definition_import(
 }
 
 async fn definition_binder(
-    backend: &Backend,
+    state: &State,
     f_id: FileId,
     b_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -211,20 +211,20 @@ async fn definition_binder(
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            definition_deferred(backend, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
 async fn definition_expression(
-    backend: &Backend,
+    state: &State,
     uri: Url,
     f_id: FileId,
     e_id: ExpressionId,
 ) -> Option<GotoDefinitionResponse> {
     let (content, parsed, resolved, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let content = runtime.content(f_id);
         let (parsed, _) = runtime.parsed(f_id);
         let resolved = runtime.resolved(f_id);
@@ -235,13 +235,13 @@ async fn definition_expression(
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            definition_deferred(backend, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution).await
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => {
-                    definition_deferred(backend, &resolved, &lowered, *id).await
+                    definition_deferred(state, &resolved, &lowered, *id).await
                 }
                 TermResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
@@ -274,20 +274,20 @@ async fn definition_expression(
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            definition_deferred(backend, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
 async fn definition_type(
-    backend: &Backend,
+    state: &State,
     uri: Url,
     f_id: FileId,
     t_id: TypeId,
 ) -> Option<GotoDefinitionResponse> {
     let (content, parsed, resolved, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let content = runtime.content(f_id);
         let (parsed, _) = runtime.parsed(f_id);
         let resolved = runtime.resolved(f_id);
@@ -298,10 +298,10 @@ async fn definition_type(
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
         lowering::TypeKind::Constructor { resolution } => {
-            definition_deferred(backend, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution).await
         }
         lowering::TypeKind::Operator { resolution } => {
-            definition_deferred(backend, &resolved, &lowered, *resolution).await
+            definition_deferred(state, &resolved, &lowered, *resolution).await
         }
         lowering::TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -320,7 +320,7 @@ async fn definition_type(
 }
 
 async fn definition_deferred(
-    backend: &Backend,
+    state: &State,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -333,13 +333,13 @@ async fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
 
             let uri = {
-                let files = backend.files.lock().unwrap();
+                let files = state.files.lock().unwrap();
                 let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let mut runtime = backend.runtime.lock().unwrap();
+                let mut runtime = state.runtime.lock().unwrap();
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);
@@ -361,13 +361,13 @@ async fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
 
             let uri = {
-                let files = backend.files.lock().unwrap();
+                let files = state.files.lock().unwrap();
                 let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let mut runtime = backend.runtime.lock().unwrap();
+                let mut runtime = state.runtime.lock().unwrap();
                 let content = runtime.content(f_id);
                 let (parsed, _) = runtime.parsed(f_id);
                 let indexed = runtime.indexed(f_id);

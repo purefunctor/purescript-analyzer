@@ -1,0 +1,20 @@
+use async_lsp::lsp_types::*;
+use serde::{Deserialize, Serialize};
+
+pub enum CustomInitialize {}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomInitializeParams {
+    #[serde(flatten)]
+    initialize_params: InitializeParams,
+    work_done_token: Option<ProgressToken>,
+}
+
+impl request::Request for CustomInitialize {
+    type Params = CustomInitializeParams;
+
+    type Result = InitializeResult;
+
+    const METHOD: &'static str = request::Initialize::METHOD;
+}

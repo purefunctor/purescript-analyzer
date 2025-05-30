@@ -1,7 +1,7 @@
 pub mod lockfile;
 
 use std::{
-    env, fs, io,
+    fs, io,
     path::{Path, PathBuf},
 };
 

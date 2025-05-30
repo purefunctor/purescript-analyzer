@@ -1,5 +1,6 @@
 use std::ops::Index;
 
+use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{
     FullIndexedModule, ImportItemId, IndexingSource, TermItemId, TermItemKind, TypeItemKind,
@@ -17,36 +18,35 @@ use rowan::{
 };
 use smol_str::SmolStrBuilder;
 use syntax::{SyntaxKind, SyntaxNode, cst};
-use tower_lsp::lsp_types::*;
 
-use super::{Backend, locate};
+use super::{State, locate};
 
-pub(super) async fn hover(backend: &Backend, uri: Url, position: Position) -> Option<Hover> {
+pub(super) async fn hover(state: &State, uri: Url, position: Position) -> Option<Hover> {
     let f_id = {
-        let files = backend.files.lock().unwrap();
+        let files = state.files.lock().unwrap();
         let uri = uri.as_str();
         files.id(uri)?
     };
 
-    let located = locate::locate(backend, f_id, position);
+    let located = locate::locate(state, f_id, position);
 
     match located {
-        locate::Located::ModuleName(cst) => hover_module_name(backend, f_id, cst).await,
-        locate::Located::ImportItem(i_id) => hover_import(backend, f_id, i_id).await,
-        locate::Located::Binder(b_id) => hover_binder(backend, f_id, b_id).await,
-        locate::Located::Expression(e_id) => hover_expression(backend, f_id, e_id).await,
-        locate::Located::Type(t_id) => hover_type(backend, f_id, t_id).await,
+        locate::Located::ModuleName(cst) => hover_module_name(state, f_id, cst).await,
+        locate::Located::ImportItem(i_id) => hover_import(state, f_id, i_id).await,
+        locate::Located::Binder(b_id) => hover_binder(state, f_id, b_id).await,
+        locate::Located::Expression(e_id) => hover_expression(state, f_id, e_id).await,
+        locate::Located::Type(t_id) => hover_type(state, f_id, t_id).await,
         locate::Located::Nothing => None,
     }
 }
 
 async fn hover_module_name(
-    backend: &Backend,
+    state: &State,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<Hover> {
     let parsed = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
         parsed
     };
@@ -66,7 +66,7 @@ async fn hover_module_name(
         buffer.finish()
     };
 
-    let mut runtime = backend.runtime.lock().unwrap();
+    let mut runtime = state.runtime.lock().unwrap();
     let id = runtime.module_file(&module)?;
     let (parsed, _) = runtime.parsed(id);
     let root = parsed.syntax_node();
@@ -99,9 +99,9 @@ async fn hover_module_name(
     Some(Hover { contents, range })
 }
 
-async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
+async fn hover_import(state: &State, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
     let (parsed, indexed) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
@@ -130,19 +130,19 @@ async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Op
     };
 
     let import_resolved = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let import_id = runtime.module_file(&module)?;
         runtime.resolved(import_id)
     };
 
     let hover_term_import = |name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
-        hover_file_term(backend, f_id, t_id)
+        hover_file_term(state, f_id, t_id)
     };
 
     let hover_type_import = |name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
-        hover_file_type(backend, f_id, t_id)
+        hover_file_type(state, f_id, t_id)
     };
 
     match node {
@@ -166,9 +166,9 @@ async fn hover_import(backend: &Backend, f_id: FileId, i_id: ImportItemId) -> Op
     }
 }
 
-async fn hover_binder(backend: &Backend, f_id: FileId, b_id: BinderId) -> Option<Hover> {
+async fn hover_binder(state: &State, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -177,15 +177,15 @@ async fn hover_binder(backend: &Backend, f_id: FileId, b_id: BinderId) -> Option
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            hover_deferred(backend, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
-async fn hover_expression(backend: &Backend, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
+async fn hover_expression(state: &State, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -194,28 +194,28 @@ async fn hover_expression(backend: &Backend, f_id: FileId, e_id: ExpressionId) -
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            hover_deferred(backend, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution).await
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => {
-                    hover_deferred(backend, &resolved, &lowered, *id).await
+                    hover_deferred(state, &resolved, &lowered, *id).await
                 }
                 TermResolution::Binder(_) => None,
                 TermResolution::Let(_) => None,
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            hover_deferred(backend, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
-async fn hover_type(backend: &Backend, f_id: FileId, t_id: TypeId) -> Option<Hover> {
+async fn hover_type(state: &State, f_id: FileId, t_id: TypeId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let resolved = runtime.resolved(f_id);
         let lowered = runtime.lowered(f_id);
         (resolved, lowered)
@@ -224,14 +224,14 @@ async fn hover_type(backend: &Backend, f_id: FileId, t_id: TypeId) -> Option<Hov
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
         TypeKind::Constructor { resolution } => {
-            hover_deferred(backend, &resolved, &lowered, *resolution).await
+            hover_deferred(state, &resolved, &lowered, *resolution).await
         }
         _ => None,
     }
 }
 
 async fn hover_deferred(
-    backend: &Backend,
+    state: &State,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -243,18 +243,18 @@ async fn hover_deferred(
     match deferred.domain {
         ResolutionDomain::Term => {
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
-            hover_file_term(backend, f_id, t_id)
+            hover_file_term(state, f_id, t_id)
         }
         ResolutionDomain::Type => {
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
-            hover_file_type(backend, f_id, t_id)
+            hover_file_type(state, f_id, t_id)
         }
     }
 }
 
-fn hover_file_term(backend: &Backend, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
+fn hover_file_term(state: &State, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
     let (parsed, indexed) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
@@ -291,12 +291,12 @@ fn hover_file_term(backend: &Backend, f_id: FileId, t_id: TermItemId) -> Option<
 }
 
 fn hover_file_type(
-    backend: &Backend,
+    state: &State,
     f_id: Idx<files::File>,
     t_id: Idx<indexing::TypeItem>,
 ) -> Option<Hover> {
     let (parsed, indexed) = {
-        let mut runtime = backend.runtime.lock().unwrap();
+        let mut runtime = state.runtime.lock().unwrap();
         let (parsed, _) = runtime.parsed(f_id);
         let indexed = runtime.indexed(f_id);
         (parsed, indexed)
