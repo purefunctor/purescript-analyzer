@@ -1,0 +1,33 @@
+---
+source: compiler-core/lexing/tests/lexer.rs
+description: "?hole\n\n?Hole\n\n??\n"
+expression: snapshot
+snapshot_kind: text
+---
+annotation : ""
+ qualifier : ""
+      kind : HOLE
+      text : "?hole"
+  position : Position { line: 1, column: 1 }
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : HOLE
+      text : "?Hole"
+  position : Position { line: 3, column: 1 }
+     error : None
+
+annotation : "\n\n"
+ qualifier : ""
+      kind : OPERATOR
+      text : "??"
+  position : Position { line: 5, column: 1 }
+     error : None
+
+annotation : "\n"
+ qualifier : ""
+      kind : END_OF_FILE
+      text : ""
+  position : Position { line: 6, column: 1 }
+     error : None

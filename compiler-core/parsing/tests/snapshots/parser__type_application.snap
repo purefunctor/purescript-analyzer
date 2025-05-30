@@ -1,0 +1,47 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..51
+      ModuleHeader@0..28
+        MODULE@0..6 "module"
+        ModuleName@6..22
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..22 "TypeApplication"
+        Annotation@22..23
+          TEXT@22..23 " "
+        WHERE@23..28 "where"
+      LAYOUT_START@28..28 ""
+      ModuleImports@28..28
+      ModuleStatements@28..50
+        ValueSignature@28..50
+          Annotation@28..30
+            TEXT@28..30 "\n\n"
+          LOWER@30..41 "application"
+          Annotation@41..42
+            TEXT@41..42 " "
+          DOUBLE_COLON@42..44 "::"
+          TypeApplicationChain@44..50
+            TypeConstructor@44..46
+              QualifiedName@44..46
+                Annotation@44..45
+                  TEXT@44..45 " "
+                UPPER@45..46 "F"
+            TypeVariable@46..48
+              Annotation@46..47
+                TEXT@46..47 " "
+              LOWER@47..48 "a"
+            TypeVariable@48..50
+              Annotation@48..49
+                TEXT@48..49 " "
+              LOWER@49..50 "b"
+      LAYOUT_END@50..50 ""
+      Annotation@50..51
+        TEXT@50..51 "\n"
+      END_OF_FILE@51..51 ""
+    ,
+    [],
+)

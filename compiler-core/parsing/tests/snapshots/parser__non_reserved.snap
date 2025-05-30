@@ -1,0 +1,63 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..66
+      ModuleHeader@0..37
+        MODULE@0..6 "module"
+        ModuleName@6..18
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..18 "NonReserved"
+        ExportList@18..31
+          Annotation@18..19
+            TEXT@18..19 " "
+          LEFT_PARENTHESIS@19..20 "("
+          ExportValue@20..26
+            LOWER@20..26 "hiding"
+          COMMA@26..27 ","
+          ExportValue@27..30
+            Annotation@27..28
+              TEXT@27..28 " "
+            LOWER@28..30 "as"
+          RIGHT_PARENTHESIS@30..31 ")"
+        Annotation@31..32
+          TEXT@31..32 " "
+        WHERE@32..37 "where"
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..65
+        ValueSignature@37..55
+          Annotation@37..39
+            TEXT@37..39 "\n\n"
+          LOWER@39..45 "hiding"
+          Annotation@45..46
+            TEXT@45..46 " "
+          DOUBLE_COLON@46..48 "::"
+          TypeConstructor@48..55
+            QualifiedName@48..55
+              Annotation@48..49
+                TEXT@48..49 " "
+              UPPER@49..55 "Hiding"
+        LAYOUT_SEPARATOR@55..55 ""
+        ValueSignature@55..65
+          Annotation@55..57
+            TEXT@55..57 "\n\n"
+          LOWER@57..59 "as"
+          Annotation@59..60
+            TEXT@59..60 " "
+          DOUBLE_COLON@60..62 "::"
+          TypeConstructor@62..65
+            QualifiedName@62..65
+              Annotation@62..63
+                TEXT@62..63 " "
+              UPPER@63..65 "As"
+      LAYOUT_END@65..65 ""
+      Annotation@65..66
+        TEXT@65..66 "\n"
+      END_OF_FILE@66..66 ""
+    ,
+    [],
+)

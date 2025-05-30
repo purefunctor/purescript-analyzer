@@ -1,0 +1,26 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..18
+      ModuleHeader@0..17
+        MODULE@0..6 "module"
+        ModuleName@6..11
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..11 "Main"
+        Annotation@11..12
+          TEXT@11..12 " "
+        WHERE@12..17 "where"
+      LAYOUT_START@17..17 ""
+      ModuleImports@17..17
+      ModuleStatements@17..17
+      LAYOUT_END@17..17 ""
+      Annotation@17..18
+        TEXT@17..18 "\n"
+      END_OF_FILE@18..18 ""
+    ,
+    [],
+)

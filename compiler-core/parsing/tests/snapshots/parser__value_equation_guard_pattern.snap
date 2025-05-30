@@ -1,0 +1,91 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..73
+      ModuleHeader@0..37
+        MODULE@0..6 "module"
+        ModuleName@6..31
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..31 "ValueEquationGuardBinder"
+        Annotation@31..32
+          TEXT@31..32 " "
+        WHERE@32..37 "where"
+      LAYOUT_START@37..37 ""
+      ModuleImports@37..37
+      ModuleStatements@37..72
+        ValueEquation@37..72
+          Annotation@37..39
+            TEXT@37..39 "\n\n"
+          LOWER@39..40 "f"
+          FunctionBinders@40..42
+            BinderVariable@40..42
+              Annotation@40..41
+                TEXT@40..41 " "
+              LOWER@41..42 "c"
+          Conditionals@42..72
+            PatternGuarded@42..72
+              Annotation@42..45
+                TEXT@42..45 "\n  "
+              PIPE@45..46 "|"
+              PatternGuardBinder@46..58
+                BinderOperatorChain@46..53
+                  BinderVariable@46..48
+                    Annotation@46..47
+                      TEXT@46..47 " "
+                    LOWER@47..48 "a"
+                  BinderOperatorPair@48..53
+                    QualifiedName@48..51
+                      Annotation@48..49
+                        TEXT@48..49 " "
+                      OPERATOR@49..51 "/\\"
+                    BinderVariable@51..53
+                      Annotation@51..52
+                        TEXT@51..52 " "
+                      LOWER@52..53 "b"
+                Annotation@53..54
+                  TEXT@53..54 " "
+                LEFT_ARROW@54..56 "<-"
+                ExpressionVariable@56..58
+                  QualifiedName@56..58
+                    Annotation@56..57
+                      TEXT@56..57 " "
+                    LOWER@57..58 "c"
+              Annotation@58..59
+                TEXT@58..59 " "
+              EQUAL@59..60 "="
+              WhereExpression@60..72
+                ExpressionRecord@60..72
+                  Annotation@60..61
+                    TEXT@60..61 " "
+                  LEFT_CURLY@61..62 "{"
+                  RecordPun@62..64
+                    LabelName@62..64
+                      Annotation@62..63
+                        TEXT@62..63 " "
+                      TEXT@63..64 "a"
+                  COMMA@64..65 ","
+                  RecordPun@65..67
+                    LabelName@65..67
+                      Annotation@65..66
+                        TEXT@65..66 " "
+                      TEXT@66..67 "b"
+                  COMMA@67..68 ","
+                  RecordPun@68..70
+                    LabelName@68..70
+                      Annotation@68..69
+                        TEXT@68..69 " "
+                      TEXT@69..70 "c"
+                  Annotation@70..71
+                    TEXT@70..71 " "
+                  RIGHT_CURLY@71..72 "}"
+      LAYOUT_END@72..72 ""
+      Annotation@72..73
+        TEXT@72..73 "\n"
+      END_OF_FILE@73..73 ""
+    ,
+    [],
+)

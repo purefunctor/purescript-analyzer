@@ -1,0 +1,72 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..68
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "ExpressionAdoLet"
+        Annotation@23..24
+          TEXT@23..24 " "
+        WHERE@24..29 "where"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..67
+        ValueEquation@29..67
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
+          LOWER@31..35 "main"
+          FunctionBinders@35..35
+          Unconditional@35..67
+            Annotation@35..36
+              TEXT@35..36 " "
+            EQUAL@36..37 "="
+            WhereExpression@37..67
+              ExpressionAdo@37..67
+                Annotation@37..38
+                  TEXT@37..38 " "
+                ADO@38..41 "ado"
+                DoStatements@41..57
+                  LAYOUT_START@41..41 ""
+                  DoStatementLet@41..57
+                    Annotation@41..44
+                      TEXT@41..44 "\n  "
+                    LET@44..47 "let"
+                    LetBindingStatements@47..57
+                      LAYOUT_START@47..47 ""
+                      LetBindingEquation@47..57
+                        Annotation@47..48
+                          TEXT@47..48 " "
+                        LOWER@48..52 "life"
+                        FunctionBinders@52..52
+                        Unconditional@52..57
+                          Annotation@52..53
+                            TEXT@52..53 " "
+                          EQUAL@53..54 "="
+                          WhereExpression@54..57
+                            ExpressionInteger@54..57
+                              Annotation@54..55
+                                TEXT@54..55 " "
+                              INTEGER@55..57 "42"
+                      LAYOUT_END@57..57 ""
+                  LAYOUT_END@57..57 ""
+                Annotation@57..60
+                  TEXT@57..60 "\n  "
+                IN@60..62 "in"
+                ExpressionVariable@62..67
+                  QualifiedName@62..67
+                    Annotation@62..63
+                      TEXT@62..63 " "
+                    LOWER@63..67 "life"
+      LAYOUT_END@67..67 ""
+      Annotation@67..68
+        TEXT@67..68 "\n"
+      END_OF_FILE@68..68 ""
+    ,
+    [],
+)

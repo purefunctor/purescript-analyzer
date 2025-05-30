@@ -1,0 +1,65 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..84
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "InstanceDistinct"
+        Annotation@23..24
+          TEXT@23..24 " "
+        WHERE@24..29 "where"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..83
+        InstanceChain@29..55
+          InstanceDeclaration@29..55
+            Annotation@29..31
+              TEXT@29..31 "\n\n"
+            INSTANCE@31..39 "instance"
+            InstanceHead@39..55
+              QualifiedName@39..49
+                Annotation@39..40
+                  TEXT@39..40 " "
+                UPPER@40..49 "Serialise"
+              TypeVariable@49..51
+                Annotation@49..50
+                  TEXT@49..50 " "
+                LOWER@50..51 "s"
+              TypeConstructor@51..55
+                QualifiedName@51..55
+                  Annotation@51..52
+                    TEXT@51..52 " "
+                  UPPER@52..55 "Int"
+        LAYOUT_SEPARATOR@55..55 ""
+        InstanceChain@55..83
+          InstanceDeclaration@55..83
+            Annotation@55..56
+              TEXT@55..56 "\n"
+            INSTANCE@56..64 "instance"
+            InstanceHead@64..83
+              QualifiedName@64..74
+                Annotation@64..65
+                  TEXT@64..65 " "
+                UPPER@65..74 "Serialise"
+              TypeVariable@74..76
+                Annotation@74..75
+                  TEXT@74..75 " "
+                LOWER@75..76 "s"
+              TypeConstructor@76..83
+                QualifiedName@76..83
+                  Annotation@76..77
+                    TEXT@76..77 " "
+                  UPPER@77..83 "Number"
+      LAYOUT_END@83..83 ""
+      Annotation@83..84
+        TEXT@83..84 "\n"
+      END_OF_FILE@84..84 ""
+    ,
+    [],
+)

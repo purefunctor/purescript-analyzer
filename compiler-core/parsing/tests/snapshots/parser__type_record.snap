@@ -1,0 +1,217 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..187
+      ModuleHeader@0..23
+        MODULE@0..6 "module"
+        ModuleName@6..17
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..17 "TypeRecord"
+        Annotation@17..18
+          TEXT@17..18 " "
+        WHERE@18..23 "where"
+      LAYOUT_START@23..23 ""
+      ModuleImports@23..23
+      ModuleStatements@23..185
+        ValueSignature@23..36
+          Annotation@23..25
+            TEXT@23..25 "\n\n"
+          LOWER@25..30 "empty"
+          Annotation@30..31
+            TEXT@30..31 " "
+          DOUBLE_COLON@31..33 "::"
+          TypeRecord@33..36
+            Annotation@33..34
+              TEXT@33..34 " "
+            LEFT_CURLY@34..35 "{"
+            RIGHT_CURLY@35..36 "}"
+        LAYOUT_SEPARATOR@36..36 ""
+        ValueSignature@36..53
+          Annotation@36..38
+            TEXT@36..38 "\n\n"
+          LOWER@38..42 "tail"
+          Annotation@42..43
+            TEXT@42..43 " "
+          DOUBLE_COLON@43..45 "::"
+          TypeRecord@45..53
+            Annotation@45..46
+              TEXT@45..46 " "
+            LEFT_CURLY@46..47 "{"
+            TypeRowTail@47..51
+              Annotation@47..48
+                TEXT@47..48 " "
+              PIPE@48..49 "|"
+              TypeVariable@49..51
+                Annotation@49..50
+                  TEXT@49..50 " "
+                LOWER@50..51 "r"
+            Annotation@51..52
+              TEXT@51..52 " "
+            RIGHT_CURLY@52..53 "}"
+        LAYOUT_SEPARATOR@53..53 ""
+        ValueSignature@53..76
+          Annotation@53..55
+            TEXT@53..55 "\n\n"
+          LOWER@55..59 "item"
+          Annotation@59..60
+            TEXT@59..60 " "
+          DOUBLE_COLON@60..62 "::"
+          TypeRecord@62..76
+            Annotation@62..63
+              TEXT@62..63 " "
+            LEFT_CURLY@63..64 "{"
+            TypeRowItem@64..74
+              LabelName@64..66
+                Annotation@64..65
+                  TEXT@64..65 " "
+                TEXT@65..66 "a"
+              Annotation@66..67
+                TEXT@66..67 " "
+              DOUBLE_COLON@67..69 "::"
+              TypeConstructor@69..74
+                QualifiedName@69..74
+                  Annotation@69..70
+                    TEXT@69..70 " "
+                  UPPER@70..74 "Type"
+            Annotation@74..75
+              TEXT@74..75 " "
+            RIGHT_CURLY@75..76 "}"
+        LAYOUT_SEPARATOR@76..76 ""
+        ValueSignature@76..107
+          Annotation@76..78
+            TEXT@76..78 "\n\n"
+          LOWER@78..86 "itemTail"
+          Annotation@86..87
+            TEXT@86..87 " "
+          DOUBLE_COLON@87..89 "::"
+          TypeRecord@89..107
+            Annotation@89..90
+              TEXT@89..90 " "
+            LEFT_CURLY@90..91 "{"
+            TypeRowItem@91..101
+              LabelName@91..93
+                Annotation@91..92
+                  TEXT@91..92 " "
+                TEXT@92..93 "a"
+              Annotation@93..94
+                TEXT@93..94 " "
+              DOUBLE_COLON@94..96 "::"
+              TypeConstructor@96..101
+                QualifiedName@96..101
+                  Annotation@96..97
+                    TEXT@96..97 " "
+                  UPPER@97..101 "Type"
+            TypeRowTail@101..105
+              Annotation@101..102
+                TEXT@101..102 " "
+              PIPE@102..103 "|"
+              TypeVariable@103..105
+                Annotation@103..104
+                  TEXT@103..104 " "
+                LOWER@104..105 "r"
+            Annotation@105..106
+              TEXT@105..106 " "
+            RIGHT_CURLY@106..107 "}"
+        LAYOUT_SEPARATOR@107..107 ""
+        ValueSignature@107..142
+          Annotation@107..109
+            TEXT@107..109 "\n\n"
+          LOWER@109..114 "items"
+          Annotation@114..115
+            TEXT@114..115 " "
+          DOUBLE_COLON@115..117 "::"
+          TypeRecord@117..142
+            Annotation@117..118
+              TEXT@117..118 " "
+            LEFT_CURLY@118..119 "{"
+            TypeRowItem@119..129
+              LabelName@119..121
+                Annotation@119..120
+                  TEXT@119..120 " "
+                TEXT@120..121 "a"
+              Annotation@121..122
+                TEXT@121..122 " "
+              DOUBLE_COLON@122..124 "::"
+              TypeConstructor@124..129
+                QualifiedName@124..129
+                  Annotation@124..125
+                    TEXT@124..125 " "
+                  UPPER@125..129 "Type"
+            COMMA@129..130 ","
+            TypeRowItem@130..140
+              LabelName@130..132
+                Annotation@130..131
+                  TEXT@130..131 " "
+                TEXT@131..132 "b"
+              Annotation@132..133
+                TEXT@132..133 " "
+              DOUBLE_COLON@133..135 "::"
+              TypeConstructor@135..140
+                QualifiedName@135..140
+                  Annotation@135..136
+                    TEXT@135..136 " "
+                  UPPER@136..140 "Type"
+            Annotation@140..141
+              TEXT@140..141 " "
+            RIGHT_CURLY@141..142 "}"
+        LAYOUT_SEPARATOR@142..142 ""
+        ValueSignature@142..185
+          Annotation@142..144
+            TEXT@142..144 "\n\n"
+          LOWER@144..153 "itemsTail"
+          Annotation@153..154
+            TEXT@153..154 " "
+          DOUBLE_COLON@154..156 "::"
+          TypeRecord@156..185
+            Annotation@156..157
+              TEXT@156..157 " "
+            LEFT_CURLY@157..158 "{"
+            TypeRowItem@158..168
+              LabelName@158..160
+                Annotation@158..159
+                  TEXT@158..159 " "
+                TEXT@159..160 "a"
+              Annotation@160..161
+                TEXT@160..161 " "
+              DOUBLE_COLON@161..163 "::"
+              TypeConstructor@163..168
+                QualifiedName@163..168
+                  Annotation@163..164
+                    TEXT@163..164 " "
+                  UPPER@164..168 "Type"
+            COMMA@168..169 ","
+            TypeRowItem@169..179
+              LabelName@169..171
+                Annotation@169..170
+                  TEXT@169..170 " "
+                TEXT@170..171 "b"
+              Annotation@171..172
+                TEXT@171..172 " "
+              DOUBLE_COLON@172..174 "::"
+              TypeConstructor@174..179
+                QualifiedName@174..179
+                  Annotation@174..175
+                    TEXT@174..175 " "
+                  UPPER@175..179 "Type"
+            TypeRowTail@179..183
+              Annotation@179..180
+                TEXT@179..180 " "
+              PIPE@180..181 "|"
+              TypeVariable@181..183
+                Annotation@181..182
+                  TEXT@181..182 " "
+                LOWER@182..183 "r"
+            Annotation@183..184
+              TEXT@183..184 " "
+            RIGHT_CURLY@184..185 "}"
+      LAYOUT_END@185..185 ""
+      Annotation@185..187
+        TEXT@185..187 "\n\n"
+      END_OF_FILE@187..187 ""
+    ,
+    [],
+)

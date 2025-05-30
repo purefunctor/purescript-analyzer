@@ -1,0 +1,13 @@
+---
+source: compiler-core/lexing/tests/layout.rs
+expression: source
+snapshot_kind: text
+---
+module Test where{
+
+type IntType = (-1);
+
+type IntType' = (-
+  -- here's a comment
+  1)}
+<eof>

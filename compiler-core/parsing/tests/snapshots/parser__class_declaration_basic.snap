@@ -1,0 +1,224 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..196
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "ClassDeclaration"
+        Annotation@23..24
+          TEXT@23..24 " "
+        WHERE@24..29 "where"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..195
+        ClassDeclaration@29..96
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
+          CLASS@31..36 "class"
+          ClassHead@36..46
+            Annotation@36..37
+              TEXT@36..37 " "
+            UPPER@37..44 "Functor"
+            TypeVariableBinding@44..46
+              Annotation@44..45
+                TEXT@44..45 " "
+              LOWER@45..46 "f"
+          Annotation@46..47
+            TEXT@46..47 " "
+          WHERE@47..52 "where"
+          ClassStatements@52..96
+            LAYOUT_START@52..52 ""
+            ClassMemberStatement@52..96
+              Annotation@52..55
+                TEXT@52..55 "\n  "
+              LOWER@55..58 "map"
+              Annotation@58..59
+                TEXT@58..59 " "
+              DOUBLE_COLON@59..61 "::"
+              TypeForall@61..96
+                Annotation@61..62
+                  TEXT@61..62 " "
+                FORALL@62..68 "forall"
+                TypeVariableBinding@68..70
+                  Annotation@68..69
+                    TEXT@68..69 " "
+                  LOWER@69..70 "a"
+                TypeVariableBinding@70..72
+                  Annotation@70..71
+                    TEXT@70..71 " "
+                  LOWER@71..72 "b"
+                PERIOD@72..73 "."
+                TypeArrow@73..96
+                  TypeParenthesized@73..82
+                    Annotation@73..74
+                      TEXT@73..74 " "
+                    LEFT_PARENTHESIS@74..75 "("
+                    TypeArrow@75..81
+                      TypeVariable@75..76
+                        LOWER@75..76 "a"
+                      Annotation@76..77
+                        TEXT@76..77 " "
+                      RIGHT_ARROW@77..79 "->"
+                      TypeVariable@79..81
+                        Annotation@79..80
+                          TEXT@79..80 " "
+                        LOWER@80..81 "b"
+                    RIGHT_PARENTHESIS@81..82 ")"
+                  Annotation@82..83
+                    TEXT@82..83 " "
+                  RIGHT_ARROW@83..85 "->"
+                  TypeArrow@85..96
+                    TypeApplicationChain@85..89
+                      TypeVariable@85..87
+                        Annotation@85..86
+                          TEXT@85..86 " "
+                        LOWER@86..87 "f"
+                      TypeVariable@87..89
+                        Annotation@87..88
+                          TEXT@87..88 " "
+                        LOWER@88..89 "a"
+                    Annotation@89..90
+                      TEXT@89..90 " "
+                    RIGHT_ARROW@90..92 "->"
+                    TypeApplicationChain@92..96
+                      TypeVariable@92..94
+                        Annotation@92..93
+                          TEXT@92..93 " "
+                        LOWER@93..94 "f"
+                      TypeVariable@94..96
+                        Annotation@94..95
+                          TEXT@94..95 " "
+                        LOWER@95..96 "b"
+            LAYOUT_END@96..96 ""
+        LAYOUT_SEPARATOR@96..96 ""
+        ClassDeclaration@96..195
+          Annotation@96..98
+            TEXT@96..98 "\n\n"
+          CLASS@98..103 "class"
+          ClassHead@103..111
+            Annotation@103..104
+              TEXT@103..104 " "
+            UPPER@104..109 "Monad"
+            TypeVariableBinding@109..111
+              Annotation@109..110
+                TEXT@109..110 " "
+              LOWER@110..111 "m"
+          Annotation@111..112
+            TEXT@111..112 " "
+          WHERE@112..117 "where"
+          ClassStatements@117..195
+            LAYOUT_START@117..117 ""
+            ClassMemberStatement@117..164
+              Annotation@117..120
+                TEXT@117..120 "\n  "
+              LOWER@120..124 "bind"
+              Annotation@124..125
+                TEXT@124..125 " "
+              DOUBLE_COLON@125..127 "::"
+              TypeForall@127..164
+                Annotation@127..128
+                  TEXT@127..128 " "
+                FORALL@128..134 "forall"
+                TypeVariableBinding@134..136
+                  Annotation@134..135
+                    TEXT@134..135 " "
+                  LOWER@135..136 "a"
+                TypeVariableBinding@136..138
+                  Annotation@136..137
+                    TEXT@136..137 " "
+                  LOWER@137..138 "b"
+                PERIOD@138..139 "."
+                TypeArrow@139..164
+                  TypeApplicationChain@139..143
+                    TypeVariable@139..141
+                      Annotation@139..140
+                        TEXT@139..140 " "
+                      LOWER@140..141 "m"
+                    TypeVariable@141..143
+                      Annotation@141..142
+                        TEXT@141..142 " "
+                      LOWER@142..143 "a"
+                  Annotation@143..144
+                    TEXT@143..144 " "
+                  RIGHT_ARROW@144..146 "->"
+                  TypeArrow@146..164
+                    TypeParenthesized@146..157
+                      Annotation@146..147
+                        TEXT@146..147 " "
+                      LEFT_PARENTHESIS@147..148 "("
+                      TypeArrow@148..156
+                        TypeVariable@148..149
+                          LOWER@148..149 "a"
+                        Annotation@149..150
+                          TEXT@149..150 " "
+                        RIGHT_ARROW@150..152 "->"
+                        TypeApplicationChain@152..156
+                          TypeVariable@152..154
+                            Annotation@152..153
+                              TEXT@152..153 " "
+                            LOWER@153..154 "m"
+                          TypeVariable@154..156
+                            Annotation@154..155
+                              TEXT@154..155 " "
+                            LOWER@155..156 "b"
+                      RIGHT_PARENTHESIS@156..157 ")"
+                    Annotation@157..158
+                      TEXT@157..158 " "
+                    RIGHT_ARROW@158..160 "->"
+                    TypeApplicationChain@160..164
+                      TypeVariable@160..162
+                        Annotation@160..161
+                          TEXT@160..161 " "
+                        LOWER@161..162 "m"
+                      TypeVariable@162..164
+                        Annotation@162..163
+                          TEXT@162..163 " "
+                        LOWER@163..164 "b"
+            LAYOUT_SEPARATOR@164..164 ""
+            ClassMemberStatement@164..195
+              Annotation@164..167
+                TEXT@164..167 "\n  "
+              LOWER@167..173 "return"
+              Annotation@173..174
+                TEXT@173..174 " "
+              DOUBLE_COLON@174..176 "::"
+              TypeForall@176..195
+                Annotation@176..177
+                  TEXT@176..177 " "
+                FORALL@177..183 "forall"
+                TypeVariableBinding@183..185
+                  Annotation@183..184
+                    TEXT@183..184 " "
+                  LOWER@184..185 "a"
+                PERIOD@185..186 "."
+                TypeArrow@186..195
+                  TypeVariable@186..188
+                    Annotation@186..187
+                      TEXT@186..187 " "
+                    LOWER@187..188 "a"
+                  Annotation@188..189
+                    TEXT@188..189 " "
+                  RIGHT_ARROW@189..191 "->"
+                  TypeApplicationChain@191..195
+                    TypeVariable@191..193
+                      Annotation@191..192
+                        TEXT@191..192 " "
+                      LOWER@192..193 "m"
+                    TypeVariable@193..195
+                      Annotation@193..194
+                        TEXT@193..194 " "
+                      LOWER@194..195 "a"
+            LAYOUT_END@195..195 ""
+      LAYOUT_END@195..195 ""
+      Annotation@195..196
+        TEXT@195..196 "\n"
+      END_OF_FILE@196..196 ""
+    ,
+    [],
+)

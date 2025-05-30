@@ -1,0 +1,41 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..52
+      ModuleHeader@0..29
+        MODULE@0..6 "module"
+        ModuleName@6..23
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..23 "NewtypeSignature"
+        Annotation@23..24
+          TEXT@23..24 " "
+        WHERE@24..29 "where"
+      LAYOUT_START@29..29 ""
+      ModuleImports@29..29
+      ModuleStatements@29..51
+        NewtypeSignature@29..51
+          Annotation@29..31
+            TEXT@29..31 "\n\n"
+          NEWTYPE@31..38 "newtype"
+          Annotation@38..39
+            TEXT@38..39 " "
+          UPPER@39..43 "Year"
+          Annotation@43..44
+            TEXT@43..44 " "
+          DOUBLE_COLON@44..46 "::"
+          TypeConstructor@46..51
+            QualifiedName@46..51
+              Annotation@46..47
+                TEXT@46..47 " "
+              UPPER@47..51 "Type"
+      LAYOUT_END@51..51 ""
+      Annotation@51..52
+        TEXT@51..52 "\n"
+      END_OF_FILE@52..52 ""
+    ,
+    [],
+)

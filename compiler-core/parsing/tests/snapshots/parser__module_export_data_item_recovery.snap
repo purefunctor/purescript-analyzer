@@ -1,0 +1,77 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..58
+      ModuleHeader@0..57
+        MODULE@0..6 "module"
+        ModuleName@6..35
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..35 "ModuleExportDataItemR ..."
+        ExportList@35..51
+          Annotation@35..36
+            TEXT@35..36 " "
+          LEFT_PARENTHESIS@36..37 "("
+          ExportType@37..51
+            UPPER@37..41 "List"
+            TypeItemsList@41..51
+              LEFT_PARENTHESIS@41..42 "("
+              UPPER@42..46 "Cons"
+              COMMA@46..47 ","
+              ERROR@47..51
+                ERROR@47..47 ""
+                Annotation@47..48
+                  TEXT@47..48 " "
+                INTEGER@48..51 "123"
+              ERROR@51..51 ""
+          ERROR@51..51 ""
+          ERROR@51..51 ""
+        Annotation@51..52
+          TEXT@51..52 " "
+        WHERE@52..57 "where"
+      LAYOUT_START@57..57 ""
+      ModuleImports@57..57
+      ModuleStatements@57..57
+      LAYOUT_END@57..57 ""
+      Annotation@57..58
+        TEXT@57..58 "\n"
+      END_OF_FILE@58..58 ""
+    ,
+    [
+        ParseError {
+            offset: 48,
+            position: Position {
+                line: 1,
+                column: 49,
+            },
+            message: "Unexpected tokens in type items",
+        },
+        ParseError {
+            offset: 52,
+            position: Position {
+                line: 1,
+                column: 53,
+            },
+            message: "Expected RIGHT_PARENTHESIS",
+        },
+        ParseError {
+            offset: 52,
+            position: Position {
+                line: 1,
+                column: 53,
+            },
+            message: "Expected COMMA",
+        },
+        ParseError {
+            offset: 52,
+            position: Position {
+                line: 1,
+                column: 53,
+            },
+            message: "Expected RIGHT_PARENTHESIS",
+        },
+    ],
+)

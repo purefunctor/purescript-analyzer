@@ -5,17 +5,17 @@ edition = "2024"
 build = "build.rs"
 
 [dependencies]
-building = { version = "0.1.0", path = "../crates/building" }
-files = { version = "0.1.0", path = "../crates/files" }
+building = { version = "0.1.0", path = "../compiler-core/building" }
+files = { version = "0.1.0", path = "../compiler-core/files" }
 glob = "0.3.2"
-indexing = { version = "0.1.0", path = "../crates/indexing" }
-lexing = { version = "0.1.0", path = "../crates/lexing" }
-lowering = { version = "0.1.0", path = "../crates/lowering" }
-parsing = { version = "0.1.0", path = "../crates/parsing" }
-resolving = { version = "0.1.0", path = "../crates/resolving" }
+indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
+lexing = { version = "0.1.0", path = "../compiler-core/lexing" }
+lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
+parsing = { version = "0.1.0", path = "../compiler-core/parsing" }
+resolving = { version = "0.1.0", path = "../compiler-core/resolving" }
 rustc-hash = "2.1.1"
 smol_str = "0.3.2"
-syntax = { version = "0.1.0", path = "../crates/syntax" }
+syntax = { version = "0.1.0", path = "../compiler-core/syntax" }
 
 [build-dependencies]
 convert_case = "0.8.0"

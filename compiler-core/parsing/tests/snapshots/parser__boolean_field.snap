@@ -1,0 +1,64 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..64
+      ModuleHeader@0..25
+        MODULE@0..6 "module"
+        ModuleName@6..19
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..19 "BooleanField"
+        Annotation@19..20
+          TEXT@19..20 " "
+        WHERE@20..25 "where"
+      LAYOUT_START@25..25 ""
+      ModuleImports@25..25
+      ModuleStatements@25..63
+        ValueEquation@25..63
+          Annotation@25..27
+            TEXT@25..27 "\n\n"
+          LOWER@27..32 "field"
+          FunctionBinders@32..32
+          Unconditional@32..63
+            Annotation@32..33
+              TEXT@32..33 " "
+            EQUAL@33..34 "="
+            WhereExpression@34..63
+              ExpressionRecord@34..63
+                Annotation@34..35
+                  TEXT@34..35 " "
+                LEFT_CURLY@35..36 "{"
+                RecordField@36..48
+                  LabelName@36..41
+                    Annotation@36..37
+                      TEXT@36..37 " "
+                    TEXT@37..41 "true"
+                  COLON@41..42 ":"
+                  ExpressionFalse@42..48
+                    Annotation@42..43
+                      TEXT@42..43 " "
+                    FALSE@43..48 "false"
+                COMMA@48..49 ","
+                RecordField@49..61
+                  LabelName@49..55
+                    Annotation@49..50
+                      TEXT@49..50 " "
+                    TEXT@50..55 "false"
+                  COLON@55..56 ":"
+                  ExpressionTrue@56..61
+                    Annotation@56..57
+                      TEXT@56..57 " "
+                    TRUE@57..61 "true"
+                Annotation@61..62
+                  TEXT@61..62 " "
+                RIGHT_CURLY@62..63 "}"
+      LAYOUT_END@63..63 ""
+      Annotation@63..64
+        TEXT@63..64 "\n"
+      END_OF_FILE@64..64 ""
+    ,
+    [],
+)

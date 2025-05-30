@@ -1,0 +1,56 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..56
+      ModuleHeader@0..32
+        MODULE@0..6 "module"
+        ModuleName@6..26
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..26 "ExpressionDoDiscard"
+        Annotation@26..27
+          TEXT@26..27 " "
+        WHERE@27..32 "where"
+      LAYOUT_START@32..32 ""
+      ModuleImports@32..32
+      ModuleStatements@32..55
+        ValueEquation@32..55
+          Annotation@32..34
+            TEXT@32..34 "\n\n"
+          LOWER@34..38 "main"
+          FunctionBinders@38..38
+          Unconditional@38..55
+            Annotation@38..39
+              TEXT@38..39 " "
+            EQUAL@39..40 "="
+            WhereExpression@40..55
+              ExpressionDo@40..55
+                Annotation@40..41
+                  TEXT@40..41 " "
+                DO@41..43 "do"
+                DoStatements@43..55
+                  LAYOUT_START@43..43 ""
+                  DoStatementDiscard@43..55
+                    ExpressionApplicationChain@43..55
+                      ExpressionVariable@43..50
+                        QualifiedName@43..50
+                          Annotation@43..46
+                            TEXT@43..46 "\n  "
+                          LOWER@46..50 "pure"
+                      ExpressionTermArgument@50..55
+                        ExpressionVariable@50..55
+                          QualifiedName@50..55
+                            Annotation@50..51
+                              TEXT@50..51 " "
+                            LOWER@51..55 "unit"
+                  LAYOUT_END@55..55 ""
+      LAYOUT_END@55..55 ""
+      Annotation@55..56
+        TEXT@55..56 "\n"
+      END_OF_FILE@56..56 ""
+    ,
+    [],
+)

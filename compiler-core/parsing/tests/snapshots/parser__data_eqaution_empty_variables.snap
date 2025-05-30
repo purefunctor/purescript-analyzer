@@ -1,0 +1,57 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..73
+      ModuleHeader@0..42
+        MODULE@0..6 "module"
+        ModuleName@6..36
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..36 "DataDeclarationEmptyV ..."
+        Annotation@36..37
+          TEXT@36..37 " "
+        WHERE@37..42 "where"
+      LAYOUT_START@42..42 ""
+      ModuleImports@42..42
+      ModuleStatements@42..72
+        DataEquation@42..57
+          Annotation@42..44
+            TEXT@42..44 "\n\n"
+          DATA@44..48 "data"
+          Annotation@48..49
+            TEXT@48..49 " "
+          UPPER@49..53 "Left"
+          TypeVariableBinding@53..55
+            Annotation@53..54
+              TEXT@53..54 " "
+            LOWER@54..55 "a"
+          TypeVariableBinding@55..57
+            Annotation@55..56
+              TEXT@55..56 " "
+            LOWER@56..57 "b"
+        LAYOUT_SEPARATOR@57..57 ""
+        DataEquation@57..72
+          Annotation@57..58
+            TEXT@57..58 "\n"
+          DATA@58..62 "data"
+          Annotation@62..63
+            TEXT@62..63 " "
+          UPPER@63..68 "Right"
+          TypeVariableBinding@68..70
+            Annotation@68..69
+              TEXT@68..69 " "
+            LOWER@69..70 "a"
+          TypeVariableBinding@70..72
+            Annotation@70..71
+              TEXT@70..71 " "
+            LOWER@71..72 "b"
+      LAYOUT_END@72..72 ""
+      Annotation@72..73
+        TEXT@72..73 "\n"
+      END_OF_FILE@73..73 ""
+    ,
+    [],
+)

@@ -1,0 +1,94 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..70
+      ModuleHeader@0..24
+        MODULE@0..6 "module"
+        ModuleName@6..18
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..18 "BinderArray"
+        Annotation@18..19
+          TEXT@18..19 " "
+        WHERE@19..24 "where"
+      LAYOUT_START@24..24 ""
+      ModuleImports@24..24
+      ModuleStatements@24..69
+        ValueEquation@24..38
+          Annotation@24..26
+            TEXT@24..26 "\n\n"
+          LOWER@26..31 "array"
+          FunctionBinders@31..34
+            BinderArray@31..34
+              Annotation@31..32
+                TEXT@31..32 " "
+              LEFT_SQUARE@32..33 "["
+              RIGHT_SQUARE@33..34 "]"
+          Unconditional@34..38
+            Annotation@34..35
+              TEXT@34..35 " "
+            EQUAL@35..36 "="
+            WhereExpression@36..38
+              ExpressionInteger@36..38
+                Annotation@36..37
+                  TEXT@36..37 " "
+                INTEGER@37..38 "0"
+        LAYOUT_SEPARATOR@38..38 ""
+        ValueEquation@38..52
+          Annotation@38..39
+            TEXT@38..39 "\n"
+          LOWER@39..44 "array"
+          FunctionBinders@44..48
+            BinderArray@44..48
+              Annotation@44..45
+                TEXT@44..45 " "
+              LEFT_SQUARE@45..46 "["
+              BinderVariable@46..47
+                LOWER@46..47 "x"
+              RIGHT_SQUARE@47..48 "]"
+          Unconditional@48..52
+            Annotation@48..49
+              TEXT@48..49 " "
+            EQUAL@49..50 "="
+            WhereExpression@50..52
+              ExpressionInteger@50..52
+                Annotation@50..51
+                  TEXT@50..51 " "
+                INTEGER@51..52 "0"
+        LAYOUT_SEPARATOR@52..52 ""
+        ValueEquation@52..69
+          Annotation@52..53
+            TEXT@52..53 "\n"
+          LOWER@53..58 "array"
+          FunctionBinders@58..65
+            BinderArray@58..65
+              Annotation@58..59
+                TEXT@58..59 " "
+              LEFT_SQUARE@59..60 "["
+              BinderVariable@60..61
+                LOWER@60..61 "x"
+              COMMA@61..62 ","
+              BinderVariable@62..64
+                Annotation@62..63
+                  TEXT@62..63 " "
+                LOWER@63..64 "y"
+              RIGHT_SQUARE@64..65 "]"
+          Unconditional@65..69
+            Annotation@65..66
+              TEXT@65..66 " "
+            EQUAL@66..67 "="
+            WhereExpression@67..69
+              ExpressionInteger@67..69
+                Annotation@67..68
+                  TEXT@67..68 " "
+                INTEGER@68..69 "0"
+      LAYOUT_END@69..69 ""
+      Annotation@69..70
+        TEXT@69..70 "\n"
+      END_OF_FILE@70..70 ""
+    ,
+    [],
+)

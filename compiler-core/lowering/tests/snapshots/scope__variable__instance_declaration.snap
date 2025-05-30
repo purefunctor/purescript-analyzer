@@ -1,0 +1,40 @@
+---
+source: compiler-core/lowering/tests/scope.rs
+expression: snapshot
+snapshot_kind: text
+---
+Expressions:
+
+77..87
+  resolves to top-level name
+168..180
+  resolves to top-level name
+255..257
+  resolves to binder 251..253
+
+Types:
+
+114..116
+  introduces a constraint variable "a"
+137..139
+  resolves to a constraint variable "a"
+    114..116
+148..150
+  resolves to a constraint variable "a"
+    114..116
+201..203
+  introduces a constraint variable "b"
+203..205
+  introduces a constraint variable "b"
+232..234
+  resolves to forall 229..231
+234..236
+  resolves to a constraint variable "b"
+    201..203
+    203..205
+239..241
+  resolves to forall 229..231
+241..243
+  resolves to a constraint variable "b"
+    201..203
+    203..205
