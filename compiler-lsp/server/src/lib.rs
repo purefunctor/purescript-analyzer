@@ -1,3 +1,4 @@
+pub mod completion;
 pub mod definition;
 pub mod extension;
 pub mod hover;
@@ -38,6 +39,15 @@ fn initialize(
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
+                completion_provider: Some(CompletionOptions {
+                    resolve_provider: None,
+                    trigger_characters: Some(vec![".".to_string()]),
+                    all_commit_characters: None,
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: None,
+                    },
+                    completion_item: None,
+                }),
                 definition_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -83,6 +93,16 @@ fn hover(
     async move { Ok(result) }
 }
 
+fn completion(
+    state: &mut State,
+    p: CompletionParams,
+) -> impl Future<Output = Result<Option<CompletionResponse>, ResponseError>> + use<> {
+    let uri = p.text_document_position.text_document.uri;
+    let position = p.text_document_position.position;
+    let result = completion::implementation(state, uri, position);
+    async move { Ok(result) }
+}
+
 fn did_change(
     state: &mut State,
     p: DidChangeTextDocumentParams,
@@ -122,6 +142,7 @@ pub async fn main() {
             .request::<extension::CustomInitialize, _>(initialize)
             .request::<request::GotoDefinition, _>(definition)
             .request::<request::HoverRequest, _>(hover)
+            .request::<request::Completion, _>(completion)
             .notification::<notification::Initialized>(initialized)
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
