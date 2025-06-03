@@ -1,8 +1,9 @@
 use async_lsp::lsp_types::*;
 use indexing::ImportKind;
-use resolving::FullResolvedModule;
+use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
+use strsim::jaro_winkler;
 use syntax::{SyntaxToken, cst};
 
 use crate::{State, locate};
@@ -17,7 +18,6 @@ pub(super) fn implementation(
     let id = state.files.id(uri)?;
     let content = state.runtime.content(id);
     let (parsed, _) = state.runtime.parsed(id);
-    let resolved = state.runtime.resolved(id);
 
     let offset = locate::position_to_offset(&content, position)?;
 
@@ -30,176 +30,193 @@ pub(super) fn implementation(
         TokenAtOffset::Between(token, _) => token,
     };
 
-    #[derive(Debug)]
-    enum Context {
-        Term,
-        Type,
-    }
+    let filter = CompletionFilter::try_qualified(&token)
+        .or_else(|| CompletionFilter::try_qualifier(&token))?;
 
-    let _context = token.parent_ancestors().find_map(|node| {
-        let kind = node.kind();
-        if cst::Expression::can_cast(kind) {
-            Some(Context::Term)
-        } else if cst::Type::can_cast(kind) {
-            Some(Context::Type)
-        } else {
-            None
-        }
-    });
+    let resolved = state.runtime.resolved(id);
 
-    let mut items = vec![];
-
-    let completion_prefix = qualified_prefix(&token).or_else(|| qualifier_prefix(&token));
-
-    if let Some(CompletionPrefix { prefix, name }) = completion_prefix {
-        match (prefix, name) {
-            (Some(prefix), Some(name)) => {
-                collect_prefixed_name(&mut items, &resolved, &prefix, &name);
-            }
-            (None, Some(name)) => {
-                collect_name_or_prefix(&mut items, &resolved, &name);
-            }
-            (Some(prefix), None) => {
-                collect_prefixed_name(&mut items, &resolved, &prefix, "");
-            }
-            (None, None) => (),
-        }
-    }
-
+    let items = collect(state, filter, &resolved);
     let is_incomplete = items.len() > 5;
+
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
 }
 
-fn collect_prefixed_name(
-    items: &mut Vec<CompletionItem>,
-    resolved: &FullResolvedModule,
-    prefix: &str,
-    name: &str,
-) {
-    let prefix = prefix.trim_end_matches('.');
-    let mut has_exact_match = false;
+const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 
-    if let Some(import) = resolved.qualified.get(prefix) {
-        has_exact_match = true;
-        items.extend(import.iter_terms().filter_map(|(k, _, _, kind)| {
-            if !matches!(kind, ImportKind::Hidden) && k.starts_with(name) {
-                Some(completion_item(&k, CompletionItemKind::VALUE))
-            } else {
-                None
+fn collect(
+    state: &mut State,
+    filter: CompletionFilter,
+    resolved: &FullResolvedModule,
+) -> Vec<CompletionItem> {
+    let mut items = vec![];
+
+    if let Some(prefix) = filter.prefix.as_deref() {
+        // Flag that determines if we found an exact match for this module.
+        // If we have, we make sure to exclude it from the completion list.
+        let mut module_match_found = false;
+        let module = prefix.trim_end_matches('.');
+
+        if let Some(import) = resolved.qualified.get(module) {
+            module_match_found = true;
+            collect_imports(state, &mut items, &filter, import);
+        }
+
+        items.extend(resolved.qualified.iter().filter_map(|(name, import)| {
+            if module_match_found && name == module {
+                return None;
             }
-        }));
-        items.extend(import.iter_types().filter_map(|(k, _, _, kind)| {
-            if !matches!(kind, ImportKind::Hidden) && k.starts_with(name) {
-                Some(completion_item(&k, CompletionItemKind::STRUCT))
-            } else {
-                None
+            if !name.starts_with(module) {
+                return None;
             }
+            let (parsed, _) = state.runtime.parsed(import.file);
+            let description = parsed.cst().header().and_then(|cst| {
+                let cst = cst.name()?;
+                let mut string = String::default();
+                if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
+                    string.push_str(token.text());
+                }
+                if let Some(token) = cst.name_token() {
+                    string.push_str(token.text());
+                }
+                Some(string)
+            });
+            Some(completion_item(&name, CompletionItemKind::MODULE, description))
         }));
+    } else {
+        items.extend(resolved.qualified.keys().filter_map(|import| {
+            if filter.name_score(import) < ACCEPTANCE_THRESHOLD {
+                return None;
+            }
+            Some(completion_item(&import, CompletionItemKind::MODULE, None))
+        }));
+
+        items.extend(resolved.locals.iter_terms().filter_map(|(name, _, _)| {
+            if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+                return None;
+            }
+            Some(completion_item(&name, CompletionItemKind::VALUE, Some("Local".to_string())))
+        }));
+
+        items.extend(resolved.locals.iter_types().filter_map(|(name, _, _)| {
+            if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+                return None;
+            }
+            Some(completion_item(&name, CompletionItemKind::STRUCT, Some("Local".to_string())))
+        }));
+
+        for import in &resolved.unqualified {
+            collect_imports(state, &mut items, &filter, import);
+        }
     }
 
-    items.extend(resolved.qualified.keys().filter_map(|import| {
-        if has_exact_match && import == prefix {
+    items
+}
+
+fn collect_imports(
+    state: &mut State,
+    items: &mut Vec<CompletionItem>,
+    filter: &CompletionFilter,
+    import: &ResolvedImport,
+) {
+    items.extend(import.iter_terms().filter_map(|(name, id, _, kind)| {
+        if matches!(kind, ImportKind::Hidden) {
             return None;
         }
-        if import.starts_with(prefix) {
-            Some(completion_item(&import, CompletionItemKind::MODULE))
-        } else {
-            None
+        if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+            return None;
         }
+        let (parsed, _) = state.runtime.parsed(id);
+        let description = parsed.cst().header().and_then(|cst| {
+            let cst = cst.name()?;
+            let mut string = String::default();
+            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
+                string.push_str(token.text());
+            }
+            if let Some(token) = cst.name_token() {
+                string.push_str(token.text());
+            }
+            Some(string)
+        });
+        Some(completion_item(&name, CompletionItemKind::VALUE, description))
+    }));
+    items.extend(import.iter_types().filter_map(|(name, id, _, kind)| {
+        if matches!(kind, ImportKind::Hidden) {
+            return None;
+        }
+        if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+            return None;
+        }
+        let (parsed, _) = state.runtime.parsed(id);
+        let description = parsed.cst().header().and_then(|cst| {
+            let cst = cst.name()?;
+            let mut string = String::default();
+            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
+                string.push_str(token.text());
+            }
+            if let Some(token) = cst.name_token() {
+                string.push_str(token.text());
+            }
+            Some(string)
+        });
+        Some(completion_item(&name, CompletionItemKind::STRUCT, description))
     }));
 }
 
-fn collect_name_or_prefix(
-    items: &mut Vec<CompletionItem>,
-    resolved: &FullResolvedModule,
+fn completion_item(
     name: &str,
-) {
-    items.extend(resolved.qualified.keys().filter_map(|import| {
-        if import.starts_with(name) {
-            Some(completion_item(&import, CompletionItemKind::MODULE))
-        } else {
-            None
-        }
-    }));
-    items.extend(
-        resolved
-            .locals
-            .iter_terms()
-            .map(|(k, _, _)| completion_item(&k, CompletionItemKind::VALUE)),
-    );
-    items.extend(
-        resolved
-            .locals
-            .iter_types()
-            .map(|(k, _, _)| completion_item(&k, CompletionItemKind::STRUCT)),
-    );
-    items.extend(resolved.unqualified.iter().flat_map(|import| {
-        let terms = import.iter_terms().filter_map(|(k, _, _, kind)| {
-            if !matches!(kind, ImportKind::Hidden) && k.starts_with(name) {
-                Some(completion_item(&k, CompletionItemKind::VALUE))
-            } else {
-                None
-            }
-        });
-        let types = import.iter_types().filter_map(|(k, _, _, kind)| {
-            if !matches!(kind, ImportKind::Hidden) && k.starts_with(name) {
-                Some(completion_item(&k, CompletionItemKind::STRUCT))
-            } else {
-                None
-            }
-        });
-        terms.chain(types)
-    }));
-}
-
-fn completion_item(name: &str, kind: CompletionItemKind) -> CompletionItem {
+    kind: CompletionItemKind,
+    description: Option<String>,
+) -> CompletionItem {
     CompletionItem {
         label: name.to_string(),
-        label_details: Some(CompletionItemLabelDetails {
-            detail: None,
-            description: Some(name.to_string()),
-        }),
+        label_details: Some(CompletionItemLabelDetails { detail: None, description }),
         kind: Some(kind),
         ..Default::default()
     }
 }
 
-fn qualified_prefix(token: &SyntaxToken) -> Option<CompletionPrefix> {
-    token.parent_ancestors().find_map(|node| {
-        let qualified = cst::QualifiedName::cast(node)?;
-
-        let prefix = qualified.qualifier().and_then(|qualifier| {
-            let token = qualifier.text()?;
-            let text = token.text();
-            Some(SmolStr::from(text))
-        });
-
-        let name = qualified.lower().or_else(|| qualified.upper()).map(|token| {
-            let text = token.text();
-            SmolStr::from(text)
-        });
-
-        Some(CompletionPrefix { prefix, name })
-    })
-}
-
-fn qualifier_prefix(token: &SyntaxToken) -> Option<CompletionPrefix> {
-    token.parent_ancestors().find_map(|node| {
-        let qualifier = cst::Qualifier::cast(node)?;
-        let token = qualifier.text()?;
-
-        let prefix = token.text();
-        let prefix = SmolStr::new(prefix);
-
-        let prefix = Some(prefix);
-        let name = None;
-
-        Some(CompletionPrefix { prefix, name })
-    })
-}
-
 #[derive(Debug)]
-struct CompletionPrefix {
+struct CompletionFilter {
     prefix: Option<SmolStr>,
     name: Option<SmolStr>,
+}
+
+impl CompletionFilter {
+    fn try_qualified(token: &SyntaxToken) -> Option<CompletionFilter> {
+        token.parent_ancestors().find_map(|node| {
+            let qualified = cst::QualifiedName::cast(node)?;
+
+            let prefix = qualified.qualifier().and_then(|qualifier| {
+                let token = qualifier.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+
+            let name = qualified.lower().or_else(|| qualified.upper()).map(|token| {
+                let text = token.text();
+                SmolStr::from(text)
+            });
+
+            Some(CompletionFilter { prefix, name })
+        })
+    }
+
+    fn try_qualifier(token: &SyntaxToken) -> Option<CompletionFilter> {
+        token.parent_ancestors().find_map(|node| {
+            let qualifier = cst::Qualifier::cast(node)?;
+            let token = qualifier.text()?;
+
+            let prefix = token.text();
+            let prefix = SmolStr::new(prefix);
+
+            let prefix = Some(prefix);
+            let name = None;
+
+            Some(CompletionFilter { prefix, name })
+        })
+    }
+
+    fn name_score(&self, other: &str) -> f64 {
+        if let Some(name) = &self.name { jaro_winkler(name, other) } else { 1.0 }
+    }
 }
