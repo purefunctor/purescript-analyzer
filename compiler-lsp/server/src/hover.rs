@@ -3,7 +3,8 @@ use std::ops::Index;
 use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{
-    FullIndexedModule, ImportItemId, IndexingSource, TermItemId, TermItemKind, TypeItemKind,
+    FullIndexedModule, ImportItemId, IndexingSource, TermItemId, TermItemKind, TypeItemId,
+    TypeItemKind,
 };
 use itertools::Itertools;
 use la_arena::Idx;
@@ -61,37 +62,47 @@ fn hover_module_name(
         buffer.finish()
     };
 
-    let runtime = &mut state.runtime;
-    let id = runtime.module_file(&module)?;
-    let (parsed, _) = runtime.parsed(id);
-    let root = parsed.syntax_node();
-    let header = parsed.cst().header()?;
-    let header = header.syntax();
+    let module_id = state.runtime.module_file(&module)?;
 
-    let annotation = header.first_child_by_kind(&|kind| matches!(kind, SyntaxKind::Annotation));
-    let annotation = annotation.map(|annotation| {
-        let range = annotation.text_range();
-        render_annotation(&root, range)
-    });
+    let (root, annotation, syntax) = annotation_syntax_file(state, module_id)?;
 
-    let not_annotation =
-        header.first_child_or_token_by_kind(&|kind| !matches!(kind, SyntaxKind::Annotation));
-    let not_annotation = not_annotation.map(|not_annotation| {
-        let start = not_annotation.text_range().start();
-        let end = header.text_range().end();
-        let range = TextRange::new(start, end);
-        let value = root.text().slice(range).to_string();
-        vec![MarkedString::LanguageString(LanguageString {
-            language: "purescript".to_string(),
-            value,
-        })]
-    });
+    let annotation = annotation.map(|range| render_annotation(&root, range));
+    let syntax = syntax.map(|range| render_syntax(&root, range));
 
-    let array = [not_annotation, annotation].into_iter().flatten().flatten().collect_vec();
+    let array = [syntax, annotation].into_iter().flatten().flatten().collect_vec();
     let contents = HoverContents::Array(array);
     let range = None;
 
     Some(Hover { contents, range })
+}
+
+pub(crate) fn annotation_syntax_file(
+    state: &mut State,
+    f_id: FileId,
+) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
+    let (parsed, _) = state.runtime.parsed(f_id);
+
+    let root = parsed.syntax_node();
+    let cst = parsed.cst().header()?;
+    let node = cst.syntax();
+
+    let annotation = node
+        .first_child_by_kind(&|kind| matches!(kind, SyntaxKind::Annotation))
+        .map(|annotation| annotation.text_range());
+
+    let syntax = || {
+        let module_token =
+            node.first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::MODULE))?;
+        let where_token =
+            node.first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::WHERE))?;
+        let start = module_token.text_range().start();
+        let end = where_token.text_range().end();
+        Some(TextRange::new(start, end))
+    };
+
+    let syntax = syntax();
+
+    Some((root, annotation, syntax))
 }
 
 fn hover_import(state: &mut State, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
@@ -246,12 +257,25 @@ fn hover_deferred(
 }
 
 fn hover_file_term(state: &mut State, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
-    let (parsed, indexed) = {
-        let runtime = &mut state.runtime;
-        let (parsed, _) = runtime.parsed(f_id);
-        let indexed = runtime.indexed(f_id);
-        (parsed, indexed)
-    };
+    let (root, annotation, syntax) = annotation_syntax_file_term(state, f_id, t_id)?;
+
+    let annotation = annotation.map(|range| render_annotation(&root, range));
+    let syntax = syntax.map(|range| render_syntax(&root, range));
+
+    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+    let contents = HoverContents::Array(array);
+    let range = None;
+
+    Some(Hover { contents, range })
+}
+
+pub(super) fn annotation_syntax_file_term(
+    state: &mut State,
+    f_id: FileId,
+    t_id: TermItemId,
+) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
+    let (parsed, _) = state.runtime.parsed(f_id);
+    let indexed = state.runtime.indexed(f_id);
 
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];
@@ -273,6 +297,16 @@ fn hover_file_term(state: &mut State, f_id: FileId, t_id: TermItemId) -> Option<
         }
     };
 
+    Some((root, annotation, syntax))
+}
+
+fn hover_file_type(
+    state: &mut State,
+    f_id: Idx<files::File>,
+    t_id: Idx<indexing::TypeItem>,
+) -> Option<Hover> {
+    let (root, annotation, syntax) = annotation_syntax_file_type(state, f_id, t_id)?;
+
     let annotation = annotation.map(|range| render_annotation(&root, range));
     let syntax = syntax.map(|range| render_syntax(&root, range));
 
@@ -283,20 +317,17 @@ fn hover_file_term(state: &mut State, f_id: FileId, t_id: TermItemId) -> Option<
     Some(Hover { contents, range })
 }
 
-fn hover_file_type(
+pub(crate) fn annotation_syntax_file_type(
     state: &mut State,
-    f_id: Idx<files::File>,
-    t_id: Idx<indexing::TypeItem>,
-) -> Option<Hover> {
-    let (parsed, indexed) = {
-        let runtime = &mut state.runtime;
-        let (parsed, _) = runtime.parsed(f_id);
-        let indexed = runtime.indexed(f_id);
-        (parsed, indexed)
-    };
+    f_id: FileId,
+    t_id: TypeItemId,
+) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
+    let (parsed, _) = state.runtime.parsed(f_id);
+    let indexed = state.runtime.indexed(f_id);
 
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];
+
     let (annotation, syntax) = match &item.kind {
         TypeItemKind::Data { signature, equation, .. } => {
             annotation_syntax(&indexed, &root, signature, equation)?
@@ -316,14 +347,7 @@ fn hover_file_type(
         }
     };
 
-    let annotation = annotation.map(|range| render_annotation(&root, range));
-    let syntax = syntax.map(|range| render_syntax(&root, range));
-
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
-    let contents = HoverContents::Array(array);
-    let range = None;
-
-    Some(Hover { contents, range })
+    Some((root, annotation, syntax))
 }
 
 fn annotation_syntax<S, E>(
@@ -352,9 +376,7 @@ where
 }
 
 fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
-    let source = root.text().slice(range).to_string();
-    let source = source.trim();
-    let cleaned = source.lines().map(|line| line.trim_start_matches("-- |").trim()).join("\n");
+    let cleaned = render_annotation_string(root, range);
     if cleaned.is_empty() {
         vec![]
     } else {
@@ -362,8 +384,18 @@ fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
     }
 }
 
-fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
+pub(crate) fn render_annotation_string(root: &SyntaxNode, range: TextRange) -> String {
     let source = root.text().slice(range).to_string();
-    let value = source.trim().to_string();
+    let source = source.trim();
+    source.lines().map(|line| line.trim_start_matches("-- |").trim()).join("\n")
+}
+
+fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
+    let value = render_syntax_string(root, range);
     vec![MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })]
+}
+
+pub(crate) fn render_syntax_string(root: &SyntaxNode, range: TextRange) -> String {
+    let source = root.text().slice(range).to_string();
+    source.trim().to_string()
 }

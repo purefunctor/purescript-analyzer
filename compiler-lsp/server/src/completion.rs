@@ -4,13 +4,13 @@ use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{ImportKind, TermItemId, TypeItemId};
 use resolving::{FullResolvedModule, ResolvedImport};
-use rowan::{TokenAtOffset, ast::AstNode};
+use rowan::{TextRange, TokenAtOffset, ast::AstNode};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use strsim::jaro_winkler;
-use syntax::{SyntaxToken, cst};
+use syntax::{SyntaxNode, SyntaxToken, cst};
 
-use crate::{State, locate};
+use crate::{State, hover, locate};
 
 pub(super) fn implementation(
     state: &mut State,
@@ -51,17 +51,39 @@ pub(super) fn resolve_item(state: &mut State, mut item: CompletionItem) -> Compl
 
     match resolve {
         CompletionResolveData::Import(f_id) => {
-            tracing::info!("Collecting information for import {f_id:?}");
+            if let Some(ranges) = hover::annotation_syntax_file(state, f_id) {
+                resolve_documentation(ranges, &mut item);
+            }
         }
         CompletionResolveData::TermItem(f_id, t_id) => {
-            tracing::info!("Collecting information for term {f_id:?} {t_id:?}");
+            if let Some(ranges) = hover::annotation_syntax_file_term(state, f_id, t_id) {
+                resolve_documentation(ranges, &mut item);
+            }
         }
         CompletionResolveData::TypeItem(f_id, t_id) => {
-            tracing::info!("Collecting information for type {f_id:?} {t_id:?}");
+            if let Some(ranges) = hover::annotation_syntax_file_type(state, f_id, t_id) {
+                resolve_documentation(ranges, &mut item);
+            }
         }
     }
 
     item
+}
+
+fn resolve_documentation(
+    (root, annotation, syntax): (SyntaxNode, Option<TextRange>, Option<TextRange>),
+    item: &mut CompletionItem,
+) {
+    let annotation = annotation.map(|range| hover::render_annotation_string(&root, range));
+    let syntax = syntax.map(|range| hover::render_syntax_string(&root, range));
+
+    item.detail = syntax;
+    item.documentation = annotation.map(|annotation| {
+        Documentation::MarkupContent(MarkupContent {
+            kind: MarkupKind::Markdown,
+            value: annotation,
+        })
+    })
 }
 
 const ACCEPTANCE_THRESHOLD: f64 = 0.5;
