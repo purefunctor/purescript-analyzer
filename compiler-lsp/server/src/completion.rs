@@ -39,6 +39,7 @@ pub(super) fn implementation(
 
     let resolved = state.runtime.resolved(id);
 
+    let _span = tracing::info_span!("complete::collect").entered();
     let items = collect(state, filter, &resolved);
     let is_incomplete = items.len() > 5;
 
