@@ -39,7 +39,7 @@ fn initialize(
             server_info: None,
             capabilities: ServerCapabilities {
                 completion_provider: Some(CompletionOptions {
-                    resolve_provider: None,
+                    resolve_provider: Some(true),
                     trigger_characters: Some(vec![".".to_string()]),
                     all_commit_characters: None,
                     work_done_progress_options: WorkDoneProgressOptions {
@@ -102,6 +102,14 @@ fn completion(
     async move { Ok(result) }
 }
 
+fn resolve_completion_item(
+    state: &mut State,
+    item: CompletionItem,
+) -> impl Future<Output = Result<CompletionItem, ResponseError>> + use<> {
+    let result = completion::resolve_item(state, item);
+    async move { Ok(result) }
+}
+
 fn did_change(
     state: &mut State,
     p: DidChangeTextDocumentParams,
@@ -132,6 +140,7 @@ pub async fn main() {
             .request::<request::GotoDefinition, _>(definition)
             .request::<request::HoverRequest, _>(hover)
             .request::<request::Completion, _>(completion)
+            .request::<request::ResolveCompletionItem, _>(resolve_completion_item)
             .notification::<notification::Initialized>(initialized)
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
