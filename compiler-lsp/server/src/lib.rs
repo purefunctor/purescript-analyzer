@@ -13,7 +13,6 @@ use async_lsp::{
 };
 use building::Runtime;
 use files::Files;
-use smol_str::SmolStrBuilder;
 use tower::ServiceBuilder;
 use tracing::Level;
 
@@ -119,17 +118,7 @@ fn on_change(state: &mut State, uri: &str, text: &str) {
 
     state.runtime.set_content(id, content);
     let (parsed, _) = state.runtime.parsed(id);
-
-    let cst = parsed.cst();
-    if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
-        let mut builder = SmolStrBuilder::default();
-        if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-            builder.push_str(token.text());
-        }
-        if let Some(token) = cst.name_token() {
-            builder.push_str(token.text());
-        }
-        let name = builder.finish();
+    if let Some(name) = parsed.module_name() {
         state.runtime.set_module_file(&name, id);
     }
 }
