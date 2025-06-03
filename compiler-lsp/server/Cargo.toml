@@ -21,8 +21,10 @@ parsing = { version = "0.1.0", path = "../../compiler-core/parsing" }
 resolving = { version = "0.1.0", path = "../../compiler-core/resolving" }
 rowan = "0.16.1"
 serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 smol_str = "0.3.2"
 spago = { version = "0.1.0", path = "../spago" }
+strsim = "0.11.1"
 syntax = { version = "0.1.0", path = "../../compiler-core/syntax" }
 tokio = { version = "1.45.0", features = ["full"] }
 tower = { version = "0.5.2", features = ["full"] }
