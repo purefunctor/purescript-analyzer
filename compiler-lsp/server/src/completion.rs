@@ -1,3 +1,5 @@
+use std::mem;
+
 use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{ImportKind, TermItemId, TypeItemId};
@@ -41,6 +43,25 @@ pub(super) fn implementation(
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
+}
+
+pub(super) fn resolve_item(state: &mut State, mut item: CompletionItem) -> CompletionItem {
+    let Some(value) = mem::take(&mut item.data) else { return item };
+    let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
+
+    match resolve {
+        CompletionResolveData::Import(f_id) => {
+            tracing::info!("Collecting information for import {f_id:?}");
+        }
+        CompletionResolveData::TermItem(f_id, t_id) => {
+            tracing::info!("Collecting information for term {f_id:?} {t_id:?}");
+        }
+        CompletionResolveData::TypeItem(f_id, t_id) => {
+            tracing::info!("Collecting information for type {f_id:?} {t_id:?}");
+        }
+    }
+
+    item
 }
 
 const ACCEPTANCE_THRESHOLD: f64 = 0.5;
