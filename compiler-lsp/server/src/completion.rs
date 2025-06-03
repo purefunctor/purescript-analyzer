@@ -35,7 +35,8 @@ pub(super) fn implementation(
     };
 
     let filter = CompletionFilter::try_qualified(&token)
-        .or_else(|| CompletionFilter::try_qualifier(&token))?;
+        .or_else(|| CompletionFilter::try_qualifier(&token))
+        .unwrap_or_default();
 
     let resolved = state.runtime.resolved(id);
 
@@ -226,7 +227,7 @@ fn completion_item(
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct CompletionFilter {
     prefix: Option<SmolStr>,
     name: Option<SmolStr>,
