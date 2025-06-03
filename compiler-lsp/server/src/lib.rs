@@ -4,17 +4,21 @@ pub mod extension;
 pub mod hover;
 pub mod locate;
 
-use std::{env, fs, ops::ControlFlow};
+use std::{env, fs, ops::ControlFlow, time::Instant};
 
 use async_lsp::{
     ClientSocket, ResponseError, client_monitor::ClientProcessMonitorLayer,
     concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
-    server::LifecycleLayer, tracing::TracingLayer,
+    server::LifecycleLayer,
 };
 use building::Runtime;
 use files::Files;
 use tower::ServiceBuilder;
-use tracing::Level;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::{
+    Layer, Registry,
+    layer::{Context, SubscriberExt},
+};
 
 pub struct State {
     pub client: ClientSocket,
@@ -59,6 +63,7 @@ fn initialize(
 }
 
 fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp::Result<()>> {
+    let _span = tracing::info_span!("initialization").entered();
     let root = env::current_dir().unwrap();
     if let Ok(files) = spago::source_files(&root) {
         tracing::info!("Loading {} files.", files.len());
@@ -148,7 +153,6 @@ pub async fn main() {
             .notification::<notification::DidChangeTextDocument>(did_change);
 
         ServiceBuilder::new()
-            .layer(TracingLayer::default())
             .layer(LifecycleLayer::default())
             .layer(CatchUnwindLayer::default())
             .layer(ConcurrencyLayer::default())
@@ -162,7 +166,10 @@ pub async fn main() {
         .open("/tmp/purescript-analyzer.log")
         .expect("Failed to open log file");
 
-    tracing_subscriber::fmt().with_max_level(Level::INFO).with_writer(log_file).init();
+    let fmt = tracing_subscriber::fmt::layer().with_writer(log_file).with_filter(LevelFilter::INFO);
+
+    let subscriber = Registry::default().with(fmt).with(SpanTimingLayer);
+    tracing::subscriber::set_global_default(subscriber).unwrap();
 
     let (stdin, stdout) = (
         async_lsp::stdio::PipeStdin::lock_tokio().unwrap(),
@@ -170,4 +177,27 @@ pub async fn main() {
     );
 
     server.run_buffered(stdin, stdout).await.unwrap()
+}
+
+struct SpanTimingLayer;
+
+impl<S> Layer<S> for SpanTimingLayer
+where
+    S: tracing::Subscriber + for<'lookup> tracing_subscriber::registry::LookupSpan<'lookup>,
+{
+    fn on_enter(&self, id: &tracing::span::Id, ctx: Context<'_, S>) {
+        if let Some(span) = ctx.span(id) {
+            span.extensions_mut().insert(Instant::now());
+        }
+    }
+
+    fn on_close(&self, id: tracing::span::Id, ctx: Context<'_, S>) {
+        if let Some(span) = ctx.span(&id) {
+            if let Some(start) = span.extensions().get::<Instant>() {
+                let duration = start.elapsed();
+                let name = span.name();
+                tracing::info!(duration = format!("{duration:?}"), "{name}");
+            }
+        }
+    }
 }
