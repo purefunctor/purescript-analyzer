@@ -1032,6 +1032,7 @@ dependencies = [
  "insta",
  "lexing",
  "rowan",
+ "smol_str",
  "syntax",
  "test_each_file",
 ]

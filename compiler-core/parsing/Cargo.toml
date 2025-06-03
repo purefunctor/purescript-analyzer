@@ -7,6 +7,7 @@ edition = "2021"
 drop_bomb = "0.1.5"
 lexing = { version = "0.1.0", path = "../lexing" }
 rowan = "0.16.1"
+smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]

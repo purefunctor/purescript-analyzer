@@ -69,17 +69,7 @@ fn collect(
                 return None;
             }
             let (parsed, _) = state.runtime.parsed(import.file);
-            let description = parsed.cst().header().and_then(|cst| {
-                let cst = cst.name()?;
-                let mut string = String::default();
-                if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-                    string.push_str(token.text());
-                }
-                if let Some(token) = cst.name_token() {
-                    string.push_str(token.text());
-                }
-                Some(string)
-            });
+            let description = parsed.module_name().map(|name| name.to_string());
             Some(completion_item(&name, CompletionItemKind::MODULE, description))
         }));
     } else {
@@ -126,17 +116,7 @@ fn collect_imports(
             return None;
         }
         let (parsed, _) = state.runtime.parsed(id);
-        let description = parsed.cst().header().and_then(|cst| {
-            let cst = cst.name()?;
-            let mut string = String::default();
-            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-                string.push_str(token.text());
-            }
-            if let Some(token) = cst.name_token() {
-                string.push_str(token.text());
-            }
-            Some(string)
-        });
+        let description = parsed.module_name().map(|name| name.to_string());
         Some(completion_item(&name, CompletionItemKind::VALUE, description))
     }));
     items.extend(import.iter_types().filter_map(|(name, id, _, kind)| {
@@ -147,17 +127,7 @@ fn collect_imports(
             return None;
         }
         let (parsed, _) = state.runtime.parsed(id);
-        let description = parsed.cst().header().and_then(|cst| {
-            let cst = cst.name()?;
-            let mut string = String::default();
-            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-                string.push_str(token.text());
-            }
-            if let Some(token) = cst.name_token() {
-                string.push_str(token.text());
-            }
-            Some(string)
-        });
+        let description = parsed.module_name().map(|name| name.to_string());
         Some(completion_item(&name, CompletionItemKind::STRUCT, description))
     }));
 }
