@@ -70,28 +70,28 @@ fn collect(
             }
             let (parsed, _) = state.runtime.parsed(import.file);
             let description = parsed.module_name().map(|name| name.to_string());
-            Some(completion_item(&name, CompletionItemKind::MODULE, description))
+            Some(completion_item(name, CompletionItemKind::MODULE, description))
         }));
     } else {
         items.extend(resolved.qualified.keys().filter_map(|import| {
             if filter.name_score(import) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
-            Some(completion_item(&import, CompletionItemKind::MODULE, None))
+            Some(completion_item(import, CompletionItemKind::MODULE, None))
         }));
 
         items.extend(resolved.locals.iter_terms().filter_map(|(name, _, _)| {
-            if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
-            Some(completion_item(&name, CompletionItemKind::VALUE, Some("Local".to_string())))
+            Some(completion_item(name, CompletionItemKind::VALUE, Some("Local".to_string())))
         }));
 
         items.extend(resolved.locals.iter_types().filter_map(|(name, _, _)| {
-            if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
-            Some(completion_item(&name, CompletionItemKind::STRUCT, Some("Local".to_string())))
+            Some(completion_item(name, CompletionItemKind::STRUCT, Some("Local".to_string())))
         }));
 
         for import in &resolved.unqualified {
@@ -112,23 +112,23 @@ fn collect_imports(
         if matches!(kind, ImportKind::Hidden) {
             return None;
         }
-        if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+        if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
             return None;
         }
         let (parsed, _) = state.runtime.parsed(id);
         let description = parsed.module_name().map(|name| name.to_string());
-        Some(completion_item(&name, CompletionItemKind::VALUE, description))
+        Some(completion_item(name, CompletionItemKind::VALUE, description))
     }));
     items.extend(import.iter_types().filter_map(|(name, id, _, kind)| {
         if matches!(kind, ImportKind::Hidden) {
             return None;
         }
-        if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
+        if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
             return None;
         }
         let (parsed, _) = state.runtime.parsed(id);
         let description = parsed.module_name().map(|name| name.to_string());
-        Some(completion_item(&name, CompletionItemKind::STRUCT, description))
+        Some(completion_item(name, CompletionItemKind::STRUCT, description))
     }));
 }
 
