@@ -111,7 +111,7 @@ fn collect(
             if module_match_found && name == module {
                 return None;
             }
-            if !name.starts_with(module) {
+            if !name.starts_with(prefix) {
                 return None;
             }
             let (parsed, _) = state.runtime.parsed(import.file);
