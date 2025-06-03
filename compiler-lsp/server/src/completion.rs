@@ -1,7 +1,9 @@
 use async_lsp::lsp_types::*;
-use indexing::ImportKind;
+use files::FileId;
+use indexing::{ImportKind, TermItemId, TypeItemId};
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TokenAtOffset, ast::AstNode};
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use strsim::jaro_winkler;
 use syntax::{SyntaxToken, cst};
@@ -70,28 +72,50 @@ fn collect(
             }
             let (parsed, _) = state.runtime.parsed(import.file);
             let description = parsed.module_name().map(|name| name.to_string());
-            Some(completion_item(name, CompletionItemKind::MODULE, description))
+            Some(completion_item(
+                name,
+                CompletionItemKind::MODULE,
+                description,
+                CompletionResolveData::Import(import.file),
+            ))
         }));
     } else {
-        items.extend(resolved.qualified.keys().filter_map(|import| {
-            if filter.name_score(import) < ACCEPTANCE_THRESHOLD {
-                return None;
-            }
-            Some(completion_item(import, CompletionItemKind::MODULE, None))
-        }));
-
-        items.extend(resolved.locals.iter_terms().filter_map(|(name, _, _)| {
+        items.extend(resolved.qualified.iter().filter_map(|(name, import)| {
             if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
-            Some(completion_item(name, CompletionItemKind::VALUE, Some("Local".to_string())))
+            let (parsed, _) = state.runtime.parsed(import.file);
+            let description = parsed.module_name().map(|name| name.to_string());
+            Some(completion_item(
+                name,
+                CompletionItemKind::MODULE,
+                description,
+                CompletionResolveData::Import(import.file),
+            ))
         }));
 
-        items.extend(resolved.locals.iter_types().filter_map(|(name, _, _)| {
+        items.extend(resolved.locals.iter_terms().filter_map(|(name, f_id, t_id)| {
             if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
-            Some(completion_item(name, CompletionItemKind::STRUCT, Some("Local".to_string())))
+            Some(completion_item(
+                name,
+                CompletionItemKind::VALUE,
+                Some("Local".to_string()),
+                CompletionResolveData::TermItem(f_id, t_id),
+            ))
+        }));
+
+        items.extend(resolved.locals.iter_types().filter_map(|(name, f_id, t_id)| {
+            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+                return None;
+            }
+            Some(completion_item(
+                name,
+                CompletionItemKind::STRUCT,
+                Some("Local".to_string()),
+                CompletionResolveData::TypeItem(f_id, t_id),
+            ))
         }));
 
         for import in &resolved.unqualified {
@@ -108,27 +132,37 @@ fn collect_imports(
     filter: &CompletionFilter,
     import: &ResolvedImport,
 ) {
-    items.extend(import.iter_terms().filter_map(|(name, id, _, kind)| {
+    items.extend(import.iter_terms().filter_map(|(name, f_id, t_id, kind)| {
         if matches!(kind, ImportKind::Hidden) {
             return None;
         }
         if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
             return None;
         }
-        let (parsed, _) = state.runtime.parsed(id);
+        let (parsed, _) = state.runtime.parsed(f_id);
         let description = parsed.module_name().map(|name| name.to_string());
-        Some(completion_item(name, CompletionItemKind::VALUE, description))
+        Some(completion_item(
+            name,
+            CompletionItemKind::VALUE,
+            description,
+            CompletionResolveData::TermItem(f_id, t_id),
+        ))
     }));
-    items.extend(import.iter_types().filter_map(|(name, id, _, kind)| {
+    items.extend(import.iter_types().filter_map(|(name, f_id, t_id, kind)| {
         if matches!(kind, ImportKind::Hidden) {
             return None;
         }
         if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
             return None;
         }
-        let (parsed, _) = state.runtime.parsed(id);
+        let (parsed, _) = state.runtime.parsed(f_id);
         let description = parsed.module_name().map(|name| name.to_string());
-        Some(completion_item(name, CompletionItemKind::STRUCT, description))
+        Some(completion_item(
+            name,
+            CompletionItemKind::STRUCT,
+            description,
+            CompletionResolveData::TypeItem(f_id, t_id),
+        ))
     }));
 }
 
@@ -136,11 +170,14 @@ fn completion_item(
     name: &str,
     kind: CompletionItemKind,
     description: Option<String>,
+    data: CompletionResolveData,
 ) -> CompletionItem {
+    let data = serde_json::to_value(data).ok();
     CompletionItem {
         label: name.to_string(),
         label_details: Some(CompletionItemLabelDetails { detail: None, description }),
         kind: Some(kind),
+        data,
         ..Default::default()
     }
 }
@@ -188,5 +225,32 @@ impl CompletionFilter {
 
     fn name_score(&self, other: &str) -> f64 {
         if let Some(name) = &self.name { jaro_winkler(name, other) } else { 1.0 }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+enum CompletionResolveData {
+    Import(#[serde(with = "id")] FileId),
+    TermItem(#[serde(with = "id")] FileId, #[serde(with = "id")] TermItemId),
+    TypeItem(#[serde(with = "id")] FileId, #[serde(with = "id")] TypeItemId),
+}
+
+mod id {
+    use la_arena::{Idx, RawIdx};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub(super) fn serialize<T, S>(index: &Idx<T>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        index.into_raw().into_u32().serialize(serializer)
+    }
+
+    pub(super) fn deserialize<'d, T, D>(deserializer: D) -> Result<Idx<T>, D::Error>
+    where
+        D: Deserializer<'d>,
+    {
+        let value = u32::deserialize(deserializer)?;
+        Ok(Idx::from_raw(RawIdx::from_u32(value)))
     }
 }
