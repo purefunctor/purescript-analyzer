@@ -1,0 +1,66 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+snapshot_kind: text
+---
+(
+    Module@0..32
+      ModuleHeader@0..17
+        MODULE@0..6 "module"
+        ModuleName@6..11
+          Annotation@6..7
+            TEXT@6..7 " "
+          UPPER@7..11 "Main"
+        Annotation@11..12
+          TEXT@11..12 " "
+        WHERE@12..17 "where"
+      LAYOUT_START@17..17 ""
+      ModuleImports@17..31
+        ImportStatement@17..31
+          Annotation@17..19
+            TEXT@17..19 "\n\n"
+          IMPORT@19..25 "import"
+          ModuleName@25..31
+            Annotation@25..26
+              TEXT@25..26 " "
+            Qualifier@26..31
+              TEXT@26..31 "Data."
+            ERROR@31..31 ""
+          ImportAlias@31..31
+        ERROR@31..31
+          ERROR@31..31 ""
+          ERROR@31..31 ""
+          ERROR@31..31 ""
+      ModuleStatements@31..31
+      LAYOUT_END@31..31 ""
+      Annotation@31..32
+        TEXT@31..32 "\n"
+      END_OF_FILE@32..32 ""
+    ,
+    [
+        ParseError {
+            offset: 31,
+            position: Position {
+                line: 3,
+                column: 8,
+            },
+            message: "Expected UPPER",
+        },
+        ParseError {
+            offset: 31,
+            position: Position {
+                line: 3,
+                column: 8,
+            },
+            message: "Unexpected tokens in import statement",
+        },
+        ParseError {
+            offset: 31,
+            position: Position {
+                line: 3,
+                column: 8,
+            },
+            message: "Expected a token",
+        },
+    ],
+)

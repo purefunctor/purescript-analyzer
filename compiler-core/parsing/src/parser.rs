@@ -48,6 +48,10 @@ impl<'t> Parser<'t> {
         self.output.push(Output::Token { kind });
     }
 
+    fn prefix(&mut self) {
+        self.output.push(Output::Prefix);
+    }
+
     fn start(&mut self) -> NodeMarker {
         let index = self.output.len();
         self.output.push(Output::Start { kind: SyntaxKind::Node });

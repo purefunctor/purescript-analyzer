@@ -16,17 +16,17 @@ snapshot_kind: text
         WHERE@25..30 "where"
       LAYOUT_START@30..30 ""
       ModuleImports@30..242
-        ImportStatement@30..38
+        ImportStatement@30..39
           Annotation@30..32
             TEXT@30..32 "\n\n"
           IMPORT@32..38 "import"
-          ModuleName@38..38
-            ERROR@38..38 ""
-          ImportAlias@38..38
-        ERROR@38..46
-          ERROR@38..38 ""
-          Annotation@38..39
-            TEXT@38..39 " "
+          ModuleName@38..39
+            Annotation@38..39
+              TEXT@38..39 " "
+            ERROR@39..39 ""
+          ImportAlias@39..39
+        ERROR@39..46
+          ERROR@39..39 ""
           LOWER@39..46 "prelude"
         LAYOUT_SEPARATOR@46..46 ""
         ImportStatement@46..63
