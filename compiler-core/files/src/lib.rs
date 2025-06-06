@@ -39,6 +39,11 @@ impl Files {
             self.files.get_index(index).expect("invariant violated: expected valid FileId");
         Arc::clone(contents)
     }
+
+    pub fn iter_id(&self) -> impl Iterator<Item = FileId> + use<> {
+        let length = self.files.len();
+        (0..length).map(|index| Idx::from_raw(RawIdx::from_u32(index as u32)))
+    }
 }
 
 #[cfg(test)]

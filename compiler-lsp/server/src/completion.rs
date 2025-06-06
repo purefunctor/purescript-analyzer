@@ -1,4 +1,4 @@
-use std::mem;
+use std::{iter::Chain, mem, str::Chars};
 
 use async_lsp::lsp_types::*;
 use files::FileId;
@@ -7,7 +7,7 @@ use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TextRange, TokenAtOffset, ast::AstNode};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
-use strsim::jaro_winkler;
+use strsim::{generic_jaro_winkler, jaro_winkler};
 use syntax::{SyntaxNode, SyntaxToken, cst};
 
 use crate::{State, hover, locate};
@@ -36,56 +36,18 @@ pub(super) fn implementation(
 
     let filter = CompletionFilter::try_qualified(&token)
         .or_else(|| CompletionFilter::try_qualifier(&token))
+        .or_else(|| CompletionFilter::try_module_name(&token))
         .unwrap_or_default();
+
+    let context = CompletionContext::new(&token);
 
     let resolved = state.runtime.resolved(id);
 
     let _span = tracing::info_span!("completion_items").entered();
-    let items = collect(state, filter, &resolved);
+    let items = collect(state, filter, context, &resolved);
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
-}
-
-pub(super) fn resolve_item(state: &mut State, mut item: CompletionItem) -> CompletionItem {
-    let Some(value) = mem::take(&mut item.data) else { return item };
-    let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
-
-    match resolve {
-        CompletionResolveData::Import(f_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file(state, f_id) {
-                resolve_documentation(ranges, &mut item);
-            }
-        }
-        CompletionResolveData::TermItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_term(state, f_id, t_id) {
-                resolve_documentation(ranges, &mut item);
-            }
-        }
-        CompletionResolveData::TypeItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_type(state, f_id, t_id) {
-                resolve_documentation(ranges, &mut item);
-            }
-        }
-    }
-
-    item
-}
-
-fn resolve_documentation(
-    (root, annotation, syntax): (SyntaxNode, Option<TextRange>, Option<TextRange>),
-    item: &mut CompletionItem,
-) {
-    let annotation = annotation.map(|range| hover::render_annotation_string(&root, range));
-    let syntax = syntax.map(|range| hover::render_syntax_string(&root, range));
-
-    item.detail = syntax;
-    item.documentation = annotation.map(|annotation| {
-        Documentation::MarkupContent(MarkupContent {
-            kind: MarkupKind::Markdown,
-            value: annotation,
-        })
-    })
 }
 
 const ACCEPTANCE_THRESHOLD: f64 = 0.5;
@@ -93,6 +55,7 @@ const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 fn collect(
     state: &mut State,
     filter: CompletionFilter,
+    context: CompletionContext,
     resolved: &FullResolvedModule,
 ) -> Vec<CompletionItem> {
     let mut items = vec![];
@@ -168,7 +131,43 @@ fn collect(
         }
     }
 
+    if matches!(context, CompletionContext::Module) {
+        collect_module(state, filter, &mut items);
+    }
+
     items
+}
+
+fn collect_module(state: &mut State, filter: CompletionFilter, items: &mut Vec<CompletionItem>) {
+    for id in state.files.iter_id() {
+        let (parsed, _) = state.runtime.parsed(id);
+        let Some(name) = parsed.module_name() else {
+            continue;
+        };
+
+        // Limit suggestions to exact prefix matches before fuzzy matching.
+        if let Some(p) = &filter.prefix {
+            if !name.starts_with(p.as_str()) {
+                continue;
+            }
+        } else if let Some(n) = &filter.name {
+            if !name.starts_with(n.as_str()) {
+                continue;
+            }
+        }
+
+        if filter.full_score(&name) < ACCEPTANCE_THRESHOLD {
+            continue;
+        }
+
+        let description = Some(name.to_string());
+        items.push(completion_item(
+            &name,
+            CompletionItemKind::MODULE,
+            description,
+            CompletionResolveData::Import(id),
+        ));
+    }
 }
 
 fn collect_imports(
@@ -268,9 +267,139 @@ impl CompletionFilter {
         })
     }
 
+    fn try_module_name(token: &SyntaxToken) -> Option<CompletionFilter> {
+        token.parent_ancestors().find_map(|node| {
+            let module_name = cst::ModuleName::cast(node)?;
+
+            let prefix = module_name.qualifier().and_then(|qualifier| {
+                let token = qualifier.text()?;
+                let text = token.text();
+                Some(SmolStr::from(text))
+            });
+
+            let name = module_name.name_token().map(|token| {
+                let text = token.text();
+                SmolStr::from(text)
+            });
+
+            Some(CompletionFilter { prefix, name })
+        })
+    }
+
     fn name_score(&self, other: &str) -> f64 {
         if let Some(name) = &self.name { jaro_winkler(name, other) } else { 1.0 }
     }
+
+    fn full_score(&self, other: &str) -> f64 {
+        struct Full<'a> {
+            prefix: &'a str,
+            name: &'a str,
+        }
+
+        struct Other<'a> {
+            other: &'a str,
+        }
+
+        impl<'b> IntoIterator for &Full<'b> {
+            type Item = char;
+            type IntoIter = Chain<Chars<'b>, Chars<'b>>;
+
+            fn into_iter(self) -> Self::IntoIter {
+                let prefix = self.prefix.chars();
+                let name = self.name.chars();
+                prefix.chain(name)
+            }
+        }
+
+        impl<'b> IntoIterator for &Other<'b> {
+            type Item = char;
+            type IntoIter = Chars<'b>;
+
+            fn into_iter(self) -> Self::IntoIter {
+                self.other.chars()
+            }
+        }
+
+        match (&self.prefix, &self.name) {
+            (Some(prefix), Some(name)) => {
+                let full = Full { prefix, name };
+                let other = Other { other };
+                generic_jaro_winkler(&full, &other)
+            }
+            (Some(prefix), None) => jaro_winkler(prefix, other),
+            (None, Some(name)) => jaro_winkler(name, other),
+            (None, None) => 1.0,
+        }
+    }
+}
+
+#[derive(Debug)]
+enum CompletionContext {
+    Term,
+    Type,
+    Module,
+    General,
+}
+
+impl CompletionContext {
+    fn new(token: &SyntaxToken) -> CompletionContext {
+        token
+            .parent_ancestors()
+            .find_map(|node| {
+                let kind = node.kind();
+                if cst::Expression::can_cast(kind) {
+                    Some(CompletionContext::Term)
+                } else if cst::Type::can_cast(kind) {
+                    Some(CompletionContext::Type)
+                } else if cst::ImportStatement::can_cast(kind) {
+                    Some(CompletionContext::Module)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(CompletionContext::General)
+    }
+}
+
+pub(super) fn resolve_item(state: &mut State, mut item: CompletionItem) -> CompletionItem {
+    let Some(value) = mem::take(&mut item.data) else { return item };
+    let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
+
+    match resolve {
+        CompletionResolveData::Import(f_id) => {
+            if let Some(ranges) = hover::annotation_syntax_file(state, f_id) {
+                resolve_documentation(ranges, &mut item);
+            }
+        }
+        CompletionResolveData::TermItem(f_id, t_id) => {
+            if let Some(ranges) = hover::annotation_syntax_file_term(state, f_id, t_id) {
+                resolve_documentation(ranges, &mut item);
+            }
+        }
+        CompletionResolveData::TypeItem(f_id, t_id) => {
+            if let Some(ranges) = hover::annotation_syntax_file_type(state, f_id, t_id) {
+                resolve_documentation(ranges, &mut item);
+            }
+        }
+    }
+
+    item
+}
+
+fn resolve_documentation(
+    (root, annotation, syntax): (SyntaxNode, Option<TextRange>, Option<TextRange>),
+    item: &mut CompletionItem,
+) {
+    let annotation = annotation.map(|range| hover::render_annotation_string(&root, range));
+    let syntax = syntax.map(|range| hover::render_syntax_string(&root, range));
+
+    item.detail = syntax;
+    item.documentation = annotation.map(|annotation| {
+        Documentation::MarkupContent(MarkupContent {
+            kind: MarkupKind::Markdown,
+            value: annotation,
+        })
+    })
 }
 
 #[derive(Serialize, Deserialize)]
