@@ -62,8 +62,8 @@ fn collect(
 ) -> Vec<CompletionItem> {
     let mut items = vec![];
 
-    let start = locate::offset_to_position(&content, filter.range.start());
-    let end = locate::offset_to_position(&content, filter.range.end());
+    let start = locate::offset_to_position(content, filter.range.start());
+    let end = locate::offset_to_position(content, filter.range.end());
     let range = Range { start, end };
 
     if let Some(prefix) = filter.prefix.as_deref() {
