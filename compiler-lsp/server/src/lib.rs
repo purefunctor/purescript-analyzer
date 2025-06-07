@@ -4,7 +4,7 @@ pub mod extension;
 pub mod hover;
 pub mod locate;
 
-use std::{env, fs, ops::ControlFlow, time::Instant};
+use std::{env, fs, ops::ControlFlow, path::PathBuf, time::Instant};
 
 use async_lsp::{
     ClientSocket, ResponseError, client_monitor::ClientProcessMonitorLayer,
@@ -24,20 +24,26 @@ pub struct State {
     pub client: ClientSocket,
     pub runtime: Runtime,
     pub files: Files,
+    pub root: Option<PathBuf>,
 }
 
 impl State {
     fn new(client: ClientSocket) -> State {
         let runtime = Runtime::default();
         let files = Files::default();
-        State { client, runtime, files }
+        let root = None;
+        State { client, runtime, files, root }
     }
 }
 
 fn initialize(
-    _: &mut State,
-    _: extension::CustomInitializeParams,
+    state: &mut State,
+    p: extension::CustomInitializeParams,
 ) -> impl Future<Output = Result<InitializeResult, ResponseError>> + use<> {
+    state.root = p.initialize_params.workspace_folders.and_then(|folders| {
+        let folder = folders.first()?;
+        folder.uri.to_file_path().ok()
+    });
     async move {
         Ok(InitializeResult {
             server_info: None,
@@ -64,7 +70,7 @@ fn initialize(
 
 fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp::Result<()>> {
     let _span = tracing::info_span!("initialization").entered();
-    let root = env::current_dir().unwrap();
+    let root = state.root.clone().unwrap_or_else(|| env::current_dir().unwrap());
     if let Ok(files) = spago::source_files(&root) {
         tracing::info!("Loading {} files.", files.len());
         for file in &files {
