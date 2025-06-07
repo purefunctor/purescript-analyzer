@@ -8,7 +8,7 @@ use rowan::{TextRange, TokenAtOffset, ast::AstNode};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use strsim::{generic_jaro_winkler, jaro_winkler};
-use syntax::{SyntaxKind, SyntaxNode, SyntaxToken, cst};
+use syntax::{SyntaxNode, SyntaxToken, cst};
 
 use crate::{State, hover, locate};
 
@@ -34,18 +34,17 @@ pub(super) fn implementation(
         TokenAtOffset::Between(token, _) => token,
     };
 
-    let filter = CompletionFilter::try_qualified(&token)
-        .or_else(|| CompletionFilter::try_qualifier(&token))
-        .or_else(|| CompletionFilter::try_module_name(&token))
+    let filter = CompletionFilter::try_qualified(&content, &token)
+        .or_else(|| CompletionFilter::try_qualifier(&content, &token))
+        .or_else(|| CompletionFilter::try_module_name(&content, &token))
         .unwrap_or_default();
 
     let context = CompletionContext::new(&token);
 
-    let content = state.runtime.content(id);
     let resolved = state.runtime.resolved(id);
 
     let _span = tracing::info_span!("completion_items").entered();
-    let items = collect(state, filter, context, &content, &resolved);
+    let items = collect(state, filter, context, &resolved);
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
@@ -57,14 +56,9 @@ fn collect(
     state: &mut State,
     filter: CompletionFilter,
     context: CompletionContext,
-    content: &str,
     resolved: &FullResolvedModule,
 ) -> Vec<CompletionItem> {
     let mut items = vec![];
-
-    let start = locate::offset_to_position(content, filter.range.start());
-    let end = locate::offset_to_position(content, filter.range.end());
-    let range = Range { start, end };
 
     if let Some(prefix) = filter.prefix.as_deref() {
         // Flag that determines if we found an exact match for this module.
@@ -74,7 +68,7 @@ fn collect(
 
         if let Some(import) = resolved.qualified.get(module) {
             module_match_found = true;
-            collect_imports(state, &mut items, &filter, import, range);
+            collect_imports(state, &mut items, &filter, import);
         }
 
         items.extend(resolved.qualified.iter().filter_map(|(name, import)| {
@@ -90,7 +84,7 @@ fn collect(
                 name,
                 CompletionItemKind::MODULE,
                 description,
-                range,
+                filter.range,
                 CompletionResolveData::Import(import.file),
             ))
         }));
@@ -105,7 +99,7 @@ fn collect(
                 name,
                 CompletionItemKind::MODULE,
                 description,
-                range,
+                filter.range,
                 CompletionResolveData::Import(import.file),
             ))
         }));
@@ -114,11 +108,12 @@ fn collect(
             if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
+            let description = Some("Local".to_string());
             Some(completion_item(
                 name,
                 CompletionItemKind::VALUE,
-                Some("Local".to_string()),
-                range,
+                description,
+                filter.range,
                 CompletionResolveData::TermItem(f_id, t_id),
             ))
         }));
@@ -127,33 +122,29 @@ fn collect(
             if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
+            let description = Some("Local".to_string());
             Some(completion_item(
                 name,
                 CompletionItemKind::STRUCT,
-                Some("Local".to_string()),
-                range,
+                description,
+                filter.range,
                 CompletionResolveData::TypeItem(f_id, t_id),
             ))
         }));
 
         for import in &resolved.unqualified {
-            collect_imports(state, &mut items, &filter, import, range);
+            collect_imports(state, &mut items, &filter, import);
         }
     }
 
     if matches!(context, CompletionContext::Module) {
-        collect_module(state, filter, &mut items, range);
+        collect_module(state, filter, &mut items);
     }
 
     items
 }
 
-fn collect_module(
-    state: &mut State,
-    filter: CompletionFilter,
-    items: &mut Vec<CompletionItem>,
-    range: Range,
-) {
+fn collect_module(state: &mut State, filter: CompletionFilter, items: &mut Vec<CompletionItem>) {
     for id in state.files.iter_id() {
         let (parsed, _) = state.runtime.parsed(id);
         let Some(name) = parsed.module_name() else {
@@ -180,7 +171,7 @@ fn collect_module(
             &name,
             CompletionItemKind::MODULE,
             description,
-            range,
+            filter.range,
             CompletionResolveData::Import(id),
         ));
     }
@@ -191,7 +182,6 @@ fn collect_imports(
     items: &mut Vec<CompletionItem>,
     filter: &CompletionFilter,
     import: &ResolvedImport,
-    range: Range,
 ) {
     items.extend(import.iter_terms().filter_map(|(name, f_id, t_id, kind)| {
         if matches!(kind, ImportKind::Hidden) {
@@ -206,7 +196,7 @@ fn collect_imports(
             name,
             CompletionItemKind::VALUE,
             description,
-            range,
+            filter.range,
             CompletionResolveData::TermItem(f_id, t_id),
         ))
     }));
@@ -223,7 +213,7 @@ fn collect_imports(
             name,
             CompletionItemKind::STRUCT,
             description,
-            range,
+            filter.range,
             CompletionResolveData::TypeItem(f_id, t_id),
         ))
     }));
@@ -233,7 +223,7 @@ fn completion_item(
     name: &str,
     kind: CompletionItemKind,
     description: Option<String>,
-    range: Range,
+    range: Option<Range>,
     data: CompletionResolveData,
 ) -> CompletionItem {
     let data = serde_json::to_value(data).ok();
@@ -241,7 +231,10 @@ fn completion_item(
         label: name.to_string(),
         label_details: Some(CompletionItemLabelDetails { detail: None, description }),
         kind: Some(kind),
-        text_edit: Some(CompletionTextEdit::Edit(TextEdit { range, new_text: name.to_string() })),
+        text_edit: range.map(|range| {
+            let new_text = name.to_string();
+            CompletionTextEdit::Edit(TextEdit { range, new_text })
+        }),
         data,
         ..Default::default()
     }
@@ -251,40 +244,35 @@ fn completion_item(
 struct CompletionFilter {
     prefix: Option<SmolStr>,
     name: Option<SmolStr>,
-    range: TextRange,
+    range: Option<Range>,
 }
 
 impl CompletionFilter {
-    fn try_qualified(token: &SyntaxToken) -> Option<CompletionFilter> {
+    fn try_qualified(content: &str, token: &SyntaxToken) -> Option<CompletionFilter> {
         token.parent_ancestors().find_map(|node| {
             let qualified = cst::QualifiedName::cast(node)?;
 
-            let prefix = qualified.qualifier().and_then(|qualifier| {
-                let token = qualifier.text()?;
-                let text = token.text();
-                Some(SmolStr::from(text))
-            });
+            let prefix_token = qualified.qualifier().and_then(|qualifier| qualifier.text());
+            let prefix_range = prefix_token.as_ref().map(|token| token.text_range());
+            let prefix = prefix_token.map(|token| token.text().into());
 
-            let name = qualified.lower().or_else(|| qualified.upper()).map(|token| {
-                let text = token.text();
-                SmolStr::from(text)
-            });
+            let name_token = qualified.lower().or_else(|| qualified.upper());
+            let name_range = name_token.as_ref().map(|token| token.text_range());
+            let name = name_token.map(|token| token.text().into());
 
-            let start = qualified
-                .syntax()
-                .first_child_or_token_by_kind(&|kind| !matches!(kind, SyntaxKind::Annotation))?
-                .text_range()
-                .start();
+            let range = match (prefix_range, name_range) {
+                (Some(p), Some(n)) => Some(p.cover(n)),
+                (Some(r), None) => Some(r),
+                (None, Some(r)) => Some(r),
+                (None, None) => None,
+            };
 
-            let end = qualified.syntax().last_child_or_token()?.text_range().end();
-
-            let range = TextRange::new(start, end);
-
+            let range = range.map(|range| locate::text_range_to_range(content, range));
             Some(CompletionFilter { prefix, name, range })
         })
     }
 
-    fn try_qualifier(token: &SyntaxToken) -> Option<CompletionFilter> {
+    fn try_qualifier(content: &str, token: &SyntaxToken) -> Option<CompletionFilter> {
         token.parent_ancestors().find_map(|node| {
             let qualifier = cst::Qualifier::cast(node)?;
             let token = qualifier.text()?;
@@ -292,48 +280,37 @@ impl CompletionFilter {
             let prefix = token.text();
             let prefix = SmolStr::new(prefix);
 
+            let range = token.text_range();
+            let range = locate::text_range_to_range(content, range);
+
             let prefix = Some(prefix);
             let name = None;
-
-            let start = qualifier
-                .syntax()
-                .first_child_or_token_by_kind(&|kind| !matches!(kind, SyntaxKind::Annotation))?
-                .text_range()
-                .start();
-
-            let end = qualifier.syntax().last_child_or_token()?.text_range().end();
-
-            let range = TextRange::new(start, end);
+            let range = Some(range);
 
             Some(CompletionFilter { prefix, name, range })
         })
     }
 
-    fn try_module_name(token: &SyntaxToken) -> Option<CompletionFilter> {
+    fn try_module_name(content: &str, token: &SyntaxToken) -> Option<CompletionFilter> {
         token.parent_ancestors().find_map(|node| {
             let module_name = cst::ModuleName::cast(node)?;
 
-            let prefix = module_name.qualifier().and_then(|qualifier| {
-                let token = qualifier.text()?;
-                let text = token.text();
-                Some(SmolStr::from(text))
-            });
+            let prefix_token = module_name.qualifier().and_then(|qualifier| qualifier.text());
+            let prefix_range = prefix_token.as_ref().map(|token| token.text_range());
+            let prefix = prefix_token.map(|token| token.text().into());
 
-            let name = module_name.name_token().map(|token| {
-                let text = token.text();
-                SmolStr::from(text)
-            });
+            let name_token = module_name.name_token();
+            let name_range = name_token.as_ref().map(|token| token.text_range());
+            let name = name_token.map(|token| token.text().into());
 
-            let start = module_name
-                .syntax()
-                .first_child_or_token_by_kind(&|kind| !matches!(kind, SyntaxKind::Annotation))?
-                .text_range()
-                .start();
+            let range = match (prefix_range, name_range) {
+                (Some(p), Some(n)) => Some(p.cover(n)),
+                (Some(r), None) => Some(r),
+                (None, Some(r)) => Some(r),
+                (None, None) => None,
+            };
 
-            let end = module_name.syntax().last_child_or_token()?.text_range().end();
-
-            let range = TextRange::new(start, end);
-
+            let range = range.map(|range| locate::text_range_to_range(content, range));
             Some(CompletionFilter { prefix, name, range })
         })
     }

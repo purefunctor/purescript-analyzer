@@ -25,6 +25,18 @@ pub fn offset_to_position(content: &str, offset: TextSize) -> Position {
     Position { line, character: col }
 }
 
+pub fn text_range_to_range(content: &str, range: TextRange) -> Range {
+    let line_index = LineIndex::new(content);
+
+    let start = line_index.line_col(range.start());
+    let start = Position { line: start.line, character: start.col };
+
+    let end = line_index.line_col(range.end());
+    let end = Position { line: end.line, character: end.col };
+
+    Range { start, end }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Located {
     ModuleName(AstPtr<cst::ModuleName>),
