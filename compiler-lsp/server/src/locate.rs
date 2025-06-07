@@ -137,22 +137,14 @@ pub fn range_without_annotation(
     root: &SyntaxNode,
 ) -> Option<Range> {
     let range = text_range_after_annotation(ptr, root)?;
-
-    let start = offset_to_position(content, range.start());
-    let end = offset_to_position(content, range.end());
-
-    Some(Range { start, end })
+    Some(text_range_to_range(content, range))
 }
 
 pub fn text_range_after_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<TextRange> {
     let node = ptr.to_node(root);
-    let mut children = node.children_with_tokens().peekable();
 
-    if let Some(child) = children.peek() {
-        if matches!(child.kind(), SyntaxKind::Annotation) {
-            children.next();
-        }
-    }
+    let mut children = node.children_with_tokens().peekable();
+    children.next_if(|child| matches!(child.kind(), SyntaxKind::Annotation));
 
     let start = children.next()?.text_range().start();
     let end = children.last().map_or(start, |child| child.text_range().end());
