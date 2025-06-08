@@ -199,8 +199,13 @@ fn collect_imports(
             }
             let (parsed, _) = state.runtime.parsed(f_id);
             let description = parsed.module_name().map(|name| name.to_string());
+            let name = if let Some(prefix) = &filter.prefix {
+                format!("{prefix}{name}")
+            } else {
+                format!("{name}")
+            };
             Some(completion_item(
-                name,
+                &name,
                 CompletionItemKind::VALUE,
                 description,
                 filter.range,
@@ -218,6 +223,11 @@ fn collect_imports(
             }
             let (parsed, _) = state.runtime.parsed(f_id);
             let description = parsed.module_name().map(|name| name.to_string());
+            let name = if let Some(prefix) = &filter.prefix {
+                format!("{prefix}{name}")
+            } else {
+                format!("{name}")
+            };
             Some(completion_item(
                 name,
                 CompletionItemKind::STRUCT,
@@ -230,7 +240,7 @@ fn collect_imports(
 }
 
 fn completion_item(
-    name: &str,
+    name: impl ToString,
     kind: CompletionItemKind,
     description: Option<String>,
     range: Option<Range>,
