@@ -425,9 +425,7 @@ impl CompletionContext {
                 let kind = node.kind();
                 if cst::Expression::can_cast(kind) {
                     Some(CompletionContext::Term)
-                } else if cst::Type::can_cast(kind) {
-                    Some(CompletionContext::Type)
-                } else if cst::ExpressionTypeArgument::can_cast(kind) {
+                } else if cst::Type::can_cast(kind) || cst::ExpressionTypeArgument::can_cast(kind) {
                     Some(CompletionContext::Type)
                 } else if cst::ImportStatement::can_cast(kind) {
                     Some(CompletionContext::Module)
