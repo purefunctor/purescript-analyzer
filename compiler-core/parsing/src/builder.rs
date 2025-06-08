@@ -86,8 +86,10 @@ impl<'l, 's> Builder<'l, 's> {
             _ => (),
         }
 
-        let text = self.lexed.text(self.index);
-        self.builder.token(kind.into(), text);
+        if !matches!(kind, SyntaxKind::ERROR) {
+            let text = self.lexed.text(self.index);
+            self.builder.token(kind.into(), text);
+        }
 
         self.index += 1;
         self.prefixed = false;
