@@ -159,37 +159,37 @@ fn collect(
 }
 
 fn collect_module(state: &mut State, filter: &CompletionFilter, items: &mut Vec<CompletionItem>) {
-    for id in state.files.iter_id() {
+    items.extend(state.files.iter_id().filter_map(|id| {
         let (parsed, _) = state.runtime.parsed(id);
         let Some(name) = parsed.module_name() else {
-            continue;
+            return None;
         };
 
         // Limit suggestions to exact prefix matches before fuzzy matching.
         if let Some(p) = &filter.prefix {
             if !name.starts_with(p.as_str()) {
-                continue;
+                return None;
             }
         } else if let Some(n) = &filter.name {
             if !name.starts_with(n.as_str()) {
-                continue;
+                return None;
             }
         }
 
         if filter.full_score(&name) < ACCEPTANCE_THRESHOLD {
-            continue;
+            return None;
         }
 
         let description = Some(name.to_string());
-        items.push(completion_item(
+        Some(completion_item(
             &name,
             &name,
             CompletionItemKind::MODULE,
             description,
             filter.range,
             CompletionResolveData::Import(id),
-        ));
-    }
+        ))
+    }));
 }
 
 fn collect_suggestions(
@@ -229,9 +229,9 @@ fn collect_suggestions(
         let resolved = state.runtime.resolved(id);
 
         if matches!(context, CompletionContext::Term) {
-            for (name, f_id, t_id) in resolved.exports.iter_terms() {
+            items.extend(resolved.exports.iter_terms().filter_map(|(name, f_id, t_id)| {
                 if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
-                    continue;
+                    return None;
                 }
                 let edit = format!("{}{}", prefix, name);
                 let mut item = completion_item(
@@ -252,14 +252,14 @@ fn collect_suggestions(
                         ),
                     }]
                 });
-                items.push(item);
-            }
+                Some(item)
+            }));
         }
 
         if matches!(context, CompletionContext::Type) {
-            for (name, f_id, t_id) in resolved.exports.iter_types() {
+            items.extend(resolved.exports.iter_types().filter_map(|(name, f_id, t_id)| {
                 if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
-                    continue;
+                    return None;
                 }
                 let edit = format!("{}{}", prefix, name);
                 let mut item = completion_item(
@@ -280,8 +280,8 @@ fn collect_suggestions(
                         ),
                     }]
                 });
-                items.push(item);
-            }
+                Some(item)
+            }))
         }
     }
 }
