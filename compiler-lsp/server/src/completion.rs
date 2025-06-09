@@ -205,8 +205,14 @@ fn collect_suggestions(
                 (filter, context),
                 (prefix, id),
             );
-        } else if filter.name.is_some() {
-            return;
+        } else if let Some(name) = &filter.name {
+            collect_unqualified_suggestions(
+                state,
+                items,
+                (content, parsed),
+                (filter, context),
+                (name, id),
+            );
         }
     }
 }
@@ -240,9 +246,9 @@ fn collect_qualified_suggestions(
         Range::new(position, position)
     });
 
-    let resolved = state.runtime.resolved(id);
+    let import_resolved = state.runtime.resolved(id);
     if matches!(context, CompletionContext::Term) {
-        items.extend(resolved.exports.iter_terms().filter_map(|(name, f_id, t_id)| {
+        items.extend(import_resolved.exports.iter_terms().filter_map(|(name, f_id, t_id)| {
             if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
@@ -268,7 +274,7 @@ fn collect_qualified_suggestions(
             Some(item)
         }));
     } else if matches!(context, CompletionContext::Type) {
-        items.extend(resolved.exports.iter_types().filter_map(|(name, f_id, t_id)| {
+        items.extend(import_resolved.exports.iter_types().filter_map(|(name, f_id, t_id)| {
             if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
@@ -293,6 +299,48 @@ fn collect_qualified_suggestions(
             });
             Some(item)
         }))
+    }
+}
+
+fn collect_unqualified_suggestions(
+    state: &mut State,
+    items: &mut Vec<CompletionItem>,
+    (_, _): (&str, &ParsedModule),
+    (filter, context): (&CompletionFilter, &CompletionContext),
+    (name, id): (&str, FileId),
+) {
+    let (import_parsed, _) = state.runtime.parsed(id);
+    let import_resolved = state.runtime.resolved(id);
+    if matches!(context, CompletionContext::Term) {
+        items.extend(import_resolved.exports.iter_terms().filter_map(|(import, f_id, t_id)| {
+            if !import.starts_with(name) {
+                return None;
+            }
+            let description = import_parsed.module_name().map(|name| name.to_string());
+            Some(completion_item(
+                import,
+                import,
+                CompletionItemKind::VALUE,
+                description,
+                filter.range,
+                CompletionResolveData::TermItem(f_id, t_id),
+            ))
+        }));
+    } else if matches!(context, CompletionContext::Type) {
+        items.extend(import_resolved.exports.iter_types().filter_map(|(import, f_id, t_id)| {
+            if !import.starts_with(name) {
+                return None;
+            }
+            let description = import_parsed.module_name().map(|name| name.to_string());
+            Some(completion_item(
+                import,
+                import,
+                CompletionItemKind::STRUCT,
+                description,
+                filter.range,
+                CompletionResolveData::TypeItem(f_id, t_id),
+            ))
+        }));
     }
 }
 
