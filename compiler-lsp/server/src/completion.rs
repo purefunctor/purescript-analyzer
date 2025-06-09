@@ -72,7 +72,7 @@ fn collect(
 
         if let Some(import) = resolved.qualified.get(module) {
             module_match_found = true;
-            collect_imports(state, &mut items, &filter, &context, import);
+            collect_imports(state, &mut items, filter, context, import);
         }
 
         items.extend(resolved.qualified.iter().filter_map(|(name, import)| {
@@ -145,14 +145,14 @@ fn collect(
         }
 
         for import in &resolved.unqualified {
-            collect_imports(state, &mut items, &filter, &context, import);
+            collect_imports(state, &mut items, filter, context, import);
         }
     }
 
     if matches!(context, CompletionContext::Module) {
         collect_module(state, filter, &mut items);
     } else {
-        collect_suggestions(state, parsed, content, filter, &context, &mut items);
+        collect_suggestions(state, (content, parsed), (filter, context), &mut items);
     }
 
     items
@@ -161,9 +161,7 @@ fn collect(
 fn collect_module(state: &mut State, filter: &CompletionFilter, items: &mut Vec<CompletionItem>) {
     items.extend(state.files.iter_id().filter_map(|id| {
         let (parsed, _) = state.runtime.parsed(id);
-        let Some(name) = parsed.module_name() else {
-            return None;
-        };
+        let name = parsed.module_name()?;
 
         // Limit suggestions to exact prefix matches before fuzzy matching.
         if let Some(p) = &filter.prefix {
@@ -194,95 +192,107 @@ fn collect_module(state: &mut State, filter: &CompletionFilter, items: &mut Vec<
 
 fn collect_suggestions(
     state: &mut State,
-    original_parsed: &ParsedModule,
-    original_content: &str,
-    filter: &CompletionFilter,
-    context: &CompletionContext,
+    (content, parsed): (&str, &ParsedModule),
+    (filter, context): (&CompletionFilter, &CompletionContext),
     items: &mut Vec<CompletionItem>,
 ) {
     for id in state.files.iter_id() {
-        let Some(prefix) = &filter.prefix else {
-            continue;
-        };
-
-        let (parsed, _) = state.runtime.parsed(id);
-        let Some(module_name) = parsed.module_name() else {
-            continue;
-        };
-
-        if !module_name.contains(prefix.trim_end_matches(".")) {
-            continue;
+        if let Some(prefix) = &filter.prefix {
+            collect_qualified_suggestions(
+                state,
+                items,
+                (content, parsed),
+                (filter, context),
+                (prefix, id),
+            );
+        } else if filter.name.is_some() {
+            return;
         }
+    }
+}
 
-        let range = original_parsed.cst().imports().and_then(|cst| {
-            let offset = cst.syntax().text_range().end();
-            let mut position = locate::offset_to_position(&original_content, offset);
-            position.line += 1;
-            position.character = 0;
-            Some(Range::new(position, position))
-        });
+fn collect_qualified_suggestions(
+    state: &mut State,
+    items: &mut Vec<CompletionItem>,
+    (content, parsed): (&str, &ParsedModule),
+    (filter, context): (&CompletionFilter, &CompletionContext),
+    (prefix, id): (&str, FileId),
+) {
+    let (import_parsed, _) = state.runtime.parsed(id);
+    let Some(module_name) = import_parsed.module_name() else {
+        return;
+    };
 
-        if filter.prefix_score(&module_name) < 0.4 {
-            continue;
-        }
+    let clean_prefix = prefix.trim_end_matches(".");
+    if !module_name.contains(clean_prefix) {
+        return;
+    };
 
-        let resolved = state.runtime.resolved(id);
+    if filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
+        return;
+    }
 
-        if matches!(context, CompletionContext::Term) {
-            items.extend(resolved.exports.iter_terms().filter_map(|(name, f_id, t_id)| {
-                if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
-                    return None;
-                }
-                let edit = format!("{}{}", prefix, name);
-                let mut item = completion_item(
-                    name,
-                    edit,
-                    CompletionItemKind::VALUE,
-                    Some(format!("import {}", module_name)),
-                    filter.range,
-                    CompletionResolveData::TermItem(f_id, t_id),
-                );
-                item.additional_text_edits = range.map(|range| {
-                    vec![TextEdit {
-                        range,
-                        new_text: format!(
-                            "import {} as {}\n",
-                            module_name,
-                            prefix.trim_end_matches(".")
-                        ),
-                    }]
-                });
-                Some(item)
-            }));
-        }
+    let range = parsed.cst().imports().map(|cst| {
+        let offset = cst.syntax().text_range().end();
+        let mut position = locate::offset_to_position(content, offset);
+        position.line += 1;
+        position.character = 0;
+        Range::new(position, position)
+    });
 
-        if matches!(context, CompletionContext::Type) {
-            items.extend(resolved.exports.iter_types().filter_map(|(name, f_id, t_id)| {
-                if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
-                    return None;
-                }
-                let edit = format!("{}{}", prefix, name);
-                let mut item = completion_item(
-                    name,
-                    edit,
-                    CompletionItemKind::STRUCT,
-                    Some(format!("import {}", module_name)),
-                    filter.range,
-                    CompletionResolveData::TypeItem(f_id, t_id),
-                );
-                item.additional_text_edits = range.map(|range| {
-                    vec![TextEdit {
-                        range,
-                        new_text: format!(
-                            "import {} as {}\n",
-                            module_name,
-                            prefix.trim_end_matches(".")
-                        ),
-                    }]
-                });
-                Some(item)
-            }))
-        }
+    let resolved = state.runtime.resolved(id);
+    if matches!(context, CompletionContext::Term) {
+        items.extend(resolved.exports.iter_terms().filter_map(|(name, f_id, t_id)| {
+            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+                return None;
+            }
+            let edit = format!("{}{}", prefix, name);
+            let mut item = completion_item(
+                name,
+                edit,
+                CompletionItemKind::VALUE,
+                Some(format!("import {}", module_name)),
+                filter.range,
+                CompletionResolveData::TermItem(f_id, t_id),
+            );
+            item.additional_text_edits = range.map(|range| {
+                vec![TextEdit {
+                    range,
+                    new_text: format!(
+                        "import {} as {}\n",
+                        module_name,
+                        prefix.trim_end_matches(".")
+                    ),
+                }]
+            });
+            Some(item)
+        }));
+    } else if matches!(context, CompletionContext::Type) {
+        items.extend(resolved.exports.iter_types().filter_map(|(name, f_id, t_id)| {
+            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+                return None;
+            }
+            let edit = format!("{}{}", prefix, name);
+            let mut item = completion_item(
+                name,
+                edit,
+                CompletionItemKind::STRUCT,
+                Some(format!("import {}", module_name)),
+                filter.range,
+                CompletionResolveData::TypeItem(f_id, t_id),
+            );
+            item.additional_text_edits = range.map(|range| {
+                vec![TextEdit {
+                    range,
+                    new_text: format!(
+                        "import {} as {}\n",
+                        module_name,
+                        prefix.trim_end_matches(".")
+                    ),
+                }]
+            });
+            Some(item)
+        }))
     }
 }
 
