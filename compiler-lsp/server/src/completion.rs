@@ -125,9 +125,7 @@ fn collect(
                     CompletionResolveData::TermItem(f_id, t_id),
                 ))
             }));
-        }
-
-        if matches!(context, CompletionContext::Type) {
+        } else if matches!(context, CompletionContext::Type) {
             items.extend(resolved.locals.iter_types().filter_map(|(name, f_id, t_id)| {
                 if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                     return None;
@@ -375,8 +373,7 @@ fn collect_imports(
                 CompletionResolveData::TermItem(f_id, t_id),
             ))
         }));
-    }
-    if matches!(context, CompletionContext::Type) {
+    } else if matches!(context, CompletionContext::Type) {
         items.extend(import.iter_types().filter_map(|(name, f_id, t_id, kind)| {
             if matches!(kind, ImportKind::Hidden) {
                 return None;
