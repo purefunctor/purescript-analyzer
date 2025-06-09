@@ -229,13 +229,14 @@ fn collect_suggestions(
         let resolved = state.runtime.resolved(id);
 
         if matches!(context, CompletionContext::Term) {
-            for (term_name, f_id, t_id) in resolved.exports.iter_terms() {
-                if filter.name_score(&term_name) < ACCEPTANCE_THRESHOLD {
+            for (name, f_id, t_id) in resolved.exports.iter_terms() {
+                if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
                     continue;
                 }
+                let edit = format!("{}{}", prefix, name);
                 let mut item = completion_item(
-                    term_name,
-                    format!("{}{}", prefix, term_name),
+                    name,
+                    edit,
                     CompletionItemKind::VALUE,
                     Some(format!("import {}", module_name)),
                     filter.range,
@@ -256,13 +257,14 @@ fn collect_suggestions(
         }
 
         if matches!(context, CompletionContext::Type) {
-            for (type_name, f_id, t_id) in resolved.exports.iter_types() {
-                if filter.name_score(&type_name) < ACCEPTANCE_THRESHOLD {
+            for (name, f_id, t_id) in resolved.exports.iter_types() {
+                if filter.name_score(&name) < ACCEPTANCE_THRESHOLD {
                     continue;
                 }
+                let edit = format!("{}{}", prefix, name);
                 let mut item = completion_item(
-                    type_name,
-                    format!("{}{}", prefix, type_name),
+                    name,
+                    edit,
                     CompletionItemKind::STRUCT,
                     Some(format!("import {}", module_name)),
                     filter.range,
