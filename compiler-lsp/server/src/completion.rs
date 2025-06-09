@@ -3,6 +3,7 @@ use std::{iter::Chain, mem, str::Chars};
 use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{ImportKind, TermItemId, TypeItemId};
+use parsing::ParsedModule;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TextRange, TokenAtOffset, ast::AstNode};
 use serde::{Deserialize, Serialize};
@@ -45,7 +46,7 @@ pub(super) fn implementation(
     let _span = tracing::info_span!("completion_items").entered();
     tracing::info!("Collecting {:?} items", context);
 
-    let items = collect(state, filter, context, &resolved);
+    let items = collect(state, &parsed, &content, &filter, &context, &resolved);
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
@@ -55,8 +56,10 @@ const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 
 fn collect(
     state: &mut State,
-    filter: CompletionFilter,
-    context: CompletionContext,
+    parsed: &ParsedModule,
+    content: &str,
+    filter: &CompletionFilter,
+    context: &CompletionContext,
     resolved: &FullResolvedModule,
 ) -> Vec<CompletionItem> {
     let mut items = vec![];
@@ -83,6 +86,7 @@ fn collect(
             let description = parsed.module_name().map(|name| name.to_string());
             Some(completion_item(
                 name,
+                name,
                 CompletionItemKind::MODULE,
                 description,
                 filter.range,
@@ -98,6 +102,7 @@ fn collect(
             let description = parsed.module_name().map(|name| name.to_string());
             Some(completion_item(
                 name,
+                name,
                 CompletionItemKind::MODULE,
                 description,
                 filter.range,
@@ -112,6 +117,7 @@ fn collect(
                 }
                 let description = Some("Local".to_string());
                 Some(completion_item(
+                    name,
                     name,
                     CompletionItemKind::VALUE,
                     description,
@@ -129,6 +135,7 @@ fn collect(
                 let description = Some("Local".to_string());
                 Some(completion_item(
                     name,
+                    name,
                     CompletionItemKind::STRUCT,
                     description,
                     filter.range,
@@ -144,12 +151,14 @@ fn collect(
 
     if matches!(context, CompletionContext::Module) {
         collect_module(state, filter, &mut items);
+    } else {
+        collect_suggestions(state, parsed, content, filter, &context, &mut items);
     }
 
     items
 }
 
-fn collect_module(state: &mut State, filter: CompletionFilter, items: &mut Vec<CompletionItem>) {
+fn collect_module(state: &mut State, filter: &CompletionFilter, items: &mut Vec<CompletionItem>) {
     for id in state.files.iter_id() {
         let (parsed, _) = state.runtime.parsed(id);
         let Some(name) = parsed.module_name() else {
@@ -174,11 +183,104 @@ fn collect_module(state: &mut State, filter: CompletionFilter, items: &mut Vec<C
         let description = Some(name.to_string());
         items.push(completion_item(
             &name,
+            &name,
             CompletionItemKind::MODULE,
             description,
             filter.range,
             CompletionResolveData::Import(id),
         ));
+    }
+}
+
+fn collect_suggestions(
+    state: &mut State,
+    original_parsed: &ParsedModule,
+    original_content: &str,
+    filter: &CompletionFilter,
+    context: &CompletionContext,
+    items: &mut Vec<CompletionItem>,
+) {
+    for id in state.files.iter_id() {
+        let Some(prefix) = &filter.prefix else {
+            continue;
+        };
+
+        let (parsed, _) = state.runtime.parsed(id);
+        let Some(module_name) = parsed.module_name() else {
+            continue;
+        };
+
+        if !module_name.contains(prefix.trim_end_matches(".")) {
+            continue;
+        }
+
+        let range = original_parsed.cst().imports().and_then(|cst| {
+            let offset = cst.syntax().text_range().end();
+            let mut position = locate::offset_to_position(&original_content, offset);
+            position.line += 1;
+            position.character = 0;
+            Some(Range::new(position, position))
+        });
+
+        if filter.prefix_score(&module_name) < 0.4 {
+            continue;
+        }
+
+        let resolved = state.runtime.resolved(id);
+
+        if matches!(context, CompletionContext::Term) {
+            for (term_name, f_id, t_id) in resolved.exports.iter_terms() {
+                if filter.name_score(&term_name) < ACCEPTANCE_THRESHOLD {
+                    continue;
+                }
+                let mut item = completion_item(
+                    term_name,
+                    format!("{}{}", prefix, term_name),
+                    CompletionItemKind::VALUE,
+                    Some(format!("import {}", module_name)),
+                    filter.range,
+                    CompletionResolveData::TermItem(f_id, t_id),
+                );
+                item.additional_text_edits = range.map(|range| {
+                    vec![TextEdit {
+                        range,
+                        new_text: format!(
+                            "import {} as {}\n",
+                            module_name,
+                            prefix.trim_end_matches(".")
+                        ),
+                    }]
+                });
+                items.push(item);
+            }
+        }
+
+        if matches!(context, CompletionContext::Type) {
+            for (type_name, f_id, t_id) in resolved.exports.iter_types() {
+                if filter.name_score(&type_name) < ACCEPTANCE_THRESHOLD {
+                    continue;
+                }
+                let mut item = completion_item(
+                    type_name,
+                    format!("{}{}", prefix, type_name),
+                    CompletionItemKind::STRUCT,
+                    Some(format!("import {}", module_name)),
+                    filter.range,
+                    CompletionResolveData::TypeItem(f_id, t_id),
+                );
+                item.additional_text_edits = range.map(|range| {
+                    vec![TextEdit {
+                        range,
+                        new_text: format!(
+                            "import {} as {}\n",
+                            module_name,
+                            prefix.trim_end_matches(".")
+                        ),
+                    }]
+                });
+                items.push(item);
+            }
+        }
     }
 }
 
@@ -199,13 +301,14 @@ fn collect_imports(
             }
             let (parsed, _) = state.runtime.parsed(f_id);
             let description = parsed.module_name().map(|name| name.to_string());
-            let name = if let Some(prefix) = &filter.prefix {
+            let edit = if let Some(prefix) = &filter.prefix {
                 format!("{prefix}{name}")
             } else {
                 format!("{name}")
             };
             Some(completion_item(
-                &name,
+                name,
+                edit,
                 CompletionItemKind::VALUE,
                 description,
                 filter.range,
@@ -223,13 +326,14 @@ fn collect_imports(
             }
             let (parsed, _) = state.runtime.parsed(f_id);
             let description = parsed.module_name().map(|name| name.to_string());
-            let name = if let Some(prefix) = &filter.prefix {
+            let edit = if let Some(prefix) = &filter.prefix {
                 format!("{prefix}{name}")
             } else {
                 format!("{name}")
             };
             Some(completion_item(
                 name,
+                edit,
                 CompletionItemKind::STRUCT,
                 description,
                 filter.range,
@@ -241,6 +345,7 @@ fn collect_imports(
 
 fn completion_item(
     name: impl ToString,
+    edit: impl ToString,
     kind: CompletionItemKind,
     description: Option<String>,
     range: Option<Range>,
@@ -252,7 +357,7 @@ fn completion_item(
         label_details: Some(CompletionItemLabelDetails { detail: None, description }),
         kind: Some(kind),
         text_edit: range.map(|range| {
-            let new_text = name.to_string();
+            let new_text = edit.to_string();
             CompletionTextEdit::Edit(TextEdit { range, new_text })
         }),
         data,
@@ -333,6 +438,10 @@ impl CompletionFilter {
             let range = range.map(|range| locate::text_range_to_range(content, range));
             Some(CompletionFilter { prefix, name, range })
         })
+    }
+
+    fn prefix_score(&self, other: &str) -> f64 {
+        if let Some(prefix) = &self.prefix { jaro_winkler(prefix, other) } else { 1.0 }
     }
 
     fn name_score(&self, other: &str) -> f64 {
