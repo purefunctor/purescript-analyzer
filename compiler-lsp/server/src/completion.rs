@@ -149,7 +149,7 @@ fn collect(
 
     if matches!(context, CompletionContext::Module) {
         collect_module(state, filter, &mut items);
-    } else {
+    } else if matches!(context, CompletionContext::Term | CompletionContext::Type) {
         collect_suggestions(state, (content, parsed), (filter, context), &mut items);
     }
 
