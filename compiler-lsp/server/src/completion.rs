@@ -554,6 +554,7 @@ enum CompletionContext {
     Type,
     Module,
     General,
+    Comment,
 }
 
 impl CompletionContext {
@@ -599,7 +600,9 @@ impl CompletionContext {
             .parent_ancestors()
             .find_map(|node| {
                 let kind = node.kind();
-                if cst::Expression::can_cast(kind) {
+                if cst::Annotation::can_cast(kind) {
+                    Some(CompletionContext::Comment)
+                } else if cst::Expression::can_cast(kind) {
                     Some(CompletionContext::Term)
                 } else if cst::Type::can_cast(kind) || cst::ExpressionTypeArgument::can_cast(kind) {
                     Some(CompletionContext::Type)
