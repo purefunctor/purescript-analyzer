@@ -127,8 +127,10 @@ fn did_change(
     p: DidChangeTextDocumentParams,
 ) -> ControlFlow<async_lsp::Result<()>> {
     let uri = p.text_document.uri.as_str();
-    let text = p.content_changes[0].text.as_str();
-    on_change(state, uri, text);
+    for content_change in &p.content_changes {
+        let text = content_change.text.as_str();
+        on_change(state, uri, text);
+    }
     ControlFlow::Continue(())
 }
 
