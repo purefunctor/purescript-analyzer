@@ -2,7 +2,7 @@ use std::{iter::Chain, mem, str::Chars};
 
 use async_lsp::lsp_types::*;
 use files::FileId;
-use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId};
+use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId, TypeItemKind};
 use parsing::ParsedModule;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TextRange, TokenAtOffset, ast::AstNode};
@@ -303,37 +303,38 @@ fn collect_unqualified_suggestions(
     state: &mut State,
     context: &Context,
     items: &mut Vec<CompletionItem>,
-    (name, id): (&str, FileId),
+    (name, file_id): (&str, FileId),
 ) {
-    let (import_parsed, _) = state.runtime.parsed(id);
-    let import_resolved = state.runtime.resolved(id);
-
-    let insert_import_range = context.insert_import_range();
-
     if matches!(context.location, CompletionLocation::Term) {
+        let (import_parsed, _) = state.runtime.parsed(file_id);
+        let import_resolved = state.runtime.resolved(file_id);
+        let import_module_name = import_parsed.module_name().unwrap();
+        let insert_import_range = context.insert_import_range();
+
         items.extend(import_resolved.exports.iter_terms().filter_map(
-            |(import_name, f_id, t_id)| {
-                if !import_name.starts_with(name) {
+            |(term_name, term_file_id, term_item_id)| {
+                if !term_name.starts_with(name) {
+                    return None;
+                }
+                if term_file_id != file_id {
                     return None;
                 }
 
-                let (actual_parsed, _) = state.runtime.parsed(f_id);
-                let description = actual_parsed.module_name().map(|name| name.to_string());
+                let description = import_parsed.module_name().map(|name| name.to_string());
                 let mut completion_item = completion_item(
-                    import_name,
-                    import_name,
+                    term_name,
+                    term_name,
                     CompletionItemKind::VALUE,
                     description,
                     context.filter.range,
-                    CompletionResolveData::TermItem(f_id, t_id),
+                    CompletionResolveData::TermItem(term_file_id, term_item_id),
                 );
 
-                let import_module_name = import_parsed.module_name().unwrap();
                 if let Some(import) = context.resolved.unqualified.iter().find(|import| {
-                    let Some((xf_id, xt_id, _)) = import.lookup_term(import_name) else {
+                    let Some((xf_id, xt_id, _)) = import.lookup_term(term_name) else {
                         return false;
                     };
-                    (xf_id, xt_id) == (f_id, t_id)
+                    (xf_id, xt_id) == (term_file_id, term_item_id)
                 }) {
                     let import = &context.indexed.source[import.id];
                     let root = context.parsed.syntax_node();
@@ -342,10 +343,10 @@ fn collect_unqualified_suggestions(
                     let mut buffer = String::default();
                     if let Some(import_list) = import.import_list() {
                         buffer.push('(');
-                        buffer.push_str(import_name);
+                        buffer.push_str(&term_name);
                         for child in import_list.children() {
                             let text = child.syntax().text().to_string();
-                            if text.trim().contains(import_name.as_str()) {
+                            if text.trim().contains(term_name.as_str()) {
                                 continue;
                             }
                             buffer.push_str(", ");
@@ -377,7 +378,7 @@ fn collect_unqualified_suggestions(
                     completion_item.additional_text_edits = insert_import_range.map(|range| {
                         vec![TextEdit {
                             range,
-                            new_text: format!("import {import_module_name} ({import_name})\n"),
+                            new_text: format!("import {import_module_name} ({term_name})\n"),
                         }]
                     });
                 }
@@ -386,20 +387,102 @@ fn collect_unqualified_suggestions(
             },
         ));
     } else if matches!(context.location, CompletionLocation::Type) {
-        items.extend(import_resolved.exports.iter_types().filter_map(|(import, f_id, t_id)| {
-            if !import.starts_with(name) {
-                return None;
-            }
-            let description = import_parsed.module_name().map(|name| name.to_string());
-            Some(completion_item(
-                import,
-                import,
-                CompletionItemKind::STRUCT,
-                description,
-                context.filter.range,
-                CompletionResolveData::TypeItem(f_id, t_id),
-            ))
-        }));
+        let (import_parsed, _) = state.runtime.parsed(file_id);
+        let import_resolved = state.runtime.resolved(file_id);
+        let import_module_name = import_parsed.module_name().unwrap();
+        let insert_import_range = context.insert_import_range();
+
+        items.extend(import_resolved.exports.iter_types().filter_map(
+            |(type_name, type_file_id, type_item_id)| {
+                if !type_name.starts_with(name) {
+                    return None;
+                }
+                if type_file_id != file_id {
+                    return None;
+                }
+
+                let description = import_parsed.module_name().map(|name| name.to_string());
+                let mut completion_item = completion_item(
+                    type_name,
+                    type_name,
+                    CompletionItemKind::STRUCT,
+                    description,
+                    context.filter.range,
+                    CompletionResolveData::TypeItem(type_file_id, type_item_id),
+                );
+
+                if let Some(import) = context.resolved.unqualified.iter().find(|import| {
+                    let Some((xf_id, xt_id, _)) = import.lookup_type(type_name) else {
+                        return false;
+                    };
+                    (xf_id, xt_id) == (type_file_id, type_item_id)
+                }) {
+                    let import = &context.indexed.source[import.id];
+                    let root = context.parsed.syntax_node();
+                    let import = import.to_node(&root);
+
+                    let mut buffer = String::default();
+                    if let Some(import_list) = import.import_list() {
+                        buffer.push('(');
+                        let import_indexed = state.runtime.indexed(type_file_id);
+                        let type_item = &import_indexed.items[type_item_id];
+                        let import_item = if matches!(type_item.kind, TypeItemKind::Class { .. }) {
+                            format!("class {type_name}")
+                        } else {
+                            format!("{type_name}")
+                        };
+                        buffer.push_str(&import_item);
+                        for child in import_list.children() {
+                            let text = child.syntax().text().to_string();
+                            if text.trim().contains(type_name.as_str()) {
+                                continue;
+                            }
+                            buffer.push_str(", ");
+                            buffer.push_str(&text);
+                        }
+                        buffer.push(')');
+                    }
+
+                    let range = {
+                        let node = import.syntax();
+                        let ptr = SyntaxNodePtr::new(node);
+                        let text_range = locate::text_range_after_annotation(&ptr, &root);
+                        text_range.map(|range| locate::text_range_to_range(context.content, range))
+                    };
+
+                    if let Some(label_details) = completion_item.label_details.as_mut() {
+                        label_details.detail = Some(format!(" (import {import_module_name})"));
+                    }
+
+                    completion_item.additional_text_edits = range.map(|range| {
+                        vec![TextEdit {
+                            range,
+                            new_text: format!("import {import_module_name} {buffer}"),
+                        }]
+                    });
+                } else {
+                    if let Some(label_details) = completion_item.label_details.as_mut() {
+                        label_details.detail = Some(format!(" (import {import_module_name})"));
+                    }
+
+                    let import_indexed = state.runtime.indexed(type_file_id);
+                    let type_item = &import_indexed.items[type_item_id];
+                    completion_item.additional_text_edits = insert_import_range.map(|range| {
+                        let import_item = if matches!(type_item.kind, TypeItemKind::Class { .. }) {
+                            format!("class {type_name}")
+                        } else {
+                            format!("{type_name}")
+                        };
+                        vec![TextEdit {
+                            range,
+                            new_text: format!("import {import_module_name} ({import_item})\n"),
+                        }]
+                    });
+                }
+
+                Some(completion_item)
+            },
+        ));
     }
 }
 
