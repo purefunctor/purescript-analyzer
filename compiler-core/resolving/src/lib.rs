@@ -4,7 +4,7 @@ mod error;
 pub use error::*;
 
 use files::FileId;
-use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId};
+use indexing::{FullIndexedModule, ImportId, ImportKind, TermItemId, TypeItemId};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use std::sync::Arc;
@@ -99,6 +99,7 @@ impl ResolvedItems {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ResolvedImport {
+    pub id: ImportId,
     pub file: FileId,
     pub kind: ImportKind,
     pub exported: bool,
@@ -107,13 +108,13 @@ pub struct ResolvedImport {
 }
 
 impl ResolvedImport {
-    fn new(file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
+    fn new(id: ImportId, file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
         let terms = FxHashMap::default();
         let types = FxHashMap::default();
-        ResolvedImport { file, kind, exported, terms, types }
+        ResolvedImport { id, file, kind, exported, terms, types }
     }
 
-    fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId, ImportKind)> {
+    pub fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId, ImportKind)> {
         self.terms.get(name).copied()
     }
 
