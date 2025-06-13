@@ -71,6 +71,17 @@ struct Context<'a> {
     filter: &'a CompletionFilter,
 }
 
+impl<'a> Context<'a> {
+    fn insert_import_range(&self) -> Option<Range> {
+        let cst = self.parsed.cst().imports()?;
+        let offset = cst.syntax().text_range().end();
+        let mut position = locate::offset_to_position(self.content, offset);
+        position.line += 1;
+        position.character = 0;
+        Some(Range::new(position, position))
+    }
+}
+
 const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 
 fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
@@ -230,13 +241,7 @@ fn collect_qualified_suggestions(
         return;
     }
 
-    let range = context.parsed.cst().imports().map(|cst| {
-        let offset = cst.syntax().text_range().end();
-        let mut position = locate::offset_to_position(context.content, offset);
-        position.line += 1;
-        position.character = 0;
-        Range::new(position, position)
-    });
+    let insert_import_range = context.insert_import_range();
 
     let import_resolved = state.runtime.resolved(id);
     if matches!(context.location, CompletionLocation::Term) {
@@ -253,7 +258,7 @@ fn collect_qualified_suggestions(
                 context.filter.range,
                 CompletionResolveData::TermItem(f_id, t_id),
             );
-            item.additional_text_edits = range.map(|range| {
+            item.additional_text_edits = insert_import_range.map(|range| {
                 vec![TextEdit {
                     range,
                     new_text: format!(
@@ -279,7 +284,7 @@ fn collect_qualified_suggestions(
                 context.filter.range,
                 CompletionResolveData::TypeItem(f_id, t_id),
             );
-            item.additional_text_edits = range.map(|range| {
+            item.additional_text_edits = insert_import_range.map(|range| {
                 vec![TextEdit {
                     range,
                     new_text: format!(
@@ -303,13 +308,7 @@ fn collect_unqualified_suggestions(
     let (import_parsed, _) = state.runtime.parsed(id);
     let import_resolved = state.runtime.resolved(id);
 
-    let insert_import_range = context.parsed.cst().imports().map(|cst| {
-        let offset = cst.syntax().text_range().end();
-        let mut position = locate::offset_to_position(context.content, offset);
-        position.line += 1;
-        position.character = 0;
-        Range::new(position, position)
-    });
+    let insert_import_range = context.insert_import_range();
 
     if matches!(context.location, CompletionLocation::Term) {
         items.extend(import_resolved.exports.iter_terms().filter_map(
@@ -362,7 +361,9 @@ fn collect_unqualified_suggestions(
                         text_range.map(|range| locate::text_range_to_range(context.content, range))
                     };
 
-                    if let Some(label_details) = completion_item.label_details.as_mut() { label_details.detail = Some(format!(" (import {import_module_name})")); }
+                    if let Some(label_details) = completion_item.label_details.as_mut() {
+                        label_details.detail = Some(format!(" (import {import_module_name})"));
+                    }
                     completion_item.additional_text_edits = range.map(|range| {
                         vec![TextEdit {
                             range,
@@ -370,7 +371,9 @@ fn collect_unqualified_suggestions(
                         }]
                     });
                 } else {
-                    if let Some(label_details) = completion_item.label_details.as_mut() { label_details.detail = Some(format!(" (import {import_module_name})")); }
+                    if let Some(label_details) = completion_item.label_details.as_mut() {
+                        label_details.detail = Some(format!(" (import {import_module_name})"));
+                    }
                     completion_item.additional_text_edits = insert_import_range.map(|range| {
                         vec![TextEdit {
                             range,
