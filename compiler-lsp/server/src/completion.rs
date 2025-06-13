@@ -2,7 +2,7 @@ use std::{iter::Chain, mem, str::Chars};
 
 use async_lsp::lsp_types::*;
 use files::FileId;
-use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId, TypeItemKind};
+use indexing::{FullIndexedModule, ImportKind, TermItemId, TermItemKind, TypeItemId, TypeItemKind};
 use parsing::ParsedModule;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TextRange, TokenAtOffset, ast::AstNode};
@@ -375,11 +375,29 @@ fn collect_unqualified_suggestions(
                     if let Some(label_details) = completion_item.label_details.as_mut() {
                         label_details.detail = Some(format!(" (import {import_module_name})"));
                     }
-                    completion_item.additional_text_edits = insert_import_range.map(|range| {
-                        vec![TextEdit {
+
+                    let import_indexed = state.runtime.indexed(term_file_id);
+                    let term_item = &import_indexed.items[term_item_id];
+                    completion_item.additional_text_edits = insert_import_range.and_then(|range| {
+                        let item_name =
+                            if matches!(term_item.kind, TermItemKind::Constructor { .. }) {
+                                let type_item_id = import_indexed
+                                    .pairs
+                                    .constructor_type(term_item_id)
+                                    .expect("invariant violated: unpaired data constructor");
+                                let type_item = &import_indexed.items[type_item_id];
+                                if let Some(name) = &type_item.name {
+                                    format!("{name}(..)")
+                                } else {
+                                    return None;
+                                }
+                            } else {
+                                format!("{term_name}")
+                            };
+                        Some(vec![TextEdit {
                             range,
-                            new_text: format!("import {import_module_name} ({term_name})\n"),
-                        }]
+                            new_text: format!("import {import_module_name} ({item_name})\n"),
+                        }])
                     });
                 }
 
