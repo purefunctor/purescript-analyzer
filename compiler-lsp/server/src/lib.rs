@@ -118,7 +118,7 @@ fn resolve_completion_item(
     state: &mut State,
     item: CompletionItem,
 ) -> impl Future<Output = Result<CompletionItem, ResponseError>> + use<> {
-    let result = completion::resolve_item(state, item);
+    let result = completion::resolve::implementation(state, item);
     async move { Ok(result) }
 }
 
