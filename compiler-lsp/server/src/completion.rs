@@ -2,14 +2,14 @@ use std::{iter::Chain, mem, str::Chars};
 
 use async_lsp::lsp_types::*;
 use files::FileId;
-use indexing::{ImportKind, TermItemId, TypeItemId};
+use indexing::{FullIndexedModule, ImportKind, TermItemId, TypeItemId};
 use parsing::ParsedModule;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TextRange, TokenAtOffset, ast::AstNode};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use strsim::{generic_jaro_winkler, jaro_winkler};
-use syntax::{SyntaxNode, SyntaxToken, cst};
+use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 use crate::{State, hover, locate};
 
@@ -40,42 +40,54 @@ pub(super) fn implementation(
         .or_else(|| CompletionFilter::try_module_name(&content, &token))
         .unwrap_or_default();
 
-    let context = CompletionContext::new(&content, position);
+    let location = CompletionLocation::new(&content, position);
+    let indexed = state.runtime.indexed(id);
     let resolved = state.runtime.resolved(id);
 
     let _span = tracing::info_span!("completion_items").entered();
-    tracing::info!("Collecting {:?} items", context);
+    tracing::info!("Collecting {:?} items", location);
 
-    let items = collect(state, &parsed, &content, &filter, &context, &resolved);
+    let context = Context {
+        content: &content,
+        parsed: &parsed,
+        indexed: &indexed,
+        resolved: &resolved,
+        location: &location,
+        filter: &filter,
+    };
+
+    let items = collect(state, &context);
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
 }
 
+struct Context<'a> {
+    content: &'a str,
+    parsed: &'a ParsedModule,
+    indexed: &'a FullIndexedModule,
+    resolved: &'a FullResolvedModule,
+    location: &'a CompletionLocation,
+    filter: &'a CompletionFilter,
+}
+
 const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 
-fn collect(
-    state: &mut State,
-    parsed: &ParsedModule,
-    content: &str,
-    filter: &CompletionFilter,
-    context: &CompletionContext,
-    resolved: &FullResolvedModule,
-) -> Vec<CompletionItem> {
+fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
 
-    if let Some(prefix) = filter.prefix.as_deref() {
+    if let Some(prefix) = context.filter.prefix.as_deref() {
         // Flag that determines if we found an exact match for this module.
         // If we have, we make sure to exclude it from the completion list.
         let mut module_match_found = false;
         let module = prefix.trim_end_matches('.');
 
-        if let Some(import) = resolved.qualified.get(module) {
+        if let Some(import) = context.resolved.qualified.get(module) {
             module_match_found = true;
-            collect_imports(state, &mut items, filter, context, import);
+            collect_imports(state, context, import, &mut items);
         }
 
-        items.extend(resolved.qualified.iter().filter_map(|(name, import)| {
+        items.extend(context.resolved.qualified.iter().filter_map(|(name, import)| {
             if module_match_found && name == module {
                 return None;
             }
@@ -89,13 +101,13 @@ fn collect(
                 name,
                 CompletionItemKind::MODULE,
                 description,
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::Import(import.file),
             ))
         }));
     } else {
-        items.extend(resolved.qualified.iter().filter_map(|(name, import)| {
-            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+        items.extend(context.resolved.qualified.iter().filter_map(|(name, import)| {
+            if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
             let (parsed, _) = state.runtime.parsed(import.file);
@@ -105,14 +117,14 @@ fn collect(
                 name,
                 CompletionItemKind::MODULE,
                 description,
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::Import(import.file),
             ))
         }));
 
-        if matches!(context, CompletionContext::Term) {
-            items.extend(resolved.locals.iter_terms().filter_map(|(name, f_id, t_id)| {
-                if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+        if matches!(context.location, CompletionLocation::Term) {
+            items.extend(context.resolved.locals.iter_terms().filter_map(|(name, f_id, t_id)| {
+                if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                     return None;
                 }
                 let description = Some("Local".to_string());
@@ -121,13 +133,13 @@ fn collect(
                     name,
                     CompletionItemKind::VALUE,
                     description,
-                    filter.range,
+                    context.filter.range,
                     CompletionResolveData::TermItem(f_id, t_id),
                 ))
             }));
-        } else if matches!(context, CompletionContext::Type) {
-            items.extend(resolved.locals.iter_types().filter_map(|(name, f_id, t_id)| {
-                if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+        } else if matches!(context.location, CompletionLocation::Type) {
+            items.extend(context.resolved.locals.iter_types().filter_map(|(name, f_id, t_id)| {
+                if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                     return None;
                 }
                 let description = Some("Local".to_string());
@@ -136,43 +148,43 @@ fn collect(
                     name,
                     CompletionItemKind::STRUCT,
                     description,
-                    filter.range,
+                    context.filter.range,
                     CompletionResolveData::TypeItem(f_id, t_id),
                 ))
             }));
         }
 
-        for import in &resolved.unqualified {
-            collect_imports(state, &mut items, filter, context, import);
+        for import in &context.resolved.unqualified {
+            collect_imports(state, context, import, &mut items);
         }
     }
 
-    if matches!(context, CompletionContext::Module) {
-        collect_module(state, filter, &mut items);
-    } else if matches!(context, CompletionContext::Term | CompletionContext::Type) {
-        collect_suggestions(state, (content, parsed), (filter, context), &mut items);
+    if matches!(context.location, CompletionLocation::Module) {
+        collect_module(state, context, &mut items);
+    } else if matches!(context.location, CompletionLocation::Term | CompletionLocation::Type) {
+        collect_suggestions(state, context, &mut items);
     }
 
     items
 }
 
-fn collect_module(state: &mut State, filter: &CompletionFilter, items: &mut Vec<CompletionItem>) {
+fn collect_module(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
     items.extend(state.files.iter_id().filter_map(|id| {
         let (parsed, _) = state.runtime.parsed(id);
         let name = parsed.module_name()?;
 
         // Limit suggestions to exact prefix matches before fuzzy matching.
-        if let Some(p) = &filter.prefix {
+        if let Some(p) = &context.filter.prefix {
             if !name.starts_with(p.as_str()) {
                 return None;
             }
-        } else if let Some(n) = &filter.name {
+        } else if let Some(n) = &context.filter.name {
             if !name.starts_with(n.as_str()) {
                 return None;
             }
         }
 
-        if filter.full_score(&name) < ACCEPTANCE_THRESHOLD {
+        if context.filter.full_score(&name) < ACCEPTANCE_THRESHOLD {
             return None;
         }
 
@@ -182,44 +194,26 @@ fn collect_module(state: &mut State, filter: &CompletionFilter, items: &mut Vec<
             &name,
             CompletionItemKind::MODULE,
             description,
-            filter.range,
+            context.filter.range,
             CompletionResolveData::Import(id),
         ))
     }));
 }
 
-fn collect_suggestions(
-    state: &mut State,
-    (content, parsed): (&str, &ParsedModule),
-    (filter, context): (&CompletionFilter, &CompletionContext),
-    items: &mut Vec<CompletionItem>,
-) {
+fn collect_suggestions(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
     for id in state.files.iter_id() {
-        if let Some(prefix) = &filter.prefix {
-            collect_qualified_suggestions(
-                state,
-                items,
-                (content, parsed),
-                (filter, context),
-                (prefix, id),
-            );
-        } else if let Some(name) = &filter.name {
-            collect_unqualified_suggestions(
-                state,
-                items,
-                (content, parsed),
-                (filter, context),
-                (name, id),
-            );
+        if let Some(prefix) = &context.filter.prefix {
+            collect_qualified_suggestions(state, context, items, (prefix, id));
+        } else if let Some(name) = &context.filter.name {
+            collect_unqualified_suggestions(state, context, items, (name, id));
         }
     }
 }
 
 fn collect_qualified_suggestions(
     state: &mut State,
+    context: &Context,
     items: &mut Vec<CompletionItem>,
-    (content, parsed): (&str, &ParsedModule),
-    (filter, context): (&CompletionFilter, &CompletionContext),
     (prefix, id): (&str, FileId),
 ) {
     let (import_parsed, _) = state.runtime.parsed(id);
@@ -232,22 +226,22 @@ fn collect_qualified_suggestions(
         return;
     };
 
-    if filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
+    if context.filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
         return;
     }
 
-    let range = parsed.cst().imports().map(|cst| {
+    let range = context.parsed.cst().imports().map(|cst| {
         let offset = cst.syntax().text_range().end();
-        let mut position = locate::offset_to_position(content, offset);
+        let mut position = locate::offset_to_position(context.content, offset);
         position.line += 1;
         position.character = 0;
         Range::new(position, position)
     });
 
     let import_resolved = state.runtime.resolved(id);
-    if matches!(context, CompletionContext::Term) {
+    if matches!(context.location, CompletionLocation::Term) {
         items.extend(import_resolved.exports.iter_terms().filter_map(|(name, f_id, t_id)| {
-            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+            if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
             let edit = format!("{}{}", prefix, name);
@@ -256,7 +250,7 @@ fn collect_qualified_suggestions(
                 edit,
                 CompletionItemKind::VALUE,
                 Some(format!("import {}", module_name)),
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::TermItem(f_id, t_id),
             );
             item.additional_text_edits = range.map(|range| {
@@ -271,9 +265,9 @@ fn collect_qualified_suggestions(
             });
             Some(item)
         }));
-    } else if matches!(context, CompletionContext::Type) {
+    } else if matches!(context.location, CompletionLocation::Type) {
         items.extend(import_resolved.exports.iter_types().filter_map(|(name, f_id, t_id)| {
-            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+            if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
             let edit = format!("{}{}", prefix, name);
@@ -282,7 +276,7 @@ fn collect_qualified_suggestions(
                 edit,
                 CompletionItemKind::STRUCT,
                 Some(format!("import {}", module_name)),
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::TypeItem(f_id, t_id),
             );
             item.additional_text_edits = range.map(|range| {
@@ -302,29 +296,93 @@ fn collect_qualified_suggestions(
 
 fn collect_unqualified_suggestions(
     state: &mut State,
+    context: &Context,
     items: &mut Vec<CompletionItem>,
-    (_, _): (&str, &ParsedModule),
-    (filter, context): (&CompletionFilter, &CompletionContext),
     (name, id): (&str, FileId),
 ) {
     let (import_parsed, _) = state.runtime.parsed(id);
     let import_resolved = state.runtime.resolved(id);
-    if matches!(context, CompletionContext::Term) {
-        items.extend(import_resolved.exports.iter_terms().filter_map(|(import, f_id, t_id)| {
-            if !import.starts_with(name) {
-                return None;
-            }
-            let description = import_parsed.module_name().map(|name| name.to_string());
-            Some(completion_item(
-                import,
-                import,
-                CompletionItemKind::VALUE,
-                description,
-                filter.range,
-                CompletionResolveData::TermItem(f_id, t_id),
-            ))
-        }));
-    } else if matches!(context, CompletionContext::Type) {
+
+    let insert_import_range = context.parsed.cst().imports().map(|cst| {
+        let offset = cst.syntax().text_range().end();
+        let mut position = locate::offset_to_position(context.content, offset);
+        position.line += 1;
+        position.character = 0;
+        Range::new(position, position)
+    });
+
+    if matches!(context.location, CompletionLocation::Term) {
+        items.extend(import_resolved.exports.iter_terms().filter_map(
+            |(import_name, f_id, t_id)| {
+                if !import_name.starts_with(name) {
+                    return None;
+                }
+
+                let (actual_parsed, _) = state.runtime.parsed(f_id);
+                let description = actual_parsed.module_name().map(|name| name.to_string());
+                let mut completion_item = completion_item(
+                    import_name,
+                    import_name,
+                    CompletionItemKind::VALUE,
+                    description,
+                    context.filter.range,
+                    CompletionResolveData::TermItem(f_id, t_id),
+                );
+
+                let import_module_name = import_parsed.module_name().unwrap();
+                if let Some(import) = context.resolved.unqualified.iter().find(|import| {
+                    let Some((xf_id, xt_id, _)) = import.lookup_term(import_name) else {
+                        return false;
+                    };
+                    (xf_id, xt_id) == (f_id, t_id)
+                }) {
+                    let import = &context.indexed.source[import.id];
+                    let root = context.parsed.syntax_node();
+                    let import = import.to_node(&root);
+
+                    let mut buffer = String::default();
+                    if let Some(import_list) = import.import_list() {
+                        buffer.push('(');
+                        buffer.push_str(import_name);
+                        for child in import_list.children() {
+                            let text = child.syntax().text().to_string();
+                            if text.trim().contains(import_name.as_str()) {
+                                continue;
+                            }
+                            buffer.push_str(", ");
+                            buffer.push_str(&text);
+                        }
+                        buffer.push(')');
+                    }
+
+                    let range = {
+                        let node = import.syntax();
+                        let ptr = SyntaxNodePtr::new(node);
+                        let text_range = locate::text_range_after_annotation(&ptr, &root);
+                        text_range.map(|range| locate::text_range_to_range(context.content, range))
+                    };
+
+                    if let Some(label_details) = completion_item.label_details.as_mut() { label_details.detail = Some(format!(" (import {import_module_name})")); }
+                    completion_item.additional_text_edits = range.map(|range| {
+                        vec![TextEdit {
+                            range,
+                            new_text: format!("import {import_module_name} {buffer}"),
+                        }]
+                    });
+                } else {
+                    if let Some(label_details) = completion_item.label_details.as_mut() { label_details.detail = Some(format!(" (import {import_module_name})")); }
+                    completion_item.additional_text_edits = insert_import_range.map(|range| {
+                        vec![TextEdit {
+                            range,
+                            new_text: format!("import {import_module_name} ({import_name})\n"),
+                        }]
+                    });
+                }
+
+                Some(completion_item)
+            },
+        ));
+    } else if matches!(context.location, CompletionLocation::Type) {
         items.extend(import_resolved.exports.iter_types().filter_map(|(import, f_id, t_id)| {
             if !import.starts_with(name) {
                 return None;
@@ -335,7 +393,7 @@ fn collect_unqualified_suggestions(
                 import,
                 CompletionItemKind::STRUCT,
                 description,
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::TypeItem(f_id, t_id),
             ))
         }));
@@ -344,22 +402,21 @@ fn collect_unqualified_suggestions(
 
 fn collect_imports(
     state: &mut State,
-    items: &mut Vec<CompletionItem>,
-    filter: &CompletionFilter,
-    context: &CompletionContext,
+    context: &Context,
     import: &ResolvedImport,
+    items: &mut Vec<CompletionItem>,
 ) {
-    if matches!(context, CompletionContext::Term) {
+    if matches!(context.location, CompletionLocation::Term) {
         items.extend(import.iter_terms().filter_map(|(name, f_id, t_id, kind)| {
             if matches!(kind, ImportKind::Hidden) {
                 return None;
             }
-            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+            if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
             let (parsed, _) = state.runtime.parsed(f_id);
             let description = parsed.module_name().map(|name| name.to_string());
-            let edit = if let Some(prefix) = &filter.prefix {
+            let edit = if let Some(prefix) = &context.filter.prefix {
                 format!("{prefix}{name}")
             } else {
                 format!("{name}")
@@ -369,21 +426,21 @@ fn collect_imports(
                 edit,
                 CompletionItemKind::VALUE,
                 description,
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::TermItem(f_id, t_id),
             ))
         }));
-    } else if matches!(context, CompletionContext::Type) {
+    } else if matches!(context.location, CompletionLocation::Type) {
         items.extend(import.iter_types().filter_map(|(name, f_id, t_id, kind)| {
             if matches!(kind, ImportKind::Hidden) {
                 return None;
             }
-            if filter.name_score(name) < ACCEPTANCE_THRESHOLD {
+            if context.filter.name_score(name) < ACCEPTANCE_THRESHOLD {
                 return None;
             }
             let (parsed, _) = state.runtime.parsed(f_id);
             let description = parsed.module_name().map(|name| name.to_string());
-            let edit = if let Some(prefix) = &filter.prefix {
+            let edit = if let Some(prefix) = &context.filter.prefix {
                 format!("{prefix}{name}")
             } else {
                 format!("{name}")
@@ -393,7 +450,7 @@ fn collect_imports(
                 edit,
                 CompletionItemKind::STRUCT,
                 description,
-                filter.range,
+                context.filter.range,
                 CompletionResolveData::TypeItem(f_id, t_id),
             ))
         }));
@@ -549,7 +606,7 @@ impl CompletionFilter {
 }
 
 #[derive(Debug)]
-enum CompletionContext {
+enum CompletionLocation {
     Term,
     Type,
     Module,
@@ -557,8 +614,8 @@ enum CompletionContext {
     Comment,
 }
 
-impl CompletionContext {
-    fn new(content: &str, position: Position) -> CompletionContext {
+impl CompletionLocation {
+    fn new(content: &str, position: Position) -> CompletionLocation {
         // We insert a placeholder identifier at the current position of the
         // text cursor. This is done as an effort to produce as valid of a
         // parse tree as possible before we perform further analysis.
@@ -575,7 +632,7 @@ impl CompletionContext {
         // component = Halogen.z'PureScript'z
 
         let Some(offset) = locate::position_to_offset(content, position) else {
-            return CompletionContext::General;
+            return CompletionLocation::General;
         };
 
         let (left, right) = content.split_at(offset.into());
@@ -590,7 +647,7 @@ impl CompletionContext {
 
         let token = match token {
             TokenAtOffset::None => {
-                return CompletionContext::General;
+                return CompletionLocation::General;
             }
             TokenAtOffset::Single(token) => token,
             TokenAtOffset::Between(token, _) => token,
@@ -601,18 +658,18 @@ impl CompletionContext {
             .find_map(|node| {
                 let kind = node.kind();
                 if cst::Annotation::can_cast(kind) {
-                    Some(CompletionContext::Comment)
+                    Some(CompletionLocation::Comment)
                 } else if cst::Expression::can_cast(kind) {
-                    Some(CompletionContext::Term)
+                    Some(CompletionLocation::Term)
                 } else if cst::Type::can_cast(kind) || cst::ExpressionTypeArgument::can_cast(kind) {
-                    Some(CompletionContext::Type)
+                    Some(CompletionLocation::Type)
                 } else if cst::ImportStatement::can_cast(kind) {
-                    Some(CompletionContext::Module)
+                    Some(CompletionLocation::Module)
                 } else {
                     None
                 }
             })
-            .unwrap_or(CompletionContext::General)
+            .unwrap_or(CompletionLocation::General)
     }
 }
 
