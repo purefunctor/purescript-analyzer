@@ -118,7 +118,7 @@ impl ResolvedImport {
         self.terms.get(name).copied()
     }
 
-    fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId, ImportKind)> {
+    pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId, ImportKind)> {
         self.types.get(name).copied()
     }
 
