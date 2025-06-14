@@ -42,7 +42,7 @@ fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &Fu
         };
 
         let mut resolved_import =
-            ResolvedImport::new(import_file_id, indexing_import.kind, indexing_import.exported);
+            ResolvedImport::new(id, import_file_id, indexing_import.kind, indexing_import.exported);
 
         if let Some(alias) = &indexing_import.alias {
             let alias = SmolStr::clone(alias);

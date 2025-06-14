@@ -120,6 +120,12 @@ impl IndexingPairs {
         )
     }
 
+    pub fn constructor_type(&self, id: TermItemId) -> Option<TypeItemId> {
+        self.data_constructors
+            .iter()
+            .find_map(|(type_id, term_id)| if *term_id == id { Some(*type_id) } else { None })
+    }
+
     pub fn class_members(&self, id: TypeItemId) -> impl Iterator<Item = TermItemId> {
         self.class_members.iter().filter_map(
             move |(type_id, term_id)| if *type_id == id { Some(*term_id) } else { None },
