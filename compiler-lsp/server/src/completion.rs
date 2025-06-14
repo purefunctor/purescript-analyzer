@@ -84,6 +84,17 @@ const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
 
+    if matches!(context.location, CompletionLocation::Module) {
+        collect_module(state, context, &mut items);
+    } else if matches!(context.location, CompletionLocation::Term | CompletionLocation::Type) {
+        collect_qualified_local(state, context, &mut items);
+        collect_suggestions(state, context, &mut items);
+    }
+
+    items
+}
+
+fn collect_qualified_local(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
     if let Some(prefix) = context.filter.prefix.as_deref() {
         // Flag that determines if we found an exact match for this module.
         // If we have, we make sure to exclude it from the completion list.
@@ -92,7 +103,7 @@ fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
 
         if let Some(import) = context.resolved.qualified.get(module) {
             module_match_found = true;
-            collect_imports(state, context, import, &mut items);
+            collect_imports(state, context, import, items);
         }
 
         items.extend(context.resolved.qualified.iter().filter_map(|(name, import)| {
@@ -163,17 +174,9 @@ fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
         }
 
         for import in &context.resolved.unqualified {
-            collect_imports(state, context, import, &mut items);
+            collect_imports(state, context, import, items);
         }
     }
-
-    if matches!(context.location, CompletionLocation::Module) {
-        collect_module(state, context, &mut items);
-    } else if matches!(context.location, CompletionLocation::Term | CompletionLocation::Type) {
-        collect_suggestions(state, context, &mut items);
-    }
-
-    items
 }
 
 fn collect_module(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
