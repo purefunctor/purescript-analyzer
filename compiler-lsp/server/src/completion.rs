@@ -385,6 +385,7 @@ fn collect_unqualified_suggestions(
                     if let Some(label_details) = completion_item.label_details.as_mut() {
                         label_details.detail = Some(format!(" (import {import_module_name})"));
                     }
+                    completion_item.sort_text = Some(import_module_name.to_string());
                     completion_item.additional_text_edits = range.map(|range| {
                         vec![TextEdit {
                             range,
@@ -398,6 +399,7 @@ fn collect_unqualified_suggestions(
 
                     let import_indexed = state.runtime.indexed(term_file_id);
                     let term_item = &import_indexed.items[term_item_id];
+                    completion_item.sort_text = Some(import_module_name.to_string());
                     completion_item.additional_text_edits = insert_import_range.and_then(|range| {
                         let item_name =
                             if matches!(term_item.kind, TermItemKind::Constructor { .. }) {
@@ -491,7 +493,7 @@ fn collect_unqualified_suggestions(
                     if let Some(label_details) = completion_item.label_details.as_mut() {
                         label_details.detail = Some(format!(" (import {import_module_name})"));
                     }
-
+                    completion_item.sort_text = Some(import_module_name.to_string());
                     completion_item.additional_text_edits = range.map(|range| {
                         vec![TextEdit {
                             range,
@@ -505,6 +507,7 @@ fn collect_unqualified_suggestions(
 
                     let import_indexed = state.runtime.indexed(type_file_id);
                     let type_item = &import_indexed.items[type_item_id];
+                    completion_item.sort_text = Some(import_module_name.to_string());
                     completion_item.additional_text_edits = insert_import_range.map(|range| {
                         let import_item = if matches!(type_item.kind, TypeItemKind::Class { .. }) {
                             format!("class {type_name}")
