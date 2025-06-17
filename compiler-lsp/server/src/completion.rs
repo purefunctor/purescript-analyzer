@@ -246,18 +246,14 @@ fn collect_qualified_suggestions(
         return;
     };
 
-    let clean_prefix = prefix.trim_end_matches(".");
-    if !module_name.contains(clean_prefix) {
-        return;
-    };
-
     if context.filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
         return;
     }
 
+    let clean_prefix = prefix.trim_end_matches(".");
+    let import_resolved = state.runtime.resolved(id);
     let insert_import_range = context.insert_import_range();
 
-    let import_resolved = state.runtime.resolved(id);
     if matches!(context.location, CompletionLocation::Term) {
         items.extend(import_resolved.exports.iter_terms().filter_map(
             |(term_name, term_file_id, term_item_id)| {
@@ -269,7 +265,7 @@ fn collect_qualified_suggestions(
                     term_name,
                     edit,
                     CompletionItemKind::VALUE,
-                    Some(format!("import {}", module_name)),
+                    Some(module_name.to_string()),
                     context.filter.range,
                     CompletionResolveData::TermItem(term_file_id, term_item_id),
                 );
@@ -298,7 +294,7 @@ fn collect_qualified_suggestions(
                     type_name,
                     edit,
                     CompletionItemKind::STRUCT,
-                    Some(format!("import {}", module_name)),
+                    Some(module_name.to_string()),
                     context.filter.range,
                     CompletionResolveData::TypeItem(type_file_id, type_item_id),
                 );
