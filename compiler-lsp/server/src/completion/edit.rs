@@ -76,13 +76,11 @@ where
         };
 
         (Some(import_text), import_range)
+    } else if let Some(import_item_name) = name_fn(&import_indexed) {
+        let import_text = format!("import {module_name} ({import_item_name})\n");
+        (Some(import_text), None)
     } else {
-        if let Some(import_item_name) = name_fn(&import_indexed) {
-            let import_text = format!("import {module_name} ({import_item_name})\n");
-            (Some(import_text), None)
-        } else {
-            (None, None)
-        }
+        (None, None)
     }
 }
 
@@ -148,7 +146,7 @@ fn term_import_name(
         };
         Some(format!("{type_name}(..)"))
     } else {
-        Some(format!("{term_name}"))
+        Some(term_name.to_string())
     }
 }
 
@@ -161,6 +159,6 @@ fn type_import_name(
     if matches!(type_item.kind, TypeItemKind::Class { .. }) {
         Some(format!("class {type_name}"))
     } else {
-        Some(format!("{type_name}"))
+        Some(type_name.to_string())
     }
 }
