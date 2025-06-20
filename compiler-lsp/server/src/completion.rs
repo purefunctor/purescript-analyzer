@@ -1,10 +1,11 @@
 pub(crate) mod context;
+pub(crate) mod edit;
 pub(crate) mod resolve;
 
 use async_lsp::lsp_types::*;
 use context::{CompletionFilter, CompletionLocation};
 use files::FileId;
-use indexing::{FullIndexedModule, ImportKind, TermItemKind, TypeItemKind};
+use indexing::{FullIndexedModule, ImportKind, TypeItemKind};
 use parsing::ParsedModule;
 use resolve::CompletionResolveData;
 use resolving::{FullResolvedModule, ResolvedImport};
@@ -325,17 +326,21 @@ fn collect_unqualified_suggestions(
     items: &mut Vec<CompletionItem>,
     (name, file_id): (&str, FileId),
 ) {
-    if matches!(context.location, CompletionLocation::Term) {
-        let (import_parsed, _) = state.runtime.parsed(file_id);
-        let import_resolved = state.runtime.resolved(file_id);
-        let import_module_name = import_parsed.module_name().unwrap();
-        let insert_import_range = context.insert_import_range();
+    let (import_parsed, _) = state.runtime.parsed(file_id);
+    let Some(import_module_name) = import_parsed.module_name() else {
+        return tracing::error!("Missing module name {:?}", file_id);
+    };
 
+    let import_resolved = state.runtime.resolved(file_id);
+    let insert_import_range = context.insert_import_range();
+
+    if matches!(context.location, CompletionLocation::Term) {
         items.extend(import_resolved.exports.iter_terms().filter_map(
             |(term_name, term_file_id, term_item_id)| {
                 if !term_name.starts_with(name) {
                     return None;
                 }
+
                 if term_file_id != file_id {
                     return None;
                 }
@@ -350,108 +355,29 @@ fn collect_unqualified_suggestions(
                     CompletionResolveData::TermItem(term_file_id, term_item_id),
                 );
 
-                let import_containing_term = context.resolved.unqualified.iter().find(|import| {
-                    if let Some((f_id, t_id, _)) = import.lookup_term(term_name) {
-                        (f_id, t_id) == (term_file_id, term_item_id)
-                    } else {
-                        false
-                    }
-                });
+                let (import_text, import_range) = edit::term_import_item(
+                    state,
+                    context,
+                    &import_module_name,
+                    term_name,
+                    term_file_id,
+                    term_item_id,
+                );
 
-                if let Some(import) = import_containing_term {
-                    let import = &context.indexed.source[import.id];
-                    let root = context.parsed.syntax_node();
-                    let import = import.to_node(&root);
+                let text_edit = import_range.or(insert_import_range).zip(import_text);
 
-                    let mut buffer = String::default();
-                    if let Some(import_list) = import.import_list() {
-                        buffer.push('(');
-                        let import_indexed = state.runtime.indexed(term_file_id);
-                        let term_item = &import_indexed.items[term_item_id];
-                        let item_name =
-                            if matches!(term_item.kind, TermItemKind::Constructor { .. }) {
-                                let type_item_id = import_indexed
-                                    .pairs
-                                    .constructor_type(term_item_id)
-                                    .expect("invariant violated: unpaired data constructor");
-                                let type_item = &import_indexed.items[type_item_id];
-                                if let Some(name) = &type_item.name {
-                                    format!("{name}(..)")
-                                } else {
-                                    return None;
-                                }
-                            } else {
-                                format!("{term_name}")
-                            };
-                        buffer.push_str(&item_name);
-                        for child in import_list.children() {
-                            let text = child.syntax().text().to_string();
-                            if text.trim().contains(&item_name) {
-                                continue;
-                            }
-                            buffer.push_str(", ");
-                            buffer.push_str(&text);
-                        }
-                        buffer.push(')');
-                    }
-
-                    let range = {
-                        let node = import.syntax();
-                        let ptr = SyntaxNodePtr::new(node);
-                        let text_range = locate::text_range_after_annotation(&ptr, &root);
-                        text_range.map(|range| locate::text_range_to_range(context.content, range))
-                    };
-
-                    if let Some(label_details) = completion_item.label_details.as_mut() {
-                        label_details.detail = Some(format!(" (import {import_module_name})"));
-                    }
-                    completion_item.sort_text = Some(import_module_name.to_string());
-                    completion_item.additional_text_edits = range.map(|range| {
-                        vec![TextEdit {
-                            range,
-                            new_text: format!("import {import_module_name} {buffer}"),
-                        }]
-                    });
-                } else {
-                    if let Some(label_details) = completion_item.label_details.as_mut() {
-                        label_details.detail = Some(format!(" (import {import_module_name})"));
-                    }
-
-                    let import_indexed = state.runtime.indexed(term_file_id);
-                    let term_item = &import_indexed.items[term_item_id];
-                    completion_item.sort_text = Some(import_module_name.to_string());
-                    completion_item.additional_text_edits = insert_import_range.and_then(|range| {
-                        let item_name =
-                            if matches!(term_item.kind, TermItemKind::Constructor { .. }) {
-                                let type_item_id = import_indexed
-                                    .pairs
-                                    .constructor_type(term_item_id)
-                                    .expect("invariant violated: unpaired data constructor");
-                                let type_item = &import_indexed.items[type_item_id];
-                                if let Some(name) = &type_item.name {
-                                    format!("{name}(..)")
-                                } else {
-                                    return None;
-                                }
-                            } else {
-                                format!("{term_name}")
-                            };
-                        Some(vec![TextEdit {
-                            range,
-                            new_text: format!("import {import_module_name} ({item_name})\n"),
-                        }])
-                    });
+                if let Some(label_details) = completion_item.label_details.as_mut() {
+                    label_details.detail = Some(format!(" (import {import_module_name})"));
                 }
+
+                completion_item.sort_text = Some(import_module_name.to_string());
+                completion_item.additional_text_edits =
+                    text_edit.map(|(range, new_text)| vec![TextEdit { range, new_text }]);
 
                 Some(completion_item)
             },
         ));
     } else if matches!(context.location, CompletionLocation::Type) {
-        let (import_parsed, _) = state.runtime.parsed(file_id);
-        let import_resolved = state.runtime.resolved(file_id);
-        let import_module_name = import_parsed.module_name().unwrap();
-        let insert_import_range = context.insert_import_range();
-
         items.extend(import_resolved.exports.iter_types().filter_map(
             |(type_name, type_file_id, type_item_id)| {
                 if !type_name.starts_with(name) {
