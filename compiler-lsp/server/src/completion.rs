@@ -350,12 +350,15 @@ fn collect_unqualified_suggestions(
                     CompletionResolveData::TermItem(term_file_id, term_item_id),
                 );
 
-                if let Some(import) = context.resolved.unqualified.iter().find(|import| {
-                    let Some((xf_id, xt_id, _)) = import.lookup_term(term_name) else {
-                        return false;
-                    };
-                    (xf_id, xt_id) == (term_file_id, term_item_id)
-                }) {
+                let import_containing_term = context.resolved.unqualified.iter().find(|import| {
+                    if let Some((f_id, t_id, _)) = import.lookup_term(term_name) {
+                        (f_id, t_id) == (term_file_id, term_item_id)
+                    } else {
+                        false
+                    }
+                });
+
+                if let Some(import) = import_containing_term {
                     let import = &context.indexed.source[import.id];
                     let root = context.parsed.syntax_node();
                     let import = import.to_node(&root);
@@ -468,12 +471,15 @@ fn collect_unqualified_suggestions(
                     CompletionResolveData::TypeItem(type_file_id, type_item_id),
                 );
 
-                if let Some(import) = context.resolved.unqualified.iter().find(|import| {
-                    let Some((xf_id, xt_id, _)) = import.lookup_type(type_name) else {
-                        return false;
-                    };
-                    (xf_id, xt_id) == (type_file_id, type_item_id)
-                }) {
+                let import_containing_type = context.resolved.unqualified.iter().find(|import| {
+                    if let Some((f_id, t_id, _)) = import.lookup_type(type_name) {
+                        (f_id, t_id) == (type_file_id, type_item_id)
+                    } else {
+                        false
+                    }
+                });
+
+                if let Some(import) = import_containing_type {
                     let import = &context.indexed.source[import.id];
                     let root = context.parsed.syntax_node();
                     let import = import.to_node(&root);
