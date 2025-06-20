@@ -246,11 +246,15 @@ fn collect_qualified_suggestions(
         return;
     };
 
+    let clean_prefix = prefix.trim_end_matches(".");
+    if context.resolved.qualified.contains_key(clean_prefix) {
+        return;
+    }
+    
     if context.filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
         return;
     }
 
-    let clean_prefix = prefix.trim_end_matches(".");
     let import_resolved = state.runtime.resolved(id);
     let insert_import_range = context.insert_import_range();
 
