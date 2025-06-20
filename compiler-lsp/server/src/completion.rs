@@ -264,19 +264,23 @@ fn collect_qualified_suggestions(
                 if context.filter.name_score(term_name) < ACCEPTANCE_THRESHOLD {
                     return None;
                 }
+
                 let edit = format!("{}{}", prefix, term_name);
+                let description = Some(module_name.to_string());
                 let mut completion_item = completion_item(
                     term_name,
                     edit,
                     CompletionItemKind::VALUE,
-                    Some(module_name.to_string()),
+                    description,
                     context.filter.range,
                     CompletionResolveData::TermItem(term_file_id, term_item_id),
                 );
+
                 if let Some(label_details) = completion_item.label_details.as_mut() {
                     label_details.detail =
                         Some(format!(" (import {module_name} as {clean_prefix})"));
                 }
+
                 completion_item.sort_text = Some(module_name.to_string());
                 completion_item.additional_text_edits = insert_import_range.map(|range| {
                     vec![TextEdit {
@@ -284,6 +288,7 @@ fn collect_qualified_suggestions(
                         new_text: format!("import {module_name} as {clean_prefix}\n"),
                     }]
                 });
+
                 Some(completion_item)
             },
         ));
@@ -293,19 +298,23 @@ fn collect_qualified_suggestions(
                 if context.filter.name_score(type_name) < ACCEPTANCE_THRESHOLD {
                     return None;
                 }
+
                 let edit = format!("{}{}", prefix, type_name);
+                let description = Some(module_name.to_string());
                 let mut completion_item = completion_item(
                     type_name,
                     edit,
                     CompletionItemKind::STRUCT,
-                    Some(module_name.to_string()),
+                    description,
                     context.filter.range,
                     CompletionResolveData::TypeItem(type_file_id, type_item_id),
                 );
+
                 if let Some(label_details) = completion_item.label_details.as_mut() {
                     label_details.detail =
                         Some(format!(" (import {module_name} as {clean_prefix})"));
                 }
+
                 completion_item.sort_text = Some(module_name.to_string());
                 completion_item.additional_text_edits = insert_import_range.map(|range| {
                     vec![TextEdit {
@@ -313,6 +322,7 @@ fn collect_qualified_suggestions(
                         new_text: format!("import {module_name} as {clean_prefix}\n"),
                     }]
                 });
+
                 Some(completion_item)
             },
         ))
@@ -436,13 +446,16 @@ fn collect_imports(
                 if context.filter.name_score(term_name) < ACCEPTANCE_THRESHOLD {
                     return None;
                 }
+
                 let (parsed, _) = state.runtime.parsed(term_file_id);
                 let description = parsed.module_name().map(|name| name.to_string());
+
                 let edit = if let Some(prefix) = &context.filter.prefix {
                     format!("{prefix}{term_name}")
                 } else {
                     format!("{term_name}")
                 };
+
                 Some(completion_item(
                     term_name,
                     edit,
@@ -459,16 +472,20 @@ fn collect_imports(
                 if matches!(type_kind, ImportKind::Hidden) {
                     return None;
                 }
+
                 if context.filter.name_score(type_name) < ACCEPTANCE_THRESHOLD {
                     return None;
                 }
+
                 let (parsed, _) = state.runtime.parsed(type_file_id);
                 let description = parsed.module_name().map(|name| name.to_string());
+
                 let edit = if let Some(prefix) = &context.filter.prefix {
                     format!("{prefix}{type_name}")
                 } else {
                     format!("{type_name}")
                 };
+
                 Some(completion_item(
                     type_name,
                     edit,
