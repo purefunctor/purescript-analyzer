@@ -5,12 +5,11 @@ pub(crate) mod resolve;
 use async_lsp::lsp_types::*;
 use context::{CompletionFilter, CompletionLocation};
 use files::FileId;
-use indexing::{FullIndexedModule, ImportKind, TypeItemKind};
+use indexing::{FullIndexedModule, ImportKind};
 use parsing::ParsedModule;
 use resolve::CompletionResolveData;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TokenAtOffset, ast::AstNode};
-use syntax::SyntaxNodePtr;
 
 use crate::{State, locate};
 
@@ -397,78 +396,24 @@ fn collect_unqualified_suggestions(
                     CompletionResolveData::TypeItem(type_file_id, type_item_id),
                 );
 
-                let import_containing_type = context.resolved.unqualified.iter().find(|import| {
-                    if let Some((f_id, t_id, _)) = import.lookup_type(type_name) {
-                        (f_id, t_id) == (type_file_id, type_item_id)
-                    } else {
-                        false
-                    }
-                });
+                let (import_text, import_range) = edit::type_import_item(
+                    state,
+                    context,
+                    &import_module_name,
+                    type_name,
+                    type_file_id,
+                    type_item_id,
+                );
 
-                if let Some(import) = import_containing_type {
-                    let import = &context.indexed.source[import.id];
-                    let root = context.parsed.syntax_node();
-                    let import = import.to_node(&root);
+                let text_edit = import_range.or(insert_import_range).zip(import_text);
 
-                    let mut buffer = String::default();
-                    if let Some(import_list) = import.import_list() {
-                        buffer.push('(');
-                        let import_indexed = state.runtime.indexed(type_file_id);
-                        let type_item = &import_indexed.items[type_item_id];
-                        let import_item = if matches!(type_item.kind, TypeItemKind::Class { .. }) {
-                            format!("class {type_name}")
-                        } else {
-                            format!("{type_name}")
-                        };
-                        buffer.push_str(&import_item);
-                        for child in import_list.children() {
-                            let text = child.syntax().text().to_string();
-                            if text.trim().contains(type_name.as_str()) {
-                                continue;
-                            }
-                            buffer.push_str(", ");
-                            buffer.push_str(&text);
-                        }
-                        buffer.push(')');
-                    }
-
-                    let range = {
-                        let node = import.syntax();
-                        let ptr = SyntaxNodePtr::new(node);
-                        let text_range = locate::text_range_after_annotation(&ptr, &root);
-                        text_range.map(|range| locate::text_range_to_range(context.content, range))
-                    };
-
-                    if let Some(label_details) = completion_item.label_details.as_mut() {
-                        label_details.detail = Some(format!(" (import {import_module_name})"));
-                    }
-                    completion_item.sort_text = Some(import_module_name.to_string());
-                    completion_item.additional_text_edits = range.map(|range| {
-                        vec![TextEdit {
-                            range,
-                            new_text: format!("import {import_module_name} {buffer}"),
-                        }]
-                    });
-                } else {
-                    if let Some(label_details) = completion_item.label_details.as_mut() {
-                        label_details.detail = Some(format!(" (import {import_module_name})"));
-                    }
-
-                    let import_indexed = state.runtime.indexed(type_file_id);
-                    let type_item = &import_indexed.items[type_item_id];
-                    completion_item.sort_text = Some(import_module_name.to_string());
-                    completion_item.additional_text_edits = insert_import_range.map(|range| {
-                        let import_item = if matches!(type_item.kind, TypeItemKind::Class { .. }) {
-                            format!("class {type_name}")
-                        } else {
-                            format!("{type_name}")
-                        };
-                        vec![TextEdit {
-                            range,
-                            new_text: format!("import {import_module_name} ({import_item})\n"),
-                        }]
-                    });
+                if let Some(label_details) = completion_item.label_details.as_mut() {
+                    label_details.detail = Some(format!(" (import {import_module_name})"));
                 }
+
+                completion_item.sort_text = Some(import_module_name.to_string());
+                completion_item.additional_text_edits =
+                    text_edit.map(|(range, new_text)| vec![TextEdit { range, new_text }]);
 
                 Some(completion_item)
             },
