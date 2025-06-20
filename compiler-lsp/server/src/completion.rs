@@ -250,7 +250,7 @@ fn collect_qualified_suggestions(
     if context.resolved.qualified.contains_key(clean_prefix) {
         return;
     }
-    
+
     if context.filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
         return;
     }
@@ -363,10 +363,27 @@ fn collect_unqualified_suggestions(
                     let mut buffer = String::default();
                     if let Some(import_list) = import.import_list() {
                         buffer.push('(');
-                        buffer.push_str(term_name);
+                        let import_indexed = state.runtime.indexed(term_file_id);
+                        let term_item = &import_indexed.items[term_item_id];
+                        let item_name =
+                            if matches!(term_item.kind, TermItemKind::Constructor { .. }) {
+                                let type_item_id = import_indexed
+                                    .pairs
+                                    .constructor_type(term_item_id)
+                                    .expect("invariant violated: unpaired data constructor");
+                                let type_item = &import_indexed.items[type_item_id];
+                                if let Some(name) = &type_item.name {
+                                    format!("{name}(..)")
+                                } else {
+                                    return None;
+                                }
+                            } else {
+                                format!("{term_name}")
+                            };
+                        buffer.push_str(&item_name);
                         for child in import_list.children() {
                             let text = child.syntax().text().to_string();
-                            if text.trim().contains(term_name.as_str()) {
+                            if text.trim().contains(&item_name) {
                                 continue;
                             }
                             buffer.push_str(", ");
