@@ -40,10 +40,14 @@ fn initialize(
     state: &mut State,
     p: extension::CustomInitializeParams,
 ) -> impl Future<Output = Result<InitializeResult, ResponseError>> + use<> {
-    state.root = p.initialize_params.workspace_folders.and_then(|folders| {
-        let folder = folders.first()?;
-        folder.uri.to_file_path().ok()
-    });
+    state.root = p
+        .initialize_params
+        .workspace_folders
+        .and_then(|folders| {
+            let folder = folders.first()?;
+            folder.uri.to_file_path().ok()
+        })
+        .or_else(|| env::current_dir().ok());
     async move {
         Ok(InitializeResult {
             server_info: None,
@@ -70,9 +74,9 @@ fn initialize(
 
 fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp::Result<()>> {
     let _span = tracing::info_span!("initialization").entered();
-    let cwd = env::current_dir().unwrap();
-    let root = state.root.as_ref().unwrap_or(&cwd);
-    if let Ok(files) = spago::source_files(root) {
+
+    let files = state.root.as_ref().and_then(|root| spago::source_files(root).ok());
+    if let Some(files) = files {
         tracing::info!("Loading {} files.", files.len());
         for file in &files {
             let uri = format!("file://{}", file.to_str().unwrap());
@@ -81,6 +85,7 @@ fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp
         }
         tracing::info!("Loaded {} files.", files.len());
     }
+
     ControlFlow::Continue(())
 }
 
