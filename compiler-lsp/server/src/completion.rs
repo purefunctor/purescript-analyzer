@@ -238,10 +238,12 @@ fn collect_unqualified(state: &mut State, context: &Context, items: &mut Vec<Com
 }
 
 fn collect_suggestions(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
-    for id in state.files.iter_id() {
-        if let Some(prefix) = &context.filter.prefix {
+    if let Some(prefix) = &context.filter.prefix {
+        for id in state.files.iter_id() {
             collect_qualified_suggestions(state, context, items, (prefix, id));
-        } else if let Some(name) = &context.filter.name {
+        }
+    } else if let Some(name) = &context.filter.name {
+        for id in state.files.iter_id() {
             collect_unqualified_suggestions(state, context, items, (name, id));
         }
     }
