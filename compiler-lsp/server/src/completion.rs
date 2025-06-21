@@ -59,6 +59,8 @@ pub(super) fn implementation(
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
 }
 
+const ACCEPTANCE_THRESHOLD: f64 = 0.5;
+
 struct Context<'a> {
     content: &'a str,
     parsed: &'a ParsedModule,
@@ -77,9 +79,19 @@ impl Context<'_> {
         position.character = 0;
         Some(Range::new(position, position))
     }
-}
 
-const ACCEPTANCE_THRESHOLD: f64 = 0.5;
+    fn allow_prefix(&self, name: &str) -> bool {
+        self.filter.prefix_score(name) >= ACCEPTANCE_THRESHOLD
+    }
+
+    fn allow_name(&self, name: &str) -> bool {
+        self.filter.name_score(name) >= ACCEPTANCE_THRESHOLD
+    }
+
+    fn allow_full(&self, name: &str) -> bool {
+        self.filter.full_score(name) >= ACCEPTANCE_THRESHOLD
+    }
+}
 
 fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
@@ -110,7 +122,7 @@ fn collect_module(state: &mut State, context: &Context, items: &mut Vec<Completi
             }
         }
 
-        if context.filter.full_score(&name) < ACCEPTANCE_THRESHOLD {
+        if context.allow_full(&name) {
             return None;
         }
 
@@ -167,7 +179,7 @@ fn collect_qualified(
 
 fn collect_unqualified(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
     items.extend(context.resolved.qualified.iter().filter_map(|(import_name, import)| {
-        if context.filter.name_score(import_name) < ACCEPTANCE_THRESHOLD {
+        if !context.allow_name(import_name) {
             return None;
         }
 
@@ -187,7 +199,7 @@ fn collect_unqualified(state: &mut State, context: &Context, items: &mut Vec<Com
     if matches!(context.location, CompletionLocation::Term) {
         items.extend(context.resolved.locals.iter_terms().filter_map(
             |(term_name, term_file_id, term_item_id)| {
-                if context.filter.name_score(term_name) < ACCEPTANCE_THRESHOLD {
+                if !context.allow_name(term_name) {
                     return None;
                 }
                 let description = Some("Local".to_string());
@@ -204,7 +216,7 @@ fn collect_unqualified(state: &mut State, context: &Context, items: &mut Vec<Com
     } else if matches!(context.location, CompletionLocation::Type) {
         items.extend(context.resolved.locals.iter_types().filter_map(
             |(type_name, type_file_id, type_item_id)| {
-                if context.filter.name_score(type_name) < ACCEPTANCE_THRESHOLD {
+                if !context.allow_name(type_name) {
                     return None;
                 }
                 let description = Some("Local".to_string());
@@ -251,7 +263,7 @@ fn collect_qualified_suggestions(
         return;
     }
 
-    if context.filter.prefix_score(&module_name) < ACCEPTANCE_THRESHOLD {
+    if !context.allow_prefix(&module_name) {
         return;
     }
 
@@ -261,7 +273,7 @@ fn collect_qualified_suggestions(
     if matches!(context.location, CompletionLocation::Term) {
         items.extend(import_resolved.exports.iter_terms().filter_map(
             |(term_name, term_file_id, term_item_id)| {
-                if context.filter.name_score(term_name) < ACCEPTANCE_THRESHOLD {
+                if !context.allow_name(term_name) {
                     return None;
                 }
 
@@ -295,7 +307,7 @@ fn collect_qualified_suggestions(
     } else if matches!(context.location, CompletionLocation::Type) {
         items.extend(import_resolved.exports.iter_types().filter_map(
             |(type_name, type_file_id, type_item_id)| {
-                if context.filter.name_score(type_name) < ACCEPTANCE_THRESHOLD {
+                if !context.allow_name(type_name) {
                     return None;
                 }
 
@@ -443,7 +455,7 @@ fn collect_imports(
                 if matches!(term_kind, ImportKind::Hidden) {
                     return None;
                 }
-                if context.filter.name_score(term_name) < ACCEPTANCE_THRESHOLD {
+                if !context.allow_name(term_name) {
                     return None;
                 }
 
@@ -473,7 +485,7 @@ fn collect_imports(
                     return None;
                 }
 
-                if context.filter.name_score(type_name) < ACCEPTANCE_THRESHOLD {
+                if !context.allow_name(type_name) {
                     return None;
                 }
 
