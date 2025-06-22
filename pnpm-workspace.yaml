@@ -1,4 +1,7 @@
 packages:
-  - 'docs'
-  - 'docs/src/wasm/pkg'
-  - 'tests-package-set'
+  - docs
+  - docs/src/wasm/pkg
+  - tests-package-set
+
+onlyBuiltDependencies:
+  - esbuild
