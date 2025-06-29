@@ -8,10 +8,10 @@ use resolving::ResolvedImport;
 use rowan::ast::AstNode;
 use smol_str::{SmolStrBuilder, ToSmolStr};
 
-use crate::{State, completion::Context, locate};
+use crate::{Compiler, completion::Context, locate};
 
 fn import_item<F, G>(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context,
     module_name: &str,
     file_id: FileId,
@@ -28,7 +28,7 @@ where
         .iter()
         .find_map(|import| lookup_fn(import).map(|kind| (import, kind)));
 
-    let import_indexed = state.runtime.indexed(file_id);
+    let import_indexed = compiler.runtime.indexed(file_id);
 
     if let Some((import, kind)) = import_containing_item {
         // Implicit or hidden imports are skipped.
@@ -85,7 +85,7 @@ where
 }
 
 pub(super) fn term_import_item(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context,
     module_name: &str,
     term_name: &str,
@@ -93,7 +93,7 @@ pub(super) fn term_import_item(
     term_id: TermItemId,
 ) -> (Option<String>, Option<Range>) {
     import_item(
-        state,
+        compiler,
         context,
         module_name,
         file_id,
@@ -107,7 +107,7 @@ pub(super) fn term_import_item(
 }
 
 pub(super) fn type_import_item(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context,
     module_name: &str,
     type_name: &str,
@@ -115,7 +115,7 @@ pub(super) fn type_import_item(
     type_id: TypeItemId,
 ) -> (Option<String>, Option<Range>) {
     import_item(
-        state,
+        compiler,
         context,
         module_name,
         file_id,

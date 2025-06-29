@@ -22,17 +22,21 @@ use tracing_subscriber::{
 
 pub struct State {
     pub client: ClientSocket,
+    pub compiler: Compiler,
+    pub root: Option<PathBuf>,
+}
+
+#[derive(Default)]
+pub struct Compiler {
     pub runtime: Runtime,
     pub files: Files,
-    pub root: Option<PathBuf>,
 }
 
 impl State {
     fn new(client: ClientSocket) -> State {
-        let runtime = Runtime::default();
-        let files = Files::default();
+        let compiler = Compiler::default();
         let root = None;
-        State { client, runtime, files, root }
+        State { client, compiler, root }
     }
 }
 
@@ -81,7 +85,7 @@ fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp
         for file in &files {
             let uri = format!("file://{}", file.to_str().unwrap());
             let text = fs::read_to_string(file).unwrap();
-            on_change(state, &uri, &text);
+            on_change(&mut state.compiler, &uri, &text);
         }
         tracing::info!("Loaded {} files.", files.len());
     }
@@ -95,7 +99,7 @@ fn definition(
 ) -> impl Future<Output = Result<Option<GotoDefinitionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = definition::implementation(state, uri, position);
+    let result = definition::implementation(&mut state.compiler, uri, position);
     async move { Result::Ok(result) }
 }
 
@@ -105,7 +109,7 @@ fn hover(
 ) -> impl Future<Output = Result<Option<Hover>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = hover::implementation(state, uri, position);
+    let result = hover::implementation(&mut state.compiler, uri, position);
     async move { Ok(result) }
 }
 
@@ -115,7 +119,7 @@ fn completion(
 ) -> impl Future<Output = Result<Option<CompletionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    let result = completion::implementation(state, uri, position);
+    let result = completion::implementation(&mut state.compiler, uri, position);
     async move { Ok(result) }
 }
 
@@ -123,7 +127,7 @@ fn resolve_completion_item(
     state: &mut State,
     item: CompletionItem,
 ) -> impl Future<Output = Result<CompletionItem, ResponseError>> + use<> {
-    let result = completion::resolve::implementation(state, item);
+    let result = completion::resolve::implementation(&mut state.compiler, item);
     async move { Ok(result) }
 }
 
@@ -134,19 +138,19 @@ fn did_change(
     let uri = p.text_document.uri.as_str();
     for content_change in &p.content_changes {
         let text = content_change.text.as_str();
-        on_change(state, uri, text);
+        on_change(&mut state.compiler, uri, text);
     }
     ControlFlow::Continue(())
 }
 
-fn on_change(state: &mut State, uri: &str, text: &str) {
-    let id = state.files.insert(uri, text);
-    let content = state.files.content(id);
+fn on_change(compiler: &mut Compiler, uri: &str, text: &str) {
+    let id = compiler.files.insert(uri, text);
+    let content = compiler.files.content(id);
 
-    state.runtime.set_content(id, content);
-    let (parsed, _) = state.runtime.parsed(id);
+    compiler.runtime.set_content(id, content);
+    let (parsed, _) = compiler.runtime.parsed(id);
     if let Some(name) = parsed.module_name() {
-        state.runtime.set_module_file(&name, id);
+        compiler.runtime.set_module_file(&name, id);
     }
 }
 

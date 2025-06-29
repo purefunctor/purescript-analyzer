@@ -7,25 +7,25 @@ use rowan::TextRange;
 use serde::{Deserialize, Serialize};
 use syntax::SyntaxNode;
 
-use crate::{State, hover};
+use crate::{Compiler, hover};
 
-pub(crate) fn implementation(state: &mut State, mut item: CompletionItem) -> CompletionItem {
+pub(crate) fn implementation(compiler: &mut Compiler, mut item: CompletionItem) -> CompletionItem {
     let Some(value) = mem::take(&mut item.data) else { return item };
     let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
 
     match resolve {
         CompletionResolveData::Import(f_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file(state, f_id) {
+            if let Some(ranges) = hover::annotation_syntax_file(compiler, f_id) {
                 resolve_documentation(ranges, &mut item);
             }
         }
         CompletionResolveData::TermItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_term(state, f_id, t_id) {
+            if let Some(ranges) = hover::annotation_syntax_file_term(compiler, f_id, t_id) {
                 resolve_documentation(ranges, &mut item);
             }
         }
         CompletionResolveData::TypeItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_type(state, f_id, t_id) {
+            if let Some(ranges) = hover::annotation_syntax_file_type(compiler, f_id, t_id) {
                 resolve_documentation(ranges, &mut item);
             }
         }

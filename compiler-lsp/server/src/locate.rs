@@ -11,7 +11,7 @@ use rowan::{
 };
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
-use super::State;
+use crate::Compiler;
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);
@@ -47,9 +47,9 @@ pub enum Located {
     Nothing,
 }
 
-pub fn locate(state: &mut State, id: FileId, position: Position) -> Located {
+pub fn locate(compiler: &mut Compiler, id: FileId, position: Position) -> Located {
     let (content, parsed, indexed, lowered) = {
-        let runtime = &mut state.runtime;
+        let runtime = &mut compiler.runtime;
         let content = runtime.content(id);
         let (parsed, _) = runtime.parsed(id);
         let indexed = runtime.indexed(id);

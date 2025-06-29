@@ -11,18 +11,18 @@ use resolve::CompletionResolveData;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TokenAtOffset, ast::AstNode};
 
-use crate::{State, locate};
+use crate::{Compiler, locate};
 
 pub(super) fn implementation(
-    state: &mut State,
+    compiler: &mut Compiler,
     uri: Url,
     position: Position,
 ) -> Option<CompletionResponse> {
     let uri = uri.as_str();
 
-    let id = state.files.id(uri)?;
-    let content = state.runtime.content(id);
-    let (parsed, _) = state.runtime.parsed(id);
+    let id = compiler.files.id(uri)?;
+    let content = compiler.runtime.content(id);
+    let (parsed, _) = compiler.runtime.parsed(id);
 
     let offset = locate::position_to_offset(&content, position)?;
 
@@ -38,8 +38,8 @@ pub(super) fn implementation(
     let filter = CompletionFilter::new(&content, &token);
     let location = CompletionLocation::new(&content, position);
 
-    let indexed = state.runtime.indexed(id);
-    let resolved = state.runtime.resolved(id);
+    let indexed = compiler.runtime.indexed(id);
+    let resolved = compiler.runtime.resolved(id);
 
     let _span = tracing::info_span!("completion_items").entered();
     tracing::info!("Collecting {:?} items", location);
@@ -53,7 +53,7 @@ pub(super) fn implementation(
         filter: &filter,
     };
 
-    let items = collect(state, &context);
+    let items = collect(compiler, &context);
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
@@ -93,22 +93,22 @@ impl Context<'_> {
     }
 }
 
-fn collect(state: &mut State, context: &Context) -> Vec<CompletionItem> {
+fn collect(compiler: &mut Compiler, context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
 
     if matches!(context.location, CompletionLocation::Module) {
-        collect_module(state, context, &mut items);
+        collect_module(compiler, context, &mut items);
     } else if matches!(context.location, CompletionLocation::Term | CompletionLocation::Type) {
-        collect_existing(state, context, &mut items);
-        collect_suggestions(state, context, &mut items);
+        collect_existing(compiler, context, &mut items);
+        collect_suggestions(compiler, context, &mut items);
     }
 
     items
 }
 
-fn collect_module(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
-    items.extend(state.files.iter_id().filter_map(|id| {
-        let (parsed, _) = state.runtime.parsed(id);
+fn collect_module(compiler: &mut Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
+    items.extend(compiler.files.iter_id().filter_map(|id| {
+        let (parsed, _) = compiler.runtime.parsed(id);
         let name = parsed.module_name()?;
 
         // Limit suggestions to exact prefix matches before fuzzy matching.
@@ -138,16 +138,16 @@ fn collect_module(state: &mut State, context: &Context, items: &mut Vec<Completi
     }));
 }
 
-fn collect_existing(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
+fn collect_existing(compiler: &mut Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
     if let Some(prefix) = &context.filter.prefix {
-        collect_qualified(state, context, items, prefix);
+        collect_qualified(compiler, context, items, prefix);
     } else {
-        collect_unqualified(state, context, items);
+        collect_unqualified(compiler, context, items);
     }
 }
 
 fn collect_qualified(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context<'_>,
     items: &mut Vec<CompletionItem>,
     prefix: &str,
@@ -155,7 +155,7 @@ fn collect_qualified(
     let module_name = prefix.trim_end_matches('.');
 
     if let Some(import) = context.resolved.qualified.get(module_name) {
-        collect_imports(state, context, import, items);
+        collect_imports(compiler, context, import, items);
     }
 
     items.extend(context.resolved.qualified.iter().filter_map(|(import_name, import)| {
@@ -163,7 +163,7 @@ fn collect_qualified(
             return None;
         }
 
-        let (parsed, _) = state.runtime.parsed(import.file);
+        let (parsed, _) = compiler.runtime.parsed(import.file);
         let description = parsed.module_name().map(|name| name.to_string());
 
         Some(completion_item(
@@ -177,13 +177,17 @@ fn collect_qualified(
     }));
 }
 
-fn collect_unqualified(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
+fn collect_unqualified(
+    compiler: &mut Compiler,
+    context: &Context,
+    items: &mut Vec<CompletionItem>,
+) {
     items.extend(context.resolved.qualified.iter().filter_map(|(import_name, import)| {
         if !context.allow_name(import_name) {
             return None;
         }
 
-        let (parsed, _) = state.runtime.parsed(import.file);
+        let (parsed, _) = compiler.runtime.parsed(import.file);
         let description = parsed.module_name().map(|name| name.to_string());
 
         Some(completion_item(
@@ -233,29 +237,33 @@ fn collect_unqualified(state: &mut State, context: &Context, items: &mut Vec<Com
     }
 
     for import in &context.resolved.unqualified {
-        collect_imports(state, context, import, items);
+        collect_imports(compiler, context, import, items);
     }
 }
 
-fn collect_suggestions(state: &mut State, context: &Context, items: &mut Vec<CompletionItem>) {
+fn collect_suggestions(
+    compiler: &mut Compiler,
+    context: &Context,
+    items: &mut Vec<CompletionItem>,
+) {
     if let Some(prefix) = &context.filter.prefix {
-        for id in state.files.iter_id() {
-            collect_qualified_suggestions(state, context, items, (prefix, id));
+        for id in compiler.files.iter_id() {
+            collect_qualified_suggestions(compiler, context, items, (prefix, id));
         }
     } else if let Some(name) = &context.filter.name {
-        for id in state.files.iter_id() {
-            collect_unqualified_suggestions(state, context, items, (name, id));
+        for id in compiler.files.iter_id() {
+            collect_unqualified_suggestions(compiler, context, items, (name, id));
         }
     }
 }
 
 fn collect_qualified_suggestions(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context,
     items: &mut Vec<CompletionItem>,
     (prefix, id): (&str, FileId),
 ) {
-    let (import_parsed, _) = state.runtime.parsed(id);
+    let (import_parsed, _) = compiler.runtime.parsed(id);
     let Some(module_name) = import_parsed.module_name() else {
         return;
     };
@@ -269,7 +277,7 @@ fn collect_qualified_suggestions(
         return;
     }
 
-    let import_resolved = state.runtime.resolved(id);
+    let import_resolved = compiler.runtime.resolved(id);
     let insert_import_range = context.insert_import_range();
 
     if matches!(context.location, CompletionLocation::Term) {
@@ -344,17 +352,17 @@ fn collect_qualified_suggestions(
 }
 
 fn collect_unqualified_suggestions(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context,
     items: &mut Vec<CompletionItem>,
     (name, file_id): (&str, FileId),
 ) {
-    let (import_parsed, _) = state.runtime.parsed(file_id);
+    let (import_parsed, _) = compiler.runtime.parsed(file_id);
     let Some(import_module_name) = import_parsed.module_name() else {
         return tracing::error!("Missing module name {:?}", file_id);
     };
 
-    let import_resolved = state.runtime.resolved(file_id);
+    let import_resolved = compiler.runtime.resolved(file_id);
     let insert_import_range = context.insert_import_range();
 
     if matches!(context.location, CompletionLocation::Term) {
@@ -379,7 +387,7 @@ fn collect_unqualified_suggestions(
                 );
 
                 let (import_text, import_range) = edit::term_import_item(
-                    state,
+                    compiler,
                     context,
                     &import_module_name,
                     term_name,
@@ -421,7 +429,7 @@ fn collect_unqualified_suggestions(
                 );
 
                 let (import_text, import_range) = edit::type_import_item(
-                    state,
+                    compiler,
                     context,
                     &import_module_name,
                     type_name,
@@ -446,7 +454,7 @@ fn collect_unqualified_suggestions(
 }
 
 fn collect_imports(
-    state: &mut State,
+    compiler: &mut Compiler,
     context: &Context,
     import: &ResolvedImport,
     items: &mut Vec<CompletionItem>,
@@ -461,7 +469,7 @@ fn collect_imports(
                     return None;
                 }
 
-                let (parsed, _) = state.runtime.parsed(term_file_id);
+                let (parsed, _) = compiler.runtime.parsed(term_file_id);
                 let description = parsed.module_name().map(|name| name.to_string());
 
                 let edit = if let Some(prefix) = &context.filter.prefix {
@@ -491,7 +499,7 @@ fn collect_imports(
                     return None;
                 }
 
-                let (parsed, _) = state.runtime.parsed(type_file_id);
+                let (parsed, _) = compiler.runtime.parsed(type_file_id);
                 let description = parsed.module_name().map(|name| name.to_string());
 
                 let edit = if let Some(prefix) = &context.filter.prefix {
