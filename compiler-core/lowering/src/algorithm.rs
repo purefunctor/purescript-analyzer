@@ -68,14 +68,14 @@ impl State {
         let parent = mem::take(&mut self.graph_scope);
         let bindings = FxHashMap::default();
         let id = self.graph.inner.alloc(GraphNode::Binder { parent, bindings });
-        mem::replace(&mut self.graph_scope, Some(id))
+        self.graph_scope.replace(id)
     }
 
     fn push_forall_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
         let bindings = FxHashMap::default();
         let id = self.graph.inner.alloc(GraphNode::Forall { parent, bindings });
-        mem::replace(&mut self.graph_scope, Some(id))
+        self.graph_scope.replace(id)
     }
 
     fn push_implicit_scope(&mut self) -> Option<GraphNodeId> {
@@ -83,7 +83,7 @@ impl State {
         let collecting = true;
         let bindings = ImplicitBindings::default();
         let id = self.graph.inner.alloc(GraphNode::Implicit { parent, collecting, bindings });
-        mem::replace(&mut self.graph_scope, Some(id))
+        self.graph_scope.replace(id)
     }
 
     fn finish_implicit_scope(&mut self) {

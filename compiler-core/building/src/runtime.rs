@@ -14,7 +14,7 @@
 //!
 //! [Build systems à la carte: Theory and practice]: https://www.cambridge.org/core/journals/journal-of-functional-programming/article/build-systems-a-la-carte-theory-and-practice/097CE52C750E69BD16B78C318754C7A4
 
-use std::{mem, sync::Arc};
+use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -89,7 +89,7 @@ impl Runtime {
         compute: impl Fn(&mut Runtime) -> T,
         set_storage: impl Fn(&mut Runtime, T),
     ) -> T {
-        let parent = mem::replace(&mut self.parent, Some(key));
+        let parent = self.parent.replace(key);
         let value = compute(self);
         self.parent = parent;
 

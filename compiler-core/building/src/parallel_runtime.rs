@@ -68,7 +68,6 @@
 
 use std::{
     cell::RefCell,
-    mem,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -155,7 +154,7 @@ struct LocalState {
 
 impl LocalState {
     fn replace_active(&mut self, key: QueryKey) -> Option<QueryKey> {
-        mem::replace(&mut self.active, Some(key))
+        self.active.replace(key)
     }
 
     fn record_dependency(&mut self, key: QueryKey) {
