@@ -146,11 +146,14 @@ pub fn text_range_after_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Op
     let mut children = node.children_with_tokens().peekable();
     children.next_if(|child| matches!(child.kind(), SyntaxKind::Annotation));
 
-    let range = children.next()?.text_range();
-    let start = range.start();
-    let end = children.last().map_or(range.end(), |child| child.text_range().end());
+    let first = children.peek().map(|child| child.text_range());
+    let last = children.last().map(|child| child.text_range());
 
-    Some(TextRange::new(start, end))
+    first.zip(last).map(|(start, end)| {
+        let start = start.start();
+        let end = end.end();
+        TextRange::new(start, end)
+    })
 }
 
 pub fn annotation_syntax_range(
@@ -161,15 +164,15 @@ pub fn annotation_syntax_range(
     let mut children = node.children_with_tokens().peekable();
 
     let annotation = children
-        .next_if(|node| matches!(node.kind(), SyntaxKind::Annotation))
-        .map(|node| node.text_range());
+        .next_if(|child| matches!(child.kind(), SyntaxKind::Annotation))
+        .map(|child| child.text_range());
 
-    let first = children.next();
-    let last = children.last();
+    let first = children.peek().map(|child| child.text_range());
+    let last = children.last().map(|child| child.text_range());
 
     let syntax = first.zip(last).map(|(start, end)| {
-        let start = start.text_range().start();
-        let end = end.text_range().end();
+        let start = start.start();
+        let end = end.end();
         TextRange::new(start, end)
     });
 
