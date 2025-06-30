@@ -10,14 +10,12 @@ use glob::glob;
 use indexing::ImportKind;
 use lowering::ResolutionDomain;
 use resolving::FullResolvedModule;
-use rustc_hash::FxHashMap;
-use smol_str::{SmolStr, SmolStrBuilder};
+use smol_str::SmolStrBuilder;
 
 #[derive(Default)]
 pub struct IntegrationTestCompiler {
     pub files: Files,
     pub runtime: Runtime,
-    file_module: FxHashMap<FileId, SmolStr>,
 }
 
 impl IntegrationTestCompiler {
@@ -42,7 +40,6 @@ impl IntegrationTestCompiler {
             }
             let name = builder.finish();
             self.runtime.set_module_file(&name, id);
-            self.file_module.insert(id, name);
         }
     }
 }
@@ -155,7 +152,8 @@ pub fn report_deferred_resolution(compiler: &mut IntegrationTestCompiler, id: Fi
         match deferred.domain {
             ResolutionDomain::Term => {
                 let Some((f_id, t_id)) = resolved.lookup_term(prefix, name) else { continue };
-                let module = compiler.file_module.get(&f_id).unwrap();
+                let (module, _) = compiler.runtime.parsed(f_id);
+                let module = module.module_name().unwrap();
 
                 let indexed = compiler.runtime.indexed(f_id);
                 let item = &indexed.items[t_id];
@@ -165,7 +163,8 @@ pub fn report_deferred_resolution(compiler: &mut IntegrationTestCompiler, id: Fi
             }
             ResolutionDomain::Type => {
                 let Some((f_id, t_id)) = resolved.lookup_type(prefix, name) else { continue };
-                let module = compiler.file_module.get(&f_id).unwrap();
+                let (module, _) = compiler.runtime.parsed(f_id);
+                let module = module.module_name().unwrap();
 
                 let indexed = compiler.runtime.indexed(f_id);
                 let item = &indexed.items[t_id];
