@@ -19,3 +19,15 @@ letBindings =
   in
     [life, life]
 --    @     @
+
+data Maybe a = Just a | Nothing
+
+just :: Maybe Int
+--       @
+just = Just 42
+--      @
+
+nothing :: Maybe Int
+--          @
+nothing = Nothing
+--         @

@@ -172,3 +172,119 @@ Scalar(
         },
     },
 )
+
+
+GotoDefinition at Position { line: 24, character: 9 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 22,
+                character: 0,
+            },
+            end: Position {
+                line: 22,
+                character: 31,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 26, character: 8 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 22,
+                character: 15,
+            },
+            end: Position {
+                line: 22,
+                character: 21,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 29, character: 12 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 22,
+                character: 0,
+            },
+            end: Position {
+                line: 22,
+                character: 31,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 31, character: 11 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 22,
+                character: 24,
+            },
+            end: Position {
+                line: 22,
+                character: 24,
+            },
+        },
+    },
+)
