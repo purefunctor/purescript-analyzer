@@ -116,7 +116,7 @@ Scalar(
 )
 
 
-GotoDefinition at Position { line: 17, character: 6 }
+GotoDefinition at Position { line: 19, character: 6 }
 
 Scalar(
     Location {
@@ -133,11 +133,11 @@ Scalar(
         },
         range: Range {
             start: Position {
-                line: 15,
+                line: 16,
                 character: 4,
             },
             end: Position {
-                line: 15,
+                line: 17,
                 character: 13,
             },
         },
@@ -145,7 +145,7 @@ Scalar(
 )
 
 
-GotoDefinition at Position { line: 17, character: 12 }
+GotoDefinition at Position { line: 19, character: 12 }
 
 Scalar(
     Location {
@@ -162,11 +162,11 @@ Scalar(
         },
         range: Range {
             start: Position {
-                line: 15,
+                line: 16,
                 character: 4,
             },
             end: Position {
-                line: 15,
+                line: 17,
                 character: 13,
             },
         },
