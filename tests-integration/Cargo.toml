@@ -14,6 +14,7 @@ lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
 parsing = { version = "0.1.0", path = "../compiler-core/parsing" }
 resolving = { version = "0.1.0", path = "../compiler-core/resolving" }
 rustc-hash = "2.1.1"
+server = { version = "0.1.0", path = "../compiler-lsp/server" }
 smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../compiler-core/syntax" }
 

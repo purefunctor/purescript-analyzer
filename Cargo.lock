@@ -1519,6 +1519,7 @@ dependencies = [
  "parsing",
  "resolving",
  "rustc-hash 2.1.1",
+ "server",
  "smol_str",
  "syntax",
 ]

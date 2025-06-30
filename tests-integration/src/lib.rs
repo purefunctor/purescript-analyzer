@@ -4,43 +4,35 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use building::Runtime;
-use files::{FileId, Files};
+use files::FileId;
 use glob::glob;
 use indexing::ImportKind;
 use lowering::ResolutionDomain;
 use resolving::FullResolvedModule;
+use server::Compiler;
 use smol_str::SmolStrBuilder;
 
-#[derive(Default)]
-pub struct IntegrationTestCompiler {
-    pub files: Files,
-    pub runtime: Runtime,
-}
+fn load_file(compiler: &mut Compiler, path: &Path) {
+    let uri = format!("file://{}", path.to_str().unwrap());
+    let file = fs::read_to_string(path).unwrap();
 
-impl IntegrationTestCompiler {
-    fn load_file(&mut self, path: &Path) {
-        let uri = format!("file://{}", path.to_str().unwrap());
-        let file = fs::read_to_string(path).unwrap();
+    let id = compiler.files.insert(uri, file);
+    let content = compiler.files.content(id);
 
-        let id = self.files.insert(uri, file);
-        let content = self.files.content(id);
+    compiler.runtime.set_content(id, content);
+    let (parsed, _) = compiler.runtime.parsed(id);
 
-        self.runtime.set_content(id, content);
-        let (parsed, _) = self.runtime.parsed(id);
-
-        let cst = parsed.cst();
-        if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
-            let mut builder = SmolStrBuilder::default();
-            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-                builder.push_str(token.text());
-            }
-            if let Some(token) = cst.name_token() {
-                builder.push_str(token.text());
-            }
-            let name = builder.finish();
-            self.runtime.set_module_file(&name, id);
+    let cst = parsed.cst();
+    if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
+        let mut builder = SmolStrBuilder::default();
+        if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
+            builder.push_str(token.text());
         }
+        if let Some(token) = cst.name_token() {
+            builder.push_str(token.text());
+        }
+        let name = builder.finish();
+        compiler.runtime.set_module_file(&name, id);
     }
 }
 
@@ -51,10 +43,10 @@ fn load_folder(folder: &Path) -> impl Iterator<Item = PathBuf> {
     glob(&pattern).unwrap().filter_map(Result::ok)
 }
 
-pub fn load_compiler(folder: &Path) -> IntegrationTestCompiler {
-    let mut compiler = IntegrationTestCompiler::default();
+pub fn load_compiler(folder: &Path) -> Compiler {
+    let mut compiler = Compiler::default();
     load_folder(folder).for_each(|path| {
-        compiler.load_file(&path);
+        load_file(&mut compiler, &path);
     });
     compiler
 }
@@ -140,7 +132,7 @@ pub fn report_resolved(name: &str, resolved: &FullResolvedModule) -> String {
     buffer
 }
 
-pub fn report_deferred_resolution(compiler: &mut IntegrationTestCompiler, id: FileId) -> String {
+pub fn report_deferred_resolution(compiler: &mut Compiler, id: FileId) -> String {
     let resolved = compiler.runtime.resolved(id);
     let lowered = compiler.runtime.lowered(id);
 
