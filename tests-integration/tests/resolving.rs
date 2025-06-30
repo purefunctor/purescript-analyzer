@@ -8,7 +8,7 @@ fn test_001_local_resolution_explicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("Explicit", &resolved);
+    let report = tests_integration::core::report_resolved("Explicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -20,7 +20,7 @@ fn test_001_local_resolution_explicit_self() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ExplicitSelf", &resolved);
+    let report = tests_integration::core::report_resolved("ExplicitSelf", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -32,7 +32,7 @@ fn test_001_local_resolution_implicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("Implicit", &resolved);
+    let report = tests_integration::core::report_resolved("Implicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -44,7 +44,7 @@ fn test_002_import_resolution_import_explicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportExplicit", &resolved);
+    let report = tests_integration::core::report_resolved("ImportExplicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -56,7 +56,7 @@ fn test_002_import_resolution_import_for_local_only() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportForLocalOnly", &resolved);
+    let report = tests_integration::core::report_resolved("ImportForLocalOnly", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -68,7 +68,7 @@ fn test_002_import_resolution_import_hidden_constructor() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportHiddenConstructor", &resolved);
+    let report = tests_integration::core::report_resolved("ImportHiddenConstructor", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -80,7 +80,7 @@ fn test_002_import_resolution_import_qualified_explicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportQualifiedExplicit", &resolved);
+    let report = tests_integration::core::report_resolved("ImportQualifiedExplicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -92,7 +92,7 @@ fn test_002_import_resolution_import_qualified_hiding() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportQualifiedHiding", &resolved);
+    let report = tests_integration::core::report_resolved("ImportQualifiedHiding", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -104,7 +104,7 @@ fn test_002_import_resolution_import_qualified_implicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportQualifiedImplicit", &resolved);
+    let report = tests_integration::core::report_resolved("ImportQualifiedImplicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -116,7 +116,7 @@ fn test_002_import_resolution_import_unqualified_explicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportUnqualifiedExplicit", &resolved);
+    let report = tests_integration::core::report_resolved("ImportUnqualifiedExplicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -128,7 +128,7 @@ fn test_002_import_resolution_import_unqualified_hiding() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportUnqualifiedHiding", &resolved);
+    let report = tests_integration::core::report_resolved("ImportUnqualifiedHiding", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -140,7 +140,7 @@ fn test_002_import_resolution_import_unqualified_implicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("ImportUnqualifiedImplicit", &resolved);
+    let report = tests_integration::core::report_resolved("ImportUnqualifiedImplicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -152,7 +152,7 @@ fn test_002_import_resolution_library() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("Library", &resolved);
+    let report = tests_integration::core::report_resolved("Library", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -164,7 +164,7 @@ fn test_002_import_resolution_library_explicit() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("LibraryExplicit", &resolved);
+    let report = tests_integration::core::report_resolved("LibraryExplicit", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -176,7 +176,7 @@ fn test_003_import_errors_duplicate_local() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("DuplicateLocal", &resolved);
+    let report = tests_integration::core::report_resolved("DuplicateLocal", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -188,7 +188,7 @@ fn test_003_import_errors_duplicate_qualified_import() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("DuplicateQualifiedImport", &resolved);
+    let report = tests_integration::core::report_resolved("DuplicateQualifiedImport", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -200,7 +200,7 @@ fn test_003_import_errors_invalid_constructor() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("InvalidConstructor", &resolved);
+    let report = tests_integration::core::report_resolved("InvalidConstructor", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -212,7 +212,7 @@ fn test_003_import_errors_invalid_import() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("InvalidImport", &resolved);
+    let report = tests_integration::core::report_resolved("InvalidImport", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -224,7 +224,7 @@ fn test_003_import_errors_library_a() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("LibraryA", &resolved);
+    let report = tests_integration::core::report_resolved("LibraryA", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -236,7 +236,7 @@ fn test_003_import_errors_library_b() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("LibraryB", &resolved);
+    let report = tests_integration::core::report_resolved("LibraryB", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -248,7 +248,7 @@ fn test_004_import_re_exported_constructor_internal() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("Internal", &resolved);
+    let report = tests_integration::core::report_resolved("Internal", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -260,7 +260,7 @@ fn test_004_import_re_exported_constructor_library() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("Library", &resolved);
+    let report = tests_integration::core::report_resolved("Library", &resolved);
     insta::assert_snapshot!(report);
 }
 
@@ -272,6 +272,6 @@ fn test_004_import_re_exported_constructor_main() {
         return;
     };
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("Main", &resolved);
+    let report = tests_integration::core::report_resolved("Main", &resolved);
     insta::assert_snapshot!(report);
 }

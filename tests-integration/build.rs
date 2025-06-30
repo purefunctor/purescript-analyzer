@@ -57,7 +57,7 @@ fn test_{}_{}() {{
         return;
     }};
     let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::report_resolved("{}", &resolved);
+    let report = tests_integration::core::report_resolved("{}", &resolved);
     insta::assert_snapshot!(report);
 }}"#,
                 folder_name, test_name, folder_name, file_name, file_name
@@ -105,7 +105,7 @@ fn test_{}_{}() {{
     let Some(id) = compiler.runtime.module_file("{}") else {{ 
         return;
     }};
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }}"#,
                 folder_name, test_name, folder_name, file_name

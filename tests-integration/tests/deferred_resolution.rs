@@ -7,7 +7,7 @@ fn test_001_local_resolution_main() {
     let Some(id) = compiler.runtime.module_file("Main") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
 
@@ -18,7 +18,7 @@ fn test_002_import_resolution_explicit_lib() {
     let Some(id) = compiler.runtime.module_file("ExplicitLib") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
 
@@ -29,7 +29,7 @@ fn test_002_import_resolution_implicit_lib() {
     let Some(id) = compiler.runtime.module_file("ImplicitLib") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
 
@@ -40,7 +40,7 @@ fn test_002_import_resolution_main() {
     let Some(id) = compiler.runtime.module_file("Main") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
 
@@ -51,7 +51,7 @@ fn test_002_import_resolution_main_qualified() {
     let Some(id) = compiler.runtime.module_file("MainQualified") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
 
@@ -62,7 +62,7 @@ fn test_002_import_resolution_main_qualified_explicit() {
     let Some(id) = compiler.runtime.module_file("MainQualifiedExplicit") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
 
@@ -73,6 +73,6 @@ fn test_002_import_resolution_main_qualified_explicit_merged() {
     let Some(id) = compiler.runtime.module_file("MainQualifiedExplicitMerged") else { 
         return;
     };
-    let report = tests_integration::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
