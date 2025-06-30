@@ -29,6 +29,8 @@ Scalar(
         },
     },
 )
+
+
 GotoDefinition at Position { line: 10, character: 28 }
 
 Scalar(
@@ -51,7 +53,7 @@ Scalar(
             },
             end: Position {
                 line: 10,
-                character: 10,
+                character: 13,
             },
         },
     },
@@ -80,7 +82,7 @@ Scalar(
             },
             end: Position {
                 line: 10,
-                character: 14,
+                character: 17,
             },
         },
     },
@@ -109,7 +111,7 @@ Scalar(
             },
             end: Position {
                 line: 10,
-                character: 18,
+                character: 23,
             },
         },
     },
@@ -283,7 +285,7 @@ Scalar(
             },
             end: Position {
                 line: 22,
-                character: 24,
+                character: 31,
             },
         },
     },
@@ -341,7 +343,7 @@ Scalar(
             },
             end: Position {
                 line: 22,
-                character: 24,
+                character: 31,
             },
         },
     },

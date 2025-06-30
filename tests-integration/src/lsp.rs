@@ -60,12 +60,12 @@ pub fn report(compiler: &mut Compiler, id: FileId) -> String {
     for (index, (position, cursor)) in cursors.iter().enumerate() {
         let uri = uri.clone();
 
-        writeln!(result, "{cursor:#?} at {position:?}\n").unwrap();
-        dispatch_cursor(&mut result, compiler, *position, *cursor, uri);
-
         if index > 0 {
             writeln!(result, "\n").unwrap();
         }
+
+        writeln!(result, "{cursor:#?} at {position:?}\n").unwrap();
+        dispatch_cursor(&mut result, compiler, *position, *cursor, uri);
     }
 
     cleanup_report(result)

@@ -146,8 +146,9 @@ pub fn text_range_after_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Op
     let mut children = node.children_with_tokens().peekable();
     children.next_if(|child| matches!(child.kind(), SyntaxKind::Annotation));
 
-    let start = children.next()?.text_range().start();
-    let end = children.last().map_or(start, |child| child.text_range().end());
+    let range = children.next()?.text_range();
+    let start = range.start();
+    let end = children.last().map_or(range.end(), |child| child.text_range().end());
 
     Some(TextRange::new(start, end))
 }
