@@ -31,3 +31,12 @@ nothing :: Maybe Int
 --          @
 nothing = Nothing
 --         @
+
+fromMaybe :: forall a. a -> Maybe a -> a
+fromMaybe default = case _ of
+  Just value -> 
+-- @
+    value
+  Nothing -> 
+-- @
+    default
