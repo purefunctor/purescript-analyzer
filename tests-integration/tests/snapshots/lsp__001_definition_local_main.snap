@@ -1,0 +1,174 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+GotoDefinition at Position { line: 6, character: 6 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 2,
+                character: 0,
+            },
+            end: Position {
+                line: 3,
+                character: 9,
+            },
+        },
+    },
+)
+GotoDefinition at Position { line: 10, character: 28 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 10,
+                character: 10,
+            },
+            end: Position {
+                line: 10,
+                character: 10,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 10, character: 33 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 10,
+                character: 14,
+            },
+            end: Position {
+                line: 10,
+                character: 14,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 10, character: 39 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 10,
+                character: 18,
+            },
+            end: Position {
+                line: 10,
+                character: 18,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 17, character: 6 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 15,
+                character: 4,
+            },
+            end: Position {
+                line: 15,
+                character: 13,
+            },
+        },
+    },
+)
+
+
+GotoDefinition at Position { line: 17, character: 12 }
+
+Scalar(
+    Location {
+        uri: Url {
+            scheme: "file",
+            cannot_be_a_base: false,
+            username: "",
+            password: None,
+            host: None,
+            port: None,
+            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
+            query: None,
+            fragment: None,
+        },
+        range: Range {
+            start: Position {
+                line: 15,
+                character: 4,
+            },
+            end: Position {
+                line: 15,
+                character: 13,
+            },
+        },
+    },
+)
