@@ -22,7 +22,7 @@ use syntax::{SyntaxKind, SyntaxNode, cst};
 
 use crate::{Compiler, locate};
 
-pub(super) fn implementation(
+pub fn implementation(
     compiler: &mut Compiler,
     uri: Url,
     position: Position,

@@ -8,14 +8,16 @@ use server::Compiler;
 #[derive(Debug, Clone, Copy)]
 enum CursorKind {
     GotoDefinition,
+    Hover,
 }
 
 impl CursorKind {
-    const CHARACTERS: &[char] = &['@'];
+    const CHARACTERS: &[char] = &['@', '$'];
 
     fn parse(text: &str) -> Option<CursorKind> {
         match text {
             "@" => Some(CursorKind::GotoDefinition),
+            "$" => Some(CursorKind::Hover),
             _ => None,
         }
     }
@@ -41,6 +43,7 @@ fn extract_cursors(content: &str) -> Vec<(Position, CursorKind)> {
         let position = Position::new(line, character);
         let Some(kind) = CursorKind::parse(text) else { continue };
 
+        dbg!(kind);
         cursors.push((position, kind));
     }
 
@@ -81,6 +84,11 @@ fn dispatch_cursor(
     match cursor {
         CursorKind::GotoDefinition => {
             if let Some(response) = server::definition::implementation(compiler, uri, position) {
+                writeln!(result, "{response:#?}").unwrap();
+            }
+        }
+        CursorKind::Hover => {
+            if let Some(response) = server::hover::implementation(compiler, uri, position) {
                 writeln!(result, "{response:#?}").unwrap();
             }
         }
