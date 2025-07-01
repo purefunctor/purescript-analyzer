@@ -25,6 +25,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: docs
 
       - name: Install Rust toolchain
         run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
