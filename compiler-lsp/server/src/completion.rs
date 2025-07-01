@@ -1,6 +1,6 @@
 pub(crate) mod context;
 pub(crate) mod edit;
-pub(crate) mod resolve;
+pub mod resolve;
 
 use async_lsp::lsp_types::*;
 use context::{CompletionFilter, CompletionLocation};
@@ -13,7 +13,7 @@ use rowan::{TokenAtOffset, ast::AstNode};
 
 use crate::{Compiler, locate};
 
-pub(super) fn implementation(
+pub fn implementation(
     compiler: &mut Compiler,
     uri: Url,
     position: Position,

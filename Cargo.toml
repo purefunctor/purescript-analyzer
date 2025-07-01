@@ -1,5 +1,6 @@
 [workspace]
-members = [
+members = [ 
+  "compiler-bin",
   "compiler-core/*",
   "compiler-lsp/*",
   "docs/src/wasm",

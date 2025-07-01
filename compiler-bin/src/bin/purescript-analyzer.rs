@@ -1,4 +1,4 @@
 #[tokio::main]
 async fn main() {
-    server::main().await
+    compiler_bin::main().await
 }

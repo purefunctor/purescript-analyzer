@@ -18,3 +18,4 @@ impl request::Request for CustomInitialize {
 
     const METHOD: &'static str = request::Initialize::METHOD;
 }
+
