@@ -120,6 +120,7 @@ fn definition_import(
     };
 
     let goto_term = |compiler: &mut Compiler, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
@@ -146,6 +147,7 @@ fn definition_import(
     };
 
     let goto_type = |compiler: &mut Compiler, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
@@ -187,8 +189,16 @@ fn definition_import(
             let name = token.text();
             goto_type(compiler, name)
         }
-        cst::ImportItem::ImportOperator(_) => None,
-        cst::ImportItem::ImportTypeOperator(_) => None,
+        cst::ImportItem::ImportOperator(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            goto_term(compiler, name)
+        }
+        cst::ImportItem::ImportTypeOperator(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            goto_type(compiler, name)
+        }
     }
 }
 

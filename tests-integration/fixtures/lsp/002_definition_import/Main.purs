@@ -1,7 +1,7 @@
 module Main where
 
 import Lib (life, Maybe(..), (+),  type (++))
---      @    @     @
+--      @    @     @          @          @
 
 ref :: Int
 ref = life
