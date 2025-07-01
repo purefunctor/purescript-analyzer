@@ -45,6 +45,7 @@ pub fn implementation(
     tracing::info!("Collecting {:?} items", location);
 
     let context = Context {
+        id,
         content: &content,
         parsed: &parsed,
         indexed: &indexed,
@@ -62,6 +63,7 @@ pub fn implementation(
 const ACCEPTANCE_THRESHOLD: f64 = 0.5;
 
 struct Context<'a> {
+    id: FileId,
     content: &'a str,
     parsed: &'a ParsedModule,
     indexed: &'a FullIndexedModule,
@@ -248,10 +250,16 @@ fn collect_suggestions(
 ) {
     if let Some(prefix) = &context.filter.prefix {
         for id in compiler.files.iter_id() {
+            if id == context.id {
+                continue;
+            }
             collect_qualified_suggestions(compiler, context, items, (prefix, id));
         }
     } else if let Some(name) = &context.filter.name {
         for id in compiler.files.iter_id() {
+            if id == context.id {
+                continue;
+            }
             collect_unqualified_suggestions(compiler, context, items, (name, id));
         }
     }
