@@ -43,7 +43,6 @@ fn extract_cursors(content: &str) -> Vec<(Position, CursorKind)> {
         let position = Position::new(line, character);
         let Some(kind) = CursorKind::parse(text) else { continue };
 
-        dbg!(kind);
         cursors.push((position, kind));
     }
 
