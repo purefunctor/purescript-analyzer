@@ -104,7 +104,7 @@ fn generate_deferred_resolution() {
 #[test]
 fn test_{}_{}() {{
     let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{}"));
-    let Some(id) = compiler.runtime.module_file("{}") else {{ 
+    let Some(id) = compiler.runtime.module_file("{}") else {{
         return;
     }};
     let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
@@ -141,7 +141,7 @@ fn generate_lsp() {
 #[test]
 fn test_{}_main() {{
     let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{}"));
-    let Some(id) = compiler.runtime.module_file("Main") else {{ 
+    let Some(id) = compiler.runtime.module_file("Main") else {{
         return;
     }};
     let report = tests_integration::lsp::report(&mut compiler, id);
