@@ -1,6 +1,6 @@
 module Main where
 
-import Lib (life, Maybe(..), (+))
+import Lib (life, Maybe(..), (+),  type (++))
 --      @    @     @
 
 ref :: Int
@@ -24,3 +24,6 @@ opName = (+)
 opChain :: Int
 opChain = 9 + 10
 --          @
+
+type TypeOpChain = Int ++ Int
+--                     @

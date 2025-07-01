@@ -40,6 +40,7 @@ pub(super) fn implementation(
         locate::Located::Binder(b_id) => hover_binder(compiler, f_id, b_id),
         locate::Located::Expression(e_id) => hover_expression(compiler, f_id, e_id),
         locate::Located::Type(t_id) => hover_type(compiler, f_id, t_id),
+        locate::Located::OperatorInChain(_, _) => None,
         locate::Located::Nothing => None,
     }
 }

@@ -4,11 +4,12 @@ use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
-use lowering::{BinderId, ExpressionId, FullLoweredModule, TypeId};
+use lowering::{BinderId, ExpressionId, FullLoweredModule, ResolutionDomain, TypeId};
 use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
 };
+use smol_str::SmolStr;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 use crate::Compiler;
@@ -44,6 +45,7 @@ pub enum Located {
     Binder(BinderId),
     Expression(ExpressionId),
     Type(TypeId),
+    OperatorInChain(ResolutionDomain, SmolStr),
     Nothing,
 }
 
@@ -108,6 +110,24 @@ fn locate_node(
         let ptr = ptr.cast()?;
         let id = lowered.source.lookup_ty(&ptr)?;
         Some(Located::Type(id))
+    } else if cst::QualifiedName::can_cast(kind) {
+        let domain = node.ancestors().find_map(|node| {
+            let kind = node.kind();
+            if cst::Expression::can_cast(kind) {
+                Some(ResolutionDomain::Term)
+            } else if cst::Type::can_cast(kind) {
+                Some(ResolutionDomain::Type)
+            } else {
+                None
+            }
+        })?;
+
+        let node = cst::QualifiedName::cast(node)?;
+        let token = node.operator()?;
+        let text = token.text();
+        let text = SmolStr::new(text);
+
+        Some(Located::OperatorInChain(domain, text))
     } else {
         None
     }

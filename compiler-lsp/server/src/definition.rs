@@ -7,7 +7,7 @@ use lowering::{
 };
 use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
-use smol_str::SmolStrBuilder;
+use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::cst;
 
 use crate::{Compiler, locate};
@@ -29,6 +29,9 @@ pub fn implementation(
         locate::Located::Binder(b_id) => definition_binder(compiler, f_id, b_id),
         locate::Located::Expression(e_id) => definition_expression(compiler, uri, f_id, e_id),
         locate::Located::Type(t_id) => definition_type(compiler, uri, f_id, t_id),
+        locate::Located::OperatorInChain(domain, text) => {
+            definition_nominal(compiler, f_id, domain, text)
+        }
         locate::Located::Nothing => None,
     }
 }
@@ -375,4 +378,29 @@ fn definition_deferred(
             Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }
     }
+}
+
+/// Convenience function that converts name-only references into
+/// [`DeferredResolutionId`] to be used with [`definition_deferred`].
+///
+/// This is particularly useful for things like operators which
+/// we don't currently track during [`lowering`].
+fn definition_nominal(
+    compiler: &mut Compiler,
+    f_id: FileId,
+    domain: ResolutionDomain,
+    text: SmolStr,
+) -> Option<GotoDefinitionResponse> {
+    let resolved = compiler.runtime.resolved(f_id);
+    let lowered = compiler.runtime.lowered(f_id);
+
+    let id = lowered.graph.deferred().find_map(|(id, deferred)| {
+        if deferred.domain == domain && deferred.name.as_ref() == Some(&text) {
+            Some(id)
+        } else {
+            None
+        }
+    })?;
+
+    definition_deferred(compiler, &resolved, &lowered, id)
 }
