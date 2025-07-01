@@ -190,9 +190,9 @@ impl CompletionLocation {
             TokenAtOffset::Single(token) => token,
             TokenAtOffset::Between(left, right) => {
                 if left.text().contains(COMPLETION_MARKER) {
-                    right
-                } else if right.text().contains(COMPLETION_MARKER) {
                     left
+                } else if right.text().contains(COMPLETION_MARKER) {
+                    right
                 } else {
                     return CompletionLocation::General;
                 }
