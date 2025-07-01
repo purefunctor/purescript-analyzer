@@ -1,0 +1,140 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Hover at Position { line: 2, character: 8 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "module Lib where",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 2, character: 13 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "life :: Int",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 2, character: 19 }
+
+Hover {
+    contents: Array(
+        [],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 2, character: 30 }
+
+
+
+Hover at Position { line: 2, character: 41 }
+
+
+
+Hover at Position { line: 6, character: 7 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "life :: Int",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 9, character: 24 }
+
+Hover {
+    contents: Array(
+        [],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 9, character: 29 }
+
+
+
+Hover at Position { line: 11, character: 8 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "Just a",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 14, character: 22 }
+
+Hover {
+    contents: Array(
+        [],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 16, character: 11 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "Nothing",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 20, character: 10 }
+
+
+
+Hover at Position { line: 24, character: 12 }
+
+
+
+Hover at Position { line: 27, character: 23 }
