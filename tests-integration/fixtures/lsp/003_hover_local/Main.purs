@@ -12,8 +12,10 @@ letBindings =
   let
     life :: Int
     life = 42
+
+    value = 42
   in
-    [life, life]
+    [life, value]
 --    $     $
 
 data Maybe a = Just a | Nothing

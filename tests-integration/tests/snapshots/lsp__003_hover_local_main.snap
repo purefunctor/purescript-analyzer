@@ -19,7 +19,7 @@ Hover {
 }
 
 
-Hover at Position { line: 15, character: 6 }
+Hover at Position { line: 17, character: 6 }
 
 Hover {
     contents: Array(
@@ -36,24 +36,17 @@ Hover {
 }
 
 
-Hover at Position { line: 15, character: 12 }
+Hover at Position { line: 17, character: 12 }
 
 Hover {
     contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "life :: Int",
-                },
-            ),
-        ],
+        [],
     ),
     range: None,
 }
 
 
-Hover at Position { line: 20, character: 9 }
+Hover at Position { line: 22, character: 9 }
 
 Hover {
     contents: Array(
@@ -70,7 +63,7 @@ Hover {
 }
 
 
-Hover at Position { line: 22, character: 8 }
+Hover at Position { line: 24, character: 8 }
 
 Hover {
     contents: Array(
@@ -87,7 +80,7 @@ Hover {
 }
 
 
-Hover at Position { line: 25, character: 12 }
+Hover at Position { line: 27, character: 12 }
 
 Hover {
     contents: Array(
@@ -104,7 +97,7 @@ Hover {
 }
 
 
-Hover at Position { line: 27, character: 11 }
+Hover at Position { line: 29, character: 11 }
 
 Hover {
     contents: Array(
@@ -121,7 +114,7 @@ Hover {
 }
 
 
-Hover at Position { line: 32, character: 3 }
+Hover at Position { line: 34, character: 3 }
 
 Hover {
     contents: Array(
@@ -138,7 +131,7 @@ Hover {
 }
 
 
-Hover at Position { line: 35, character: 3 }
+Hover at Position { line: 37, character: 3 }
 
 Hover {
     contents: Array(
