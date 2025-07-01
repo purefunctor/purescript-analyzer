@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use async_lsp::lsp_types::{Position, Url};
+use async_lsp::lsp_types::{CompletionList, CompletionResponse, Position, Url};
 use files::FileId;
 use line_index::{LineIndex, TextSize};
 use server::Compiler;
@@ -9,15 +9,17 @@ use server::Compiler;
 enum CursorKind {
     GotoDefinition,
     Hover,
+    Completion,
 }
 
 impl CursorKind {
-    const CHARACTERS: &[char] = &['@', '$'];
+    const CHARACTERS: &[char] = &['@', '$', '^'];
 
     fn parse(text: &str) -> Option<CursorKind> {
         match text {
             "@" => Some(CursorKind::GotoDefinition),
             "$" => Some(CursorKind::Hover),
+            "^" => Some(CursorKind::Completion),
             _ => None,
         }
     }
@@ -89,6 +91,16 @@ fn dispatch_cursor(
         CursorKind::Hover => {
             if let Some(response) = server::hover::implementation(compiler, uri, position) {
                 writeln!(result, "{response:#?}").unwrap();
+            }
+        }
+        CursorKind::Completion => {
+            if let Some(response) = server::completion::implementation(compiler, uri, position) {
+                match response {
+                    CompletionResponse::Array(items)
+                    | CompletionResponse::List(CompletionList { items, .. }) => {
+                        writeln!(result, "{items:#?}").unwrap();
+                    }
+                }
             }
         }
     }

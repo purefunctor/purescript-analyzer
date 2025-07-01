@@ -43,3 +43,14 @@ fn test_004_hover_import_main() {
     let report = tests_integration::lsp::report(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_005_completion_local_main() {
+    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/005_completion_local"));
+    let Some(id) = compiler.runtime.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&mut compiler, id);
+    insta::assert_snapshot!(report);
+}
