@@ -21,10 +21,36 @@ Hover {
 
 Hover at Position { line: 15, character: 6 }
 
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "life :: Int",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
 
 
 Hover at Position { line: 15, character: 12 }
 
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "life :: Int",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
 
 
 Hover at Position { line: 20, character: 9 }
