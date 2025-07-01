@@ -6,11 +6,8 @@ edition = "2024"
 [dependencies]
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
-insta = "1.43.1"
-la-arena = "0.3.1"
 rustc-hash = "2.1.1"
 smol_str = "0.3.2"
-syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]
 itertools = "0.14.0"

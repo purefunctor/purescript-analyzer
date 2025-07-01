@@ -45,12 +45,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55cc3b69f167a1ef2e161439aa98aed94e6028e5f9a59be9a6ffb47aef1651f9"
 
 [[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
-
-[[package]]
 name = "async-lsp"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -126,25 +120,16 @@ dependencies = [
 name = "building"
 version = "0.1.0"
 dependencies = [
- "dashmap",
  "files",
- "hashbrown 0.15.3",
  "indexing",
- "indexmap",
  "interner",
- "la-arena",
  "lexing",
  "lowering",
  "parking_lot",
  "parsing",
- "petgraph",
- "rayon",
  "resolving",
- "rowan",
  "rustc-hash 2.1.1",
- "smol_str",
  "string-interner",
- "syntax",
  "thread_local",
 ]
 
@@ -153,12 +138,6 @@ name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1628fb46dfa0b37568d12e5edd512553eccf6a22a78e8bde00bb4aed84d5bdbf"
-
-[[package]]
-name = "byteorder"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
@@ -205,7 +184,6 @@ dependencies = [
  "lexing",
  "lowering",
  "parsing",
- "rowan",
  "smol_str",
  "syntax",
 ]
@@ -378,20 +356,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
 
 [[package]]
-name = "dashmap"
-version = "6.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5041cc499144891f3790297212f32a74fb938e5136a14943f338ef9e0ae276cf"
-dependencies = [
- "cfg-if",
- "crossbeam-utils",
- "hashbrown 0.14.5",
- "lock_api",
- "once_cell",
- "parking_lot_core",
-]
-
-[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -458,12 +422,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fixedbitset"
-version = "0.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
-
-[[package]]
 name = "foldhash"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -486,7 +444,6 @@ checksum = "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876"
 dependencies = [
  "futures-channel",
  "futures-core",
- "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -508,17 +465,6 @@ name = "futures-core"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
-
-[[package]]
-name = "futures-executor"
-version = "0.3.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e28d1d997f585e54aebc3f97d39e72338912123a67330d723fdbb564d646c9f"
-dependencies = [
- "futures-core",
- "futures-task",
- "futures-util",
-]
 
 [[package]]
 name = "futures-io"
@@ -617,16 +563,6 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
-]
-
-[[package]]
-name = "hdrhistogram"
-version = "7.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "765c9198f173dd59ce26ff9f95ef0aafd0a0fe01fb9d72841bc5066a4c06511d"
-dependencies = [
- "byteorder",
- "num-traits",
 ]
 
 [[package]]
@@ -740,7 +676,6 @@ dependencies = [
 name = "indexing"
 version = "0.1.0"
 dependencies = [
- "files",
  "insta",
  "itertools 0.14.0",
  "la-arena",
@@ -844,7 +779,6 @@ name = "lexing"
 version = "0.1.0"
 dependencies = [
  "insta",
- "memchr",
  "syntax",
  "test_each_file",
  "unicode_categories",
@@ -898,7 +832,6 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 name = "lowering"
 version = "0.1.0"
 dependencies = [
- "hashbrown 0.15.3",
  "indexing",
  "indexmap",
  "insta",
@@ -1064,16 +997,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
-name = "petgraph"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
-dependencies = [
- "fixedbitset",
- "indexmap",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1204,9 +1127,7 @@ version = "0.1.0"
 dependencies = [
  "files",
  "indexing",
- "insta",
  "itertools 0.14.0",
- "la-arena",
  "lexing",
  "lowering",
  "parsing",
@@ -1214,7 +1135,6 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "smol_str",
- "syntax",
 ]
 
 [[package]]
@@ -1334,13 +1254,9 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "async-lsp",
  "building",
  "files",
- "futures",
- "glob",
- "globset",
  "indexing",
  "itertools 0.14.0",
  "la-arena",
@@ -1350,18 +1266,12 @@ dependencies = [
  "parsing",
  "resolving",
  "rowan",
- "rustc-hash 2.1.1",
  "serde",
  "serde_json",
  "smol_str",
- "spago",
  "strsim",
  "syntax",
- "tokio",
- "tower",
  "tracing",
- "tracing-subscriber",
- "walkdir",
 ]
 
 [[package]]
@@ -1478,12 +1388,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sync_wrapper"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263"
-
-[[package]]
 name = "synstructure"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1522,22 +1426,17 @@ name = "tests-integration"
 version = "0.1.0"
 dependencies = [
  "async-lsp",
- "building",
  "convert_case",
  "files",
  "glob",
  "indexing",
  "insta",
  "itertools 0.14.0",
- "lexing",
  "line-index",
  "lowering",
- "parsing",
  "resolving",
- "rustc-hash 2.1.1",
  "server",
  "smol_str",
- "syntax",
 ]
 
 [[package]]
@@ -1641,36 +1540,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-util"
-version = "0.7.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66a539a9ad6d5d281510d5bd368c973d636c02dbf8a67300bfb6b950696ad7df"
-dependencies = [
- "bytes",
- "futures-core",
- "futures-sink",
- "pin-project-lite",
- "tokio",
-]
-
-[[package]]
 name = "tower"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d039ad9159c98b70ecfd540b2573b97f7f52c3e8d9f8ad57a24b916a536975f9"
 dependencies = [
- "futures-core",
- "futures-util",
- "hdrhistogram",
- "indexmap",
- "pin-project-lite",
- "slab",
- "sync_wrapper",
- "tokio",
- "tokio-util",
  "tower-layer",
  "tower-service",
- "tracing",
 ]
 
 [[package]]

@@ -6,19 +6,14 @@ build = "build.rs"
 
 [dependencies]
 async-lsp = "0.2.2"
-building = { version = "0.1.0", path = "../compiler-core/building" }
 files = { version = "0.1.0", path = "../compiler-core/files" }
 glob = "0.3.2"
 indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
-lexing = { version = "0.1.0", path = "../compiler-core/lexing" }
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
-parsing = { version = "0.1.0", path = "../compiler-core/parsing" }
 resolving = { version = "0.1.0", path = "../compiler-core/resolving" }
-rustc-hash = "2.1.1"
 server = { version = "0.1.0", path = "../compiler-lsp/server" }
 smol_str = "0.3.2"
-syntax = { version = "0.1.0", path = "../compiler-core/syntax" }
 
 [build-dependencies]
 convert_case = "0.8.0"
