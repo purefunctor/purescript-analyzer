@@ -150,6 +150,8 @@ pub(crate) enum CompletionLocation {
     Comment,
 }
 
+const COMPLETION_MARKER: &str = "z'PureScript'z";
+
 impl CompletionLocation {
     pub(crate) fn new(content: &str, position: Position) -> CompletionLocation {
         // We insert a placeholder identifier at the current position of the
@@ -172,7 +174,7 @@ impl CompletionLocation {
         };
 
         let (left, right) = content.split_at(offset.into());
-        let source = format!("{left}z'PureScript'z{right}");
+        let source = format!("{left}{COMPLETION_MARKER}{right}");
 
         let lexed = lexing::lex(&source);
         let tokens = lexing::layout(&lexed);
@@ -186,7 +188,15 @@ impl CompletionLocation {
                 return CompletionLocation::General;
             }
             TokenAtOffset::Single(token) => token,
-            TokenAtOffset::Between(token, _) => token,
+            TokenAtOffset::Between(left, right) => {
+                if left.text().contains(COMPLETION_MARKER) {
+                    right
+                } else if right.text().contains(COMPLETION_MARKER) {
+                    left
+                } else {
+                    return CompletionLocation::General;
+                }
+            }
         };
 
         token
