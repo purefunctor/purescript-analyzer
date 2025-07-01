@@ -208,10 +208,10 @@ fn hover_expression(compiler: &mut Compiler, f_id: FileId, e_id: ExpressionId) -
             match resolution {
                 TermResolution::Deferred(id) => hover_deferred(compiler, &resolved, &lowered, *id),
                 TermResolution::Binder(_) => None,
-                TermResolution::Let(lb) => {
+                TermResolution::Let(let_binding) => {
                     let (parsed, _) = compiler.runtime.parsed(f_id);
                     let root = parsed.syntax_node();
-                    hover_let(&root, &lowered, lb)
+                    hover_let(&root, &lowered, let_binding)
                 }
             }
         }
@@ -225,29 +225,47 @@ fn hover_expression(compiler: &mut Compiler, f_id: FileId, e_id: ExpressionId) -
 fn hover_let(
     root: &SyntaxNode,
     lowered: &FullLoweredModule,
-    lb: &LetBindingResolution,
+    let_binding: &LetBindingResolution,
 ) -> Option<Hover> {
-    let signature = lb.signature.map(|id| {
+    let signature = let_binding.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();
         locate::annotation_syntax_range(root, ptr)
     });
 
-    let equation = || {
-        let id = lb.equations.first().copied()?;
-        let ptr = lowered.source[id].syntax_node_ptr();
-        let (annotation, _) = locate::annotation_syntax_range(root, ptr);
-        Some((annotation, None))
-    };
+    if let Some((annotation, syntax)) = signature {
+        let annotation = annotation.map(|range| render_annotation(root, range));
+        let syntax = syntax.map(|range| render_syntax(root, range));
 
-    let (annotation, syntax) = signature.or_else(equation)?;
-    let annotation = annotation.map(|range| render_annotation(root, range));
-    let syntax = syntax.map(|range| render_syntax(root, range));
+        let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+        let contents = HoverContents::Array(array);
+        let range = None;
 
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
-    let contents = HoverContents::Array(array);
-    let range = None;
+        Some(Hover { contents, range })
+    } else {
+        let id = let_binding.equations.first().copied()?;
 
-    Some(Hover { contents, range })
+        let ptr = &lowered.source[id];
+        let node = ptr.to_node(root);
+
+        let token = node.name_token()?;
+        let text = token.text();
+
+        let array = vec![
+            MarkedString::LanguageString(LanguageString {
+                language: "purescript".to_string(),
+                value: format!("{text} :: _"),
+            }),
+            MarkedString::String("---".to_string()),
+            MarkedString::String(format!("`{text}` is a `let`-bound name.")),
+            MarkedString::String("---".to_string()),
+            MarkedString::String("note: type information is currently not available".to_string()),
+        ];
+
+        let contents = HoverContents::Array(array);
+        let range = None;
+
+        Some(Hover { contents, range })
+    }
 }
 
 fn hover_type(compiler: &mut Compiler, f_id: FileId, t_id: TypeId) -> Option<Hover> {

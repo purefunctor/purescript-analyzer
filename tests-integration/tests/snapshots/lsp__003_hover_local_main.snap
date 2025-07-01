@@ -40,7 +40,26 @@ Hover at Position { line: 17, character: 12 }
 
 Hover {
     contents: Array(
-        [],
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "value :: _",
+                },
+            ),
+            String(
+                "---",
+            ),
+            String(
+                "`value` is a `let`-bound name.",
+            ),
+            String(
+                "---",
+            ),
+            String(
+                "note: type information is currently not available",
+            ),
+        ],
     ),
     range: None,
 }
