@@ -22,11 +22,7 @@ use syntax::{SyntaxKind, SyntaxNode, cst};
 
 use crate::{Compiler, locate};
 
-pub fn implementation(
-    compiler: &mut Compiler,
-    uri: Url,
-    position: Position,
-) -> Option<Hover> {
+pub fn implementation(compiler: &mut Compiler, uri: Url, position: Position) -> Option<Hover> {
     let f_id = {
         let uri = uri.as_str();
         compiler.files.id(uri)?
