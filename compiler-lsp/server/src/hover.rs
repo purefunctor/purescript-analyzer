@@ -229,19 +229,19 @@ fn hover_let(
 ) -> Option<Hover> {
     let signature = lb.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();
-        locate::annotation_syntax_range(&root, ptr)
+        locate::annotation_syntax_range(root, ptr)
     });
 
     let equation = || {
         let id = lb.equations.first().copied()?;
         let ptr = lowered.source[id].syntax_node_ptr();
-        let (annotation, _) = locate::annotation_syntax_range(&root, ptr);
+        let (annotation, _) = locate::annotation_syntax_range(root, ptr);
         Some((annotation, None))
     };
 
     let (annotation, syntax) = signature.or_else(equation)?;
-    let annotation = annotation.map(|range| render_annotation(&root, range));
-    let syntax = syntax.map(|range| render_syntax(&root, range));
+    let annotation = annotation.map(|range| render_annotation(root, range));
+    let syntax = syntax.map(|range| render_syntax(root, range));
 
     let array = [syntax, annotation].into_iter().flatten().flatten().collect();
     let contents = HoverContents::Array(array);
