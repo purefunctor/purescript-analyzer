@@ -174,3 +174,61 @@ Completion at Position { line: 21, character: 10 }
         tags: None,
     },
 ]
+
+
+Completion at Position { line: 24, character: 15 }
+
+[
+    CompletionItem {
+        label: "Maybe",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Local",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 24,
+                            character: 14,
+                        },
+                        end: Position {
+                            line: 24,
+                            character: 15,
+                        },
+                    },
+                    new_text: "Maybe",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TypeItem": Array [
+                    Number(0),
+                    Number(0),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]

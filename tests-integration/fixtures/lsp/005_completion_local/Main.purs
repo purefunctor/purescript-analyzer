@@ -21,3 +21,6 @@ check2 = J
 check3 :: Maybe Int
 check3 = N
 --        ^
+
+type Check4 = M
+--             ^
