@@ -1,0 +1,74 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Completion at Position { line: 2, character: 7 }
+
+[
+    CompletionItem {
+        label: "Lib",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: None,
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(0),
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
+        label: "Main",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Main",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: None,
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(1),
+            },
+        ),
+        tags: None,
+    },
+]

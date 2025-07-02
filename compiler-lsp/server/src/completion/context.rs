@@ -150,7 +150,7 @@ pub(crate) enum CompletionLocation {
     Comment,
 }
 
-const COMPLETION_MARKER: &str = "z'PureScript'z";
+const COMPLETION_MARKER: &str = "Z'PureScript'Z";
 
 impl CompletionLocation {
     pub(crate) fn new(content: &str, position: Position) -> CompletionLocation {

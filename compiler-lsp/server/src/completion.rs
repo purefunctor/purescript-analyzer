@@ -124,7 +124,7 @@ fn collect_module(compiler: &mut Compiler, context: &Context, items: &mut Vec<Co
             }
         }
 
-        if context.allow_full(&name) {
+        if !context.allow_full(&name) {
             return None;
         }
 
