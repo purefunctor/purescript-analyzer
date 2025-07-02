@@ -308,7 +308,7 @@ Completion at Position { line: 8, character: 13 }
 ]
 
 
-Completion at Position { line: 11, character: 26 }
+Completion at Position { line: 11, character: 27 }
 
 [
     CompletionItem {
@@ -386,7 +386,7 @@ Completion at Position { line: 11, character: 26 }
 ]
 
 
-Completion at Position { line: 13, character: 15 }
+Completion at Position { line: 13, character: 16 }
 
 [
     CompletionItem {
@@ -464,7 +464,7 @@ Completion at Position { line: 13, character: 15 }
 ]
 
 
-Completion at Position { line: 16, character: 12 }
+Completion at Position { line: 16, character: 13 }
 
 [
     CompletionItem {
