@@ -10,12 +10,12 @@ justQ = Lib.J
 --           ^
 
 nothingQ :: forall a. Lib.M
---                        ^
+--                         ^
 nothingQ = Lib.J
---             ^
+--              ^
 
 clsQ :: Lib.C
---          ^
+--           ^
 clsQ = unit
 
 fullQ :: Int
