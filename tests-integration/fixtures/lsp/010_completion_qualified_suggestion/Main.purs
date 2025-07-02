@@ -17,3 +17,7 @@ nothingQ = Lib.J
 clsQ :: Lib.C
 --          ^
 clsQ = unit
+
+fullQ :: Int
+fullQ = Data.Maybe.j
+--                  ^

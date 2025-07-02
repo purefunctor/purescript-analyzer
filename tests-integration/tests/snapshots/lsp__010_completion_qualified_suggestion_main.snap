@@ -612,3 +612,81 @@ Completion at Position { line: 16, character: 12 }
         tags: None,
     },
 ]
+
+
+Completion at Position { line: 21, character: 20 }
+
+[
+    CompletionItem {
+        label: "just",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Data.Maybe as Data.Maybe)",
+                ),
+                description: Some(
+                    "Data.Maybe",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Data.Maybe",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 21,
+                            character: 8,
+                        },
+                        end: Position {
+                            line: 21,
+                            character: 20,
+                        },
+                    },
+                    new_text: "Data.Maybe.just",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Data.Maybe as Data.Maybe\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(2),
+                    Number(0),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
