@@ -2,7 +2,7 @@
 source: tests-integration/tests/lsp.rs
 expression: report
 ---
-Completion at Position { line: 5, character: 7 }
+Completion at Position { line: 6, character: 7 }
 
 [
     CompletionItem {
@@ -32,11 +32,11 @@ Completion at Position { line: 5, character: 7 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 5,
+                            line: 6,
                             character: 6,
                         },
                         end: Position {
-                            line: 5,
+                            line: 6,
                             character: 7,
                         },
                     },
@@ -88,11 +88,11 @@ Completion at Position { line: 5, character: 7 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 5,
+                            line: 6,
                             character: 6,
                         },
                         end: Position {
-                            line: 5,
+                            line: 6,
                             character: 7,
                         },
                     },
@@ -116,7 +116,7 @@ Completion at Position { line: 5, character: 7 }
 ]
 
 
-Completion at Position { line: 8, character: 24 }
+Completion at Position { line: 9, character: 24 }
 
 [
     CompletionItem {
@@ -146,11 +146,11 @@ Completion at Position { line: 8, character: 24 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 8,
+                            line: 9,
                             character: 23,
                         },
                         end: Position {
-                            line: 8,
+                            line: 9,
                             character: 24,
                         },
                     },
@@ -202,11 +202,11 @@ Completion at Position { line: 8, character: 24 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 8,
+                            line: 9,
                             character: 23,
                         },
                         end: Position {
-                            line: 8,
+                            line: 9,
                             character: 24,
                         },
                     },
@@ -230,7 +230,7 @@ Completion at Position { line: 8, character: 24 }
 ]
 
 
-Completion at Position { line: 10, character: 8 }
+Completion at Position { line: 11, character: 8 }
 
 [
     CompletionItem {
@@ -260,11 +260,11 @@ Completion at Position { line: 10, character: 8 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 10,
+                            line: 11,
                             character: 7,
                         },
                         end: Position {
-                            line: 10,
+                            line: 11,
                             character: 8,
                         },
                     },
@@ -316,11 +316,11 @@ Completion at Position { line: 10, character: 8 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 10,
+                            line: 11,
                             character: 7,
                         },
                         end: Position {
-                            line: 10,
+                            line: 11,
                             character: 8,
                         },
                     },
@@ -344,7 +344,7 @@ Completion at Position { line: 10, character: 8 }
 ]
 
 
-Completion at Position { line: 13, character: 22 }
+Completion at Position { line: 14, character: 22 }
 
 [
     CompletionItem {
@@ -374,11 +374,11 @@ Completion at Position { line: 13, character: 22 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 13,
+                            line: 14,
                             character: 21,
                         },
                         end: Position {
-                            line: 13,
+                            line: 14,
                             character: 22,
                         },
                     },
@@ -430,11 +430,11 @@ Completion at Position { line: 13, character: 22 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 13,
+                            line: 14,
                             character: 21,
                         },
                         end: Position {
-                            line: 13,
+                            line: 14,
                             character: 22,
                         },
                     },
@@ -458,7 +458,7 @@ Completion at Position { line: 13, character: 22 }
 ]
 
 
-Completion at Position { line: 15, character: 11 }
+Completion at Position { line: 16, character: 11 }
 
 [
     CompletionItem {
@@ -488,11 +488,11 @@ Completion at Position { line: 15, character: 11 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 15,
+                            line: 16,
                             character: 10,
                         },
                         end: Position {
-                            line: 15,
+                            line: 16,
                             character: 11,
                         },
                     },
@@ -544,15 +544,413 @@ Completion at Position { line: 15, character: 11 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 15,
+                            line: 16,
                             character: 10,
                         },
                         end: Position {
-                            line: 15,
+                            line: 16,
                             character: 11,
                         },
                     },
                     new_text: "Nothing",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(0),
+                    Number(2),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 20, character: 12 }
+
+[
+    CompletionItem {
+        label: "plus",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 20,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 20,
+                            character: 12,
+                        },
+                    },
+                    new_text: "Lib.plus",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(0),
+                    Number(3),
+                ],
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
+        label: "life",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 20,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 20,
+                            character: 12,
+                        },
+                    },
+                    new_text: "Lib.life",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(0),
+                    Number(0),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 23, character: 29 }
+
+[
+    CompletionItem {
+        label: "Maybe",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 23,
+                            character: 24,
+                        },
+                        end: Position {
+                            line: 23,
+                            character: 29,
+                        },
+                    },
+                    new_text: "Lib.Maybe",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TypeItem": Array [
+                    Number(0),
+                    Number(0),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 25, character: 8 }
+
+[
+    CompletionItem {
+        label: "Just",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 8,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 9,
+                        },
+                    },
+                    new_text: "Just",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(0),
+                    Number(1),
+                ],
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
+        label: "Just",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Lib)",
+                ),
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Lib",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 8,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 9,
+                        },
+                    },
+                    new_text: "Just",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(0),
+                    Number(1),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 28, character: 27 }
+
+[
+    CompletionItem {
+        label: "Maybe",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 28,
+                            character: 22,
+                        },
+                        end: Position {
+                            line: 28,
+                            character: 27,
+                        },
+                    },
+                    new_text: "Lib.Maybe",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TypeItem": Array [
+                    Number(0),
+                    Number(0),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 30, character: 16 }
+
+[
+    CompletionItem {
+        label: "Nothing",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 30,
+                            character: 11,
+                        },
+                        end: Position {
+                            line: 30,
+                            character: 16,
+                        },
+                    },
+                    new_text: "Lib.Nothing",
                 },
             ),
         ),
