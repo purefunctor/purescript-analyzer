@@ -1,5 +1,6 @@
 module Main where
 
+import Data.Maybe as Data.Maybe
 import Lib (life, Maybe(..), (+), type (++))
 import Lib as Lib
 
@@ -33,3 +34,6 @@ nothingQ = Lib.N
 
 moduleNameQ = Li
 --              ^
+
+fullModuleNameQ = Data.M
+--                      ^

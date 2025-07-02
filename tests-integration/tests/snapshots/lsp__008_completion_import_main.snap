@@ -2,7 +2,7 @@
 source: tests-integration/tests/lsp.rs
 expression: report
 ---
-Completion at Position { line: 6, character: 7 }
+Completion at Position { line: 7, character: 7 }
 
 [
     CompletionItem {
@@ -32,11 +32,11 @@ Completion at Position { line: 6, character: 7 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 6,
+                            line: 7,
                             character: 6,
                         },
                         end: Position {
-                            line: 6,
+                            line: 7,
                             character: 7,
                         },
                     },
@@ -58,6 +58,58 @@ Completion at Position { line: 6, character: 7 }
         tags: None,
     },
     CompletionItem {
+        label: "fullModuleNameQ",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Local",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 7,
+                            character: 6,
+                        },
+                        end: Position {
+                            line: 7,
+                            character: 7,
+                        },
+                    },
+                    new_text: "fullModuleNameQ",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(1),
+                    Number(7),
+                ],
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
         label: "life",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -84,11 +136,11 @@ Completion at Position { line: 6, character: 7 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 6,
+                            line: 7,
                             character: 6,
                         },
                         end: Position {
-                            line: 6,
+                            line: 7,
                             character: 7,
                         },
                     },
@@ -140,11 +192,11 @@ Completion at Position { line: 6, character: 7 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 6,
+                            line: 7,
                             character: 6,
                         },
                         end: Position {
-                            line: 6,
+                            line: 7,
                             character: 7,
                         },
                     },
@@ -168,7 +220,7 @@ Completion at Position { line: 6, character: 7 }
 ]
 
 
-Completion at Position { line: 9, character: 24 }
+Completion at Position { line: 10, character: 24 }
 
 [
     CompletionItem {
@@ -198,11 +250,11 @@ Completion at Position { line: 9, character: 24 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 9,
+                            line: 10,
                             character: 23,
                         },
                         end: Position {
-                            line: 9,
+                            line: 10,
                             character: 24,
                         },
                     },
@@ -254,11 +306,11 @@ Completion at Position { line: 9, character: 24 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 9,
+                            line: 10,
                             character: 23,
                         },
                         end: Position {
-                            line: 9,
+                            line: 10,
                             character: 24,
                         },
                     },
@@ -282,7 +334,7 @@ Completion at Position { line: 9, character: 24 }
 ]
 
 
-Completion at Position { line: 11, character: 8 }
+Completion at Position { line: 12, character: 8 }
 
 [
     CompletionItem {
@@ -312,11 +364,11 @@ Completion at Position { line: 11, character: 8 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 11,
+                            line: 12,
                             character: 7,
                         },
                         end: Position {
-                            line: 11,
+                            line: 12,
                             character: 8,
                         },
                     },
@@ -368,11 +420,11 @@ Completion at Position { line: 11, character: 8 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 11,
+                            line: 12,
                             character: 7,
                         },
                         end: Position {
-                            line: 11,
+                            line: 12,
                             character: 8,
                         },
                     },
@@ -396,7 +448,7 @@ Completion at Position { line: 11, character: 8 }
 ]
 
 
-Completion at Position { line: 14, character: 22 }
+Completion at Position { line: 15, character: 22 }
 
 [
     CompletionItem {
@@ -426,11 +478,11 @@ Completion at Position { line: 14, character: 22 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 14,
+                            line: 15,
                             character: 21,
                         },
                         end: Position {
-                            line: 14,
+                            line: 15,
                             character: 22,
                         },
                     },
@@ -482,11 +534,11 @@ Completion at Position { line: 14, character: 22 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 14,
+                            line: 15,
                             character: 21,
                         },
                         end: Position {
-                            line: 14,
+                            line: 15,
                             character: 22,
                         },
                     },
@@ -510,7 +562,7 @@ Completion at Position { line: 14, character: 22 }
 ]
 
 
-Completion at Position { line: 16, character: 11 }
+Completion at Position { line: 17, character: 11 }
 
 [
     CompletionItem {
@@ -540,11 +592,11 @@ Completion at Position { line: 16, character: 11 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 16,
+                            line: 17,
                             character: 10,
                         },
                         end: Position {
-                            line: 16,
+                            line: 17,
                             character: 11,
                         },
                     },
@@ -596,11 +648,11 @@ Completion at Position { line: 16, character: 11 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 16,
+                            line: 17,
                             character: 10,
                         },
                         end: Position {
-                            line: 16,
+                            line: 17,
                             character: 11,
                         },
                     },
@@ -624,7 +676,7 @@ Completion at Position { line: 16, character: 11 }
 ]
 
 
-Completion at Position { line: 20, character: 12 }
+Completion at Position { line: 21, character: 12 }
 
 [
     CompletionItem {
@@ -654,11 +706,11 @@ Completion at Position { line: 20, character: 12 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 20,
+                            line: 21,
                             character: 7,
                         },
                         end: Position {
-                            line: 20,
+                            line: 21,
                             character: 12,
                         },
                     },
@@ -706,11 +758,11 @@ Completion at Position { line: 20, character: 12 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 20,
+                            line: 21,
                             character: 7,
                         },
                         end: Position {
-                            line: 20,
+                            line: 21,
                             character: 12,
                         },
                     },
@@ -734,7 +786,7 @@ Completion at Position { line: 20, character: 12 }
 ]
 
 
-Completion at Position { line: 23, character: 29 }
+Completion at Position { line: 24, character: 29 }
 
 [
     CompletionItem {
@@ -764,11 +816,11 @@ Completion at Position { line: 23, character: 29 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 23,
+                            line: 24,
                             character: 24,
                         },
                         end: Position {
-                            line: 23,
+                            line: 24,
                             character: 29,
                         },
                     },
@@ -792,7 +844,7 @@ Completion at Position { line: 23, character: 29 }
 ]
 
 
-Completion at Position { line: 25, character: 8 }
+Completion at Position { line: 26, character: 8 }
 
 [
     CompletionItem {
@@ -822,11 +874,11 @@ Completion at Position { line: 25, character: 8 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 25,
+                            line: 26,
                             character: 8,
                         },
                         end: Position {
-                            line: 25,
+                            line: 26,
                             character: 9,
                         },
                     },
@@ -878,11 +930,11 @@ Completion at Position { line: 25, character: 8 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 25,
+                            line: 26,
                             character: 8,
                         },
                         end: Position {
-                            line: 25,
+                            line: 26,
                             character: 9,
                         },
                     },
@@ -906,7 +958,7 @@ Completion at Position { line: 25, character: 8 }
 ]
 
 
-Completion at Position { line: 28, character: 27 }
+Completion at Position { line: 29, character: 27 }
 
 [
     CompletionItem {
@@ -936,11 +988,11 @@ Completion at Position { line: 28, character: 27 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 28,
+                            line: 29,
                             character: 22,
                         },
                         end: Position {
-                            line: 28,
+                            line: 29,
                             character: 27,
                         },
                     },
@@ -964,7 +1016,7 @@ Completion at Position { line: 28, character: 27 }
 ]
 
 
-Completion at Position { line: 30, character: 16 }
+Completion at Position { line: 31, character: 16 }
 
 [
     CompletionItem {
@@ -994,11 +1046,11 @@ Completion at Position { line: 30, character: 16 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 30,
+                            line: 31,
                             character: 11,
                         },
                         end: Position {
-                            line: 30,
+                            line: 31,
                             character: 16,
                         },
                     },
@@ -1022,7 +1074,7 @@ Completion at Position { line: 30, character: 16 }
 ]
 
 
-Completion at Position { line: 33, character: 16 }
+Completion at Position { line: 34, character: 16 }
 
 [
     CompletionItem {
@@ -1052,11 +1104,11 @@ Completion at Position { line: 33, character: 16 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 33,
+                            line: 34,
                             character: 14,
                         },
                         end: Position {
-                            line: 33,
+                            line: 34,
                             character: 16,
                         },
                     },
@@ -1101,11 +1153,11 @@ Completion at Position { line: 33, character: 16 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 33,
+                            line: 34,
                             character: 14,
                         },
                         end: Position {
-                            line: 33,
+                            line: 34,
                             character: 16,
                         },
                     },
@@ -1153,11 +1205,11 @@ Completion at Position { line: 33, character: 16 }
                 TextEdit {
                     range: Range {
                         start: Position {
-                            line: 33,
+                            line: 34,
                             character: 14,
                         },
                         end: Position {
-                            line: 33,
+                            line: 34,
                             character: 16,
                         },
                     },
@@ -1174,6 +1226,61 @@ Completion at Position { line: 33, character: 16 }
                     Number(0),
                     Number(0),
                 ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 37, character: 24 }
+
+[
+    CompletionItem {
+        label: "Data.Maybe",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Data.Maybe",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 37,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 37,
+                            character: 24,
+                        },
+                    },
+                    new_text: "Data.Maybe",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(2),
             },
         ),
         tags: None,
