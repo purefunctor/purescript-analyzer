@@ -76,3 +76,14 @@ fn test_007_completion_partial_token_main() {
     let report = tests_integration::lsp::report(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_008_completion_import_main() {
+    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/008_completion_import"));
+    let Some(id) = compiler.runtime.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&mut compiler, id);
+    insta::assert_snapshot!(report);
+}
