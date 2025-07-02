@@ -6,6 +6,58 @@ Completion at Position { line: 6, character: 7 }
 
 [
     CompletionItem {
+        label: "moduleNameQ",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Local",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 6,
+                            character: 6,
+                        },
+                        end: Position {
+                            line: 6,
+                            character: 7,
+                        },
+                    },
+                    new_text: "moduleNameQ",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(1),
+                    Number(6),
+                ],
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
         label: "life",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -962,6 +1014,165 @@ Completion at Position { line: 30, character: 16 }
                 "TermItem": Array [
                     Number(0),
                     Number(2),
+                ],
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 33, character: 16 }
+
+[
+    CompletionItem {
+        label: "Lib",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 33,
+                            character: 14,
+                        },
+                        end: Position {
+                            line: 33,
+                            character: 16,
+                        },
+                    },
+                    new_text: "Lib",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(0),
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
+        label: "nothingQ",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Local",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 33,
+                            character: 14,
+                        },
+                        end: Position {
+                            line: 33,
+                            character: 16,
+                        },
+                    },
+                    new_text: "nothingQ",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(1),
+                    Number(5),
+                ],
+            },
+        ),
+        tags: None,
+    },
+    CompletionItem {
+        label: "life",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 33,
+                            character: 14,
+                        },
+                        end: Position {
+                            line: 33,
+                            character: 16,
+                        },
+                    },
+                    new_text: "life",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "TermItem": Array [
+                    Number(0),
+                    Number(0),
                 ],
             },
         ),

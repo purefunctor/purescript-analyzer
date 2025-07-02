@@ -30,3 +30,6 @@ nothingQ :: forall a. Lib.M
 --                         ^
 nothingQ = Lib.N
 --              ^
+
+moduleNameQ = Li
+--              ^
