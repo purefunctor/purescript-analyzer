@@ -71,4 +71,147 @@ Completion at Position { line: 2, character: 7 }
         ),
         tags: None,
     },
+    CompletionItem {
+        label: "Data.Maybe",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Data.Maybe",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: None,
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(2),
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 4, character: 8 }
+
+[
+    CompletionItem {
+        label: "Lib",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 4,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 4,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Lib",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(0),
+            },
+        ),
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 6, character: 12 }
+
+[
+    CompletionItem {
+        label: "Data.Maybe",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Data.Maybe",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 6,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 6,
+                            character: 12,
+                        },
+                    },
+                    new_text: "Data.Maybe",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: Some(
+            Object {
+                "Import": Number(2),
+            },
+        ),
+        tags: None,
+    },
 ]
