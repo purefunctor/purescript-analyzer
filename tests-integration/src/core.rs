@@ -1,10 +1,10 @@
 use std::fmt::Write;
 
+use analyzer::Compiler;
 use files::FileId;
 use indexing::ImportKind;
 use lowering::ResolutionDomain;
 use resolving::FullResolvedModule;
-use server::Compiler;
 
 pub fn report_resolved(name: &str, resolved: &FullResolvedModule) -> String {
     let mut buffer = String::default();

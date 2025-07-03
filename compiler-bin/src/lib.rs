@@ -16,13 +16,13 @@ use tracing_subscriber::{
 
 pub struct State {
     pub client: ClientSocket,
-    pub compiler: server::Compiler,
+    pub compiler: analyzer::Compiler,
     pub root: Option<PathBuf>,
 }
 
 impl State {
     fn new(client: ClientSocket) -> State {
-        let compiler = server::Compiler::default();
+        let compiler = analyzer::Compiler::default();
         let root = None;
         State { client, compiler, root }
     }
@@ -87,7 +87,7 @@ fn definition(
 ) -> impl Future<Output = Result<Option<GotoDefinitionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = server::definition::implementation(&mut state.compiler, uri, position);
+    let result = analyzer::definition::implementation(&mut state.compiler, uri, position);
     async move { Result::Ok(result) }
 }
 
@@ -97,7 +97,7 @@ fn hover(
 ) -> impl Future<Output = Result<Option<Hover>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = server::hover::implementation(&mut state.compiler, uri, position);
+    let result = analyzer::hover::implementation(&mut state.compiler, uri, position);
     async move { Ok(result) }
 }
 
@@ -107,7 +107,7 @@ fn completion(
 ) -> impl Future<Output = Result<Option<CompletionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    let result = server::completion::implementation(&mut state.compiler, uri, position);
+    let result = analyzer::completion::implementation(&mut state.compiler, uri, position);
     async move { Ok(result) }
 }
 
@@ -115,7 +115,7 @@ fn resolve_completion_item(
     state: &mut State,
     item: CompletionItem,
 ) -> impl Future<Output = Result<CompletionItem, ResponseError>> + use<> {
-    let result = server::completion::resolve::implementation(&mut state.compiler, item);
+    let result = analyzer::completion::resolve::implementation(&mut state.compiler, item);
     async move { Ok(result) }
 }
 
@@ -131,7 +131,7 @@ fn did_change(
     ControlFlow::Continue(())
 }
 
-fn on_change(compiler: &mut server::Compiler, uri: &str, text: &str) {
+fn on_change(compiler: &mut analyzer::Compiler, uri: &str, text: &str) {
     let id = compiler.files.insert(uri, text);
     let content = compiler.files.content(id);
 

@@ -6,8 +6,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use analyzer::Compiler;
 use glob::glob;
-use server::Compiler;
 use smol_str::SmolStrBuilder;
 
 fn load_file(compiler: &mut Compiler, path: &Path) {

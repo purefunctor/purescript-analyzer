@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
 serde = { version = "1.0.219", features = ["derive"] }
-server = { version = "0.1.0", path = "../compiler-lsp/server" }
 spago = { version = "0.1.0", path = "../compiler-lsp/spago" }
 tokio = { version = "1.45.1", features = ["full"] }
 tower = "0.5.2"

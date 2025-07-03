@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
+use analyzer::Compiler;
 use async_lsp::lsp_types::{CompletionList, CompletionResponse, Position, Url};
 use files::FileId;
 use line_index::{LineIndex, TextSize};
-use server::Compiler;
 
 #[derive(Debug, Clone, Copy)]
 enum CursorKind {
@@ -84,23 +84,25 @@ fn dispatch_cursor(
 ) {
     match cursor {
         CursorKind::GotoDefinition => {
-            if let Some(response) = server::definition::implementation(compiler, uri, position) {
+            if let Some(response) = analyzer::definition::implementation(compiler, uri, position) {
                 writeln!(result, "{response:#?}").unwrap();
             }
         }
         CursorKind::Hover => {
-            if let Some(response) = server::hover::implementation(compiler, uri, position) {
+            if let Some(response) = analyzer::hover::implementation(compiler, uri, position) {
                 writeln!(result, "{response:#?}").unwrap();
             }
         }
         CursorKind::Completion => {
-            if let Some(response) = server::completion::implementation(compiler, uri, position) {
+            if let Some(response) = analyzer::completion::implementation(compiler, uri, position) {
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
                         let items: Vec<_> = items
                             .into_iter()
-                            .map(|item| server::completion::resolve::implementation(compiler, item))
+                            .map(|item| {
+                                analyzer::completion::resolve::implementation(compiler, item)
+                            })
                             .collect();
                         writeln!(result, "{items:#?}").unwrap();
                     }
