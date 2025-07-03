@@ -19,7 +19,14 @@ Completion at Position { line: 7, character: 7 }
             Value,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "--              ^",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -47,14 +54,7 @@ Completion at Position { line: 7, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(1),
-                    Number(6),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -71,7 +71,14 @@ Completion at Position { line: 7, character: 7 }
             Value,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "--              ^",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -99,14 +106,7 @@ Completion at Position { line: 7, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(1),
-                    Number(7),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -122,8 +122,17 @@ Completion at Position { line: 7, character: 7 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "life :: Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -151,14 +160,7 @@ Completion at Position { line: 7, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -176,8 +178,17 @@ Completion at Position { line: 7, character: 7 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "life :: Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -207,14 +218,7 @@ Completion at Position { line: 7, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -237,7 +241,14 @@ Completion at Position { line: 10, character: 24 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -265,14 +276,7 @@ Completion at Position { line: 10, character: 24 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -291,7 +295,14 @@ Completion at Position { line: 10, character: 24 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -321,14 +332,7 @@ Completion at Position { line: 10, character: 24 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -350,8 +354,17 @@ Completion at Position { line: 12, character: 8 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Just a",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -379,14 +392,7 @@ Completion at Position { line: 12, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -404,8 +410,17 @@ Completion at Position { line: 12, character: 8 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Just a",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -435,14 +450,7 @@ Completion at Position { line: 12, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -465,7 +473,14 @@ Completion at Position { line: 15, character: 22 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -493,14 +508,7 @@ Completion at Position { line: 15, character: 22 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -519,7 +527,14 @@ Completion at Position { line: 15, character: 22 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -549,14 +564,7 @@ Completion at Position { line: 15, character: 22 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -578,8 +586,17 @@ Completion at Position { line: 17, character: 11 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Nothing",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -607,14 +624,7 @@ Completion at Position { line: 17, character: 11 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(2),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -632,8 +642,17 @@ Completion at Position { line: 17, character: 11 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Nothing",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -663,14 +682,7 @@ Completion at Position { line: 17, character: 11 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(2),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -692,8 +704,17 @@ Completion at Position { line: 21, character: 12 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "plus :: Int -> Int -> Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -721,14 +742,7 @@ Completion at Position { line: 21, character: 12 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(3),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -744,8 +758,17 @@ Completion at Position { line: 21, character: 12 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "life :: Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -773,14 +796,7 @@ Completion at Position { line: 21, character: 12 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -803,7 +819,14 @@ Completion at Position { line: 24, character: 29 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -831,14 +854,7 @@ Completion at Position { line: 24, character: 29 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -860,8 +876,17 @@ Completion at Position { line: 26, character: 8 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Just a",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -889,14 +914,7 @@ Completion at Position { line: 26, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -914,8 +932,17 @@ Completion at Position { line: 26, character: 8 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Just a",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -945,14 +972,7 @@ Completion at Position { line: 26, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -975,7 +995,14 @@ Completion at Position { line: 29, character: 27 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -1003,14 +1030,7 @@ Completion at Position { line: 29, character: 27 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -1032,8 +1052,17 @@ Completion at Position { line: 31, character: 16 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Nothing",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -1061,14 +1090,7 @@ Completion at Position { line: 31, character: 16 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(2),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -1090,8 +1112,17 @@ Completion at Position { line: 34, character: 16 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Lib where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -1119,11 +1150,7 @@ Completion at Position { line: 34, character: 16 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(0),
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -1139,8 +1166,17 @@ Completion at Position { line: 34, character: 16 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "nothingQ :: forall a. Lib.M",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "--      ^",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -1168,14 +1204,7 @@ Completion at Position { line: 34, character: 16 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(1),
-                    Number(5),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -1191,8 +1220,17 @@ Completion at Position { line: 34, character: 16 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "life :: Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -1220,14 +1258,7 @@ Completion at Position { line: 34, character: 16 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -1249,8 +1280,17 @@ Completion at Position { line: 37, character: 24 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Data.Maybe where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -1278,11 +1318,7 @@ Completion at Position { line: 37, character: 24 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(2),
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]

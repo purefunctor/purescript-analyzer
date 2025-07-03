@@ -20,8 +20,17 @@ Completion at Position { line: 3, character: 7 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "life :: Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -67,14 +76,7 @@ Completion at Position { line: 3, character: 7 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -99,7 +101,14 @@ Completion at Position { line: 6, character: 24 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -145,14 +154,7 @@ Completion at Position { line: 6, character: 24 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -176,8 +178,17 @@ Completion at Position { line: 8, character: 8 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Just a",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -223,14 +234,7 @@ Completion at Position { line: 8, character: 8 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -255,7 +259,14 @@ Completion at Position { line: 11, character: 22 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -301,14 +312,7 @@ Completion at Position { line: 11, character: 22 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -332,8 +336,17 @@ Completion at Position { line: 13, character: 11 }
         kind: Some(
             Value,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "Nothing",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -379,14 +392,7 @@ Completion at Position { line: 13, character: 11 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(2),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -410,8 +416,17 @@ Completion at Position { line: 16, character: 8 }
         kind: Some(
             Struct,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "foreign import data Cons :: Type -> Type -> Type",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -457,14 +472,7 @@ Completion at Position { line: 16, character: 8 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -483,7 +491,14 @@ Completion at Position { line: 16, character: 8 }
             Struct,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: Some(
@@ -529,14 +544,7 @@ Completion at Position { line: 16, character: 8 }
         ),
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TypeItem": Array [
-                    Number(0),
-                    Number(3),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]

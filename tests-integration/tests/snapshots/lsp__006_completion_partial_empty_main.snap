@@ -19,7 +19,14 @@ Completion at Position { line: 4, character: 8 }
             Value,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -31,14 +38,7 @@ Completion at Position { line: 4, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(0),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -55,7 +55,14 @@ Completion at Position { line: 4, character: 8 }
             Value,
         ),
         detail: None,
-        documentation: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -67,14 +74,7 @@ Completion at Position { line: 4, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "TermItem": Array [
-                    Number(0),
-                    Number(1),
-                ],
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]

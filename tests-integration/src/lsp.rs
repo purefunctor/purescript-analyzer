@@ -98,6 +98,10 @@ fn dispatch_cursor(
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
+                        let items: Vec<_> = items
+                            .into_iter()
+                            .map(|item| server::completion::resolve::implementation(compiler, item))
+                            .collect();
                         writeln!(result, "{items:#?}").unwrap();
                     }
                 }

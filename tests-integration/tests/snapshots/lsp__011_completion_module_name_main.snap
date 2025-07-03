@@ -18,8 +18,17 @@ Completion at Position { line: 2, character: 7 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Lib where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -31,11 +40,7 @@ Completion at Position { line: 2, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(0),
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -51,8 +56,17 @@ Completion at Position { line: 2, character: 7 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Main where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -64,11 +78,7 @@ Completion at Position { line: 2, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(1),
-            },
-        ),
+        data: None,
         tags: None,
     },
     CompletionItem {
@@ -84,8 +94,17 @@ Completion at Position { line: 2, character: 7 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Data.Maybe where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -97,11 +116,7 @@ Completion at Position { line: 2, character: 7 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(2),
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -123,8 +138,17 @@ Completion at Position { line: 4, character: 8 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Lib where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -152,11 +176,7 @@ Completion at Position { line: 4, character: 8 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(0),
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
@@ -178,8 +198,17 @@ Completion at Position { line: 6, character: 12 }
         kind: Some(
             Module,
         ),
-        detail: None,
-        documentation: None,
+        detail: Some(
+            "module Data.Maybe where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
         deprecated: None,
         preselect: None,
         sort_text: None,
@@ -207,11 +236,7 @@ Completion at Position { line: 6, character: 12 }
         additional_text_edits: None,
         command: None,
         commit_characters: None,
-        data: Some(
-            Object {
-                "Import": Number(2),
-            },
-        ),
+        data: None,
         tags: None,
     },
 ]
