@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use itertools::Itertools;
 use spago::lockfile::Lockfile;
 
@@ -25,4 +27,16 @@ fn test_lockfile_sources() {
         .join("\n");
 
     insta::assert_snapshot!(sources);
+}
+
+#[test]
+fn test_source_files() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let fixture = path.join("tests/fixture");
+
+    let files = spago::source_files(fixture);
+    let snapshot = format!("{files:#?}");
+    let snapshot = snapshot.replace(env!("CARGO_MANIFEST_DIR"), "./spago");
+
+    insta::assert_snapshot!(snapshot);
 }
