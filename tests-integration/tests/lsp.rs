@@ -120,3 +120,14 @@ fn test_011_completion_module_name_main() {
     let report = tests_integration::lsp::report(&mut compiler, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_012_completion_edit_import_main() {
+    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/012_completion_edit_import"));
+    let Some(id) = compiler.runtime.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&mut compiler, id);
+    insta::assert_snapshot!(report);
+}
