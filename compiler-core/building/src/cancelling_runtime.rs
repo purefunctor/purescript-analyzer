@@ -45,6 +45,70 @@
 // 1. Revision and dependency tracking
 // 2. Cancellation after input writes
 // 3. Dependency verification
+//
+// On revision on dependency tracking, much remains the same:
+// updating inputs creates a new revision. Ideally we can store
+// the revision as an atomic value, with storage backed by a
+// read-write lock or a mutex. To prevent queries from accessing
+// stale versions of inputs, a "query lock" is needed to act as
+// a way to make read/writes more consistent.
+//
+// Cancellation can be implemented as an atomic boolean, which
+// propagates through all queries across all threads. Special
+// care needs to be taken to make sure that promises for ongoing
+// threads are dropped once a computation fails to resolve.
+//
+// Finally, there's dependency verification—we take the revisions
+// and dependencies tracked for any given query, then check if
+// its dependencies need updating or if the cached value can be
+// returned successfully.
+//
+// In both the blocking and parallel runtimes, we've designed
+// traces to be stored homogeneously through the query keys.
+// I think historically it was implemented this way to align
+// more with the original paper's description of the implementation,
+// but since it only stores the latest trace then storing said
+// trace information alongside the actual values is perfectly
+// acceptable.
+//
+// One complication that arises with this approach is that
+// it combines storage for memoized values (i.e. the actual hashmaps)
+// and storage for the synchronization mechanisms. This makes the
+// future goal of cross-process incrementality a little bit more
+// difficult. In terms of the actual code, I don't think much needs
+// to be changed.
+//
+// We could simply panic if serialization is attempted for in-progress
+// queries, or simply ignore them from being serialized.
+//
+// There's 3 states for a derived query to be in:
+//
+// enum QueryState<T> {
+//   NotComputed,
+//   InProgress {
+//     promises: Mutex<Vec<Promise<T>>>,
+//   },
+//   Computed {
+//     computed: T,
+//     trace: Trace,
+//   },
+// }
+//
+// NotComputed/Computed are trivial—InProgress is a little more interesting.
+// The idea with InProgress is to keep track of an internally mutable vector
+// of promises that need to be fulfilled by the thread tasked with computing
+// the query i.e. the first thread to read NotComputed
+//
+// Any thread that encounters an InProgress query would create a new future/
+// promise pair, push the newly created promise, and block on the future.
+//
+// Note that when writing lookup functions for the query storage, we must avoid
+// Option<QueryState<T>>, in favor of defaulting to NotComputed.
+//
+// In the parallel runtime, thread-local state is maintained, specifically for
+// tracking dependencies between queries. We set the expectation that queries
+// execute their dependencies on the same thread, which would make significantly
+// easier to perform dependency tracking.
 
 mod promise;
 
@@ -83,7 +147,7 @@ where
     }
 
     // Check if already computed or in progress
-    let future = {
+    {
         let mut guard = state.lock();
         match guard.get_mut(&n) {
             Some(State::Memoized(value)) => {
@@ -94,20 +158,15 @@ where
                 // Another thread is computing, create a future and add our promise
                 let (future, promise) = Future::new();
                 promises.lock().push(promise);
-                Some(future)
+
+                drop(guard);
+                return future.wait();
             }
             None => {
-                // We're the first, start computing
                 guard.insert(n, State::InProgress(Mutex::new(Vec::new())));
-                None
             }
         }
     };
-
-    // If we have a future, wait for another thread to compute
-    if let Some(future) = future {
-        return future.wait();
-    }
 
     // If the computation falls through, make sure that the cancellation is
     // propagated across the waiting futures by dropping the promises that
