@@ -192,12 +192,8 @@ where
                 promise.fulfill(result);
             });
         }
-    };
-
-    {
-        let mut guard = state.lock();
         guard.insert(n, State::Memoized(result));
-    }
+    };
 
     Some(result)
 }
@@ -215,12 +211,17 @@ fn test_fibonacci() {
     let state1 = Arc::new(Mutex::new(FxHashMap::default()));
     let cancelled = Arc::new(AtomicBool::new(false));
 
+    let mut threads = vec![];
     for _ in 0..10_000 {
         let state2 = state1.clone();
         let cancelled2 = cancelled.clone();
         let a = std::thread::spawn(move || fibonacci(state2, cancelled2, 100));
-        a.join().unwrap();
+        threads.push(a);
     }
+
+    threads.into_iter().for_each(|thread| {
+        thread.join().unwrap();
+    });
 }
 
 #[test]
