@@ -159,6 +159,9 @@ where
                 let (future, promise) = Future::new();
                 promises.lock().push(promise);
 
+                // This is important because `wait` blocks execution for the current
+                // thread and would hold the guard indefinitely. The computing thread
+                // needs to be able to acquire the `state` to read the promises.
                 drop(guard);
                 return future.wait();
             }
@@ -188,11 +191,11 @@ where
         let mut guard = state.lock();
         if let Some(State::InProgress(promises)) = guard.remove(&n) {
             let promises = promises.into_inner();
-            promises.into_iter().for_each(|promise| {
-                promise.fulfill(result);
-            });
+            promises.into_iter().for_each(|promise| promise.fulfill(result));
+            guard.insert(n, State::Memoized(result));
+        } else {
+            unreachable!("invariant violated: expected InProgress");
         }
-        guard.insert(n, State::Memoized(result));
     };
 
     Some(result)
