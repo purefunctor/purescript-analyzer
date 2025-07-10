@@ -149,7 +149,7 @@ where
     // Check if already computed or in progress
     {
         let mut guard = state.lock();
-        match guard.get_mut(&n) {
+        match guard.get(&n) {
             Some(State::Memoized(value)) => {
                 let value = *value;
                 return Some(value);
