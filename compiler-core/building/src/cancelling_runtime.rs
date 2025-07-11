@@ -242,7 +242,8 @@ impl QueryEngine {
         }
     }
 
-    fn lines(&self, k: usize) -> usize {
+    fn lines(&self, before: impl Fn(), k: usize) -> usize {
+        before();
         let content = self.content(k);
         content.lines().count()
     }
@@ -250,7 +251,7 @@ impl QueryEngine {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::sync::{atomic::Ordering, Arc, Barrier};
 
     use super::{GlobalState, QueryControlGuard, QueryEngine};
 
@@ -274,6 +275,35 @@ mod tests {
     fn query_engine() {
         let engine = QueryEngine::default();
         engine.set_content(0, "abc\ndef");
-        assert_eq!(engine.lines(0), 2);
+        assert_eq!(engine.lines(|| (), 0), 2);
+    }
+
+    #[test]
+    fn query_engine_cancellation() {
+        let engine = QueryEngine::default();
+        let checkpoint = Arc::new(Barrier::new(2));
+
+        engine.set_content(0, "abc\ndef");
+
+        let engine_snapshot = engine.snapshot();
+        let checkpoint_clone = checkpoint.clone();
+
+        let thread = std::thread::spawn(move || {
+            let global = engine_snapshot.control.global.clone();
+            engine_snapshot.lines(
+                || {
+                    checkpoint_clone.wait();
+                    assert!(global.cancelled.load(Ordering::Relaxed));
+                },
+                0,
+            )
+        });
+
+        engine.control.global.cancelled.store(true, Ordering::Relaxed);
+        checkpoint.wait();
+        assert!(thread.join().is_ok());
+
+        assert!(engine.control.global.query_lock.try_write().is_some());
+        engine.control.global.cancelled.store(false, Ordering::Relaxed);
     }
 }
