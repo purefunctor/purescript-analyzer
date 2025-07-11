@@ -214,8 +214,16 @@ struct QueryStorage {
 
 #[derive(Default)]
 struct QueryEngine {
-    input: Arc<RwLock<QueryStorage>>,
+    storage: Arc<RwLock<QueryStorage>>,
     control: QueryControl,
+}
+
+impl QueryEngine {
+    fn snapshot(&self) -> QueryEngine {
+        let storage = self.storage.clone();
+        let control = self.control.snapshot();
+        QueryEngine { storage, control }
+    }
 }
 
 #[cfg(test)]
