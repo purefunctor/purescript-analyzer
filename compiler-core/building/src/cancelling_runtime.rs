@@ -226,11 +226,33 @@ impl QueryEngine {
     }
 }
 
+impl QueryEngine {
+    fn set_content(&self, k: usize, v: impl Into<Arc<str>>) {
+        self.control.global.cancelled.store(true, Ordering::Relaxed);
+        let _query_lock = self.control.global.query_lock.write();
+        self.storage.write().input.content.insert(k, v.into());
+        self.control.global.cancelled.store(false, Ordering::Relaxed);
+    }
+
+    fn content(&self, k: usize) -> Arc<str> {
+        if let Some(v) = self.storage.read().input.content.get(&k) {
+            Arc::clone(v)
+        } else {
+            unreachable!("invariant violated: invalid {}", k);
+        }
+    }
+
+    fn lines(&self, k: usize) -> usize {
+        let content = self.content(k);
+        content.lines().count()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
 
-    use super::{GlobalState, QueryControlGuard};
+    use super::{GlobalState, QueryControlGuard, QueryEngine};
 
     #[test]
     fn query_control_guard_holds() {
@@ -246,5 +268,12 @@ mod tests {
         let guard = QueryControlGuard::new(&global);
         drop(guard);
         assert!(global.query_lock.try_write().is_some());
+    }
+
+    #[test]
+    fn query_engine() {
+        let engine = QueryEngine::default();
+        engine.set_content(0, "abc\ndef");
+        assert_eq!(engine.lines(0), 2);
     }
 }
