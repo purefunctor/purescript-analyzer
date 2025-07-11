@@ -109,6 +109,12 @@
 // tracking dependencies between queries. We set the expectation that queries
 // execute their dependencies on the same thread, which would make significantly
 // easier to perform dependency tracking.
+//
+// Going back to the global query_lock approach, an important strategy that
+// salsa employs is only acquiring a singular read lock from the query_lock
+// per "snapshot" of the runtime, rather than on every query! It uses the raw
+// API for parking_lot to implement a custom RAII structure that releases
+// the lock when the snapshot is dropped.
 
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -142,15 +148,24 @@ struct QueryStorage {
     analyse: FxHashMap<usize, QueryState<usize>>,
 }
 
-struct Runtime {
+struct GlobalState {
+    /// An atomic token that determines if query execution had been cancelled.
     cancelled: AtomicBool,
-    global_lock: RwLock<()>,
+    /// A global read-write lock for enforcing the order of reads and writes.
+    query_lock: RwLock<()>,
+}
+
+struct LocalState {}
+
+struct Runtime {
+    global: Arc<GlobalState>,
+    local: Arc<LocalState>,
     input_storage: Arc<RwLock<InputStorage>>,
     query_storage: Arc<RwLock<QueryStorage>>,
 }
 
 impl Runtime {
-    fn set_content(&mut self, k: usize, v: impl Into<Arc<str>>) {
+    fn set_content(&self, k: usize, v: impl Into<Arc<str>>) {
         // Using an AtomicBool seems like a good idea at first, but then how do
         // we revert it back to false while also making sure that _all_ derived
         // queries have finished execution? I suppose that if a query were to
@@ -180,9 +195,9 @@ impl Runtime {
         // not to be cancelled, and the fact that we were able to acquire a write
         // lock in the first place tells us that there are no other threads holding
         // a read lock.
-        self.cancelled.store(true, Ordering::Relaxed);
-        let _global_lock = self.global_lock.write();
-        self.cancelled.store(false, Ordering::Relaxed);
+        self.global.cancelled.store(true, Ordering::Relaxed);
+        let _global_lock = self.global.query_lock.write();
+        self.global.cancelled.store(false, Ordering::Relaxed);
         self.input_storage.write().content.insert(k, v.into());
     }
 }
