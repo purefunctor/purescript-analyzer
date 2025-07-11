@@ -180,9 +180,9 @@ impl Runtime {
         // not to be cancelled, and the fact that we were able to acquire a write
         // lock in the first place tells us that there are no other threads holding
         // a read lock.
-        self.cancelled.store(true, Ordering::SeqCst);
+        self.cancelled.store(true, Ordering::Relaxed);
         let _global_lock = self.global_lock.write();
-        self.cancelled.store(false, Ordering::SeqCst);
+        self.cancelled.store(false, Ordering::Relaxed);
         self.input_storage.write().content.insert(k, v.into());
     }
 }
