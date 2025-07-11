@@ -135,7 +135,7 @@ enum QueryKey {
 }
 
 #[derive(Default)]
-enum QueryState<T> {
+enum DerivedState<T> {
     #[default]
     NotComputed,
     InProgress {
@@ -152,9 +152,9 @@ struct InputStorage {
 }
 
 #[derive(Default)]
-struct QueryStorage {
-    lines: FxHashMap<usize, QueryState<usize>>,
-    analyse: FxHashMap<usize, QueryState<usize>>,
+struct DerivedStorage {
+    lines: FxHashMap<usize, DerivedState<usize>>,
+    analyse: FxHashMap<usize, DerivedState<usize>>,
 }
 
 #[derive(Default)]
@@ -207,9 +207,14 @@ impl QueryControl {
 }
 
 #[derive(Default)]
+struct QueryStorage {
+    input: InputStorage,
+    derived: DerivedStorage,
+}
+
+#[derive(Default)]
 struct QueryEngine {
-    input: RwLock<InputStorage>,
-    query: RwLock<QueryStorage>,
+    input: Arc<RwLock<QueryStorage>>,
     control: QueryControl,
 }
 
