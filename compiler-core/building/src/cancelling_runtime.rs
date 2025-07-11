@@ -116,16 +116,17 @@
 // API for parking_lot to implement a custom RAII structure that releases
 // the lock when the snapshot is dropped.
 
+mod promise;
+
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
 
+use lock_api::{RawRwLock, RawRwLockRecursive};
 use parking_lot::{Mutex, RwLock};
 use promise::Promise;
 use rustc_hash::FxHashMap;
-
-mod promise;
 
 enum QueryKey {
     Content(usize),
@@ -148,6 +149,7 @@ struct QueryStorage {
     analyse: FxHashMap<usize, QueryState<usize>>,
 }
 
+#[derive(Default)]
 struct GlobalState {
     /// An atomic token that determines if query execution had been cancelled.
     cancelled: AtomicBool,
@@ -155,256 +157,72 @@ struct GlobalState {
     query_lock: RwLock<()>,
 }
 
+#[derive(Default)]
 struct LocalState {}
 
-struct Runtime {
+/// Custom guard that acquires a read lock from the [`GlobalState::query_lock`]
+/// and releases it when dropped, effectively tying it to the lifetime of the
+/// [`QueryControl`] it belongs to.
+struct QueryControlGuard {
     global: Arc<GlobalState>,
-    local: Arc<LocalState>,
-    input_storage: Arc<RwLock<InputStorage>>,
-    query_storage: Arc<RwLock<QueryStorage>>,
 }
 
-impl Runtime {
-    fn set_content(&self, k: usize, v: impl Into<Arc<str>>) {
-        // Using an AtomicBool seems like a good idea at first, but then how do
-        // we revert it back to false while also making sure that _all_ derived
-        // queries have finished execution? I suppose that if a query were to
-        // acquire the `global_lock` under a read first and foremost, then it
-        // would present some guarantee that it would read `cancelled` as true,
-        // thus failing immediately. I suppose the `Ordering` that we provide to
-        // the atomic store/load operations would have an effect as well.
-        //
-        // The alternative would be to take advantage of revision numbers,
-        // where we can store the current revision and the pending revision,
-        // the latter of which we increment during input setting.
-        //
-        // Queries can then compare the current revision and pending revision
-        // from time to time to determine if they should be cancelled.
-        //
-        // Going back to the AtomicBool approach, if a thread is able to acquire
-        // a read lock on the global lock before a thread was able to acquire a
-        // write lock, there's a chance that the value of `cancelled` that it
-        // would read is false, thus allowing it to continue execution. In the
-        // instance that the thread needed to compute dependencies, those dependencies
-        // would be able to acquire a recursive read lock on the global lock,
-        // but at this point `cancelled` might have been already set to true!
-        // Thus, an Err is immediately returned which propagates up to the top-level
-        // query. Finally, the read lock is released, freeing up the write lock.
-        // Consider that the write lock guarantees no other threads can execute
-        // queries: any thread spawned during the lifetime of the write lock does
-        // not to be cancelled, and the fact that we were able to acquire a write
-        // lock in the first place tells us that there are no other threads holding
-        // a read lock.
-        self.global.cancelled.store(true, Ordering::Relaxed);
-        let _global_lock = self.global.query_lock.write();
-        self.global.cancelled.store(false, Ordering::Relaxed);
-        self.input_storage.write().content.insert(k, v.into());
+impl QueryControlGuard {
+    fn new(global: &Arc<GlobalState>) -> QueryControlGuard {
+        // SAFETY: QueryControlGuard::drop
+        unsafe { global.query_lock.raw().lock_shared_recursive() };
+        QueryControlGuard { global: Arc::clone(global) }
     }
 }
 
-// use std::sync::atomic::{AtomicBool, Ordering};
-// use std::sync::Arc;
-//
-// use parking_lot::Mutex;
-// use promise::{Future, Promise};
-// use rustc_hash::FxHashMap;
-//
-// #[derive(Debug)]
-// enum State {
-//     InProgress(Mutex<Vec<Promise<usize>>>),
-//     Memoized(usize),
-// }
-//
-// fn fibonacci_with_hook<F>(
-//     state: Arc<Mutex<FxHashMap<usize, State>>>,
-//     cancelled: Arc<AtomicBool>,
-//     n: usize,
-//     hook: F,
-// ) -> Option<usize>
-// where
-//     F: Fn(usize) + Clone,
-// {
-//     // Call the hook with current n
-//     hook(n);
-//
-//     // Check cancellation at the start
-//     if cancelled.load(Ordering::Relaxed) {
-//         return None;
-//     }
-//
-//     if n <= 1 {
-//         return Some(n);
-//     }
-//
-//     // Check if already computed or in progress
-//     {
-//         let mut guard = state.lock();
-//         match guard.get(&n) {
-//             Some(State::Memoized(value)) => {
-//                 let value = *value;
-//                 return Some(value);
-//             }
-//             Some(State::InProgress(promises)) => {
-//                 // Another thread is computing, create a future and add our promise
-//                 let (future, promise) = Future::new();
-//                 promises.lock().push(promise);
-//
-//                 // This is important because `wait` blocks execution for the current
-//                 // thread and would hold the guard indefinitely. The computing thread
-//                 // needs to be able to acquire the `state` to read the promises.
-//                 drop(guard);
-//                 return future.wait();
-//             }
-//             None => {
-//                 guard.insert(n, State::InProgress(Mutex::new(Vec::new())));
-//             }
-//         }
-//     };
-//
-//     // If the computation falls through, make sure that the cancellation is
-//     // propagated across the waiting futures by dropping the promises that
-//     // have been collected so far.
-//     let Some(n_1) = fibonacci_with_hook(state.clone(), cancelled.clone(), n - 1, hook.clone())
-//     else {
-//         state.lock().remove(&n);
-//         return None;
-//     };
-//     let Some(n_2) = fibonacci_with_hook(state.clone(), cancelled.clone(), n - 2, hook.clone())
-//     else {
-//         state.lock().remove(&n);
-//         return None;
-//     };
-//     let result = n_1 + n_2;
-//
-//     // Fulfill all waiting promises and memoize
-//     {
-//         let mut guard = state.lock();
-//         if let Some(State::InProgress(promises)) = guard.remove(&n) {
-//             let promises = promises.into_inner();
-//             promises.into_iter().for_each(|promise| promise.fulfill(result));
-//             guard.insert(n, State::Memoized(result));
-//         } else {
-//             unreachable!("invariant violated: expected InProgress");
-//         }
-//     };
-//
-//     Some(result)
-// }
-//
-// fn fibonacci(
-//     state: Arc<Mutex<FxHashMap<usize, State>>>,
-//     cancelled: Arc<AtomicBool>,
-//     n: usize,
-// ) -> Option<usize> {
-//     fibonacci_with_hook(state, cancelled, n, |_| {})
-// }
-//
-// #[test]
-// fn test_fibonacci() {
-//     let state1 = Arc::new(Mutex::new(FxHashMap::default()));
-//     let cancelled = Arc::new(AtomicBool::new(false));
-//
-//     let mut threads = vec![];
-//     for _ in 0..10_000 {
-//         let state2 = state1.clone();
-//         let cancelled2 = cancelled.clone();
-//         let a = std::thread::spawn(move || fibonacci(state2, cancelled2, 100));
-//         threads.push(a);
-//     }
-//
-//     threads.into_iter().for_each(|thread| {
-//         thread.join().unwrap();
-//     });
-// }
-//
-// #[test]
-// fn test_fibonacci_cancellation() {
-//     let state = Arc::new(Mutex::new(FxHashMap::default()));
-//     let cancelled = Arc::new(AtomicBool::new(false));
-//
-//     // Pre-cancel before starting computation
-//     cancelled.store(true, Ordering::Relaxed);
-//
-//     // Should return None immediately due to cancellation check
-//     let result = fibonacci(state.clone(), cancelled.clone(), 100);
-//     assert_eq!(result, None);
-// }
-//
-// #[test]
-// fn test_fibonacci_cancellation_propagation() {
-//     let state = Arc::new(Mutex::new(FxHashMap::default()));
-//     let cancelled = Arc::new(AtomicBool::new(false));
-//
-//     // Compute a value first
-//     let result = fibonacci(state.clone(), cancelled.clone(), 10);
-//     assert_eq!(result, Some(55));
-//
-//     // Now cancel and try to compute again
-//     cancelled.store(true, Ordering::Relaxed);
-//
-//     // Should return None for new computations
-//     let result = fibonacci(state.clone(), cancelled.clone(), 15);
-//     assert_eq!(result, None);
-//
-//     // Should also return None for previously computed values
-//     let result = fibonacci(state.clone(), cancelled.clone(), 10);
-//     assert_eq!(result, None);
-// }
-//
-// #[test]
-// fn test_fibonacci_cancellation_mid_computation() {
-//     use std::sync::{Arc, Barrier};
-//
-//     let state = Arc::new(Mutex::new(FxHashMap::default()));
-//     let cancelled = Arc::new(AtomicBool::new(false));
-//
-//     // Use a barrier to synchronize between threads
-//     let barrier = Arc::new(Barrier::new(2));
-//
-//     // Start computing in a separate thread with a synchronization hook
-//     let state1 = state.clone();
-//     let cancelled1 = cancelled.clone();
-//     let barrier1 = barrier.clone();
-//     let handle1 = std::thread::spawn(move || {
-//         fibonacci_with_hook(state1, cancelled1, 5, |n| {
-//             // Signal when we reach n=15 (middle of computation)
-//             if n == 2 {
-//                 // First barrier: signal we've reached the target
-//                 barrier1.wait();
-//                 // Second barrier: wait for cancellation to be set
-//                 barrier1.wait();
-//             }
-//         })
-//     });
-//
-//     let state2 = state.clone();
-//     let cancelled2 = cancelled.clone();
-//     let barrier2 = barrier.clone();
-//     let handle2 = std::thread::spawn(move || {
-//         fibonacci_with_hook(state2, cancelled2, 5, |n| {
-//             // Signal when we reach n=15 (middle of computation)
-//             if n == 2 {
-//                 // First barrier: signal we've reached the target
-//                 barrier2.wait();
-//                 // Second barrier: wait for cancellation to be set
-//                 barrier2.wait();
-//             }
-//         })
-//     });
-//
-//     // Wait for the computation to reach the synchronization point
-//     barrier.wait();
-//
-//     // Now we know the computation is at n=15, set cancellation
-//     cancelled.store(true, Ordering::Relaxed);
-//
-//     // Release the computation thread to continue
-//     barrier.wait();
-//
-//     // Should return None due to cancellation
-//     let result1 = handle1.join().unwrap();
-//     assert_eq!(result1, None);
-//
-//     let result2 = handle2.join().unwrap();
-//     assert_eq!(result2, None);
-// }
+impl Drop for QueryControlGuard {
+    fn drop(&mut self) {
+        // SAFETY: QueryControlGuard::new
+        unsafe { self.global.query_lock.raw().unlock_shared() }
+    }
+}
+
+struct QueryControl {
+    guard: Option<QueryControlGuard>,
+    local: Arc<LocalState>,
+    global: Arc<GlobalState>,
+}
+
+impl QueryControl {
+    fn new() -> QueryControl {
+        let guard = None;
+        let local = Arc::new(LocalState::default());
+        let global = Arc::new(GlobalState::default());
+        QueryControl { guard, local, global }
+    }
+
+    fn snapshot(&self) -> QueryControl {
+        let guard = Some(QueryControlGuard::new(&self.global));
+        let local = Arc::new(LocalState::default());
+        let global = Arc::clone(&self.global);
+        QueryControl { guard, local, global }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use super::{GlobalState, QueryControlGuard};
+
+    #[test]
+    fn query_control_guard_holds() {
+        let global = Arc::new(GlobalState::default());
+        let guard = QueryControlGuard::new(&global);
+        assert!(global.query_lock.try_write().is_none());
+        drop(guard);
+    }
+
+    #[test]
+    fn query_control_guard_drops() {
+        let global = Arc::new(GlobalState::default());
+        let guard = QueryControlGuard::new(&global);
+        drop(guard);
+        assert!(global.query_lock.try_write().is_some());
+    }
+}
