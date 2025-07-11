@@ -134,16 +134,24 @@ enum QueryKey {
     Analyse(usize),
 }
 
+#[derive(Default)]
 enum QueryState<T> {
+    #[default]
     NotComputed,
-    InProgress { promises: Mutex<Vec<Promise<T>>> },
-    Computed { computed: T },
+    InProgress {
+        promises: Mutex<Vec<Promise<T>>>,
+    },
+    Computed {
+        computed: T,
+    },
 }
 
+#[derive(Default)]
 struct InputStorage {
     content: FxHashMap<usize, Arc<str>>,
 }
 
+#[derive(Default)]
 struct QueryStorage {
     lines: FxHashMap<usize, QueryState<usize>>,
     analyse: FxHashMap<usize, QueryState<usize>>,
@@ -182,6 +190,7 @@ impl Drop for QueryControlGuard {
     }
 }
 
+#[derive(Default)]
 struct QueryControl {
     guard: Option<QueryControlGuard>,
     local: Arc<LocalState>,
@@ -189,19 +198,19 @@ struct QueryControl {
 }
 
 impl QueryControl {
-    fn new() -> QueryControl {
-        let guard = None;
-        let local = Arc::new(LocalState::default());
-        let global = Arc::new(GlobalState::default());
-        QueryControl { guard, local, global }
-    }
-
     fn snapshot(&self) -> QueryControl {
         let guard = Some(QueryControlGuard::new(&self.global));
         let local = Arc::new(LocalState::default());
         let global = Arc::clone(&self.global);
         QueryControl { guard, local, global }
     }
+}
+
+#[derive(Default)]
+struct QueryEngine {
+    input: RwLock<InputStorage>,
+    query: RwLock<QueryStorage>,
+    control: QueryControl,
 }
 
 #[cfg(test)]
