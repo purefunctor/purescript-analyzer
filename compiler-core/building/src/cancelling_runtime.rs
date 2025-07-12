@@ -120,7 +120,7 @@ mod promise;
 
 use std::{
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
     time::Duration,
@@ -137,6 +137,14 @@ enum QueryKey {
     Analyse(usize),
 }
 
+#[derive(Debug)]
+struct Trace {
+    /// Timestamp of when the query was last called.
+    built: usize,
+    /// Timestamp of when the query was last recomputed.
+    changed: usize,
+}
+
 #[derive(Debug, Default)]
 enum DerivedState<T> {
     #[default]
@@ -146,6 +154,7 @@ enum DerivedState<T> {
     },
     Computed {
         computed: T,
+        trace: Trace,
     },
 }
 
@@ -155,9 +164,14 @@ impl<T> DerivedState<T> {
     }
 }
 
+struct InputState<T> {
+    value: T,
+    changed: usize,
+}
+
 #[derive(Default)]
 struct InputStorage {
-    content: FxHashMap<usize, Arc<str>>,
+    content: FxHashMap<usize, InputState<Arc<str>>>,
 }
 
 #[derive(Default)]
@@ -172,6 +186,8 @@ struct GlobalState {
     cancelled: AtomicBool,
     /// A global read-write lock for enforcing the order of reads and writes.
     query_lock: RwLock<()>,
+    /// A counter that tracks the current revision of the query engine.
+    revision: AtomicUsize,
 }
 
 #[derive(Default)]
@@ -239,13 +255,17 @@ impl QueryEngine {
     fn set_content(&self, k: usize, v: impl Into<Arc<str>>) {
         self.control.global.cancelled.store(true, Ordering::Relaxed);
         let _query_lock = self.control.global.query_lock.write();
-        self.storage.write().input.content.insert(k, v.into());
+
+        let changed = self.control.global.revision.fetch_add(1, Ordering::Relaxed);
+        let input = InputState { value: v.into(), changed: changed + 1 };
+        self.storage.write().input.content.insert(k, input);
+
         self.control.global.cancelled.store(false, Ordering::Relaxed);
     }
 
     fn content(&self, k: usize) -> Arc<str> {
-        if let Some(v) = self.storage.read().input.content.get(&k) {
-            Arc::clone(v)
+        if let Some(InputState { value, .. }) = self.storage.read().input.content.get(&k) {
+            Arc::clone(value)
         } else {
             unreachable!("invariant violated: invalid {}", k);
         }
@@ -279,7 +299,10 @@ impl QueryEngine {
                     } else {
                         unreachable!("invariant violated: expected InProgress");
                     }
-                    storage.derived.lines.insert(k, DerivedState::Computed { computed });
+
+                    let revision = self.control.global.revision.load(Ordering::Relaxed);
+                    let trace = Trace { built: revision, changed: revision };
+                    storage.derived.lines.insert(k, DerivedState::Computed { computed, trace });
                 }
 
                 computed
@@ -291,7 +314,20 @@ impl QueryEngine {
                 drop(storage);
                 future.wait().unwrap_or(usize::MAX)
             }
-            DerivedState::Computed { computed } => *computed,
+            DerivedState::Computed { computed, trace } => {
+                let revision = self.control.global.revision.load(Ordering::Relaxed);
+
+                if trace.built == revision {
+                    return *computed;
+                }
+
+                // Our current approach of a read lock over the derived query
+                // storage will cause duplicated work across multiple threads.
+                // The alternative is a variation of double-checked locking(?)
+                // where once a write lock is acquired, it checks if another
+                // thread has made progress already.
+                todo!()
+            }
         }
     }
 }
