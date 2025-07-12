@@ -118,14 +118,17 @@
 
 mod promise;
 
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
 };
 
 use lock_api::{RawRwLock, RawRwLockRecursive};
 use parking_lot::{Mutex, RwLock};
-use promise::Promise;
+use promise::{Future, Promise};
 use rustc_hash::FxHashMap;
 
 enum QueryKey {
@@ -134,7 +137,7 @@ enum QueryKey {
     Analyse(usize),
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 enum DerivedState<T> {
     #[default]
     NotComputed,
@@ -144,6 +147,12 @@ enum DerivedState<T> {
     Computed {
         computed: T,
     },
+}
+
+impl<T> DerivedState<T> {
+    fn in_progress() -> DerivedState<T> {
+        DerivedState::InProgress { promises: Mutex::default() }
+    }
 }
 
 #[derive(Default)]
@@ -242,16 +251,54 @@ impl QueryEngine {
         }
     }
 
-    fn lines(&self, before: impl Fn(), k: usize) -> usize {
-        before();
-        let content = self.content(k);
-        content.lines().count()
+    fn lines(&self, k: usize) -> usize {
+        if self.control.global.cancelled.load(Ordering::Relaxed) {
+            return usize::MAX;
+        }
+
+        let storage = self.storage.read();
+        match storage.derived.lines.get(&k).unwrap_or(&DerivedState::NotComputed) {
+            DerivedState::NotComputed => {
+                drop(storage);
+
+                {
+                    let mut storage = self.storage.write();
+                    storage.derived.lines.insert(k, DerivedState::in_progress());
+                }
+
+                let content = self.content(k);
+                let computed = content.lines().count();
+
+                {
+                    let mut storage = self.storage.write();
+                    if let Some(DerivedState::InProgress { promises }) =
+                        storage.derived.lines.remove(&k)
+                    {
+                        let promises = promises.into_inner();
+                        promises.into_iter().for_each(|promise| promise.fulfill(computed));
+                    } else {
+                        unreachable!("invariant violated: expected InProgress");
+                    }
+                    storage.derived.lines.insert(k, DerivedState::Computed { computed });
+                }
+
+                computed
+            }
+            DerivedState::InProgress { promises } => {
+                let (future, promise) = Future::new();
+                promises.lock().push(promise);
+
+                drop(storage);
+                future.wait().unwrap_or(usize::MAX)
+            }
+            DerivedState::Computed { computed } => *computed,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{atomic::Ordering, Arc, Barrier};
+    use std::sync::Arc;
 
     use super::{GlobalState, QueryControlGuard, QueryEngine};
 
@@ -275,35 +322,24 @@ mod tests {
     fn query_engine() {
         let engine = QueryEngine::default();
         engine.set_content(0, "abc\ndef");
-        assert_eq!(engine.lines(|| (), 0), 2);
+        assert_eq!(engine.lines(0), 2);
     }
 
     #[test]
-    fn query_engine_cancellation() {
+    fn query_engine_parallel() {
         let engine = QueryEngine::default();
-        let checkpoint = Arc::new(Barrier::new(2));
-
         engine.set_content(0, "abc\ndef");
 
-        let engine_snapshot = engine.snapshot();
-        let checkpoint_clone = checkpoint.clone();
+        let mut threads = vec![];
+        for _ in 0..1024 {
+            let engine = engine.snapshot();
+            threads.push(std::thread::spawn(move || {
+                assert_eq!(engine.lines(0), 2);
+            }))
+        }
 
-        let thread = std::thread::spawn(move || {
-            let global = engine_snapshot.control.global.clone();
-            engine_snapshot.lines(
-                || {
-                    checkpoint_clone.wait();
-                    assert!(global.cancelled.load(Ordering::Relaxed));
-                },
-                0,
-            )
-        });
-
-        engine.control.global.cancelled.store(true, Ordering::Relaxed);
-        checkpoint.wait();
-        assert!(thread.join().is_ok());
-
-        assert!(engine.control.global.query_lock.try_write().is_some());
-        engine.control.global.cancelled.store(false, Ordering::Relaxed);
+        for thread in threads {
+            assert!(thread.join().is_ok());
+        }
     }
 }
