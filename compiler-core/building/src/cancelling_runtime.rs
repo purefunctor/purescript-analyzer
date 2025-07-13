@@ -127,7 +127,7 @@ use std::{
 };
 
 use lock_api::{RawRwLock, RawRwLockRecursive};
-use parking_lot::{Mutex, RwLock};
+use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use promise::{Future, Promise};
 use rustc_hash::FxHashMap;
 
@@ -315,18 +315,76 @@ impl QueryEngine {
                 future.wait().unwrap_or(usize::MAX)
             }
             DerivedState::Computed { computed, trace } => {
+                // If this query was built during the current revision i.e.
+                // we've already called this query, we can skip revalidation.
                 let revision = self.control.global.revision.load(Ordering::Relaxed);
-
                 if trace.built == revision {
                     return *computed;
                 }
 
-                // Our current approach of a read lock over the derived query
-                // storage will cause duplicated work across multiple threads.
-                // The alternative is a variation of double-checked locking(?)
-                // where once a write lock is acquired, it checks if another
-                // thread has made progress already.
-                todo!()
+                drop(storage);
+
+                // If multiple threads were to end up needing to revalidate
+                // the current query, we make sure to use upgradable_read
+                // such that only a single thread can proceed with actually
+                // computing the query.
+                let storage = self.storage.upgradable_read();
+                match storage.derived.lines.get(&k).unwrap_or(&DerivedState::NotComputed) {
+                    DerivedState::NotComputed => {
+                        unreachable!("invariant violated: invalid revalidation state");
+                    }
+                    DerivedState::InProgress { promises } => {
+                        let (future, promise) = Future::new();
+                        promises.lock().push(promise);
+
+                        drop(storage);
+                        future.wait().unwrap_or(usize::MAX)
+                    }
+                    DerivedState::Computed { .. } => {
+                        // TODO: Our current formulation of step traces in
+                        // the single-thread runtime involves revalidation
+                        // of dependencies by calling them. However, this
+                        // risks a deadlock since the dependencies themselves
+                        // might need to acquire the same upgradable_read
+                        // lock that we're currently holding. We could release
+                        // this lock temporarily, but releasing said lock
+                        // will signal other threads to proceed, which will
+                        // cause duplicated work.
+                        //
+                        // We should be able to alleviate this by making
+                        // the current query InProgress before dropping
+                        // the lock, ensuring that other threads only
+                        // have to wait for the result.
+                        {
+                            let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
+                            storage.derived.lines.insert(k, DerivedState::in_progress());
+                        }
+
+                        let content = self.content(k);
+                        let computed = content.lines().count();
+
+                        {
+                            let mut storage = self.storage.write();
+                            if let Some(DerivedState::InProgress { promises }) =
+                                storage.derived.lines.remove(&k)
+                            {
+                                let promises = promises.into_inner();
+                                promises.into_iter().for_each(|promise| promise.fulfill(computed));
+                            } else {
+                                unreachable!("invariant violated: expected InProgress");
+                            }
+
+                            let revision = self.control.global.revision.load(Ordering::Relaxed);
+                            let trace = Trace { built: revision, changed: revision };
+                            storage
+                                .derived
+                                .lines
+                                .insert(k, DerivedState::Computed { computed, trace });
+                        }
+
+                        computed
+                    }
+                }
             }
         }
     }
@@ -371,6 +429,27 @@ mod tests {
             let engine = engine.snapshot();
             threads.push(std::thread::spawn(move || {
                 assert_eq!(engine.lines(0), 2);
+            }))
+        }
+
+        for thread in threads {
+            assert!(thread.join().is_ok());
+        }
+    }
+
+    #[test]
+    fn query_engine_validate() {
+        let engine = QueryEngine::default();
+
+        engine.set_content(0, "abc\ndef");
+        assert_eq!(engine.lines(0), 2);
+        engine.set_content(0, "abc\ndef\nghi");
+
+        let mut threads = vec![];
+        for _ in 0..1024 {
+            let engine = engine.snapshot();
+            threads.push(std::thread::spawn(move || {
+                assert_eq!(engine.lines(0), 3);
             }))
         }
 
