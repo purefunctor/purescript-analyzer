@@ -134,7 +134,7 @@ enum QueryKey {
     Analyse(usize),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Trace {
     /// Timestamp of when the query was last called.
     built: usize,
@@ -348,7 +348,10 @@ impl QueryEngine {
                     future.wait().unwrap_or(usize::MAX)
                 }
                 // TODO: Determine if query should be recomputed based on its dependencies.
-                DerivedState::Computed { .. } => {
+                DerivedState::Computed { computed, trace } => {
+                    let computed = *computed;
+                    let trace = *trace;
+
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         storage.derived.lines.insert(k, DerivedState::in_progress());
@@ -360,26 +363,74 @@ impl QueryEngine {
                         return usize::MAX;
                     }
 
-                    let content = self.content(k);
-                    let computed = content.lines().count();
+                    let dependencies = vec![QueryKey::Content(k)];
 
-                    {
-                        let mut storage = self.storage.write();
-                        if let Some(DerivedState::InProgress { promises }) =
-                            storage.derived.lines.remove(&k)
-                        {
-                            let promises = promises.into_inner();
-                            promises.into_iter().for_each(|promise| promise.fulfill(computed));
-                        } else {
-                            unreachable!("invariant violated: expected InProgress");
-                        }
-
-                        let revision = self.control.global.revision.load(Ordering::Relaxed);
-                        let trace = Trace { built: revision, changed: revision };
-                        storage.derived.lines.insert(k, DerivedState::Computed { computed, trace });
+                    let mut latest = 0;
+                    for dependency in dependencies.iter() {
+                        match dependency {
+                            QueryKey::Content(k) => {
+                                let storage = self.storage.read();
+                                if let Some(InputState { changed, .. }) =
+                                    storage.input.content.get(k)
+                                {
+                                    latest = latest.max(*changed);
+                                }
+                            }
+                            QueryKey::Lines(k) => {
+                                self.lines(*k);
+                                {
+                                    let storage = self.storage.read();
+                                    if let Some(DerivedState::Computed { trace, .. }) =
+                                        storage.derived.lines.get(k)
+                                    {
+                                        latest = latest.max(trace.changed);
+                                    }
+                                }
+                            }
+                            QueryKey::Analyse(k) => {
+                                let storage = self.storage.read();
+                                if let Some(DerivedState::Computed { trace, .. }) =
+                                    storage.derived.analyse.get(k)
+                                {
+                                    latest = latest.max(trace.changed);
+                                }
+                            }
+                        };
                     }
 
-                    computed
+                    if trace.built >= latest {
+                        {
+                            let mut storage = self.storage.write();
+                            if let Some(DerivedState::Computed { trace, .. }) =
+                                storage.derived.lines.get_mut(&k)
+                            {
+                                trace.built = self.control.global.revision.load(Ordering::Relaxed);
+                            }
+                        }
+                        computed
+                    } else {
+                        let content = self.content(k);
+                        let computed = content.lines().count();
+                        {
+                            let mut storage = self.storage.write();
+                            if let Some(DerivedState::InProgress { promises }) =
+                                storage.derived.lines.remove(&k)
+                            {
+                                let promises = promises.into_inner();
+                                promises.into_iter().for_each(|promise| promise.fulfill(computed));
+                            } else {
+                                unreachable!("invariant violated: expected InProgress");
+                            }
+
+                            let revision = self.control.global.revision.load(Ordering::Relaxed);
+                            let trace = Trace { built: revision, changed: revision };
+                            storage
+                                .derived
+                                .lines
+                                .insert(k, DerivedState::Computed { computed, trace });
+                        }
+                        computed
+                    }
                 }
             }
         }
