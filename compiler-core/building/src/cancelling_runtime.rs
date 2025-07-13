@@ -281,6 +281,9 @@ impl QueryEngine {
             DerivedState::NotComputed => {
                 drop(storage);
 
+                // TODO: While unlikely, it's possible for multiple threads to fall
+                // through to this same branch.
+                
                 {
                     let mut storage = self.storage.write();
                     storage.derived.lines.insert(k, DerivedState::in_progress());
