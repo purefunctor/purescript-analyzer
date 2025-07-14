@@ -153,9 +153,9 @@ impl QueryEngine {
         V: Eq + Clone,
     {
         // If query execution fails at any given point, clean up the state.
-        self.query_core(&get, &get_mut, &compute, dependencies).inspect_err(
+        self.query_core(&get, &get_mut, &compute, dependencies).map_err(
             |QueryError::Cancelled { cleanup }| {
-                if *cleanup {
+                if cleanup {
                     let mut storage = self.storage.write();
                     if let Entry::Occupied(o) = get_mut(&mut storage) {
                         if let DerivedState::InProgress { promises } = o.remove() {
@@ -166,6 +166,16 @@ impl QueryEngine {
                         }
                     }
                 }
+                // Dependent queries must perform cleanup regardless of
+                // whether cleanup was executed for this query. For instance:
+                //
+                // Thread 2: B
+                // Thread 1: A -> B
+                //
+                // Once cancelled, Thread 2 executes cleanup for query B.
+                // The cancellation propagates to Thread 1, where cleanup
+                // is skipped for query B, but executed for query A.
+                QueryError::Cancelled { cleanup: true }
             },
         )
     }
