@@ -188,11 +188,11 @@ impl QueryEngine {
 
         let computed = compute(self)?;
 
-        // If the current computed result is equal to the previous one, we
-        // don't need to update the changed timestamp of the query. We also
-        // insert the previous value back into the cache. This is a niche
-        // but useful optimisation for when V = Arc<T> as it means pointer
-        // equality is checked first before structural equality.
+        // If the computed result is equal to the cached one, the changed
+        // timestamp does not need to be updated. Likewise, we also insert
+        // the previous value back into the cache. The latter is a niche,
+        // but useful optimisation for when V = Arc<T>, since it enables
+        // pointer equality.
         let state = match previous {
             Some((previous, trace)) if computed == previous => DerivedState::Computed {
                 computed: previous,
