@@ -410,7 +410,7 @@ impl QueryEngine {
     }
 
     pub fn analyse(&self, _k: usize) -> Result<usize, QueryError> {
-        Err(QueryError::Cancelled { cleanup: false })
+        Err(QueryError::Cancelled { cleanup: true })
     }
 }
 
