@@ -1,6 +1,7 @@
 mod promise;
 
 use std::{
+    cell::RefCell,
     collections::hash_map::Entry,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -11,8 +12,10 @@ use std::{
 use lock_api::{RawRwLock, RawRwLockRecursive};
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use promise::{Future, Promise};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
+use thread_local::ThreadLocal;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum QueryKey {
     Content(usize),
     Lines(usize),
@@ -37,6 +40,7 @@ enum DerivedState<T> {
     Computed {
         computed: T,
         trace: Trace,
+        dependencies: Arc<[QueryKey]>,
     },
 }
 
@@ -74,7 +78,42 @@ struct GlobalState {
 }
 
 #[derive(Default)]
-struct LocalState {}
+struct LocalState {
+    inner: ThreadLocal<RefCell<LocalStateInner>>,
+}
+
+impl LocalState {
+    fn with_current<T>(&self, current: QueryKey, f: impl FnOnce() -> T) -> T {
+        let inner = self.inner.get_or_default();
+        let previous = inner.borrow_mut().current.replace(current);
+        let result = f();
+        inner.borrow_mut().current = previous;
+        result
+    }
+
+    fn with_dependency(&self, dependency: QueryKey) {
+        let mut inner = self.inner.get_or_default().borrow_mut();
+        if let Some(current) = inner.current {
+            inner.dependencies.entry(current).or_default().insert(dependency);
+        }
+    }
+
+    fn dependencies(&self, key: QueryKey) -> Arc<[QueryKey]> {
+        let inner = &self.inner.get_or_default().borrow();
+        inner
+            .dependencies
+            .get(&key)
+            .map(|dependencies| dependencies.iter().copied())
+            .unwrap_or_default()
+            .collect()
+    }
+}
+
+#[derive(Debug, Default)]
+struct LocalStateInner {
+    current: Option<QueryKey>,
+    dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
+}
 
 /// Custom guard that acquires a read lock from the [`GlobalState::query_lock`]
 /// and releases it when dropped, effectively tying it to the lifetime of the
@@ -142,10 +181,10 @@ impl QueryEngine {
 impl QueryEngine {
     fn query<K, V, GetFn, GetMutFn, ComputeFn>(
         &self,
+        key: QueryKey,
         get: GetFn,
         get_mut: GetMutFn,
         compute: ComputeFn,
-        dependencies: &[QueryKey],
     ) -> Result<V, QueryError>
     where
         GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
@@ -153,38 +192,46 @@ impl QueryEngine {
         ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
         V: Eq + Clone,
     {
-        // If query execution fails at any given point, clean up the state.
-        self.query_core(&get, &get_mut, &compute, dependencies).map_err(
-            |QueryError::Cancelled { cleanup }| {
-                if cleanup {
-                    let mut storage = self.storage.write();
-                    if let Entry::Occupied(o) = get_mut(&mut storage) {
-                        if let DerivedState::InProgress { promises } = o.remove() {
-                            drop(promises);
-                            drop(storage);
-                        } else {
-                            unreachable!("invariant violated: expected InProgress");
+        self.control.local.with_dependency(key);
+        self.control.local.with_current(key, || {
+            // If query execution fails at any given point, clean up the state.
+            self.query_core(key, &get, &get_mut, &compute).map_err(
+                |QueryError::Cancelled { cleanup }| {
+                    if cleanup {
+                        let mut storage = self.storage.write();
+                        if let Entry::Occupied(o) = get_mut(&mut storage) {
+                            if let DerivedState::InProgress { promises } = o.remove() {
+                                drop(promises);
+                                drop(storage);
+                            } else {
+                                unreachable!("invariant violated: expected InProgress");
+                            }
                         }
                     }
-                }
-                // Dependent queries must perform cleanup regardless of
-                // whether cleanup was executed for this query. For instance:
-                //
-                // Thread 2: B
-                // Thread 1: A -> B
-                //
-                // Once cancelled, Thread 2 executes cleanup for query B.
-                // The cancellation propagates to Thread 1, where cleanup
-                // is skipped for query B, but executed for query A.
-                QueryError::Cancelled { cleanup: true }
-            },
-        )
+                    // Dependent queries must perform cleanup regardless of
+                    // whether cleanup was executed for this query. For instance:
+                    //
+                    // Thread 2: B
+                    // Thread 1: A -> B
+                    //
+                    // Once cancelled, Thread 2 executes cleanup for query B.
+                    // The cancellation propagates to Thread 1, where cleanup
+                    // is skipped for query B, but executed for query A.
+                    QueryError::Cancelled { cleanup: true }
+                },
+            )
+        })
     }
 
     /// Fulfills the promises of an [`DerivedState::InProgress`] query and
     /// replaces it with a [`DerivedState::Computed`] result in the store.
-    fn fulfill_and_store<K, V, GetMutFn>(&self, get_mut: &GetMutFn, computed: V, trace: Trace)
-    where
+    fn fulfill_and_store<K, V, GetMutFn>(
+        &self,
+        get_mut: &GetMutFn,
+        key: QueryKey,
+        computed: V,
+        trace: Trace,
+    ) where
         GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
         V: Clone,
     {
@@ -201,7 +248,8 @@ impl QueryEngine {
             }
         }
 
-        let state = DerivedState::Computed { computed, trace };
+        let dependencies = self.control.local.dependencies(key);
+        let state = DerivedState::Computed { computed, trace, dependencies };
         get_mut(&mut storage).insert_entry(state);
     }
 
@@ -209,6 +257,7 @@ impl QueryEngine {
         &self,
         get_mut: &GetMutFn,
         compute: &ComputeFn,
+        key: QueryKey,
         revision: usize,
         previous: Option<(V, Trace)>,
     ) -> Result<V, QueryError>
@@ -231,12 +280,12 @@ impl QueryEngine {
         match previous {
             Some((previous, trace)) if computed == previous => {
                 let trace = Trace { built: revision, changed: trace.changed };
-                self.fulfill_and_store(get_mut, V::clone(&previous), trace);
+                self.fulfill_and_store(get_mut, key, V::clone(&previous), trace);
                 Ok(previous)
             }
             _ => {
                 let trace = Trace { built: revision, changed: revision };
-                self.fulfill_and_store(get_mut, V::clone(&computed), trace);
+                self.fulfill_and_store(get_mut, key, V::clone(&computed), trace);
                 Ok(computed)
             }
         }
@@ -280,10 +329,10 @@ impl QueryEngine {
 
     fn query_core<K, V, GetFn, GetMutFn, ComputeFn>(
         &self,
+        key: QueryKey,
         get: &GetFn,
         get_mut: &GetMutFn,
         compute: &ComputeFn,
-        dependencies: &[QueryKey],
     ) -> Result<V, QueryError>
     where
         GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
@@ -305,7 +354,7 @@ impl QueryEngine {
         {
             let storage = self.storage.read();
             match get(&storage).unwrap_or(&DerivedState::NotComputed) {
-                DerivedState::Computed { computed, trace } => {
+                DerivedState::Computed { computed, trace, .. } => {
                     if trace.built == revision {
                         return Ok(V::clone(computed));
                     }
@@ -339,7 +388,7 @@ impl QueryEngine {
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
                     }
 
-                    self.compute_core(get_mut, compute, revision, None)
+                    self.compute_core(get_mut, compute, key, revision, None)
                 }
                 DerivedState::InProgress { promises } => {
                     let (future, promise) = Future::new();
@@ -350,9 +399,10 @@ impl QueryEngine {
 
                     future.wait().ok_or(QueryError::Cancelled { cleanup: false })
                 }
-                DerivedState::Computed { computed, trace } => {
+                DerivedState::Computed { computed, trace, dependencies } => {
                     let computed = V::clone(computed);
                     let trace = *trace;
+                    let dependencies = Arc::clone(dependencies);
 
                     // If the cached value was built during the current revision
                     // we can skip dependency verification entirely. This is also
@@ -367,7 +417,7 @@ impl QueryEngine {
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
                     }
 
-                    let latest = self.verify_core(dependencies)?;
+                    let latest = self.verify_core(&dependencies)?;
 
                     // If the cached value was built more recently the the
                     // latest change, we can update its built timestamp to
@@ -375,58 +425,76 @@ impl QueryEngine {
                     // the fastest path if it's called in the same revision.
                     if trace.built >= latest {
                         let trace = Trace { built: revision, ..trace };
-                        self.fulfill_and_store(get_mut, V::clone(&computed), trace);
+                        self.fulfill_and_store(get_mut, key, V::clone(&computed), trace);
                         return Ok(computed);
                     }
 
-                    self.compute_core(get_mut, compute, revision, Some((computed, trace)))
+                    self.compute_core(get_mut, compute, key, revision, Some((computed, trace)))
                 }
             }
         }
+    }
+
+    fn set_input<K, V, F>(&self, f: F, v: V)
+    where
+        F: FnOnce(&mut QueryStorage) -> Entry<K, InputState<V>>,
+    {
+        self.control.global.cancelled.store(true, Ordering::Relaxed);
+        let _query_lock = self.control.global.query_lock.write();
+
+        let changed = self.control.global.revision.fetch_add(1, Ordering::AcqRel);
+        let state = InputState { value: v, changed: changed + 1 };
+
+        let mut storage = self.storage.write();
+        f(&mut storage).insert_entry(state);
+
+        self.control.global.cancelled.store(false, Ordering::Relaxed);
+    }
+
+    fn get_input<V, F>(&self, k: QueryKey, f: F) -> V
+    where
+        F: FnOnce(&QueryStorage) -> Option<&InputState<V>>,
+        V: Clone,
+    {
+        self.control.local.with_dependency(k);
+        let storage = self.storage.read();
+        let state = f(&storage).unwrap_or_else(|| {
+            panic!("invariant violated: missing input {:?}", k);
+        });
+        V::clone(&state.value)
     }
 }
 
 impl QueryEngine {
     pub fn set_content(&self, k: usize, v: impl Into<Arc<str>>) {
-        self.control.global.cancelled.store(true, Ordering::Relaxed);
-        let _query_lock = self.control.global.query_lock.write();
-
-        let changed = self.control.global.revision.fetch_add(1, Ordering::Relaxed);
-        let input = InputState { value: v.into(), changed: changed + 1 };
-        self.storage.write().input.content.insert(k, input);
-
-        self.control.global.cancelled.store(false, Ordering::Relaxed);
+        self.set_input(|storage| storage.input.content.entry(k), v.into());
     }
 
     pub fn content(&self, k: usize) -> Arc<str> {
-        if let Some(InputState { value, .. }) = self.storage.read().input.content.get(&k) {
-            Arc::clone(value)
-        } else {
-            unreachable!("invariant violated: invalid {}", k);
-        }
+        self.get_input(QueryKey::Content(k), |storage| storage.input.content.get(&k))
     }
 
     pub fn lines(&self, k: usize) -> Result<usize, QueryError> {
         self.query(
+            QueryKey::Lines(k),
             |storage| storage.derived.lines.get(&k),
             |storage| storage.derived.lines.entry(k),
             |this| {
                 let content = this.content(k);
                 Ok(content.lines().count())
             },
-            &[QueryKey::Content(k)],
         )
     }
 
     pub fn analyse(&self, k: usize) -> Result<usize, QueryError> {
         self.query(
+            QueryKey::Analyse(k),
             |storage| storage.derived.analyse.get(&k),
             |storage| storage.derived.analyse.entry(k),
             |this| {
                 let lines = this.lines(k)?;
                 Ok(lines * 2)
             },
-            &[QueryKey::Lines(k)],
         )
     }
 }
@@ -521,8 +589,9 @@ mod tests {
         });
 
         for _ in 0..1024 {
-            let engine = global_engine.snapshot();
+            let engine = global_engine.clone();
             threads.push(std::thread::spawn(move || {
+                let engine = engine.snapshot();
                 let lines = engine.lines(0);
                 let success = lines.is_ok();
                 let failure = lines.is_err();
@@ -546,11 +615,19 @@ mod tests {
             let storage = engine.storage.read();
             assert!(matches!(
                 storage.derived.lines.get(&0),
-                Some(DerivedState::Computed { computed: 2, trace: Trace { built: 1, changed: 1 } })
+                Some(DerivedState::Computed {
+                    computed: 2,
+                    trace: Trace { built: 1, changed: 1 },
+                    dependencies: _
+                })
             ));
             assert!(matches!(
                 storage.derived.analyse.get(&0),
-                Some(DerivedState::Computed { computed: 4, trace: Trace { built: 1, changed: 1 } })
+                Some(DerivedState::Computed {
+                    computed: 4,
+                    trace: Trace { built: 1, changed: 1 },
+                    dependencies: _,
+                })
             ));
         }
 
@@ -561,11 +638,19 @@ mod tests {
             let storage = engine.storage.read();
             assert!(matches!(
                 storage.derived.lines.get(&0),
-                Some(DerivedState::Computed { computed: 2, trace: Trace { built: 2, changed: 1 } })
+                Some(DerivedState::Computed {
+                    computed: 2,
+                    trace: Trace { built: 2, changed: 1 },
+                    dependencies: _
+                })
             ));
             assert!(matches!(
                 storage.derived.analyse.get(&0),
-                Some(DerivedState::Computed { computed: 4, trace: Trace { built: 2, changed: 1 } })
+                Some(DerivedState::Computed {
+                    computed: 4,
+                    trace: Trace { built: 2, changed: 1 },
+                    dependencies: _
+                })
             ));
         }
     }
