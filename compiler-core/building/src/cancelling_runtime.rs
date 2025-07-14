@@ -268,7 +268,126 @@ impl QueryEngine {
         GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
         GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
         ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
-        V: Clone,
+        V: Eq + Clone,
+    {
+        // If query execution fails at any given point, clean up the state.
+        self.query_core(&get, &get_mut, &compute, dependencies).inspect_err(|_| {
+            let mut storage = self.storage.write();
+            if let Entry::Occupied(o) = get_mut(&mut storage) {
+                if let DerivedState::InProgress { .. } = o.get() {
+                    o.remove();
+                }
+            }
+        })
+    }
+
+    fn compute_core<K, V, GetMutFn, ComputeFn>(
+        &self,
+        get_mut: &GetMutFn,
+        compute: &ComputeFn,
+        previous: Option<(V, Trace)>,
+    ) -> Result<V, QueryError>
+    where
+        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
+        V: Eq + Clone,
+    {
+        if self.control.global.cancelled.load(Ordering::Relaxed) {
+            return Err(QueryError::Cancelled);
+        }
+
+        let computed = compute(self)?;
+
+        // Invariant Check!
+        //
+        // If we reach this code path and observe that the query state was
+        // updated somewhere else, we crash the entire program. This is
+        // dependent on the invariant that only one thread can acquire an
+        // upgradable read lock at any given time.
+        {
+            let mut storage = self.storage.write();
+            if let Entry::Occupied(o) = get_mut(&mut storage) {
+                if let DerivedState::InProgress { promises } = o.remove() {
+                    let promises = promises.into_inner();
+                    promises.into_iter().for_each(|promise| {
+                        let computed = V::clone(&computed);
+                        promise.fulfill(computed);
+                    });
+                } else {
+                    unreachable!("invariant violated: expected InProgress");
+                }
+            }
+
+            let revision = self.control.global.revision.load(Ordering::Relaxed);
+
+            // If the current computed result is equal to the previous one, we
+            // don't need to update the changed timestamp of the query. We also
+            // insert the previous value back into the cache. This is a niche
+            // but useful optimisation for when V = Arc<T> as it means pointer
+            // equality is checked first before structural equality.
+            let state = match previous {
+                Some((previous, trace)) if computed == previous => DerivedState::Computed {
+                    computed: previous,
+                    trace: Trace { built: revision, changed: trace.changed },
+                },
+                _ => DerivedState::Computed {
+                    computed: V::clone(&computed),
+                    trace: Trace { built: revision, changed: revision },
+                },
+            };
+
+            get_mut(&mut storage).insert_entry(state);
+        }
+
+        Ok(computed)
+    }
+
+    /// Validate the given dependencies by executing them,
+    /// returning the timestamp of the most latest change.
+    fn validate_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
+        let mut latest = 0;
+        for dependency in dependencies {
+            match dependency {
+                QueryKey::Content(k) => {
+                    let storage = self.storage.read();
+                    if let Some(InputState { changed, .. }) = storage.input.content.get(k) {
+                        latest = latest.max(*changed);
+                    }
+                }
+                QueryKey::Lines(k) => {
+                    self.lines(*k)?;
+                    let storage = self.storage.read();
+                    if let Some(DerivedState::Computed { trace, .. }) = storage.derived.lines.get(k)
+                    {
+                        latest = latest.max(trace.changed);
+                    }
+                }
+                QueryKey::Analyse(k) => {
+                    self.analyse(*k)?;
+                    let storage = self.storage.read();
+                    if let Some(DerivedState::Computed { trace, .. }) =
+                        storage.derived.analyse.get(k)
+                    {
+                        latest = latest.max(trace.changed);
+                    }
+                }
+            }
+        }
+        Ok(latest)
+    }
+
+    fn query_core<K, V, GetFn, GetMutFn, ComputeFn>(
+        &self,
+        get: &GetFn,
+        get_mut: &GetMutFn,
+        compute: &ComputeFn,
+        dependencies: &[QueryKey],
+    ) -> Result<V, QueryError>
+    where
+        GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
+        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
+        V: Eq + Clone,
     {
         // The fastest path i.e. checking if the cached value was built during
         // the current revision only requires a read lock. This is an extremely
@@ -277,8 +396,7 @@ impl QueryEngine {
         {
             let storage = self.storage.read();
             if let Some(DerivedState::Computed { computed, trace }) = get(&storage) {
-                let revision = self.control.global.revision.load(Ordering::Relaxed);
-                if trace.built == revision {
+                if trace.built == self.control.global.revision.load(Ordering::Relaxed) {
                     return Ok(V::clone(computed));
                 }
             }
@@ -289,64 +407,21 @@ impl QueryEngine {
         // yet to be computed. Rather than using a write lock directly, it uses
         // an upgradable read lock; this allows the fastest path above to still
         // be accessible to queries independent of the query being executed.
+        // More importantly, only a single thread would be able to acquire the
+        // upgradable read lock at a time, which enables work deduplication.
         {
             let storage = self.storage.upgradable_read();
             match get(&storage).unwrap_or(&DerivedState::NotComputed) {
                 DerivedState::NotComputed => {
-                    // We upgrade our lock into a proper write lock to update
-                    // the query to be InProgress. At the end of this block,
-                    // any thread waiting to acquire the upgradable read lock
-                    // should see that the query is already InProgress, which
-                    // achieves our goal of work deduplication.
+                    // We upgrade our lock to update the query state. At the
+                    // end of this block, any thread waiting to acquire the
+                    // upgradable read lock should read that the query is
+                    // already in progress.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
                     }
-
-                    if self.control.global.cancelled.load(Ordering::Relaxed) {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            o.remove();
-                        }
-                        return Result::Err(QueryError::Cancelled);
-                    }
-
-                    // Finally, actually execute the query.
-                    let Ok(computed) = compute(self) else {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            o.remove();
-                        }
-                        return Result::Err(QueryError::Cancelled);
-                    };
-
-                    // Invariant Check!
-                    //
-                    // If we reach this code path and observe that the query
-                    // query state was updated somewhere else, we crash the
-                    // entire program. This is dependent on the invariant that
-                    // only one thread can acquire an upgradable read lock at
-                    // any given time.
-                    {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            if let DerivedState::InProgress { promises } = o.remove() {
-                                let promises = promises.into_inner();
-                                promises.into_iter().for_each(|promise| {
-                                    let computed = V::clone(&computed);
-                                    promise.fulfill(computed);
-                                });
-                            }
-                        }
-
-                        let revision = self.control.global.revision.load(Ordering::Relaxed);
-                        get_mut(&mut storage).insert_entry(DerivedState::Computed {
-                            computed: V::clone(&computed),
-                            trace: Trace { built: revision, changed: revision },
-                        });
-                    }
-
-                    Ok(computed)
+                    self.compute_core(get_mut, compute, None)
                 }
                 DerivedState::InProgress { promises } => {
                     let (future, promise) = Future::new();
@@ -361,63 +436,22 @@ impl QueryEngine {
                     let computed = V::clone(computed);
                     let trace = *trace;
 
+                    // Same as NotComputed, see comment above.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
                     }
 
                     if self.control.global.cancelled.load(Ordering::Relaxed) {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            o.remove();
-                        }
-                        return Result::Err(QueryError::Cancelled);
+                        return Err(QueryError::Cancelled);
                     }
 
-                    let mut latest = 0;
-                    for dependency in dependencies {
-                        match dependency {
-                            QueryKey::Content(k) => {
-                                let storage = self.storage.read();
-                                if let Some(InputState { changed, .. }) =
-                                    storage.input.content.get(k)
-                                {
-                                    latest = latest.max(*changed);
-                                }
-                            }
-                            QueryKey::Lines(k) => {
-                                if let Err(_) = self.lines(*k) {
-                                    let mut storage = self.storage.write();
-                                    if let Entry::Occupied(o) = get_mut(&mut storage) {
-                                        o.remove();
-                                    }
-                                    return Result::Err(QueryError::Cancelled);
-                                }
-                                let storage = self.storage.read();
-                                if let Some(DerivedState::Computed { trace, .. }) =
-                                    storage.derived.lines.get(k)
-                                {
-                                    latest = latest.max(trace.changed);
-                                }
-                            }
-                            QueryKey::Analyse(k) => {
-                                if let Err(_) = self.analyse(*k) {
-                                    let mut storage = self.storage.write();
-                                    if let Entry::Occupied(o) = get_mut(&mut storage) {
-                                        o.remove();
-                                    }
-                                    return Result::Err(QueryError::Cancelled);
-                                }
-                                let storage = self.storage.read();
-                                if let Some(DerivedState::Computed { trace, .. }) =
-                                    storage.derived.analyse.get(k)
-                                {
-                                    latest = latest.max(trace.changed);
-                                }
-                            }
-                        }
-                    }
+                    let latest = self.validate_core(dependencies)?;
 
+                    // If the cached value was built more recently the the
+                    // latest change, we can update its built timestamp to
+                    // the current revision. This allows the query to hit
+                    // the fastest path if it's called in the same revision.
                     if trace.built >= latest {
                         let mut storage = self.storage.write();
                         if let Entry::Occupied(o) = get_mut(&mut storage) {
@@ -428,34 +462,7 @@ impl QueryEngine {
                         return Ok(computed);
                     }
 
-                    let Ok(computed) = compute(self) else {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            o.remove();
-                        }
-                        return Result::Err(QueryError::Cancelled);
-                    };
-
-                    {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            if let DerivedState::InProgress { promises } = o.remove() {
-                                let promises = promises.into_inner();
-                                promises.into_iter().for_each(|promise| {
-                                    let computed = V::clone(&computed);
-                                    promise.fulfill(computed);
-                                });
-                            }
-                        }
-
-                        let revision = self.control.global.revision.load(Ordering::Relaxed);
-                        get_mut(&mut storage).insert_entry(DerivedState::Computed {
-                            computed: V::clone(&computed),
-                            trace: Trace { built: revision, changed: revision },
-                        });
-                    }
-
-                    Ok(computed)
+                    self.compute_core(get_mut, compute, Some((computed, trace)))
                 }
             }
         }
@@ -495,7 +502,7 @@ impl QueryEngine {
     }
 
     pub fn analyse(&self, _k: usize) -> Result<usize, QueryError> {
-        todo!();
+        Err(QueryError::Cancelled)
     }
 }
 
