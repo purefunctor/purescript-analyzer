@@ -245,7 +245,7 @@ pub struct QueryEngine {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum QueryError {
-    Cancelled,
+    Cancelled { cleanup: bool },
 }
 
 impl QueryEngine {
@@ -271,20 +271,28 @@ impl QueryEngine {
         V: Eq + Clone,
     {
         // If query execution fails at any given point, clean up the state.
-        self.query_core(&get, &get_mut, &compute, dependencies).inspect_err(|_| {
-            let mut storage = self.storage.write();
-            if let Entry::Occupied(o) = get_mut(&mut storage) {
-                if let DerivedState::InProgress { .. } = o.get() {
-                    o.remove();
+        self.query_core(&get, &get_mut, &compute, dependencies).inspect_err(
+            |QueryError::Cancelled { cleanup }| {
+                if *cleanup {
+                    let mut storage = self.storage.write();
+                    if let Entry::Occupied(o) = get_mut(&mut storage) {
+                        if let DerivedState::InProgress { promises } = o.remove() {
+                            drop(promises);
+                            drop(storage);
+                        } else {
+                            unreachable!("invariant violated: expected InProgress");
+                        }
+                    }
                 }
-            }
-        })
+            },
+        )
     }
 
     fn compute_core<K, V, GetMutFn, ComputeFn>(
         &self,
         get_mut: &GetMutFn,
         compute: &ComputeFn,
+        revision: usize,
         previous: Option<(V, Trace)>,
     ) -> Result<V, QueryError>
     where
@@ -293,10 +301,26 @@ impl QueryEngine {
         V: Eq + Clone,
     {
         if self.control.global.cancelled.load(Ordering::Relaxed) {
-            return Err(QueryError::Cancelled);
+            return Err(QueryError::Cancelled { cleanup: true });
         }
 
         let computed = compute(self)?;
+
+        // If the current computed result is equal to the previous one, we
+        // don't need to update the changed timestamp of the query. We also
+        // insert the previous value back into the cache. This is a niche
+        // but useful optimisation for when V = Arc<T> as it means pointer
+        // equality is checked first before structural equality.
+        let state = match previous {
+            Some((previous, trace)) if computed == previous => DerivedState::Computed {
+                computed: previous,
+                trace: Trace { built: revision, changed: trace.changed },
+            },
+            _ => DerivedState::Computed {
+                computed: V::clone(&computed),
+                trace: Trace { built: revision, changed: revision },
+            },
+        };
 
         // Invariant Check!
         //
@@ -317,25 +341,6 @@ impl QueryEngine {
                     unreachable!("invariant violated: expected InProgress");
                 }
             }
-
-            let revision = self.control.global.revision.load(Ordering::Relaxed);
-
-            // If the current computed result is equal to the previous one, we
-            // don't need to update the changed timestamp of the query. We also
-            // insert the previous value back into the cache. This is a niche
-            // but useful optimisation for when V = Arc<T> as it means pointer
-            // equality is checked first before structural equality.
-            let state = match previous {
-                Some((previous, trace)) if computed == previous => DerivedState::Computed {
-                    computed: previous,
-                    trace: Trace { built: revision, changed: trace.changed },
-                },
-                _ => DerivedState::Computed {
-                    computed: V::clone(&computed),
-                    trace: Trace { built: revision, changed: revision },
-                },
-            };
-
             get_mut(&mut storage).insert_entry(state);
         }
 
@@ -391,14 +396,16 @@ impl QueryEngine {
         ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
         V: Eq + Clone,
     {
+        let revision = self.control.global.revision.load(Ordering::Relaxed);
+
         // The fastest path i.e. checking if the cached value was built during
         // the current revision only requires a read lock. This is an extremely
-        // useful optimisation because it allows us to skip revalidation, which
-        // requires upgradable read locks to ensure deduplication of work.
+        // useful optimisation because it allows threads to skip their turn on
+        // acquiring an upgradable read lock.
         {
             let storage = self.storage.read();
             if let Some(DerivedState::Computed { computed, trace }) = get(&storage) {
-                if trace.built == self.control.global.revision.load(Ordering::Relaxed) {
+                if trace.built == revision {
                     return Ok(V::clone(computed));
                 }
             }
@@ -423,7 +430,8 @@ impl QueryEngine {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
                     }
-                    self.compute_core(get_mut, compute, None)
+
+                    self.compute_core(get_mut, compute, revision, None)
                 }
                 DerivedState::InProgress { promises } => {
                     let (future, promise) = Future::new();
@@ -432,20 +440,23 @@ impl QueryEngine {
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
 
-                    future.wait().ok_or(QueryError::Cancelled)
+                    future.wait().ok_or(QueryError::Cancelled { cleanup: false })
                 }
                 DerivedState::Computed { computed, trace } => {
                     let computed = V::clone(computed);
                     let trace = *trace;
 
+                    // If the cached value was built during the current revision
+                    // we can skip dependency validation entirely. This is also
+                    // checked at the start of the query_core with a read lock.
+                    if trace.built == revision {
+                        return Ok(computed);
+                    }
+
                     // Same as NotComputed, see comment above.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
-                    }
-
-                    if self.control.global.cancelled.load(Ordering::Relaxed) {
-                        return Err(QueryError::Cancelled);
                     }
 
                     let latest = self.validate_core(dependencies)?;
@@ -464,7 +475,7 @@ impl QueryEngine {
                         return Ok(computed);
                     }
 
-                    self.compute_core(get_mut, compute, Some((computed, trace)))
+                    self.compute_core(get_mut, compute, revision, Some((computed, trace)))
                 }
             }
         }
@@ -504,7 +515,7 @@ impl QueryEngine {
     }
 
     pub fn analyse(&self, _k: usize) -> Result<usize, QueryError> {
-        Err(QueryError::Cancelled)
+        Err(QueryError::Cancelled { cleanup: false })
     }
 }
 
