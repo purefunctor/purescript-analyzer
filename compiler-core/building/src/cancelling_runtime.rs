@@ -1,121 +1,3 @@
-// Requirements:
-//
-// 1. Derived queries can be ran in parallel
-// 2. Derived queries can be cancelled
-// 3. Derived queries need to be deduplicated
-// 4. Input queries cancel in-flight derived queries
-//
-// Todo:
-//
-// 1. Implement a future/promise mechanism for deduplication
-// 2. Implement runtime forking
-// 3. Implement a signal and handling for cancellation.
-//    For this, we'll probably use an atomic boolean that's
-//    checked periodically.
-//
-// Some important concepts to grok
-// 1. In salsa, runtimes are a bundle an ID, local state,
-//    shared state, and a read lock.
-// 2. When a runtime is forked, it increments the ID,
-//    creates a new local state, clones the shared state,
-//    and acquires a read lock.
-// 3. When the runtime is dropped, make sure that the read
-//    lock is dropped as well.
-// 4. The local state just tracks which queries are
-//    currently active using a stack
-// 5. The shared state tracks a few more things, in particular,
-//    it holds the counter for the next ID, the query lock
-//    from which the runtime's read lock is derived from,
-//    and the cancellation flag which coordinates cancellation
-//    globally across all forked runtimes
-// 6. In salsa, the runtime lives alongside the query storage,
-//    which is different from our current formulation.
-// 7. Then, salsa defines the database which holds the storage,
-//    and exposes the functions that actually interact with
-//    the runtime and storage mechanisms.
-//
-// Good, we've successfully implemented a future/promise mechanism
-// This would allow us to create a mapping from keys to states
-//
-// The current implementation below demonstrates a fibonacci
-// implementation with capabilities for cancellation using
-// a result-based approach.
-//
-// Needs to be implemented:
-// 1. Revision and dependency tracking
-// 2. Cancellation after input writes
-// 3. Dependency verification
-//
-// On revision on dependency tracking, much remains the same:
-// updating inputs creates a new revision. Ideally we can store
-// the revision as an atomic value, with storage backed by a
-// read-write lock or a mutex. To prevent queries from accessing
-// stale versions of inputs, a "query lock" is needed to act as
-// a way to make read/writes more consistent.
-//
-// Cancellation can be implemented as an atomic boolean, which
-// propagates through all queries across all threads. Special
-// care needs to be taken to make sure that promises for ongoing
-// threads are dropped once a computation fails to resolve.
-//
-// Finally, there's dependency verification—we take the revisions
-// and dependencies tracked for any given query, then check if
-// its dependencies need updating or if the cached value can be
-// returned successfully.
-//
-// In both the blocking and parallel runtimes, we've designed
-// traces to be stored homogeneously through the query keys.
-// I think historically it was implemented this way to align
-// more with the original paper's description of the implementation,
-// but since it only stores the latest trace then storing said
-// trace information alongside the actual values is perfectly
-// acceptable.
-//
-// One complication that arises with this approach is that
-// it combines storage for memoized values (i.e. the actual hashmaps)
-// and storage for the synchronization mechanisms. This makes the
-// future goal of cross-process incrementality a little bit more
-// difficult. In terms of the actual code, I don't think much needs
-// to be changed.
-//
-// We could simply panic if serialization is attempted for in-progress
-// queries, or simply ignore them from being serialized.
-//
-// There's 3 states for a derived query to be in:
-//
-// enum QueryState<T> {
-//   NotComputed,
-//   InProgress {
-//     promises: Mutex<Vec<Promise<T>>>,
-//   },
-//   Computed {
-//     computed: T,
-//     trace: Trace,
-//   },
-// }
-//
-// NotComputed/Computed are trivial—InProgress is a little more interesting.
-// The idea with InProgress is to keep track of an internally mutable vector
-// of promises that need to be fulfilled by the thread tasked with computing
-// the query i.e. the first thread to read NotComputed
-//
-// Any thread that encounters an InProgress query would create a new future/
-// promise pair, push the newly created promise, and block on the future.
-//
-// Note that when writing lookup functions for the query storage, we must avoid
-// Option<QueryState<T>>, in favor of defaulting to NotComputed.
-//
-// In the parallel runtime, thread-local state is maintained, specifically for
-// tracking dependencies between queries. We set the expectation that queries
-// execute their dependencies on the same thread, which would make significantly
-// easier to perform dependency tracking.
-//
-// Going back to the global query_lock approach, an important strategy that
-// salsa employs is only acquiring a singular read lock from the query_lock
-// per "snapshot" of the runtime, rather than on every query! It uses the raw
-// API for parking_lot to implement a custom RAII structure that releases
-// the lock when the snapshot is dropped.
-
 mod promise;
 
 use std::{
@@ -347,9 +229,9 @@ impl QueryEngine {
         Ok(computed)
     }
 
-    /// Validate the given dependencies by executing them,
+    /// Verify the given dependencies by executing them,
     /// returning the timestamp of the most latest change.
-    fn validate_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
+    fn verify_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
         let mut latest = 0;
 
         macro_rules! input_changed {
@@ -398,34 +280,47 @@ impl QueryEngine {
     {
         let revision = self.control.global.revision.load(Ordering::Relaxed);
 
-        // The fastest path i.e. checking if the cached value was built during
-        // the current revision only requires a read lock. This is an extremely
-        // useful optimisation because it allows threads to skip their turn on
-        // acquiring an upgradable read lock.
+        // Certain query states can be checked with only a read lock, and this
+        // is an extremely useful optimisation because it allows threads to
+        // skip their turn on acquiring an upgradable read lock.
+        //
+        // For computed queries, we can skip dependency verification if the
+        // cached value was built during the current revision.
+        //
+        // For in-progress queries, we can simply push to the internally mutable
+        // vector of promises and then wait on the future.
         {
             let storage = self.storage.read();
-            if let Some(DerivedState::Computed { computed, trace }) = get(&storage) {
-                if trace.built == revision {
-                    return Ok(V::clone(computed));
+            match get(&storage).unwrap_or(&DerivedState::NotComputed) {
+                DerivedState::Computed { computed, trace } => {
+                    if trace.built == revision {
+                        return Ok(V::clone(computed));
+                    }
                 }
+                DerivedState::InProgress { promises } => {
+                    let (future, promise) = Future::new();
+                    promises.lock().push(promise);
+
+                    // Remember that Future::wait blocks the current thread!
+                    drop(storage);
+
+                    return future.wait().ok_or(QueryError::Cancelled { cleanup: false });
+                }
+                _ => (),
             }
         }
 
-        // The slower path involves either revalidation for cached values that
-        // were not built during the current revision, or query keys that have
-        // yet to be computed. Rather than using a write lock directly, it uses
-        // an upgradable read lock; this allows the fastest path above to still
-        // be accessible to queries independent of the query being executed.
-        // More importantly, only a single thread would be able to acquire the
-        // upgradable read lock at a time, which enables work deduplication.
+        // Otherwise, we will have to perform computation or cache verification.
+        // Instead of a write lock, we use an upgradable read lock for two reasons:
+        // we want to ensure that only a single thread can observe the NotComputed
+        // state for any given query while allowing read locks to be acquired for
+        // the optimisation above.
         {
             let storage = self.storage.upgradable_read();
             match get(&storage).unwrap_or(&DerivedState::NotComputed) {
                 DerivedState::NotComputed => {
-                    // We upgrade our lock to update the query state. At the
-                    // end of this block, any thread waiting to acquire the
-                    // upgradable read lock should read that the query is
-                    // already in progress.
+                    // At the end of this block, threads waiting to acquire the
+                    // upgradable read lock should read that the query is in progress.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
@@ -447,7 +342,7 @@ impl QueryEngine {
                     let trace = *trace;
 
                     // If the cached value was built during the current revision
-                    // we can skip dependency validation entirely. This is also
+                    // we can skip dependency verification entirely. This is also
                     // checked at the start of the query_core with a read lock.
                     if trace.built == revision {
                         return Ok(computed);
@@ -459,7 +354,7 @@ impl QueryEngine {
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
                     }
 
-                    let latest = self.validate_core(dependencies)?;
+                    let latest = self.verify_core(dependencies)?;
 
                     // If the cached value was built more recently the the
                     // latest change, we can update its built timestamp to
