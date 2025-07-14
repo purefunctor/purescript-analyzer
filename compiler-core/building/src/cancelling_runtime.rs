@@ -320,7 +320,7 @@ impl QueryEngine {
             match get(&storage).unwrap_or(&DerivedState::NotComputed) {
                 DerivedState::NotComputed => {
                     // At the end of this block, threads waiting to acquire the
-                    // upgradable read lock should read that the query is in progress.
+                    // upgradable read lock should read that the query is InProgress.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
