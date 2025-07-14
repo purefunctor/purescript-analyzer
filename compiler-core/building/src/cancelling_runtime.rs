@@ -346,33 +346,35 @@ impl QueryEngine {
     /// returning the timestamp of the most latest change.
     fn validate_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
         let mut latest = 0;
+
+        macro_rules! input_changed {
+            ($field:ident, $key:expr) => {{
+                let storage = self.storage.read();
+                if let Some(InputState { changed, .. }) = storage.input.$field.get($key) {
+                    latest = latest.max(*changed);
+                }
+            }};
+        }
+
+        macro_rules! derived_changed {
+            ($field:ident, $key:expr) => {{
+                self.$field(*$key)?;
+                let storage = self.storage.read();
+                if let Some(DerivedState::Computed { trace, .. }) = storage.derived.$field.get($key)
+                {
+                    latest = latest.max(trace.changed);
+                }
+            }};
+        }
+
         for dependency in dependencies {
             match dependency {
-                QueryKey::Content(k) => {
-                    let storage = self.storage.read();
-                    if let Some(InputState { changed, .. }) = storage.input.content.get(k) {
-                        latest = latest.max(*changed);
-                    }
-                }
-                QueryKey::Lines(k) => {
-                    self.lines(*k)?;
-                    let storage = self.storage.read();
-                    if let Some(DerivedState::Computed { trace, .. }) = storage.derived.lines.get(k)
-                    {
-                        latest = latest.max(trace.changed);
-                    }
-                }
-                QueryKey::Analyse(k) => {
-                    self.analyse(*k)?;
-                    let storage = self.storage.read();
-                    if let Some(DerivedState::Computed { trace, .. }) =
-                        storage.derived.analyse.get(k)
-                    {
-                        latest = latest.max(trace.changed);
-                    }
-                }
+                QueryKey::Content(k) => input_changed!(content, k),
+                QueryKey::Lines(k) => derived_changed!(lines, k),
+                QueryKey::Analyse(k) => derived_changed!(analyse, k),
             }
         }
+
         Ok(latest)
     }
 
