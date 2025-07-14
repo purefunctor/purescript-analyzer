@@ -46,6 +46,7 @@ impl<T> DerivedState<T> {
     }
 }
 
+#[derive(Debug)]
 struct InputState<T> {
     value: T,
     changed: usize,
@@ -180,6 +181,30 @@ impl QueryEngine {
         )
     }
 
+    /// Fulfills the promises of an [`DerivedState::InProgress`] query and
+    /// replaces it with a [`DerivedState::Computed`] result in the store.
+    fn fulfill_and_store<K, V, GetMutFn>(&self, get_mut: &GetMutFn, computed: V, trace: Trace)
+    where
+        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        V: Clone,
+    {
+        let mut storage = self.storage.write();
+        if let Entry::Occupied(o) = get_mut(&mut storage) {
+            if let DerivedState::InProgress { promises } = o.remove() {
+                let promises = promises.into_inner();
+                promises.into_iter().for_each(|promise| {
+                    let computed = V::clone(&computed);
+                    promise.fulfill(computed);
+                });
+            } else {
+                unreachable!("invariant violated: expected InProgress");
+            }
+        }
+
+        let state = DerivedState::Computed { computed, trace };
+        get_mut(&mut storage).insert_entry(state);
+    }
+
     fn compute_core<K, V, GetMutFn, ComputeFn>(
         &self,
         get_mut: &GetMutFn,
@@ -203,44 +228,22 @@ impl QueryEngine {
         // the previous value back into the cache. The latter is a niche,
         // but useful optimisation for when V = Arc<T>, since it enables
         // pointer equality.
-        let state = match previous {
-            Some((previous, trace)) if computed == previous => DerivedState::Computed {
-                computed: previous,
-                trace: Trace { built: revision, changed: trace.changed },
-            },
-            _ => DerivedState::Computed {
-                computed: V::clone(&computed),
-                trace: Trace { built: revision, changed: revision },
-            },
-        };
-
-        // Invariant Check!
-        //
-        // If we reach this code path and observe that the query state was
-        // updated somewhere else, we crash the entire program. This is
-        // dependent on the invariant that only one thread can acquire an
-        // upgradable read lock at any given time.
-        {
-            let mut storage = self.storage.write();
-            if let Entry::Occupied(o) = get_mut(&mut storage) {
-                if let DerivedState::InProgress { promises } = o.remove() {
-                    let promises = promises.into_inner();
-                    promises.into_iter().for_each(|promise| {
-                        let computed = V::clone(&computed);
-                        promise.fulfill(computed);
-                    });
-                } else {
-                    unreachable!("invariant violated: expected InProgress");
-                }
+        match previous {
+            Some((previous, trace)) if computed == previous => {
+                let trace = Trace { built: revision, changed: trace.changed };
+                self.fulfill_and_store(get_mut, V::clone(&previous), trace);
+                Ok(previous)
             }
-            get_mut(&mut storage).insert_entry(state);
+            _ => {
+                let trace = Trace { built: revision, changed: revision };
+                self.fulfill_and_store(get_mut, V::clone(&computed), trace);
+                Ok(computed)
+            }
         }
-
-        Ok(computed)
     }
 
-    /// Verify the given dependencies by executing them,
-    /// returning the timestamp of the most latest change.
+    /// Verifies the given dependencies by executing them, returning the
+    /// timestamp of the most latest change.
     fn verify_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
         let mut latest = 0;
 
@@ -371,12 +374,8 @@ impl QueryEngine {
                     // the current revision. This allows the query to hit
                     // the fastest path if it's called in the same revision.
                     if trace.built >= latest {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            if let DerivedState::Computed { trace, .. } = o.into_mut() {
-                                trace.built = self.control.global.revision.load(Ordering::Relaxed);
-                            }
-                        }
+                        let trace = Trace { built: revision, ..trace };
+                        self.fulfill_and_store(get_mut, V::clone(&computed), trace);
                         return Ok(computed);
                     }
 
@@ -419,8 +418,16 @@ impl QueryEngine {
         )
     }
 
-    pub fn analyse(&self, _k: usize) -> Result<usize, QueryError> {
-        Err(QueryError::Cancelled { cleanup: true })
+    pub fn analyse(&self, k: usize) -> Result<usize, QueryError> {
+        self.query(
+            |storage| storage.derived.analyse.get(&k),
+            |storage| storage.derived.analyse.entry(k),
+            |this| {
+                let lines = this.lines(k)?;
+                Ok(lines * 2)
+            },
+            &[QueryKey::Lines(k)],
+        )
     }
 }
 
@@ -428,7 +435,7 @@ impl QueryEngine {
 mod tests {
     use std::{sync::Arc, time::Duration};
 
-    use super::{GlobalState, QueryControlGuard, QueryEngine};
+    use super::{DerivedState, GlobalState, QueryControlGuard, QueryEngine, Trace};
 
     #[test]
     fn query_control_guard_holds() {
@@ -525,6 +532,41 @@ mod tests {
 
         for thread in threads {
             assert!(thread.join().is_ok());
+        }
+    }
+
+    #[test]
+    fn query_engine_deep() {
+        let engine = QueryEngine::default();
+
+        engine.set_content(0, "abc\ndef");
+        assert_eq!(engine.analyse(0), Ok(4));
+
+        {
+            let storage = engine.storage.read();
+            assert!(matches!(
+                storage.derived.lines.get(&0),
+                Some(DerivedState::Computed { computed: 2, trace: Trace { built: 1, changed: 1 } })
+            ));
+            assert!(matches!(
+                storage.derived.analyse.get(&0),
+                Some(DerivedState::Computed { computed: 4, trace: Trace { built: 1, changed: 1 } })
+            ));
+        }
+
+        engine.set_content(0, "def\nghi");
+        assert_eq!(engine.analyse(0), Ok(4));
+
+        {
+            let storage = engine.storage.read();
+            assert!(matches!(
+                storage.derived.lines.get(&0),
+                Some(DerivedState::Computed { computed: 2, trace: Trace { built: 2, changed: 1 } })
+            ));
+            assert!(matches!(
+                storage.derived.analyse.get(&0),
+                Some(DerivedState::Computed { computed: 4, trace: Trace { built: 2, changed: 1 } })
+            ));
         }
     }
 }
