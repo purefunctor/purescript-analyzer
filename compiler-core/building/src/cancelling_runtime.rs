@@ -9,6 +9,7 @@ use std::{
     },
 };
 
+use building_types::{QueryError, QueryResult};
 use lock_api::{RawRwLock, RawRwLockRecursive};
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use promise::{Future, Promise};
@@ -165,11 +166,6 @@ pub struct QueryEngine {
     control: QueryControl,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum QueryError {
-    Cancelled { cleanup: bool },
-}
-
 impl QueryEngine {
     pub fn snapshot(&self) -> QueryEngine {
         let storage = self.storage.clone();
@@ -185,11 +181,11 @@ impl QueryEngine {
         get: GetFn,
         get_mut: GetMutFn,
         compute: ComputeFn,
-    ) -> Result<V, QueryError>
+    ) -> QueryResult<V>
     where
         GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
         GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
-        ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
+        ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
         self.control.local.with_dependency(key);
@@ -260,10 +256,10 @@ impl QueryEngine {
         key: QueryKey,
         revision: usize,
         previous: Option<(V, Trace)>,
-    ) -> Result<V, QueryError>
+    ) -> QueryResult<V>
     where
         GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
-        ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
+        ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
         if self.control.global.cancelled.load(Ordering::Relaxed) {
@@ -333,11 +329,11 @@ impl QueryEngine {
         get: &GetFn,
         get_mut: &GetMutFn,
         compute: &ComputeFn,
-    ) -> Result<V, QueryError>
+    ) -> QueryResult<V>
     where
         GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
         GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
-        ComputeFn: Fn(&QueryEngine) -> Result<V, QueryError>,
+        ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
         let revision = self.control.global.revision.load(Ordering::Relaxed);

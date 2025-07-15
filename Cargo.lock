@@ -144,6 +144,7 @@ dependencies = [
 name = "building"
 version = "0.1.0"
 dependencies = [
+ "building-types",
  "files",
  "indexing",
  "interner",
@@ -159,6 +160,10 @@ dependencies = [
  "string-interner",
  "thread_local",
 ]
+
+[[package]]
+name = "building-types"
+version = "0.1.0"
 
 [[package]]
 name = "bumpalo"
