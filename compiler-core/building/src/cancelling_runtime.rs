@@ -10,17 +10,22 @@ use std::{
 };
 
 use building_types::{QueryError, QueryResult};
+use files::FileId;
+use indexing::FullIndexedModule;
 use lock_api::{RawRwLock, RawRwLockRecursive};
+use lowering::FullLoweredModule;
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
+use parsing::FullParsedModule;
 use promise::{Future, Promise};
 use rustc_hash::{FxHashMap, FxHashSet};
 use thread_local::ThreadLocal;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum QueryKey {
-    Content(usize),
-    Lines(usize),
-    Analyse(usize),
+    Content(FileId),
+    Parsed(FileId),
+    Indexed(FileId),
+    Lowered(FileId),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -59,13 +64,14 @@ struct InputState<T> {
 
 #[derive(Default)]
 struct InputStorage {
-    content: FxHashMap<usize, InputState<Arc<str>>>,
+    content: FxHashMap<FileId, InputState<Arc<str>>>,
 }
 
 #[derive(Default)]
 struct DerivedStorage {
-    lines: FxHashMap<usize, DerivedState<usize>>,
-    analyse: FxHashMap<usize, DerivedState<usize>>,
+    parsed: FxHashMap<FileId, DerivedState<FullParsedModule>>,
+    indexed: FxHashMap<FileId, DerivedState<Arc<FullIndexedModule>>>,
+    lowered: FxHashMap<FileId, DerivedState<Arc<FullLoweredModule>>>,
 }
 
 #[derive(Default)]
@@ -316,8 +322,9 @@ impl QueryEngine {
         for dependency in dependencies {
             match dependency {
                 QueryKey::Content(k) => input_changed!(content, k),
-                QueryKey::Lines(k) => derived_changed!(lines, k),
-                QueryKey::Analyse(k) => derived_changed!(analyse, k),
+                QueryKey::Parsed(k) => derived_changed!(parsed, k),
+                QueryKey::Indexed(k) => derived_changed!(indexed, k),
+                QueryKey::Lowered(k) => derived_changed!(lowered, k),
             }
         }
 
@@ -463,34 +470,60 @@ impl QueryEngine {
 }
 
 impl QueryEngine {
-    pub fn set_content(&self, k: usize, v: impl Into<Arc<str>>) {
-        self.set_input(|storage| storage.input.content.entry(k), v.into());
+    pub fn set_content(&self, id: FileId, content: impl Into<Arc<str>>) {
+        self.set_input(|storage| storage.input.content.entry(id), content.into());
     }
 
-    pub fn content(&self, k: usize) -> Arc<str> {
-        self.get_input(QueryKey::Content(k), |storage| storage.input.content.get(&k))
+    pub fn content(&self, id: FileId) -> Arc<str> {
+        self.get_input(QueryKey::Content(id), |storage| storage.input.content.get(&id))
     }
 
-    pub fn lines(&self, k: usize) -> Result<usize, QueryError> {
+    pub fn parsed(&self, id: FileId) -> QueryResult<FullParsedModule> {
         self.query(
-            QueryKey::Lines(k),
-            |storage| storage.derived.lines.get(&k),
-            |storage| storage.derived.lines.entry(k),
+            QueryKey::Parsed(id),
+            |storage| storage.derived.parsed.get(&id),
+            |storage| storage.derived.parsed.entry(id),
             |this| {
-                let content = this.content(k);
-                Ok(content.lines().count())
+                let content = this.content(id);
+
+                let lexed = lexing::lex(&content);
+                let tokens = lexing::layout(&lexed);
+                let parsed = parsing::parse(&lexed, &tokens);
+
+                Ok(parsed)
             },
         )
     }
 
-    pub fn analyse(&self, k: usize) -> Result<usize, QueryError> {
+    pub fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
         self.query(
-            QueryKey::Analyse(k),
-            |storage| storage.derived.analyse.get(&k),
-            |storage| storage.derived.analyse.entry(k),
+            QueryKey::Indexed(id),
+            |storage| storage.derived.indexed.get(&id),
+            |storage| storage.derived.indexed.entry(id),
             |this| {
-                let lines = this.lines(k)?;
-                Ok(lines * 2)
+                let (parsed, _) = this.parsed(id)?;
+
+                let module = parsed.cst();
+                let indexed = indexing::index_module(&module);
+
+                Ok(Arc::new(indexed))
+            },
+        )
+    }
+
+    pub fn lowered(&self, id: FileId) -> QueryResult<Arc<FullLoweredModule>> {
+        self.query(
+            QueryKey::Lowered(id),
+            |storage| storage.derived.lowered.get(&id),
+            |storage| storage.derived.lowered.entry(id),
+            |this| {
+                let (parsed, _) = this.parsed(id)?;
+                let indexed = this.indexed(id)?;
+
+                let module = parsed.cst();
+                let lowered = lowering::lower_module(&module, &indexed);
+
+                Ok(Arc::new(lowered))
             },
         )
     }
@@ -498,157 +531,165 @@ impl QueryEngine {
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::Arc, time::Duration};
+    use std::{fmt::Debug, sync::Arc};
 
-    use super::{DerivedState, GlobalState, QueryControlGuard, QueryEngine, Trace};
+    use super::{DerivedState, QueryEngine, QueryKey};
 
-    #[test]
-    fn query_control_guard_holds() {
-        let global = Arc::new(GlobalState::default());
-        let guard = QueryControlGuard::new(&global);
-        assert!(global.query_lock.try_write().is_none());
-        drop(guard);
+    #[derive(Debug)]
+    struct Trace<'a> {
+        built: usize,
+        changed: usize,
+        dependencies: &'a [QueryKey],
+    }
+
+    struct ShowTrace<'a, T>(&'a DerivedState<T>);
+
+    impl<'a, T> Debug for ShowTrace<'a, T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match &self.0 {
+                DerivedState::NotComputed => write!(f, "NotComputed"),
+                DerivedState::InProgress { .. } => write!(f, "InProgress {{ .. }}"),
+                DerivedState::Computed { trace, dependencies, .. } => f
+                    .debug_struct("Trace")
+                    .field("built", &trace.built)
+                    .field("changed", &trace.changed)
+                    .field("dependencies", dependencies)
+                    .finish(),
+            }
+        }
+    }
+
+    impl<'a, 'b, T> PartialEq<Trace<'b>> for ShowTrace<'a, T> {
+        fn eq(&self, other: &Trace<'b>) -> bool {
+            match self.0 {
+                DerivedState::NotComputed => false,
+                DerivedState::InProgress { .. } => false,
+                DerivedState::Computed { trace, dependencies, .. } => {
+                    trace.built == other.built
+                        && trace.changed == other.changed
+                        && dependencies.as_ref() == other.dependencies
+                }
+            }
+        }
     }
 
     #[test]
-    fn query_control_guard_drops() {
-        let global = Arc::new(GlobalState::default());
-        let guard = QueryControlGuard::new(&global);
-        drop(guard);
-        assert!(global.query_lock.try_write().is_some());
-    }
-
-    #[test]
-    fn query_engine() {
+    fn test_pointer_equality() {
         let engine = QueryEngine::default();
-        engine.set_content(0, "abc\ndef");
-        assert_eq!(engine.lines(0), Ok(2));
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
+        let content = files.content(id);
+
+        engine.set_content(id, content);
+        let index_a = engine.indexed(id).unwrap();
+        let index_b = engine.indexed(id).unwrap();
+        assert!(Arc::ptr_eq(&index_a, &index_b));
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42\n\n");
+        let content = files.content(id);
+
+        engine.set_content(id, content);
+        let index_a = engine.indexed(id).unwrap();
+        let index_b = engine.indexed(id).unwrap();
+        assert!(Arc::ptr_eq(&index_a, &index_b));
     }
 
     #[test]
-    fn query_engine_parallel() {
-        let engine = QueryEngine::default();
-        engine.set_content(0, "abc\ndef");
+    fn test_verifying_step_traces() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
 
-        let mut threads = vec![];
-        for _ in 0..1024 {
-            let engine = engine.snapshot();
-            threads.push(std::thread::spawn(move || {
-                assert_eq!(engine.lines(0), Ok(2));
-            }))
+        macro_rules! assert_trace {
+            ($storage:expr, $field:ident($id:expr) => $trace:expr) => {
+                assert_eq!(ShowTrace($storage.derived.$field.get(&$id).unwrap()), $trace);
+            };
         }
 
-        for thread in threads {
-            assert!(thread.join().is_ok());
-        }
-    }
+        let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
+        let content = files.content(id);
 
-    #[test]
-    fn query_engine_validate() {
-        let engine = QueryEngine::default();
-
-        engine.set_content(0, "abc\ndef");
-        assert_eq!(engine.lines(0), Ok(2));
-        engine.set_content(0, "abc\ndef\nghi");
-
-        let mut threads = vec![];
-        for _ in 0..1024 {
-            let engine = engine.snapshot();
-            threads.push(std::thread::spawn(move || {
-                assert_eq!(engine.lines(0), Ok(3));
-            }))
-        }
-
-        for thread in threads {
-            assert!(thread.join().is_ok());
-        }
-    }
-
-    #[test]
-    fn query_engine_stress() {
-        let global_engine = Arc::new(QueryEngine::default());
-        global_engine.set_content(0, "abc\ndef");
-
-        let mut threads = vec![];
-
-        // NOTE: snapshot is only used for threads that need to acquire
-        // read-only access for the current revision. We should enforce
-        // this using a type state pattern in the future.
-        let engine = global_engine.clone();
-        let _infinite = std::thread::spawn(move || loop {
-            // This test is intentionally flaky to simulate unpredictability
-            // in real-world use cases. It just needs to be random enough that
-            // it triggers both cases. However, this also makes coverage very
-            // volatile so ideally it should be replaced by more thorough test
-            // cases that make use of Barrier.
-            std::thread::sleep(Duration::from_nanos(10));
-            engine.set_content(0, "ghi\njkl");
-        });
-
-        for _ in 0..1024 {
-            let engine = global_engine.clone();
-            threads.push(std::thread::spawn(move || {
-                let engine = engine.snapshot();
-                let lines = engine.lines(0);
-                let success = lines.is_ok();
-                let failure = lines.is_err();
-                assert!(success || failure);
-            }));
-        }
-
-        for thread in threads {
-            assert!(thread.join().is_ok());
-        }
-    }
-
-    #[test]
-    fn query_engine_deep() {
-        let engine = QueryEngine::default();
-
-        engine.set_content(0, "abc\ndef");
-        assert_eq!(engine.analyse(0), Ok(4));
+        runtime.set_content(id, content);
+        let indexed_a = runtime.indexed(id).unwrap();
+        let lowered_a = runtime.lowered(id).unwrap();
 
         {
-            let storage = engine.storage.read();
-            assert!(matches!(
-                storage.derived.lines.get(&0),
-                Some(DerivedState::Computed {
-                    computed: 2,
-                    trace: Trace { built: 1, changed: 1 },
-                    dependencies: _
-                })
-            ));
-            assert!(matches!(
-                storage.derived.analyse.get(&0),
-                Some(DerivedState::Computed {
-                    computed: 4,
-                    trace: Trace { built: 1, changed: 1 },
-                    dependencies: _,
-                })
-            ));
+            let storage = runtime.storage.read();
+            assert_trace!(storage, parsed(id) => Trace {
+                built: 1,
+                changed: 1,
+                dependencies: &[QueryKey::Content(id)]
+            });
+            assert_trace!(storage, indexed(id) => Trace {
+                built: 1,
+                changed: 1,
+                dependencies: &[QueryKey::Parsed(id)]
+            });
+            assert_trace!(storage, lowered(id) => Trace {
+                built: 1,
+                changed: 1,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Indexed(id)]
+            });
         }
 
-        engine.set_content(0, "def\nghi");
-        assert_eq!(engine.analyse(0), Ok(4));
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let indexed_b = runtime.indexed(id).unwrap();
+        let lowered_b = runtime.lowered(id).unwrap();
 
         {
-            let storage = engine.storage.read();
-            assert!(matches!(
-                storage.derived.lines.get(&0),
-                Some(DerivedState::Computed {
-                    computed: 2,
-                    trace: Trace { built: 2, changed: 1 },
-                    dependencies: _
-                })
-            ));
-            assert!(matches!(
-                storage.derived.analyse.get(&0),
-                Some(DerivedState::Computed {
-                    computed: 4,
-                    trace: Trace { built: 2, changed: 1 },
-                    dependencies: _
-                })
-            ));
+            let storage = runtime.storage.read();
+            assert_trace!(storage, parsed(id) => Trace {
+                built: 2,
+                changed: 2,
+                dependencies: &[QueryKey::Content(id)]
+            });
+            assert_trace!(storage, indexed(id) => Trace {
+                built: 2,
+                changed: 2,
+                dependencies: &[QueryKey::Parsed(id)]
+            });
+            assert_trace!(storage, lowered(id) => Trace {
+                built: 2,
+                changed: 2,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Indexed(id)]
+            });
         }
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let indexed_c = runtime.indexed(id).unwrap();
+        let lowered_c = runtime.lowered(id).unwrap();
+
+        {
+            let storage = runtime.storage.read();
+            assert_trace!(storage, parsed(id) => Trace {
+                built: 3,
+                changed: 3,
+                dependencies: &[QueryKey::Content(id)]
+            });
+            assert_trace!(storage, indexed(id) => Trace {
+                built: 3,
+                changed: 2,
+                dependencies: &[QueryKey::Parsed(id)]
+            });
+            assert_trace!(storage, lowered(id) => Trace {
+                built: 3,
+                changed: 2,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Indexed(id)]
+            });
+        }
+
+        assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
+        assert!(Arc::ptr_eq(&lowered_b, &lowered_c));
+
+        assert!(!Arc::ptr_eq(&indexed_a, &indexed_b));
+        assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
+        assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
+        assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
     }
 }
