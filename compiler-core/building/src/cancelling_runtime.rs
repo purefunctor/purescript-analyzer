@@ -439,7 +439,7 @@ impl QueryEngine {
         self.control.global.cancelled.store(true, Ordering::Relaxed);
         let _query_lock = self.control.global.query_lock.write();
 
-        let changed = self.control.global.revision.fetch_add(1, Ordering::AcqRel);
+        let changed = self.control.global.revision.fetch_add(1, Ordering::Relaxed);
         let state = InputState { value: v, changed: changed + 1 };
 
         let mut storage = self.storage.write();
