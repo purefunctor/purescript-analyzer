@@ -224,9 +224,9 @@ impl QueryEngine {
     fn fulfill_and_store<K, V, GetMutFn>(
         &self,
         get_mut: &GetMutFn,
-        key: QueryKey,
         computed: V,
         trace: Trace,
+        dependencies: Arc<[QueryKey]>,
     ) where
         GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
         V: Clone,
@@ -244,7 +244,6 @@ impl QueryEngine {
             }
         }
 
-        let dependencies = self.control.local.dependencies(key);
         let state = DerivedState::Computed { computed, trace, dependencies };
         get_mut(&mut storage).insert_entry(state);
     }
@@ -276,12 +275,14 @@ impl QueryEngine {
         match previous {
             Some((previous, trace)) if computed == previous => {
                 let trace = Trace { built: revision, changed: trace.changed };
-                self.fulfill_and_store(get_mut, key, V::clone(&previous), trace);
+                let dependencies = self.control.local.dependencies(key);
+                self.fulfill_and_store(get_mut, V::clone(&previous), trace, dependencies);
                 Ok(previous)
             }
             _ => {
                 let trace = Trace { built: revision, changed: revision };
-                self.fulfill_and_store(get_mut, key, V::clone(&computed), trace);
+                let dependencies = self.control.local.dependencies(key);
+                self.fulfill_and_store(get_mut, V::clone(&computed), trace, dependencies);
                 Ok(computed)
             }
         }
@@ -421,7 +422,7 @@ impl QueryEngine {
                     // the fastest path if it's called in the same revision.
                     if trace.built >= latest {
                         let trace = Trace { built: revision, ..trace };
-                        self.fulfill_and_store(get_mut, key, V::clone(&computed), trace);
+                        self.fulfill_and_store(get_mut, V::clone(&computed), trace, dependencies);
                         return Ok(computed);
                     }
 
