@@ -3,6 +3,7 @@ mod error;
 
 pub use error::*;
 
+use building_types::QueryResult;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportId, ImportKind, TermItemId, TypeItemId};
 use rustc_hash::FxHashMap;
@@ -11,11 +12,11 @@ use std::sync::Arc;
 
 /// External dependencies used in name resolution.
 pub trait External {
-    fn indexed(&mut self, id: FileId) -> Arc<FullIndexedModule>;
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>>;
 
-    fn resolved(&mut self, id: FileId) -> Arc<FullResolvedModule>;
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>>;
 
-    fn module_file(&mut self, name: &str) -> Option<FileId>;
+    fn module_file(&self, name: &str) -> QueryResult<Option<FileId>>;
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -131,8 +132,8 @@ impl ResolvedImport {
     }
 }
 
-pub fn resolve_module(external: &mut impl External, file: FileId) -> FullResolvedModule {
+pub fn resolve_module(external: &impl External, file: FileId) -> QueryResult<FullResolvedModule> {
     let algorithm::State { unqualified, qualified, exports, locals, errors } =
-        algorithm::resolve_module(external, file);
-    FullResolvedModule { unqualified, qualified, exports, locals, errors }
+        algorithm::resolve_module(external, file)?;
+    Ok(FullResolvedModule { unqualified, qualified, exports, locals, errors })
 }

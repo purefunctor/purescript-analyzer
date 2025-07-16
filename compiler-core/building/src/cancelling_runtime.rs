@@ -17,6 +17,7 @@ use lowering::FullLoweredModule;
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use parsing::FullParsedModule;
 use promise::{Future, Promise};
+use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
 use thread_local::ThreadLocal;
 
@@ -72,6 +73,7 @@ struct DerivedStorage {
     parsed: FxHashMap<FileId, DerivedState<FullParsedModule>>,
     indexed: FxHashMap<FileId, DerivedState<Arc<FullIndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<FullLoweredModule>>>,
+    resolved: FxHashMap<FileId, DerivedState<Arc<FullResolvedModule>>>,
 }
 
 #[derive(Default)]
@@ -526,6 +528,32 @@ impl QueryEngine {
                 Ok(Arc::new(lowered))
             },
         )
+    }
+
+    pub fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+        self.query(
+            QueryKey::Lowered(id),
+            |storage| storage.derived.resolved.get(&id),
+            |storage| storage.derived.resolved.entry(id),
+            |this| {
+                let resolved = resolving::resolve_module(this, id)?;
+                Ok(Arc::new(resolved))
+            },
+        )
+    }
+}
+
+impl resolving::External for QueryEngine {
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
+        QueryEngine::indexed(self, id)
+    }
+
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+        QueryEngine::resolved(self, id)
+    }
+
+    fn module_file(&self, _name: &str) -> QueryResult<Option<FileId>> {
+        Ok(None)
     }
 }
 
