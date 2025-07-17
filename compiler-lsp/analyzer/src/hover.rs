@@ -46,7 +46,7 @@ fn hover_module_name(
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<Hover> {
-    let (parsed, _) = compiler.runtime.parsed(f_id).ok()?;
+    let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let module = cst.to_node(&root);
@@ -63,7 +63,7 @@ fn hover_module_name(
         buffer.finish()
     };
 
-    let module_id = compiler.runtime.module_file(&module)?;
+    let module_id = compiler.engine.module_file(&module)?;
 
     let (root, annotation, syntax) = annotation_syntax_file(compiler, module_id)?;
 
@@ -81,7 +81,7 @@ pub(crate) fn annotation_syntax_file(
     compiler: &mut Compiler,
     f_id: FileId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = compiler.runtime.parsed(f_id).ok()?;
+    let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let cst = parsed.cst().header()?;
@@ -108,9 +108,8 @@ pub(crate) fn annotation_syntax_file(
 
 fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
     let (parsed, indexed) = {
-        let runtime = &mut compiler.runtime;
-        let (parsed, _) = runtime.parsed(f_id).ok()?;
-        let indexed = runtime.indexed(f_id).ok()?;
+        let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
+        let indexed = compiler.engine.indexed(f_id).ok()?;
         (parsed, indexed)
     };
 
@@ -137,9 +136,8 @@ fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Op
     };
 
     let import_resolved = {
-        let runtime = &mut compiler.runtime;
-        let import_id = runtime.module_file(&module)?;
-        runtime.resolved(import_id).ok()?
+        let import_id = compiler.engine.module_file(&module)?;
+        compiler.engine.resolved(import_id).ok()?
     };
 
     let hover_term_import = |compiler: &mut Compiler, name: &str| {
@@ -175,9 +173,8 @@ fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Op
 
 fn hover_binder(compiler: &mut Compiler, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id).ok()?;
-        let lowered = runtime.lowered(f_id).ok()?;
+        let resolved = compiler.engine.resolved(f_id).ok()?;
+        let lowered = compiler.engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
@@ -192,9 +189,8 @@ fn hover_binder(compiler: &mut Compiler, f_id: FileId, b_id: BinderId) -> Option
 
 fn hover_expression(compiler: &mut Compiler, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id).ok()?;
-        let lowered = runtime.lowered(f_id).ok()?;
+        let resolved = compiler.engine.resolved(f_id).ok()?;
+        let lowered = compiler.engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
@@ -209,7 +205,7 @@ fn hover_expression(compiler: &mut Compiler, f_id: FileId, e_id: ExpressionId) -
                 TermResolution::Deferred(id) => hover_deferred(compiler, &resolved, &lowered, *id),
                 TermResolution::Binder(_) => None,
                 TermResolution::Let(let_binding) => {
-                    let (parsed, _) = compiler.runtime.parsed(f_id).ok()?;
+                    let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
@@ -270,9 +266,8 @@ fn hover_let(
 
 fn hover_type(compiler: &mut Compiler, f_id: FileId, t_id: TypeId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id).ok()?;
-        let lowered = runtime.lowered(f_id).ok()?;
+        let resolved = compiler.engine.resolved(f_id).ok()?;
+        let lowered = compiler.engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
@@ -325,8 +320,8 @@ pub(super) fn annotation_syntax_file_term(
     f_id: FileId,
     t_id: TermItemId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = compiler.runtime.parsed(f_id).ok()?;
-    let indexed = compiler.runtime.indexed(f_id).ok()?;
+    let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
+    let indexed = compiler.engine.indexed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];
@@ -373,8 +368,8 @@ pub(crate) fn annotation_syntax_file_type(
     f_id: FileId,
     t_id: TypeItemId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = compiler.runtime.parsed(f_id).ok()?;
-    let indexed = compiler.runtime.indexed(f_id).ok()?;
+    let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
+    let indexed = compiler.engine.indexed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];

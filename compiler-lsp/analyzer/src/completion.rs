@@ -21,8 +21,8 @@ pub fn implementation(
     let uri = uri.as_str();
 
     let id = compiler.files.id(uri)?;
-    let content = compiler.runtime.content(id);
-    let (parsed, _) = compiler.runtime.parsed(id).ok()?;
+    let content = compiler.engine.content(id);
+    let (parsed, _) = compiler.engine.parsed(id).ok()?;
 
     let offset = locate::position_to_offset(&content, position)?;
 
@@ -38,8 +38,8 @@ pub fn implementation(
     let filter = CompletionFilter::new(&content, &token);
     let location = CompletionLocation::new(&content, position);
 
-    let indexed = compiler.runtime.indexed(id).ok()?;
-    let resolved = compiler.runtime.resolved(id).ok()?;
+    let indexed = compiler.engine.indexed(id).ok()?;
+    let resolved = compiler.engine.resolved(id).ok()?;
 
     let _span = tracing::info_span!("completion_items").entered();
     tracing::info!("Collecting {:?} items", location);
@@ -110,7 +110,7 @@ fn collect(compiler: &mut Compiler, context: &Context) -> Vec<CompletionItem> {
 
 fn collect_module(compiler: &mut Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
     items.extend(compiler.files.iter_id().filter_map(|id| {
-        let (parsed, _) = compiler.runtime.parsed(id).ok()?;
+        let (parsed, _) = compiler.engine.parsed(id).ok()?;
         let name = parsed.module_name()?;
 
         // Limit suggestions to exact prefix matches before fuzzy matching.
@@ -165,7 +165,7 @@ fn collect_qualified(
             return None;
         }
 
-        let (parsed, _) = compiler.runtime.parsed(import.file).ok()?;
+        let (parsed, _) = compiler.engine.parsed(import.file).ok()?;
         let description = parsed.module_name().map(|name| name.to_string());
 
         Some(completion_item(
@@ -189,7 +189,7 @@ fn collect_unqualified(
             return None;
         }
 
-        let (parsed, _) = compiler.runtime.parsed(import.file).ok()?;
+        let (parsed, _) = compiler.engine.parsed(import.file).ok()?;
         let description = parsed.module_name().map(|name| name.to_string());
 
         Some(completion_item(
@@ -271,7 +271,7 @@ fn collect_qualified_suggestions(
     items: &mut Vec<CompletionItem>,
     (prefix, id): (&str, FileId),
 ) {
-    let Ok((import_parsed, _)) = compiler.runtime.parsed(id) else {
+    let Ok((import_parsed, _)) = compiler.engine.parsed(id) else {
         return;
     };
     let Some(module_name) = import_parsed.module_name() else {
@@ -287,7 +287,7 @@ fn collect_qualified_suggestions(
         return;
     }
 
-    let Ok(import_resolved) = compiler.runtime.resolved(id) else {
+    let Ok(import_resolved) = compiler.engine.resolved(id) else {
         return;
     };
     let insert_import_range = context.insert_import_range();
@@ -369,14 +369,14 @@ fn collect_unqualified_suggestions(
     items: &mut Vec<CompletionItem>,
     (name, file_id): (&str, FileId),
 ) {
-    let Ok((import_parsed, _)) = compiler.runtime.parsed(file_id) else {
+    let Ok((import_parsed, _)) = compiler.engine.parsed(file_id) else {
         return;
     };
     let Some(import_module_name) = import_parsed.module_name() else {
         return tracing::error!("Missing module name {:?}", file_id);
     };
 
-    let Ok(import_resolved) = compiler.runtime.resolved(file_id) else {
+    let Ok(import_resolved) = compiler.engine.resolved(file_id) else {
         return;
     };
     let insert_import_range = context.insert_import_range();
@@ -485,7 +485,7 @@ fn collect_imports(
                     return None;
                 }
 
-                let (parsed, _) = compiler.runtime.parsed(term_file_id).ok()?;
+                let (parsed, _) = compiler.engine.parsed(term_file_id).ok()?;
                 let description = parsed.module_name().map(|name| name.to_string());
 
                 let edit = if let Some(prefix) = &context.filter.prefix {
@@ -515,7 +515,7 @@ fn collect_imports(
                     return None;
                 }
 
-                let (parsed, _) = compiler.runtime.parsed(type_file_id).ok()?;
+                let (parsed, _) = compiler.engine.parsed(type_file_id).ok()?;
                 let description = parsed.module_name().map(|name| name.to_string());
 
                 let edit = if let Some(prefix) = &context.filter.prefix {

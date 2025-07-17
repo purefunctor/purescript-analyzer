@@ -4,7 +4,7 @@
 #[test]
 fn test_001_local_resolution_explicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
-    let Some(id) = compiler.runtime.module_file("Explicit") else {
+    let Some(id) = compiler.engine.module_file("Explicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "Explicit");
@@ -15,7 +15,7 @@ fn test_001_local_resolution_explicit() {
 #[test]
 fn test_001_local_resolution_explicit_self() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
-    let Some(id) = compiler.runtime.module_file("ExplicitSelf") else {
+    let Some(id) = compiler.engine.module_file("ExplicitSelf") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ExplicitSelf");
@@ -26,7 +26,7 @@ fn test_001_local_resolution_explicit_self() {
 #[test]
 fn test_001_local_resolution_implicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
-    let Some(id) = compiler.runtime.module_file("Implicit") else {
+    let Some(id) = compiler.engine.module_file("Implicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "Implicit");
@@ -37,7 +37,7 @@ fn test_001_local_resolution_implicit() {
 #[test]
 fn test_002_import_resolution_import_explicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportExplicit") else {
+    let Some(id) = compiler.engine.module_file("ImportExplicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportExplicit");
@@ -48,7 +48,7 @@ fn test_002_import_resolution_import_explicit() {
 #[test]
 fn test_002_import_resolution_import_for_local_only() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportForLocalOnly") else {
+    let Some(id) = compiler.engine.module_file("ImportForLocalOnly") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportForLocalOnly");
@@ -59,7 +59,7 @@ fn test_002_import_resolution_import_for_local_only() {
 #[test]
 fn test_002_import_resolution_import_hidden_constructor() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportHiddenConstructor") else {
+    let Some(id) = compiler.engine.module_file("ImportHiddenConstructor") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportHiddenConstructor");
@@ -70,7 +70,7 @@ fn test_002_import_resolution_import_hidden_constructor() {
 #[test]
 fn test_002_import_resolution_import_qualified_explicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportQualifiedExplicit") else {
+    let Some(id) = compiler.engine.module_file("ImportQualifiedExplicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportQualifiedExplicit");
@@ -81,7 +81,7 @@ fn test_002_import_resolution_import_qualified_explicit() {
 #[test]
 fn test_002_import_resolution_import_qualified_hiding() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportQualifiedHiding") else {
+    let Some(id) = compiler.engine.module_file("ImportQualifiedHiding") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportQualifiedHiding");
@@ -92,7 +92,7 @@ fn test_002_import_resolution_import_qualified_hiding() {
 #[test]
 fn test_002_import_resolution_import_qualified_implicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportQualifiedImplicit") else {
+    let Some(id) = compiler.engine.module_file("ImportQualifiedImplicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportQualifiedImplicit");
@@ -103,7 +103,7 @@ fn test_002_import_resolution_import_qualified_implicit() {
 #[test]
 fn test_002_import_resolution_import_unqualified_explicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportUnqualifiedExplicit") else {
+    let Some(id) = compiler.engine.module_file("ImportUnqualifiedExplicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportUnqualifiedExplicit");
@@ -114,7 +114,7 @@ fn test_002_import_resolution_import_unqualified_explicit() {
 #[test]
 fn test_002_import_resolution_import_unqualified_hiding() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportUnqualifiedHiding") else {
+    let Some(id) = compiler.engine.module_file("ImportUnqualifiedHiding") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportUnqualifiedHiding");
@@ -125,7 +125,7 @@ fn test_002_import_resolution_import_unqualified_hiding() {
 #[test]
 fn test_002_import_resolution_import_unqualified_implicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("ImportUnqualifiedImplicit") else {
+    let Some(id) = compiler.engine.module_file("ImportUnqualifiedImplicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "ImportUnqualifiedImplicit");
@@ -136,7 +136,7 @@ fn test_002_import_resolution_import_unqualified_implicit() {
 #[test]
 fn test_002_import_resolution_library() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("Library") else {
+    let Some(id) = compiler.engine.module_file("Library") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "Library");
@@ -147,7 +147,7 @@ fn test_002_import_resolution_library() {
 #[test]
 fn test_002_import_resolution_library_explicit() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
-    let Some(id) = compiler.runtime.module_file("LibraryExplicit") else {
+    let Some(id) = compiler.engine.module_file("LibraryExplicit") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "LibraryExplicit");
@@ -158,7 +158,7 @@ fn test_002_import_resolution_library_explicit() {
 #[test]
 fn test_003_import_errors_duplicate_local() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
-    let Some(id) = compiler.runtime.module_file("DuplicateLocal") else {
+    let Some(id) = compiler.engine.module_file("DuplicateLocal") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "DuplicateLocal");
@@ -169,7 +169,7 @@ fn test_003_import_errors_duplicate_local() {
 #[test]
 fn test_003_import_errors_duplicate_qualified_import() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
-    let Some(id) = compiler.runtime.module_file("DuplicateQualifiedImport") else {
+    let Some(id) = compiler.engine.module_file("DuplicateQualifiedImport") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "DuplicateQualifiedImport");
@@ -180,7 +180,7 @@ fn test_003_import_errors_duplicate_qualified_import() {
 #[test]
 fn test_003_import_errors_invalid_constructor() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
-    let Some(id) = compiler.runtime.module_file("InvalidConstructor") else {
+    let Some(id) = compiler.engine.module_file("InvalidConstructor") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "InvalidConstructor");
@@ -191,7 +191,7 @@ fn test_003_import_errors_invalid_constructor() {
 #[test]
 fn test_003_import_errors_invalid_import() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
-    let Some(id) = compiler.runtime.module_file("InvalidImport") else {
+    let Some(id) = compiler.engine.module_file("InvalidImport") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "InvalidImport");
@@ -202,7 +202,7 @@ fn test_003_import_errors_invalid_import() {
 #[test]
 fn test_003_import_errors_library_a() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
-    let Some(id) = compiler.runtime.module_file("LibraryA") else {
+    let Some(id) = compiler.engine.module_file("LibraryA") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "LibraryA");
@@ -213,7 +213,7 @@ fn test_003_import_errors_library_a() {
 #[test]
 fn test_003_import_errors_library_b() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
-    let Some(id) = compiler.runtime.module_file("LibraryB") else {
+    let Some(id) = compiler.engine.module_file("LibraryB") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "LibraryB");
@@ -224,7 +224,7 @@ fn test_003_import_errors_library_b() {
 #[test]
 fn test_004_import_re_exported_constructor_internal() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
-    let Some(id) = compiler.runtime.module_file("Internal") else {
+    let Some(id) = compiler.engine.module_file("Internal") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "Internal");
@@ -235,7 +235,7 @@ fn test_004_import_re_exported_constructor_internal() {
 #[test]
 fn test_004_import_re_exported_constructor_library() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
-    let Some(id) = compiler.runtime.module_file("Library") else {
+    let Some(id) = compiler.engine.module_file("Library") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "Library");
@@ -246,7 +246,7 @@ fn test_004_import_re_exported_constructor_library() {
 #[test]
 fn test_004_import_re_exported_constructor_main() {
     let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
-    let Some(id) = compiler.runtime.module_file("Main") else {
+    let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
     let report = tests_integration::core::report_resolved(&compiler, id, "Main");

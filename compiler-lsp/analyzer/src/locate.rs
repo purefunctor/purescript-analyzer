@@ -51,17 +51,10 @@ pub enum Located {
 
 pub fn locate(compiler: &mut Compiler, id: FileId, position: Position) -> Located {
     let (content, parsed, indexed, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let content = runtime.content(id);
-        let Ok((parsed, _)) = runtime.parsed(id) else {
-            return Located::Nothing
-        };
-        let Ok(indexed) = runtime.indexed(id) else {
-            return Located::Nothing
-        };
-        let Ok(lowered) = runtime.lowered(id) else {
-            return Located::Nothing
-        };
+        let content = compiler.engine.content(id);
+        let Ok((parsed, _)) = compiler.engine.parsed(id) else { return Located::Nothing };
+        let Ok(indexed) = compiler.engine.indexed(id) else { return Located::Nothing };
+        let Ok(lowered) = compiler.engine.lowered(id) else { return Located::Nothing };
         (content, parsed, indexed, lowered)
     };
 

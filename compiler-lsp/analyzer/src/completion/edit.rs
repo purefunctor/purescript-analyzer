@@ -28,7 +28,7 @@ where
         .iter()
         .find_map(|import| lookup_fn(import).map(|kind| (import, kind)));
 
-    let Ok(import_indexed) = compiler.runtime.indexed(file_id) else {
+    let Ok(import_indexed) = compiler.engine.indexed(file_id) else {
         return (None, None);
     };
 

@@ -57,7 +57,7 @@ pub fn report(compiler: &mut Compiler, id: FileId) -> String {
         Url::parse(&path).unwrap()
     };
 
-    let content = compiler.runtime.content(id);
+    let content = compiler.engine.content(id);
     let cursors = extract_cursors(&content);
 
     let mut result = String::new();

@@ -8,6 +8,6 @@ use files::Files;
 
 #[derive(Default)]
 pub struct Compiler {
-    pub runtime: QueryEngine,
+    pub engine: QueryEngine,
     pub files: Files,
 }

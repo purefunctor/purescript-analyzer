@@ -17,8 +17,8 @@ fn load_file(compiler: &mut Compiler, path: &Path) {
     let id = compiler.files.insert(uri, file);
     let content = compiler.files.content(id);
 
-    compiler.runtime.set_content(id, content);
-    let Ok((parsed, _)) = compiler.runtime.parsed(id) else {
+    compiler.engine.set_content(id, content);
+    let Ok((parsed, _)) = compiler.engine.parsed(id) else {
         return;
     };
 
@@ -32,7 +32,7 @@ fn load_file(compiler: &mut Compiler, path: &Path) {
             builder.push_str(token.text());
         }
         let name = builder.finish();
-        compiler.runtime.update_module_name(|m| {
+        compiler.engine.update_module_name(|m| {
             m.intern_with_file(&name, id);
         });
     }

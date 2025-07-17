@@ -6,7 +6,7 @@ use indexing::ImportKind;
 use lowering::ResolutionDomain;
 
 pub fn report_resolved(compiler: &Compiler, id: FileId, name: &str) -> String {
-    let resolved = compiler.runtime.resolved(id).unwrap();
+    let resolved = compiler.engine.resolved(id).unwrap();
 
     let mut buffer = String::default();
     writeln!(buffer, "module {}", name).unwrap();
@@ -89,8 +89,8 @@ pub fn report_resolved(compiler: &Compiler, id: FileId, name: &str) -> String {
 }
 
 pub fn report_deferred_resolution(compiler: &Compiler, id: FileId) -> String {
-    let resolved = compiler.runtime.resolved(id).unwrap();
-    let lowered = compiler.runtime.lowered(id).unwrap();
+    let resolved = compiler.engine.resolved(id).unwrap();
+    let lowered = compiler.engine.lowered(id).unwrap();
 
     let mut buffer = String::default();
     for (id, deferred) in lowered.graph.deferred() {
@@ -100,10 +100,10 @@ pub fn report_deferred_resolution(compiler: &Compiler, id: FileId) -> String {
         match deferred.domain {
             ResolutionDomain::Term => {
                 let Some((f_id, t_id)) = resolved.lookup_term(prefix, name) else { continue };
-                let (module, _) = compiler.runtime.parsed(f_id).unwrap();
+                let (module, _) = compiler.engine.parsed(f_id).unwrap();
                 let module = module.module_name().unwrap();
 
-                let indexed = compiler.runtime.indexed(f_id).unwrap();
+                let indexed = compiler.engine.indexed(f_id).unwrap();
                 let item = &indexed.items[t_id];
 
                 let Some(item) = &item.name else { continue };
@@ -111,10 +111,10 @@ pub fn report_deferred_resolution(compiler: &Compiler, id: FileId) -> String {
             }
             ResolutionDomain::Type => {
                 let Some((f_id, t_id)) = resolved.lookup_type(prefix, name) else { continue };
-                let (module, _) = compiler.runtime.parsed(f_id).unwrap();
+                let (module, _) = compiler.engine.parsed(f_id).unwrap();
                 let module = module.module_name().unwrap();
 
-                let indexed = compiler.runtime.indexed(f_id).unwrap();
+                let indexed = compiler.engine.indexed(f_id).unwrap();
                 let item = &indexed.items[t_id];
 
                 let Some(item) = &item.name else { continue };
