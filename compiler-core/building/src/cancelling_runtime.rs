@@ -21,12 +21,15 @@ use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
 use thread_local::ThreadLocal;
 
+use crate::ModuleNameMap;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum QueryKey {
     Content(FileId),
     Parsed(FileId),
     Indexed(FileId),
     Lowered(FileId),
+    ModuleNameMap,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -74,6 +77,12 @@ struct DerivedStorage {
     indexed: FxHashMap<FileId, DerivedState<Arc<FullIndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<FullLoweredModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<FullResolvedModule>>>,
+}
+
+#[derive(Default)]
+struct DiscoveredStorage {
+    module_name: ModuleNameMap,
+    changed: usize,
 }
 
 #[derive(Default)]
@@ -166,6 +175,7 @@ impl QueryControl {
 struct QueryStorage {
     input: InputStorage,
     derived: DerivedStorage,
+    discovered: DiscoveredStorage,
 }
 
 #[derive(Default)]
@@ -327,6 +337,10 @@ impl QueryEngine {
                 QueryKey::Parsed(k) => derived_changed!(parsed, k),
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
+                QueryKey::ModuleNameMap => {
+                    let storage = self.storage.read();
+                    latest = latest.max(storage.discovered.changed);
+                }
             }
         }
 
@@ -469,6 +483,27 @@ impl QueryEngine {
         });
         V::clone(&state.value)
     }
+
+    fn update_discovered<T>(&self, f: impl FnOnce(&mut QueryStorage) -> T) -> T {
+        self.control.global.cancelled.store(true, Ordering::Relaxed);
+        let _query_lock = self.control.global.query_lock.write();
+
+        let changed = self.control.global.revision.fetch_add(1, Ordering::Relaxed);
+
+        let mut storage = self.storage.write();
+        let result = f(&mut storage);
+        storage.discovered.changed = changed + 1;
+
+        self.control.global.cancelled.store(false, Ordering::Relaxed);
+
+        result
+    }
+
+    fn with_discovered<T>(&self, k: QueryKey, f: impl FnOnce(&QueryStorage) -> T) -> T {
+        self.control.local.with_dependency(k);
+        let storage = self.storage.read();
+        f(&storage)
+    }
 }
 
 impl QueryEngine {
@@ -478,6 +513,14 @@ impl QueryEngine {
 
     pub fn content(&self, id: FileId) -> Arc<str> {
         self.get_input(QueryKey::Content(id), |storage| storage.input.content.get(&id))
+    }
+
+    pub fn update_module_name<T>(&self, f: impl FnOnce(&mut ModuleNameMap) -> T) -> T {
+        self.update_discovered(|storage| f(&mut storage.discovered.module_name))
+    }
+
+    pub fn with_module_name<T>(&self, f: impl FnOnce(&ModuleNameMap) -> T) -> T {
+        self.with_discovered(QueryKey::ModuleNameMap, |storage| f(&storage.discovered.module_name))
     }
 
     pub fn parsed(&self, id: FileId) -> QueryResult<FullParsedModule> {
@@ -560,6 +603,8 @@ impl resolving::External for QueryEngine {
 #[cfg(test)]
 mod tests {
     use std::{fmt::Debug, sync::Arc};
+
+    use files::Files;
 
     use super::{DerivedState, QueryEngine, QueryKey};
 
@@ -719,5 +764,52 @@ mod tests {
         assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
+    }
+
+    #[test]
+    fn test_module_name() {
+        let engine = QueryEngine::default();
+        let mut files = Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n");
+        let content = files.content(id);
+
+        engine.set_content(id, content);
+        let (parsed, _) = engine.parsed(id).unwrap();
+        let name = parsed.module_name().unwrap();
+
+        let module_id = engine.update_module_name(|m| m.intern_with_file(&name, id));
+        let file_id = engine.with_module_name(|m| m.file_id(module_id)).unwrap();
+
+        assert_eq!(id, file_id);
+    }
+
+    #[test]
+    fn test_discovered_batch() {
+        let engine = QueryEngine::default();
+        let mut files = Files::default();
+
+        let batch = [
+            ("./src/Main.purs", "module Main where\n\n"),
+            ("./src/Lib.purs", "module Lib where\n\n"),
+        ];
+
+        let id = batch.map(|(k, v)| files.insert(k, v));
+
+        let name_file = id.map(|id| {
+            let content = files.content(id);
+            engine.set_content(id, content);
+
+            let (parsed, _) = engine.parsed(id).unwrap();
+            (parsed.module_name().unwrap(), id)
+        });
+
+        let module_id = engine.update_module_name(move |m| {
+            name_file.map(|(name, file)| m.intern_with_file(&name, file))
+        });
+
+        let file_id = engine.with_module_name(move |m| module_id.map(|id| m.file_id(id).unwrap()));
+
+        assert_eq!(id, file_id);
     }
 }
