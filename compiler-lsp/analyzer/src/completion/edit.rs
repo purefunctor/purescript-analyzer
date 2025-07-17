@@ -28,7 +28,9 @@ where
         .iter()
         .find_map(|import| lookup_fn(import).map(|kind| (import, kind)));
 
-    let import_indexed = compiler.runtime.indexed(file_id);
+    let Ok(import_indexed) = compiler.runtime.indexed(file_id) else {
+        return (None, None);
+    };
 
     if let Some((import, kind)) = import_containing_item {
         // Implicit or hidden imports are skipped.

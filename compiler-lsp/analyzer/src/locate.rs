@@ -53,9 +53,15 @@ pub fn locate(compiler: &mut Compiler, id: FileId, position: Position) -> Locate
     let (content, parsed, indexed, lowered) = {
         let runtime = &mut compiler.runtime;
         let content = runtime.content(id);
-        let (parsed, _) = runtime.parsed(id);
-        let indexed = runtime.indexed(id);
-        let lowered = runtime.lowered(id);
+        let Ok((parsed, _)) = runtime.parsed(id) else {
+            return Located::Nothing
+        };
+        let Ok(indexed) = runtime.indexed(id) else {
+            return Located::Nothing
+        };
+        let Ok(lowered) = runtime.lowered(id) else {
+            return Located::Nothing
+        };
         (content, parsed, indexed, lowered)
     };
 

@@ -586,6 +586,15 @@ impl QueryEngine {
     }
 }
 
+impl QueryEngine {
+    pub fn module_file(&self, name: &str) -> Option<FileId> {
+        self.with_module_name(|m| {
+            let id = m.module_id(name)?;
+            m.file_id(id)
+        })
+    }
+}
+
 impl resolving::External for QueryEngine {
     fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
         QueryEngine::indexed(self, id)
@@ -595,8 +604,8 @@ impl resolving::External for QueryEngine {
         QueryEngine::resolved(self, id)
     }
 
-    fn module_file(&self, _name: &str) -> QueryResult<Option<FileId>> {
-        Ok(None)
+    fn module_file(&self, name: &str) -> Option<FileId> {
+        QueryEngine::module_file(self, name)
     }
 }
 

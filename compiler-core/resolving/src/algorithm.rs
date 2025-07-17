@@ -41,7 +41,7 @@ fn resolve_imports(
             continue;
         };
 
-        let Some(import_file_id) = external.module_file(name)? else {
+        let Some(import_file_id) = external.module_file(name) else {
             state.errors.push(ResolvingError::InvalidImportStatement { id });
             continue;
         };

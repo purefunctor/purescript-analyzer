@@ -136,9 +136,13 @@ fn on_change(compiler: &mut analyzer::Compiler, uri: &str, text: &str) {
     let content = compiler.files.content(id);
 
     compiler.runtime.set_content(id, content);
-    let (parsed, _) = compiler.runtime.parsed(id);
+    let Ok((parsed, _)) = compiler.runtime.parsed(id) else {
+        return;
+    };
     if let Some(name) = parsed.module_name() {
-        compiler.runtime.set_module_file(&name, id);
+        compiler.runtime.update_module_name(|m| {
+            m.intern_with_file(&name, id);
+        });
     }
 }
 

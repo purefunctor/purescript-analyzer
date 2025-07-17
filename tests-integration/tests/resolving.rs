@@ -3,275 +3,252 @@
 #[rustfmt::skip]
 #[test]
 fn test_001_local_resolution_explicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
     let Some(id) = compiler.runtime.module_file("Explicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("Explicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "Explicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_001_local_resolution_explicit_self() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
     let Some(id) = compiler.runtime.module_file("ExplicitSelf") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ExplicitSelf", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ExplicitSelf");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_001_local_resolution_implicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/001_local_resolution"));
     let Some(id) = compiler.runtime.module_file("Implicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("Implicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "Implicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_explicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportExplicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportExplicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportExplicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_for_local_only() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportForLocalOnly") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportForLocalOnly", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportForLocalOnly");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_hidden_constructor() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportHiddenConstructor") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportHiddenConstructor", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportHiddenConstructor");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_qualified_explicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportQualifiedExplicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportQualifiedExplicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportQualifiedExplicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_qualified_hiding() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportQualifiedHiding") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportQualifiedHiding", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportQualifiedHiding");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_qualified_implicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportQualifiedImplicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportQualifiedImplicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportQualifiedImplicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_unqualified_explicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportUnqualifiedExplicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportUnqualifiedExplicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportUnqualifiedExplicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_unqualified_hiding() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportUnqualifiedHiding") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportUnqualifiedHiding", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportUnqualifiedHiding");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_import_unqualified_implicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("ImportUnqualifiedImplicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("ImportUnqualifiedImplicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "ImportUnqualifiedImplicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_library() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("Library") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("Library", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "Library");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_library_explicit() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/002_import_resolution"));
     let Some(id) = compiler.runtime.module_file("LibraryExplicit") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("LibraryExplicit", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "LibraryExplicit");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_import_errors_duplicate_local() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
     let Some(id) = compiler.runtime.module_file("DuplicateLocal") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("DuplicateLocal", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "DuplicateLocal");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_import_errors_duplicate_qualified_import() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
     let Some(id) = compiler.runtime.module_file("DuplicateQualifiedImport") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("DuplicateQualifiedImport", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "DuplicateQualifiedImport");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_import_errors_invalid_constructor() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
     let Some(id) = compiler.runtime.module_file("InvalidConstructor") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("InvalidConstructor", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "InvalidConstructor");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_import_errors_invalid_import() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
     let Some(id) = compiler.runtime.module_file("InvalidImport") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("InvalidImport", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "InvalidImport");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_import_errors_library_a() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
     let Some(id) = compiler.runtime.module_file("LibraryA") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("LibraryA", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "LibraryA");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_import_errors_library_b() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/003_import_errors"));
     let Some(id) = compiler.runtime.module_file("LibraryB") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("LibraryB", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "LibraryB");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_004_import_re_exported_constructor_internal() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
     let Some(id) = compiler.runtime.module_file("Internal") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("Internal", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "Internal");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_004_import_re_exported_constructor_library() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
     let Some(id) = compiler.runtime.module_file("Library") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("Library", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "Library");
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_004_import_re_exported_constructor_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/004_import_re_exported_constructor"));
     let Some(id) = compiler.runtime.module_file("Main") else {
         return;
     };
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("Main", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "Main");
     insta::assert_snapshot!(report);
 }

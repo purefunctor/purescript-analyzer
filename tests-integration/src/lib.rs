@@ -18,7 +18,9 @@ fn load_file(compiler: &mut Compiler, path: &Path) {
     let content = compiler.files.content(id);
 
     compiler.runtime.set_content(id, content);
-    let (parsed, _) = compiler.runtime.parsed(id);
+    let Ok((parsed, _)) = compiler.runtime.parsed(id) else {
+        return;
+    };
 
     let cst = parsed.cst();
     if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
@@ -30,7 +32,9 @@ fn load_file(compiler: &mut Compiler, path: &Path) {
             builder.push_str(token.text());
         }
         let name = builder.finish();
-        compiler.runtime.set_module_file(&name, id);
+        compiler.runtime.update_module_name(|m| {
+            m.intern_with_file(&name, id);
+        });
     }
 }
 

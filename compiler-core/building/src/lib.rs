@@ -3,8 +3,8 @@ pub mod module_name_map;
 // pub mod parallel_runtime;
 // pub mod runtime;
 
+pub use cancelling_runtime::*;
 pub use module_name_map::*;
-// pub use runtime::*;
 
 // #[cfg(test)]
 // mod tests {

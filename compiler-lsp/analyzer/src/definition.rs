@@ -41,7 +41,7 @@ fn definition_module_name(
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
-    let (parsed, _) = compiler.runtime.parsed(f_id);
+    let (parsed, _) = compiler.runtime.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let module = cst.to_node(&root);
@@ -59,12 +59,12 @@ fn definition_module_name(
     };
 
     let (uri, range) = {
-        let runtime = &mut compiler.runtime;
+        let runtime = &compiler.runtime;
         let files = &compiler.files;
 
         let id = runtime.module_file(&module)?;
         let content = runtime.content(id);
-        let (parsed, _) = runtime.parsed(id);
+        let (parsed, _) = runtime.parsed(id).ok()?;
         let root = parsed.syntax_node();
         let path = files.path(id);
 
@@ -88,8 +88,8 @@ fn definition_import(
 ) -> Option<GotoDefinitionResponse> {
     let (parsed, indexed) = {
         let runtime = &mut compiler.runtime;
-        let (parsed, _) = runtime.parsed(f_id);
-        let indexed = runtime.indexed(f_id);
+        let (parsed, _) = runtime.parsed(f_id).ok()?;
+        let indexed = runtime.indexed(f_id).ok()?;
         (parsed, indexed)
     };
 
@@ -116,7 +116,7 @@ fn definition_import(
     let import_resolved = {
         let runtime = &mut compiler.runtime;
         let import_id = runtime.module_file(&module)?;
-        runtime.resolved(import_id)
+        runtime.resolved(import_id).ok()?
     };
 
     let goto_term = |compiler: &mut Compiler, name: &str| {
@@ -129,10 +129,10 @@ fn definition_import(
         };
 
         let (content, parsed, indexed) = {
-            let runtime = &mut compiler.runtime;
+            let runtime = &compiler.runtime;
             let content = runtime.content(f_id);
-            let (parsed, _) = runtime.parsed(f_id);
-            let indexed = runtime.indexed(f_id);
+            let (parsed, _) = runtime.parsed(f_id).ok()?;
+            let indexed = runtime.indexed(f_id).ok()?;
             (content, parsed, indexed)
         };
 
@@ -156,10 +156,10 @@ fn definition_import(
         };
 
         let (content, parsed, indexed) = {
-            let runtime = &mut compiler.runtime;
+            let runtime = &compiler.runtime;
             let content = runtime.content(f_id);
-            let (parsed, _) = runtime.parsed(f_id);
-            let indexed = runtime.indexed(f_id);
+            let (parsed, _) = runtime.parsed(f_id).ok()?;
+            let indexed = runtime.indexed(f_id).ok()?;
             (content, parsed, indexed)
         };
 
@@ -209,8 +209,8 @@ fn definition_binder(
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
         let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id);
-        let lowered = runtime.lowered(f_id);
+        let resolved = runtime.resolved(f_id).ok()?;
+        let lowered = runtime.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
@@ -232,9 +232,9 @@ fn definition_expression(
     let (content, parsed, resolved, lowered) = {
         let runtime = &mut compiler.runtime;
         let content = runtime.content(f_id);
-        let (parsed, _) = runtime.parsed(f_id);
-        let resolved = runtime.resolved(f_id);
-        let lowered = runtime.lowered(f_id);
+        let (parsed, _) = runtime.parsed(f_id).ok()?;
+        let resolved = runtime.resolved(f_id).ok()?;
+        let lowered = runtime.lowered(f_id).ok()?;
         (content, parsed, resolved, lowered)
     };
 
@@ -295,9 +295,9 @@ fn definition_type(
     let (content, parsed, resolved, lowered) = {
         let runtime = &mut compiler.runtime;
         let content = runtime.content(f_id);
-        let (parsed, _) = runtime.parsed(f_id);
-        let resolved = runtime.resolved(f_id);
-        let lowered = runtime.lowered(f_id);
+        let (parsed, _) = runtime.parsed(f_id).ok()?;
+        let resolved = runtime.resolved(f_id).ok()?;
+        let lowered = runtime.lowered(f_id).ok()?;
         (content, parsed, resolved, lowered)
     };
 
@@ -346,8 +346,8 @@ fn definition_deferred(
             let (content, parsed, indexed) = {
                 let runtime = &mut compiler.runtime;
                 let content = runtime.content(f_id);
-                let (parsed, _) = runtime.parsed(f_id);
-                let indexed = runtime.indexed(f_id);
+                let (parsed, _) = runtime.parsed(f_id).ok()?;
+                let indexed = runtime.indexed(f_id).ok()?;
                 (content, parsed, indexed)
             };
 
@@ -373,8 +373,8 @@ fn definition_deferred(
             let (content, parsed, indexed) = {
                 let runtime = &mut compiler.runtime;
                 let content = runtime.content(f_id);
-                let (parsed, _) = runtime.parsed(f_id);
-                let indexed = runtime.indexed(f_id);
+                let (parsed, _) = runtime.parsed(f_id).ok()?;
+                let indexed = runtime.indexed(f_id).ok()?;
                 (content, parsed, indexed)
             };
 
@@ -401,8 +401,8 @@ fn definition_nominal(
     domain: ResolutionDomain,
     text: SmolStr,
 ) -> Option<GotoDefinitionResponse> {
-    let resolved = compiler.runtime.resolved(f_id);
-    let lowered = compiler.runtime.lowered(f_id);
+    let resolved = compiler.runtime.resolved(f_id).ok()?;
+    let lowered = compiler.runtime.lowered(f_id).ok()?;
 
     let id = lowered.graph.deferred().find_map(|(id, deferred)| {
         if deferred.domain == domain && deferred.name.as_ref() == Some(&text) {

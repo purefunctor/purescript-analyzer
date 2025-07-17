@@ -54,12 +54,11 @@ fn generate_resolving() {
 #[rustfmt::skip]
 #[test]
 fn test_{}_{}() {{
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{}"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{}"));
     let Some(id) = compiler.runtime.module_file("{}") else {{
         return;
     }};
-    let resolved = compiler.runtime.resolved(id);
-    let report = tests_integration::core::report_resolved("{}", &resolved);
+    let report = tests_integration::core::report_resolved(&compiler, id, "{}");
     insta::assert_snapshot!(report);
 }}"#,
                 folder_name, test_name, folder_name, file_name, file_name
@@ -103,11 +102,11 @@ fn generate_deferred_resolution() {
 #[rustfmt::skip]
 #[test]
 fn test_{}_{}() {{
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{}"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{}"));
     let Some(id) = compiler.runtime.module_file("{}") else {{
         return;
     }};
-    let report = tests_integration::core::report_deferred_resolution(&mut compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
     insta::assert_snapshot!(report);
 }}"#,
                 folder_name, test_name, folder_name, file_name

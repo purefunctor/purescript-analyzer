@@ -16,7 +16,7 @@ pub trait External {
 
     fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>>;
 
-    fn module_file(&self, name: &str) -> QueryResult<Option<FileId>>;
+    fn module_file(&self, name: &str) -> Option<FileId>;
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
