@@ -13,7 +13,7 @@ use syntax::cst;
 use crate::{Compiler, locate};
 
 pub fn implementation(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
@@ -37,7 +37,7 @@ pub fn implementation(
 }
 
 fn definition_module_name(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
@@ -80,7 +80,7 @@ fn definition_module_name(
 }
 
 fn definition_import(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     i_id: ImportItemId,
 ) -> Option<GotoDefinitionResponse> {
@@ -115,7 +115,7 @@ fn definition_import(
         compiler.engine.resolved(import_id).ok()?
     };
 
-    let goto_term = |compiler: &mut Compiler, name: &str| {
+    let goto_term = |compiler: &Compiler, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
@@ -141,7 +141,7 @@ fn definition_import(
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
     };
 
-    let goto_type = |compiler: &mut Compiler, name: &str| {
+    let goto_type = |compiler: &Compiler, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
@@ -197,7 +197,7 @@ fn definition_import(
 }
 
 fn definition_binder(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     b_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
@@ -217,7 +217,7 @@ fn definition_binder(
 }
 
 fn definition_expression(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     uri: Url,
     f_id: FileId,
     e_id: ExpressionId,
@@ -279,7 +279,7 @@ fn definition_expression(
 }
 
 fn definition_type(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     uri: Url,
     f_id: FileId,
     t_id: TypeId,
@@ -317,7 +317,7 @@ fn definition_type(
 }
 
 fn definition_deferred(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -385,7 +385,7 @@ fn definition_deferred(
 /// This is particularly useful for things like operators which
 /// we don't currently track during [`lowering`].
 fn definition_nominal(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     domain: ResolutionDomain,
     text: SmolStr,

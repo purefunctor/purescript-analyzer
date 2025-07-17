@@ -9,7 +9,7 @@ use syntax::SyntaxNode;
 
 use crate::{Compiler, hover};
 
-pub fn implementation(compiler: &mut Compiler, mut item: CompletionItem) -> CompletionItem {
+pub fn implementation(compiler: &Compiler, mut item: CompletionItem) -> CompletionItem {
     let Some(value) = mem::take(&mut item.data) else { return item };
     let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
 

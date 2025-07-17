@@ -3,131 +3,131 @@
 #[rustfmt::skip]
 #[test]
 fn test_001_definition_local_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/001_definition_local"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/001_definition_local"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_definition_import_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/002_definition_import"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/002_definition_import"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_003_hover_local_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/003_hover_local"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/003_hover_local"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_004_hover_import_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/004_hover_import"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/004_hover_import"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_005_completion_local_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/005_completion_local"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/005_completion_local"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_006_completion_partial_empty_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/006_completion_partial_empty"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/006_completion_partial_empty"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_007_completion_partial_token_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/007_completion_partial_token"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/007_completion_partial_token"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_008_completion_import_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/008_completion_import"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/008_completion_import"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_009_completion_suggestion_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/009_completion_suggestion"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/009_completion_suggestion"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_010_completion_qualified_suggestion_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/010_completion_qualified_suggestion"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/010_completion_qualified_suggestion"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_011_completion_module_name_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/011_completion_module_name"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/011_completion_module_name"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_012_completion_edit_import_main() {
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/012_completion_edit_import"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/012_completion_edit_import"));
     let Some(id) = compiler.engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }

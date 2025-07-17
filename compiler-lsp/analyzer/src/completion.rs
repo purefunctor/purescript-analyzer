@@ -14,7 +14,7 @@ use rowan::{TokenAtOffset, ast::AstNode};
 use crate::{Compiler, locate};
 
 pub fn implementation(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     uri: Url,
     position: Position,
 ) -> Option<CompletionResponse> {
@@ -95,7 +95,7 @@ impl Context<'_> {
     }
 }
 
-fn collect(compiler: &mut Compiler, context: &Context) -> Vec<CompletionItem> {
+fn collect(compiler: &Compiler, context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
 
     if matches!(context.location, CompletionLocation::Module) {
@@ -108,7 +108,7 @@ fn collect(compiler: &mut Compiler, context: &Context) -> Vec<CompletionItem> {
     items
 }
 
-fn collect_module(compiler: &mut Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
+fn collect_module(compiler: &Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
     items.extend(compiler.files.iter_id().filter_map(|id| {
         let (parsed, _) = compiler.engine.parsed(id).ok()?;
         let name = parsed.module_name()?;
@@ -140,7 +140,7 @@ fn collect_module(compiler: &mut Compiler, context: &Context, items: &mut Vec<Co
     }));
 }
 
-fn collect_existing(compiler: &mut Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
+fn collect_existing(compiler: &Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
     if let Some(prefix) = &context.filter.prefix {
         collect_qualified(compiler, context, items, prefix);
     } else {
@@ -149,7 +149,7 @@ fn collect_existing(compiler: &mut Compiler, context: &Context, items: &mut Vec<
 }
 
 fn collect_qualified(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context<'_>,
     items: &mut Vec<CompletionItem>,
     prefix: &str,
@@ -180,7 +180,7 @@ fn collect_qualified(
 }
 
 fn collect_unqualified(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     items: &mut Vec<CompletionItem>,
 ) {
@@ -244,7 +244,7 @@ fn collect_unqualified(
 }
 
 fn collect_suggestions(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     items: &mut Vec<CompletionItem>,
 ) {
@@ -266,7 +266,7 @@ fn collect_suggestions(
 }
 
 fn collect_qualified_suggestions(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     items: &mut Vec<CompletionItem>,
     (prefix, id): (&str, FileId),
@@ -364,7 +364,7 @@ fn collect_qualified_suggestions(
 }
 
 fn collect_unqualified_suggestions(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     items: &mut Vec<CompletionItem>,
     (name, file_id): (&str, FileId),
@@ -470,7 +470,7 @@ fn collect_unqualified_suggestions(
 }
 
 fn collect_imports(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     import: &ResolvedImport,
     items: &mut Vec<CompletionItem>,

@@ -139,11 +139,11 @@ fn generate_lsp() {
 #[rustfmt::skip]
 #[test]
 fn test_{}_main() {{
-    let mut compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{}"));
+    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{}"));
     let Some(id) = compiler.engine.module_file("Main") else {{
         return;
     }};
-    let report = tests_integration::lsp::report(&mut compiler, id);
+    let report = tests_integration::lsp::report(&compiler, id);
     insta::assert_snapshot!(report);
 }}"#,
             folder_name, folder_name

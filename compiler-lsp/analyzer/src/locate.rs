@@ -49,7 +49,7 @@ pub enum Located {
     Nothing,
 }
 
-pub fn locate(compiler: &mut Compiler, id: FileId, position: Position) -> Located {
+pub fn locate(compiler: &Compiler, id: FileId, position: Position) -> Located {
     let (content, parsed, indexed, lowered) = {
         let content = compiler.engine.content(id);
         let Ok((parsed, _)) = compiler.engine.parsed(id) else { return Located::Nothing };

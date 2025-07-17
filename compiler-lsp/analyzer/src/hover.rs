@@ -22,7 +22,7 @@ use syntax::{SyntaxKind, SyntaxNode, cst};
 
 use crate::{Compiler, locate};
 
-pub fn implementation(compiler: &mut Compiler, uri: Url, position: Position) -> Option<Hover> {
+pub fn implementation(compiler: &Compiler, uri: Url, position: Position) -> Option<Hover> {
     let f_id = {
         let uri = uri.as_str();
         compiler.files.id(uri)?
@@ -42,7 +42,7 @@ pub fn implementation(compiler: &mut Compiler, uri: Url, position: Position) -> 
 }
 
 fn hover_module_name(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<Hover> {
@@ -78,7 +78,7 @@ fn hover_module_name(
 }
 
 pub(crate) fn annotation_syntax_file(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
     let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
@@ -106,7 +106,7 @@ pub(crate) fn annotation_syntax_file(
     Some((root, annotation, syntax))
 }
 
-fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
+fn hover_import(compiler: &Compiler, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
     let (parsed, indexed) = {
         let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
         let indexed = compiler.engine.indexed(f_id).ok()?;
@@ -140,12 +140,12 @@ fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Op
         compiler.engine.resolved(import_id).ok()?
     };
 
-    let hover_term_import = |compiler: &mut Compiler, name: &str| {
+    let hover_term_import = |compiler: &Compiler, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
         hover_file_term(compiler, f_id, t_id)
     };
 
-    let hover_type_import = |compiler: &mut Compiler, name: &str| {
+    let hover_type_import = |compiler: &Compiler, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
         hover_file_type(compiler, f_id, t_id)
     };
@@ -171,7 +171,7 @@ fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Op
     }
 }
 
-fn hover_binder(compiler: &mut Compiler, f_id: FileId, b_id: BinderId) -> Option<Hover> {
+fn hover_binder(compiler: &Compiler, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     let (resolved, lowered) = {
         let resolved = compiler.engine.resolved(f_id).ok()?;
         let lowered = compiler.engine.lowered(f_id).ok()?;
@@ -187,7 +187,7 @@ fn hover_binder(compiler: &mut Compiler, f_id: FileId, b_id: BinderId) -> Option
     }
 }
 
-fn hover_expression(compiler: &mut Compiler, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
+fn hover_expression(compiler: &Compiler, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
         let resolved = compiler.engine.resolved(f_id).ok()?;
         let lowered = compiler.engine.lowered(f_id).ok()?;
@@ -264,7 +264,7 @@ fn hover_let(
     }
 }
 
-fn hover_type(compiler: &mut Compiler, f_id: FileId, t_id: TypeId) -> Option<Hover> {
+fn hover_type(compiler: &Compiler, f_id: FileId, t_id: TypeId) -> Option<Hover> {
     let (resolved, lowered) = {
         let resolved = compiler.engine.resolved(f_id).ok()?;
         let lowered = compiler.engine.lowered(f_id).ok()?;
@@ -281,7 +281,7 @@ fn hover_type(compiler: &mut Compiler, f_id: FileId, t_id: TypeId) -> Option<Hov
 }
 
 fn hover_deferred(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -302,7 +302,7 @@ fn hover_deferred(
     }
 }
 
-fn hover_file_term(compiler: &mut Compiler, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
+fn hover_file_term(compiler: &Compiler, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
     let (root, annotation, syntax) = annotation_syntax_file_term(compiler, f_id, t_id)?;
 
     let annotation = annotation.map(|range| render_annotation(&root, range));
@@ -316,7 +316,7 @@ fn hover_file_term(compiler: &mut Compiler, f_id: FileId, t_id: TermItemId) -> O
 }
 
 pub(super) fn annotation_syntax_file_term(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     t_id: TermItemId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
@@ -347,7 +347,7 @@ pub(super) fn annotation_syntax_file_term(
 }
 
 fn hover_file_type(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: Idx<files::File>,
     t_id: Idx<indexing::TypeItem>,
 ) -> Option<Hover> {
@@ -364,7 +364,7 @@ fn hover_file_type(
 }
 
 pub(crate) fn annotation_syntax_file_type(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     f_id: FileId,
     t_id: TypeItemId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {

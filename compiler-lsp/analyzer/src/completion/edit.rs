@@ -11,7 +11,7 @@ use smol_str::{SmolStrBuilder, ToSmolStr};
 use crate::{Compiler, completion::Context, locate};
 
 fn import_item<F, G>(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     module_name: &str,
     file_id: FileId,
@@ -87,7 +87,7 @@ where
 }
 
 pub(super) fn term_import_item(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     module_name: &str,
     term_name: &str,
@@ -109,7 +109,7 @@ pub(super) fn term_import_item(
 }
 
 pub(super) fn type_import_item(
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     context: &Context,
     module_name: &str,
     type_name: &str,

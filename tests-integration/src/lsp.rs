@@ -51,7 +51,7 @@ fn extract_cursors(content: &str) -> Vec<(Position, CursorKind)> {
     cursors
 }
 
-pub fn report(compiler: &mut Compiler, id: FileId) -> String {
+pub fn report(compiler: &Compiler, id: FileId) -> String {
     let uri = {
         let path = compiler.files.path(id);
         Url::parse(&path).unwrap()
@@ -77,7 +77,7 @@ pub fn report(compiler: &mut Compiler, id: FileId) -> String {
 
 fn dispatch_cursor(
     result: &mut String,
-    compiler: &mut Compiler,
+    compiler: &Compiler,
     position: Position,
     cursor: CursorKind,
     uri: Url,
