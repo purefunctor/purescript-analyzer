@@ -140,9 +140,18 @@ fn on_change(compiler: &mut analyzer::Compiler, uri: &str, text: &str) {
         return;
     };
     if let Some(name) = parsed.module_name() {
-        compiler.engine.update_module_name(|m| {
-            m.intern_with_file(&name, id);
+        // NOTE: as a consequence of discovered inputs, we have to
+        // perform this check to make sure we're not invalidating
+        // queries too much.
+        let should_update = compiler.engine.with_module_name(|m| {
+            let id = m.module_id(&name);
+            id.is_none()
         });
+        if should_update {
+            compiler.engine.update_module_name(|m| {
+                m.intern_with_file(&name, id);
+            });
+        }
     }
 }
 
