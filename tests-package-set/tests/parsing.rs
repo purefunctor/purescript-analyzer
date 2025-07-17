@@ -1,7 +1,6 @@
 use std::{collections::HashMap, fs, path::PathBuf, sync::Arc, time::Instant};
 
 use files::Files;
-use itertools::Itertools;
 use parsing::ParseError;
 use tests_package_set::all_source_files;
 
@@ -57,20 +56,15 @@ fn test_parallel_parse_package_set() {
     let parsing = start.elapsed();
     println!("Parsing {:?}", parsing);
 
-    let names = source
-        .iter()
-        .filter_map(|&id| {
-            let (parsed, _) = engine.parsed(id).ok()?;
-            let module_name = parsed.module_name()?;
-            Some((module_name, id))
-        })
-        .collect_vec();
-
-    engine.update_module_name(|m| {
-        for (name, file) in names {
-            m.intern_with_file(&name, file);
-        }
+    let names = source.iter().filter_map(|&id| {
+        let (parsed, _) = engine.parsed(id).ok()?;
+        let module_name = parsed.module_name()?;
+        Some((module_name, id))
     });
+
+    for (name, file) in names {
+        engine.set_module_file(&name, file);
+    }
 
     let start = Instant::now();
     source.par_iter().for_each(|&id| {

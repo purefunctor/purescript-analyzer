@@ -157,6 +157,7 @@ dependencies = [
  "rayon",
  "resolving",
  "rustc-hash 2.1.1",
+ "smol_str",
  "string-interner",
  "thread_local",
 ]

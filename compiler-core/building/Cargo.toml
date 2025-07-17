@@ -16,6 +16,7 @@ parsing = { version = "0.1.0", path = "../parsing" }
 rayon = "1.10.0"
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.0"
+smol_str = "0.3.2"
 string-interner = "0.19.0"
 thread_local = "1.1.8"
 

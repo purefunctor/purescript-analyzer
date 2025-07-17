@@ -8,7 +8,6 @@ use std::{
 
 use analyzer::Compiler;
 use glob::glob;
-use smol_str::SmolStrBuilder;
 
 fn load_file(compiler: &mut Compiler, path: &Path) {
     let uri = format!("file://{}", path.to_str().unwrap());
@@ -22,19 +21,8 @@ fn load_file(compiler: &mut Compiler, path: &Path) {
         return;
     };
 
-    let cst = parsed.cst();
-    if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
-        let mut builder = SmolStrBuilder::default();
-        if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-            builder.push_str(token.text());
-        }
-        if let Some(token) = cst.name_token() {
-            builder.push_str(token.text());
-        }
-        let name = builder.finish();
-        compiler.engine.update_module_name(|m| {
-            m.intern_with_file(&name, id);
-        });
+    if let Some(name) = parsed.module_name() {
+        compiler.engine.set_module_file(&name, id);
     }
 }
 
