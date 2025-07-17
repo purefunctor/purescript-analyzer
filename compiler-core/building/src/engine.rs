@@ -1,3 +1,27 @@
+//! Implements the core build system for the query-based compiler
+//!
+//! Our implementation is inspired by the verifying step traces described in
+//! the [Build systems à la carte: Theory and practice] paper. However, the
+//! implementation has two key differences: we only retain the latest step
+//! trace for any given query; and more significantly, we use structural
+//! equality instead of hashing to compare cached and fresh values.
+//!
+//! Unlike traditional phase-based compilation, query-based compilers are
+//! designed to have its intermediate states be observed directly using a
+//! convenient API.
+//!
+//! The build system is designed to be pure and hermetic—the current state of
+//! the workspace e.g. file contents are stored in-memory to make dependency
+//! tracking easier to manage.
+//!
+//! Our implementation also borrows a few techniques used by [salsa] such as
+//! using global query lock for ordering query reads and input writes, and
+//! future-promise-based work deduplication. These techniques enable parallel
+//! computation with cancellation and work deduplication!
+//!
+//! [Build systems à la carte: Theory and practice]: https://www.cambridge.org/core/journals/journal-of-functional-programming/article/build-systems-a-la-carte-theory-and-practice/097CE52C750E69BD16B78C318754C7A4
+//! [salsa]: https://github.com/salsa-rs/salsa
+
 mod promise;
 
 use std::{
@@ -79,6 +103,14 @@ struct DerivedStorage {
     resolved: FxHashMap<FileId, DerivedState<Arc<FullResolvedModule>>>,
 }
 
+/// Concept: discovered inputs
+///
+/// Discovered inputs are information discovered from the results of queries,
+/// but may be too impractical to model as a query itself. An example of this
+/// is the mapping from module names to file IDs: while possible to model as
+/// a query, it would have to be recomputed on every keystroke which requires
+/// re-allocation. Instead, we can model it as a discovered input which can be
+/// updated incrementally.
 #[derive(Default)]
 struct DiscoveredStorage {
     module_name: ModuleNameMap,
@@ -157,17 +189,17 @@ impl Drop for QueryControlGuard {
 
 #[derive(Default)]
 struct QueryControl {
-    guard: Option<QueryControlGuard>,
+    _guard: Option<QueryControlGuard>,
     local: Arc<LocalState>,
     global: Arc<GlobalState>,
 }
 
 impl QueryControl {
     fn snapshot(&self) -> QueryControl {
-        let guard = Some(QueryControlGuard::new(&self.global));
+        let _guard = Some(QueryControlGuard::new(&self.global));
         let local = Arc::new(LocalState::default());
         let global = Arc::clone(&self.global);
-        QueryControl { guard, local, global }
+        QueryControl { _guard, local, global }
     }
 }
 
