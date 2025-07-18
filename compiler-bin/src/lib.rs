@@ -5,7 +5,7 @@ use std::{
     env, fs,
     ops::{ControlFlow, Deref},
     path::PathBuf,
-    sync::{Arc, atomic::AtomicUsize},
+    sync::Arc,
     time::Instant,
 };
 
