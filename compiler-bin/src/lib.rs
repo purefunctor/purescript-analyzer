@@ -1,12 +1,22 @@
 pub mod extension;
 
-use std::{env, fs, ops::ControlFlow, path::PathBuf, time::Instant};
+use std::{
+    borrow::BorrowMut,
+    env, fs,
+    ops::{ControlFlow, Deref},
+    path::PathBuf,
+    sync::{Arc, atomic::AtomicUsize},
+    time::Instant,
+};
 
+use analyzer::{Files, QueryEngine};
 use async_lsp::{
-    ClientSocket, ResponseError, client_monitor::ClientProcessMonitorLayer,
+    ClientSocket, ErrorCode, ResponseError, client_monitor::ClientProcessMonitorLayer,
     concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
     server::LifecycleLayer,
 };
+use parking_lot::RwLock;
+use tokio::task;
 use tower::ServiceBuilder;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{
@@ -16,17 +26,37 @@ use tracing_subscriber::{
 
 pub struct State {
     pub client: ClientSocket,
-    pub engine: analyzer::QueryEngine,
-    pub files: analyzer::Files,
+    pub engine: QueryEngine,
+    pub files: Arc<RwLock<Files>>,
     pub root: Option<PathBuf>,
 }
 
 impl State {
     fn new(client: ClientSocket) -> State {
-        let engine = analyzer::QueryEngine::default();
-        let files = analyzer::Files::default();
+        let engine = QueryEngine::default();
+        let files = Arc::new(RwLock::new(Files::default()));
         let root = None;
         State { client, engine, files, root }
+    }
+
+    fn spawn<T>(&self, f: impl FnOnce(StateSnapshot) -> T + Send + 'static) -> task::JoinHandle<T>
+    where
+        T: Send + 'static,
+    {
+        let snapshot =
+            StateSnapshot { engine: self.engine.snapshot(), files: Arc::clone(&self.files) };
+        task::spawn_blocking(move || f(snapshot))
+    }
+}
+
+struct StateSnapshot {
+    engine: QueryEngine,
+    files: Arc<RwLock<Files>>,
+}
+
+impl StateSnapshot {
+    fn files(&self) -> impl Deref<Target = Files> {
+        self.files.read()
     }
 }
 
@@ -84,41 +114,34 @@ fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp
 }
 
 fn definition(
-    state: &mut State,
+    snapshot: StateSnapshot,
     p: GotoDefinitionParams,
-) -> impl Future<Output = Result<Option<GotoDefinitionResponse>, ResponseError>> + use<> {
+) -> Result<Option<GotoDefinitionResponse>, ResponseError> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = analyzer::definition::implementation(&state.engine, &state.files, uri, position);
-    async move { Result::Ok(result) }
+    Ok(analyzer::definition::implementation(&snapshot.engine, &snapshot.files(), uri, position))
 }
 
-fn hover(
-    state: &mut State,
-    p: HoverParams,
-) -> impl Future<Output = Result<Option<Hover>, ResponseError>> + use<> {
+fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, ResponseError> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = analyzer::hover::implementation(&state.engine, &state.files, uri, position);
-    async move { Ok(result) }
+    Ok(analyzer::hover::implementation(&snapshot.engine, &snapshot.files(), uri, position))
 }
 
 fn completion(
-    state: &mut State,
+    snapshot: StateSnapshot,
     p: CompletionParams,
-) -> impl Future<Output = Result<Option<CompletionResponse>, ResponseError>> + use<> {
+) -> Result<Option<CompletionResponse>, ResponseError> {
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    let result = analyzer::completion::implementation(&state.engine, &state.files, uri, position);
-    async move { Ok(result) }
+    Ok(analyzer::completion::implementation(&snapshot.engine, &snapshot.files(), uri, position))
 }
 
 fn resolve_completion_item(
-    state: &mut State,
+    snapshot: StateSnapshot,
     item: CompletionItem,
-) -> impl Future<Output = Result<CompletionItem, ResponseError>> + use<> {
-    let result = analyzer::completion::resolve::implementation(&state.engine, item);
-    async move { Ok(result) }
+) -> Result<CompletionItem, ResponseError> {
+    Ok(analyzer::completion::resolve::implementation(&snapshot.engine, item))
 }
 
 fn did_change(
@@ -134,9 +157,11 @@ fn did_change(
 }
 
 fn on_change(state: &mut State, uri: &str, text: &str) {
-    let id = state.files.insert(uri, text);
-    let content = state.files.content(id);
-
+    let (id, content) = {
+        let mut files = state.files.write();
+        let id = files.insert(uri, text);
+        (id, files.content(id))
+    };
     state.engine.set_content(id, content);
     let Ok((parsed, _)) = state.engine.parsed(id) else {
         return;
@@ -169,16 +194,38 @@ where
     }
 }
 
+trait RequestExtension: BorrowMut<Router<State>> {
+    fn request_snapshot<R: request::Request>(
+        &mut self,
+        f: impl Fn(StateSnapshot, R::Params) -> Result<R::Result, ResponseError> + Send + Copy + 'static,
+    ) -> &mut Self
+    where
+        R::Params: Send + 'static,
+        R::Result: Send + 'static,
+    {
+        self.borrow_mut().request::<R, _>(move |this, p| {
+            let task = this.spawn(move |snapshot| f(snapshot, p));
+            async move {
+                task.await
+                    .map_err(|_| ResponseError::new(ErrorCode::REQUEST_FAILED, "REQUEST_FAILED"))?
+            }
+        });
+        self
+    }
+}
+
+impl RequestExtension for Router<State> {}
+
 pub async fn main() {
     let (server, _) = async_lsp::MainLoop::new_server(|client| {
         let mut router: Router<State, ResponseError> = Router::new(State::new(client.clone()));
 
         router
             .request::<extension::CustomInitialize, _>(initialize)
-            .request::<request::GotoDefinition, _>(definition)
-            .request::<request::HoverRequest, _>(hover)
-            .request::<request::Completion, _>(completion)
-            .request::<request::ResolveCompletionItem, _>(resolve_completion_item)
+            .request_snapshot::<request::GotoDefinition>(definition)
+            .request_snapshot::<request::HoverRequest>(hover)
+            .request_snapshot::<request::Completion>(completion)
+            .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
             .notification::<notification::Initialized>(initialized)
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
