@@ -87,7 +87,7 @@ fn definition(
 ) -> impl Future<Output = Result<Option<GotoDefinitionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = analyzer::definition::implementation(&mut state.compiler, uri, position);
+    let result = analyzer::definition::implementation(&state.compiler, uri, position);
     async move { Result::Ok(result) }
 }
 
@@ -97,7 +97,7 @@ fn hover(
 ) -> impl Future<Output = Result<Option<Hover>, ResponseError>> + use<> {
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    let result = analyzer::hover::implementation(&mut state.compiler, uri, position);
+    let result = analyzer::hover::implementation(&state.compiler, uri, position);
     async move { Ok(result) }
 }
 
@@ -107,7 +107,7 @@ fn completion(
 ) -> impl Future<Output = Result<Option<CompletionResponse>, ResponseError>> + use<> {
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    let result = analyzer::completion::implementation(&mut state.compiler, uri, position);
+    let result = analyzer::completion::implementation(&state.compiler, uri, position);
     async move { Ok(result) }
 }
 
@@ -115,7 +115,7 @@ fn resolve_completion_item(
     state: &mut State,
     item: CompletionItem,
 ) -> impl Future<Output = Result<CompletionItem, ResponseError>> + use<> {
-    let result = analyzer::completion::resolve::implementation(&mut state.compiler, item);
+    let result = analyzer::completion::resolve::implementation(&state.compiler, item);
     async move { Ok(result) }
 }
 
