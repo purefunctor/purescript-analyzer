@@ -1,5 +1,6 @@
 use async_lsp::lsp_types::*;
-use files::FileId;
+use building::QueryEngine;
+use files::{FileId, Files};
 use indexing::ImportItemId;
 use lowering::{
     BinderId, BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
@@ -10,38 +11,40 @@ use rowan::ast::{AstNode, AstPtr};
 use smol_str::{SmolStr, SmolStrBuilder};
 use syntax::cst;
 
-use crate::{Compiler, locate};
+use crate::locate;
 
 pub fn implementation(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
     let f_id = {
         let uri = uri.as_str();
-        compiler.files.id(uri)?
+        files.id(uri)?
     };
 
-    let thing = locate::locate(compiler, f_id, position);
+    let thing = locate::locate(engine, f_id, position);
     match thing {
-        locate::Located::ModuleName(cst) => definition_module_name(compiler, f_id, cst),
-        locate::Located::ImportItem(i_id) => definition_import(compiler, f_id, i_id),
-        locate::Located::Binder(b_id) => definition_binder(compiler, f_id, b_id),
-        locate::Located::Expression(e_id) => definition_expression(compiler, uri, f_id, e_id),
-        locate::Located::Type(t_id) => definition_type(compiler, uri, f_id, t_id),
+        locate::Located::ModuleName(cst) => definition_module_name(engine, files, f_id, cst),
+        locate::Located::ImportItem(i_id) => definition_import(engine, files, f_id, i_id),
+        locate::Located::Binder(b_id) => definition_binder(engine, files, f_id, b_id),
+        locate::Located::Expression(e_id) => definition_expression(engine, files, uri, f_id, e_id),
+        locate::Located::Type(t_id) => definition_type(engine, files, uri, f_id, t_id),
         locate::Located::OperatorInChain(domain, text) => {
-            definition_nominal(compiler, f_id, domain, text)
+            definition_nominal(engine, files, f_id, domain, text)
         }
         locate::Located::Nothing => None,
     }
 }
 
 fn definition_module_name(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
-    let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
+    let (parsed, _) = engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let module = cst.to_node(&root);
@@ -59,11 +62,11 @@ fn definition_module_name(
     };
 
     let (uri, range) = {
-        let id = compiler.engine.module_file(&module)?;
-        let path = compiler.files.path(id);
-        let content = compiler.engine.content(id);
+        let id = engine.module_file(&module)?;
+        let path = files.path(id);
+        let content = engine.content(id);
 
-        let (parsed, _) = compiler.engine.parsed(id).ok()?;
+        let (parsed, _) = engine.parsed(id).ok()?;
         let root = parsed.syntax_node();
 
         let range = root.text_range();
@@ -80,13 +83,14 @@ fn definition_module_name(
 }
 
 fn definition_import(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     f_id: FileId,
     i_id: ImportItemId,
 ) -> Option<GotoDefinitionResponse> {
     let (parsed, indexed) = {
-        let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-        let indexed = compiler.engine.indexed(f_id).ok()?;
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
         (parsed, indexed)
     };
 
@@ -111,23 +115,23 @@ fn definition_import(
     };
 
     let import_resolved = {
-        let import_id = compiler.engine.module_file(&module)?;
-        compiler.engine.resolved(import_id).ok()?
+        let import_id = engine.module_file(&module)?;
+        engine.resolved(import_id).ok()?
     };
 
-    let goto_term = |compiler: &Compiler, name: &str| {
+    let goto_term = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
-            let uri = compiler.files.path(f_id);
+            let uri = files.path(f_id);
             Url::parse(&uri).ok()?
         };
 
         let (content, parsed, indexed) = {
-            let content = compiler.engine.content(f_id);
-            let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-            let indexed = compiler.engine.indexed(f_id).ok()?;
+            let content = engine.content(f_id);
+            let (parsed, _) = engine.parsed(f_id).ok()?;
+            let indexed = engine.indexed(f_id).ok()?;
             (content, parsed, indexed)
         };
 
@@ -141,19 +145,19 @@ fn definition_import(
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
     };
 
-    let goto_type = |compiler: &Compiler, name: &str| {
+    let goto_type = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
-            let uri = compiler.files.path(f_id);
+            let uri = files.path(f_id);
             Url::parse(&uri).ok()?
         };
 
         let (content, parsed, indexed) = {
-            let content = compiler.engine.content(f_id);
-            let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-            let indexed = compiler.engine.indexed(f_id).ok()?;
+            let content = engine.content(f_id);
+            let (parsed, _) = engine.parsed(f_id).ok()?;
+            let indexed = engine.indexed(f_id).ok()?;
             (content, parsed, indexed)
         };
 
@@ -171,75 +175,77 @@ fn definition_import(
         cst::ImportItem::ImportValue(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_term(compiler, name)
+            goto_term(engine, files, name)
         }
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_type(compiler, name)
+            goto_type(engine, files, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_type(compiler, name)
+            goto_type(engine, files, name)
         }
         cst::ImportItem::ImportOperator(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_term(compiler, name)
+            goto_term(engine, files, name)
         }
         cst::ImportItem::ImportTypeOperator(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            goto_type(compiler, name)
+            goto_type(engine, files, name)
         }
     }
 }
 
 fn definition_binder(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     f_id: FileId,
     b_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
     let (resolved, lowered) = {
-        let resolved = compiler.engine.resolved(f_id).ok()?;
-        let lowered = compiler.engine.lowered(f_id).ok()?;
+        let resolved = engine.resolved(f_id).ok()?;
+        let lowered = engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            definition_deferred(compiler, &resolved, &lowered, *resolution)
+            definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
 fn definition_expression(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     uri: Url,
     f_id: FileId,
     e_id: ExpressionId,
 ) -> Option<GotoDefinitionResponse> {
     let (content, parsed, resolved, lowered) = {
-        let content = compiler.engine.content(f_id);
-        let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-        let resolved = compiler.engine.resolved(f_id).ok()?;
-        let lowered = compiler.engine.lowered(f_id).ok()?;
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let resolved = engine.resolved(f_id).ok()?;
+        let lowered = engine.lowered(f_id).ok()?;
         (content, parsed, resolved, lowered)
     };
 
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            definition_deferred(compiler, &resolved, &lowered, *resolution)
+            definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => {
-                    definition_deferred(compiler, &resolved, &lowered, *id)
+                    definition_deferred(engine, files, &resolved, &lowered, *id)
                 }
                 TermResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
@@ -272,33 +278,34 @@ fn definition_expression(
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            definition_deferred(compiler, &resolved, &lowered, *resolution)
+            definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
 fn definition_type(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     uri: Url,
     f_id: FileId,
     t_id: TypeId,
 ) -> Option<GotoDefinitionResponse> {
     let (content, parsed, resolved, lowered) = {
-        let content = compiler.engine.content(f_id);
-        let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-        let resolved = compiler.engine.resolved(f_id).ok()?;
-        let lowered = compiler.engine.lowered(f_id).ok()?;
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let resolved = engine.resolved(f_id).ok()?;
+        let lowered = engine.lowered(f_id).ok()?;
         (content, parsed, resolved, lowered)
     };
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
         lowering::TypeKind::Constructor { resolution } => {
-            definition_deferred(compiler, &resolved, &lowered, *resolution)
+            definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         lowering::TypeKind::Operator { resolution } => {
-            definition_deferred(compiler, &resolved, &lowered, *resolution)
+            definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         lowering::TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -317,7 +324,8 @@ fn definition_type(
 }
 
 fn definition_deferred(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -330,14 +338,14 @@ fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
 
             let uri = {
-                let path = compiler.files.path(f_id);
+                let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let content = compiler.engine.content(f_id);
-                let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-                let indexed = compiler.engine.indexed(f_id).ok()?;
+                let content = engine.content(f_id);
+                let (parsed, _) = engine.parsed(f_id).ok()?;
+                let indexed = engine.indexed(f_id).ok()?;
                 (content, parsed, indexed)
             };
 
@@ -356,14 +364,14 @@ fn definition_deferred(
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
 
             let uri = {
-                let path = compiler.files.path(f_id);
+                let path = files.path(f_id);
                 Url::parse(&path).ok()?
             };
 
             let (content, parsed, indexed) = {
-                let content = compiler.engine.content(f_id);
-                let (parsed, _) = compiler.engine.parsed(f_id).ok()?;
-                let indexed = compiler.engine.indexed(f_id).ok()?;
+                let content = engine.content(f_id);
+                let (parsed, _) = engine.parsed(f_id).ok()?;
+                let indexed = engine.indexed(f_id).ok()?;
                 (content, parsed, indexed)
             };
 
@@ -385,13 +393,14 @@ fn definition_deferred(
 /// This is particularly useful for things like operators which
 /// we don't currently track during [`lowering`].
 fn definition_nominal(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     f_id: FileId,
     domain: ResolutionDomain,
     text: SmolStr,
 ) -> Option<GotoDefinitionResponse> {
-    let resolved = compiler.engine.resolved(f_id).ok()?;
-    let lowered = compiler.engine.lowered(f_id).ok()?;
+    let resolved = engine.resolved(f_id).ok()?;
+    let lowered = engine.lowered(f_id).ok()?;
 
     let id = lowered.graph.deferred().find_map(|(id, deferred)| {
         if deferred.domain == domain && deferred.name.as_ref() == Some(&text) {
@@ -401,5 +410,5 @@ fn definition_nominal(
         }
     })?;
 
-    definition_deferred(compiler, &resolved, &lowered, id)
+    definition_deferred(engine, files, &resolved, &lowered, id)
 }

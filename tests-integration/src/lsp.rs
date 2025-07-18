@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
-use analyzer::Compiler;
+use analyzer::QueryEngine;
 use async_lsp::lsp_types::{CompletionList, CompletionResponse, Position, Url};
-use files::FileId;
+use files::{FileId, Files};
 use line_index::{LineIndex, TextSize};
 
 #[derive(Debug, Clone, Copy)]
@@ -51,13 +51,13 @@ fn extract_cursors(content: &str) -> Vec<(Position, CursorKind)> {
     cursors
 }
 
-pub fn report(compiler: &Compiler, id: FileId) -> String {
+pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
     let uri = {
-        let path = compiler.files.path(id);
+        let path = files.path(id);
         Url::parse(&path).unwrap()
     };
 
-    let content = compiler.engine.content(id);
+    let content = engine.content(id);
     let cursors = extract_cursors(&content);
 
     let mut result = String::new();
@@ -69,7 +69,7 @@ pub fn report(compiler: &Compiler, id: FileId) -> String {
         }
 
         writeln!(result, "{cursor:#?} at {position:?}\n").unwrap();
-        dispatch_cursor(&mut result, compiler, *position, *cursor, uri);
+        dispatch_cursor(&mut result, engine, files, *position, *cursor, uri);
     }
 
     cleanup_report(result)
@@ -77,32 +77,35 @@ pub fn report(compiler: &Compiler, id: FileId) -> String {
 
 fn dispatch_cursor(
     result: &mut String,
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     position: Position,
     cursor: CursorKind,
     uri: Url,
 ) {
     match cursor {
         CursorKind::GotoDefinition => {
-            if let Some(response) = analyzer::definition::implementation(compiler, uri, position) {
+            if let Some(response) =
+                analyzer::definition::implementation(engine, files, uri, position)
+            {
                 writeln!(result, "{response:#?}").unwrap();
             }
         }
         CursorKind::Hover => {
-            if let Some(response) = analyzer::hover::implementation(compiler, uri, position) {
+            if let Some(response) = analyzer::hover::implementation(engine, files, uri, position) {
                 writeln!(result, "{response:#?}").unwrap();
             }
         }
         CursorKind::Completion => {
-            if let Some(response) = analyzer::completion::implementation(compiler, uri, position) {
+            if let Some(response) =
+                analyzer::completion::implementation(engine, files, uri, position)
+            {
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
                         let items: Vec<_> = items
                             .into_iter()
-                            .map(|item| {
-                                analyzer::completion::resolve::implementation(compiler, item)
-                            })
+                            .map(|item| analyzer::completion::resolve::implementation(engine, item))
                             .collect();
                         writeln!(result, "{items:#?}").unwrap();
                     }

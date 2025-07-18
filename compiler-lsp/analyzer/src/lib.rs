@@ -3,11 +3,5 @@ pub mod definition;
 pub mod hover;
 pub mod locate;
 
-use building::QueryEngine;
-use files::Files;
-
-#[derive(Default)]
-pub struct Compiler {
-    pub engine: QueryEngine,
-    pub files: Files,
-}
+pub use building::QueryEngine;
+pub use files::Files;

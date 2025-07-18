@@ -54,11 +54,11 @@ fn generate_resolving() {
 #[rustfmt::skip]
 #[test]
 fn test_{}_{}() {{
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{}"));
-    let Some(id) = compiler.engine.module_file("{}") else {{
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{}"));
+    let Some(id) = engine.module_file("{}") else {{
         return;
     }};
-    let report = tests_integration::core::report_resolved(&compiler, id, "{}");
+    let report = tests_integration::core::report_resolved(&engine, id, "{}");
     insta::assert_snapshot!(report);
 }}"#,
                 folder_name, test_name, folder_name, file_name, file_name
@@ -102,11 +102,11 @@ fn generate_deferred_resolution() {
 #[rustfmt::skip]
 #[test]
 fn test_{}_{}() {{
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{}"));
-    let Some(id) = compiler.engine.module_file("{}") else {{
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{}"));
+    let Some(id) = engine.module_file("{}") else {{
         return;
     }};
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }}"#,
                 folder_name, test_name, folder_name, file_name
@@ -139,11 +139,11 @@ fn generate_lsp() {
 #[rustfmt::skip]
 #[test]
 fn test_{}_main() {{
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{}"));
-    let Some(id) = compiler.engine.module_file("Main") else {{
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{}"));
+    let Some(id) = engine.module_file("Main") else {{
         return;
     }};
-    let report = tests_integration::lsp::report(&compiler, id);
+    let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }}"#,
             folder_name, folder_name

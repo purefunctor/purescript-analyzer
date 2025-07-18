@@ -3,76 +3,76 @@
 #[rustfmt::skip]
 #[test]
 fn test_001_local_resolution_main() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/001_local_resolution"));
-    let Some(id) = compiler.engine.module_file("Main") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/001_local_resolution"));
+    let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_explicit_lib() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
-    let Some(id) = compiler.engine.module_file("ExplicitLib") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
+    let Some(id) = engine.module_file("ExplicitLib") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_implicit_lib() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
-    let Some(id) = compiler.engine.module_file("ImplicitLib") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
+    let Some(id) = engine.module_file("ImplicitLib") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_main() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
-    let Some(id) = compiler.engine.module_file("Main") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
+    let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_main_qualified() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
-    let Some(id) = compiler.engine.module_file("MainQualified") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
+    let Some(id) = engine.module_file("MainQualified") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_main_qualified_explicit() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
-    let Some(id) = compiler.engine.module_file("MainQualifiedExplicit") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
+    let Some(id) = engine.module_file("MainQualifiedExplicit") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }
 
 #[rustfmt::skip]
 #[test]
 fn test_002_import_resolution_main_qualified_explicit_merged() {
-    let compiler = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
-    let Some(id) = compiler.engine.module_file("MainQualifiedExplicitMerged") else {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/002_import_resolution"));
+    let Some(id) = engine.module_file("MainQualifiedExplicitMerged") else {
         return;
     };
-    let report = tests_integration::core::report_deferred_resolution(&compiler, id);
+    let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
 }

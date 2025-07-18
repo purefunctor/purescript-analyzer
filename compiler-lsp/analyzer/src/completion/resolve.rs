@@ -1,31 +1,32 @@
 use std::mem;
 
 use async_lsp::lsp_types::*;
+use building::QueryEngine;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use rowan::TextRange;
 use serde::{Deserialize, Serialize};
 use syntax::SyntaxNode;
 
-use crate::{Compiler, hover};
+use crate::hover;
 
-pub fn implementation(compiler: &Compiler, mut item: CompletionItem) -> CompletionItem {
+pub fn implementation(engine: &QueryEngine, mut item: CompletionItem) -> CompletionItem {
     let Some(value) = mem::take(&mut item.data) else { return item };
     let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
 
     match resolve {
         CompletionResolveData::Import(f_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file(compiler, f_id) {
+            if let Some(ranges) = hover::annotation_syntax_file(engine, f_id) {
                 resolve_documentation(ranges, &mut item);
             }
         }
         CompletionResolveData::TermItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_term(compiler, f_id, t_id) {
+            if let Some(ranges) = hover::annotation_syntax_file_term(engine, f_id, t_id) {
                 resolve_documentation(ranges, &mut item);
             }
         }
         CompletionResolveData::TypeItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_type(compiler, f_id, t_id) {
+            if let Some(ranges) = hover::annotation_syntax_file_type(engine, f_id, t_id) {
                 resolve_documentation(ranges, &mut item);
             }
         }

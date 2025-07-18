@@ -3,26 +3,28 @@ pub(crate) mod edit;
 pub mod resolve;
 
 use async_lsp::lsp_types::*;
+use building::QueryEngine;
 use context::{CompletionFilter, CompletionLocation};
-use files::FileId;
+use files::{FileId, Files};
 use indexing::{FullIndexedModule, ImportKind};
 use parsing::ParsedModule;
 use resolve::CompletionResolveData;
 use resolving::{FullResolvedModule, ResolvedImport};
 use rowan::{TokenAtOffset, ast::AstNode};
 
-use crate::{Compiler, locate};
+use crate::locate;
 
 pub fn implementation(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     uri: Url,
     position: Position,
 ) -> Option<CompletionResponse> {
     let uri = uri.as_str();
 
-    let id = compiler.files.id(uri)?;
-    let content = compiler.engine.content(id);
-    let (parsed, _) = compiler.engine.parsed(id).ok()?;
+    let id = files.id(uri)?;
+    let content = engine.content(id);
+    let (parsed, _) = engine.parsed(id).ok()?;
 
     let offset = locate::position_to_offset(&content, position)?;
 
@@ -38,8 +40,8 @@ pub fn implementation(
     let filter = CompletionFilter::new(&content, &token);
     let location = CompletionLocation::new(&content, position);
 
-    let indexed = compiler.engine.indexed(id).ok()?;
-    let resolved = compiler.engine.resolved(id).ok()?;
+    let indexed = engine.indexed(id).ok()?;
+    let resolved = engine.resolved(id).ok()?;
 
     let _span = tracing::info_span!("completion_items").entered();
     tracing::info!("Collecting {:?} items", location);
@@ -54,7 +56,7 @@ pub fn implementation(
         filter: &filter,
     };
 
-    let items = collect(compiler, &context);
+    let items = collect(engine, files, &context);
     let is_incomplete = items.len() > 5;
 
     Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
@@ -95,22 +97,27 @@ impl Context<'_> {
     }
 }
 
-fn collect(compiler: &Compiler, context: &Context) -> Vec<CompletionItem> {
+fn collect(engine: &QueryEngine, files: &Files, context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
 
     if matches!(context.location, CompletionLocation::Module) {
-        collect_module(compiler, context, &mut items);
+        collect_module(engine, files, context, &mut items);
     } else if matches!(context.location, CompletionLocation::Term | CompletionLocation::Type) {
-        collect_existing(compiler, context, &mut items);
-        collect_suggestions(compiler, context, &mut items);
+        collect_existing(engine, context, &mut items);
+        collect_suggestions(engine, files, context, &mut items);
     }
 
     items
 }
 
-fn collect_module(compiler: &Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
-    items.extend(compiler.files.iter_id().filter_map(|id| {
-        let (parsed, _) = compiler.engine.parsed(id).ok()?;
+fn collect_module(
+    engine: &QueryEngine,
+    files: &Files,
+    context: &Context,
+    items: &mut Vec<CompletionItem>,
+) {
+    items.extend(files.iter_id().filter_map(|id| {
+        let (parsed, _) = engine.parsed(id).ok()?;
         let name = parsed.module_name()?;
 
         // Limit suggestions to exact prefix matches before fuzzy matching.
@@ -140,16 +147,16 @@ fn collect_module(compiler: &Compiler, context: &Context, items: &mut Vec<Comple
     }));
 }
 
-fn collect_existing(compiler: &Compiler, context: &Context, items: &mut Vec<CompletionItem>) {
+fn collect_existing(engine: &QueryEngine, context: &Context, items: &mut Vec<CompletionItem>) {
     if let Some(prefix) = &context.filter.prefix {
-        collect_qualified(compiler, context, items, prefix);
+        collect_qualified(engine, context, items, prefix);
     } else {
-        collect_unqualified(compiler, context, items);
+        collect_unqualified(engine, context, items);
     }
 }
 
 fn collect_qualified(
-    compiler: &Compiler,
+    engine: &QueryEngine,
     context: &Context<'_>,
     items: &mut Vec<CompletionItem>,
     prefix: &str,
@@ -157,7 +164,7 @@ fn collect_qualified(
     let module_name = prefix.trim_end_matches('.');
 
     if let Some(import) = context.resolved.qualified.get(module_name) {
-        collect_imports(compiler, context, import, items);
+        collect_imports(engine, context, import, items);
     }
 
     items.extend(context.resolved.qualified.iter().filter_map(|(import_name, import)| {
@@ -165,7 +172,7 @@ fn collect_qualified(
             return None;
         }
 
-        let (parsed, _) = compiler.engine.parsed(import.file).ok()?;
+        let (parsed, _) = engine.parsed(import.file).ok()?;
         let description = parsed.module_name().map(|name| name.to_string());
 
         Some(completion_item(
@@ -179,17 +186,13 @@ fn collect_qualified(
     }));
 }
 
-fn collect_unqualified(
-    compiler: &Compiler,
-    context: &Context,
-    items: &mut Vec<CompletionItem>,
-) {
+fn collect_unqualified(engine: &QueryEngine, context: &Context, items: &mut Vec<CompletionItem>) {
     items.extend(context.resolved.qualified.iter().filter_map(|(import_name, import)| {
         if !context.allow_name(import_name) {
             return None;
         }
 
-        let (parsed, _) = compiler.engine.parsed(import.file).ok()?;
+        let (parsed, _) = engine.parsed(import.file).ok()?;
         let description = parsed.module_name().map(|name| name.to_string());
 
         Some(completion_item(
@@ -239,39 +242,40 @@ fn collect_unqualified(
     }
 
     for import in &context.resolved.unqualified {
-        collect_imports(compiler, context, import, items);
+        collect_imports(engine, context, import, items);
     }
 }
 
 fn collect_suggestions(
-    compiler: &Compiler,
+    engine: &QueryEngine,
+    files: &Files,
     context: &Context,
     items: &mut Vec<CompletionItem>,
 ) {
     if let Some(prefix) = &context.filter.prefix {
-        for id in compiler.files.iter_id() {
+        for id in files.iter_id() {
             if id == context.id {
                 continue;
             }
-            collect_qualified_suggestions(compiler, context, items, (prefix, id));
+            collect_qualified_suggestions(engine, context, items, (prefix, id));
         }
     } else if let Some(name) = &context.filter.name {
-        for id in compiler.files.iter_id() {
+        for id in files.iter_id() {
             if id == context.id {
                 continue;
             }
-            collect_unqualified_suggestions(compiler, context, items, (name, id));
+            collect_unqualified_suggestions(engine, context, items, (name, id));
         }
     }
 }
 
 fn collect_qualified_suggestions(
-    compiler: &Compiler,
+    engine: &QueryEngine,
     context: &Context,
     items: &mut Vec<CompletionItem>,
     (prefix, id): (&str, FileId),
 ) {
-    let Ok((import_parsed, _)) = compiler.engine.parsed(id) else {
+    let Ok((import_parsed, _)) = engine.parsed(id) else {
         return;
     };
     let Some(module_name) = import_parsed.module_name() else {
@@ -287,7 +291,7 @@ fn collect_qualified_suggestions(
         return;
     }
 
-    let Ok(import_resolved) = compiler.engine.resolved(id) else {
+    let Ok(import_resolved) = engine.resolved(id) else {
         return;
     };
     let insert_import_range = context.insert_import_range();
@@ -364,19 +368,19 @@ fn collect_qualified_suggestions(
 }
 
 fn collect_unqualified_suggestions(
-    compiler: &Compiler,
+    engine: &QueryEngine,
     context: &Context,
     items: &mut Vec<CompletionItem>,
     (name, file_id): (&str, FileId),
 ) {
-    let Ok((import_parsed, _)) = compiler.engine.parsed(file_id) else {
+    let Ok((import_parsed, _)) = engine.parsed(file_id) else {
         return;
     };
     let Some(import_module_name) = import_parsed.module_name() else {
         return tracing::error!("Missing module name {:?}", file_id);
     };
 
-    let Ok(import_resolved) = compiler.engine.resolved(file_id) else {
+    let Ok(import_resolved) = engine.resolved(file_id) else {
         return;
     };
     let insert_import_range = context.insert_import_range();
@@ -403,7 +407,7 @@ fn collect_unqualified_suggestions(
                 );
 
                 let (import_text, import_range) = edit::term_import_item(
-                    compiler,
+                    engine,
                     context,
                     &import_module_name,
                     term_name,
@@ -445,7 +449,7 @@ fn collect_unqualified_suggestions(
                 );
 
                 let (import_text, import_range) = edit::type_import_item(
-                    compiler,
+                    engine,
                     context,
                     &import_module_name,
                     type_name,
@@ -470,7 +474,7 @@ fn collect_unqualified_suggestions(
 }
 
 fn collect_imports(
-    compiler: &Compiler,
+    engine: &QueryEngine,
     context: &Context,
     import: &ResolvedImport,
     items: &mut Vec<CompletionItem>,
@@ -485,7 +489,7 @@ fn collect_imports(
                     return None;
                 }
 
-                let (parsed, _) = compiler.engine.parsed(term_file_id).ok()?;
+                let (parsed, _) = engine.parsed(term_file_id).ok()?;
                 let description = parsed.module_name().map(|name| name.to_string());
 
                 let edit = if let Some(prefix) = &context.filter.prefix {
@@ -515,7 +519,7 @@ fn collect_imports(
                     return None;
                 }
 
-                let (parsed, _) = compiler.engine.parsed(type_file_id).ok()?;
+                let (parsed, _) = engine.parsed(type_file_id).ok()?;
                 let description = parsed.module_name().map(|name| name.to_string());
 
                 let edit = if let Some(prefix) = &context.filter.prefix {
