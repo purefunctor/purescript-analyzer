@@ -1,3 +1,4 @@
+use building_types::QueryResult;
 use files::FileId;
 use indexing::{
     ExportKind, FullIndexedModule, ImplicitItems, ImportKind, IndexingImport, TermItemId,
@@ -19,17 +20,21 @@ pub(super) struct State {
     pub(super) errors: Vec<ResolvingError>,
 }
 
-pub(super) fn resolve_module(external: &mut impl External, file: FileId) -> State {
-    let indexed = external.indexed(file);
+pub(super) fn resolve_module(external: &impl External, file: FileId) -> QueryResult<State> {
+    let indexed = external.indexed(file)?;
 
     let mut state = State::default();
-    resolve_imports(external, &mut state, &indexed);
+    resolve_imports(external, &mut state, &indexed)?;
     resolve_exports(&mut state, &indexed, file);
 
-    state
+    Ok(state)
 }
 
-fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &FullIndexedModule) {
+fn resolve_imports(
+    external: &impl External,
+    state: &mut State,
+    indexed: &FullIndexedModule,
+) -> QueryResult<()> {
     for (&id, indexing_import) in &indexed.imports {
         let Some(name) = &indexing_import.name else {
             state.errors.push(ResolvingError::InvalidImportStatement { id });
@@ -53,7 +58,7 @@ fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &Fu
                 resolved_import,
                 indexing_import,
                 import_file_id,
-            );
+            )?;
         } else {
             resolve_import(
                 external,
@@ -61,26 +66,28 @@ fn resolve_imports(external: &mut impl External, state: &mut State, indexed: &Fu
                 &mut resolved_import,
                 indexing_import,
                 import_file_id,
-            );
+            )?;
             state.unqualified.push(resolved_import);
         }
     }
+
+    Ok(())
 }
 
 fn resolve_import(
-    external: &mut impl External,
+    external: &impl External,
     errors: &mut Vec<ResolvingError>,
     resolved: &mut ResolvedImport,
     indexing_import: &IndexingImport,
     import_file_id: FileId,
-) {
+) -> QueryResult<()> {
     let kind = match indexing_import.kind {
         ImportKind::Implicit => ImportKind::Implicit,
         ImportKind::Explicit => ImportKind::Hidden,
         ImportKind::Hidden => ImportKind::Implicit,
     };
 
-    let import_resolved = external.resolved(import_file_id);
+    let import_resolved = external.resolved(import_file_id)?;
 
     let terms = import_resolved.exports.iter_terms().map(|(name, file, id)| (name, file, id, kind));
     let types = import_resolved.exports.iter_types().map(|(name, file, id)| (name, file, id, kind));
@@ -89,7 +96,7 @@ fn resolve_import(
     add_imported_types(errors, resolved, types);
 
     if matches!(indexing_import.kind, ImportKind::Implicit) {
-        return;
+        return Ok(());
     }
 
     for (name, &id) in &indexing_import.terms {
@@ -105,21 +112,23 @@ fn resolve_import(
             *kind = indexing_import.kind;
             let Some(implicit) = implicit else { continue };
             let item = (*file, *id, implicit);
-            resolve_implicit(external, resolved, indexing_import, item);
+            resolve_implicit(external, resolved, indexing_import, item)?;
         } else {
             errors.push(ResolvingError::InvalidImportItem { id });
         };
     }
+
+    Ok(())
 }
 
 fn resolve_implicit(
-    external: &mut impl External,
+    external: &impl External,
     resolved: &mut ResolvedImport,
     indexing_import: &IndexingImport,
     item: (FileId, TypeItemId, &ImplicitItems),
-) {
+) -> QueryResult<()> {
     let (f_id, t_id, implicit) = item;
-    let import_indexed = external.indexed(f_id);
+    let import_indexed = external.indexed(f_id)?;
     match implicit {
         ImplicitItems::Everything => {
             for term_id in import_indexed.pairs.data_constructors(t_id) {
@@ -143,6 +152,7 @@ fn resolve_implicit(
             }
         }
     }
+    Ok(())
 }
 
 fn add_imported_terms<'a>(

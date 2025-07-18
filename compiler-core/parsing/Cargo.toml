@@ -11,5 +11,5 @@ smol_str = "0.3.2"
 syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]
-insta = "1.41.1"
-test_each_file = "0.3.4"
+insta = "1.43.1"
+test_each_file = "0.3.5"

@@ -1,7 +1,4 @@
-//! See documentation for [`ModuleNameId`] and [`ModuleNameMap`].
-
-use files::FileId;
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::FxBuildHasher;
 use string_interner::{backend::BucketBackend, symbol::SymbolU32, StringInterner, Symbol};
 
 /// A stable ID for module names.
@@ -18,47 +15,20 @@ impl Symbol for ModuleNameId {
     }
 }
 
-type Interner = StringInterner<BucketBackend<ModuleNameId>, FxBuildHasher>;
+pub struct ModuleNameInterner(StringInterner<BucketBackend<ModuleNameId>, FxBuildHasher>);
 
-/// Assigns stable IDs to module names and maps them to files.
-pub struct ModuleNameMap {
-    interner: Interner,
-    modules: FxHashMap<ModuleNameId, FileId>,
-}
-
-impl Default for ModuleNameMap {
-    fn default() -> ModuleNameMap {
-        let interner = Interner::new();
-        let modules = FxHashMap::default();
-        ModuleNameMap { interner, modules }
+impl Default for ModuleNameInterner {
+    fn default() -> ModuleNameInterner {
+        ModuleNameInterner(StringInterner::new())
     }
 }
 
-impl ModuleNameMap {
-    /// Intern a module name.
+impl ModuleNameInterner {
     pub fn intern(&mut self, name: &str) -> ModuleNameId {
-        self.interner.get_or_intern(name)
+        self.0.get_or_intern(name)
     }
 
-    /// Intern a module name with a file.
-    pub fn intern_with_file(&mut self, name: &str, file: FileId) -> ModuleNameId {
-        let id = self.intern(name);
-        self.modules.insert(id, file);
-        id
-    }
-
-    /// Look up the name of a module.
-    pub fn module_name(&self, id: ModuleNameId) -> Option<&str> {
-        self.interner.resolve(id)
-    }
-
-    /// Look up the ID of a module.
-    pub fn module_id(&self, name: &str) -> Option<ModuleNameId> {
-        self.interner.get(name)
-    }
-
-    /// Look up the file of a module.
-    pub fn file_id(&self, id: ModuleNameId) -> Option<FileId> {
-        self.modules.get(&id).copied()
+    pub fn lookup(&self, name: &str) -> Option<ModuleNameId> {
+        self.0.get(name)
     }
 }

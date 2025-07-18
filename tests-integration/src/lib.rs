@@ -6,31 +6,24 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use analyzer::Compiler;
+use analyzer::QueryEngine;
+use files::Files;
 use glob::glob;
-use smol_str::SmolStrBuilder;
 
-fn load_file(compiler: &mut Compiler, path: &Path) {
+fn load_file(engine: &mut QueryEngine, files: &mut Files, path: &Path) {
     let uri = format!("file://{}", path.to_str().unwrap());
     let file = fs::read_to_string(path).unwrap();
 
-    let id = compiler.files.insert(uri, file);
-    let content = compiler.files.content(id);
+    let id = files.insert(uri, file);
+    let content = files.content(id);
 
-    compiler.runtime.set_content(id, content);
-    let (parsed, _) = compiler.runtime.parsed(id);
+    engine.set_content(id, content);
+    let Ok((parsed, _)) = engine.parsed(id) else {
+        return;
+    };
 
-    let cst = parsed.cst();
-    if let Some(cst) = cst.header().and_then(|cst| cst.name()) {
-        let mut builder = SmolStrBuilder::default();
-        if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-            builder.push_str(token.text());
-        }
-        if let Some(token) = cst.name_token() {
-            builder.push_str(token.text());
-        }
-        let name = builder.finish();
-        compiler.runtime.set_module_file(&name, id);
+    if let Some(name) = parsed.module_name() {
+        engine.set_module_file(&name, id);
     }
 }
 
@@ -41,10 +34,11 @@ fn load_folder(folder: &Path) -> impl Iterator<Item = PathBuf> {
     glob(&pattern).unwrap().filter_map(Result::ok)
 }
 
-pub fn load_compiler(folder: &Path) -> Compiler {
-    let mut compiler = Compiler::default();
+pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
     load_folder(folder).for_each(|path| {
-        load_file(&mut compiler, &path);
+        load_file(&mut engine, &mut files, &path);
     });
-    compiler
+    (engine, files)
 }

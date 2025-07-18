@@ -1,9 +1,7 @@
 use std::{collections::HashMap, fs, path::PathBuf, sync::Arc, time::Instant};
 
 use files::Files;
-use itertools::Itertools;
 use parsing::ParseError;
-use smol_str::SmolStrBuilder;
 use tests_package_set::all_source_files;
 
 type ParseErrorPerFile = HashMap<PathBuf, Arc<[ParseError]>>;
@@ -31,11 +29,11 @@ fn test_parse_package_set() {
 
 #[test]
 fn test_parallel_parse_package_set() {
-    use building::parallel_runtime::*;
+    use building::QueryEngine;
     use rayon::prelude::*;
 
     let mut files = Files::default();
-    let runtime = SequentialRuntime::default();
+    let engine = QueryEngine::default();
 
     let mut source = vec![];
     for path in all_source_files() {
@@ -45,65 +43,52 @@ fn test_parallel_parse_package_set() {
         let id = files.insert(path, content);
         let content = files.content(id);
 
-        runtime.set_content(id, content);
+        engine.set_content(id, content);
         source.push(id);
     }
 
     let start = Instant::now();
-    runtime.upgraded(|runtime| {
-        source.par_iter().for_each(|&id| {
-            runtime.parsed(id);
-        });
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let parsed = engine.parsed(id);
+        assert!(parsed.is_ok());
     });
     let parsing = start.elapsed();
     println!("Parsing {:?}", parsing);
 
-    let names = runtime.upgraded(|runtime| {
-        let names = source.iter().filter_map(|&id| {
-            let (parsed, _) = runtime.parsed(id);
-            let cst = parsed.cst();
-            let cst = cst.header().and_then(|cst| cst.name())?;
-
-            let mut builder = SmolStrBuilder::default();
-            if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-                builder.push_str(token.text());
-            }
-            if let Some(token) = cst.name_token() {
-                builder.push_str(token.text());
-            }
-
-            Some((id, builder.finish()))
-        });
-        names.collect_vec()
+    let names = source.iter().filter_map(|&id| {
+        let (parsed, _) = engine.parsed(id).ok()?;
+        let module_name = parsed.module_name()?;
+        Some((module_name, id))
     });
 
-    for (file, name) in names {
-        runtime.set_module_file(&name, file);
+    for (name, file) in names {
+        engine.set_module_file(&name, file);
     }
 
     let start = Instant::now();
-    runtime.upgraded(|runtime| {
-        source.par_iter().for_each(|&id| {
-            runtime.indexed(id);
-        });
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let indexed = engine.indexed(id);
+        assert!(indexed.is_ok());
     });
     let indexing = start.elapsed();
     println!("Indexing {:?}", indexing);
 
     let start = Instant::now();
-    runtime.upgraded(|runtime| {
-        source.par_iter().for_each(|&id| {
-            runtime.resolved(id);
-        });
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let resolved = engine.resolved(id);
+        assert!(resolved.is_ok());
     });
     let resolving = start.elapsed();
     println!("Resolving {:?}", resolving);
 
     let start = Instant::now();
-    runtime.upgraded(|runtime| {
-        source.par_iter().for_each(|&id| {
-            runtime.lowered(id);
-        });
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let lowered = engine.lowered(id);
+        assert!(lowered.is_ok());
     });
     let lowering = start.elapsed();
     println!("Lowering {:?}", lowering);

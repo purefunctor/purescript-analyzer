@@ -1,7 +1,8 @@
 ---
 source: tests-integration/tests/deferred_resolution.rs
 expression: report
-snapshot_kind: text
 ---
 Idx::<DeferredResolution>(0) = ImplicitLib.implicit
 Idx::<DeferredResolution>(1) = ExplicitLib.explicit
+Idx::<DeferredResolution>(2) = ImplicitLib.ImplicitVoid
+Idx::<DeferredResolution>(3) = ExplicitLib.ExplicitVoid

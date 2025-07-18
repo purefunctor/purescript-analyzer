@@ -12,15 +12,15 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "devDependencies": {
-    "@fontsource-variable/montserrat": "^5.2.5",
+    "@fontsource-variable/montserrat": "^5.2.6",
     "@sveltejs/adapter-auto": "^3.3.1",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.20.8",
+    "@sveltejs/kit": "^2.25.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.4",
     "comlink": "^4.4.2",
     "docs-lib": "workspace:*",
-    "svelte": "^5.28.2",
-    "svelte-check": "^4.1.7",
+    "svelte": "^5.36.7",
+    "svelte-check": "^4.3.0",
     "typescript": "^5.8.3",
     "vite": "^5.4.19"
   },

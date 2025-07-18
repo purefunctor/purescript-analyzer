@@ -1,3 +1,5 @@
-module ExplicitLib (explicit) where
+module ExplicitLib (ExplicitVoid, explicit) where
+
+data ExplicitVoid
 
 explicit = 123

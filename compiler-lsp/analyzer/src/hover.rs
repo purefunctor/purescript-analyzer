@@ -1,7 +1,8 @@
 use std::ops::Index;
 
 use async_lsp::lsp_types::*;
-use files::FileId;
+use building::QueryEngine;
+use files::{FileId, Files};
 use indexing::{
     FullIndexedModule, ImportItemId, IndexingSource, TermItemId, TermItemKind, TypeItemId,
     TypeItemKind,
@@ -20,33 +21,38 @@ use rowan::{
 use smol_str::SmolStrBuilder;
 use syntax::{SyntaxKind, SyntaxNode, cst};
 
-use crate::{Compiler, locate};
+use crate::locate;
 
-pub fn implementation(compiler: &mut Compiler, uri: Url, position: Position) -> Option<Hover> {
+pub fn implementation(
+    engine: &QueryEngine,
+    files: &Files,
+    uri: Url,
+    position: Position,
+) -> Option<Hover> {
     let f_id = {
         let uri = uri.as_str();
-        compiler.files.id(uri)?
+        files.id(uri)?
     };
 
-    let located = locate::locate(compiler, f_id, position);
+    let located = locate::locate(engine, f_id, position);
 
     match located {
-        locate::Located::ModuleName(cst) => hover_module_name(compiler, f_id, cst),
-        locate::Located::ImportItem(i_id) => hover_import(compiler, f_id, i_id),
-        locate::Located::Binder(b_id) => hover_binder(compiler, f_id, b_id),
-        locate::Located::Expression(e_id) => hover_expression(compiler, f_id, e_id),
-        locate::Located::Type(t_id) => hover_type(compiler, f_id, t_id),
+        locate::Located::ModuleName(cst) => hover_module_name(engine, f_id, cst),
+        locate::Located::ImportItem(i_id) => hover_import(engine, f_id, i_id),
+        locate::Located::Binder(b_id) => hover_binder(engine, f_id, b_id),
+        locate::Located::Expression(e_id) => hover_expression(engine, f_id, e_id),
+        locate::Located::Type(t_id) => hover_type(engine, f_id, t_id),
         locate::Located::OperatorInChain(_, _) => None,
         locate::Located::Nothing => None,
     }
 }
 
 fn hover_module_name(
-    compiler: &mut Compiler,
+    engine: &QueryEngine,
     f_id: FileId,
     cst: AstPtr<cst::ModuleName>,
 ) -> Option<Hover> {
-    let (parsed, _) = compiler.runtime.parsed(f_id);
+    let (parsed, _) = engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let module = cst.to_node(&root);
@@ -63,9 +69,9 @@ fn hover_module_name(
         buffer.finish()
     };
 
-    let module_id = compiler.runtime.module_file(&module)?;
+    let module_id = engine.module_file(&module)?;
 
-    let (root, annotation, syntax) = annotation_syntax_file(compiler, module_id)?;
+    let (root, annotation, syntax) = annotation_syntax_file(engine, module_id)?;
 
     let annotation = annotation.map(|range| render_annotation(&root, range));
     let syntax = syntax.map(|range| render_syntax(&root, range));
@@ -78,10 +84,10 @@ fn hover_module_name(
 }
 
 pub(crate) fn annotation_syntax_file(
-    compiler: &mut Compiler,
+    engine: &QueryEngine,
     f_id: FileId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = compiler.runtime.parsed(f_id);
+    let (parsed, _) = engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let cst = parsed.cst().header()?;
@@ -106,11 +112,10 @@ pub(crate) fn annotation_syntax_file(
     Some((root, annotation, syntax))
 }
 
-fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
+fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
     let (parsed, indexed) = {
-        let runtime = &mut compiler.runtime;
-        let (parsed, _) = runtime.parsed(f_id);
-        let indexed = runtime.indexed(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
         (parsed, indexed)
     };
 
@@ -137,86 +142,83 @@ fn hover_import(compiler: &mut Compiler, f_id: FileId, i_id: ImportItemId) -> Op
     };
 
     let import_resolved = {
-        let runtime = &mut compiler.runtime;
-        let import_id = runtime.module_file(&module)?;
-        runtime.resolved(import_id)
+        let import_id = engine.module_file(&module)?;
+        engine.resolved(import_id).ok()?
     };
 
-    let hover_term_import = |compiler: &mut Compiler, name: &str| {
+    let hover_term_import = |engine: &QueryEngine, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
-        hover_file_term(compiler, f_id, t_id)
+        hover_file_term(engine, f_id, t_id)
     };
 
-    let hover_type_import = |compiler: &mut Compiler, name: &str| {
+    let hover_type_import = |engine: &QueryEngine, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
-        hover_file_type(compiler, f_id, t_id)
+        hover_file_type(engine, f_id, t_id)
     };
 
     match node {
         cst::ImportItem::ImportValue(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            hover_term_import(compiler, name)
+            hover_term_import(engine, name)
         }
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            hover_type_import(compiler, name)
+            hover_type_import(engine, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token()?;
             let name = token.text();
-            hover_type_import(compiler, name)
+            hover_type_import(engine, name)
         }
         cst::ImportItem::ImportOperator(_) => None,
         cst::ImportItem::ImportTypeOperator(_) => None,
     }
 }
 
-fn hover_binder(compiler: &mut Compiler, f_id: FileId, b_id: BinderId) -> Option<Hover> {
+fn hover_binder(engine: &QueryEngine, f_id: FileId, b_id: BinderId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id);
-        let lowered = runtime.lowered(f_id);
+        let resolved = engine.resolved(f_id).ok()?;
+        let lowered = engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            hover_deferred(compiler, &resolved, &lowered, *resolution)
+            hover_deferred(engine, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
-fn hover_expression(compiler: &mut Compiler, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
+fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id);
-        let lowered = runtime.lowered(f_id);
+        let resolved = engine.resolved(f_id).ok()?;
+        let lowered = engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
         ExpressionKind::Constructor { resolution } => {
-            hover_deferred(compiler, &resolved, &lowered, *resolution)
+            hover_deferred(engine, &resolved, &lowered, *resolution)
         }
         ExpressionKind::Variable { resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Deferred(id) => hover_deferred(compiler, &resolved, &lowered, *id),
+                TermResolution::Deferred(id) => hover_deferred(engine, &resolved, &lowered, *id),
                 TermResolution::Binder(_) => None,
                 TermResolution::Let(let_binding) => {
-                    let (parsed, _) = compiler.runtime.parsed(f_id);
+                    let (parsed, _) = engine.parsed(f_id).ok()?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
             }
         }
         ExpressionKind::OperatorName { resolution } => {
-            hover_deferred(compiler, &resolved, &lowered, *resolution)
+            hover_deferred(engine, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
@@ -268,25 +270,24 @@ fn hover_let(
     }
 }
 
-fn hover_type(compiler: &mut Compiler, f_id: FileId, t_id: TypeId) -> Option<Hover> {
+fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover> {
     let (resolved, lowered) = {
-        let runtime = &mut compiler.runtime;
-        let resolved = runtime.resolved(f_id);
-        let lowered = runtime.lowered(f_id);
+        let resolved = engine.resolved(f_id).ok()?;
+        let lowered = engine.lowered(f_id).ok()?;
         (resolved, lowered)
     };
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
         TypeKind::Constructor { resolution } => {
-            hover_deferred(compiler, &resolved, &lowered, *resolution)
+            hover_deferred(engine, &resolved, &lowered, *resolution)
         }
         _ => None,
     }
 }
 
 fn hover_deferred(
-    compiler: &mut Compiler,
+    engine: &QueryEngine,
     resolved: &FullResolvedModule,
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
@@ -298,17 +299,17 @@ fn hover_deferred(
     match deferred.domain {
         ResolutionDomain::Term => {
             let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
-            hover_file_term(compiler, f_id, t_id)
+            hover_file_term(engine, f_id, t_id)
         }
         ResolutionDomain::Type => {
             let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
-            hover_file_type(compiler, f_id, t_id)
+            hover_file_type(engine, f_id, t_id)
         }
     }
 }
 
-fn hover_file_term(compiler: &mut Compiler, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
-    let (root, annotation, syntax) = annotation_syntax_file_term(compiler, f_id, t_id)?;
+fn hover_file_term(engine: &QueryEngine, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
+    let (root, annotation, syntax) = annotation_syntax_file_term(engine, f_id, t_id)?;
 
     let annotation = annotation.map(|range| render_annotation(&root, range));
     let syntax = syntax.map(|range| render_syntax(&root, range));
@@ -321,12 +322,12 @@ fn hover_file_term(compiler: &mut Compiler, f_id: FileId, t_id: TermItemId) -> O
 }
 
 pub(super) fn annotation_syntax_file_term(
-    compiler: &mut Compiler,
+    engine: &QueryEngine,
     f_id: FileId,
     t_id: TermItemId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = compiler.runtime.parsed(f_id);
-    let indexed = compiler.runtime.indexed(f_id);
+    let (parsed, _) = engine.parsed(f_id).ok()?;
+    let indexed = engine.indexed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];
@@ -352,11 +353,11 @@ pub(super) fn annotation_syntax_file_term(
 }
 
 fn hover_file_type(
-    compiler: &mut Compiler,
+    engine: &QueryEngine,
     f_id: Idx<files::File>,
     t_id: Idx<indexing::TypeItem>,
 ) -> Option<Hover> {
-    let (root, annotation, syntax) = annotation_syntax_file_type(compiler, f_id, t_id)?;
+    let (root, annotation, syntax) = annotation_syntax_file_type(engine, f_id, t_id)?;
 
     let annotation = annotation.map(|range| render_annotation(&root, range));
     let syntax = syntax.map(|range| render_syntax(&root, range));
@@ -369,12 +370,12 @@ fn hover_file_type(
 }
 
 pub(crate) fn annotation_syntax_file_type(
-    compiler: &mut Compiler,
+    engine: &QueryEngine,
     f_id: FileId,
     t_id: TypeItemId,
 ) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = compiler.runtime.parsed(f_id);
-    let indexed = compiler.runtime.indexed(f_id);
+    let (parsed, _) = engine.parsed(f_id).ok()?;
+    let indexed = engine.indexed(f_id).ok()?;
 
     let root = parsed.syntax_node();
     let item = &indexed.items[t_id];
