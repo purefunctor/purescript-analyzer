@@ -31,8 +31,4 @@ impl ModuleNameInterner {
     pub fn lookup(&self, name: &str) -> Option<ModuleNameId> {
         self.0.get(name)
     }
-
-    pub fn resolve(&self, id: ModuleNameId) -> Option<&str> {
-        self.0.resolve(id)
-    }
 }
