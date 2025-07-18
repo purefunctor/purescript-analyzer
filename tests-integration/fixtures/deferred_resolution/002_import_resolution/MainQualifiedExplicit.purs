@@ -1,7 +1,10 @@
 module MainQualifiedExplicit where
 
-import ImplicitLib (implicit) as ImplicitLib
-import ExplicitLib (explicit) as ExplicitLib
+import ImplicitLib (ImplicitVoid, implicit) as ImplicitLib
+import ExplicitLib (ExplicitVoid, explicit) as ExplicitLib
 
 a = ImplicitLib.implicit
 b = ExplicitLib.explicit
+
+type A = ImplicitLib.ImplicitVoid
+type B = ExplicitLib.ExplicitVoid

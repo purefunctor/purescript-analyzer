@@ -1,7 +1,7 @@
 ---
 source: tests-integration/tests/deferred_resolution.rs
 expression: report
-snapshot_kind: text
 ---
 Idx::<DeferredResolution>(0) = Main.a
 Idx::<DeferredResolution>(1) = Main.b
+Idx::<DeferredResolution>(2) = Main.Void
