@@ -216,7 +216,7 @@ trait RequestExtension: BorrowMut<Router<State>> {
 
 impl RequestExtension for Router<State> {}
 
-pub async fn main() {
+pub async fn analyzer_loop() {
     let (server, _) = async_lsp::MainLoop::new_server(|client| {
         let mut router: Router<State, ResponseError> = Router::new(State::new(client.clone()));
 
