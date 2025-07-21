@@ -8,7 +8,7 @@ struct Cli {}
 
 #[tokio::main(flavor = "current_thread")]
 async fn analyzer_main() {
-    compiler_bin::analyzer_loop().await
+    purescript_analyzer::analyzer_loop().await
 }
 
 fn main() {

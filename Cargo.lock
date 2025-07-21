@@ -339,22 +339,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 
 [[package]]
-name = "compiler-bin"
-version = "0.0.2"
-dependencies = [
- "analyzer",
- "async-lsp",
- "clap",
- "parking_lot",
- "serde",
- "spago",
- "tokio",
- "tower",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "console"
 version = "0.15.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1181,6 +1165,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "purescript-analyzer"
+version = "0.0.2"
+dependencies = [
+ "analyzer",
+ "async-lsp",
+ "clap",
+ "parking_lot",
+ "serde",
+ "spago",
+ "tokio",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
