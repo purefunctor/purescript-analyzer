@@ -1,0 +1,7 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Completion at Position { line: 3, character: 23 }
+
+[]

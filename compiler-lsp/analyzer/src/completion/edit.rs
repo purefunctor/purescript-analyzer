@@ -46,7 +46,9 @@ where
 
         let ptr = &context.indexed.source[import.id];
         let root = context.parsed.syntax_node();
-        let node = ptr.to_node(&root);
+        let Some(node) = ptr.try_to_node(&root) else {
+            return (None, None);
+        };
 
         let import_list =
             node.import_list().expect("invariant violated: ImportKind::Explicit w/ no ImportList");
