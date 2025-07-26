@@ -47,7 +47,7 @@ fn definition_module_name(
     let (parsed, _) = engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
-    let module = cst.to_node(&root);
+    let module = cst.try_to_node(&root)?;
     let module = {
         let mut buffer = SmolStrBuilder::default();
 
@@ -96,7 +96,7 @@ fn definition_import(
 
     let root = parsed.syntax_node();
     let ptr = &indexed.source[i_id];
-    let node = ptr.to_node(&root);
+    let node = ptr.try_to_node(&root)?;
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
     let module = statement.module_name()?;

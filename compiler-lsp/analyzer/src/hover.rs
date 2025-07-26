@@ -55,7 +55,7 @@ fn hover_module_name(
     let (parsed, _) = engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
-    let module = cst.to_node(&root);
+    let module = cst.try_to_node(&root)?;
     let module = {
         let mut buffer = SmolStrBuilder::default();
 
@@ -122,7 +122,7 @@ fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Optio
     let node = {
         let root = parsed.syntax_node();
         let ptr = &indexed.source[i_id];
-        ptr.to_node(&root)
+        ptr.try_to_node(&root)?
     };
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
@@ -247,7 +247,7 @@ fn hover_let(
         let id = let_binding.equations.first().copied()?;
 
         let ptr = &lowered.source[id];
-        let node = ptr.to_node(root);
+        let node = ptr.try_to_node(root)?;
 
         let token = node.name_token()?;
         let text = token.text();
