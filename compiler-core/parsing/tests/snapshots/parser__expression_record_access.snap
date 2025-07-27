@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..273
@@ -15,13 +14,11 @@ snapshot_kind: text
           TEXT@29..30 " "
         WHERE@30..35 "where"
       LAYOUT_START@35..35 ""
-      ModuleImports@35..35
       ModuleStatements@35..272
         ValueEquation@35..56
           Annotation@35..37
             TEXT@35..37 "\n\n"
           LOWER@37..43 "access"
-          FunctionBinders@43..43
           Unconditional@43..56
             Annotation@43..44
               TEXT@43..44 " "
@@ -41,7 +38,6 @@ snapshot_kind: text
           Annotation@56..57
             TEXT@56..57 "\n"
           LOWER@57..63 "access"
-          FunctionBinders@63..63
           Unconditional@63..80
             Annotation@63..64
               TEXT@63..64 " "
@@ -64,7 +60,6 @@ snapshot_kind: text
           Annotation@80..82
             TEXT@80..82 "\n\n"
           LOWER@82..89 "keyword"
-          FunctionBinders@89..89
           Unconditional@89..105
             Annotation@89..90
               TEXT@89..90 " "
@@ -84,7 +79,6 @@ snapshot_kind: text
           Annotation@105..106
             TEXT@105..106 "\n"
           LOWER@106..113 "keyword"
-          FunctionBinders@113..113
           Unconditional@113..136
             Annotation@113..114
               TEXT@113..114 " "
@@ -107,7 +101,6 @@ snapshot_kind: text
           Annotation@136..138
             TEXT@136..138 "\n\n"
           LOWER@138..144 "string"
-          FunctionBinders@144..144
           Unconditional@144..161
             Annotation@144..145
               TEXT@144..145 " "
@@ -127,7 +120,6 @@ snapshot_kind: text
           Annotation@161..162
             TEXT@161..162 "\n"
           LOWER@162..168 "string"
-          FunctionBinders@168..168
           Unconditional@168..193
             Annotation@168..169
               TEXT@168..169 " "
@@ -150,7 +142,6 @@ snapshot_kind: text
           Annotation@193..195
             TEXT@193..195 "\n\n"
           LOWER@195..205 "raw_string"
-          FunctionBinders@205..205
           Unconditional@205..226
             Annotation@205..206
               TEXT@205..206 " "
@@ -170,7 +161,6 @@ snapshot_kind: text
           Annotation@226..227
             TEXT@226..227 "\n"
           LOWER@227..237 "raw_string"
-          FunctionBinders@237..237
           Unconditional@237..272
             Annotation@237..238
               TEXT@237..238 " "

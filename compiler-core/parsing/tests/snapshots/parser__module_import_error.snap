@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..243
@@ -24,7 +23,6 @@ snapshot_kind: text
             Annotation@38..39
               TEXT@38..39 " "
             ERROR@39..39 ""
-          ImportAlias@39..39
         ERROR@39..46
           ERROR@39..39 ""
           LOWER@39..46 "prelude"
@@ -39,7 +37,6 @@ snapshot_kind: text
             Qualifier@54..59
               TEXT@54..59 "Data."
             UPPER@59..63 "List"
-          ImportAlias@63..63
         LAYOUT_SEPARATOR@63..63 ""
         ImportStatement@63..98
           Annotation@63..64
@@ -68,7 +65,6 @@ snapshot_kind: text
                   LOWER@93..96 "nil"
                 RIGHT_PARENTHESIS@96..97 ")"
             RIGHT_PARENTHESIS@97..98 ")"
-          ImportAlias@98..98
         LAYOUT_SEPARATOR@98..98 ""
         ImportStatement@98..132
           Annotation@98..99
@@ -97,7 +93,6 @@ snapshot_kind: text
                   DOUBLE_PERIOD@128..130 ".."
                 RIGHT_PARENTHESIS@130..131 ")"
             RIGHT_PARENTHESIS@131..132 ")"
-          ImportAlias@132..132
         LAYOUT_SEPARATOR@132..132 ""
         ImportStatement@132..166
           Annotation@132..133
@@ -126,7 +121,6 @@ snapshot_kind: text
                   UPPER@160..164 "Cons"
                 RIGHT_PARENTHESIS@164..165 ")"
             RIGHT_PARENTHESIS@165..166 ")"
-          ImportAlias@166..166
         LAYOUT_SEPARATOR@166..166 ""
         ImportStatement@166..189
           Annotation@166..167
@@ -146,7 +140,6 @@ snapshot_kind: text
               ERROR@185..185 ""
               INTEGER@185..188 "123"
             RIGHT_PARENTHESIS@188..189 ")"
-          ImportAlias@189..189
         LAYOUT_SEPARATOR@189..189 ""
         ImportStatement@189..206
           Annotation@189..190
@@ -158,7 +151,6 @@ snapshot_kind: text
             Qualifier@197..202
               TEXT@197..202 "Data."
             UPPER@202..206 "List"
-          ImportAlias@206..206
         ERROR@206..218
           ERROR@206..206 ""
           Annotation@206..207
@@ -180,8 +172,6 @@ snapshot_kind: text
             Qualifier@226..236
               TEXT@226..236 "Recovered."
             UPPER@236..242 "Import"
-          ImportAlias@242..242
-      ModuleStatements@242..242
       LAYOUT_END@242..242 ""
       Annotation@242..243
         TEXT@242..243 "\n"

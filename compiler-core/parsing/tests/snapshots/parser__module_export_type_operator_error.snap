@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..74
@@ -45,8 +44,6 @@ snapshot_kind: text
           TEXT@67..68 " "
         WHERE@68..73 "where"
       LAYOUT_START@73..73 ""
-      ModuleImports@73..73
-      ModuleStatements@73..73
       LAYOUT_END@73..73 ""
       Annotation@73..74
         TEXT@73..74 "\n"

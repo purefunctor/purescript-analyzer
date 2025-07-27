@@ -55,7 +55,7 @@ pub(super) fn function_binders(p: &mut Parser, s: TokenSet) {
             p.error_recover("Unexpected token in function binders");
         }
     }
-    m.end(p, SyntaxKind::FunctionBinders);
+    m.end_non_empty(p, SyntaxKind::FunctionBinders);
 }
 
 pub(super) fn unconditional_or_conditionals(p: &mut Parser, s: SyntaxKind) {
@@ -76,7 +76,7 @@ pub(super) fn where_expression(p: &mut Parser) {
     if p.eat(SyntaxKind::WHERE) {
         binding::let_binding_statements(p);
     }
-    m.end(p, SyntaxKind::WhereExpression);
+    m.end_non_empty(p, SyntaxKind::WhereExpression);
 }
 
 fn conditionals(p: &mut Parser, s: SyntaxKind) {

@@ -54,8 +54,9 @@ impl<'t> Parser<'t> {
 
     fn start(&mut self) -> NodeMarker {
         let index = self.output.len();
+        let token_index = self.index;
         self.output.push(Output::Start { kind: SyntaxKind::Node });
-        NodeMarker::new(index)
+        NodeMarker::new(index, token_index)
     }
 
     fn optional(&mut self, rule: Rule) {
@@ -180,13 +181,14 @@ impl<'t> Parser<'t> {
 
 struct NodeMarker {
     index: usize,
+    token_index: usize,
     bomb: DropBomb,
 }
 
 impl NodeMarker {
-    fn new(index: usize) -> NodeMarker {
+    fn new(index: usize, token_index: usize) -> NodeMarker {
         let bomb = DropBomb::new("failed to call end or cancel");
-        NodeMarker { index, bomb }
+        NodeMarker { index, token_index, bomb }
     }
 
     fn end(&mut self, parser: &mut Parser, kind: SyntaxKind) {
@@ -198,6 +200,14 @@ impl NodeMarker {
             _ => unreachable!(),
         }
         parser.output.push(Output::Finish);
+    }
+
+    fn end_non_empty(&mut self, parser: &mut Parser, kind: SyntaxKind) {
+        if parser.index > self.token_index {
+            self.end(parser, kind);
+        } else {
+            self.cancel(parser);
+        }
     }
 
     fn cancel(&mut self, parser: &mut Parser) {
@@ -389,7 +399,7 @@ fn imports_and_statements(p: &mut Parser) {
         }
     }
 
-    imports.end(p, SyntaxKind::ModuleImports);
+    imports.end_non_empty(p, SyntaxKind::ModuleImports);
 
     let mut statements = p.start();
 
@@ -401,7 +411,7 @@ fn imports_and_statements(p: &mut Parser) {
         }
     }
 
-    statements.end(p, SyntaxKind::ModuleStatements);
+    statements.end_non_empty(p, SyntaxKind::ModuleStatements);
 }
 
 fn import_statement(p: &mut Parser) {
@@ -489,12 +499,12 @@ fn import_item(p: &mut Parser) {
 
 fn import_alias(p: &mut Parser) {
     let mut m = p.start();
-
     if p.eat(SyntaxKind::AS) {
         names::module_name(p);
+        m.end(p, SyntaxKind::ImportAlias);
+    } else {
+        m.cancel(p);
     }
-
-    m.end(p, SyntaxKind::ImportAlias);
 }
 
 const MODULE_STATEMENT_START: TokenSet = TokenSet::new(&[

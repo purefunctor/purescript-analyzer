@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..285
@@ -24,7 +23,6 @@ snapshot_kind: text
             Annotation@33..34
               TEXT@33..34 " "
             UPPER@34..41 "Prelude"
-          ImportAlias@41..41
         LAYOUT_SEPARATOR@41..41 ""
         ImportStatement@41..58
           Annotation@41..42
@@ -36,7 +34,6 @@ snapshot_kind: text
             Qualifier@49..54
               TEXT@49..54 "Data."
             UPPER@54..58 "List"
-          ImportAlias@58..58
         LAYOUT_SEPARATOR@58..58 ""
         ImportStatement@58..79
           Annotation@58..59
@@ -53,7 +50,6 @@ snapshot_kind: text
             ImportValue@73..78
               LOWER@73..78 "value"
             RIGHT_PARENTHESIS@78..79 ")"
-          ImportAlias@79..79
         LAYOUT_SEPARATOR@79..79 ""
         ImportStatement@79..106
           Annotation@79..80
@@ -73,7 +69,6 @@ snapshot_kind: text
                 TEXT@99..100 " "
               UPPER@100..105 "Class"
             RIGHT_PARENTHESIS@105..106 ")"
-          ImportAlias@106..106
         LAYOUT_SEPARATOR@106..106 ""
         ImportStatement@106..125
           Annotation@106..107
@@ -90,7 +85,6 @@ snapshot_kind: text
             ImportType@120..124
               UPPER@120..124 "List"
             RIGHT_PARENTHESIS@124..125 ")"
-          ImportAlias@125..125
         LAYOUT_SEPARATOR@125..125 ""
         ImportStatement@125..154
           Annotation@125..126
@@ -115,7 +109,6 @@ snapshot_kind: text
                 UPPER@151..152 "B"
                 RIGHT_PARENTHESIS@152..153 ")"
             RIGHT_PARENTHESIS@153..154 ")"
-          ImportAlias@154..154
         LAYOUT_SEPARATOR@154..154 ""
         ImportStatement@154..180
           Annotation@154..155
@@ -134,7 +127,6 @@ snapshot_kind: text
               TypeItemsAll@175..179
                 DOUBLE_PERIOD_OPERATOR_NAME@175..179 "(..)"
             RIGHT_PARENTHESIS@179..180 ")"
-          ImportAlias@180..180
         LAYOUT_SEPARATOR@180..180 ""
         ImportStatement@180..200
           Annotation@180..181
@@ -173,7 +165,6 @@ snapshot_kind: text
             ImportValue@226..230
               LOWER@226..230 "cons"
             RIGHT_PARENTHESIS@230..231 ")"
-          ImportAlias@231..231
         LAYOUT_SEPARATOR@231..231 ""
         ImportStatement@231..253
           Annotation@231..232
@@ -190,7 +181,6 @@ snapshot_kind: text
             ImportOperator@249..252
               OPERATOR_NAME@249..252 "(+)"
             RIGHT_PARENTHESIS@252..253 ")"
-          ImportAlias@253..253
         LAYOUT_SEPARATOR@253..253 ""
         ImportStatement@253..284
           Annotation@253..254
@@ -210,8 +200,6 @@ snapshot_kind: text
                 TEXT@279..280 " "
               OPERATOR_NAME@280..283 "(+)"
             RIGHT_PARENTHESIS@283..284 ")"
-          ImportAlias@284..284
-      ModuleStatements@284..284
       LAYOUT_END@284..284 ""
       Annotation@284..285
         TEXT@284..285 "\n"

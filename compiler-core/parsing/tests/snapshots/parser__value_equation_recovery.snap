@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..133
@@ -15,13 +14,11 @@ snapshot_kind: text
           TEXT@28..29 " "
         WHERE@29..34 "where"
       LAYOUT_START@34..34 ""
-      ModuleImports@34..34
       ModuleStatements@34..132
         ValueEquation@34..45
           Annotation@34..36
             TEXT@34..36 "\n\n"
           LOWER@36..40 "pass"
-          FunctionBinders@40..40
           Unconditional@40..45
             Annotation@40..41
               TEXT@40..41 " "
@@ -36,12 +33,10 @@ snapshot_kind: text
           Annotation@45..46
             TEXT@45..46 "\n"
           LOWER@46..50 "fail"
-          FunctionBinders@50..50
           Unconditional@50..52
             Annotation@50..51
               TEXT@50..51 " "
             EQUAL@51..52 "="
-            WhereExpression@52..52
         ERROR@52..59
           ERROR@52..52 ""
           Annotation@52..53
@@ -52,7 +47,6 @@ snapshot_kind: text
           Annotation@59..60
             TEXT@59..60 "\n"
           LOWER@60..64 "pass"
-          FunctionBinders@64..64
           Unconditional@64..69
             Annotation@64..65
               TEXT@64..65 " "
@@ -67,7 +61,6 @@ snapshot_kind: text
           Annotation@69..71
             TEXT@69..71 "\n\n"
           LOWER@71..79 "bindings"
-          FunctionBinders@79..79
           Unconditional@79..132
             Annotation@79..80
               TEXT@79..80 " "
@@ -86,7 +79,6 @@ snapshot_kind: text
                   Annotation@92..95
                     TEXT@92..95 "\n  "
                   LOWER@95..99 "pass"
-                  FunctionBinders@99..99
                   Unconditional@99..104
                     Annotation@99..100
                       TEXT@99..100 " "
@@ -101,12 +93,10 @@ snapshot_kind: text
                   Annotation@104..107
                     TEXT@104..107 "\n  "
                   LOWER@107..111 "fail"
-                  FunctionBinders@111..111
                   Unconditional@111..113
                     Annotation@111..112
                       TEXT@111..112 " "
                     EQUAL@112..113 "="
-                    WhereExpression@113..113
                 ERROR@113..120
                   ERROR@113..113 ""
                   Annotation@113..114
@@ -117,7 +107,6 @@ snapshot_kind: text
                   Annotation@120..123
                     TEXT@120..123 "\n  "
                   LOWER@123..127 "pass"
-                  FunctionBinders@127..127
                   Unconditional@127..132
                     Annotation@127..128
                       TEXT@127..128 " "
