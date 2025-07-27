@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..32
@@ -26,11 +25,9 @@ snapshot_kind: text
             Qualifier@26..31
               TEXT@26..31 "Data."
             ERROR@31..31 ""
-          ImportAlias@31..31
         ERROR@31..31
           ERROR@31..31 ""
           ERROR@31..31 ""
-      ModuleStatements@31..31
       LAYOUT_END@31..31 ""
       Annotation@31..32
         TEXT@31..32 "\n"

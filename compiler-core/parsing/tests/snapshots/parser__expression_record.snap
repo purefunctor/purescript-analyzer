@@ -1,7 +1,6 @@
 ---
 source: compiler-core/parsing/tests/parser.rs
 expression: "(node, errors)"
-snapshot_kind: text
 ---
 (
     Module@0..122
@@ -15,13 +14,11 @@ snapshot_kind: text
           TEXT@23..24 " "
         WHERE@24..29 "where"
       LAYOUT_START@29..29 ""
-      ModuleImports@29..29
       ModuleStatements@29..121
         ValueEquation@29..42
           Annotation@29..31
             TEXT@29..31 "\n\n"
           LOWER@31..37 "record"
-          FunctionBinders@37..37
           Unconditional@37..42
             Annotation@37..38
               TEXT@37..38 " "
@@ -37,7 +34,6 @@ snapshot_kind: text
           Annotation@42..43
             TEXT@42..43 "\n"
           LOWER@43..49 "record"
-          FunctionBinders@49..49
           Unconditional@49..55
             Annotation@49..50
               TEXT@49..50 " "
@@ -56,7 +52,6 @@ snapshot_kind: text
           Annotation@55..56
             TEXT@55..56 "\n"
           LOWER@56..62 "record"
-          FunctionBinders@62..62
           Unconditional@62..71
             Annotation@62..63
               TEXT@62..63 " "
@@ -81,7 +76,6 @@ snapshot_kind: text
           Annotation@71..72
             TEXT@71..72 "\n"
           LOWER@72..78 "record"
-          FunctionBinders@78..78
           Unconditional@78..93
             Annotation@78..79
               TEXT@78..79 " "
@@ -118,7 +112,6 @@ snapshot_kind: text
           Annotation@93..94
             TEXT@93..94 "\n"
           LOWER@94..100 "record"
-          FunctionBinders@100..100
           Unconditional@100..121
             Annotation@100..101
               TEXT@100..101 " "
