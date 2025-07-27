@@ -76,11 +76,16 @@ struct Context<'a> {
 
 impl Context<'_> {
     fn insert_import_range(&self) -> Option<Range> {
-        let cst = self.parsed.cst().imports()?;
-        let offset = cst.syntax().text_range().end();
-        let mut position = locate::offset_to_position(self.content, offset);
+        let range = self.parsed.cst().imports().map_or_else(
+            || Some(self.parsed.cst().header()?.syntax().text_range()),
+            |cst| Some(cst.syntax().text_range()),
+        )?;
+
+        let mut position = locate::offset_to_position(self.content, range.end());
+
         position.line += 1;
         position.character = 0;
+
         Some(Range::new(position, position))
     }
 
