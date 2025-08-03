@@ -42,14 +42,26 @@ impl FullResolvedModule {
         } else {
             let local = self.locals.lookup_term(name);
             let unqualified = || {
-                let imports = self.unqualified.iter();
                 // Collect candidates first then match the first non-Hidden.
-                let (file, id, _) = imports
+                let (file, id, _) = self
+                    .unqualified
+                    .values()
+                    .flatten()
                     .filter_map(|import| import.lookup_term(name))
                     .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
                 Some((file, id))
             };
-            let prim = || prim.exports.lookup_term(name);
+            let prim = || {
+                if let Some(imports) = self.unqualified.get("Prim") {
+                    let (file, id, _) = imports
+                        .iter()
+                        .filter_map(|import| import.lookup_term(name))
+                        .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                    Some((file, id))
+                } else {
+                    prim.exports.lookup_term(name)
+                }
+            };
             local.or_else(unqualified).or_else(prim)
         }
     }
@@ -67,20 +79,32 @@ impl FullResolvedModule {
         } else {
             let local = self.locals.lookup_type(name);
             let unqualified = || {
-                let imports = self.unqualified.iter();
                 // Collect candidates first then match the first non-Hidden.
-                let (file, id, _) = imports
+                let (file, id, _) = self
+                    .unqualified
+                    .values()
+                    .flatten()
                     .filter_map(|import| import.lookup_type(name))
                     .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
                 Some((file, id))
             };
-            let prim = || prim.exports.lookup_type(name);
+            let prim = || {
+                if let Some(imports) = self.unqualified.get("Prim") {
+                    let (file, id, _) = imports
+                        .iter()
+                        .filter_map(|import| import.lookup_type(name))
+                        .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                    Some((file, id))
+                } else {
+                    prim.exports.lookup_type(name)
+                }
+            };
             local.or_else(unqualified).or_else(prim)
         }
     }
 }
 
-type ResolvedImportsUnqualified = Vec<ResolvedImport>;
+type ResolvedImportsUnqualified = FxHashMap<SmolStr, Vec<ResolvedImport>>;
 type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
 
 type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;

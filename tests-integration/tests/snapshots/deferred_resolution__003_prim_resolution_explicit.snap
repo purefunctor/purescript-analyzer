@@ -1,0 +1,5 @@
+---
+source: tests-integration/tests/deferred_resolution.rs
+expression: report
+---
+Idx::<DeferredResolution>(1) = Prim.Type

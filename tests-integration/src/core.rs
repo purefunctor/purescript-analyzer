@@ -13,7 +13,7 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 
     writeln!(buffer).unwrap();
     writeln!(buffer, "Unqualified Imports:").unwrap();
-    for import in &resolved.unqualified {
+    for import in resolved.unqualified.values().flatten() {
         writeln!(buffer).unwrap();
         writeln!(buffer, "Terms:").unwrap();
         for (name, _, _, kind) in import.iter_terms() {

@@ -51,7 +51,7 @@ fn resolve_imports(
 
         if let Some(alias) = &indexing_import.alias {
             let alias = SmolStr::clone(alias);
-            let resolved_import = state.qualified.entry(alias).or_insert_with(|| resolved_import);
+            let resolved_import = state.qualified.entry(alias).or_insert(resolved_import);
             resolve_import(
                 external,
                 &mut state.errors,
@@ -60,6 +60,7 @@ fn resolve_imports(
                 import_file_id,
             )?;
         } else {
+            let name = SmolStr::clone(name);
             resolve_import(
                 external,
                 &mut state.errors,
@@ -67,7 +68,7 @@ fn resolve_imports(
                 indexing_import,
                 import_file_id,
             )?;
-            state.unqualified.push(resolved_import);
+            state.unqualified.entry(name).or_default().push(resolved_import);
         }
     }
 
@@ -328,7 +329,7 @@ fn export_module_imports(state: &mut State, indexed: &FullIndexedModule) {
         return;
     }
 
-    let unqualified = state.unqualified.iter();
+    let unqualified = state.unqualified.values().flatten();
     let qualified = state.qualified.values();
     let imports = unqualified.chain(qualified);
 
