@@ -1,15 +1,14 @@
 ---
 source: compiler-core/lowering/tests/scope.rs
 expression: snapshot
-snapshot_kind: text
 ---
 Expressions:
 
-77..87
+eqIntImpl@77..87
   resolves to top-level name
-168..180
+eqMaybeImpl@168..180
   resolves to top-level name
-255..257
+b@255..257
   resolves to binder 251..253
 
 Types:

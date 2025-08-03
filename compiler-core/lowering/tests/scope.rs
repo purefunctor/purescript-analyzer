@@ -4,11 +4,12 @@ use lowering::{
     ExpressionKind, FullLoweredModule, GraphNode, LetBindingResolution, TermResolution, TypeKind,
     TypeVariableResolution,
 };
+use rowan::ast::AstNode;
 use std::fmt::Write;
 use test_each_file::test_each_file;
 
 fn variable_scope_check(content: &str) -> String {
-    let (_, _, FullLoweredModule { intermediate, source, graph, .. }) =
+    let (module, _, FullLoweredModule { intermediate, source, graph, .. }) =
         shared::lower_source(content);
 
     let mut snapshot = String::default();
@@ -21,9 +22,15 @@ fn variable_scope_check(content: &str) -> String {
         else {
             continue;
         };
+
         let cst = &source[expression_id];
-        let range = cst.syntax_node_ptr().text_range();
-        writeln!(snapshot, "{:?}", range).unwrap();
+        let root = module.syntax();
+
+        let node = cst.syntax_node_ptr().to_node(root);
+        let text = node.text().to_string();
+        let range = node.text_range();
+
+        writeln!(snapshot, "{}@{:?}", text.trim(), range).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
                 TermResolution::Deferred(_) => {
