@@ -1,0 +1,14 @@
+---
+source: compiler-core/lowering/tests/scope.rs
+expression: snapshot
+---
+Expressions:
+
+pure@46..51
+  resolves to top-level name
+x'notBinder@51..63
+  resolves to top-level name
+x'notBinder@68..80
+  resolves to binder 29..43
+
+Types:

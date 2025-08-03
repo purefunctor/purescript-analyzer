@@ -574,9 +574,9 @@ pub(super) fn lower_equation_like<T: AstNode>(
 fn lower_do_statement(s: &mut State, e: &Environment, cst: &cst::DoStatement) -> DoStatement {
     match cst {
         cst::DoStatement::DoStatementBind(cst) => {
+            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             s.push_binder_scope();
             let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
-            let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             DoStatement::Bind { binder, expression }
         }
         cst::DoStatement::DoStatementLet(cst) => {

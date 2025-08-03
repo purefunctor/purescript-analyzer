@@ -1,0 +1,24 @@
+---
+source: compiler-core/lowering/tests/scope.rs
+expression: snapshot
+---
+Expressions:
+
+action@28..37
+  resolves to top-level name
+x@37..39
+  resolves to top-level name
+y@39..41
+  resolves to top-level name
+pure@61..66
+  resolves to top-level name
+pure@82..89
+  resolves to top-level name
+x@91..93
+  resolves to equation 47..54
+y@95..97
+  resolves to binder 54..58
+z@99..101
+  resolves to equation 75..82
+
+Types:
