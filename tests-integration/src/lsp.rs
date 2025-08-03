@@ -54,7 +54,9 @@ fn extract_cursors(content: &str) -> Vec<(Position, CursorKind)> {
 pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
     let uri = {
         let path = files.path(id);
-        Url::parse(&path).unwrap()
+        let content = files.content(id);
+        let uri = Url::parse(&path).unwrap();
+        prim::handle_generated(uri, &content).unwrap()
     };
 
     let content = engine.content(id);

@@ -33,9 +33,13 @@ pub struct State {
 
 impl State {
     fn new(client: ClientSocket) -> State {
-        let engine = QueryEngine::default();
-        let files = Arc::new(RwLock::new(Files::default()));
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
+
+        let files = Arc::new(RwLock::new(files));
         let root = None;
+
         State { client, engine, files, root }
     }
 

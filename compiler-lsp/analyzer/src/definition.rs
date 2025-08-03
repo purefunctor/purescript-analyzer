@@ -74,6 +74,8 @@ fn definition_module_name(
         let end = locate::offset_to_position(&content, range.end());
 
         let uri = Url::parse(&path).ok()?;
+        let uri = prim::handle_generated(uri, &content)?;
+
         let range = Range { start, end };
 
         (uri, range)
@@ -124,8 +126,11 @@ fn definition_import(
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
-            let uri = files.path(f_id);
-            Url::parse(&uri).ok()?
+            let path = files.path(f_id);
+            let content = files.content(f_id);
+
+            let uri = Url::parse(&path).ok()?;
+            prim::handle_generated(uri, &content)?
         };
 
         let (content, parsed, indexed) = {
@@ -150,8 +155,10 @@ fn definition_import(
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
-            let uri = files.path(f_id);
-            Url::parse(&uri).ok()?
+            let path = files.path(f_id);
+            let content = files.content(f_id);
+            let uri = Url::parse(&path).ok()?;
+            prim::handle_generated(uri, &content)?
         };
 
         let (content, parsed, indexed) = {
@@ -339,7 +346,9 @@ fn definition_deferred(
 
             let uri = {
                 let path = files.path(f_id);
-                Url::parse(&path).ok()?
+                let content = files.content(f_id);
+                let uri = Url::parse(&path).ok()?;
+                prim::handle_generated(uri, &content)?
             };
 
             let (content, parsed, indexed) = {
@@ -365,7 +374,9 @@ fn definition_deferred(
 
             let uri = {
                 let path = files.path(f_id);
-                Url::parse(&path).ok()?
+                let content = files.content(f_id);
+                let uri = Url::parse(&path).ok()?;
+                prim::handle_generated(uri, &content)?
             };
 
             let (content, parsed, indexed) = {
