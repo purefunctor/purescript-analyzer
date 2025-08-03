@@ -337,12 +337,18 @@ fn definition_deferred(
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
 ) -> Option<GotoDefinitionResponse> {
+    let prim = {
+        let id = engine.module_file("Prim")?;
+        engine.resolved(id).ok()?
+    };
+
     let deferred = &lowered.graph[id];
     let prefix = deferred.qualifier.as_deref();
     let name = deferred.name.as_deref()?;
+
     match deferred.domain {
         ResolutionDomain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
 
             let uri = {
                 let path = files.path(f_id);
@@ -370,7 +376,7 @@ fn definition_deferred(
             Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }
         ResolutionDomain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
 
             let uri = {
                 let path = files.path(f_id);

@@ -292,17 +292,22 @@ fn hover_deferred(
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
 ) -> Option<Hover> {
+    let prim = {
+        let id = engine.module_file("Prim")?;
+        engine.resolved(id).ok()?
+    };
+
     let deferred = &lowered.graph[id];
     let prefix = deferred.qualifier.as_deref();
     let name = deferred.name.as_deref()?;
 
     match deferred.domain {
         ResolutionDomain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
             hover_file_term(engine, f_id, t_id)
         }
         ResolutionDomain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
             hover_file_type(engine, f_id, t_id)
         }
     }

@@ -6,6 +6,44 @@ Completion at Position { line: 2, character: 7 }
 
 [
     CompletionItem {
+        label: "Prim",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Prim",
+                ),
+            },
+        ),
+        kind: Some(
+            Module,
+        ),
+        detail: Some(
+            "module Prim where",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: None,
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
         label: "Lib",
         label_details: Some(
             CompletionItemLabelDetails {

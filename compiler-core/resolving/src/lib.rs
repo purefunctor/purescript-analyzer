@@ -29,7 +29,12 @@ pub struct FullResolvedModule {
 }
 
 impl FullResolvedModule {
-    pub fn lookup_term(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
+    pub fn lookup_term(
+        &self,
+        prim: &FullResolvedModule,
+        prefix: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TermItemId)> {
         if let Some(prefix) = prefix {
             let import = self.qualified.get(prefix)?;
             let (file, id, kind) = import.lookup_term(name)?;
@@ -44,11 +49,17 @@ impl FullResolvedModule {
                     .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
                 Some((file, id))
             };
-            local.or_else(unqualified)
+            let prim = || prim.exports.lookup_term(name);
+            local.or_else(unqualified).or_else(prim)
         }
     }
 
-    pub fn lookup_type(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TypeItemId)> {
+    pub fn lookup_type(
+        &self,
+        prim: &FullResolvedModule,
+        prefix: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TypeItemId)> {
         if let Some(prefix) = prefix {
             let import = self.qualified.get(prefix)?;
             let (file, id, kind) = import.lookup_type(name)?;
@@ -63,7 +74,8 @@ impl FullResolvedModule {
                     .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
                 Some((file, id))
             };
-            local.or_else(unqualified)
+            let prim = || prim.exports.lookup_type(name);
+            local.or_else(unqualified).or_else(prim)
         }
     }
 }
