@@ -50,20 +50,20 @@ fn test_0000_success() {
         }
         let Some(name) = &item.name else { continue };
         if tm.contains(name) {
-            assert!(item.exported, "Expected term '{}' to be exported.", name);
+            assert!(item.exported, "Expected term '{name}' to be exported.");
             tm.remove(name);
         } else {
-            assert!(!item.exported, "Expected term '{}' to be hidden.", name);
+            assert!(!item.exported, "Expected term '{name}' to be hidden.");
         }
     }
 
     for (_, item) in indexed.items.iter_types() {
         let Some(name) = &item.name else { continue };
         if ty.contains(name) {
-            assert!(item.exported, "Expected type '{}' to be exported.", name);
+            assert!(item.exported, "Expected type '{name}' to be exported.");
             ty.remove(name);
         } else {
-            assert!(!item.exported, "Expected type '{}' to be hidden.", name);
+            assert!(!item.exported, "Expected type '{name}' to be hidden.");
         }
     }
 

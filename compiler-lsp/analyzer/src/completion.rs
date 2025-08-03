@@ -308,7 +308,7 @@ fn collect_qualified_suggestions(
                     return None;
                 }
 
-                let edit = format!("{}{}", prefix, term_name);
+                let edit = format!("{prefix}{term_name}");
                 let description = Some(module_name.to_string());
                 let mut completion_item = completion_item(
                     term_name,
@@ -342,7 +342,7 @@ fn collect_qualified_suggestions(
                     return None;
                 }
 
-                let edit = format!("{}{}", prefix, type_name);
+                let edit = format!("{prefix}{type_name}");
                 let description = Some(module_name.to_string());
                 let mut completion_item = completion_item(
                     type_name,

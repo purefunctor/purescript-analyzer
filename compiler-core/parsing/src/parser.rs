@@ -166,7 +166,7 @@ impl<'t> Parser<'t> {
         if self.eat(kind) {
             return true;
         }
-        self.error(format!("Expected {:?}", kind));
+        self.error(format!("Expected {kind:?}"));
         false
     }
 

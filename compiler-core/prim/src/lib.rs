@@ -6,11 +6,12 @@ use url::Url;
 use building::QueryEngine;
 use files::Files;
 
-pub const SCHEME: &'static str = "generated";
-pub const PRIM: &'static str = include_str!("Prim.purs");
+pub const SCHEME: &str = "generated";
+pub const PRIM: &str = include_str!("Prim.purs");
 
 pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
-    for (name, content) in [("Prim", PRIM)] {
+    {
+        let (name, content) = ("Prim", PRIM);
         let path = format!("{SCHEME}://{name}.purs");
         let id = files.insert(path, content);
 
