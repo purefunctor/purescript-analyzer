@@ -90,7 +90,7 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 
 pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
     let prim = {
-        let id = engine.module_file("Prim").unwrap();
+        let id = engine.prim_id();
         engine.resolved(id).ok().unwrap()
     };
 

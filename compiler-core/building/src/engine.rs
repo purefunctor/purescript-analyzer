@@ -594,6 +594,12 @@ impl QueryEngine {
     }
 }
 
+impl QueryEngine {
+    pub fn prim_id(&self) -> FileId {
+        self.module_file("Prim").expect("invariant violated: prim::configure")
+    }
+}
+
 impl resolving::External for QueryEngine {
     fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
         QueryEngine::indexed(self, id)

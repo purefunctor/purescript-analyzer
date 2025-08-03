@@ -338,7 +338,7 @@ fn definition_deferred(
     id: DeferredResolutionId,
 ) -> Option<GotoDefinitionResponse> {
     let prim = {
-        let id = engine.module_file("Prim")?;
+        let id = engine.prim_id();
         engine.resolved(id).ok()?
     };
 
