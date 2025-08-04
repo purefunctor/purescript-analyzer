@@ -8,10 +8,27 @@ use files::Files;
 
 pub const SCHEME: &str = "generated";
 pub const PRIM: &str = include_str!("Prim.purs");
+pub const PRIM_BOOLEAN: &str = include_str!("Prim.Boolean.purs");
+pub const PRIM_COERCE: &str = include_str!("Prim.Coerce.purs");
+pub const PRIM_INT: &str = include_str!("Prim.Int.purs");
+pub const PRIM_ORDERING: &str = include_str!("Prim.Ordering.purs");
+pub const PRIM_ROW: &str = include_str!("Prim.Row.purs");
+pub const PRIM_ROW_LIST: &str = include_str!("Prim.RowList.purs");
+pub const PRIM_SYMBOL: &str = include_str!("Prim.Symbol.purs");
+pub const PRIM_TYPE_ERROR: &str = include_str!("Prim.TypeError.purs");
 
 pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
-    {
-        let (name, content) = ("Prim", PRIM);
+    for (name, content) in [
+        ("Prim", PRIM),
+        ("Prim.Boolean", PRIM_BOOLEAN),
+        ("Prim.Coerce", PRIM_COERCE),
+        ("Prim.Int", PRIM_INT),
+        ("Prim.Ordering", PRIM_ORDERING),
+        ("Prim.Row", PRIM_ROW),
+        ("Prim.RowList", PRIM_ROW_LIST),
+        ("Prim.Symbol", PRIM_SYMBOL),
+        ("Prim.TypeError", PRIM_TYPE_ERROR),
+    ] {
         let path = format!("{SCHEME}://{name}.purs");
         let id = files.insert(path, content);
 
