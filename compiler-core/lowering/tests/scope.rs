@@ -39,18 +39,18 @@ fn variable_scope_check(content: &str) -> String {
                 TermResolution::Binder(binder) => {
                     let cst = &source[*binder];
                     let range = cst.syntax_node_ptr().text_range();
-                    writeln!(snapshot, "  resolves to binder {:?}", range).unwrap();
+                    writeln!(snapshot, "  resolves to binder {range:?}").unwrap();
                 }
                 TermResolution::Let(LetBindingResolution { signature, equations }) => {
                     if let Some(signature) = signature {
                         let cst = &source[*signature];
                         let range = cst.syntax_node_ptr().text_range();
-                        writeln!(snapshot, "  resolves to signature {:?}", range).unwrap();
+                        writeln!(snapshot, "  resolves to signature {range:?}").unwrap();
                     }
                     for equation in equations.iter() {
                         let cst = &source[*equation];
                         let range = cst.syntax_node_ptr().text_range();
-                        writeln!(snapshot, "  resolves to equation {:?}", range).unwrap();
+                        writeln!(snapshot, "  resolves to equation {range:?}").unwrap();
                     }
                 }
             }
@@ -68,28 +68,28 @@ fn variable_scope_check(content: &str) -> String {
         };
         let cst = &source[type_id];
         let range = cst.syntax_node_ptr().text_range();
-        writeln!(snapshot, "{:?}", range).unwrap();
+        writeln!(snapshot, "{range:?}").unwrap();
         if let Some(resolution) = resolution {
             match resolution {
                 TypeVariableResolution::Forall(id) => {
                     let cst = &source[*id];
                     let range = cst.syntax_node_ptr().text_range();
-                    writeln!(snapshot, "  resolves to forall {:?}", range).unwrap();
+                    writeln!(snapshot, "  resolves to forall {range:?}").unwrap();
                 }
                 TypeVariableResolution::Implicit { binding, node, id } => {
                     if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
                         let (name, type_ids) =
                             bindings.get_index(*id).expect("invariant violated: invalid index");
                         if *binding {
-                            writeln!(snapshot, "  introduces a constraint variable {:?}", name)
+                            writeln!(snapshot, "  introduces a constraint variable {name:?}")
                                 .unwrap();
                         } else {
-                            writeln!(snapshot, "  resolves to a constraint variable {:?}", name)
+                            writeln!(snapshot, "  resolves to a constraint variable {name:?}")
                                 .unwrap();
                             for &type_id in type_ids {
                                 let cst = &source[type_id];
                                 let range = cst.syntax_node_ptr().text_range();
-                                writeln!(snapshot, "    {:?}", range).unwrap();
+                                writeln!(snapshot, "    {range:?}").unwrap();
                             }
                         }
                     } else {

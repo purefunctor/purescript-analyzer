@@ -29,7 +29,12 @@ pub struct FullResolvedModule {
 }
 
 impl FullResolvedModule {
-    pub fn lookup_term(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
+    pub fn lookup_term(
+        &self,
+        prim: &FullResolvedModule,
+        prefix: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TermItemId)> {
         if let Some(prefix) = prefix {
             let import = self.qualified.get(prefix)?;
             let (file, id, kind) = import.lookup_term(name)?;
@@ -37,18 +42,36 @@ impl FullResolvedModule {
         } else {
             let local = self.locals.lookup_term(name);
             let unqualified = || {
-                let imports = self.unqualified.iter();
                 // Collect candidates first then match the first non-Hidden.
-                let (file, id, _) = imports
+                let (file, id, _) = self
+                    .unqualified
+                    .values()
+                    .flatten()
                     .filter_map(|import| import.lookup_term(name))
                     .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
                 Some((file, id))
             };
-            local.or_else(unqualified)
+            let prim = || {
+                if let Some(imports) = self.unqualified.get("Prim") {
+                    let (file, id, _) = imports
+                        .iter()
+                        .filter_map(|import| import.lookup_term(name))
+                        .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                    Some((file, id))
+                } else {
+                    prim.exports.lookup_term(name)
+                }
+            };
+            local.or_else(unqualified).or_else(prim)
         }
     }
 
-    pub fn lookup_type(&self, prefix: Option<&str>, name: &str) -> Option<(FileId, TypeItemId)> {
+    pub fn lookup_type(
+        &self,
+        prim: &FullResolvedModule,
+        prefix: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TypeItemId)> {
         if let Some(prefix) = prefix {
             let import = self.qualified.get(prefix)?;
             let (file, id, kind) = import.lookup_type(name)?;
@@ -56,19 +79,32 @@ impl FullResolvedModule {
         } else {
             let local = self.locals.lookup_type(name);
             let unqualified = || {
-                let imports = self.unqualified.iter();
                 // Collect candidates first then match the first non-Hidden.
-                let (file, id, _) = imports
+                let (file, id, _) = self
+                    .unqualified
+                    .values()
+                    .flatten()
                     .filter_map(|import| import.lookup_type(name))
                     .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
                 Some((file, id))
             };
-            local.or_else(unqualified)
+            let prim = || {
+                if let Some(imports) = self.unqualified.get("Prim") {
+                    let (file, id, _) = imports
+                        .iter()
+                        .filter_map(|import| import.lookup_type(name))
+                        .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                    Some((file, id))
+                } else {
+                    prim.exports.lookup_type(name)
+                }
+            };
+            local.or_else(unqualified).or_else(prim)
         }
     }
 }
 
-type ResolvedImportsUnqualified = Vec<ResolvedImport>;
+type ResolvedImportsUnqualified = FxHashMap<SmolStr, Vec<ResolvedImport>>;
 type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
 
 type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;

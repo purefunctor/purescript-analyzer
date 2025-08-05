@@ -37,6 +37,7 @@ fn load_folder(folder: &Path) -> impl Iterator<Item = PathBuf> {
 pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
     let mut engine = QueryEngine::default();
     let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
     load_folder(folder).for_each(|path| {
         load_file(&mut engine, &mut files, &path);
     });

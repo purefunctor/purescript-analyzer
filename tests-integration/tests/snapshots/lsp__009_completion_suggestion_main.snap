@@ -86,6 +86,80 @@ Completion at Position { line: 6, character: 24 }
 
 [
     CompletionItem {
+        label: "Mul",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Int)",
+                ),
+                description: Some(
+                    "Prim.Int",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Mul :: Int -> Int -> Int -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Int",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 6,
+                            character: 23,
+                        },
+                        end: Position {
+                            line: 6,
+                            character: 24,
+                        },
+                    },
+                    new_text: "Mul",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Int (class Mul)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
         label: "Maybe",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -244,6 +318,80 @@ Completion at Position { line: 11, character: 22 }
 
 [
     CompletionItem {
+        label: "Mul",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Int)",
+                ),
+                description: Some(
+                    "Prim.Int",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Mul :: Int -> Int -> Int -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Int",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 11,
+                            character: 21,
+                        },
+                        end: Position {
+                            line: 11,
+                            character: 22,
+                        },
+                    },
+                    new_text: "Mul",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Int (class Mul)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
         label: "Maybe",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -401,6 +549,450 @@ Completion at Position { line: 13, character: 11 }
 Completion at Position { line: 16, character: 8 }
 
 [
+    CompletionItem {
+        label: "Coercible",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Coerce)",
+                ),
+                description: Some(
+                    "Prim.Coerce",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Coercible :: forall (k :: Type). k -> k -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Coerce",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Coercible",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Coerce (class Coercible)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Compare",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Int)",
+                ),
+                description: Some(
+                    "Prim.Int",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Compare :: Int -> Int -> Ordering -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Int",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Compare",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Int (class Compare)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Cons",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Row)",
+                ),
+                description: Some(
+                    "Prim.Row",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Cons :: forall (k :: Type). Symbol -> k -> Row k -> Row k -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Row",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Cons",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Row (class Cons)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Cons",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.RowList)",
+                ),
+                description: Some(
+                    "Prim.RowList",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "data Cons :: forall (k :: Type). Symbol -> k -> RowList k -> RowList k",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.RowList",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Cons",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.RowList (Cons)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Cons",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Symbol)",
+                ),
+                description: Some(
+                    "Prim.Symbol",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Cons :: Symbol -> Symbol -> Symbol -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Symbol",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Cons",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Symbol (class Cons)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Compare",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Symbol)",
+                ),
+                description: Some(
+                    "Prim.Symbol",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Compare :: Symbol -> Symbol -> Ordering -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Symbol",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Compare",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Symbol (class Compare)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
     CompletionItem {
         label: "Cons",
         label_details: Some(

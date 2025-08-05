@@ -13,7 +13,7 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 
     writeln!(buffer).unwrap();
     writeln!(buffer, "Unqualified Imports:").unwrap();
-    for import in &resolved.unqualified {
+    for import in resolved.unqualified.values().flatten() {
         writeln!(buffer).unwrap();
         writeln!(buffer, "Terms:").unwrap();
         for (name, _, _, kind) in import.iter_terms() {
@@ -89,6 +89,11 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 }
 
 pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
+    let prim = {
+        let id = engine.prim_id();
+        engine.resolved(id).ok().unwrap()
+    };
+
     let resolved = engine.resolved(id).unwrap();
     let lowered = engine.lowered(id).unwrap();
 
@@ -99,7 +104,9 @@ pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
 
         match deferred.domain {
             ResolutionDomain::Term => {
-                let Some((f_id, t_id)) = resolved.lookup_term(prefix, name) else { continue };
+                let Some((f_id, t_id)) = resolved.lookup_term(&prim, prefix, name) else {
+                    continue;
+                };
                 let (module, _) = engine.parsed(f_id).unwrap();
                 let module = module.module_name().unwrap();
 
@@ -110,7 +117,9 @@ pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
                 writeln!(buffer, "{:?} = {}.{}", id, module, item).unwrap();
             }
             ResolutionDomain::Type => {
-                let Some((f_id, t_id)) = resolved.lookup_type(prefix, name) else { continue };
+                let Some((f_id, t_id)) = resolved.lookup_type(&prim, prefix, name) else {
+                    continue;
+                };
                 let (module, _) = engine.parsed(f_id).unwrap();
                 let module = module.module_name().unwrap();
 

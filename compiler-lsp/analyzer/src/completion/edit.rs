@@ -26,7 +26,8 @@ where
     let import_containing_item = context
         .resolved
         .unqualified
-        .iter()
+        .values()
+        .flatten()
         .find_map(|import| lookup_fn(import).map(|kind| (import, kind)));
 
     let Ok(import_indexed) = engine.indexed(file_id) else {

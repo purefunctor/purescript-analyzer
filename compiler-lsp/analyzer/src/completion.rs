@@ -246,7 +246,7 @@ fn collect_unqualified(engine: &QueryEngine, context: &Context, items: &mut Vec<
         ));
     }
 
-    for import in &context.resolved.unqualified {
+    for import in context.resolved.unqualified.values().flatten() {
         collect_imports(engine, context, import, items);
     }
 }
@@ -257,16 +257,17 @@ fn collect_suggestions(
     context: &Context,
     items: &mut Vec<CompletionItem>,
 ) {
+    let prim = engine.prim_id();
     if let Some(prefix) = &context.filter.prefix {
         for id in files.iter_id() {
-            if id == context.id {
+            if id == context.id || id == prim {
                 continue;
             }
             collect_qualified_suggestions(engine, context, items, (prefix, id));
         }
     } else if let Some(name) = &context.filter.name {
         for id in files.iter_id() {
-            if id == context.id {
+            if id == context.id || id == prim {
                 continue;
             }
             collect_unqualified_suggestions(engine, context, items, (name, id));
@@ -308,7 +309,7 @@ fn collect_qualified_suggestions(
                     return None;
                 }
 
-                let edit = format!("{}{}", prefix, term_name);
+                let edit = format!("{prefix}{term_name}");
                 let description = Some(module_name.to_string());
                 let mut completion_item = completion_item(
                     term_name,
@@ -342,7 +343,7 @@ fn collect_qualified_suggestions(
                     return None;
                 }
 
-                let edit = format!("{}{}", prefix, type_name);
+                let edit = format!("{prefix}{type_name}");
                 let description = Some(module_name.to_string());
                 let mut completion_item = completion_item(
                     type_name,

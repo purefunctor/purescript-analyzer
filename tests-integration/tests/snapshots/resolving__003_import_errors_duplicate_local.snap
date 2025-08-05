@@ -1,7 +1,6 @@
 ---
 source: tests-integration/tests/resolving.rs
 expression: report
-snapshot_kind: text
 ---
 module DuplicateLocal
 
@@ -22,7 +21,7 @@ Local Types:
   - Data
 
 Errors:
-  - ExistingTerm { existing: (Idx::<File>(0), Idx::<TermItem>(0)), duplicate: (Idx::<File>(0), Idx::<TermItem>(1)) }
-  - ExistingType { existing: (Idx::<File>(0), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(0), Idx::<TypeItem>(1)) }
-  - ExistingTerm { existing: (Idx::<File>(0), Idx::<TermItem>(0)), duplicate: (Idx::<File>(0), Idx::<TermItem>(1)) }
-  - ExistingType { existing: (Idx::<File>(0), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(0), Idx::<TypeItem>(1)) }
+  - ExistingTerm { existing: (Idx::<File>(9), Idx::<TermItem>(0)), duplicate: (Idx::<File>(9), Idx::<TermItem>(1)) }
+  - ExistingType { existing: (Idx::<File>(9), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(9), Idx::<TypeItem>(1)) }
+  - ExistingTerm { existing: (Idx::<File>(9), Idx::<TermItem>(0)), duplicate: (Idx::<File>(9), Idx::<TermItem>(1)) }
+  - ExistingType { existing: (Idx::<File>(9), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(9), Idx::<TypeItem>(1)) }

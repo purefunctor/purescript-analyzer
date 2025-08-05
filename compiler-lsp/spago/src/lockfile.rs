@@ -46,7 +46,7 @@ impl Lockfile {
                 [src, test]
             }
             PackageEntry::Registry { version } => {
-                let name_version = format!("{}-{}", name, version);
+                let name_version = format!("{name}-{version}");
                 let src = Path::new(".spago/p").join(&name_version).join("src");
                 let test = Path::new(".spago/p").join(&name_version).join("test");
                 [src, test]

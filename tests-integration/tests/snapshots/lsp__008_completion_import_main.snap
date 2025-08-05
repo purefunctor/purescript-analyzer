@@ -280,6 +280,80 @@ Completion at Position { line: 10, character: 24 }
         tags: None,
     },
     CompletionItem {
+        label: "Mul",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Int)",
+                ),
+                description: Some(
+                    "Prim.Int",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Mul :: Int -> Int -> Int -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Int",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 10,
+                            character: 23,
+                        },
+                        end: Position {
+                            line: 10,
+                            character: 24,
+                        },
+                    },
+                    new_text: "Mul",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 5,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 5,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Int (class Mul)\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
         label: "Maybe",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -506,6 +580,80 @@ Completion at Position { line: 15, character: 22 }
             ),
         ),
         additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Mul",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim.Int)",
+                ),
+                description: Some(
+                    "Prim.Int",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "class Mul :: Int -> Int -> Int -> Constraint",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim.Int",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 15,
+                            character: 21,
+                        },
+                        end: Position {
+                            line: 15,
+                            character: 22,
+                        },
+                    },
+                    new_text: "Mul",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 5,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 5,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Prim.Int (class Mul)\n",
+                },
+            ],
+        ),
         command: None,
         commit_characters: None,
         data: None,

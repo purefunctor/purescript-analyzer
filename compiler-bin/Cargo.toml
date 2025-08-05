@@ -16,6 +16,7 @@ analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
 clap = { version = "4.5.41", features = ["derive"] }
 parking_lot = "0.12.4"
+prim = { version = "0.1.0", path = "../compiler-core/prim" }
 serde = { version = "1.0.219", features = ["derive"] }
 spago = { version = "0.1.0", path = "../compiler-lsp/spago" }
 tokio = { version = "1.46.1", features = ["full"] }

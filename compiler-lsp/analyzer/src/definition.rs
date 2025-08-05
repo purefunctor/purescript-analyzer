@@ -74,6 +74,8 @@ fn definition_module_name(
         let end = locate::offset_to_position(&content, range.end());
 
         let uri = Url::parse(&path).ok()?;
+        let uri = prim::handle_generated(uri, &content)?;
+
         let range = Range { start, end };
 
         (uri, range)
@@ -124,8 +126,11 @@ fn definition_import(
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
 
         let uri = {
-            let uri = files.path(f_id);
-            Url::parse(&uri).ok()?
+            let path = files.path(f_id);
+            let content = files.content(f_id);
+
+            let uri = Url::parse(&path).ok()?;
+            prim::handle_generated(uri, &content)?
         };
 
         let (content, parsed, indexed) = {
@@ -150,8 +155,10 @@ fn definition_import(
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
 
         let uri = {
-            let uri = files.path(f_id);
-            Url::parse(&uri).ok()?
+            let path = files.path(f_id);
+            let content = files.content(f_id);
+            let uri = Url::parse(&path).ok()?;
+            prim::handle_generated(uri, &content)?
         };
 
         let (content, parsed, indexed) = {
@@ -330,16 +337,24 @@ fn definition_deferred(
     lowered: &FullLoweredModule,
     id: DeferredResolutionId,
 ) -> Option<GotoDefinitionResponse> {
+    let prim = {
+        let id = engine.prim_id();
+        engine.resolved(id).ok()?
+    };
+
     let deferred = &lowered.graph[id];
     let prefix = deferred.qualifier.as_deref();
     let name = deferred.name.as_deref()?;
+
     match deferred.domain {
         ResolutionDomain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
 
             let uri = {
                 let path = files.path(f_id);
-                Url::parse(&path).ok()?
+                let content = files.content(f_id);
+                let uri = Url::parse(&path).ok()?;
+                prim::handle_generated(uri, &content)?
             };
 
             let (content, parsed, indexed) = {
@@ -361,11 +376,13 @@ fn definition_deferred(
             Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }
         ResolutionDomain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
 
             let uri = {
                 let path = files.path(f_id);
-                Url::parse(&path).ok()?
+                let content = files.content(f_id);
+                let uri = Url::parse(&path).ok()?;
+                prim::handle_generated(uri, &content)?
             };
 
             let (content, parsed, indexed) = {
