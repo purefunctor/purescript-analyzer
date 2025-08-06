@@ -42,11 +42,17 @@ pub fn handle_generated(uri: Url, content: &str) -> Option<Url> {
         return Some(uri);
     }
 
-    let mut temporary = Builder::new().prefix("purescript-analyzer").tempfile().ok()?;
+    let mut temporary = Builder::new()
+        .prefix("purescript-analyzer-")
+        .disable_cleanup(true)
+        .suffix(".purs")
+        .tempfile()
+        .ok()?;
+
     write!(temporary, "{content}").ok()?;
 
     let path = temporary.into_temp_path();
     let path = path.to_str()?;
 
-    Url::parse(path).ok()
+    Url::from_file_path(path).ok()
 }
