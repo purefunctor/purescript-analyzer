@@ -357,11 +357,7 @@ pub(super) fn annotation_syntax_file_term(
     Some((root, annotation, syntax))
 }
 
-fn hover_file_type(
-    engine: &QueryEngine,
-    f_id: Idx<files::File>,
-    t_id: Idx<indexing::TypeItem>,
-) -> Option<Hover> {
+fn hover_file_type(engine: &QueryEngine, f_id: FileId, t_id: TypeItemId) -> Option<Hover> {
     let (root, annotation, syntax) = annotation_syntax_file_type(engine, f_id, t_id)?;
 
     let annotation = annotation.map(|range| render_annotation(&root, range));

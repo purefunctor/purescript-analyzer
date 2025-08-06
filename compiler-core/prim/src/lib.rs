@@ -1,12 +1,12 @@
-use std::io::Write;
+use std::{fs::File, io::Write, sync::OnceLock};
 
-use tempfile::Builder;
+use tempfile::{Builder, TempDir};
 use url::Url;
 
 use building::QueryEngine;
 use files::Files;
 
-pub const SCHEME: &str = "generated";
+pub const HOST: &str = "generated";
 pub const PRIM: &str = include_str!("Prim.purs");
 pub const PRIM_BOOLEAN: &str = include_str!("Prim.Boolean.purs");
 pub const PRIM_COERCE: &str = include_str!("Prim.Coerce.purs");
@@ -29,7 +29,7 @@ pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
         ("Prim.Symbol", PRIM_SYMBOL),
         ("Prim.TypeError", PRIM_TYPE_ERROR),
     ] {
-        let path = format!("{SCHEME}://{name}.purs");
+        let path = format!("file://{HOST}/{name}.purs");
         let id = files.insert(path, content);
 
         engine.set_content(id, content);
@@ -37,22 +37,28 @@ pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
     }
 }
 
-pub fn handle_generated(uri: Url, content: &str) -> Option<Url> {
-    if uri.scheme() != SCHEME {
+static TEMPORARY_DIRECTORY: OnceLock<TempDir> = OnceLock::new();
+
+pub fn handle_generated(mut uri: Url, content: &str) -> Option<Url> {
+    if uri.host_str() != Some(HOST) {
         return Some(uri);
     }
 
-    let mut temporary = Builder::new()
-        .prefix("purescript-analyzer-")
-        .disable_cleanup(true)
-        .suffix(".purs")
-        .tempfile()
-        .ok()?;
+    let directory = TEMPORARY_DIRECTORY.get_or_init(|| {
+        Builder::new()
+            .prefix("purescript-analyzer-")
+            .tempdir()
+            .expect("invariant violated: failed to create TEMPORARY_DIRECTORY")
+    });
 
-    write!(temporary, "{content}").ok()?;
+    uri.set_host(Some("localhost")).ok()?;
+    let original = uri.to_file_path().ok()?;
 
-    let path = temporary.into_temp_path();
-    let path = path.to_str()?;
+    let file = original.components().last()?;
+    let path = directory.path().join(file);
+
+    let mut file = File::create(&path).ok()?;
+    write!(file, "{content}").ok()?;
 
     Url::from_file_path(path).ok()
 }
