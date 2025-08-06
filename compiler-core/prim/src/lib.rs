@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, sync::OnceLock};
+use std::{fs::File, io::Write, sync::LazyLock};
 
 use tempfile::{Builder, TempDir};
 use url::Url;
@@ -37,25 +37,23 @@ pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
     }
 }
 
-static TEMPORARY_DIRECTORY: OnceLock<TempDir> = OnceLock::new();
+static TEMPORARY_DIRECTORY: LazyLock<TempDir> = LazyLock::new(|| {
+    Builder::new()
+        .prefix("purescript-analyzer-")
+        .tempdir()
+        .expect("invariant violated: failed to create TEMPORARY_DIRECTORY")
+});
 
 pub fn handle_generated(mut uri: Url, content: &str) -> Option<Url> {
     if uri.host_str() != Some(HOST) {
         return Some(uri);
     }
 
-    let directory = TEMPORARY_DIRECTORY.get_or_init(|| {
-        Builder::new()
-            .prefix("purescript-analyzer-")
-            .tempdir()
-            .expect("invariant violated: failed to create TEMPORARY_DIRECTORY")
-    });
-
     uri.set_host(Some("localhost")).ok()?;
     let original = uri.to_file_path().ok()?;
 
     let file = original.components().last()?;
-    let path = directory.path().join(file);
+    let path = TEMPORARY_DIRECTORY.path().join(file);
 
     let mut file = File::create(&path).ok()?;
     write!(file, "{content}").ok()?;
