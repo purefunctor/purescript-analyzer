@@ -54,6 +54,7 @@ enum QueryKey {
     Parsed(FileId),
     Indexed(FileId),
     Lowered(FileId),
+    Resolved(FileId),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -362,6 +363,7 @@ impl QueryEngine {
                 QueryKey::Parsed(k) => derived_changed!(parsed, k),
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
+                QueryKey::Resolved(k) => derived_changed!(resolved, k),
             }
         }
 
@@ -583,7 +585,7 @@ impl QueryEngine {
 
     pub fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
         self.query(
-            QueryKey::Lowered(id),
+            QueryKey::Resolved(id),
             |storage| storage.derived.resolved.get(&id),
             |storage| storage.derived.resolved.entry(id),
             |this| {

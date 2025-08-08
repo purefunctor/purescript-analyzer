@@ -52,7 +52,7 @@ pub fn handle_generated(mut uri: Url, content: &str) -> Option<Url> {
     uri.set_host(Some("localhost")).ok()?;
     let original = uri.to_file_path().ok()?;
 
-    let file = original.components().last()?;
+    let file = original.components().next_back()?;
     let path = TEMPORARY_DIRECTORY.path().join(file);
 
     let mut file = File::create(&path).ok()?;
