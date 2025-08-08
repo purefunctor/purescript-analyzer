@@ -128,10 +128,17 @@ struct LocalState {
 impl LocalState {
     fn with_current<T>(&self, current: QueryKey, f: impl FnOnce() -> T) -> T {
         let inner = self.inner.get_or_default();
-        inner.borrow_mut().stack.push(current);
+        {
+            let mut setup = inner.borrow_mut();
+            setup.stack.push(current);
+        }
         let result = f();
-        inner.borrow_mut().stack.pop();
-        inner.borrow_mut().in_progress.remove(&current);
+        {
+            let mut cleanup = inner.borrow_mut();
+            cleanup.stack.pop();
+            cleanup.in_progress.remove(&current);
+            cleanup.dependencies.remove(&current);
+        }
         result
     }
 
