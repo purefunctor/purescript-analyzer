@@ -128,15 +128,16 @@ struct LocalState {
 impl LocalState {
     fn with_current<T>(&self, current: QueryKey, f: impl FnOnce() -> T) -> T {
         let inner = self.inner.get_or_default();
-        let previous = inner.borrow_mut().current.replace(current);
+        inner.borrow_mut().stack.push(current);
         let result = f();
-        inner.borrow_mut().current = previous;
+        inner.borrow_mut().stack.pop();
+        inner.borrow_mut().in_progress.remove(&current);
         result
     }
 
     fn with_dependency(&self, dependency: QueryKey) {
         let mut inner = self.inner.get_or_default().borrow_mut();
-        if let Some(current) = inner.current {
+        if let Some(&current) = inner.stack.last() {
             inner.dependencies.entry(current).or_default().insert(dependency);
         }
     }
@@ -150,11 +151,22 @@ impl LocalState {
             .unwrap_or_default()
             .collect()
     }
+
+    fn add_in_progress(&self, key: QueryKey) {
+        let mut inner = self.inner.get_or_default().borrow_mut();
+        inner.in_progress.insert(key);
+    }
+
+    fn is_in_progress(&self, key: QueryKey) -> bool {
+        let inner = self.inner.get_or_default().borrow();
+        inner.in_progress.contains(&key)
+    }
 }
 
 #[derive(Debug, Default)]
 struct LocalStateInner {
-    current: Option<QueryKey>,
+    stack: Vec<QueryKey>,
+    in_progress: FxHashSet<QueryKey>,
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
 }
 
@@ -234,31 +246,19 @@ impl QueryEngine {
         self.control.local.with_dependency(key);
         self.control.local.with_current(key, || {
             // If query execution fails at any given point, clean up the state.
-            self.query_core(key, &get, &get_mut, &compute).map_err(
-                |QueryError::Cancelled { cleanup }| {
-                    if cleanup {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            if let DerivedState::InProgress { promises } = o.remove() {
-                                drop(promises);
-                                drop(storage);
-                            } else {
-                                unreachable!("invariant violated: expected InProgress");
-                            }
+            self.query_core(key, &get, &get_mut, &compute).inspect_err(|QueryError::Cancelled| {
+                if self.control.local.is_in_progress(key) {
+                    let mut storage = self.storage.write();
+                    if let Entry::Occupied(o) = get_mut(&mut storage) {
+                        if let DerivedState::InProgress { promises } = o.remove() {
+                            drop(promises);
+                            drop(storage);
+                        } else {
+                            unreachable!("invariant violated: expected InProgress");
                         }
                     }
-                    // Dependent queries must perform cleanup regardless of
-                    // whether cleanup was executed for this query. For instance:
-                    //
-                    // Thread 2: B
-                    // Thread 1: A -> B
-                    //
-                    // Once cancelled, Thread 2 executes cleanup for query B.
-                    // The cancellation propagates to Thread 1, where cleanup
-                    // is skipped for query B, but executed for query A.
-                    QueryError::Cancelled { cleanup: true }
-                },
-            )
+                }
+            })
         })
     }
 
@@ -305,7 +305,7 @@ impl QueryEngine {
         V: Eq + Clone,
     {
         if self.control.global.cancelled.load(Ordering::Relaxed) {
-            return Err(QueryError::Cancelled { cleanup: true });
+            return Err(QueryError::Cancelled);
         }
 
         let computed = compute(self)?;
@@ -383,6 +383,10 @@ impl QueryEngine {
         ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
+        if self.control.global.cancelled.load(Ordering::Relaxed) {
+            return Err(QueryError::Cancelled);
+        }
+
         let revision = self.control.global.revision.load(Ordering::Relaxed);
 
         // Certain query states can be checked with only a read lock, and this
@@ -409,7 +413,7 @@ impl QueryEngine {
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
 
-                    return future.wait().ok_or(QueryError::Cancelled { cleanup: false });
+                    return future.wait().ok_or(QueryError::Cancelled);
                 }
                 _ => (),
             }
@@ -429,6 +433,7 @@ impl QueryEngine {
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
+                        self.control.local.add_in_progress(key);
                     }
 
                     self.compute_core(get_mut, compute, key, revision, None)
@@ -440,7 +445,7 @@ impl QueryEngine {
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
 
-                    future.wait().ok_or(QueryError::Cancelled { cleanup: false })
+                    future.wait().ok_or(QueryError::Cancelled)
                 }
                 DerivedState::Computed { computed, trace, dependencies } => {
                     let computed = V::clone(computed);
@@ -458,6 +463,7 @@ impl QueryEngine {
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
                         get_mut(&mut storage).insert_entry(DerivedState::in_progress());
+                        self.control.local.add_in_progress(key);
                     }
 
                     let latest = self.verify_core(&dependencies)?;
@@ -618,7 +624,12 @@ impl resolving::External for QueryEngine {
 
 #[cfg(test)]
 mod tests {
-    use std::{fmt::Debug, sync::Arc};
+    use std::{
+        fmt::Debug,
+        sync::{atomic::Ordering, Arc},
+    };
+
+    use building_types::QueryError;
 
     use super::{DerivedState, QueryEngine, QueryKey};
 
@@ -778,5 +789,112 @@ mod tests {
         assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
+    }
+
+    #[test]
+    fn test_local_state_cleanup() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let key = QueryKey::Parsed(id);
+
+        let indexed_a = runtime.indexed(id).unwrap();
+        assert!(!runtime.control.local.is_in_progress(key));
+
+        let indexed_b = runtime.indexed(id).unwrap();
+        assert!(!runtime.control.local.is_in_progress(key));
+
+        assert_eq!(indexed_a, indexed_b);
+    }
+
+    #[test]
+    fn test_cancellation_cleanup() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let key = QueryKey::Indexed(id);
+
+        // Simulate the current thread starting a computation.
+        {
+            let mut storage = runtime.storage.write();
+            storage.derived.indexed.insert(id, DerivedState::in_progress());
+            runtime.control.local.add_in_progress(key);
+        }
+
+        // Finally, enable cancellation and run the query on this thread.
+        runtime.control.global.cancelled.store(true, Ordering::Relaxed);
+        let result = runtime.query(
+            key,
+            |storage| storage.derived.indexed.get(&id),
+            |storage| storage.derived.indexed.entry(id),
+            |_| unreachable!("impossible."),
+        );
+
+        assert_eq!(result, Err(QueryError::Cancelled));
+
+        // Observe that the storage has been edited.
+        {
+            let storage = runtime.storage.read();
+            assert_eq!(storage.derived.indexed.contains_key(&id), false);
+        }
+    }
+
+    #[test]
+    fn test_cancellation_no_cleanup() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let key = QueryKey::Indexed(id);
+
+        // Simulate the current thread starting a computation.
+        {
+            let mut storage = runtime.storage.write();
+            storage.derived.indexed.insert(id, DerivedState::in_progress());
+            runtime.control.local.add_in_progress(key);
+        }
+
+        // Finally, enable cancellation and run the query on another thread.
+        runtime.control.global.cancelled.store(true, Ordering::Relaxed);
+        let result = std::thread::scope(|scope| {
+            let runtime = runtime.snapshot();
+            let thread = scope.spawn(move || {
+                runtime.query(
+                    key,
+                    |storage| storage.derived.indexed.get(&id),
+                    |storage| storage.derived.indexed.entry(id),
+                    |_| unreachable!("impossible."),
+                )
+            });
+            thread.join().unwrap()
+        });
+
+        assert_eq!(result, Err(QueryError::Cancelled));
+
+        // Observe that the storage is not edited.
+        {
+            let storage = runtime.storage.read();
+            assert_eq!(storage.derived.indexed.contains_key(&id), true);
+        }
+
+        let result = runtime.query(
+            key,
+            |storage| storage.derived.indexed.get(&id),
+            |storage| storage.derived.indexed.entry(id),
+            |_| unreachable!("impossible."),
+        );
+
+        assert_eq!(result, Err(QueryError::Cancelled));
+
+        // Finally, observe that the storage is edited.
+        {
+            let storage = runtime.storage.read();
+            assert_eq!(storage.derived.indexed.contains_key(&id), false);
+        }
     }
 }
