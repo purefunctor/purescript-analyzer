@@ -22,19 +22,21 @@
 //! [Build systems à la carte: Theory and practice]: https://www.cambridge.org/core/journals/journal-of-functional-programming/article/build-systems-a-la-carte-theory-and-practice/097CE52C750E69BD16B78C318754C7A4
 //! [salsa]: https://github.com/salsa-rs/salsa
 
+mod graph;
 mod promise;
 
 use std::{
     cell::RefCell,
     collections::hash_map::Entry,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
         Arc,
     },
 };
 
 use building_types::{QueryError, QueryResult};
 use files::FileId;
+use graph::SnapshotGraph;
 use indexing::FullIndexedModule;
 use lock_api::{RawRwLock, RawRwLockRecursive};
 use lowering::FullLoweredModule;
@@ -70,6 +72,7 @@ enum DerivedState<T> {
     #[default]
     NotComputed,
     InProgress {
+        id: SnapshotId,
         promises: Mutex<Vec<Promise<T>>>,
     },
     Computed {
@@ -80,8 +83,8 @@ enum DerivedState<T> {
 }
 
 impl<T> DerivedState<T> {
-    fn in_progress() -> DerivedState<T> {
-        DerivedState::InProgress { promises: Mutex::default() }
+    fn in_progress(id: SnapshotId) -> DerivedState<T> {
+        DerivedState::InProgress { id, promises: Mutex::default() }
     }
 }
 
@@ -110,6 +113,9 @@ struct InternedStorage {
     module: ModuleNameInterner,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct SnapshotId(u32);
+
 #[derive(Default)]
 struct GlobalState {
     /// An atomic token that determines if query execution had been cancelled.
@@ -118,6 +124,16 @@ struct GlobalState {
     query_lock: RwLock<()>,
     /// A counter that tracks the current revision of the query engine.
     revision: AtomicUsize,
+    /// A counter that tracks the next [`SnapshotId`],
+    snapshot: AtomicU32,
+    /// A graph that tracks dependencies between [`SnapshotId`]
+    graph: Mutex<SnapshotGraph>,
+}
+
+impl GlobalState {
+    fn next_snapshot(&self) -> SnapshotId {
+        SnapshotId(self.snapshot.fetch_add(1, Ordering::Relaxed))
+    }
 }
 
 #[derive(Default)]
@@ -199,9 +215,9 @@ impl Drop for QueryControlGuard {
     }
 }
 
-#[derive(Default)]
 struct QueryControl {
     _guard: Option<QueryControlGuard>,
+    id: SnapshotId,
     local: Arc<LocalState>,
     global: Arc<GlobalState>,
 }
@@ -211,7 +227,18 @@ impl QueryControl {
         let _guard = Some(QueryControlGuard::new(&self.global));
         let local = Arc::new(LocalState::default());
         let global = Arc::clone(&self.global);
-        QueryControl { _guard, local, global }
+        let id = global.next_snapshot();
+        QueryControl { _guard, id, local, global }
+    }
+}
+
+impl Default for QueryControl {
+    fn default() -> QueryControl {
+        let _guard = None;
+        let local = Arc::new(LocalState::default());
+        let global = Arc::new(GlobalState::default());
+        let id = global.next_snapshot();
+        QueryControl { _guard, id, local, global }
     }
 }
 
@@ -253,11 +280,11 @@ impl QueryEngine {
         self.control.local.with_dependency(key);
         self.control.local.with_current(key, || {
             // If query execution fails at any given point, clean up the state.
-            self.query_core(key, &get, &get_mut, &compute).inspect_err(|QueryError::Cancelled| {
+            self.query_core(key, &get, &get_mut, &compute).inspect_err(|_| {
                 if self.control.local.is_in_progress(key) {
                     let mut storage = self.storage.write();
                     if let Entry::Occupied(o) = get_mut(&mut storage) {
-                        if let DerivedState::InProgress { promises } = o.remove() {
+                        if let DerivedState::InProgress { promises, .. } = o.remove() {
                             drop(promises);
                             drop(storage);
                         } else {
@@ -283,7 +310,7 @@ impl QueryEngine {
     {
         let mut storage = self.storage.write();
         if let Entry::Occupied(o) = get_mut(&mut storage) {
-            if let DerivedState::InProgress { promises } = o.remove() {
+            if let DerivedState::InProgress { promises, .. } = o.remove() {
                 let promises = promises.into_inner();
                 promises.into_iter().for_each(|promise| {
                     let computed = V::clone(&computed);
@@ -377,6 +404,23 @@ impl QueryEngine {
         Ok(latest)
     }
 
+    fn create_future<T>(
+        &self,
+        to_id: SnapshotId,
+        promises: &Mutex<Vec<Promise<T>>>,
+    ) -> Result<Future<T>, QueryError> {
+        {
+            let mut graph = self.control.global.graph.lock();
+            if !graph.add_edge(self.control.id, to_id) {
+                return Err(QueryError::Cycle);
+            }
+        }
+
+        let (future, promise) = Future::new();
+        promises.lock().push(promise);
+        Ok(future)
+    }
+
     fn query_core<K, V, GetFn, GetMutFn, ComputeFn>(
         &self,
         key: QueryKey,
@@ -413,9 +457,8 @@ impl QueryEngine {
                         return Ok(V::clone(computed));
                     }
                 }
-                DerivedState::InProgress { promises } => {
-                    let (future, promise) = Future::new();
-                    promises.lock().push(promise);
+                DerivedState::InProgress { id, promises } => {
+                    let future = self.create_future(*id, promises)?;
 
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
@@ -439,15 +482,15 @@ impl QueryEngine {
                     // upgradable read lock should read that the query is InProgress.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
-                        get_mut(&mut storage).insert_entry(DerivedState::in_progress());
+                        get_mut(&mut storage)
+                            .insert_entry(DerivedState::in_progress(self.control.id));
                         self.control.local.add_in_progress(key);
                     }
 
                     self.compute_core(get_mut, compute, key, revision, None)
                 }
-                DerivedState::InProgress { promises } => {
-                    let (future, promise) = Future::new();
-                    promises.lock().push(promise);
+                DerivedState::InProgress { id, promises } => {
+                    let future = self.create_future(*id, promises)?;
 
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
@@ -469,7 +512,8 @@ impl QueryEngine {
                     // Same as NotComputed, see comment above.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
-                        get_mut(&mut storage).insert_entry(DerivedState::in_progress());
+                        get_mut(&mut storage)
+                            .insert_entry(DerivedState::in_progress(self.control.id));
                         self.control.local.add_in_progress(key);
                     }
 
@@ -637,6 +681,9 @@ mod tests {
     };
 
     use building_types::QueryError;
+    use files::FileId;
+    use la_arena::RawIdx;
+    use resolving::FullResolvedModule;
 
     use super::{DerivedState, QueryEngine, QueryKey};
 
@@ -829,7 +876,7 @@ mod tests {
         // Simulate the current thread starting a computation.
         {
             let mut storage = runtime.storage.write();
-            storage.derived.indexed.insert(id, DerivedState::in_progress());
+            storage.derived.indexed.insert(id, DerivedState::in_progress(runtime.control.id));
             runtime.control.local.add_in_progress(key);
         }
 
@@ -862,7 +909,7 @@ mod tests {
         // Simulate the current thread starting a computation.
         {
             let mut storage = runtime.storage.write();
-            storage.derived.indexed.insert(id, DerivedState::in_progress());
+            storage.derived.indexed.insert(id, DerivedState::in_progress(runtime.control.id));
             runtime.control.local.add_in_progress(key);
         }
 
@@ -903,5 +950,114 @@ mod tests {
             let storage = runtime.storage.read();
             assert_eq!(storage.derived.indexed.contains_key(&id), false);
         }
+    }
+
+    #[test]
+    fn test_cycle_detection() {
+        const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
+
+        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+            engine.query(
+                QueryKey::Resolved(ID),
+                |storage| storage.derived.resolved.get(&ID),
+                |storage| storage.derived.resolved.entry(ID),
+                |engine| fake_query_a(engine),
+            )
+        }
+
+        let engine = QueryEngine::default();
+        let result = fake_query_a(&engine);
+        assert!(matches!(result, Err(QueryError::Cycle)));
+    }
+
+    #[test]
+    fn test_cycle_recovery() {
+        const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
+
+        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+            engine.query(
+                QueryKey::Resolved(ID),
+                |storage| storage.derived.resolved.get(&ID),
+                |storage| storage.derived.resolved.entry(ID),
+                |engine| fake_query_a(engine).map_err(|_| QueryError::Cancelled),
+            )
+        }
+
+        let engine = QueryEngine::default();
+        let result = fake_query_a(&engine);
+        assert!(matches!(result, Err(QueryError::Cancelled)));
+    }
+
+    #[test]
+    fn test_snapshot_cycle_detection() {
+        const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
+        const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
+
+        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+            engine.query(
+                QueryKey::Resolved(ID_A),
+                |storage| storage.derived.resolved.get(&ID_A),
+                |storage| storage.derived.resolved.entry(ID_A),
+                |engine| fake_query_b(engine),
+            )
+        }
+
+        fn fake_query_b(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+            engine.query(
+                QueryKey::Resolved(ID_B),
+                |storage| storage.derived.resolved.get(&ID_B),
+                |storage| storage.derived.resolved.entry(ID_B),
+                |engine| fake_query_a(engine),
+            )
+        }
+
+        let engine = QueryEngine::default();
+
+        let snapshot = engine.snapshot();
+        let thread = std::thread::spawn(move || fake_query_b(&snapshot));
+
+        let result_a = fake_query_a(&engine);
+        let result_b = thread.join().unwrap();
+
+        assert!(result_a.is_err());
+        assert!(result_b.is_err());
+
+        // Either result can return `Cancelled`, but at least one of should be `Cycle`
+        assert!([result_a, result_b].iter().any(|result| matches!(result, Err(QueryError::Cycle))));
+    }
+
+    #[test]
+    fn test_snapshot_cycle_recovery() {
+        const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
+        const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
+
+        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+            engine.query(
+                QueryKey::Resolved(ID_A),
+                |storage| storage.derived.resolved.get(&ID_A),
+                |storage| storage.derived.resolved.entry(ID_A),
+                |engine| fake_query_b(engine).map_err(|_| QueryError::Cancelled),
+            )
+        }
+
+        fn fake_query_b(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+            engine.query(
+                QueryKey::Resolved(ID_B),
+                |storage| storage.derived.resolved.get(&ID_B),
+                |storage| storage.derived.resolved.entry(ID_B),
+                |engine| fake_query_a(engine).map_err(|_| QueryError::Cancelled),
+            )
+        }
+
+        let engine = QueryEngine::default();
+
+        let snapshot = engine.snapshot();
+        let thread = std::thread::spawn(move || fake_query_b(&snapshot));
+
+        let result_a = fake_query_a(&engine);
+        let result_b = thread.join().unwrap();
+
+        assert!(matches!(result_a, Err(QueryError::Cancelled)));
+        assert!(matches!(result_b, Err(QueryError::Cancelled)));
     }
 }
