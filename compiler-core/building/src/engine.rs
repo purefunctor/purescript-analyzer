@@ -675,7 +675,7 @@ mod tests {
     };
 
     use building_types::{QueryError, QueryResult};
-    use files::FileId;
+    use files::{FileId, Files};
     use la_arena::RawIdx;
     use resolving::FullResolvedModule;
 
@@ -1056,5 +1056,45 @@ mod tests {
 
         assert!(matches!(result_a, Err(QueryError::Cancelled)));
         assert!(matches!(result_b, Err(QueryError::Cancelled)));
+    }
+
+    #[test]
+    fn test_resolving_cycle() {
+        let engine = QueryEngine::default();
+        let mut files = Files::default();
+
+        let main = files.insert("Main.purs", "module Main where\n\nimport Lib (b)\n\na = 123");
+        let library = files.insert("Lib.purs", "module Lib where\n\nimport Main (a)\n\nb = 123");
+
+        engine.set_content(main, files.content(main));
+        engine.set_content(library, files.content(library));
+        engine.set_module_file("Main", main);
+        engine.set_module_file("Lib", library);
+
+        let result_a = engine.resolved(main);
+        assert_eq!(
+            result_a,
+            Err(QueryError::Cycle {
+                stack: [
+                    QueryKey::Resolved(main),
+                    QueryKey::Resolved(library),
+                    QueryKey::Resolved(main)
+                ]
+                .into()
+            })
+        );
+
+        let result_b = engine.resolved(library);
+        assert_eq!(
+            result_b,
+            Err(QueryError::Cycle {
+                stack: [
+                    QueryKey::Resolved(library),
+                    QueryKey::Resolved(main),
+                    QueryKey::Resolved(library)
+                ]
+                .into()
+            })
+        );
     }
 }
