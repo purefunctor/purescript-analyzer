@@ -277,9 +277,11 @@ impl QueryEngine {
                 if self.control.local.is_in_progress(key) {
                     let mut storage = self.storage.write();
                     if let Entry::Occupied(o) = get_mut(&mut storage) {
-                        if let DerivedState::InProgress { promises, .. } = o.remove() {
+                        if let DerivedState::InProgress { id, promises } = o.remove() {
+                            let mut graph = self.control.global.graph.lock();
                             drop(promises);
                             drop(storage);
+                            graph.remove_edge(id);
                         } else {
                             unreachable!("invariant violated: expected InProgress");
                         }
@@ -303,12 +305,14 @@ impl QueryEngine {
     {
         let mut storage = self.storage.write();
         if let Entry::Occupied(o) = get_mut(&mut storage) {
-            if let DerivedState::InProgress { promises, .. } = o.remove() {
+            if let DerivedState::InProgress { id, promises } = o.remove() {
+                let mut graph = self.control.global.graph.lock();
                 let promises = promises.into_inner();
                 promises.into_iter().for_each(|promise| {
                     let computed = V::clone(&computed);
                     promise.fulfill(computed);
                 });
+                graph.remove_edge(id);
             } else {
                 unreachable!("invariant violated: expected InProgress");
             }

@@ -5,20 +5,30 @@ use rustc_hash::FxHashMap;
 use super::SnapshotId;
 
 #[derive(Debug, Default)]
-pub(super) struct SnapshotGraph {
+pub(crate) struct SnapshotGraph {
     inner: FxHashMap<SnapshotId, SnapshotId>,
 }
 
 impl SnapshotGraph {
-    pub(super) fn add_edge(&mut self, from_id: SnapshotId, to_id: SnapshotId) -> bool {
+    pub(crate) fn add_edge(&mut self, from_id: SnapshotId, to_id: SnapshotId) -> bool {
         if iter::successors(Some(to_id), |&id| self.inner.get(&id).copied()).any(|id| id == from_id)
         {
             return false;
         }
 
         self.inner.insert(from_id, to_id);
-
         true
+    }
+
+    pub(crate) fn remove_edge(&mut self, to_id: SnapshotId) {
+        let keys: Vec<_> = self
+            .inner
+            .iter()
+            .filter_map(|(&from_id, &id)| if id == to_id { Some(from_id) } else { None })
+            .collect();
+        keys.iter().for_each(|key| {
+            self.inner.remove(key);
+        });
     }
 }
 
