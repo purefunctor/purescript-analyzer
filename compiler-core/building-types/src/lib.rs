@@ -1,9 +1,8 @@
 pub mod module_name_map;
-use std::sync::Arc;
-
 pub use module_name_map::*;
 
 use files::FileId;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryKey {
