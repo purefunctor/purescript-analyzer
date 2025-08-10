@@ -34,7 +34,7 @@ use std::{
     },
 };
 
-use building_types::{QueryError, QueryResult};
+use building_types::{ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryResult};
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::FullIndexedModule;
@@ -46,18 +46,6 @@ use promise::{Future, Promise};
 use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
 use thread_local::ThreadLocal;
-
-use crate::{ModuleNameId, ModuleNameInterner};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum QueryKey {
-    Content(FileId),
-    Module(ModuleNameId),
-    Parsed(FileId),
-    Indexed(FileId),
-    Lowered(FileId),
-    Resolved(FileId),
-}
 
 #[derive(Debug, Clone, Copy)]
 struct Trace {
@@ -173,6 +161,11 @@ impl LocalState {
             .map(|dependencies| dependencies.iter().copied())
             .unwrap_or_default()
             .collect()
+    }
+
+    fn stack(&self) -> Arc<[QueryKey]> {
+        let inner = self.inner.get_or_default().borrow();
+        inner.stack.as_slice().into()
     }
 
     fn add_in_progress(&self, key: QueryKey) {
@@ -367,7 +360,7 @@ impl QueryEngine {
 
     /// Verifies the given dependencies by executing them, returning the
     /// timestamp of the most latest change.
-    fn verify_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
+    fn verify_core(&self, dependencies: &[QueryKey]) -> QueryResult<usize> {
         let mut latest = 0;
 
         macro_rules! input_changed {
@@ -408,11 +401,12 @@ impl QueryEngine {
         &self,
         to_id: SnapshotId,
         promises: &Mutex<Vec<Promise<T>>>,
-    ) -> Result<Future<T>, QueryError> {
+    ) -> QueryResult<Future<T>> {
         {
             let mut graph = self.control.global.graph.lock();
+            let stack = self.control.local.stack();
             if !graph.add_edge(self.control.id, to_id) {
-                return Err(QueryError::Cycle);
+                return Err(QueryError::Cycle { stack });
             }
         }
 
@@ -680,7 +674,7 @@ mod tests {
         sync::{atomic::Ordering, Arc},
     };
 
-    use building_types::QueryError;
+    use building_types::{QueryError, QueryResult};
     use files::FileId;
     use la_arena::RawIdx;
     use resolving::FullResolvedModule;
@@ -955,8 +949,9 @@ mod tests {
     #[test]
     fn test_cycle_detection() {
         const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
+        const KEY: QueryKey = QueryKey::Resolved(ID);
 
-        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID),
                 |storage| storage.derived.resolved.get(&ID),
@@ -967,14 +962,14 @@ mod tests {
 
         let engine = QueryEngine::default();
         let result = fake_query_a(&engine);
-        assert!(matches!(result, Err(QueryError::Cycle)));
+        assert_eq!(result, Err(QueryError::Cycle { stack: [KEY, KEY].into() }));
     }
 
     #[test]
     fn test_cycle_recovery() {
         const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
 
-        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID),
                 |storage| storage.derived.resolved.get(&ID),
@@ -993,7 +988,7 @@ mod tests {
         const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
         const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
 
-        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_A),
                 |storage| storage.derived.resolved.get(&ID_A),
@@ -1002,7 +997,7 @@ mod tests {
             )
         }
 
-        fn fake_query_b(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_B),
                 |storage| storage.derived.resolved.get(&ID_B),
@@ -1023,7 +1018,9 @@ mod tests {
         assert!(result_b.is_err());
 
         // Either result can return `Cancelled`, but at least one of should be `Cycle`
-        assert!([result_a, result_b].iter().any(|result| matches!(result, Err(QueryError::Cycle))));
+        assert!([result_a, result_b]
+            .iter()
+            .any(|result| matches!(result, Err(QueryError::Cycle { .. }))));
     }
 
     #[test]
@@ -1031,7 +1028,7 @@ mod tests {
         const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
         const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
 
-        fn fake_query_a(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_A),
                 |storage| storage.derived.resolved.get(&ID_A),
@@ -1040,7 +1037,7 @@ mod tests {
             )
         }
 
-        fn fake_query_b(engine: &QueryEngine) -> Result<Arc<FullResolvedModule>, QueryError> {
+        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_B),
                 |storage| storage.derived.resolved.get(&ID_B),
