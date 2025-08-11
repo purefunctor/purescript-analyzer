@@ -246,8 +246,63 @@ fn collect_unqualified(engine: &QueryEngine, context: &Context, items: &mut Vec<
         ));
     }
 
+    let prim_id = engine.prim_id();
+
+    let mut has_explicit_prim = false;
     for import in context.resolved.unqualified.values().flatten() {
+        has_explicit_prim = import.file == prim_id;
         collect_imports(engine, context, import, items);
+    }
+
+    if !has_explicit_prim {
+        collect_implicit_prim(engine, context, items, prim_id);
+    }
+}
+
+fn collect_implicit_prim(
+    engine: &QueryEngine,
+    context: &Context<'_>,
+    items: &mut Vec<CompletionItem>,
+    prim_id: FileId,
+) {
+    let Ok(prim_resolved) = engine.resolved(prim_id) else {
+        return tracing::error!("Failed to resolve Prim@{prim_id:?}!");
+    };
+
+    if let CompletionLocation::Term = &context.location {
+        items.extend(prim_resolved.exports.iter_terms().filter_map(
+            |(term_name, term_file_id, term_item_id)| {
+                if !context.allow_name(term_name) {
+                    return None;
+                }
+                let description = Some("Prim".to_string());
+                Some(completion_item(
+                    term_name,
+                    term_name,
+                    CompletionItemKind::VALUE,
+                    description,
+                    context.filter.range,
+                    CompletionResolveData::TermItem(term_file_id, term_item_id),
+                ))
+            },
+        ));
+    } else if let CompletionLocation::Type = &context.location {
+        items.extend(prim_resolved.exports.iter_types().filter_map(
+            |(type_name, type_file_id, type_item_id)| {
+                if !context.allow_name(type_name) {
+                    return None;
+                }
+                let description = Some("Prim".to_string());
+                Some(completion_item(
+                    type_name,
+                    type_name,
+                    CompletionItemKind::STRUCT,
+                    description,
+                    context.filter.range,
+                    CompletionResolveData::TypeItem(type_file_id, type_item_id),
+                ))
+            },
+        ));
     }
 }
 

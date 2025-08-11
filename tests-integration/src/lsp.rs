@@ -119,5 +119,8 @@ fn dispatch_cursor(
 
 fn cleanup_report(result: String) -> String {
     let manifest_directory = env!("CARGO_MANIFEST_DIR");
-    result.replace(manifest_directory, "./tests-integration")
+    let temporary_directory = prim::TEMPORARY_DIRECTORY.path().to_str().unwrap();
+    result
+        .replace(manifest_directory, "./tests-integration")
+        .replace(temporary_directory, "./temporary-directory")
 }

@@ -37,7 +37,7 @@ pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
     }
 }
 
-static TEMPORARY_DIRECTORY: LazyLock<TempDir> = LazyLock::new(|| {
+pub static TEMPORARY_DIRECTORY: LazyLock<TempDir> = LazyLock::new(|| {
     Builder::new()
         .prefix("purescript-analyzer-")
         .tempdir()
