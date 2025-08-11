@@ -41,8 +41,8 @@ mod tests {
         let mut graph = SnapshotGraph::default();
         let id_a = SnapshotId(0);
         let id_b = SnapshotId(1);
-        assert_eq!(graph.add_edge(id_a, id_b), true);
-        assert_eq!(graph.add_edge(id_b, id_a), false);
+        assert!(graph.add_edge(id_a, id_b));
+        assert!(!graph.add_edge(id_b, id_a));
     }
 
     #[test]
@@ -51,15 +51,15 @@ mod tests {
         let id_a = SnapshotId(0);
         let id_b = SnapshotId(1);
         let id_c = SnapshotId(2);
-        assert_eq!(graph.add_edge(id_a, id_b), true);
-        assert_eq!(graph.add_edge(id_b, id_c), true);
-        assert_eq!(graph.add_edge(id_c, id_a), false);
+        assert!(graph.add_edge(id_a, id_b));
+        assert!(graph.add_edge(id_b, id_c));
+        assert!(!graph.add_edge(id_c, id_a));
     }
 
     #[test]
     fn test_self_cycle() {
         let mut graph = SnapshotGraph::default();
         let id_a = SnapshotId(0);
-        assert_eq!(graph.add_edge(id_a, id_a), false);
+        assert!(!graph.add_edge(id_a, id_a));
     }
 }

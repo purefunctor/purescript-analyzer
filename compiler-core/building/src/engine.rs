@@ -892,7 +892,7 @@ mod tests {
         // Observe that the storage has been edited.
         {
             let storage = runtime.storage.read();
-            assert_eq!(storage.derived.indexed.contains_key(&id), false);
+            assert!(!storage.derived.indexed.contains_key(&id));
         }
     }
 
@@ -931,7 +931,7 @@ mod tests {
         // Observe that the storage is not edited.
         {
             let storage = runtime.storage.read();
-            assert_eq!(storage.derived.indexed.contains_key(&id), true);
+            assert!(storage.derived.indexed.contains_key(&id));
         }
 
         let result = runtime.query(
@@ -946,7 +946,7 @@ mod tests {
         // Finally, observe that the storage is edited.
         {
             let storage = runtime.storage.read();
-            assert_eq!(storage.derived.indexed.contains_key(&id), false);
+            assert!(!storage.derived.indexed.contains_key(&id));
         }
     }
 
@@ -960,7 +960,7 @@ mod tests {
                 QueryKey::Resolved(ID),
                 |storage| storage.derived.resolved.get(&ID),
                 |storage| storage.derived.resolved.entry(ID),
-                |engine| fake_query_a(engine),
+                fake_query_a,
             )
         }
 
@@ -997,7 +997,7 @@ mod tests {
                 QueryKey::Resolved(ID_A),
                 |storage| storage.derived.resolved.get(&ID_A),
                 |storage| storage.derived.resolved.entry(ID_A),
-                |engine| fake_query_b(engine),
+                fake_query_b,
             )
         }
 
@@ -1006,7 +1006,7 @@ mod tests {
                 QueryKey::Resolved(ID_B),
                 |storage| storage.derived.resolved.get(&ID_B),
                 |storage| storage.derived.resolved.entry(ID_B),
-                |engine| fake_query_a(engine),
+                fake_query_a,
             )
         }
 
