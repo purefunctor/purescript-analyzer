@@ -550,6 +550,114 @@ Completion at Position { line: 16, character: 8 }
 
 [
     CompletionItem {
+        label: "Char",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Prim",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "data Char :: Type",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Char",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Constraint",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: None,
+                description: Some(
+                    "Prim",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "data Constraint :: Type",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: None,
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 16,
+                            character: 7,
+                        },
+                        end: Position {
+                            line: 16,
+                            character: 8,
+                        },
+                    },
+                    new_text: "Constraint",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
         label: "Coercible",
         label_details: Some(
             CompletionItemLabelDetails {
