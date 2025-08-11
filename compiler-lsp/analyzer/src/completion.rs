@@ -312,17 +312,21 @@ fn collect_suggestions(
     context: &Context,
     items: &mut Vec<CompletionItem>,
 ) {
-    let prim = engine.prim_id();
+    let prim_id = engine.prim_id();
+    let has_qualified_prim =
+        context.resolved.qualified.values().any(|import| import.file == prim_id);
+    let has_unqualified_prim =
+        context.resolved.unqualified.values().flatten().any(|import| import.file == prim_id);
     if let Some(prefix) = &context.filter.prefix {
         for id in files.iter_id() {
-            if id == context.id || id == prim {
+            if id == context.id || (id == prim_id && !has_qualified_prim) {
                 continue;
             }
             collect_qualified_suggestions(engine, context, items, (prefix, id));
         }
     } else if let Some(name) = &context.filter.name {
         for id in files.iter_id() {
-            if id == context.id || id == prim {
+            if id == context.id || (id == prim_id && !has_unqualified_prim) {
                 continue;
             }
             collect_unqualified_suggestions(engine, context, items, (name, id));

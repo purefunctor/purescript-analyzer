@@ -105,4 +105,62 @@ Completion at Position { line: 10, character: 20 }
         data: None,
         tags: None,
     },
+    CompletionItem {
+        label: "Type",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Prim)",
+                ),
+                description: Some(
+                    "Prim",
+                ),
+            },
+        ),
+        kind: Some(
+            Struct,
+        ),
+        detail: Some(
+            "data Type :: Type",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Prim",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 10,
+                            character: 18,
+                        },
+                        end: Position {
+                            line: 10,
+                            character: 20,
+                        },
+                    },
+                    new_text: "Type",
+                },
+            ),
+        ),
+        additional_text_edits: None,
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
 ]
