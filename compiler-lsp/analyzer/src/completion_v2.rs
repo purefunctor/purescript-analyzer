@@ -2,15 +2,14 @@ mod filter;
 mod prelude;
 mod sources;
 
-use building::QueryEngine;
 use smol_str::SmolStr;
 
-use filter::HasPrefix;
+use filter::StartsWith;
 use prelude::{Context, Source};
 use sources::QualifiedModules;
 
-pub fn collect(engine: QueryEngine, context: Context, prefix: Option<SmolStr>) {
+pub fn collect(context: Context, prefix: Option<SmolStr>) {
     if let Some(prefix) = prefix {
-        let _ = QualifiedModules::candidates(&engine, &context, HasPrefix(prefix));
+        let _ = QualifiedModules::candidates(&context, StartsWith(prefix));
     }
 }

@@ -1,8 +1,11 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
+use files::Files;
 use resolving::FullResolvedModule;
 
-pub struct Context<'a> {
+pub struct Context<'c, 'a> {
+    pub engine: &'c QueryEngine,
+    pub files: &'c Files,
     pub resolved: &'a FullResolvedModule,
 }
 
@@ -10,11 +13,7 @@ pub struct Context<'a> {
 pub trait Source {
     type Filter: Filter;
 
-    fn candidates(
-        engine: &QueryEngine,
-        context: &Context,
-        filter: Self::Filter,
-    ) -> impl Iterator<Item = CompletionItem>;
+    fn candidates(context: &Context, filter: Self::Filter) -> impl Iterator<Item = CompletionItem>;
 }
 
 /// A trait for describing completion filters.

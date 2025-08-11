@@ -1,7 +1,6 @@
 use async_lsp::lsp_types::*;
-use building::QueryEngine;
 
-use super::{filter::HasPrefix, prelude::*};
+use super::{filter::StartsWith, prelude::*};
 
 /// Yields the qualified names of imports.
 ///
@@ -15,17 +14,13 @@ use super::{filter::HasPrefix, prelude::*};
 pub struct QualifiedModules;
 
 impl Source for QualifiedModules {
-    type Filter = HasPrefix;
+    type Filter = StartsWith;
 
-    fn candidates(
-        engine: &QueryEngine,
-        context: &Context,
-        filter: Self::Filter,
-    ) -> impl Iterator<Item = CompletionItem> {
+    fn candidates(context: &Context, filter: Self::Filter) -> impl Iterator<Item = CompletionItem> {
         let source =
             context.resolved.qualified.iter().filter(move |(name, _)| filter.matches(name));
         source.filter_map(|(name, import)| {
-            let (parsed, _) = engine.parsed(import.file).ok()?;
+            let (parsed, _) = context.engine.parsed(import.file).ok()?;
             let description = parsed.module_name().map(|name| name.to_string());
             Some(completion_item(name, name, CompletionItemKind::MODULE, description, None))
         })
