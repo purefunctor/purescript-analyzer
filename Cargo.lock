@@ -210,6 +210,11 @@ dependencies = [
 [[package]]
 name = "building-types"
 version = "0.1.0"
+dependencies = [
+ "files",
+ "rustc-hash 2.1.1",
+ "string-interner",
+]
 
 [[package]]
 name = "bumpalo"

@@ -22,19 +22,21 @@
 //! [Build systems à la carte: Theory and practice]: https://www.cambridge.org/core/journals/journal-of-functional-programming/article/build-systems-a-la-carte-theory-and-practice/097CE52C750E69BD16B78C318754C7A4
 //! [salsa]: https://github.com/salsa-rs/salsa
 
+mod graph;
 mod promise;
 
 use std::{
     cell::RefCell,
     collections::hash_map::Entry,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
         Arc,
     },
 };
 
-use building_types::{QueryError, QueryResult};
+use building_types::{ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryResult};
 use files::FileId;
+use graph::SnapshotGraph;
 use indexing::FullIndexedModule;
 use lock_api::{RawRwLock, RawRwLockRecursive};
 use lowering::FullLoweredModule;
@@ -44,18 +46,6 @@ use promise::{Future, Promise};
 use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
 use thread_local::ThreadLocal;
-
-use crate::{ModuleNameId, ModuleNameInterner};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum QueryKey {
-    Content(FileId),
-    Module(ModuleNameId),
-    Parsed(FileId),
-    Indexed(FileId),
-    Lowered(FileId),
-    Resolved(FileId),
-}
 
 #[derive(Debug, Clone, Copy)]
 struct Trace {
@@ -70,6 +60,7 @@ enum DerivedState<T> {
     #[default]
     NotComputed,
     InProgress {
+        id: SnapshotId,
         promises: Mutex<Vec<Promise<T>>>,
     },
     Computed {
@@ -80,8 +71,8 @@ enum DerivedState<T> {
 }
 
 impl<T> DerivedState<T> {
-    fn in_progress() -> DerivedState<T> {
-        DerivedState::InProgress { promises: Mutex::default() }
+    fn in_progress(id: SnapshotId) -> DerivedState<T> {
+        DerivedState::InProgress { id, promises: Mutex::default() }
     }
 }
 
@@ -110,6 +101,9 @@ struct InternedStorage {
     module: ModuleNameInterner,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct SnapshotId(u32);
+
 #[derive(Default)]
 struct GlobalState {
     /// An atomic token that determines if query execution had been cancelled.
@@ -118,6 +112,16 @@ struct GlobalState {
     query_lock: RwLock<()>,
     /// A counter that tracks the current revision of the query engine.
     revision: AtomicUsize,
+    /// A counter that tracks the next [`SnapshotId`],
+    snapshot: AtomicU32,
+    /// A graph that tracks dependencies between [`SnapshotId`]
+    graph: Mutex<SnapshotGraph>,
+}
+
+impl GlobalState {
+    fn next_snapshot(&self) -> SnapshotId {
+        SnapshotId(self.snapshot.fetch_add(1, Ordering::Relaxed))
+    }
 }
 
 #[derive(Default)]
@@ -128,15 +132,23 @@ struct LocalState {
 impl LocalState {
     fn with_current<T>(&self, current: QueryKey, f: impl FnOnce() -> T) -> T {
         let inner = self.inner.get_or_default();
-        let previous = inner.borrow_mut().current.replace(current);
+        {
+            let mut setup = inner.borrow_mut();
+            setup.stack.push(current);
+        }
         let result = f();
-        inner.borrow_mut().current = previous;
+        {
+            let mut cleanup = inner.borrow_mut();
+            cleanup.stack.pop();
+            cleanup.in_progress.remove(&current);
+            cleanup.dependencies.remove(&current);
+        }
         result
     }
 
     fn with_dependency(&self, dependency: QueryKey) {
         let mut inner = self.inner.get_or_default().borrow_mut();
-        if let Some(current) = inner.current {
+        if let Some(&current) = inner.stack.last() {
             inner.dependencies.entry(current).or_default().insert(dependency);
         }
     }
@@ -150,11 +162,27 @@ impl LocalState {
             .unwrap_or_default()
             .collect()
     }
+
+    fn stack(&self) -> Arc<[QueryKey]> {
+        let inner = self.inner.get_or_default().borrow();
+        inner.stack.as_slice().into()
+    }
+
+    fn add_in_progress(&self, key: QueryKey) {
+        let mut inner = self.inner.get_or_default().borrow_mut();
+        inner.in_progress.insert(key);
+    }
+
+    fn is_in_progress(&self, key: QueryKey) -> bool {
+        let inner = self.inner.get_or_default().borrow();
+        inner.in_progress.contains(&key)
+    }
 }
 
 #[derive(Debug, Default)]
 struct LocalStateInner {
-    current: Option<QueryKey>,
+    stack: Vec<QueryKey>,
+    in_progress: FxHashSet<QueryKey>,
     dependencies: FxHashMap<QueryKey, FxHashSet<QueryKey>>,
 }
 
@@ -180,9 +208,9 @@ impl Drop for QueryControlGuard {
     }
 }
 
-#[derive(Default)]
 struct QueryControl {
     _guard: Option<QueryControlGuard>,
+    id: SnapshotId,
     local: Arc<LocalState>,
     global: Arc<GlobalState>,
 }
@@ -192,7 +220,18 @@ impl QueryControl {
         let _guard = Some(QueryControlGuard::new(&self.global));
         let local = Arc::new(LocalState::default());
         let global = Arc::clone(&self.global);
-        QueryControl { _guard, local, global }
+        let id = global.next_snapshot();
+        QueryControl { _guard, id, local, global }
+    }
+}
+
+impl Default for QueryControl {
+    fn default() -> QueryControl {
+        let _guard = None;
+        let local = Arc::new(LocalState::default());
+        let global = Arc::new(GlobalState::default());
+        let id = global.next_snapshot();
+        QueryControl { _guard, id, local, global }
     }
 }
 
@@ -234,31 +273,21 @@ impl QueryEngine {
         self.control.local.with_dependency(key);
         self.control.local.with_current(key, || {
             // If query execution fails at any given point, clean up the state.
-            self.query_core(key, &get, &get_mut, &compute).map_err(
-                |QueryError::Cancelled { cleanup }| {
-                    if cleanup {
-                        let mut storage = self.storage.write();
-                        if let Entry::Occupied(o) = get_mut(&mut storage) {
-                            if let DerivedState::InProgress { promises } = o.remove() {
-                                drop(promises);
-                                drop(storage);
-                            } else {
-                                unreachable!("invariant violated: expected InProgress");
-                            }
+            self.query_core(key, &get, &get_mut, &compute).inspect_err(|_| {
+                if self.control.local.is_in_progress(key) {
+                    let mut storage = self.storage.write();
+                    if let Entry::Occupied(o) = get_mut(&mut storage) {
+                        if let DerivedState::InProgress { id, promises } = o.remove() {
+                            let mut graph = self.control.global.graph.lock();
+                            drop(promises);
+                            drop(storage);
+                            graph.remove_edge(id);
+                        } else {
+                            unreachable!("invariant violated: expected InProgress");
                         }
                     }
-                    // Dependent queries must perform cleanup regardless of
-                    // whether cleanup was executed for this query. For instance:
-                    //
-                    // Thread 2: B
-                    // Thread 1: A -> B
-                    //
-                    // Once cancelled, Thread 2 executes cleanup for query B.
-                    // The cancellation propagates to Thread 1, where cleanup
-                    // is skipped for query B, but executed for query A.
-                    QueryError::Cancelled { cleanup: true }
-                },
-            )
+                }
+            })
         })
     }
 
@@ -276,12 +305,14 @@ impl QueryEngine {
     {
         let mut storage = self.storage.write();
         if let Entry::Occupied(o) = get_mut(&mut storage) {
-            if let DerivedState::InProgress { promises } = o.remove() {
+            if let DerivedState::InProgress { id, promises } = o.remove() {
+                let mut graph = self.control.global.graph.lock();
                 let promises = promises.into_inner();
                 promises.into_iter().for_each(|promise| {
                     let computed = V::clone(&computed);
                     promise.fulfill(computed);
                 });
+                graph.remove_edge(id);
             } else {
                 unreachable!("invariant violated: expected InProgress");
             }
@@ -305,7 +336,7 @@ impl QueryEngine {
         V: Eq + Clone,
     {
         if self.control.global.cancelled.load(Ordering::Relaxed) {
-            return Err(QueryError::Cancelled { cleanup: true });
+            return Err(QueryError::Cancelled);
         }
 
         let computed = compute(self)?;
@@ -333,7 +364,7 @@ impl QueryEngine {
 
     /// Verifies the given dependencies by executing them, returning the
     /// timestamp of the most latest change.
-    fn verify_core(&self, dependencies: &[QueryKey]) -> Result<usize, QueryError> {
+    fn verify_core(&self, dependencies: &[QueryKey]) -> QueryResult<usize> {
         let mut latest = 0;
 
         macro_rules! input_changed {
@@ -370,6 +401,24 @@ impl QueryEngine {
         Ok(latest)
     }
 
+    fn create_future<T>(
+        &self,
+        to_id: SnapshotId,
+        promises: &Mutex<Vec<Promise<T>>>,
+    ) -> QueryResult<Future<T>> {
+        {
+            let mut graph = self.control.global.graph.lock();
+            let stack = self.control.local.stack();
+            if !graph.add_edge(self.control.id, to_id) {
+                return Err(QueryError::Cycle { stack });
+            }
+        }
+
+        let (future, promise) = Future::new();
+        promises.lock().push(promise);
+        Ok(future)
+    }
+
     fn query_core<K, V, GetFn, GetMutFn, ComputeFn>(
         &self,
         key: QueryKey,
@@ -383,6 +432,10 @@ impl QueryEngine {
         ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
+        if self.control.global.cancelled.load(Ordering::Relaxed) {
+            return Err(QueryError::Cancelled);
+        }
+
         let revision = self.control.global.revision.load(Ordering::Relaxed);
 
         // Certain query states can be checked with only a read lock, and this
@@ -402,14 +455,13 @@ impl QueryEngine {
                         return Ok(V::clone(computed));
                     }
                 }
-                DerivedState::InProgress { promises } => {
-                    let (future, promise) = Future::new();
-                    promises.lock().push(promise);
+                DerivedState::InProgress { id, promises } => {
+                    let future = self.create_future(*id, promises)?;
 
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
 
-                    return future.wait().ok_or(QueryError::Cancelled { cleanup: false });
+                    return future.wait().ok_or(QueryError::Cancelled);
                 }
                 _ => (),
             }
@@ -428,19 +480,20 @@ impl QueryEngine {
                     // upgradable read lock should read that the query is InProgress.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
-                        get_mut(&mut storage).insert_entry(DerivedState::in_progress());
+                        get_mut(&mut storage)
+                            .insert_entry(DerivedState::in_progress(self.control.id));
+                        self.control.local.add_in_progress(key);
                     }
 
                     self.compute_core(get_mut, compute, key, revision, None)
                 }
-                DerivedState::InProgress { promises } => {
-                    let (future, promise) = Future::new();
-                    promises.lock().push(promise);
+                DerivedState::InProgress { id, promises } => {
+                    let future = self.create_future(*id, promises)?;
 
                     // Remember that Future::wait blocks the current thread!
                     drop(storage);
 
-                    future.wait().ok_or(QueryError::Cancelled { cleanup: false })
+                    future.wait().ok_or(QueryError::Cancelled)
                 }
                 DerivedState::Computed { computed, trace, dependencies } => {
                     let computed = V::clone(computed);
@@ -457,7 +510,9 @@ impl QueryEngine {
                     // Same as NotComputed, see comment above.
                     {
                         let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
-                        get_mut(&mut storage).insert_entry(DerivedState::in_progress());
+                        get_mut(&mut storage)
+                            .insert_entry(DerivedState::in_progress(self.control.id));
+                        self.control.local.add_in_progress(key);
                     }
 
                     let latest = self.verify_core(&dependencies)?;
@@ -618,7 +673,15 @@ impl resolving::External for QueryEngine {
 
 #[cfg(test)]
 mod tests {
-    use std::{fmt::Debug, sync::Arc};
+    use std::{
+        fmt::Debug,
+        sync::{atomic::Ordering, Arc},
+    };
+
+    use building_types::{QueryError, QueryResult};
+    use files::{FileId, Files};
+    use la_arena::RawIdx;
+    use resolving::FullResolvedModule;
 
     use super::{DerivedState, QueryEngine, QueryKey};
 
@@ -778,5 +841,264 @@ mod tests {
         assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
         assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
+    }
+
+    #[test]
+    fn test_local_state_cleanup() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let content = files.content(id);
+
+        runtime.set_content(id, content);
+        let key = QueryKey::Parsed(id);
+
+        let indexed_a = runtime.indexed(id).unwrap();
+        assert!(!runtime.control.local.is_in_progress(key));
+
+        let indexed_b = runtime.indexed(id).unwrap();
+        assert!(!runtime.control.local.is_in_progress(key));
+
+        assert_eq!(indexed_a, indexed_b);
+    }
+
+    #[test]
+    fn test_cancellation_cleanup() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let key = QueryKey::Indexed(id);
+
+        // Simulate the current thread starting a computation.
+        {
+            let mut storage = runtime.storage.write();
+            storage.derived.indexed.insert(id, DerivedState::in_progress(runtime.control.id));
+            runtime.control.local.add_in_progress(key);
+        }
+
+        // Finally, enable cancellation and run the query on this thread.
+        runtime.control.global.cancelled.store(true, Ordering::Relaxed);
+        let result = runtime.query(
+            key,
+            |storage| storage.derived.indexed.get(&id),
+            |storage| storage.derived.indexed.entry(id),
+            |_| unreachable!("impossible."),
+        );
+
+        assert_eq!(result, Err(QueryError::Cancelled));
+
+        // Observe that the storage has been edited.
+        {
+            let storage = runtime.storage.read();
+            assert_eq!(storage.derived.indexed.contains_key(&id), false);
+        }
+    }
+
+    #[test]
+    fn test_cancellation_no_cleanup() {
+        let runtime = QueryEngine::default();
+        let mut files = files::Files::default();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
+        let key = QueryKey::Indexed(id);
+
+        // Simulate the current thread starting a computation.
+        {
+            let mut storage = runtime.storage.write();
+            storage.derived.indexed.insert(id, DerivedState::in_progress(runtime.control.id));
+            runtime.control.local.add_in_progress(key);
+        }
+
+        // Finally, enable cancellation and run the query on another thread.
+        runtime.control.global.cancelled.store(true, Ordering::Relaxed);
+        let result = std::thread::scope(|scope| {
+            let runtime = runtime.snapshot();
+            let thread = scope.spawn(move || {
+                runtime.query(
+                    key,
+                    |storage| storage.derived.indexed.get(&id),
+                    |storage| storage.derived.indexed.entry(id),
+                    |_| unreachable!("impossible."),
+                )
+            });
+            thread.join().unwrap()
+        });
+
+        assert_eq!(result, Err(QueryError::Cancelled));
+
+        // Observe that the storage is not edited.
+        {
+            let storage = runtime.storage.read();
+            assert_eq!(storage.derived.indexed.contains_key(&id), true);
+        }
+
+        let result = runtime.query(
+            key,
+            |storage| storage.derived.indexed.get(&id),
+            |storage| storage.derived.indexed.entry(id),
+            |_| unreachable!("impossible."),
+        );
+
+        assert_eq!(result, Err(QueryError::Cancelled));
+
+        // Finally, observe that the storage is edited.
+        {
+            let storage = runtime.storage.read();
+            assert_eq!(storage.derived.indexed.contains_key(&id), false);
+        }
+    }
+
+    #[test]
+    fn test_cycle_detection() {
+        const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
+        const KEY: QueryKey = QueryKey::Resolved(ID);
+
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+            engine.query(
+                QueryKey::Resolved(ID),
+                |storage| storage.derived.resolved.get(&ID),
+                |storage| storage.derived.resolved.entry(ID),
+                |engine| fake_query_a(engine),
+            )
+        }
+
+        let engine = QueryEngine::default();
+        let result = fake_query_a(&engine);
+        assert_eq!(result, Err(QueryError::Cycle { stack: [KEY, KEY].into() }));
+    }
+
+    #[test]
+    fn test_cycle_recovery() {
+        const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
+
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+            engine.query(
+                QueryKey::Resolved(ID),
+                |storage| storage.derived.resolved.get(&ID),
+                |storage| storage.derived.resolved.entry(ID),
+                |engine| fake_query_a(engine).map_err(|_| QueryError::Cancelled),
+            )
+        }
+
+        let engine = QueryEngine::default();
+        let result = fake_query_a(&engine);
+        assert!(matches!(result, Err(QueryError::Cancelled)));
+    }
+
+    #[test]
+    fn test_snapshot_cycle_detection() {
+        const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
+        const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
+
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+            engine.query(
+                QueryKey::Resolved(ID_A),
+                |storage| storage.derived.resolved.get(&ID_A),
+                |storage| storage.derived.resolved.entry(ID_A),
+                |engine| fake_query_b(engine),
+            )
+        }
+
+        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+            engine.query(
+                QueryKey::Resolved(ID_B),
+                |storage| storage.derived.resolved.get(&ID_B),
+                |storage| storage.derived.resolved.entry(ID_B),
+                |engine| fake_query_a(engine),
+            )
+        }
+
+        let engine = QueryEngine::default();
+
+        let snapshot = engine.snapshot();
+        let thread = std::thread::spawn(move || fake_query_b(&snapshot));
+
+        let result_a = fake_query_a(&engine);
+        let result_b = thread.join().unwrap();
+
+        assert!(result_a.is_err());
+        assert!(result_b.is_err());
+
+        // Either result can return `Cancelled`, but at least one of should be `Cycle`
+        assert!([result_a, result_b]
+            .iter()
+            .any(|result| matches!(result, Err(QueryError::Cycle { .. }))));
+    }
+
+    #[test]
+    fn test_snapshot_cycle_recovery() {
+        const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
+        const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
+
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+            engine.query(
+                QueryKey::Resolved(ID_A),
+                |storage| storage.derived.resolved.get(&ID_A),
+                |storage| storage.derived.resolved.entry(ID_A),
+                |engine| fake_query_b(engine).map_err(|_| QueryError::Cancelled),
+            )
+        }
+
+        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+            engine.query(
+                QueryKey::Resolved(ID_B),
+                |storage| storage.derived.resolved.get(&ID_B),
+                |storage| storage.derived.resolved.entry(ID_B),
+                |engine| fake_query_a(engine).map_err(|_| QueryError::Cancelled),
+            )
+        }
+
+        let engine = QueryEngine::default();
+
+        let snapshot = engine.snapshot();
+        let thread = std::thread::spawn(move || fake_query_b(&snapshot));
+
+        let result_a = fake_query_a(&engine);
+        let result_b = thread.join().unwrap();
+
+        assert!(matches!(result_a, Err(QueryError::Cancelled)));
+        assert!(matches!(result_b, Err(QueryError::Cancelled)));
+    }
+
+    #[test]
+    fn test_resolving_cycle() {
+        let engine = QueryEngine::default();
+        let mut files = Files::default();
+
+        let main = files.insert("Main.purs", "module Main where\n\nimport Lib (b)\n\na = 123");
+        let library = files.insert("Lib.purs", "module Lib where\n\nimport Main (a)\n\nb = 123");
+
+        engine.set_content(main, files.content(main));
+        engine.set_content(library, files.content(library));
+        engine.set_module_file("Main", main);
+        engine.set_module_file("Lib", library);
+
+        let result_a = engine.resolved(main);
+        assert_eq!(
+            result_a,
+            Err(QueryError::Cycle {
+                stack: [
+                    QueryKey::Resolved(main),
+                    QueryKey::Resolved(library),
+                    QueryKey::Resolved(main)
+                ]
+                .into()
+            })
+        );
+
+        let result_b = engine.resolved(library);
+        assert_eq!(
+            result_b,
+            Err(QueryError::Cycle {
+                stack: [
+                    QueryKey::Resolved(library),
+                    QueryKey::Resolved(main),
+                    QueryKey::Resolved(library)
+                ]
+                .into()
+            })
+        );
     }
 }
