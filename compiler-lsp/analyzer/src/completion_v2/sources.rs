@@ -228,11 +228,12 @@ trait SuggestionsHelper {
     ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)>;
 
     fn candidate(
+        &self,
         context: &Context,
         name: &SmolStr,
         file_id: FileId,
         item_id: Self::ItemId,
-    ) -> CompletionItem;
+    ) -> Option<CompletionItem>;
 }
 
 impl SuggestionsHelper for SuggestedTerms {
@@ -245,23 +246,32 @@ impl SuggestionsHelper for SuggestedTerms {
     }
 
     fn candidate(
+        &self,
         context: &Context,
         name: &SmolStr,
         file_id: FileId,
         item_id: Self::ItemId,
-    ) -> CompletionItem {
-        let description = context.engine.parsed(file_id).ok().and_then(|(parsed, _)| {
-            let module_name = parsed.module_name()?;
-            Some(module_name.to_string())
-        });
-        completion_item(
+    ) -> Option<CompletionItem> {
+        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        let module_name = parsed.module_name()?;
+
+        let description = Some(module_name.to_string());
+        let mut item = completion_item(
             name,
             name,
             CompletionItemKind::VALUE,
             description,
             context.range,
             CompletionResolveData::TermItem(file_id, item_id),
-        )
+        );
+
+        if let Some(label_details) = item.label_details.as_mut() {
+            label_details.detail = Some(format!(" (import {})", module_name));
+        }
+
+        item.sort_text = Some(module_name.to_string());
+
+        Some(item)
     }
 }
 
@@ -275,27 +285,37 @@ impl SuggestionsHelper for SuggestedTypes {
     }
 
     fn candidate(
+        &self,
         context: &Context,
         name: &SmolStr,
         file_id: FileId,
         item_id: Self::ItemId,
-    ) -> CompletionItem {
-        let description = context.engine.parsed(file_id).ok().and_then(|(parsed, _)| {
-            let module_name = parsed.module_name()?;
-            Some(module_name.to_string())
-        });
-        completion_item(
+    ) -> Option<CompletionItem> {
+        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        let module_name = parsed.module_name()?;
+
+        let description = Some(module_name.to_string());
+        let mut item = completion_item(
             name,
             name,
             CompletionItemKind::STRUCT,
             description,
             context.range,
             CompletionResolveData::TypeItem(file_id, item_id),
-        )
+        );
+
+        if let Some(label_details) = item.label_details.as_mut() {
+            label_details.detail = Some(format!(" (import {})", module_name));
+        }
+
+        item.sort_text = Some(module_name.to_string());
+
+        Some(item)
     }
 }
 
 fn suggestions_candidates<T: SuggestionsHelper>(
+    this: &T,
     context: &Context,
     filter: impl Filter,
 ) -> impl Iterator<Item = CompletionItem> {
@@ -321,7 +341,7 @@ fn suggestions_candidates<T: SuggestionsHelper>(
 
         let source = T::exports(&resolved)
             .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
-            .map(|(name, file_id, item_id)| T::candidate(context, name, file_id, item_id));
+            .filter_map(|(name, file_id, item_id)| this.candidate(context, name, file_id, item_id));
 
         items.extend(source);
     }
@@ -335,7 +355,7 @@ impl Source for SuggestedTerms {
         context: &Context,
         filter: F,
     ) -> impl Iterator<Item = CompletionItem> {
-        suggestions_candidates::<Self>(context, filter)
+        suggestions_candidates(self, context, filter)
     }
 }
 
@@ -345,7 +365,7 @@ impl Source for SuggestedTypes {
         context: &Context,
         filter: F,
     ) -> impl Iterator<Item = CompletionItem> {
-        suggestions_candidates::<Self>(context, filter)
+        suggestions_candidates(self, context, filter)
     }
 }
 
@@ -411,23 +431,7 @@ pub struct QualifiedTermsSuggestions<'a>(pub &'a str);
 /// Yields suggestions for qualified types.
 pub struct QualifiedTypesSuggestions<'a>(pub &'a str);
 
-trait QualifiedSuggestionsHelper {
-    type ItemId;
-
-    fn exports(
-        resolved: &FullResolvedModule,
-    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)>;
-
-    fn candidate(
-        &self,
-        context: &Context,
-        name: &SmolStr,
-        file_id: FileId,
-        item_id: Self::ItemId,
-    ) -> Option<CompletionItem>;
-}
-
-impl QualifiedSuggestionsHelper for QualifiedTermsSuggestions<'_> {
+impl SuggestionsHelper for QualifiedTermsSuggestions<'_> {
     type ItemId = TermItemId;
 
     fn exports(
@@ -462,11 +466,13 @@ impl QualifiedSuggestionsHelper for QualifiedTermsSuggestions<'_> {
             label_details.detail = Some(format!(" (import {} as {})", module_name, self.0));
         }
 
+        item.sort_text = Some(module_name.to_string());
+
         Some(item)
     }
 }
 
-impl QualifiedSuggestionsHelper for QualifiedTypesSuggestions<'_> {
+impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
     type ItemId = TypeItemId;
 
     fn exports(
@@ -501,11 +507,13 @@ impl QualifiedSuggestionsHelper for QualifiedTypesSuggestions<'_> {
             label_details.detail = Some(format!(" (import {} as {})", module_name, self.0));
         }
 
+        item.sort_text = Some(module_name.to_string());
+
         Some(item)
     }
 }
 
-fn suggestions_candidates_qualified<T: QualifiedSuggestionsHelper>(
+fn suggestions_candidates_qualified<T: SuggestionsHelper>(
     this: &T,
     context: &Context,
     filter: impl Filter,
