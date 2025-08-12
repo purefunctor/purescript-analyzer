@@ -295,40 +295,57 @@ impl SuggestionsHelper for SuggestedTypes {
     }
 }
 
-impl<T> Source for T
-where
-    T: SuggestionsHelper,
-{
+fn suggestions_candidates<T: SuggestionsHelper>(
+    context: &Context,
+    filter: impl Filter,
+) -> impl Iterator<Item = CompletionItem> {
+    let has_prim = context
+        .resolved
+        .unqualified
+        .values()
+        .flatten()
+        .any(|import| import.file == context.prim_id);
+
+    let file_ids = context.files.iter_id().filter(move |&id| {
+        let not_self = id != context.id;
+        let not_prim = id != context.prim_id;
+        not_self && (not_prim || has_prim)
+    });
+
+    let mut items = vec![];
+
+    for import_id in file_ids {
+        let Some(resolved) = context.engine.resolved(import_id).ok() else {
+            continue;
+        };
+
+        let source = T::exports(&resolved)
+            .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
+            .map(|(name, file_id, item_id)| T::candidate(context, name, file_id, item_id));
+
+        items.extend(source);
+    }
+
+    items.into_iter()
+}
+
+impl Source for SuggestedTerms {
     fn candidates<F: Filter>(
         &self,
         context: &Context,
         filter: F,
     ) -> impl Iterator<Item = CompletionItem> {
-        let prim_id = context.engine.prim_id();
-        let has_prim =
-            context.resolved.unqualified.values().flatten().any(|import| import.file == prim_id);
+        suggestions_candidates::<Self>(context, filter)
+    }
+}
 
-        let file_ids = context.files.iter_id().filter(move |&id| {
-            let not_self = id != context.id;
-            let not_prim = id != prim_id;
-            not_self && (not_prim || has_prim)
-        });
-
-        let mut items = vec![];
-
-        for import_id in file_ids {
-            let Some(resolved) = context.engine.resolved(import_id).ok() else {
-                continue;
-            };
-
-            let source = T::exports(&resolved)
-                .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
-                .map(|(name, file_id, item_id)| T::candidate(context, name, file_id, item_id));
-
-            items.extend(source);
-        }
-
-        items.into_iter()
+impl Source for SuggestedTypes {
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        suggestions_candidates::<Self>(context, filter)
     }
 }
 
@@ -385,5 +402,155 @@ impl Source for PrimTypes {
                 CompletionResolveData::TypeItem(f, t),
             )
         })
+    }
+}
+
+/// Yields suggestions for qualified terms.
+pub struct QualifiedTermsSuggestions<'a>(pub &'a str);
+
+/// Yields suggestions for qualified types.
+pub struct QualifiedTypesSuggestions<'a>(pub &'a str);
+
+trait QualifiedSuggestionsHelper {
+    type ItemId;
+
+    fn exports(
+        resolved: &FullResolvedModule,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)>;
+
+    fn candidate(
+        &self,
+        context: &Context,
+        name: &SmolStr,
+        file_id: FileId,
+        item_id: Self::ItemId,
+    ) -> Option<CompletionItem>;
+}
+
+impl QualifiedSuggestionsHelper for QualifiedTermsSuggestions<'_> {
+    type ItemId = TermItemId;
+
+    fn exports(
+        resolved: &FullResolvedModule,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
+        resolved.exports.iter_terms()
+    }
+
+    fn candidate(
+        &self,
+        context: &Context,
+        name: &SmolStr,
+        file_id: FileId,
+        item_id: Self::ItemId,
+    ) -> Option<CompletionItem> {
+        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        let module_name = parsed.module_name()?;
+
+        let edit = format!("{}.{}", self.0, name);
+        let description = Some(module_name.to_string());
+
+        let mut item = completion_item(
+            name,
+            edit,
+            CompletionItemKind::VALUE,
+            description,
+            context.range,
+            CompletionResolveData::TermItem(file_id, item_id),
+        );
+
+        if let Some(label_details) = item.label_details.as_mut() {
+            label_details.detail = Some(format!(" (import {} as {})", module_name, self.0));
+        }
+
+        Some(item)
+    }
+}
+
+impl QualifiedSuggestionsHelper for QualifiedTypesSuggestions<'_> {
+    type ItemId = TypeItemId;
+
+    fn exports(
+        resolved: &FullResolvedModule,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
+        resolved.exports.iter_types()
+    }
+
+    fn candidate(
+        &self,
+        context: &Context,
+        name: &SmolStr,
+        file_id: FileId,
+        item_id: Self::ItemId,
+    ) -> Option<CompletionItem> {
+        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        let module_name = parsed.module_name()?;
+
+        let edit = format!("{}.{}", self.0, name);
+        let description = Some(module_name.to_string());
+
+        let mut item = completion_item(
+            name,
+            edit,
+            CompletionItemKind::STRUCT,
+            description,
+            context.range,
+            CompletionResolveData::TypeItem(file_id, item_id),
+        );
+
+        if let Some(label_details) = item.label_details.as_mut() {
+            label_details.detail = Some(format!(" (import {} as {})", module_name, self.0));
+        }
+
+        Some(item)
+    }
+}
+
+fn suggestions_candidates_qualified<T: QualifiedSuggestionsHelper>(
+    this: &T,
+    context: &Context,
+    filter: impl Filter,
+) -> impl Iterator<Item = CompletionItem> {
+    let has_prim = context.resolved.qualified.values().any(|import| import.file == context.prim_id);
+
+    let file_ids = context.files.iter_id().filter(move |&id| {
+        let not_self = id != context.id;
+        let not_prim = id != context.prim_id;
+        not_self && (not_prim || has_prim)
+    });
+
+    let mut items = vec![];
+
+    for import_id in file_ids {
+        let Some(resolved) = context.engine.resolved(import_id).ok() else {
+            continue;
+        };
+
+        let source = T::exports(&resolved)
+            .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
+            .filter_map(|(name, file_id, item_id)| this.candidate(context, name, file_id, item_id));
+
+        items.extend(source);
+    }
+
+    items.into_iter()
+}
+
+impl Source for QualifiedTermsSuggestions<'_> {
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        suggestions_candidates_qualified(self, context, filter)
+    }
+}
+
+impl Source for QualifiedTypesSuggestions<'_> {
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        suggestions_candidates_qualified(self, context, filter)
     }
 }

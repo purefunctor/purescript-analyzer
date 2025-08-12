@@ -12,7 +12,8 @@ use filter::{FuzzyMatch, NoFilter, StartsWith};
 use prelude::{Context, CursorSemantics, CursorText, Source};
 use sources::{
     ImportedTerms, ImportedTypes, LocalTerms, LocalTypes, PrimTerms, PrimTypes, QualifiedModules,
-    QualifiedTerms, QualifiedTypes, SuggestedTerms, SuggestedTypes,
+    QualifiedTerms, QualifiedTermsSuggestions, QualifiedTypes, QualifiedTypesSuggestions,
+    SuggestedTerms, SuggestedTypes,
 };
 
 use crate::locate;
@@ -113,9 +114,11 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
             let p = p.trim_end_matches('.');
             if context.collect_terms() {
                 items.extend(QualifiedTerms(p).candidates(context, FuzzyMatch(n)));
+                items.extend(QualifiedTermsSuggestions(p).candidates(context, FuzzyMatch(n)));
             }
             if context.collect_types() {
                 items.extend(QualifiedTypes(p).candidates(context, FuzzyMatch(n)));
+                items.extend(QualifiedTypesSuggestions(p).candidates(context, FuzzyMatch(n)));
             }
         }
     }
