@@ -46,6 +46,10 @@ impl Context<'_, '_> {
         Some(Range::new(position, position))
     }
 
+    pub fn collect_modules(&self) -> bool {
+        matches!(self.semantics, CursorSemantics::Module)
+    }
+
     pub fn collect_terms(&self) -> bool {
         matches!(self.semantics, CursorSemantics::Term)
     }

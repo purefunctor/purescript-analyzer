@@ -572,3 +572,33 @@ impl Source for QualifiedTypesSuggestions<'_> {
         suggestions_candidates_qualified(self, context, filter)
     }
 }
+
+/// Yields module names in the workspace.
+pub struct WorkspaceModules;
+
+impl Source for WorkspaceModules {
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        context.files.iter_id().filter_map(move |id| {
+            let (parsed, _) = context.engine.parsed(id).ok()?;
+            let module_name = parsed.module_name()?;
+
+            if !filter.matches(&module_name) {
+                return None;
+            }
+
+            let description = Some(module_name.to_string());
+            Some(completion_item(
+                &module_name,
+                &module_name,
+                CompletionItemKind::MODULE,
+                description,
+                context.range,
+                CompletionResolveData::Import(id),
+            ))
+        })
+    }
+}

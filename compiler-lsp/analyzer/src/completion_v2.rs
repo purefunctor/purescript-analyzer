@@ -13,7 +13,7 @@ use prelude::{Context, CursorSemantics, CursorText, Source};
 use sources::{
     ImportedTerms, ImportedTypes, LocalTerms, LocalTypes, PrimTerms, PrimTypes, QualifiedModules,
     QualifiedTerms, QualifiedTermsSuggestions, QualifiedTypes, QualifiedTypesSuggestions,
-    SuggestedTerms, SuggestedTypes,
+    SuggestedTerms, SuggestedTypes, WorkspaceModules,
 };
 
 use crate::locate;
@@ -72,7 +72,11 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
     let mut items = vec![];
     match &context.text {
         CursorText::None => {
-            items.extend(QualifiedModules.candidates(context, NoFilter));
+            if context.collect_modules() {
+                items.extend(WorkspaceModules.candidates(context, NoFilter));
+            } else {
+                items.extend(QualifiedModules.candidates(context, NoFilter));
+            }
             if context.collect_terms() {
                 items.extend(LocalTerms.candidates(context, NoFilter));
             }
@@ -82,7 +86,11 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
         }
         CursorText::Prefix(p) => {
             let p = p.trim_end_matches('.');
-            items.extend(QualifiedModules.candidates(context, StartsWith(p)));
+            if context.collect_modules() {
+                items.extend(WorkspaceModules.candidates(context, StartsWith(p)));
+            } else {
+                items.extend(QualifiedModules.candidates(context, StartsWith(p)));
+            }
             if context.collect_terms() {
                 items.extend(QualifiedTerms(p).candidates(context, NoFilter));
             }
@@ -91,7 +99,11 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
             }
         }
         CursorText::Name(n) => {
-            items.extend(QualifiedModules.candidates(context, StartsWith(n)));
+            if context.collect_modules() {
+                items.extend(WorkspaceModules.candidates(context, StartsWith(n)));
+            } else {
+                items.extend(QualifiedModules.candidates(context, StartsWith(n)));
+            }
             if context.collect_terms() {
                 items.extend(LocalTerms.candidates(context, FuzzyMatch(n)));
                 items.extend(ImportedTerms.candidates(context, FuzzyMatch(n)));
@@ -111,7 +123,12 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
         }
         CursorText::Both(p, n) => {
             let t: SmolStr = p.chars().chain(n.chars()).collect();
-            items.extend(QualifiedModules.candidates(context, StartsWith(&t)));
+
+            if context.collect_modules() {
+                items.extend(WorkspaceModules.candidates(context, StartsWith(&t)));
+            } else {
+                items.extend(QualifiedModules.candidates(context, StartsWith(&t)));
+            }
 
             let p = p.trim_end_matches('.');
             if context.collect_terms() {
