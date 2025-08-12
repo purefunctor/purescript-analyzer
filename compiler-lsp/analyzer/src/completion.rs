@@ -1,3 +1,4 @@
+mod edit;
 mod filter;
 mod prelude;
 mod sources;
@@ -47,6 +48,7 @@ pub fn implementation(
     let semantics = CursorSemantics::new(&content, position);
     let (text, range) = CursorText::new(&content, &token);
 
+    let indexed = engine.indexed(id).ok()?;
     let resolved = engine.resolved(id).ok()?;
     let prim_resolved = engine.resolved(prim_id).ok()?;
 
@@ -55,6 +57,7 @@ pub fn implementation(
         files,
         id,
         content: &content,
+        indexed: &indexed,
         parsed: &parsed,
         resolved: &resolved,
         prim_id,

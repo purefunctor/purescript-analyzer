@@ -6,7 +6,7 @@ use smol_str::SmolStr;
 
 use crate::completion::resolve::CompletionResolveData;
 
-use super::prelude::*;
+use super::{edit, prelude::*};
 
 /// Yields the qualified names of imports.
 ///
@@ -265,11 +265,18 @@ impl SuggestionsHelper for SuggestedTerms {
             CompletionResolveData::TermItem(file_id, item_id),
         );
 
+        let (import_text, import_range) =
+            edit::term_import_item(context, &module_name, name, file_id, item_id);
+
+        let text_edit = import_range.or_else(|| context.insert_import_range()).zip(import_text);
+
         if let Some(label_details) = item.label_details.as_mut() {
             label_details.detail = Some(format!(" (import {module_name})"));
         }
 
         item.sort_text = Some(module_name.to_string());
+        item.additional_text_edits =
+            text_edit.map(|(range, new_text)| vec![TextEdit { range, new_text }]);
 
         Some(item)
     }
@@ -304,11 +311,18 @@ impl SuggestionsHelper for SuggestedTypes {
             CompletionResolveData::TypeItem(file_id, item_id),
         );
 
+        let (import_text, import_range) =
+            edit::type_import_item(context, &module_name, name, file_id, item_id);
+
+        let text_edit = import_range.or_else(|| context.insert_import_range()).zip(import_text);
+
         if let Some(label_details) = item.label_details.as_mut() {
             label_details.detail = Some(format!(" (import {module_name})"));
         }
 
         item.sort_text = Some(module_name.to_string());
+        item.additional_text_edits =
+            text_edit.map(|(range, new_text)| vec![TextEdit { range, new_text }]);
 
         Some(item)
     }

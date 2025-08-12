@@ -1,6 +1,7 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::{FileId, Files};
+use indexing::FullIndexedModule;
 use parsing::ParsedModule;
 use resolving::FullResolvedModule;
 use rowan::{TokenAtOffset, ast::AstNode};
@@ -15,6 +16,7 @@ pub struct Context<'c, 'a> {
 
     pub id: FileId,
     pub content: &'a str,
+    pub indexed: &'a FullIndexedModule,
     pub parsed: &'a ParsedModule,
     pub resolved: &'a FullResolvedModule,
 
