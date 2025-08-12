@@ -138,11 +138,15 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
             let p = p.trim_end_matches('.');
             if context.collect_terms() {
                 items.extend(QualifiedTerms(p).candidates(context, FuzzyMatch(n)));
-                items.extend(QualifiedTermsSuggestions(p).candidates(context, FuzzyMatch(n)));
+                if !context.has_qualified_import(p) {
+                    items.extend(QualifiedTermsSuggestions(p).candidates(context, FuzzyMatch(n)));
+                }
             }
             if context.collect_types() {
                 items.extend(QualifiedTypes(p).candidates(context, FuzzyMatch(n)));
-                items.extend(QualifiedTypesSuggestions(p).candidates(context, FuzzyMatch(n)));
+                if !context.has_qualified_import(p) {
+                    items.extend(QualifiedTypesSuggestions(p).candidates(context, FuzzyMatch(n)));
+                }
             }
         }
     }

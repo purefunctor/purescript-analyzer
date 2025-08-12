@@ -4,9 +4,7 @@ use indexing::{ImportKind, TermItemId, TypeItemId};
 use resolving::FullResolvedModule;
 use smol_str::SmolStr;
 
-use crate::completion::resolve::CompletionResolveData;
-
-use super::{edit, prelude::*};
+use super::{edit, prelude::*, resolve::CompletionResolveData};
 
 /// Yields the qualified names of imports.
 ///

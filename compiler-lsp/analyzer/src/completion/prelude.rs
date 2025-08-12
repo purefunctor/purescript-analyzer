@@ -63,6 +63,10 @@ impl Context<'_, '_> {
     pub fn collect_implicit_prim(&self) -> bool {
         self.resolved.unqualified.values().flatten().all(|import| import.file != self.prim_id)
     }
+
+    pub fn has_qualified_import(&self, name: &str) -> bool {
+        self.resolved.qualified.contains_key(name)
+    }
 }
 
 /// A trait for describing completion sources.
