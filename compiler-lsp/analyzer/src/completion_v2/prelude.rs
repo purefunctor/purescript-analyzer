@@ -1,6 +1,7 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::{FileId, Files};
+use parsing::ParsedModule;
 use resolving::FullResolvedModule;
 use rowan::{TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
@@ -13,7 +14,10 @@ pub struct Context<'c, 'a> {
     pub files: &'c Files,
 
     pub id: FileId,
+    pub content: &'a str,
+    pub parsed: &'a ParsedModule,
     pub resolved: &'a FullResolvedModule,
+
     pub prim_id: FileId,
     pub prim_resolved: &'a FullResolvedModule,
 
@@ -23,6 +27,25 @@ pub struct Context<'c, 'a> {
 }
 
 impl Context<'_, '_> {
+    pub fn insert_import_range(&self) -> Option<Range> {
+        let cst = self.parsed.cst();
+
+        let range = cst.imports().map_or_else(
+            || {
+                let header = cst.header()?;
+                Some(header.syntax().text_range())
+            },
+            |cst| Some(cst.syntax().text_range()),
+        )?;
+
+        let mut position = locate::offset_to_position(self.content, range.end());
+
+        position.line += 1;
+        position.character = 0;
+
+        Some(Range::new(position, position))
+    }
+
     pub fn collect_terms(&self) -> bool {
         matches!(self.semantics, CursorSemantics::Term)
     }

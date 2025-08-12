@@ -266,7 +266,7 @@ impl SuggestionsHelper for SuggestedTerms {
         );
 
         if let Some(label_details) = item.label_details.as_mut() {
-            label_details.detail = Some(format!(" (import {})", module_name));
+            label_details.detail = Some(format!(" (import {module_name})"));
         }
 
         item.sort_text = Some(module_name.to_string());
@@ -305,7 +305,7 @@ impl SuggestionsHelper for SuggestedTypes {
         );
 
         if let Some(label_details) = item.label_details.as_mut() {
-            label_details.detail = Some(format!(" (import {})", module_name));
+            label_details.detail = Some(format!(" (import {module_name})"));
         }
 
         item.sort_text = Some(module_name.to_string());
@@ -447,6 +447,8 @@ impl SuggestionsHelper for QualifiedTermsSuggestions<'_> {
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
+        let insert_import_range = context.insert_import_range();
+
         let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;
 
@@ -467,6 +469,9 @@ impl SuggestionsHelper for QualifiedTermsSuggestions<'_> {
         }
 
         item.sort_text = Some(module_name.to_string());
+        item.additional_text_edits = insert_import_range.map(|range| {
+            vec![TextEdit { range, new_text: format!("import {module_name} as {}\n", self.0) }]
+        });
 
         Some(item)
     }
@@ -488,6 +493,8 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
+        let insert_import_range = context.insert_import_range();
+
         let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;
 
@@ -508,6 +515,9 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
         }
 
         item.sort_text = Some(module_name.to_string());
+        item.additional_text_edits = insert_import_range.map(|range| {
+            vec![TextEdit { range, new_text: format!("import {module_name} as {}\n", self.0) }]
+        });
 
         Some(item)
     }

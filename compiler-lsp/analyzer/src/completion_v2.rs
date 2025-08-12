@@ -52,6 +52,8 @@ pub fn implementation(
         engine,
         files,
         id,
+        content: &content,
+        parsed: &parsed,
         resolved: &resolved,
         prim_id,
         prim_resolved: &prim_resolved,
