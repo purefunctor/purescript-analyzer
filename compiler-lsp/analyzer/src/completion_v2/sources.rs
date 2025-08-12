@@ -331,3 +331,59 @@ where
         items.into_iter()
     }
 }
+
+/// Yields terms for implicit Prim.
+pub struct PrimTerms;
+
+impl Source for PrimTerms {
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        let source = context
+            .prim_resolved
+            .exports
+            .iter_terms()
+            .filter(move |(name, _, _)| filter.matches(name));
+        source.map(|(name, f, t)| {
+            let description = Some("Prim".to_string());
+            completion_item(
+                name,
+                name,
+                CompletionItemKind::VALUE,
+                description,
+                context.range,
+                CompletionResolveData::TermItem(f, t),
+            )
+        })
+    }
+}
+
+/// Yields types for implicit Prim.
+pub struct PrimTypes;
+
+impl Source for PrimTypes {
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        let source = context
+            .prim_resolved
+            .exports
+            .iter_types()
+            .filter(move |(name, _, _)| filter.matches(name));
+        source.map(|(name, f, t)| {
+            let description = Some("Prim".to_string());
+            completion_item(
+                name,
+                name,
+                CompletionItemKind::STRUCT,
+                description,
+                context.range,
+                CompletionResolveData::TypeItem(f, t),
+            )
+        })
+    }
+}

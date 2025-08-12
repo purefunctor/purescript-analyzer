@@ -11,8 +11,8 @@ use smol_str::SmolStr;
 use filter::{FuzzyMatch, NoFilter, StartsWith};
 use prelude::{Context, CursorSemantics, CursorText, Source};
 use sources::{
-    ImportedTerms, ImportedTypes, LocalTerms, LocalTypes, QualifiedModules, QualifiedTerms,
-    QualifiedTypes, SuggestedTerms, SuggestedTypes,
+    ImportedTerms, ImportedTypes, LocalTerms, LocalTypes, PrimTerms, PrimTypes, QualifiedModules,
+    QualifiedTerms, QualifiedTypes, SuggestedTerms, SuggestedTypes,
 };
 
 use crate::locate;
@@ -26,6 +26,7 @@ pub fn implementation(
     let uri = uri.as_str();
 
     let id = files.id(uri)?;
+    let prim_id = engine.prim_id();
     let content = engine.content(id);
     let (parsed, _) = engine.parsed(id).ok()?;
 
@@ -44,7 +45,19 @@ pub fn implementation(
     let (text, range) = CursorText::new(&content, &token);
 
     let resolved = engine.resolved(id).ok()?;
-    let context = Context { engine, files, semantics, text, range, id, resolved: &resolved };
+    let prim_resolved = engine.resolved(prim_id).ok()?;
+
+    let context = Context {
+        engine,
+        files,
+        id,
+        resolved: &resolved,
+        prim_id,
+        prim_resolved: &prim_resolved,
+        semantics,
+        text,
+        range,
+    };
 
     let items = collect(&context);
     let is_incomplete = items.len() > 5;
@@ -80,11 +93,17 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
                 items.extend(LocalTerms.candidates(context, FuzzyMatch(n)));
                 items.extend(ImportedTerms.candidates(context, FuzzyMatch(n)));
                 items.extend(SuggestedTerms.candidates(context, StartsWith(n)));
+                if context.collect_implicit_prim() {
+                    items.extend(PrimTerms.candidates(context, FuzzyMatch(n)));
+                }
             }
             if context.collect_types() {
                 items.extend(LocalTypes.candidates(context, FuzzyMatch(n)));
                 items.extend(ImportedTypes.candidates(context, FuzzyMatch(n)));
                 items.extend(SuggestedTypes.candidates(context, StartsWith(n)));
+                if context.collect_implicit_prim() {
+                    items.extend(PrimTypes.candidates(context, FuzzyMatch(n)));
+                }
             }
         }
         CursorText::Both(p, n) => {

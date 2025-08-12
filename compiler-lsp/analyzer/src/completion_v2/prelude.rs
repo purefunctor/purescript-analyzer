@@ -14,6 +14,8 @@ pub struct Context<'c, 'a> {
 
     pub id: FileId,
     pub resolved: &'a FullResolvedModule,
+    pub prim_id: FileId,
+    pub prim_resolved: &'a FullResolvedModule,
 
     pub semantics: CursorSemantics,
     pub text: CursorText,
@@ -27,6 +29,10 @@ impl Context<'_, '_> {
 
     pub fn collect_types(&self) -> bool {
         matches!(self.semantics, CursorSemantics::Type)
+    }
+
+    pub fn collect_implicit_prim(&self) -> bool {
+        self.resolved.unqualified.values().flatten().all(|import| import.file != self.prim_id)
     }
 }
 
