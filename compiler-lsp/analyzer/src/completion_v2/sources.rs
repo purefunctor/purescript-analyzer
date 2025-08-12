@@ -1,5 +1,8 @@
 use async_lsp::lsp_types::*;
-use indexing::ImportKind;
+use files::FileId;
+use indexing::{ImportKind, TermItemId, TypeItemId};
+use resolving::FullResolvedModule;
+use smol_str::SmolStr;
 
 use crate::completion::resolve::CompletionResolveData;
 
@@ -208,5 +211,123 @@ impl Source for QualifiedTypes<'_> {
                 ))
             })
         })
+    }
+}
+
+/// Yields suggestions for terms.
+pub struct SuggestedTerms;
+
+/// Yields suggestions for types.
+pub struct SuggestedTypes;
+
+trait SuggestionsHelper {
+    type ItemId;
+
+    fn exports(
+        resolved: &FullResolvedModule,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)>;
+
+    fn candidate(
+        context: &Context,
+        name: &SmolStr,
+        file_id: FileId,
+        item_id: Self::ItemId,
+    ) -> CompletionItem;
+}
+
+impl SuggestionsHelper for SuggestedTerms {
+    type ItemId = TermItemId;
+
+    fn exports(
+        resolved: &FullResolvedModule,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+        resolved.exports.iter_terms()
+    }
+
+    fn candidate(
+        context: &Context,
+        name: &SmolStr,
+        file_id: FileId,
+        item_id: Self::ItemId,
+    ) -> CompletionItem {
+        let description = context.engine.parsed(file_id).ok().and_then(|(parsed, _)| {
+            let module_name = parsed.module_name()?;
+            Some(module_name.to_string())
+        });
+        completion_item(
+            name,
+            name,
+            CompletionItemKind::VALUE,
+            description,
+            context.range,
+            CompletionResolveData::TermItem(file_id, item_id),
+        )
+    }
+}
+
+impl SuggestionsHelper for SuggestedTypes {
+    type ItemId = TypeItemId;
+
+    fn exports(
+        resolved: &FullResolvedModule,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
+        resolved.exports.iter_types()
+    }
+
+    fn candidate(
+        context: &Context,
+        name: &SmolStr,
+        file_id: FileId,
+        item_id: Self::ItemId,
+    ) -> CompletionItem {
+        let description = context.engine.parsed(file_id).ok().and_then(|(parsed, _)| {
+            let module_name = parsed.module_name()?;
+            Some(module_name.to_string())
+        });
+        completion_item(
+            name,
+            name,
+            CompletionItemKind::STRUCT,
+            description,
+            context.range,
+            CompletionResolveData::TypeItem(file_id, item_id),
+        )
+    }
+}
+
+impl<T> Source for T
+where
+    T: SuggestionsHelper,
+{
+    fn candidates<F: Filter>(
+        &self,
+        context: &Context,
+        filter: F,
+    ) -> impl Iterator<Item = CompletionItem> {
+        let prim_id = context.engine.prim_id();
+        let has_prim =
+            context.resolved.unqualified.values().flatten().any(|import| import.file == prim_id);
+
+        let file_ids = context.files.iter_id().filter(move |&id| {
+            let not_self = id != context.id;
+            let not_prim = id != prim_id;
+            not_self && (not_prim || has_prim)
+        });
+
+        let mut items = vec![];
+
+        for import_id in file_ids {
+            let Some(resolved) = context.engine.resolved(import_id).ok() else {
+                continue;
+            };
+
+            let source = T::exports(&resolved)
+                .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
+                .map(|(name, file_id, item_id)| T::candidate(context, name, file_id, item_id));
+
+            items.extend(source);
+        }
+
+        items.into_iter()
     }
 }

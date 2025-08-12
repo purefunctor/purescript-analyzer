@@ -1,6 +1,6 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
-use files::Files;
+use files::{FileId, Files};
 use resolving::FullResolvedModule;
 use rowan::{TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
@@ -11,6 +11,8 @@ use crate::{completion::resolve::CompletionResolveData, locate};
 pub struct Context<'c, 'a> {
     pub engine: &'c QueryEngine,
     pub files: &'c Files,
+
+    pub id: FileId,
     pub resolved: &'a FullResolvedModule,
 
     pub semantics: CursorSemantics,

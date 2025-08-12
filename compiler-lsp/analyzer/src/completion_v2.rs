@@ -12,7 +12,7 @@ use filter::{FuzzyMatch, NoFilter, StartsWith};
 use prelude::{Context, CursorSemantics, CursorText, Source};
 use sources::{
     ImportedTerms, ImportedTypes, LocalTerms, LocalTypes, QualifiedModules, QualifiedTerms,
-    QualifiedTypes,
+    QualifiedTypes, SuggestedTerms, SuggestedTypes,
 };
 
 use crate::locate;
@@ -44,7 +44,7 @@ pub fn implementation(
     let (text, range) = CursorText::new(&content, &token);
 
     let resolved = engine.resolved(id).ok()?;
-    let context = Context { engine, files, semantics, text, range, resolved: &resolved };
+    let context = Context { engine, files, semantics, text, range, id, resolved: &resolved };
 
     let items = collect(&context);
     let is_incomplete = items.len() > 5;
@@ -79,10 +79,12 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
             if context.collect_terms() {
                 items.extend(LocalTerms.candidates(context, FuzzyMatch(n)));
                 items.extend(ImportedTerms.candidates(context, FuzzyMatch(n)));
+                items.extend(SuggestedTerms.candidates(context, StartsWith(n)));
             }
             if context.collect_types() {
                 items.extend(LocalTypes.candidates(context, FuzzyMatch(n)));
                 items.extend(ImportedTypes.candidates(context, FuzzyMatch(n)));
+                items.extend(SuggestedTypes.candidates(context, StartsWith(n)));
             }
         }
         CursorText::Both(p, n) => {
