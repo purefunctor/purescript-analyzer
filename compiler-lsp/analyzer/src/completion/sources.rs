@@ -3,6 +3,7 @@ use files::FileId;
 use indexing::{ImportKind, TermItemId, TypeItemId};
 use resolving::FullResolvedModule;
 use smol_str::SmolStr;
+use strsim::jaro_winkler;
 
 use super::{edit, prelude::*, resolve::CompletionResolveData};
 
@@ -229,6 +230,7 @@ trait SuggestionsHelper {
         &self,
         context: &Context,
         name: &SmolStr,
+        import_id: FileId,
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem>;
@@ -247,10 +249,13 @@ impl SuggestionsHelper for SuggestedTerms {
         &self,
         context: &Context,
         name: &SmolStr,
+        import_id: FileId,
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
-        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        assert_eq!(import_id, file_id);
+
+        let (parsed, _) = context.engine.parsed(import_id).ok()?;
         let module_name = parsed.module_name()?;
 
         let description = Some(module_name.to_string());
@@ -293,10 +298,13 @@ impl SuggestionsHelper for SuggestedTypes {
         &self,
         context: &Context,
         name: &SmolStr,
+        import_id: FileId,
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
-        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        assert_eq!(import_id, file_id);
+
+        let (parsed, _) = context.engine.parsed(import_id).ok()?;
         let module_name = parsed.module_name()?;
 
         let description = Some(module_name.to_string());
@@ -353,7 +361,9 @@ fn suggestions_candidates<T: SuggestionsHelper>(
 
         let source = T::exports(&resolved)
             .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
-            .filter_map(|(name, file_id, item_id)| this.candidate(context, name, file_id, item_id));
+            .filter_map(|(name, file_id, item_id)| {
+                this.candidate(context, name, import_id, file_id, item_id)
+            });
 
         items.extend(source);
     }
@@ -456,12 +466,13 @@ impl SuggestionsHelper for QualifiedTermsSuggestions<'_> {
         &self,
         context: &Context,
         name: &SmolStr,
+        import_id: FileId,
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
         let insert_import_range = context.insert_import_range();
 
-        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        let (parsed, _) = context.engine.parsed(import_id).ok()?;
         let module_name = parsed.module_name()?;
 
         let edit = format!("{}.{}", self.0, name);
@@ -502,12 +513,13 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
         &self,
         context: &Context,
         name: &SmolStr,
+        import_id: FileId,
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
         let insert_import_range = context.insert_import_range();
 
-        let (parsed, _) = context.engine.parsed(file_id).ok()?;
+        let (parsed, _) = context.engine.parsed(import_id).ok()?;
         let module_name = parsed.module_name()?;
 
         let edit = format!("{}.{}", self.0, name);
@@ -556,7 +568,8 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
             continue;
         };
 
-        if parsed.module_name().is_some_and(|module_name| !module_name.starts_with(prefix)) {
+        if parsed.module_name().is_some_and(|module_name| jaro_winkler(prefix, &module_name) < 0.5)
+        {
             continue;
         }
 
@@ -564,9 +577,9 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
             continue;
         };
 
-        let source = T::exports(&resolved)
-            .filter(|(name, file_id, _)| filter.matches(name) && *file_id == import_id)
-            .filter_map(|(name, file_id, item_id)| this.candidate(context, name, file_id, item_id));
+        let source = T::exports(&resolved).filter(|(name, _, _)| filter.matches(name)).filter_map(
+            |(name, file_id, item_id)| this.candidate(context, name, import_id, file_id, item_id),
+        );
 
         items.extend(source);
     }
