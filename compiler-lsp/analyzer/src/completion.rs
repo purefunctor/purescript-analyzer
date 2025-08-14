@@ -98,9 +98,15 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
             }
             if context.collect_terms() {
                 items.extend(QualifiedTerms(p).candidates(context, NoFilter));
+                if !context.has_qualified_import(p) {
+                    items.extend(QualifiedTermsSuggestions(p).candidates(context, NoFilter));
+                }
             }
             if context.collect_types() {
                 items.extend(QualifiedTypes(p).candidates(context, NoFilter));
+                if !context.has_qualified_import(p) {
+                    items.extend(QualifiedTypesSuggestions(p).candidates(context, NoFilter));
+                }
             }
         }
         CursorText::Name(n) => {

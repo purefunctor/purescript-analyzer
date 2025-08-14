@@ -537,6 +537,7 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
 
 fn suggestions_candidates_qualified<T: SuggestionsHelper>(
     this: &T,
+    prefix: &str,
     context: &Context,
     filter: impl Filter,
 ) -> impl Iterator<Item = CompletionItem> {
@@ -551,6 +552,14 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
     let mut items = vec![];
 
     for import_id in file_ids {
+        let Some((parsed, _)) = context.engine.parsed(import_id).ok() else {
+            continue;
+        };
+
+        if parsed.module_name().is_some_and(|module_name| !module_name.starts_with(prefix)) {
+            continue;
+        }
+
         let Some(resolved) = context.engine.resolved(import_id).ok() else {
             continue;
         };
@@ -571,7 +580,7 @@ impl Source for QualifiedTermsSuggestions<'_> {
         context: &Context,
         filter: F,
     ) -> impl Iterator<Item = CompletionItem> {
-        suggestions_candidates_qualified(self, context, filter)
+        suggestions_candidates_qualified(self, self.0, context, filter)
     }
 }
 
@@ -581,7 +590,7 @@ impl Source for QualifiedTypesSuggestions<'_> {
         context: &Context,
         filter: F,
     ) -> impl Iterator<Item = CompletionItem> {
-        suggestions_candidates_qualified(self, context, filter)
+        suggestions_candidates_qualified(self, self.0, context, filter)
     }
 }
 

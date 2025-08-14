@@ -160,80 +160,6 @@ Completion at Position { line: 6, character: 29 }
 
 [
     CompletionItem {
-        label: "Mul",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Int as Lib)",
-                ),
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Mul :: Int -> Int -> Int -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Int",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 6,
-                            character: 24,
-                        },
-                        end: Position {
-                            line: 6,
-                            character: 29,
-                        },
-                    },
-                    new_text: "Lib.Mul",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Int as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
         label: "Maybe",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -392,80 +318,6 @@ Completion at Position { line: 11, character: 27 }
 
 [
     CompletionItem {
-        label: "Mul",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Int as Lib)",
-                ),
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Mul :: Int -> Int -> Int -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Int",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 11,
-                            character: 22,
-                        },
-                        end: Position {
-                            line: 11,
-                            character: 27,
-                        },
-                    },
-                    new_text: "Lib.Mul",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Int as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
         label: "Maybe",
         label_details: Some(
             CompletionItemLabelDetails {
@@ -623,450 +475,6 @@ Completion at Position { line: 13, character: 16 }
 Completion at Position { line: 16, character: 13 }
 
 [
-    CompletionItem {
-        label: "Coercible",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Coerce as Lib)",
-                ),
-                description: Some(
-                    "Prim.Coerce",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Coercible :: forall (k :: Type). k -> k -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Coerce",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 16,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 16,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Lib.Coercible",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Coerce as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Compare",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Int as Lib)",
-                ),
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Compare :: Int -> Int -> Ordering -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Int",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 16,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 16,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Lib.Compare",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Int as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Cons",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Row as Lib)",
-                ),
-                description: Some(
-                    "Prim.Row",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Cons :: forall (k :: Type). Symbol -> k -> Row k -> Row k -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Row",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 16,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 16,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Lib.Cons",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Row as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Cons",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.RowList as Lib)",
-                ),
-                description: Some(
-                    "Prim.RowList",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "data Cons :: forall (k :: Type). Symbol -> k -> RowList k -> RowList k",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.RowList",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 16,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 16,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Lib.Cons",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.RowList as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Cons",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Symbol as Lib)",
-                ),
-                description: Some(
-                    "Prim.Symbol",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Cons :: Symbol -> Symbol -> Symbol -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Symbol",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 16,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 16,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Lib.Cons",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Symbol as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Compare",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Symbol as Lib)",
-                ),
-                description: Some(
-                    "Prim.Symbol",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Compare :: Symbol -> Symbol -> Ordering -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Symbol",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 16,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 16,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Lib.Compare",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Symbol as Lib\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
     CompletionItem {
         label: "Cons",
         label_details: Some(
@@ -1263,6 +671,451 @@ Completion at Position { line: 21, character: 20 }
                         end: Position {
                             line: 21,
                             character: 20,
+                        },
+                    },
+                    new_text: "Data.Maybe.just",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Data.Maybe as Data.Maybe\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 25, character: 15 }
+
+[
+    CompletionItem {
+        label: "plus",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Lib as Lib)",
+                ),
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: Some(
+            "plus :: Int -> Int -> Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Lib",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 11,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 15,
+                        },
+                    },
+                    new_text: "Lib.plus",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Lib as Lib\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Just",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Lib as Lib)",
+                ),
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: Some(
+            "Just a",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Lib",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 11,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 15,
+                        },
+                    },
+                    new_text: "Lib.Just",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Lib as Lib\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "life",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Lib as Lib)",
+                ),
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: Some(
+            "life :: Int",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Lib",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 11,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 15,
+                        },
+                    },
+                    new_text: "Lib.life",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Lib as Lib\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "Nothing",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Lib as Lib)",
+                ),
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: Some(
+            "Nothing",
+        ),
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Lib",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 11,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 15,
+                        },
+                    },
+                    new_text: "Lib.Nothing",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Lib as Lib\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+    CompletionItem {
+        label: "+",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Lib as Lib)",
+                ),
+                description: Some(
+                    "Lib",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: None,
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Lib",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 25,
+                            character: 11,
+                        },
+                        end: Position {
+                            line: 25,
+                            character: 15,
+                        },
+                    },
+                    new_text: "Lib.+",
+                },
+            ),
+        ),
+        additional_text_edits: Some(
+            [
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: 1,
+                            character: 0,
+                        },
+                    },
+                    new_text: "import Lib as Lib\n",
+                },
+            ],
+        ),
+        command: None,
+        commit_characters: None,
+        data: None,
+        tags: None,
+    },
+]
+
+
+Completion at Position { line: 29, character: 23 }
+
+[
+    CompletionItem {
+        label: "just",
+        label_details: Some(
+            CompletionItemLabelDetails {
+                detail: Some(
+                    " (import Data.Maybe as Data.Maybe)",
+                ),
+                description: Some(
+                    "Data.Maybe",
+                ),
+            },
+        ),
+        kind: Some(
+            Value,
+        ),
+        detail: None,
+        documentation: Some(
+            MarkupContent(
+                MarkupContent {
+                    kind: Markdown,
+                    value: "",
+                },
+            ),
+        ),
+        deprecated: None,
+        preselect: None,
+        sort_text: Some(
+            "Data.Maybe",
+        ),
+        filter_text: None,
+        insert_text: None,
+        insert_text_format: None,
+        insert_text_mode: None,
+        text_edit: Some(
+            Edit(
+                TextEdit {
+                    range: Range {
+                        start: Position {
+                            line: 29,
+                            character: 12,
+                        },
+                        end: Position {
+                            line: 29,
+                            character: 23,
                         },
                     },
                     new_text: "Data.Maybe.just",

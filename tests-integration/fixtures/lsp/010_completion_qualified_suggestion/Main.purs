@@ -21,3 +21,11 @@ clsQ = unit
 fullQ :: Int
 fullQ = Data.Maybe.j
 --                  ^
+
+libEmpty :: Int
+libEmpty = Lib.
+--             ^
+
+fullEmpty :: Int
+fullEmpty = Data.Maybe.
+--                     ^
