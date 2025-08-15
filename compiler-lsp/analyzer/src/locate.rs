@@ -15,7 +15,15 @@ use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);
-    let line_col = LineCol { line: position.line, col: position.character };
+    let range = line_index.line(position.line)?;
+
+    let line = position.line;
+    let col = content[range]
+        .char_indices()
+        .nth(position.character as usize)
+        .map(|(column, _)| column as u32)?;
+
+    let line_col = LineCol { line, col };
     line_index.offset(line_col)
 }
 
@@ -37,9 +45,11 @@ pub fn text_range_to_range(content: &str, range: TextRange) -> Range {
     Range { start, end }
 }
 
+type ModuleNamePtr = AstPtr<cst::ModuleName>;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Located {
-    ModuleName(AstPtr<cst::ModuleName>),
+    ModuleName(ModuleNamePtr),
     ImportItem(ImportItemId),
     Binder(BinderId),
     Expression(ExpressionId),

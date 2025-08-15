@@ -1,0 +1,36 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Hover at Position { line: 6, character: 19 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "foreign import data Either ∷ Type → Type → Type",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}
+
+
+Hover at Position { line: 6, character: 41 }
+
+Hover {
+    contents: Array(
+        [
+            LanguageString(
+                LanguageString {
+                    language: "purescript",
+                    value: "foreign import data Either ∷ Type → Type → Type",
+                },
+            ),
+        ],
+    ),
+    range: None,
+}

@@ -175,3 +175,14 @@ fn test_016_prim_suggestion_main() {
     let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_017_unicode_operators_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/017_unicode_operators"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}
