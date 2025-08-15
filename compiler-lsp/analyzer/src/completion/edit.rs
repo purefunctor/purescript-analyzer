@@ -21,10 +21,9 @@ where
     F: Fn(&ResolvedImport) -> Option<ImportKind>,
     G: Fn(&FullIndexedModule) -> Option<String>,
 {
-    let import_containing_item = context
-        .resolved
-        .unqualified
-        .values()
+    let existing_import = context.resolved.unqualified.get(module_name);
+    let import_with_item = existing_import
+        .into_iter()
         .flatten()
         .find_map(|import| lookup_fn(import).map(|kind| (import, kind)));
 
@@ -32,7 +31,7 @@ where
         return (None, None);
     };
 
-    if let Some((import, kind)) = import_containing_item {
+    if let Some((import, kind)) = import_with_item {
         // Implicit or hidden imports are skipped.
         if !matches!(import.kind, ImportKind::Explicit) {
             return (None, None);

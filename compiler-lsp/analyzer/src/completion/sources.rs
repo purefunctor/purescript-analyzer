@@ -255,7 +255,7 @@ impl SuggestionsHelper for SuggestedTerms {
     ) -> Option<CompletionItem> {
         assert_eq!(import_id, file_id);
 
-        let (parsed, _) = context.engine.parsed(import_id).ok()?;
+        let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;
 
         let description = Some(module_name.to_string());
@@ -304,7 +304,7 @@ impl SuggestionsHelper for SuggestedTypes {
     ) -> Option<CompletionItem> {
         assert_eq!(import_id, file_id);
 
-        let (parsed, _) = context.engine.parsed(import_id).ok()?;
+        let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;
 
         let description = Some(module_name.to_string());
