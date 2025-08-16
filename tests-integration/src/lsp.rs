@@ -90,8 +90,8 @@ pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
             let line_0 = &content[line_0];
             let line_1 = &content[line_1];
             writeln!(result, "```").unwrap();
-            write!(result, "{}", line_0).unwrap();
-            write!(result, "{}", line_1).unwrap();
+            write!(result, "{line_0}").unwrap();
+            write!(result, "{line_1}").unwrap();
             writeln!(result, "```").unwrap();
         }
         writeln!(result).unwrap();

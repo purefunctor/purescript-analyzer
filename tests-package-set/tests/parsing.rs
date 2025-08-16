@@ -24,7 +24,7 @@ fn test_parse_package_set() {
         }
     }
 
-    assert!(all_errors.is_empty(), "{:#?}", all_errors);
+    assert!(all_errors.is_empty(), "{all_errors:#?}");
 }
 
 #[test]
@@ -54,7 +54,7 @@ fn test_parallel_parse_package_set() {
         assert!(parsed.is_ok());
     });
     let parsing = start.elapsed();
-    println!("Parsing {:?}", parsing);
+    println!("Parsing {parsing:?}");
 
     let names = source.iter().filter_map(|&id| {
         let (parsed, _) = engine.parsed(id).ok()?;
@@ -73,7 +73,7 @@ fn test_parallel_parse_package_set() {
         assert!(indexed.is_ok());
     });
     let indexing = start.elapsed();
-    println!("Indexing {:?}", indexing);
+    println!("Indexing {indexing:?}");
 
     let start = Instant::now();
     source.par_iter().for_each(|&id| {
@@ -82,7 +82,7 @@ fn test_parallel_parse_package_set() {
         assert!(resolved.is_ok());
     });
     let resolving = start.elapsed();
-    println!("Resolving {:?}", resolving);
+    println!("Resolving {resolving:?}");
 
     let start = Instant::now();
     source.par_iter().for_each(|&id| {
@@ -91,7 +91,7 @@ fn test_parallel_parse_package_set() {
         assert!(lowered.is_ok());
     });
     let lowering = start.elapsed();
-    println!("Lowering {:?}", lowering);
+    println!("Lowering {lowering:?}");
 
     println!("Total {:?}", parsing + indexing + resolving + lowering);
 }

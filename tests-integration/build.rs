@@ -53,15 +53,14 @@ fn generate_resolving() {
                 r#"
 #[rustfmt::skip]
 #[test]
-fn test_{}_{}() {{
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{}"));
-    let Some(id) = engine.module_file("{}") else {{
+fn test_{folder_name}_{test_name}() {{
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{folder_name}"));
+    let Some(id) = engine.module_file("{file_name}") else {{
         return;
     }};
-    let report = tests_integration::core::report_resolved(&engine, id, "{}");
+    let report = tests_integration::core::report_resolved(&engine, id, "{file_name}");
     insta::assert_snapshot!(report);
-}}"#,
-                folder_name, test_name, folder_name, file_name, file_name
+}}"#
             )
             .unwrap();
         }
@@ -101,15 +100,14 @@ fn generate_deferred_resolution() {
                 r#"
 #[rustfmt::skip]
 #[test]
-fn test_{}_{}() {{
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{}"));
-    let Some(id) = engine.module_file("{}") else {{
+fn test_{folder_name}_{test_name}() {{
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/deferred_resolution/{folder_name}"));
+    let Some(id) = engine.module_file("{file_name}") else {{
         return;
     }};
     let report = tests_integration::core::report_deferred_resolution(&engine, id);
     insta::assert_snapshot!(report);
-}}"#,
-                folder_name, test_name, folder_name, file_name
+}}"#
             )
             .unwrap();
         }
@@ -138,15 +136,14 @@ fn generate_lsp() {
             r#"
 #[rustfmt::skip]
 #[test]
-fn test_{}_main() {{
-    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{}"));
+fn test_{folder_name}_main() {{
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{folder_name}"));
     let Some(id) = engine.module_file("Main") else {{
         return;
     }};
     let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
-}}"#,
-            folder_name, folder_name
+}}"#
         )
         .unwrap();
     }
