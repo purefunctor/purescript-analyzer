@@ -188,13 +188,12 @@ where
     }
 
     fn on_close(&self, id: tracing::span::Id, ctx: Context<'_, S>) {
-        if let Some(span) = ctx.span(&id) {
-            if let Some(start) = span.extensions().get::<Instant>() {
+        if let Some(span) = ctx.span(&id)
+            && let Some(start) = span.extensions().get::<Instant>() {
                 let duration = start.elapsed();
                 let name = span.name();
                 tracing::info!(duration = format!("{duration:?}"), "{name}");
             }
-        }
     }
 }
 
