@@ -12,7 +12,7 @@ pub struct Position {
     pub column: u32,
 }
 
-pub fn lex(source: &str) -> Lexed {
+pub fn lex(source: &str) -> Lexed<'_> {
     let mut lexer = lexer::Lexer::new(source);
     while !lexer.is_eof() {
         lexer.take_token();

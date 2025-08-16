@@ -91,12 +91,11 @@ pub(super) fn index_module(cst: &cst::Module) -> State {
         }
     }
 
-    if let Some(header) = cst.header() {
-        if let Some(exports) = header.exports() {
+    if let Some(header) = cst.header()
+        && let Some(exports) = header.exports() {
             state.kind = ExportKind::Explicit;
             index_exports(&mut state, &exports);
         }
-    }
 
     state
 }
