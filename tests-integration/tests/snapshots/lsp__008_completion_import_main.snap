@@ -4,1469 +4,195 @@ expression: report
 ---
 Completion at Position { line: 7, character: 7 }
 
-[
-    CompletionItem {
-        label: "moduleNameQ",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "--              ^",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 7,
-                            character: 6,
-                        },
-                        end: Position {
-                            line: 7,
-                            character: 7,
-                        },
-                    },
-                    new_text: "moduleNameQ",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "fullModuleNameQ",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "--              ^",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 7,
-                            character: 6,
-                        },
-                        end: Position {
-                            line: 7,
-                            character: 7,
-                        },
-                    },
-                    new_text: "fullModuleNameQ",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "life",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "life :: Int",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 7,
-                            character: 6,
-                        },
-                        end: Position {
-                            line: 7,
-                            character: 7,
-                        },
-                    },
-                    new_text: "life",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "life",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "life :: Int",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 7,
-                            character: 6,
-                        },
-                        end: Position {
-                            line: 7,
-                            character: 7,
-                        },
-                    },
-                    new_text: "life",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+ref = l
+--     ^
+```
+
+╭───────────────────┬─────────────────┬─────────────────────┬─────────────────────────╮
+│  label            │  label_detail   │  label_description  │  additional_text_edits  │
+├───────────────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  moduleNameQ      │   ...           │  Local              │  ...                    │
+├───────────────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  fullModuleNameQ  │   ...           │  Local              │  ...                    │
+├───────────────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  life             │   ...           │  Lib                │  ...                    │
+├───────────────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  life             │   (import Lib)  │  Lib                │  ...                    │
+╰───────────────────┴─────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 10, character: 24 }
 
-[
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 10,
-                            character: 23,
-                        },
-                        end: Position {
-                            line: 10,
-                            character: 24,
-                        },
-                    },
-                    new_text: "Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Mul",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Int)",
-                ),
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Mul :: Int -> Int -> Int -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Int",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 10,
-                            character: 23,
-                        },
-                        end: Position {
-                            line: 10,
-                            character: 24,
-                        },
-                    },
-                    new_text: "Mul",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 5,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 5,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Int (class Mul)\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 10,
-                            character: 23,
-                        },
-                        end: Position {
-                            line: 10,
-                            character: 24,
-                        },
-                    },
-                    new_text: "Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+just :: forall a. a -> M
+--                      ^
+```
+
+╭─────────┬──────────────────────┬─────────────────────┬───────────────────────────────╮
+│  label  │  label_detail        │  label_description  │  additional_text_edits        │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Maybe  │   ...                │  Lib                │  ...                          │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Mul    │   (import Prim.Int)  │  Prim.Int           │  5:0 .. 5:0                   │
+│         │                      │                     │  import Prim.Int (class Mul)  │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Maybe  │   (import Lib)       │  Lib                │  ...                          │
+╰─────────┴──────────────────────┴─────────────────────┴───────────────────────────────╯
 
 
 Completion at Position { line: 12, character: 8 }
 
-[
-    CompletionItem {
-        label: "Just",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Just a",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 12,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 12,
-                            character: 8,
-                        },
-                    },
-                    new_text: "Just",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Just",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Just a",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 12,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 12,
-                            character: 8,
-                        },
-                    },
-                    new_text: "Just",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+just = J
+--      ^
+```
+
+╭─────────┬─────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail   │  label_description  │  additional_text_edits  │
+├─────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  Just   │   ...           │  Lib                │  ...                    │
+├─────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  Just   │   (import Lib)  │  Lib                │  ...                    │
+╰─────────┴─────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 15, character: 22 }
 
-[
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 15,
-                            character: 21,
-                        },
-                        end: Position {
-                            line: 15,
-                            character: 22,
-                        },
-                    },
-                    new_text: "Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Mul",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Int)",
-                ),
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Mul :: Int -> Int -> Int -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Int",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 15,
-                            character: 21,
-                        },
-                        end: Position {
-                            line: 15,
-                            character: 22,
-                        },
-                    },
-                    new_text: "Mul",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 5,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 5,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Int (class Mul)\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 15,
-                            character: 21,
-                        },
-                        end: Position {
-                            line: 15,
-                            character: 22,
-                        },
-                    },
-                    new_text: "Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+nothing :: forall a. M
+--                    ^
+```
+
+╭─────────┬──────────────────────┬─────────────────────┬───────────────────────────────╮
+│  label  │  label_detail        │  label_description  │  additional_text_edits        │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Maybe  │   ...                │  Lib                │  ...                          │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Mul    │   (import Prim.Int)  │  Prim.Int           │  5:0 .. 5:0                   │
+│         │                      │                     │  import Prim.Int (class Mul)  │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Maybe  │   (import Lib)       │  Lib                │  ...                          │
+╰─────────┴──────────────────────┴─────────────────────┴───────────────────────────────╯
 
 
 Completion at Position { line: 17, character: 11 }
 
-[
-    CompletionItem {
-        label: "Nothing",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Nothing",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 17,
-                            character: 10,
-                        },
-                        end: Position {
-                            line: 17,
-                            character: 11,
-                        },
-                    },
-                    new_text: "Nothing",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Nothing",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Nothing",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 17,
-                            character: 10,
-                        },
-                        end: Position {
-                            line: 17,
-                            character: 11,
-                        },
-                    },
-                    new_text: "Nothing",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+nothing = N
+--         ^
+```
+
+╭───────────┬─────────────────┬─────────────────────┬─────────────────────────╮
+│  label    │  label_detail   │  label_description  │  additional_text_edits  │
+├───────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  Nothing  │   ...           │  Lib                │  ...                    │
+├───────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  Nothing  │   (import Lib)  │  Lib                │  ...                    │
+╰───────────┴─────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 21, character: 12 }
 
-[
-    CompletionItem {
-        label: "plus",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "plus :: Int -> Int -> Int",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 21,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 21,
-                            character: 12,
-                        },
-                    },
-                    new_text: "Lib.plus",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "life",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "life :: Int",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 21,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 21,
-                            character: 12,
-                        },
-                    },
-                    new_text: "Lib.life",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+refQ = Lib.l
+--          ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  plus   │   ...          │  Lib                │  ...                    │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  life   │   ...          │  Lib                │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 24, character: 29 }
 
-[
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 24,
-                            character: 24,
-                        },
-                        end: Position {
-                            line: 24,
-                            character: 29,
-                        },
-                    },
-                    new_text: "Lib.Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+justQ :: forall a. a -> Lib.M
+--                           ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Maybe  │   ...          │  Lib                │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 26, character: 8 }
 
-[
-    CompletionItem {
-        label: "Just",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Just a",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 26,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 26,
-                            character: 9,
-                        },
-                    },
-                    new_text: "Just",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Just",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Just a",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 26,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 26,
-                            character: 9,
-                        },
-                    },
-                    new_text: "Just",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+justQ = J
+--      ^
+```
+
+╭─────────┬─────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail   │  label_description  │  additional_text_edits  │
+├─────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  Just   │   ...           │  Lib                │  ...                    │
+├─────────┼─────────────────┼─────────────────────┼─────────────────────────┤
+│  Just   │   (import Lib)  │  Lib                │  ...                    │
+╰─────────┴─────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 29, character: 27 }
 
-[
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 29,
-                            character: 22,
-                        },
-                        end: Position {
-                            line: 29,
-                            character: 27,
-                        },
-                    },
-                    new_text: "Lib.Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+nothingQ :: forall a. Lib.M
+--                         ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Maybe  │   ...          │  Lib                │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 31, character: 16 }
 
-[
-    CompletionItem {
-        label: "Nothing",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Nothing",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 31,
-                            character: 11,
-                        },
-                        end: Position {
-                            line: 31,
-                            character: 16,
-                        },
-                    },
-                    new_text: "Lib.Nothing",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+nothingQ = Lib.N
+--              ^
+```
+
+╭───────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label    │  label_detail  │  label_description  │  additional_text_edits  │
+├───────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Nothing  │   ...          │  Lib                │  ...                    │
+╰───────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 34, character: 16 }
 
-[
-    CompletionItem {
-        label: "Lib",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Lib where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 34,
-                            character: 14,
-                        },
-                        end: Position {
-                            line: 34,
-                            character: 16,
-                        },
-                    },
-                    new_text: "Lib",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "nothingQ",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "nothingQ :: forall a. Lib.M",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "--      ^",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 34,
-                            character: 14,
-                        },
-                        end: Position {
-                            line: 34,
-                            character: 16,
-                        },
-                    },
-                    new_text: "nothingQ",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "life",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "life :: Int",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 34,
-                            character: 14,
-                        },
-                        end: Position {
-                            line: 34,
-                            character: 16,
-                        },
-                    },
-                    new_text: "life",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+moduleNameQ = Li
+--              ^
+```
+
+╭────────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label     │  label_detail  │  label_description  │  additional_text_edits  │
+├────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Lib       │   ...          │  Lib                │  ...                    │
+├────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  nothingQ  │   ...          │  Local              │  ...                    │
+├────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  life      │   ...          │  Lib                │  ...                    │
+╰────────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 37, character: 24 }
 
-[
-    CompletionItem {
-        label: "Data.Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Data.Maybe",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Data.Maybe where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 37,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 37,
-                            character: 24,
-                        },
-                    },
-                    new_text: "Data.Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+fullModuleNameQ = Data.M
+--                      ^
+```
+
+╭──────────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label       │  label_detail  │  label_description  │  additional_text_edits  │
+├──────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Data.Maybe  │   ...          │  Data.Maybe         │  ...                    │
+╰──────────────┴────────────────┴─────────────────────┴─────────────────────────╯

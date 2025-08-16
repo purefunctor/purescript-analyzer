@@ -4,77 +4,14 @@ expression: report
 ---
 Completion at Position { line: 4, character: 9 }
 
-[
-    CompletionItem {
-        label: "ref",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Lib)",
-                ),
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Lib",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 4,
-                            character: 8,
-                        },
-                        end: Position {
-                            line: 4,
-                            character: 9,
-                        },
-                    },
-                    new_text: "ref",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 2,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 2,
-                            character: 17,
-                        },
-                    },
-                    new_text: "import Lib (life, ref)",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+value = r
+--       ^
+```
+
+╭─────────┬─────────────────┬─────────────────────┬──────────────────────────╮
+│  label  │  label_detail   │  label_description  │  additional_text_edits   │
+├─────────┼─────────────────┼─────────────────────┼──────────────────────────┤
+│  ref    │   (import Lib)  │  Lib                │  2:0 .. 2:17             │
+│         │                 │                     │  import Lib (life, ref)  │
+╰─────────┴─────────────────┴─────────────────────┴──────────────────────────╯

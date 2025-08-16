@@ -4,137 +4,142 @@ expression: report
 ---
 Hover at Position { line: 2, character: 8 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "module Lib where",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      $    $     $          $          $
+```
+
+```purescript
+module Lib where
+```
 
 
 Hover at Position { line: 2, character: 13 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "life :: Int",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      $    $     $          $          $
+```
+
+```purescript
+life :: Int
+```
 
 
 Hover at Position { line: 2, character: 19 }
 
-Hover {
-    contents: Array(
-        [],
-    ),
-    range: None,
-}
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      $    $     $          $          $
+```
+
+
 
 
 Hover at Position { line: 2, character: 30 }
+
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      $    $     $          $          $
+```
 
 
 
 Hover at Position { line: 2, character: 41 }
 
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      $    $     $          $          $
+```
+
 
 
 Hover at Position { line: 6, character: 7 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "life :: Int",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+ref = life
+--     $
+```
+
+```purescript
+life :: Int
+```
 
 
 Hover at Position { line: 9, character: 24 }
 
-Hover {
-    contents: Array(
-        [],
-    ),
-    range: None,
-}
+```
+just :: forall a. a -> Maybe a
+--                      $    $
+```
+
+
 
 
 Hover at Position { line: 9, character: 29 }
+
+```
+just :: forall a. a -> Maybe a
+--                      $    $
+```
 
 
 
 Hover at Position { line: 11, character: 8 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "Just a",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+just = Just
+--      $
+```
+
+```purescript
+Just a
+```
 
 
 Hover at Position { line: 14, character: 22 }
 
-Hover {
-    contents: Array(
-        [],
-    ),
-    range: None,
-}
+```
+nothing :: forall a. Maybe a
+--                    $
+```
+
+
 
 
 Hover at Position { line: 16, character: 11 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "Nothing",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+nothing = Nothing
+--         $
+```
+
+```purescript
+Nothing
+```
 
 
 Hover at Position { line: 20, character: 10 }
+
+```
+opName = (+)
+--        $
+```
 
 
 
 Hover at Position { line: 24, character: 12 }
 
+```
+opChain = 9 + 10
+--          $
+```
+
 
 
 Hover at Position { line: 27, character: 23 }
+
+```
+type TypeOpChain = Int ++ Int
+--                     $
+```

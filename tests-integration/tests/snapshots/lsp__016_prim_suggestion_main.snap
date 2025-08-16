@@ -4,79 +4,14 @@ expression: report
 ---
 Completion at Position { line: 4, character: 8 }
 
-[
-    CompletionItem {
-        label: "Array",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim)",
-                ),
-                description: Some(
-                    "Prim",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "data Array :: Type -> Type",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 4,
-                            character: 5,
-                        },
-                        end: Position {
-                            line: 4,
-                            character: 8,
-                        },
-                    },
-                    new_text: "Array",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 2,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 2,
-                            character: 18,
-                        },
-                    },
-                    new_text: "import Prim (Type, Array)",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+a :: Arr
+--      ^   
+```
+
+╭─────────┬──────────────────┬─────────────────────┬─────────────────────────────╮
+│  label  │  label_detail    │  label_description  │  additional_text_edits      │
+├─────────┼──────────────────┼─────────────────────┼─────────────────────────────┤
+│  Array  │   (import Prim)  │  Prim               │  2:0 .. 2:18                │
+│         │                  │                     │  import Prim (Type, Array)  │
+╰─────────┴──────────────────┴─────────────────────┴─────────────────────────────╯

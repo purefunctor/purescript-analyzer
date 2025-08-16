@@ -4,163 +4,37 @@ expression: report
 ---
 GotoDefinition at Position { line: 4, character: 18 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./temporary-directory/Prim.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 2,
-                character: 0,
-            },
-            end: Position {
-                line: 3,
-                character: 9,
-            },
-        },
-    },
-)
+```
+type Definition = Type
+--                @
+```
+
+file:///temporary-directory/Prim.purs @ 2:0..3:9
 
 
 Hover at Position { line: 7, character: 13 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "data Type :: Type",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+type Hover = Type
+--           $
+```
+
+```purescript
+data Type :: Type
+```
 
 
 Completion at Position { line: 10, character: 20 }
 
-[
-    CompletionItem {
-        label: "Type",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "data Type :: Type",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 10,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 10,
-                            character: 20,
-                        },
-                    },
-                    new_text: "Type",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Type",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim)",
-                ),
-                description: Some(
-                    "Prim",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "data Type :: Type",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 10,
-                            character: 18,
-                        },
-                        end: Position {
-                            line: 10,
-                            character: 20,
-                        },
-                    },
-                    new_text: "Type",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+type Completion = Ty
+--                  ^
+```
+
+╭─────────┬──────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail    │  label_description  │  additional_text_edits  │
+├─────────┼──────────────────┼─────────────────────┼─────────────────────────┤
+│  Type   │   ...            │  Prim               │  ...                    │
+├─────────┼──────────────────┼─────────────────────┼─────────────────────────┤
+│  Type   │   (import Prim)  │  Prim               │  ...                    │
+╰─────────┴──────────────────┴─────────────────────┴─────────────────────────╯

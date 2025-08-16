@@ -1,9 +1,20 @@
+mod render;
+
 use std::fmt::Write;
 
 use analyzer::QueryEngine;
-use async_lsp::lsp_types::{CompletionList, CompletionResponse, Position, Url};
+use async_lsp::lsp_types::{
+    CompletionList, CompletionResponse, GotoDefinitionResponse, HoverContents, LanguageString,
+    Location, MarkedString, Position, Url,
+};
 use files::{FileId, Files};
+use itertools::Itertools;
 use line_index::{LineIndex, TextSize};
+use render::TabledCompletionItem;
+use tabled::{
+    Table,
+    settings::{Padding, Style},
+};
 
 #[derive(Debug, Clone, Copy)]
 enum CursorKind {
@@ -60,6 +71,7 @@ pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
     };
 
     let content = engine.content(id);
+    let line_index = LineIndex::new(&content);
     let cursors = extract_cursors(&content);
 
     let mut result = String::new();
@@ -71,10 +83,23 @@ pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
         }
 
         writeln!(result, "{cursor:#?} at {position:?}\n").unwrap();
+
+        let line_0 = line_index.line(position.line);
+        let line_1 = line_index.line(position.line + 1);
+        if let Some((line_0, line_1)) = line_0.zip(line_1) {
+            let line_0 = &content[line_0];
+            let line_1 = &content[line_1];
+            writeln!(result, "```").unwrap();
+            write!(result, "{}", line_0).unwrap();
+            write!(result, "{}", line_1).unwrap();
+            writeln!(result, "```").unwrap();
+        }
+        writeln!(result).unwrap();
+
         dispatch_cursor(&mut result, engine, files, *position, *cursor, uri);
     }
 
-    cleanup_report(result)
+    redact_paths(result)
 }
 
 fn dispatch_cursor(
@@ -90,12 +115,54 @@ fn dispatch_cursor(
             if let Some(response) =
                 analyzer::definition::implementation(engine, files, uri, position)
             {
-                writeln!(result, "{response:#?}").unwrap();
+                let convert = |location: Location| -> String {
+                    format!(
+                        "{} @ {}:{}..{}:{}",
+                        location.uri,
+                        location.range.start.line,
+                        location.range.start.character,
+                        location.range.end.line,
+                        location.range.end.character,
+                    )
+                };
+
+                match response {
+                    GotoDefinitionResponse::Scalar(location) => {
+                        let location = convert(location);
+                        writeln!(result, "{location}").unwrap();
+                    }
+                    GotoDefinitionResponse::Array(location) => {
+                        let location = location.into_iter().map(convert).join("\n");
+                        writeln!(result, "{location}").unwrap();
+                    }
+                    GotoDefinitionResponse::Link(_) => (),
+                }
             }
         }
         CursorKind::Hover => {
             if let Some(response) = analyzer::hover::implementation(engine, files, uri, position) {
-                writeln!(result, "{response:#?}").unwrap();
+                let convert = |marked: MarkedString| -> String {
+                    match marked {
+                        MarkedString::String(string) => string,
+                        MarkedString::LanguageString(LanguageString {
+                            language, value, ..
+                        }) => format!("```{language}\n{value}\n```"),
+                    }
+                };
+
+                match response.contents {
+                    HoverContents::Scalar(marked) => {
+                        let marked = convert(marked);
+                        writeln!(result, "{marked}").unwrap();
+                    }
+                    HoverContents::Array(marked) => {
+                        let marked = marked.into_iter().map(convert).join("\n");
+                        writeln!(result, "{marked}").unwrap();
+                    }
+                    HoverContents::Markup(markup) => {
+                        writeln!(result, "{}", markup.value).unwrap();
+                    }
+                }
             }
         }
         CursorKind::Completion => {
@@ -105,11 +172,14 @@ fn dispatch_cursor(
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
-                        let items: Vec<_> = items
-                            .into_iter()
-                            .map(|item| analyzer::completion::resolve::implementation(engine, item))
-                            .collect();
-                        writeln!(result, "{items:#?}").unwrap();
+                        let items: Vec<TabledCompletionItem> =
+                            items.into_iter().map(TabledCompletionItem::from).collect();
+
+                        let mut table = Table::new(items);
+                        table.with(Style::modern_rounded());
+                        table.with(Padding::new(2, 2, 0, 0));
+
+                        writeln!(result, "{table}").unwrap();
                     }
                 }
             }
@@ -117,10 +187,10 @@ fn dispatch_cursor(
     }
 }
 
-fn cleanup_report(result: String) -> String {
+fn redact_paths(result: String) -> String {
     let manifest_directory = env!("CARGO_MANIFEST_DIR");
     let temporary_directory = prim::TEMPORARY_DIRECTORY.path().to_str().unwrap();
     result
-        .replace(manifest_directory, "./tests-integration")
-        .replace(temporary_directory, "./temporary-directory")
+        .replace(manifest_directory, "/tests-integration")
+        .replace(temporary_directory, "/temporary-directory")
 }

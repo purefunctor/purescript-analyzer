@@ -4,4 +4,11 @@ expression: report
 ---
 Completion at Position { line: 3, character: 23 }
 
-[]
+```
+data Maybe a = Just a |
+--                     ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯

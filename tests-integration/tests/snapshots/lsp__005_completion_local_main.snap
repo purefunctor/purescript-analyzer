@@ -4,311 +4,58 @@ expression: report
 ---
 Completion at Position { line: 13, character: 5 }
 
-[
-    CompletionItem {
-        label: "vTop",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "vTop :: Int",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 13,
-                            character: 4,
-                        },
-                        end: Position {
-                            line: 13,
-                            character: 5,
-                        },
-                    },
-                    new_text: "vTop",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+    v 
+--   ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  vTop   │   ...          │  Local              │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 17, character: 10 }
 
-[
-    CompletionItem {
-        label: "Just",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Just a",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 17,
-                            character: 9,
-                        },
-                        end: Position {
-                            line: 17,
-                            character: 10,
-                        },
-                    },
-                    new_text: "Just",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+check2 = J
+--        ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Just   │   ...          │  Local              │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 21, character: 10 }
 
-[
-    CompletionItem {
-        label: "Nothing",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: Some(
-            "Nothing",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 21,
-                            character: 9,
-                        },
-                        end: Position {
-                            line: 21,
-                            character: 10,
-                        },
-                    },
-                    new_text: "Nothing",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+check3 = N
+--        ^
+```
+
+╭───────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label    │  label_detail  │  label_description  │  additional_text_edits  │
+├───────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Nothing  │   ...          │  Local              │  ...                    │
+╰───────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 24, character: 15 }
 
-[
-    CompletionItem {
-        label: "Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 24,
-                            character: 14,
-                        },
-                        end: Position {
-                            line: 24,
-                            character: 15,
-                        },
-                    },
-                    new_text: "Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Mul",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: Some(
-                    " (import Prim.Int)",
-                ),
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Struct,
-        ),
-        detail: Some(
-            "class Mul :: Int -> Int -> Int -> Constraint",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: Some(
-            "Prim.Int",
-        ),
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 24,
-                            character: 14,
-                        },
-                        end: Position {
-                            line: 24,
-                            character: 15,
-                        },
-                    },
-                    new_text: "Mul",
-                },
-            ),
-        ),
-        additional_text_edits: Some(
-            [
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                        end: Position {
-                            line: 1,
-                            character: 0,
-                        },
-                    },
-                    new_text: "import Prim.Int (class Mul)\n",
-                },
-            ],
-        ),
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+type Check4 = M
+--             ^
+```
+
+╭─────────┬──────────────────────┬─────────────────────┬───────────────────────────────╮
+│  label  │  label_detail        │  label_description  │  additional_text_edits        │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Maybe  │   ...                │  Local              │  ...                          │
+├─────────┼──────────────────────┼─────────────────────┼───────────────────────────────┤
+│  Mul    │   (import Prim.Int)  │  Prim.Int           │  1:0 .. 1:0                   │
+│         │                      │                     │  import Prim.Int (class Mul)  │
+╰─────────┴──────────────────────┴─────────────────────┴───────────────────────────────╯

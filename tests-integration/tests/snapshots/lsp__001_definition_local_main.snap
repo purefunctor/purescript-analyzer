@@ -4,347 +4,119 @@ expression: report
 ---
 GotoDefinition at Position { line: 6, character: 6 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 2,
-                character: 0,
-            },
-            end: Position {
-                line: 3,
-                character: 9,
-            },
-        },
-    },
-)
+```
+ref = life
+--    @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 2:0..3:9
 
 
 GotoDefinition at Position { line: 10, character: 28 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 10,
-                character: 10,
-            },
-            end: Position {
-                line: 10,
-                character: 13,
-            },
-        },
-    },
-)
+```
+arguments one two three = [one, two, three]
+--                          @    @     @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 10:10..10:13
 
 
 GotoDefinition at Position { line: 10, character: 33 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 10,
-                character: 14,
-            },
-            end: Position {
-                line: 10,
-                character: 17,
-            },
-        },
-    },
-)
+```
+arguments one two three = [one, two, three]
+--                          @    @     @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 10:14..10:17
 
 
 GotoDefinition at Position { line: 10, character: 39 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 10,
-                character: 18,
-            },
-            end: Position {
-                line: 10,
-                character: 23,
-            },
-        },
-    },
-)
+```
+arguments one two three = [one, two, three]
+--                          @    @     @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 10:18..10:23
 
 
 GotoDefinition at Position { line: 19, character: 6 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 16,
-                character: 4,
-            },
-            end: Position {
-                line: 17,
-                character: 13,
-            },
-        },
-    },
-)
+```
+    [life, life]
+--    @     @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 16:4..17:13
 
 
 GotoDefinition at Position { line: 19, character: 12 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 16,
-                character: 4,
-            },
-            end: Position {
-                line: 17,
-                character: 13,
-            },
-        },
-    },
-)
+```
+    [life, life]
+--    @     @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 16:4..17:13
 
 
 GotoDefinition at Position { line: 24, character: 9 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 22,
-                character: 0,
-            },
-            end: Position {
-                line: 22,
-                character: 31,
-            },
-        },
-    },
-)
+```
+just :: Maybe Int
+--       @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 22:0..22:31
 
 
 GotoDefinition at Position { line: 26, character: 8 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 22,
-                character: 15,
-            },
-            end: Position {
-                line: 22,
-                character: 21,
-            },
-        },
-    },
-)
+```
+just = Just 42
+--      @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 22:15..22:21
 
 
 GotoDefinition at Position { line: 29, character: 12 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 22,
-                character: 0,
-            },
-            end: Position {
-                line: 22,
-                character: 31,
-            },
-        },
-    },
-)
+```
+nothing :: Maybe Int
+--          @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 22:0..22:31
 
 
 GotoDefinition at Position { line: 31, character: 11 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 22,
-                character: 24,
-            },
-            end: Position {
-                line: 22,
-                character: 31,
-            },
-        },
-    },
-)
+```
+nothing = Nothing
+--         @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 22:24..22:31
 
 
 GotoDefinition at Position { line: 36, character: 3 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 22,
-                character: 15,
-            },
-            end: Position {
-                line: 22,
-                character: 21,
-            },
-        },
-    },
-)
+```
+  Just value -> 
+-- @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 22:15..22:21
 
 
 GotoDefinition at Position { line: 39, character: 3 }
 
-Scalar(
-    Location {
-        uri: Url {
-            scheme: "file",
-            cannot_be_a_base: false,
-            username: "",
-            password: None,
-            host: None,
-            port: None,
-            path: "./tests-integration/fixtures/lsp/001_definition_local/Main.purs",
-            query: None,
-            fragment: None,
-        },
-        range: Range {
-            start: Position {
-                line: 22,
-                character: 24,
-            },
-            end: Position {
-                line: 22,
-                character: 31,
-            },
-        },
-    },
-)
+```
+  Nothing -> 
+-- @
+```
+
+file:///tests-integration/fixtures/lsp/001_definition_local/Main.purs @ 22:24..22:31

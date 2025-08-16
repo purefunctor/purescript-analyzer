@@ -4,164 +4,109 @@ expression: report
 ---
 Hover at Position { line: 6, character: 6 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "life :: Int",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+ref = life
+--    $
+```
+
+```purescript
+life :: Int
+```
 
 
 Hover at Position { line: 17, character: 6 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "life :: Int",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+    [life, value]
+--    $     $
+```
+
+```purescript
+life :: Int
+```
 
 
 Hover at Position { line: 17, character: 12 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "value :: _",
-                },
-            ),
-            String(
-                "---",
-            ),
-            String(
-                "`value` is a `let`-bound name.",
-            ),
-            String(
-                "---",
-            ),
-            String(
-                "note: type information is currently not available",
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+    [life, value]
+--    $     $
+```
+
+```purescript
+value :: _
+```
+---
+`value` is a `let`-bound name.
+---
+note: type information is currently not available
 
 
 Hover at Position { line: 22, character: 9 }
 
-Hover {
-    contents: Array(
-        [
-            String(
-                "---",
-            ),
-            String(
-                "--    $     $",
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+just :: Maybe Int
+--       $
+```
+
+---
+--    $     $
 
 
 Hover at Position { line: 24, character: 8 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "Just a",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+just = Just 42
+--      $
+```
+
+```purescript
+Just a
+```
 
 
 Hover at Position { line: 27, character: 12 }
 
-Hover {
-    contents: Array(
-        [
-            String(
-                "---",
-            ),
-            String(
-                "--    $     $",
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+nothing :: Maybe Int
+--          $
+```
+
+---
+--    $     $
 
 
 Hover at Position { line: 29, character: 11 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "Nothing",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+nothing = Nothing
+--         $
+```
+
+```purescript
+Nothing
+```
 
 
 Hover at Position { line: 34, character: 3 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "Just a",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+  Just value -> 
+-- $
+```
+
+```purescript
+Just a
+```
 
 
 Hover at Position { line: 37, character: 3 }
 
-Hover {
-    contents: Array(
-        [
-            LanguageString(
-                LanguageString {
-                    language: "purescript",
-                    value: "Nothing",
-                },
-            ),
-        ],
-    ),
-    range: None,
-}
+```
+  Nothing -> 
+-- $
+```
+
+```purescript
+Nothing
+```

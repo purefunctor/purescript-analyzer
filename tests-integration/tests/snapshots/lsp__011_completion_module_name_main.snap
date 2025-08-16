@@ -4,641 +4,77 @@ expression: report
 ---
 Completion at Position { line: 2, character: 7 }
 
-[
-    CompletionItem {
-        label: "Prim",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.Boolean",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.Boolean",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.Boolean where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.Coerce",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.Coerce",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.Coerce where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.Int",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.Int",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.Int where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.Ordering",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.Ordering",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.Ordering where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.Row",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.Row",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.Row where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.RowList",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.RowList",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.RowList where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.Symbol",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.Symbol",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.Symbol where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Prim.TypeError",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Prim.TypeError",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Prim.TypeError where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Lib",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Lib where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Main",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Main",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Main where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "Data.Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Data.Maybe",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Data.Maybe where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+import 
+--     ^
+```
+
+╭──────────────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label           │  label_detail  │  label_description  │  additional_text_edits  │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim            │   ...          │  Prim               │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.Boolean    │   ...          │  Prim.Boolean       │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.Coerce     │   ...          │  Prim.Coerce        │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.Int        │   ...          │  Prim.Int           │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.Ordering   │   ...          │  Prim.Ordering      │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.Row        │   ...          │  Prim.Row           │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.RowList    │   ...          │  Prim.RowList       │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.Symbol     │   ...          │  Prim.Symbol        │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Prim.TypeError  │   ...          │  Prim.TypeError     │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Lib             │   ...          │  Lib                │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Main            │   ...          │  Main               │  ...                    │
+├──────────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Data.Maybe      │   ...          │  Data.Maybe         │  ...                    │
+╰──────────────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 4, character: 8 }
 
-[
-    CompletionItem {
-        label: "Lib",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Lib",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Lib where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 4,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 4,
-                            character: 8,
-                        },
-                    },
-                    new_text: "Lib",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+import L
+--      ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Lib    │   ...          │  Lib                │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 6, character: 12 }
 
-[
-    CompletionItem {
-        label: "Data.Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Data.Maybe",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Data.Maybe where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 6,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 6,
-                            character: 12,
-                        },
-                    },
-                    new_text: "Data.Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+import Data.
+--          ^
+```
+
+╭──────────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label       │  label_detail  │  label_description  │  additional_text_edits  │
+├──────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Data.Maybe  │   ...          │  Data.Maybe         │  ...                    │
+╰──────────────┴────────────────┴─────────────────────┴─────────────────────────╯
 
 
 Completion at Position { line: 8, character: 13 }
 
-[
-    CompletionItem {
-        label: "Data.Maybe",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Data.Maybe",
-                ),
-            },
-        ),
-        kind: Some(
-            Module,
-        ),
-        detail: Some(
-            "module Data.Maybe where",
-        ),
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: Some(
-            Edit(
-                TextEdit {
-                    range: Range {
-                        start: Position {
-                            line: 8,
-                            character: 7,
-                        },
-                        end: Position {
-                            line: 8,
-                            character: 13,
-                        },
-                    },
-                    new_text: "Data.Maybe",
-                },
-            ),
-        ),
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+import Data.M
+--           ^
+```
+
+╭──────────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label       │  label_detail  │  label_description  │  additional_text_edits  │
+├──────────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  Data.Maybe  │   ...          │  Data.Maybe         │  ...                    │
+╰──────────────┴────────────────┴─────────────────────┴─────────────────────────╯

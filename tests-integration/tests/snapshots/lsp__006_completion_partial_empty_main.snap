@@ -4,77 +4,15 @@ expression: report
 ---
 Completion at Position { line: 4, character: 8 }
 
-[
-    CompletionItem {
-        label: "life",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-    CompletionItem {
-        label: "check",
-        label_details: Some(
-            CompletionItemLabelDetails {
-                detail: None,
-                description: Some(
-                    "Local",
-                ),
-            },
-        ),
-        kind: Some(
-            Value,
-        ),
-        detail: None,
-        documentation: Some(
-            MarkupContent(
-                MarkupContent {
-                    kind: Markdown,
-                    value: "",
-                },
-            ),
-        ),
-        deprecated: None,
-        preselect: None,
-        sort_text: None,
-        filter_text: None,
-        insert_text: None,
-        insert_text_format: None,
-        insert_text_mode: None,
-        text_edit: None,
-        additional_text_edits: None,
-        command: None,
-        commit_characters: None,
-        data: None,
-        tags: None,
-    },
-]
+```
+check = 
+--      ^
+```
+
+╭─────────┬────────────────┬─────────────────────┬─────────────────────────╮
+│  label  │  label_detail  │  label_description  │  additional_text_edits  │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  life   │   ...          │  Local              │  ...                    │
+├─────────┼────────────────┼─────────────────────┼─────────────────────────┤
+│  check  │   ...          │  Local              │  ...                    │
+╰─────────┴────────────────┴─────────────────────┴─────────────────────────╯

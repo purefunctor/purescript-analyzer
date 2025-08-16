@@ -10,11 +10,13 @@ async-lsp = "0.2.2"
 files = { version = "0.1.0", path = "../compiler-core/files" }
 glob = "0.3.2"
 indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
+itertools = "0.14.0"
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
 prim = { version = "0.1.0", path = "../compiler-core/prim" }
 resolving = { version = "0.1.0", path = "../compiler-core/resolving" }
 smol_str = "0.3.2"
+tabled = "0.20.0"
 
 [build-dependencies]
 convert_case = "0.8.0"
