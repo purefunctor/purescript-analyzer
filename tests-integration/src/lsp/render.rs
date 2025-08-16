@@ -29,7 +29,7 @@ fn display_text_edits(edits: &Option<Vec<TextEdit>>) -> String {
             .iter()
             .map(|edit| {
                 format!(
-                    "{}:{} .. {}:{}\n{}",
+                    "{}:{}..{}:{}\n{}",
                     edit.range.start.line,
                     edit.range.start.character,
                     edit.range.end.line,
