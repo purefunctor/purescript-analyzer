@@ -23,3 +23,7 @@ coverage-html:
 
 @integration *args="":
   cargo nextest run -p tests-integration "$@"
+
+[doc("Apply clippy fixes and format")]
+fix:
+  cargo clippy --fix && cargo fmt
