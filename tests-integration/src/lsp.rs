@@ -137,6 +137,8 @@ fn dispatch_cursor(
                     }
                     GotoDefinitionResponse::Link(_) => (),
                 }
+            } else {
+                writeln!(result, "<empty>").unwrap();
             }
         }
         CursorKind::Hover => {
@@ -163,6 +165,8 @@ fn dispatch_cursor(
                         writeln!(result, "{}", markup.value).unwrap();
                     }
                 }
+            } else {
+                writeln!(result, "<empty>").unwrap();
             }
         }
         CursorKind::Completion => {
@@ -182,6 +186,8 @@ fn dispatch_cursor(
                         writeln!(result, "{table}").unwrap();
                     }
                 }
+            } else {
+                writeln!(result, "<empty>").unwrap();
             }
         }
     }

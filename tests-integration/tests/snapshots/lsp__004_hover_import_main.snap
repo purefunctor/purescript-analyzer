@@ -43,6 +43,7 @@ import Lib (life, Maybe(..), (+),  type (++))
 --      $    $     $          $          $
 ```
 
+<empty>
 
 
 Hover at Position { line: 2, character: 41 }
@@ -52,6 +53,7 @@ import Lib (life, Maybe(..), (+),  type (++))
 --      $    $     $          $          $
 ```
 
+<empty>
 
 
 Hover at Position { line: 6, character: 7 }
@@ -83,6 +85,7 @@ just :: forall a. a -> Maybe a
 --                      $    $
 ```
 
+<empty>
 
 
 Hover at Position { line: 11, character: 8 }
@@ -126,6 +129,7 @@ opName = (+)
 --        $
 ```
 
+<empty>
 
 
 Hover at Position { line: 24, character: 12 }
@@ -135,6 +139,7 @@ opChain = 9 + 10
 --          $
 ```
 
+<empty>
 
 
 Hover at Position { line: 27, character: 23 }
@@ -143,3 +148,5 @@ Hover at Position { line: 27, character: 23 }
 type TypeOpChain = Int ++ Int
 --                     $
 ```
+
+<empty>
