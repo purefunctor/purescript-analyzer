@@ -266,9 +266,15 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .unwrap_or_default();
 
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+
+            let associativity = cst
+                .infix()
+                .map(|_| Associativity::None)
+                .or_else(|| cst.infixl().map(|_| Associativity::Left))
+                .or_else(|| cst.infixr().map(|_| Associativity::Right));
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
-            let kind = TermItemIr::Operator { resolution, precedence };
+            let kind = TermItemIr::Operator { resolution, associativity, precedence };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Value { signature, equations } => {
@@ -425,9 +431,15 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 .unwrap_or_default();
 
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
+
+            let associativity = cst
+                .infix()
+                .map(|_| Associativity::None)
+                .or_else(|| cst.infixl().map(|_| Associativity::Left))
+                .or_else(|| cst.infixr().map(|_| Associativity::Right));
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
-            let kind = TypeItemIr::Operator { resolution, precedence };
+            let kind = TypeItemIr::Operator { resolution, associativity, precedence };
             s.intermediate.insert_type_item(item_id, kind);
         }
     }

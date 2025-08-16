@@ -1086,6 +1086,9 @@ has_child!(
 
 has_token!(
     InfixDeclaration
+    | infix() -> INFIX
+    | infixl() -> INFIXL
+    | infixr() -> INFIXR
     | precedence() -> INTEGER
 );
 

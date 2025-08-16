@@ -214,7 +214,7 @@ pub struct PatternGuard {
     pub expression: Option<ExpressionId>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OperatorPair<T> {
     pub resolution: DeferredResolutionId,
     pub element: Option<T>,
@@ -230,6 +230,16 @@ pub struct InfixPair<T> {
 pub struct InstanceMemberGroup {
     pub signature: Option<TypeId>,
     pub equations: Arc<[Equation]>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Associativity {
+    /// infix
+    None,
+    /// infixl
+    Left,
+    /// infixr
+    Right,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -256,7 +266,8 @@ pub enum TermItemIr {
     },
     Operator {
         resolution: DeferredResolutionId,
-        precedence: Option<u16>,
+        associativity: Option<Associativity>,
+        precedence: Option<u8>,
     },
     ValueGroup {
         signature: Option<TypeId>,
@@ -296,12 +307,32 @@ pub struct ClassIr {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeItemIr {
-    DataGroup { signature: Option<TypeId>, data: Option<DataIr>, roles: Arc<[Role]> },
-    NewtypeGroup { signature: Option<TypeId>, newtype: Option<NewtypeIr>, roles: Arc<[Role]> },
-    SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
-    ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
-    Foreign { signature: Option<TypeId> },
-    Operator { resolution: DeferredResolutionId, precedence: Option<u16> },
+    DataGroup {
+        signature: Option<TypeId>,
+        data: Option<DataIr>,
+        roles: Arc<[Role]>,
+    },
+    NewtypeGroup {
+        signature: Option<TypeId>,
+        newtype: Option<NewtypeIr>,
+        roles: Arc<[Role]>,
+    },
+    SynonymGroup {
+        signature: Option<TypeId>,
+        synonym: Option<SynonymIr>,
+    },
+    ClassGroup {
+        signature: Option<TypeId>,
+        class: Option<ClassIr>,
+    },
+    Foreign {
+        signature: Option<TypeId>,
+    },
+    Operator {
+        resolution: DeferredResolutionId,
+        associativity: Option<Associativity>,
+        precedence: Option<u8>,
+    },
 }
 
 syntax::create_association! {
