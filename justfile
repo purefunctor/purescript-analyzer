@@ -26,4 +26,4 @@ coverage-html:
 
 [doc("Apply clippy fixes and format")]
 fix:
-  cargo clippy --fix && cargo fmt
+  cargo clippy --workspace --fix && cargo fmt
