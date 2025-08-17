@@ -671,6 +671,24 @@ impl resolving::External for QueryEngine {
     }
 }
 
+impl sugar::External for QueryEngine {
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
+        QueryEngine::indexed(self, id)
+    }
+
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+        QueryEngine::resolved(self, id)
+    }
+
+    fn lowered(&self, id: FileId) -> QueryResult<Arc<FullLoweredModule>> {
+        QueryEngine::lowered(self, id)
+    }
+
+    fn prim_id(&self) -> FileId {
+        QueryEngine::prim_id(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{

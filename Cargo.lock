@@ -204,6 +204,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "smol_str",
  "string-interner",
+ "sugar",
  "thread_local",
 ]
 
@@ -1566,6 +1567,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
+name = "sugar"
+version = "0.1.0"
+dependencies = [
+ "building-types",
+ "files",
+ "indexing",
+ "lowering",
+ "resolving",
+ "rustc-hash 2.1.1",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1673,6 +1686,7 @@ dependencies = [
  "prim",
  "resolving",
  "smol_str",
+ "sugar",
  "tabled",
 ]
 
