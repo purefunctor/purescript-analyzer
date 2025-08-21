@@ -15,12 +15,12 @@ use syntax::cst;
 use crate::*;
 
 #[derive(Default)]
-pub(super) struct State {
-    pub(super) intermediate: Intermediate,
-    pub(super) source: LoweringSource,
-    pub(super) graph: LoweringGraph,
-    pub(super) graph_info: LoweringGraphInfo,
-    pub(super) graph_scope: Option<GraphNodeId>,
+pub(crate) struct State {
+    pub(crate) intermediate: Intermediate,
+    pub(crate) source: LoweringSource,
+    pub(crate) graph: LoweringGraph,
+    pub(crate) graph_info: LoweringGraphInfo,
+    pub(crate) graph_scope: Option<GraphNodeId>,
 }
 
 struct Environment<'e> {
@@ -94,7 +94,7 @@ impl State {
 
     fn resolve_deferred(
         &mut self,
-        domain: ResolutionDomain,
+        domain: Domain,
         qualifier: Option<SmolStr>,
         name: Option<SmolStr>,
     ) -> DeferredResolutionId {
@@ -107,12 +107,12 @@ impl State {
         name: Option<SmolStr>,
     ) -> Option<TermResolution> {
         if qualifier.is_some() {
-            let r = self.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+            let r = self.resolve_deferred(Domain::Term, qualifier, name);
             Some(TermResolution::Deferred(r))
         } else {
             let name = name?;
             self.resolve_term_local(&name).or_else(|| {
-                let r = self.resolve_deferred(ResolutionDomain::Term, None, Some(name));
+                let r = self.resolve_deferred(Domain::Term, None, Some(name));
                 Some(TermResolution::Deferred(r))
             })
         }
@@ -187,12 +187,17 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
 
             let Some((_, qualifier, name)) = cst.instance_head().and_then(|cst| {
                 let cst = cst.qualified()?;
-                Some(recursive::lower_qualified_name(s, &cst, cst::QualifiedName::upper))
+                Some(recursive::lower_qualified_name(
+                    s,
+                    Domain::Type,
+                    &cst,
+                    cst::QualifiedName::upper,
+                ))
             }) else {
                 todo!("figure out");
             };
 
-            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
 
             let arguments = cst
                 .instance_head()
@@ -224,12 +229,17 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
 
             let Some((_, qualifier, name)) = cst.instance_head().and_then(|cst| {
                 let cst = cst.qualified()?;
-                Some(recursive::lower_qualified_name(s, &cst, cst::QualifiedName::upper))
+                Some(recursive::lower_qualified_name(
+                    s,
+                    Domain::Type,
+                    &cst,
+                    cst::QualifiedName::upper,
+                ))
             }) else {
                 todo!("figureout")
             };
 
-            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
 
             let arguments = cst
                 .instance_head()
@@ -258,14 +268,13 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((_, qualifier, name)) = cst
-                .qualified()
-                .map(|cst| recursive::lower_qualified_name(s, &cst, cst::QualifiedName::lower))
-            else {
+            let Some((_, qualifier, name)) = cst.qualified().map(|cst| {
+                recursive::lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::lower)
+            }) else {
                 todo!("figureout")
             };
 
-            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
 
             let associativity = cst
                 .infix()
@@ -425,14 +434,13 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((_, qualifier, name)) = cst
-                .qualified()
-                .map(|cst| recursive::lower_qualified_name(s, &cst, cst::QualifiedName::upper))
-            else {
+            let Some((_, qualifier, name)) = cst.qualified().map(|cst| {
+                recursive::lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::upper)
+            }) else {
                 todo!("figureout")
             };
 
-            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
+            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
 
             let associativity = cst
                 .infix()

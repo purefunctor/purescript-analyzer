@@ -3,8 +3,8 @@ use building::QueryEngine;
 use files::{FileId, Files};
 use indexing::ImportItemId;
 use lowering::{
-    BinderId, BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
-    ResolutionDomain, TermResolution, TypeId, TypeVariableResolution,
+    BinderId, BinderKind, DeferredResolutionId, Domain, ExpressionId, ExpressionKind,
+    FullLoweredModule, TermResolution, TypeId, TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
@@ -347,7 +347,7 @@ fn definition_deferred(
     let name = deferred.name.as_deref()?;
 
     match deferred.domain {
-        ResolutionDomain::Term => {
+        Domain::Term => {
             let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
 
             let uri = {
@@ -375,7 +375,7 @@ fn definition_deferred(
 
             Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }
-        ResolutionDomain::Type => {
+        Domain::Type => {
             let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
 
             let uri = {
@@ -413,7 +413,7 @@ fn definition_nominal(
     engine: &QueryEngine,
     files: &Files,
     f_id: FileId,
-    domain: ResolutionDomain,
+    domain: Domain,
     text: SmolStr,
 ) -> Option<GotoDefinitionResponse> {
     let resolved = engine.resolved(f_id).ok()?;

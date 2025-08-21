@@ -4,8 +4,8 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::FullIndexedModule;
 use lowering::{
-    Associativity, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
-    OperatorPair, ResolutionDomain, TermItemIr, TypeItemIr,
+    Associativity, DeferredResolutionId, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
+    OperatorPair, TermItemIr, TypeItemIr,
 };
 use resolving::FullResolvedModule;
 use rustc_hash::FxHashMap;
@@ -64,7 +64,7 @@ where
         let prefix = deferred.qualifier.as_deref();
         let Some(name) = deferred.name.as_deref() else { continue };
         match deferred.domain {
-            ResolutionDomain::Term => {
+            Domain::Term => {
                 let Some((file_id, term_id)) = resolved.lookup_term(prim, prefix, name) else {
                     continue;
                 };
@@ -81,7 +81,7 @@ where
                     operators.insert(id, (*resolution, associativity, precedence));
                 }
             }
-            ResolutionDomain::Type => {
+            Domain::Type => {
                 let Some((file_id, type_id)) = resolved.lookup_type(prim, prefix, name) else {
                     continue;
                 };

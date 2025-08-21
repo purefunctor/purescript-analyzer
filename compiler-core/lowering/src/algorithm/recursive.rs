@@ -10,7 +10,7 @@ use crate::*;
 
 use super::{Environment, State};
 
-pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) -> BinderId {
+pub(crate) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) -> BinderId {
     let id = s.source.allocate_bd(cst);
     let kind = lower_binder_kind(s, e, cst, id).unwrap_or(BinderKind::Unknown);
     s.associate_binder_info(id, kind);
@@ -36,7 +36,7 @@ fn lower_binder_kind(
                 .map(|cst| {
                     let qualified = cst.qualified();
                     let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
-                    lower_pair(s, ResolutionDomain::Term, qualified, binder)
+                    lower_pair(s, Domain::Term, qualified, binder)
                 })
                 .collect::<Option<Arc<_>>>()?;
             BinderKind::OperatorChain { head, tail }
@@ -44,9 +44,10 @@ fn lower_binder_kind(
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
         cst::Binder::BinderConstructor(cst) => {
-            let (_, qualifier, name) =
-                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::upper))?;
-            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+            let (_, qualifier, name) = cst.name().map(|cst| {
+                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::upper)
+            })?;
+            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
             BinderKind::Constructor { resolution, arguments }
         }
@@ -113,7 +114,7 @@ fn lower_binder_kind(
     })
 }
 
-pub(super) fn lower_expression(
+pub(crate) fn lower_expression(
     s: &mut State,
     e: &Environment,
     cst: &cst::Expression,
@@ -142,7 +143,7 @@ fn lower_expression_kind(
                 .map(|cst| {
                     let qualified = cst.qualified();
                     let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
-                    lower_pair(s, ResolutionDomain::Term, qualified, expression)
+                    lower_pair(s, Domain::Term, qualified, expression)
                 })
                 .collect::<Option<Arc<_>>>()?;
             ExpressionKind::OperatorChain { head, tail }
@@ -280,22 +281,24 @@ fn lower_expression_kind(
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
-            let (_, qualifier, name) =
-                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::upper))?;
-            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+            let (_, qualifier, name) = cst.name().map(|cst| {
+                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::upper)
+            })?;
+            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             ExpressionKind::Constructor { resolution }
         }
         cst::Expression::ExpressionVariable(cst) => {
-            let (_, qualifier, name) =
-                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::lower))?;
+            let (_, qualifier, name) = cst.name().map(|cst| {
+                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::lower)
+            })?;
             let resolution = s.resolve_term(qualifier, name);
             ExpressionKind::Variable { resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
-            let (_, qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::operator_name))?;
-            let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
+            let (_, qualifier, name) = cst.name().map(|cst| {
+                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::operator_name)
+            })?;
+            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             ExpressionKind::OperatorName { resolution }
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
@@ -564,7 +567,7 @@ fn lower_equation_bindings(
     }));
 }
 
-pub(super) fn lower_equation_like<T: AstNode>(
+pub(crate) fn lower_equation_like<T: AstNode>(
     s: &mut State,
     e: &Environment,
     equation: T,
@@ -633,7 +636,7 @@ fn lower_record_updates(
         .collect()
 }
 
-pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
+pub(crate) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     let id = s.source.allocate_ty(cst);
     let kind = lower_type_kind(s, e, cst, id).unwrap_or(TypeKind::Unknown);
     s.associate_type_info(id, kind);
@@ -666,9 +669,10 @@ fn lower_type_kind(
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
-            let (_, qualifier, name) =
-                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::upper))?;
-            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
+            let (_, qualifier, name) = cst.name().map(|cst| {
+                lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::upper)
+            })?;
+            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
             TypeKind::Constructor { resolution }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
@@ -688,10 +692,10 @@ fn lower_type_kind(
             TypeKind::Kinded { ty, kind }
         }
         cst::Type::TypeOperator(cst) => {
-            let (_, qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::operator_name))?;
-            let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
+            let (_, qualifier, name) = cst.name().map(|cst| {
+                lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::operator_name)
+            })?;
+            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
             TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(cst) => {
@@ -701,7 +705,7 @@ fn lower_type_kind(
                 .map(|cst| {
                     let qualified = cst.qualified();
                     let ty = cst.ty().map(|cst| lower_type(s, e, &cst));
-                    lower_pair(s, ResolutionDomain::Type, qualified, ty)
+                    lower_pair(s, Domain::Type, qualified, ty)
                 })
                 .collect::<Option<Arc<_>>>()?;
             TypeKind::OperatorChain { head, tail }
@@ -742,7 +746,7 @@ fn lower_type_kind(
     })
 }
 
-pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
+pub(crate) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     // To enable lexically-scoped type variables, we avoid calling `with_scope`
     // as to not reset to the parent scope once all the top-level `forall` have
     // been lowered. In `lower_type`, the `TypeForall` branch explicitly calls
@@ -762,19 +766,20 @@ pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> T
 
 fn lower_pair<T>(
     s: &mut State,
-    domain: ResolutionDomain,
+    domain: Domain,
     qualified: Option<cst::QualifiedName>,
     element: Option<T>,
 ) -> Option<OperatorPair<T>> {
     let qualified = qualified?;
     let (_, qualifier, operator) =
-        lower_qualified_name(s, &qualified, cst::QualifiedName::operator);
+        lower_qualified_name(s, domain, &qualified, cst::QualifiedName::operator);
     let resolution = s.resolve_deferred(domain, qualifier, operator);
     Some(OperatorPair { resolution, element })
 }
 
-pub(super) fn lower_qualified_name(
+pub(crate) fn lower_qualified_name(
     s: &mut State,
+    domain: Domain,
     cst: &cst::QualifiedName,
     token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
 ) -> (QualifiedNameId, Option<SmolStr>, Option<SmolStr>) {
@@ -788,10 +793,14 @@ pub(super) fn lower_qualified_name(
         let text = cst.text().trim_start_matches("(").trim_end_matches(")");
         SmolStr::from(text)
     });
+    s.intermediate.insert_qualified_name(
+        id,
+        QualifiedNameIr { domain, qualifier: qualifier.clone(), name: name.clone() },
+    );
     (id, qualifier, name)
 }
 
-pub(super) fn lower_type_variable_binding(
+pub(crate) fn lower_type_variable_binding(
     s: &mut State,
     e: &Environment,
     cst: &cst::TypeVariableBinding,

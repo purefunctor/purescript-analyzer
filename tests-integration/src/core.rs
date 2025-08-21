@@ -3,7 +3,7 @@ use std::fmt::Write;
 use analyzer::QueryEngine;
 use files::FileId;
 use indexing::ImportKind;
-use lowering::ResolutionDomain;
+use lowering::Domain;
 
 pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let resolved = engine.resolved(id).unwrap();
@@ -103,7 +103,7 @@ pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
         let Some(name) = &deferred.name else { continue };
 
         match deferred.domain {
-            ResolutionDomain::Term => {
+            Domain::Term => {
                 let Some((f_id, t_id)) = resolved.lookup_term(&prim, prefix, name) else {
                     continue;
                 };
@@ -116,7 +116,7 @@ pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
                 let Some(item) = &item.name else { continue };
                 writeln!(buffer, "{id:?} = {module}.{item}").unwrap();
             }
-            ResolutionDomain::Type => {
+            Domain::Type => {
                 let Some((f_id, t_id)) = resolved.lookup_type(&prim, prefix, name) else {
                     continue;
                 };

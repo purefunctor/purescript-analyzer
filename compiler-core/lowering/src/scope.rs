@@ -25,7 +25,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
 use syntax::create_association;
 
-use crate::source::*;
+use crate::{source::*, Domain};
 
 /// A resolution for term names.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -124,17 +124,10 @@ pub enum GraphNode {
 
 pub type GraphNodeId = Idx<GraphNode>;
 
-/// The domain of a root resolution.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResolutionDomain {
-    Term,
-    Type,
-}
-
 /// A resolution to a non-local binding.
 #[derive(Debug, PartialEq, Eq)]
 pub struct DeferredResolution {
-    pub domain: ResolutionDomain,
+    pub domain: Domain,
     pub qualifier: Option<SmolStr>,
     pub name: Option<SmolStr>,
 }

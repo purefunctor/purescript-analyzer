@@ -5,7 +5,7 @@ use building::QueryEngine;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
-use lowering::{BinderId, ExpressionId, FullLoweredModule, ResolutionDomain, TypeId};
+use lowering::{BinderId, Domain, ExpressionId, FullLoweredModule, TypeId};
 use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
@@ -54,7 +54,7 @@ pub enum Located {
     Binder(BinderId),
     Expression(ExpressionId),
     Type(TypeId),
-    OperatorInChain(ResolutionDomain, SmolStr),
+    OperatorInChain(Domain, SmolStr),
     Nothing,
 }
 
@@ -122,9 +122,9 @@ fn locate_node(
         let domain = node.ancestors().find_map(|node| {
             let kind = node.kind();
             if cst::Expression::can_cast(kind) {
-                Some(ResolutionDomain::Term)
+                Some(Domain::Term)
             } else if cst::Type::can_cast(kind) {
-                Some(ResolutionDomain::Type)
+                Some(Domain::Type)
             } else {
                 None
             }

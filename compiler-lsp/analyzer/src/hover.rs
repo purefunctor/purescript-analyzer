@@ -10,8 +10,8 @@ use indexing::{
 use itertools::Itertools;
 use la_arena::Idx;
 use lowering::{
-    BinderId, BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
-    LetBindingResolution, ResolutionDomain, TermResolution, TypeId, TypeKind,
+    BinderId, BinderKind, DeferredResolutionId, Domain, ExpressionId, ExpressionKind,
+    FullLoweredModule, LetBindingResolution, TermResolution, TypeId, TypeKind,
 };
 use resolving::FullResolvedModule;
 use rowan::{
@@ -302,11 +302,11 @@ fn hover_deferred(
     let name = deferred.name.as_deref()?;
 
     match deferred.domain {
-        ResolutionDomain::Term => {
+        Domain::Term => {
             let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
             hover_file_term(engine, f_id, t_id)
         }
-        ResolutionDomain::Type => {
+        Domain::Type => {
             let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
             hover_file_type(engine, f_id, t_id)
         }
