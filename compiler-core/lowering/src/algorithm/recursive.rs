@@ -12,7 +12,18 @@ use super::{Environment, State};
 
 pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) -> BinderId {
     let id = s.source.allocate_bd(cst);
-    let kind = match cst {
+    let kind = lower_binder_kind(s, e, cst, id).unwrap_or(BinderKind::Unknown);
+    s.associate_binder_info(id, kind);
+    id
+}
+
+fn lower_binder_kind(
+    s: &mut State,
+    e: &Environment<'_>,
+    cst: &cst::Binder,
+    id: la_arena::Idx<rowan::ast::AstPtr<cst::Binder>>,
+) -> Option<BinderKind> {
+    Some(match cst {
         cst::Binder::BinderTyped(cst) => {
             let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
             let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
@@ -27,16 +38,14 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
                     let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
                     lower_pair(s, ResolutionDomain::Term, qualified, binder)
                 })
-                .collect();
+                .collect::<Option<Arc<_>>>()?;
             BinderKind::OperatorChain { head, tail }
         }
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
         cst::Binder::BinderConstructor(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
+            let (_, qualifier, name) =
+                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::upper))?;
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
             BinderKind::Constructor { resolution, arguments }
@@ -101,9 +110,7 @@ pub(super) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) ->
             let parenthesized = cst.binder().map(|cst| lower_binder(s, e, &cst));
             BinderKind::Parenthesized { parenthesized }
         }
-    };
-    s.associate_binder_info(id, kind);
-    id
+    })
 }
 
 pub(super) fn lower_expression(
@@ -112,7 +119,17 @@ pub(super) fn lower_expression(
     cst: &cst::Expression,
 ) -> ExpressionId {
     let id = s.source.allocate_ex(cst);
-    let kind = match cst {
+    let kind = lower_expression_kind(s, e, cst).unwrap_or(ExpressionKind::Unknown);
+    s.intermediate.insert_expression_kind(id, kind);
+    id
+}
+
+fn lower_expression_kind(
+    s: &mut State,
+    e: &Environment<'_>,
+    cst: &cst::Expression,
+) -> Option<ExpressionKind> {
+    Some(match cst {
         cst::Expression::ExpressionTyped(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             let r#type = cst.signature().map(|cst| lower_type(s, e, &cst));
@@ -127,7 +144,7 @@ pub(super) fn lower_expression(
                     let expression = p.expression().map(|cst| lower_expression(s, e, &cst));
                     lower_pair(s, ResolutionDomain::Term, qualified, expression)
                 })
-                .collect();
+                .collect::<Option<Arc<_>>>()?;
             ExpressionKind::OperatorChain { head, tail }
         }
         cst::Expression::ExpressionInfixChain(cst) => {
@@ -263,26 +280,21 @@ pub(super) fn lower_expression(
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
+            let (_, qualifier, name) =
+                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::upper))?;
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             ExpressionKind::Constructor { resolution }
         }
         cst::Expression::ExpressionVariable(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::lower))
-                .unwrap_or_default();
+            let (_, qualifier, name) =
+                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::lower))?;
             let resolution = s.resolve_term(qualifier, name);
             ExpressionKind::Variable { resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
-            let (qualifier, name) = cst
+            let (_, qualifier, name) = cst
                 .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
-                .unwrap_or_default();
+                .map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::operator_name))?;
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
             ExpressionKind::OperatorName { resolution }
         }
@@ -345,9 +357,7 @@ pub(super) fn lower_expression(
                 .unwrap_or_default();
             ExpressionKind::RecordUpdate { updates }
         }
-    };
-    s.intermediate.insert_expression_kind(id, kind);
-    id
+    })
 }
 
 fn lower_guarded(
@@ -625,7 +635,18 @@ fn lower_record_updates(
 
 pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     let id = s.source.allocate_ty(cst);
-    let kind = match cst {
+    let kind = lower_type_kind(s, e, cst, id).unwrap_or(TypeKind::Unknown);
+    s.associate_type_info(id, kind);
+    id
+}
+
+fn lower_type_kind(
+    s: &mut State,
+    e: &Environment<'_>,
+    cst: &cst::Type,
+    id: la_arena::Idx<rowan::ast::AstPtr<cst::Type>>,
+) -> Option<TypeKind> {
+    Some(match cst {
         cst::Type::TypeApplicationChain(cst) => {
             let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
             let function = children.next();
@@ -645,10 +666,8 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
+            let (_, qualifier, name) =
+                cst.name().map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::upper))?;
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             TypeKind::Constructor { resolution }
         }
@@ -669,10 +688,9 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
             TypeKind::Kinded { r#type, kind }
         }
         cst::Type::TypeOperator(cst) => {
-            let (qualifier, name) = cst
+            let (_, qualifier, name) = cst
                 .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
-                .unwrap_or_default();
+                .map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::operator_name))?;
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
             TypeKind::Operator { resolution }
         }
@@ -685,7 +703,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
                     let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
                     lower_pair(s, ResolutionDomain::Type, qualified, r#type)
                 })
-                .collect();
+                .collect::<Option<Arc<_>>>()?;
             TypeKind::OperatorChain { head, tail }
         }
         cst::Type::TypeString(_) => TypeKind::String,
@@ -721,9 +739,7 @@ pub(super) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> Typ
             let parenthesized = cst.r#type().map(|cst| lower_type(s, e, &cst));
             TypeKind::Parenthesized { parenthesized }
         }
-    };
-    s.associate_type_info(id, kind);
-    id
+    })
 }
 
 pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
@@ -749,18 +765,19 @@ fn lower_pair<T>(
     domain: ResolutionDomain,
     qualified: Option<cst::QualifiedName>,
     element: Option<T>,
-) -> OperatorPair<T> {
-    let (qualifier, operator) = qualified
-        .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator))
-        .unwrap_or_default();
+) -> Option<OperatorPair<T>> {
+    let (_, qualifier, operator) =
+        qualified.map(|cst| lower_qualified_name(s, &cst, cst::QualifiedName::operator))?;
     let resolution = s.resolve_deferred(domain, qualifier, operator);
-    OperatorPair { resolution, element }
+    Some(OperatorPair { resolution, element })
 }
 
 pub(super) fn lower_qualified_name(
+    s: &mut State,
     cst: &cst::QualifiedName,
     token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
-) -> (Option<SmolStr>, Option<SmolStr>) {
+) -> (QualifiedNameId, Option<SmolStr>, Option<SmolStr>) {
+    let id = s.source.allocate_qualified_name(cst);
     let qualifier = cst.qualifier().and_then(|cst| {
         let token = cst.text()?;
         let text = token.text().trim_end_matches(".");
@@ -770,7 +787,7 @@ pub(super) fn lower_qualified_name(
         let text = cst.text().trim_start_matches("(").trim_end_matches(")");
         SmolStr::from(text)
     });
-    (qualifier, name)
+    (id, qualifier, name)
 }
 
 pub(super) fn lower_type_variable_binding(

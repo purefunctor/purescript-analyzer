@@ -120,6 +120,7 @@ fn core_of_cst<S: CoreStorage>(
         lowering::TypeKind::Parenthesized { parenthesized } => {
             parenthesized.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown())
         }
+        lowering::TypeKind::Unknown => c.storage.unknown(),
     }
 }
 

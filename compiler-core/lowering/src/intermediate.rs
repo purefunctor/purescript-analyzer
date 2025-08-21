@@ -26,6 +26,7 @@ pub enum BinderKind {
     Array { array: Arc<[BinderId]> },
     Record { record: Arc<[BinderRecordItem]> },
     Parenthesized { parenthesized: Option<BinderId> },
+    Unknown,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -142,6 +143,7 @@ pub enum ExpressionKind {
     RecordUpdate {
         updates: Arc<[RecordUpdate]>,
     },
+    Unknown,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -176,6 +178,7 @@ pub enum TypeKind {
     Record { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
     Row { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
     Parenthesized { parenthesized: Option<TypeId> },
+    Unknown,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -335,6 +338,19 @@ pub enum TypeItemIr {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Domain {
+    Term,
+    Type,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct QualifiedNameIr {
+    pub domain: Domain,
+    pub qualifier: Option<SmolStr>,
+    pub name: Option<SmolStr>,
+}
+
 syntax::create_association! {
     pub struct Intermediate {
         binder_kind: BinderId => BinderKind,
@@ -342,6 +358,7 @@ syntax::create_association! {
         type_kind: TypeId => TypeKind,
         term_item: TermItemId => TermItemIr,
         type_item: TypeItemId => TypeItemIr,
+        qualified_name: QualifiedNameId => QualifiedNameIr,
     }
 }
 

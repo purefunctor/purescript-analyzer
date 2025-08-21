@@ -9,5 +9,6 @@ syntax::create_source! {
         le: syntax::cst::LetBindingEquation as LetBindingEquation,
         is: syntax::cst::InstanceSignatureStatement as InstanceSignature,
         ie: syntax::cst::InstanceEquationStatement as InstanceEquation,
+        qualified_name: syntax::cst::QualifiedName as QualifiedName,
     }
 }

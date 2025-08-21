@@ -185,13 +185,12 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Derive { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let (qualifier, name) = cst
-                .instance_head()
-                .and_then(|cst| {
-                    let cst = cst.qualified()?;
-                    Some(recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
-                })
-                .unwrap_or_default();
+            let Some((_, qualifier, name)) = cst.instance_head().and_then(|cst| {
+                let cst = cst.qualified()?;
+                Some(recursive::lower_qualified_name(s, &cst, cst::QualifiedName::upper))
+            }) else {
+                todo!("figure out");
+            };
 
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
 
@@ -223,13 +222,12 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Instance { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let (qualifier, name) = cst
-                .instance_head()
-                .and_then(|cst| {
-                    let cst = cst.qualified()?;
-                    Some(recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
-                })
-                .unwrap_or_default();
+            let Some((_, qualifier, name)) = cst.instance_head().and_then(|cst| {
+                let cst = cst.qualified()?;
+                Some(recursive::lower_qualified_name(s, &cst, cst::QualifiedName::upper))
+            }) else {
+                todo!("figureout")
+            };
 
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
 
@@ -260,10 +258,12 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let (qualifier, name) = cst
+            let Some((_, qualifier, name)) = cst
                 .qualified()
-                .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::lower))
-                .unwrap_or_default();
+                .map(|cst| recursive::lower_qualified_name(s, &cst, cst::QualifiedName::lower))
+            else {
+                todo!("figureout")
+            };
 
             let resolution = s.resolve_deferred(ResolutionDomain::Term, qualifier, name);
 
@@ -425,10 +425,12 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let (qualifier, name) = cst
+            let Some((_, qualifier, name)) = cst
                 .qualified()
-                .map(|cst| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
+                .map(|cst| recursive::lower_qualified_name(s, &cst, cst::QualifiedName::upper))
+            else {
+                todo!("figureout")
+            };
 
             let resolution = s.resolve_deferred(ResolutionDomain::Type, qualifier, name);
 
