@@ -220,6 +220,7 @@ pub struct PatternGuard {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OperatorPair<T> {
     pub resolution: DeferredResolutionId,
+    pub id: QualifiedNameId,
     pub element: Option<T>,
 }
 

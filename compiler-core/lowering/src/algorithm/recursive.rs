@@ -771,10 +771,10 @@ fn lower_pair<T>(
     element: Option<T>,
 ) -> Option<OperatorPair<T>> {
     let qualified = qualified?;
-    let (_, qualifier, operator) =
+    let (id, qualifier, operator) =
         lower_qualified_name(s, domain, &qualified, cst::QualifiedName::operator);
     let resolution = s.resolve_deferred(domain, qualifier, operator);
-    Some(OperatorPair { resolution, element })
+    Some(OperatorPair { resolution, id, element })
 }
 
 pub(crate) fn lower_qualified_name(

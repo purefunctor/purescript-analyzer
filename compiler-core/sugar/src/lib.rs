@@ -127,7 +127,7 @@ fn rebracket(
     tail: &[OperatorPair<ExpressionId>],
 ) -> Result<Tree, BracketError> {
     match tail {
-        [OperatorPair { resolution, element }] => {
+        [OperatorPair { resolution, element, .. }] => {
             let (resolution, _, _) =
                 operators.get(resolution).ok_or(BracketError::FailedToResolve(*resolution))?;
             Ok(Tree::Branch(*resolution, vec![Tree::Leaf(head), Tree::Leaf(*element)]))
@@ -152,7 +152,7 @@ where
     let mut left = Tree::Leaf(head);
 
     loop {
-        let Some(OperatorPair { resolution, element }) = tail.peek().copied() else {
+        let Some(OperatorPair { resolution, element, .. }) = tail.peek().copied() else {
             break;
         };
 
