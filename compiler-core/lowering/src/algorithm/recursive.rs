@@ -34,9 +34,9 @@ fn lower_binder_kind(
             let tail = cst
                 .children()
                 .map(|cst| {
-                    let qualified = cst.qualified()?;
+                    let qualified = cst.qualified();
                     let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
-                    Some(lower_pair(s, ResolutionDomain::Term, qualified, binder))
+                    lower_pair(s, ResolutionDomain::Term, qualified, binder)
                 })
                 .collect::<Option<Arc<_>>>()?;
             BinderKind::OperatorChain { head, tail }
@@ -140,9 +140,9 @@ fn lower_expression_kind(
             let tail = cst
                 .children()
                 .map(|cst| {
-                    let qualified = cst.qualified()?;
+                    let qualified = cst.qualified();
                     let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
-                    Some(lower_pair(s, ResolutionDomain::Term, qualified, expression))
+                    lower_pair(s, ResolutionDomain::Term, qualified, expression)
                 })
                 .collect::<Option<Arc<_>>>()?;
             ExpressionKind::OperatorChain { head, tail }
@@ -699,9 +699,9 @@ fn lower_type_kind(
             let tail = cst
                 .children()
                 .map(|cst| {
-                    let qualified = cst.qualified()?;
+                    let qualified = cst.qualified();
                     let ty = cst.ty().map(|cst| lower_type(s, e, &cst));
-                    Some(lower_pair(s, ResolutionDomain::Type, qualified, ty))
+                    lower_pair(s, ResolutionDomain::Type, qualified, ty)
                 })
                 .collect::<Option<Arc<_>>>()?;
             TypeKind::OperatorChain { head, tail }
@@ -763,13 +763,14 @@ pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> T
 fn lower_pair<T>(
     s: &mut State,
     domain: ResolutionDomain,
-    qualified: cst::QualifiedName,
+    qualified: Option<cst::QualifiedName>,
     element: Option<T>,
-) -> OperatorPair<T> {
+) -> Option<OperatorPair<T>> {
+    let qualified = qualified?;
     let (_, qualifier, operator) =
         lower_qualified_name(s, &qualified, cst::QualifiedName::operator);
     let resolution = s.resolve_deferred(domain, qualifier, operator);
-    OperatorPair { resolution, element }
+    Some(OperatorPair { resolution, element })
 }
 
 pub(super) fn lower_qualified_name(
