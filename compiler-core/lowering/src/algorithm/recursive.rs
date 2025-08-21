@@ -44,12 +44,12 @@ fn lower_binder_kind(
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
         cst::Binder::BinderConstructor(cst) => {
-            let (_, qualifier, name) = cst.name().map(|cst| {
+            let (id, qualifier, name) = cst.name().map(|cst| {
                 lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::upper)
             })?;
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
-            BinderKind::Constructor { resolution, arguments }
+            BinderKind::Constructor { resolution, id, arguments }
         }
         cst::Binder::BinderVariable(cst) => {
             let variable = cst.name_token().map(|cst| {
@@ -281,25 +281,25 @@ fn lower_expression_kind(
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
-            let (_, qualifier, name) = cst.name().map(|cst| {
+            let (id, qualifier, name) = cst.name().map(|cst| {
                 lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::upper)
             })?;
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
-            ExpressionKind::Constructor { resolution }
+            ExpressionKind::Constructor { resolution, id }
         }
         cst::Expression::ExpressionVariable(cst) => {
-            let (_, qualifier, name) = cst.name().map(|cst| {
+            let (id, qualifier, name) = cst.name().map(|cst| {
                 lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::lower)
             })?;
             let resolution = s.resolve_term(qualifier, name);
-            ExpressionKind::Variable { resolution }
+            ExpressionKind::Variable { resolution, id }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
-            let (_, qualifier, name) = cst.name().map(|cst| {
+            let (id, qualifier, name) = cst.name().map(|cst| {
                 lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::operator_name)
             })?;
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
-            ExpressionKind::OperatorName { resolution }
+            ExpressionKind::OperatorName { resolution, id }
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
         cst::Expression::ExpressionHole(_) => ExpressionKind::Hole,

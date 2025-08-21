@@ -245,10 +245,10 @@ fn definition_expression(
 
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
-        ExpressionKind::Constructor { resolution } => {
+        ExpressionKind::Constructor { resolution, .. } => {
             definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
-        ExpressionKind::Variable { resolution } => {
+        ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => {
@@ -284,7 +284,7 @@ fn definition_expression(
                 }
             }
         }
-        ExpressionKind::OperatorName { resolution } => {
+        ExpressionKind::OperatorName { resolution, .. } => {
             definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         _ => None,
@@ -308,10 +308,10 @@ fn definition_type(
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        lowering::TypeKind::Constructor { resolution } => {
+        lowering::TypeKind::Constructor { resolution, .. } => {
             definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
-        lowering::TypeKind::Operator { resolution } => {
+        lowering::TypeKind::Operator { resolution, .. } => {
             definition_deferred(engine, files, &resolved, &lowered, *resolution)
         }
         lowering::TypeKind::Variable { resolution, .. } => {

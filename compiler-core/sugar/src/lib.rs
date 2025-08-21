@@ -71,7 +71,7 @@ where
 
                 let lowered = external.lowered(file_id)?;
 
-                let Some(TermItemIr::Operator { resolution, associativity, precedence }) =
+                let Some(TermItemIr::Operator { resolution, associativity, precedence, .. }) =
                     lowered.intermediate.index_term_item(term_id)
                 else {
                     continue;
@@ -88,7 +88,7 @@ where
 
                 let lowered = external.lowered(file_id)?;
 
-                let Some(TypeItemIr::Operator { resolution, associativity, precedence }) =
+                let Some(TypeItemIr::Operator { resolution, associativity, precedence, .. }) =
                     lowered.intermediate.index_type_item(type_id)
                 else {
                     continue;

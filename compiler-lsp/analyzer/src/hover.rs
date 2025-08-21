@@ -202,10 +202,10 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
 
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
-        ExpressionKind::Constructor { resolution } => {
+        ExpressionKind::Constructor { resolution, .. } => {
             hover_deferred(engine, &resolved, &lowered, *resolution)
         }
-        ExpressionKind::Variable { resolution } => {
+        ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => hover_deferred(engine, &resolved, &lowered, *id),
@@ -217,7 +217,7 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
                 }
             }
         }
-        ExpressionKind::OperatorName { resolution } => {
+        ExpressionKind::OperatorName { resolution, .. } => {
             hover_deferred(engine, &resolved, &lowered, *resolution)
         }
         _ => None,
@@ -279,7 +279,7 @@ fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover>
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        TypeKind::Constructor { resolution } => {
+        TypeKind::Constructor { resolution, .. } => {
             hover_deferred(engine, &resolved, &lowered, *resolution)
         }
         _ => None,

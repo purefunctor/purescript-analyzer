@@ -185,7 +185,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Derive { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((_, qualifier, name)) = cst.instance_head().and_then(|cst| {
+            let Some((id, qualifier, name)) = cst.instance_head().and_then(|cst| {
                 let cst = cst.qualified()?;
                 Some(recursive::lower_qualified_name(
                     s,
@@ -215,7 +215,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .map(|cst| cst.children().map(|cst| recursive::lower_type(s, e, &cst)).collect())
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Derive { resolution, constraints, arguments };
+            let kind = TermItemIr::Derive { resolution, id, constraints, arguments };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Foreign { id } => {
@@ -227,7 +227,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Instance { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((_, qualifier, name)) = cst.instance_head().and_then(|cst| {
+            let Some((id, qualifier, name)) = cst.instance_head().and_then(|cst| {
                 let cst = cst.qualified()?;
                 Some(recursive::lower_qualified_name(
                     s,
@@ -262,13 +262,13 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .map(|cst| lower_instance_statements(s, e, &cst))
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Instance { resolution, constraints, arguments, members };
+            let kind = TermItemIr::Instance { resolution, id, constraints, arguments, members };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((_, qualifier, name)) = cst.qualified().map(|cst| {
+            let Some((id, qualifier, name)) = cst.qualified().map(|cst| {
                 recursive::lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::lower)
             }) else {
                 todo!("figureout")
@@ -283,7 +283,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
                 .or_else(|| cst.infixr().map(|_| Associativity::Right));
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
-            let kind = TermItemIr::Operator { resolution, associativity, precedence };
+            let kind = TermItemIr::Operator { resolution, id, associativity, precedence };
             s.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Value { signature, equations } => {
@@ -434,7 +434,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((_, qualifier, name)) = cst.qualified().map(|cst| {
+            let Some((id, qualifier, name)) = cst.qualified().map(|cst| {
                 recursive::lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::upper)
             }) else {
                 todo!("figureout")
@@ -449,7 +449,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                 .or_else(|| cst.infixr().map(|_| Associativity::Right));
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
-            let kind = TypeItemIr::Operator { resolution, associativity, precedence };
+            let kind = TypeItemIr::Operator { resolution, id, associativity, precedence };
             s.intermediate.insert_type_item(item_id, kind);
         }
     }

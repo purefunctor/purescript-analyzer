@@ -12,20 +12,43 @@ pub enum BinderRecordItem {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderKind {
-    Typed { binder: Option<BinderId>, ty: Option<TypeId> },
-    OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<BinderId>]> },
+    Typed {
+        binder: Option<BinderId>,
+        ty: Option<TypeId>,
+    },
+    OperatorChain {
+        head: Option<BinderId>,
+        tail: Arc<[OperatorPair<BinderId>]>,
+    },
     Integer,
     Number,
-    Constructor { resolution: DeferredResolutionId, arguments: Arc<[BinderId]> },
-    Variable { variable: Option<SmolStr> },
-    Named { named: Option<SmolStr>, binder: Option<BinderId> },
+    Constructor {
+        resolution: DeferredResolutionId,
+        id: QualifiedNameId,
+        arguments: Arc<[BinderId]>,
+    },
+    Variable {
+        variable: Option<SmolStr>,
+    },
+    Named {
+        named: Option<SmolStr>,
+        binder: Option<BinderId>,
+    },
     Wildcard,
     String,
     Char,
-    Boolean { boolean: bool },
-    Array { array: Arc<[BinderId]> },
-    Record { record: Arc<[BinderRecordItem]> },
-    Parenthesized { parenthesized: Option<BinderId> },
+    Boolean {
+        boolean: bool,
+    },
+    Array {
+        array: Arc<[BinderId]>,
+    },
+    Record {
+        record: Arc<[BinderRecordItem]>,
+    },
+    Parenthesized {
+        parenthesized: Option<BinderId>,
+    },
     Unknown,
 }
 
@@ -111,12 +134,15 @@ pub enum ExpressionKind {
     },
     Constructor {
         resolution: DeferredResolutionId,
+        id: QualifiedNameId,
     },
     Variable {
         resolution: Option<TermResolution>,
+        id: QualifiedNameId,
     },
     OperatorName {
         resolution: DeferredResolutionId,
+        id: QualifiedNameId,
     },
     Section,
     Hole,
@@ -256,6 +282,7 @@ pub enum TermItemIr {
     },
     Derive {
         resolution: DeferredResolutionId,
+        id: QualifiedNameId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
     },
@@ -264,12 +291,14 @@ pub enum TermItemIr {
     },
     Instance {
         resolution: DeferredResolutionId,
+        id: QualifiedNameId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },
     Operator {
         resolution: DeferredResolutionId,
+        id: QualifiedNameId,
         associativity: Option<Associativity>,
         precedence: Option<u8>,
     },
@@ -334,6 +363,7 @@ pub enum TypeItemIr {
     },
     Operator {
         resolution: DeferredResolutionId,
+        id: QualifiedNameId,
         associativity: Option<Associativity>,
         precedence: Option<u8>,
     },
