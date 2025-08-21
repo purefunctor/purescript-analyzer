@@ -26,8 +26,8 @@ fn lower_binder_kind(
     Some(match cst {
         cst::Binder::BinderTyped(cst) => {
             let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
-            let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
-            BinderKind::Typed { binder, r#type }
+            let ty = cst.ty().map(|cst| lower_type(s, e, &cst));
+            BinderKind::Typed { binder, ty }
         }
         cst::Binder::BinderOperatorChain(cst) => {
             let head = cst.binder().map(|cst| lower_binder(s, e, &cst));
@@ -132,8 +132,8 @@ fn lower_expression_kind(
     Some(match cst {
         cst::Expression::ExpressionTyped(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
-            let r#type = cst.signature().map(|cst| lower_type(s, e, &cst));
-            ExpressionKind::Typed { expression, r#type }
+            let ty = cst.signature().map(|cst| lower_type(s, e, &cst));
+            ExpressionKind::Typed { expression, ty }
         }
         cst::Expression::ExpressionOperatorChain(cst) => {
             let head = cst.expression().map(|cst| lower_expression(s, e, &cst));
@@ -170,7 +170,7 @@ fn lower_expression_kind(
             let lower_argument =
                 |s: &mut State, e: &Environment, cst: &cst::ExpressionArgument| match cst {
                     cst::ExpressionArgument::ExpressionTypeArgument(cst) => {
-                        let id = cst.r#type().map(|cst| lower_type(s, e, &cst));
+                        let id = cst.ty().map(|cst| lower_type(s, e, &cst));
                         ExpressionArgument::Type(id)
                     }
                     cst::ExpressionArgument::ExpressionTermArgument(cst) => {
@@ -543,7 +543,7 @@ fn lower_equation_bindings(
         s.with_scope(|s| {
             let signature = resolution.signature.and_then(|id| {
                 let cst = s.source[id].to_node(root);
-                cst.r#type().map(|t| lower_forall(s, e, &t))
+                cst.ty().map(|t| lower_forall(s, e, &t))
             });
             let equations = resolution
                 .equations
@@ -676,16 +676,16 @@ fn lower_type_kind(
             s.push_forall_scope();
             let bindings =
                 cst.children().map(|cst| lower_type_variable_binding(s, e, &cst)).collect();
-            let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
-            TypeKind::Forall { bindings, r#type }
+            let ty = cst.ty().map(|cst| lower_type(s, e, &cst));
+            TypeKind::Forall { bindings, ty }
         }),
         cst::Type::TypeHole(_) => TypeKind::Hole,
         cst::Type::TypeInteger(_) => TypeKind::Integer,
         cst::Type::TypeKinded(cst) => {
             let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
-            let r#type = children.next();
+            let ty = children.next();
             let kind = children.next();
-            TypeKind::Kinded { r#type, kind }
+            TypeKind::Kinded { ty, kind }
         }
         cst::Type::TypeOperator(cst) => {
             let (_, qualifier, name) = cst
@@ -695,13 +695,13 @@ fn lower_type_kind(
             TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(cst) => {
-            let head = cst.r#type().map(|cst| lower_type(s, e, &cst));
+            let head = cst.ty().map(|cst| lower_type(s, e, &cst));
             let tail = cst
                 .children()
                 .map(|cst| {
                     let qualified = cst.qualified()?;
-                    let r#type = cst.r#type().map(|cst| lower_type(s, e, &cst));
-                    Some(lower_pair(s, ResolutionDomain::Type, qualified, r#type))
+                    let ty = cst.ty().map(|cst| lower_type(s, e, &cst));
+                    Some(lower_pair(s, ResolutionDomain::Type, qualified, ty))
                 })
                 .collect::<Option<Arc<_>>>()?;
             TypeKind::OperatorChain { head, tail }
@@ -722,7 +722,7 @@ fn lower_type_kind(
         cst::Type::TypeRecord(cst) => {
             let items = cst.children().map(|cst| lower_row_item(s, e, &cst)).collect();
             let tail = cst.tail().and_then(|cst| {
-                let cst = cst.r#type()?;
+                let cst = cst.ty()?;
                 Some(lower_type(s, e, &cst))
             });
             TypeKind::Record { items, tail }
@@ -730,13 +730,13 @@ fn lower_type_kind(
         cst::Type::TypeRow(cst) => {
             let items = cst.children().map(|cst| lower_row_item(s, e, &cst)).collect();
             let tail = cst.tail().and_then(|cst| {
-                let cst = cst.r#type()?;
+                let cst = cst.ty()?;
                 Some(lower_type(s, e, &cst))
             });
             TypeKind::Row { items, tail }
         }
         cst::Type::TypeParenthesized(cst) => {
-            let parenthesized = cst.r#type().map(|cst| lower_type(s, e, &cst));
+            let parenthesized = cst.ty().map(|cst| lower_type(s, e, &cst));
             TypeKind::Parenthesized { parenthesized }
         }
     })
@@ -751,8 +751,8 @@ pub(super) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> T
         let id = s.source.allocate_ty(cst);
         s.push_forall_scope();
         let bindings = f.children().map(|cst| lower_type_variable_binding(s, e, &cst)).collect();
-        let r#type = f.r#type().map(|cst| lower_forall(s, e, &cst));
-        let kind = TypeKind::Forall { bindings, r#type };
+        let ty = f.ty().map(|cst| lower_forall(s, e, &cst));
+        let kind = TypeKind::Forall { bindings, ty };
         s.associate_type_info(id, kind);
         id
     } else {
@@ -814,6 +814,6 @@ fn lower_row_item(s: &mut State, e: &Environment, cst: &cst::TypeRowItem) -> Typ
         let text = token.text();
         Some(SmolStr::from(text))
     });
-    let r#type = cst.r#type().map(|t| lower_type(s, e, &t));
-    TypeRowItem { name, r#type }
+    let ty = cst.ty().map(|t| lower_type(s, e, &t));
+    TypeRowItem { name, ty }
 }

@@ -451,7 +451,7 @@ has_token!(
 
 has_child!(
     InstanceSignatureStatement
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -472,7 +472,7 @@ has_token!(
 
 has_child!(
     TypeSynonymSignature
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -482,7 +482,7 @@ has_token!(
 
 has_child!(
     TypeSynonymEquation
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_children!(
@@ -497,7 +497,7 @@ has_token!(
 
 has_child!(
     ClassSignature
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_child!(
@@ -534,7 +534,7 @@ has_token!(
 
 has_child!(
     ClassMemberStatement
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -544,7 +544,7 @@ has_token!(
 
 has_child!(
     NewtypeSignature
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -565,7 +565,7 @@ has_token!(
 
 has_child!(
     DataSignature
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -596,7 +596,7 @@ has_token!(
 
 has_child!(
     ForeignImportDataDeclaration
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -606,7 +606,7 @@ has_token!(
 
 has_child!(
     ForeignImportValueDeclaration
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_child!(
@@ -704,7 +704,7 @@ has_children!(
 
 has_child!(
     ExpressionTypeArgument
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_child!(
@@ -758,7 +758,7 @@ has_token!(
 
 has_child!(
     LetBindingSignature
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -917,7 +917,7 @@ has_child!(
 has_child!(
     BinderTyped
     | binder() -> Binder
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_child!(
@@ -998,7 +998,7 @@ has_child!(
 
 has_child!(
     TypeForall
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_children!(
@@ -1029,7 +1029,7 @@ has_child!(
 
 has_child!(
     TypeOperatorChain
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_children!(
@@ -1040,7 +1040,7 @@ has_children!(
 has_child!(
     TypeOperatorPair
     | qualified() -> QualifiedName
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(
@@ -1061,7 +1061,7 @@ has_children!(
 has_child!(
     TypeRowItem
     | name() -> LabelName
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_child!(
@@ -1076,12 +1076,12 @@ has_child!(
 
 has_child!(
     TypeRowTail
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_child!(
     TypeParenthesized
-    | r#type() -> Type
+    | ty() -> Type
 );
 
 has_token!(

@@ -12,7 +12,7 @@ pub enum BinderRecordItem {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderKind {
-    Typed { binder: Option<BinderId>, r#type: Option<TypeId> },
+    Typed { binder: Option<BinderId>, ty: Option<TypeId> },
     OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<BinderId>]> },
     Integer,
     Number,
@@ -64,7 +64,7 @@ pub enum ExpressionRecordItem {
 pub enum ExpressionKind {
     Typed {
         expression: Option<ExpressionId>,
-        r#type: Option<TypeId>,
+        ty: Option<TypeId>,
     },
     OperatorChain {
         head: Option<ExpressionId>,
@@ -157,7 +157,7 @@ pub struct TypeVariableBinding {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TypeRowItem {
     pub name: Option<SmolStr>,
-    pub r#type: Option<TypeId>,
+    pub ty: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -166,10 +166,10 @@ pub enum TypeKind {
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
     Constructor { resolution: DeferredResolutionId },
-    Forall { bindings: Arc<[TypeVariableBinding]>, r#type: Option<TypeId> },
+    Forall { bindings: Arc<[TypeVariableBinding]>, ty: Option<TypeId> },
     Hole,
     Integer,
-    Kinded { r#type: Option<TypeId>, kind: Option<TypeId> },
+    Kinded { ty: Option<TypeId>, kind: Option<TypeId> },
     Operator { resolution: DeferredResolutionId },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
@@ -299,7 +299,7 @@ pub struct NewtypeIr {
 #[derive(Debug, PartialEq, Eq)]
 pub struct SynonymIr {
     pub variables: Arc<[TypeVariableBinding]>,
-    pub r#type: Option<TypeId>,
+    pub ty: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

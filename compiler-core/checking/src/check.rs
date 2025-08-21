@@ -69,7 +69,7 @@ fn core_of_cst<S: CoreStorage>(
         }
         lowering::TypeKind::Constrained { .. } => c.storage.unknown(),
         lowering::TypeKind::Constructor { .. } => c.storage.unknown(),
-        lowering::TypeKind::Forall { bindings, r#type } => {
+        lowering::TypeKind::Forall { bindings, ty } => {
             let binders = bindings.iter().filter_map(|binding| {
                 let visible = binding.visible;
                 let name = binding.name.clone()?;
@@ -82,7 +82,7 @@ fn core_of_cst<S: CoreStorage>(
                 Some(ForallBinder { visible, name, level, kind })
             });
             let binders = binders.collect_vec().into_iter();
-            let inner = r#type.map(|id| core_of_cst(c, e, id));
+            let inner = ty.map(|id| core_of_cst(c, e, id));
             let inner = inner.unwrap_or_else(|| c.storage.unknown());
             binders.rfold(inner, |inner, binder| c.storage.allocate(Type::Forall(binder, inner)))
         }
