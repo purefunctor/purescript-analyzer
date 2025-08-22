@@ -18,8 +18,8 @@ pub trait External {
 }
 
 pub fn bracketed<E>(
-    external: &E,
-    id: FileId,
+    _external: &E,
+    _id: FileId,
 ) -> QueryResult<FxHashMap<ExpressionId, Result<Tree, BracketError>>>
 where
     E: External,

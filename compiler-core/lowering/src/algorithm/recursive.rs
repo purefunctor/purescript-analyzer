@@ -44,15 +44,10 @@ fn lower_binder_kind(
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
         cst::Binder::BinderConstructor(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
             let id =
                 lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
-            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
-            BinderKind::Constructor { resolution, id, arguments }
+            BinderKind::Constructor { id, arguments }
         }
         cst::Binder::BinderVariable(cst) => {
             let variable = cst.name_token().map(|cst| {
@@ -284,14 +279,9 @@ fn lower_expression_kind(
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
             let id =
                 lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
-            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
-            ExpressionKind::Constructor { resolution, id }
+            ExpressionKind::Constructor { id }
         }
         cst::Expression::ExpressionVariable(cst) => {
             let (qualifier, name) = cst
@@ -304,18 +294,13 @@ fn lower_expression_kind(
             ExpressionKind::Variable { resolution, id }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
-                .unwrap_or_default();
             let id = lower_qualified_name_v2(
                 s,
                 Domain::Term,
                 cst.name(),
                 cst::QualifiedName::operator_name,
             );
-            let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
-            ExpressionKind::OperatorName { resolution, id }
+            ExpressionKind::OperatorName { id }
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
         cst::Expression::ExpressionHole(_) => ExpressionKind::Hole,
@@ -680,14 +665,9 @@ fn lower_type_kind(s: &mut State, e: &Environment<'_>, cst: &cst::Type, id: Type
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
-                .unwrap_or_default();
             let id =
                 lower_qualified_name_v2(s, Domain::Type, cst.name(), cst::QualifiedName::upper);
-            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
-            TypeKind::Constructor { resolution, id }
+            TypeKind::Constructor { id }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
         cst::Type::TypeForall(cst) => s.with_scope(|s| {
@@ -706,18 +686,13 @@ fn lower_type_kind(s: &mut State, e: &Environment<'_>, cst: &cst::Type, id: Type
             TypeKind::Kinded { type_, kind }
         }
         cst::Type::TypeOperator(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
-                .unwrap_or_default();
             let id = lower_qualified_name_v2(
                 s,
                 Domain::Type,
                 cst.name(),
                 cst::QualifiedName::operator_name,
             );
-            let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
-            TypeKind::Operator { resolution, id }
+            TypeKind::Operator { id }
         }
         cst::Type::TypeOperatorChain(cst) => {
             let head = cst.type_().map(|cst| lower_type(s, e, &cst));
