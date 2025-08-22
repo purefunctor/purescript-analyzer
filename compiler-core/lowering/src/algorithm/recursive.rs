@@ -12,7 +12,7 @@ use super::{Environment, State};
 
 pub(crate) fn lower_binder(s: &mut State, e: &Environment, cst: &cst::Binder) -> BinderId {
     let id = s.source.allocate_bd(cst);
-    let kind = lower_binder_kind(s, e, cst, id).unwrap_or(BinderKind::Unknown);
+    let kind = lower_binder_kind(s, e, cst, id);
     s.associate_binder_info(id, kind);
     id
 }
@@ -22,8 +22,8 @@ fn lower_binder_kind(
     e: &Environment<'_>,
     cst: &cst::Binder,
     id: BinderId,
-) -> Option<BinderKind> {
-    Some(match cst {
+) -> BinderKind {
+    match cst {
         cst::Binder::BinderTyped(cst) => {
             let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
             let type_ = cst.type_().map(|cst| lower_type(s, e, &cst));
@@ -38,7 +38,7 @@ fn lower_binder_kind(
                     let binder = cst.binder().map(|cst| lower_binder(s, e, &cst));
                     lower_pair(s, Domain::Term, qualified, binder)
                 })
-                .collect::<Option<Arc<_>>>()?;
+                .collect();
             BinderKind::OperatorChain { head, tail }
         }
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
@@ -114,7 +114,7 @@ fn lower_binder_kind(
             let parenthesized = cst.binder().map(|cst| lower_binder(s, e, &cst));
             BinderKind::Parenthesized { parenthesized }
         }
-    })
+    }
 }
 
 pub(crate) fn lower_expression(
@@ -123,7 +123,7 @@ pub(crate) fn lower_expression(
     cst: &cst::Expression,
 ) -> ExpressionId {
     let id = s.source.allocate_ex(cst);
-    let kind = lower_expression_kind(s, e, cst).unwrap_or(ExpressionKind::Unknown);
+    let kind = lower_expression_kind(s, e, cst);
     s.intermediate.insert_expression_kind(id, kind);
     id
 }
@@ -132,8 +132,8 @@ fn lower_expression_kind(
     s: &mut State,
     e: &Environment<'_>,
     cst: &cst::Expression,
-) -> Option<ExpressionKind> {
-    Some(match cst {
+) -> ExpressionKind {
+    match cst {
         cst::Expression::ExpressionTyped(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
             let type_ = cst.signature().map(|cst| lower_type(s, e, &cst));
@@ -148,7 +148,7 @@ fn lower_expression_kind(
                     let expression = cst.expression().map(|cst| lower_expression(s, e, &cst));
                     lower_pair(s, Domain::Term, qualified, expression)
                 })
-                .collect::<Option<Arc<_>>>()?;
+                .collect();
             ExpressionKind::OperatorChain { head, tail }
         }
         cst::Expression::ExpressionInfixChain(cst) => {
@@ -376,7 +376,7 @@ fn lower_expression_kind(
                 .unwrap_or_default();
             ExpressionKind::RecordUpdate { updates }
         }
-    })
+    }
 }
 
 fn lower_guarded(
@@ -654,18 +654,13 @@ fn lower_record_updates(
 
 pub(crate) fn lower_type(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
     let id = s.source.allocate_ty(cst);
-    let kind = lower_type_kind(s, e, cst, id).unwrap_or(TypeKind::Unknown);
+    let kind = lower_type_kind(s, e, cst, id);
     s.associate_type_info(id, kind);
     id
 }
 
-fn lower_type_kind(
-    s: &mut State,
-    e: &Environment<'_>,
-    cst: &cst::Type,
-    id: TypeId,
-) -> Option<TypeKind> {
-    Some(match cst {
+fn lower_type_kind(s: &mut State, e: &Environment<'_>, cst: &cst::Type, id: TypeId) -> TypeKind {
+    match cst {
         cst::Type::TypeApplicationChain(cst) => {
             let mut children = cst.children().map(|cst| lower_type(s, e, &cst));
             let function = children.next();
@@ -730,10 +725,10 @@ fn lower_type_kind(
                 .children()
                 .map(|cst| {
                     let qualified = cst.qualified();
-                    let ty = cst.type_().map(|cst| lower_type(s, e, &cst));
-                    lower_pair(s, Domain::Type, qualified, ty)
+                    let type_ = cst.type_().map(|cst| lower_type(s, e, &cst));
+                    lower_pair(s, Domain::Type, qualified, type_)
                 })
-                .collect::<Option<Arc<_>>>()?;
+                .collect();
             TypeKind::OperatorChain { head, tail }
         }
         cst::Type::TypeString(_) => TypeKind::String,
@@ -769,7 +764,7 @@ fn lower_type_kind(
             let parenthesized = cst.type_().map(|cst| lower_type(s, e, &cst));
             TypeKind::Parenthesized { parenthesized }
         }
-    })
+    }
 }
 
 pub(crate) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> TypeId {
@@ -795,12 +790,9 @@ fn lower_pair<T>(
     domain: Domain,
     qualified: Option<cst::QualifiedName>,
     element: Option<T>,
-) -> Option<OperatorPair<T>> {
-    let qualified = qualified?;
-    let (qualifier, operator) = lower_qualified_name(&qualified, cst::QualifiedName::operator);
-    let resolution = state.resolve_deferred(domain, qualifier, operator);
-    let id = lower_qualified_name_v2(state, domain, Some(qualified), cst::QualifiedName::operator);
-    Some(OperatorPair { resolution, id, element })
+) -> OperatorPair<T> {
+    let id = lower_qualified_name_v2(state, domain, qualified, cst::QualifiedName::operator);
+    OperatorPair { id, element }
 }
 
 pub(crate) fn lower_qualified_name(

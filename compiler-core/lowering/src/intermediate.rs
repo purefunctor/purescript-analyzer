@@ -49,7 +49,6 @@ pub enum BinderKind {
     Parenthesized {
         parenthesized: Option<BinderId>,
     },
-    Unknown,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -169,7 +168,6 @@ pub enum ExpressionKind {
     RecordUpdate {
         updates: Arc<[RecordUpdate]>,
     },
-    Unknown,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -204,7 +202,6 @@ pub enum TypeKind {
     Record { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
     Row { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },
     Parenthesized { parenthesized: Option<TypeId> },
-    Unknown,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -245,7 +242,6 @@ pub struct PatternGuard {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OperatorPair<T> {
-    pub resolution: DeferredResolutionId,
     pub id: Option<QualifiedNameId>,
     pub element: Option<T>,
 }
