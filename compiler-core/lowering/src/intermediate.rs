@@ -24,7 +24,7 @@ pub enum BinderKind {
     Number,
     Constructor {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
         arguments: Arc<[BinderId]>,
     },
     Variable {
@@ -134,15 +134,15 @@ pub enum ExpressionKind {
     },
     Constructor {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
     },
     Variable {
         resolution: Option<TermResolution>,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
     },
     OperatorName {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
     },
     Section,
     Hole,
@@ -246,7 +246,7 @@ pub struct PatternGuard {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OperatorPair<T> {
     pub resolution: DeferredResolutionId,
-    pub id: QualifiedNameId,
+    pub id: Option<QualifiedNameId>,
     pub element: Option<T>,
 }
 
@@ -282,7 +282,7 @@ pub enum TermItemIr {
     },
     Derive {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
     },
@@ -291,14 +291,14 @@ pub enum TermItemIr {
     },
     Instance {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },
     Operator {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
         associativity: Option<Associativity>,
         precedence: Option<u8>,
     },
@@ -363,7 +363,7 @@ pub enum TypeItemIr {
     },
     Operator {
         resolution: DeferredResolutionId,
-        id: QualifiedNameId,
+        id: Option<QualifiedNameId>,
         associativity: Option<Associativity>,
         precedence: Option<u8>,
     },

@@ -44,9 +44,12 @@ fn lower_binder_kind(
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
         cst::Binder::BinderConstructor(cst) => {
-            let (id, qualifier, name) = cst.name().map(|cst| {
-                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::upper)
-            })?;
+            let (qualifier, name) = cst
+                .name()
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            let id =
+                lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
             BinderKind::Constructor { resolution, id, arguments }
@@ -281,23 +284,36 @@ fn lower_expression_kind(
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
-            let (id, qualifier, name) = cst.name().map(|cst| {
-                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::upper)
-            })?;
+            let (qualifier, name) = cst
+                .name()
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            let id =
+                lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             ExpressionKind::Constructor { resolution, id }
         }
         cst::Expression::ExpressionVariable(cst) => {
-            let (id, qualifier, name) = cst.name().map(|cst| {
-                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::lower)
-            })?;
+            let (qualifier, name) = cst
+                .name()
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::lower))
+                .unwrap_or_default();
+            let id =
+                lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::lower);
             let resolution = s.resolve_term(qualifier, name);
             ExpressionKind::Variable { resolution, id }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
-            let (id, qualifier, name) = cst.name().map(|cst| {
-                lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::operator_name)
-            })?;
+            let (qualifier, name) = cst
+                .name()
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::lower))
+                .unwrap_or_default();
+            let id = lower_qualified_name_v2(
+                s,
+                Domain::Term,
+                cst.name(),
+                cst::QualifiedName::operator_name,
+            );
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
             ExpressionKind::OperatorName { resolution, id }
         }
@@ -669,9 +685,11 @@ fn lower_type_kind(
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
-            let (_, qualifier, name) = cst.name().map(|cst| {
-                lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::upper)
-            })?;
+            let (qualifier, name) = cst
+                .name()
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
+            let _ = lower_qualified_name_v2(s, Domain::Type, cst.name(), cst::QualifiedName::upper);
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
             TypeKind::Constructor { resolution }
         }
@@ -692,9 +710,16 @@ fn lower_type_kind(
             TypeKind::Kinded { type_, kind }
         }
         cst::Type::TypeOperator(cst) => {
-            let (_, qualifier, name) = cst.name().map(|cst| {
-                lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::operator_name)
-            })?;
+            let (qualifier, name) = cst
+                .name()
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
+                .unwrap_or_default();
+            let _ = lower_qualified_name_v2(
+                s,
+                Domain::Type,
+                cst.name(),
+                cst::QualifiedName::operator_name,
+            );
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
             TypeKind::Operator { resolution }
         }
@@ -765,25 +790,22 @@ pub(crate) fn lower_forall(s: &mut State, e: &Environment, cst: &cst::Type) -> T
 }
 
 fn lower_pair<T>(
-    s: &mut State,
+    state: &mut State,
     domain: Domain,
     qualified: Option<cst::QualifiedName>,
     element: Option<T>,
 ) -> Option<OperatorPair<T>> {
     let qualified = qualified?;
-    let (id, qualifier, operator) =
-        lower_qualified_name(s, domain, &qualified, cst::QualifiedName::operator);
-    let resolution = s.resolve_deferred(domain, qualifier, operator);
+    let (qualifier, operator) = lower_qualified_name(&qualified, cst::QualifiedName::operator);
+    let resolution = state.resolve_deferred(domain, qualifier, operator);
+    let id = lower_qualified_name_v2(state, domain, Some(qualified), cst::QualifiedName::operator);
     Some(OperatorPair { resolution, id, element })
 }
 
 pub(crate) fn lower_qualified_name(
-    s: &mut State,
-    domain: Domain,
     cst: &cst::QualifiedName,
     token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
-) -> (QualifiedNameId, Option<SmolStr>, Option<SmolStr>) {
-    let id = s.source.allocate_qualified_name(cst);
+) -> (Option<SmolStr>, Option<SmolStr>) {
     let qualifier = cst.qualifier().and_then(|cst| {
         let token = cst.text()?;
         let text = token.text().trim_end_matches(".");
@@ -793,11 +815,32 @@ pub(crate) fn lower_qualified_name(
         let text = cst.text().trim_start_matches("(").trim_end_matches(")");
         SmolStr::from(text)
     });
-    s.intermediate.insert_qualified_name(
-        id,
-        QualifiedNameIr { domain, qualifier: qualifier.clone(), name: name.clone() },
-    );
-    (id, qualifier, name)
+    (qualifier, name)
+}
+
+pub(crate) fn lower_qualified_name_v2(
+    state: &mut State,
+    domain: Domain,
+    qualified: Option<cst::QualifiedName>,
+    token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
+) -> Option<QualifiedNameId> {
+    let qualified = qualified?;
+    let id = state.source.allocate_qualified_name(&qualified);
+
+    let qualifier = qualified.qualifier().and_then(|cst| {
+        let token = cst.text()?;
+        let text = token.text().trim_end_matches(".");
+        Some(SmolStr::from(text))
+    });
+
+    let token = token(&qualified)?;
+    let text = token.text().trim_start_matches('(').trim_end_matches(')');
+    let name = Some(SmolStr::from(text));
+
+    let ir = QualifiedNameIr { domain, qualifier, name };
+    state.intermediate.insert_qualified_name(id, ir);
+
+    Some(id)
 }
 
 pub(crate) fn lower_type_variable_binding(

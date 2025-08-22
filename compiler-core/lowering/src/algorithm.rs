@@ -185,17 +185,19 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Derive { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((id, qualifier, name)) = cst.instance_head().and_then(|cst| {
-                let cst = cst.qualified()?;
-                Some(recursive::lower_qualified_name(
-                    s,
-                    Domain::Type,
-                    &cst,
-                    cst::QualifiedName::upper,
-                ))
-            }) else {
-                todo!("figure out");
-            };
+            let qualified = cst.instance_head().and_then(|cst| cst.qualified());
+
+            let (qualifier, name) = qualified
+                .as_ref()
+                .map(|cst| recursive::lower_qualified_name(cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
+
+            let id = recursive::lower_qualified_name_v2(
+                s,
+                Domain::Type,
+                qualified,
+                cst::QualifiedName::upper,
+            );
 
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
 
@@ -227,17 +229,19 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Instance { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((id, qualifier, name)) = cst.instance_head().and_then(|cst| {
-                let cst = cst.qualified()?;
-                Some(recursive::lower_qualified_name(
-                    s,
-                    Domain::Type,
-                    &cst,
-                    cst::QualifiedName::upper,
-                ))
-            }) else {
-                todo!("figureout")
-            };
+            let qualified = cst.instance_head().and_then(|cst| cst.qualified());
+
+            let (qualifier, name) = qualified
+                .as_ref()
+                .map(|cst| recursive::lower_qualified_name(cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
+
+            let id = recursive::lower_qualified_name_v2(
+                s,
+                Domain::Type,
+                qualified,
+                cst::QualifiedName::upper,
+            );
 
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
 
@@ -268,11 +272,19 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         TermItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((id, qualifier, name)) = cst.qualified().map(|cst| {
-                recursive::lower_qualified_name(s, Domain::Term, &cst, cst::QualifiedName::lower)
-            }) else {
-                todo!("figureout")
-            };
+            let qualified = cst.qualified();
+
+            let (qualifier, name) = qualified
+                .as_ref()
+                .map(|cst| recursive::lower_qualified_name(cst, cst::QualifiedName::lower))
+                .unwrap_or_default();
+
+            let id = recursive::lower_qualified_name_v2(
+                s,
+                Domain::Term,
+                qualified,
+                cst::QualifiedName::lower,
+            );
 
             let resolution = s.resolve_deferred(Domain::Term, qualifier, name);
 
@@ -434,11 +446,19 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         TypeItemKind::Operator { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
 
-            let Some((id, qualifier, name)) = cst.qualified().map(|cst| {
-                recursive::lower_qualified_name(s, Domain::Type, &cst, cst::QualifiedName::upper)
-            }) else {
-                todo!("figureout")
-            };
+            let qualified = cst.qualified();
+
+            let (qualifier, name) = qualified
+                .as_ref()
+                .map(|cst| recursive::lower_qualified_name(cst, cst::QualifiedName::upper))
+                .unwrap_or_default();
+
+            let id = recursive::lower_qualified_name_v2(
+                s,
+                Domain::Type,
+                qualified,
+                cst::QualifiedName::upper,
+            );
 
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
 
