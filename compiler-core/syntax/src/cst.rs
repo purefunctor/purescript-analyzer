@@ -451,7 +451,7 @@ has_token!(
 
 has_child!(
     InstanceSignatureStatement
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -472,7 +472,7 @@ has_token!(
 
 has_child!(
     TypeSynonymSignature
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -482,7 +482,7 @@ has_token!(
 
 has_child!(
     TypeSynonymEquation
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_children!(
@@ -497,7 +497,7 @@ has_token!(
 
 has_child!(
     ClassSignature
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_child!(
@@ -534,7 +534,7 @@ has_token!(
 
 has_child!(
     ClassMemberStatement
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -544,7 +544,7 @@ has_token!(
 
 has_child!(
     NewtypeSignature
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -565,7 +565,7 @@ has_token!(
 
 has_child!(
     DataSignature
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -596,7 +596,7 @@ has_token!(
 
 has_child!(
     ForeignImportDataDeclaration
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -606,7 +606,7 @@ has_token!(
 
 has_child!(
     ForeignImportValueDeclaration
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_child!(
@@ -704,7 +704,7 @@ has_children!(
 
 has_child!(
     ExpressionTypeArgument
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_child!(
@@ -714,9 +714,9 @@ has_child!(
 
 has_child!(
     ExpressionIfThenElse
-    | r#if() -> ExpressionIf
+    | if_() -> ExpressionIf
     | then() -> ExpressionThen
-    | r#else() -> ExpressionElse
+    | else_() -> ExpressionElse
 );
 
 has_child!(
@@ -758,7 +758,7 @@ has_token!(
 
 has_child!(
     LetBindingSignature
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -917,7 +917,7 @@ has_child!(
 has_child!(
     BinderTyped
     | binder() -> Binder
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_child!(
@@ -998,7 +998,7 @@ has_child!(
 
 has_child!(
     TypeForall
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_children!(
@@ -1029,7 +1029,7 @@ has_child!(
 
 has_child!(
     TypeOperatorChain
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_children!(
@@ -1040,7 +1040,7 @@ has_children!(
 has_child!(
     TypeOperatorPair
     | qualified() -> QualifiedName
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(
@@ -1061,7 +1061,7 @@ has_children!(
 has_child!(
     TypeRowItem
     | name() -> LabelName
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_child!(
@@ -1076,12 +1076,12 @@ has_child!(
 
 has_child!(
     TypeRowTail
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_child!(
     TypeParenthesized
-    | ty() -> Type
+    | type_() -> Type
 );
 
 has_token!(

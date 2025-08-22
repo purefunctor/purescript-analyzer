@@ -14,7 +14,7 @@ pub enum BinderRecordItem {
 pub enum BinderKind {
     Typed {
         binder: Option<BinderId>,
-        ty: Option<TypeId>,
+        type_: Option<TypeId>,
     },
     OperatorChain {
         head: Option<BinderId>,
@@ -87,7 +87,7 @@ pub enum ExpressionRecordItem {
 pub enum ExpressionKind {
     Typed {
         expression: Option<ExpressionId>,
-        ty: Option<TypeId>,
+        type_: Option<TypeId>,
     },
     OperatorChain {
         head: Option<ExpressionId>,
@@ -105,9 +105,9 @@ pub enum ExpressionKind {
         arguments: Arc<[ExpressionArgument]>,
     },
     IfThenElse {
-        r#if: Option<ExpressionId>,
+        if_: Option<ExpressionId>,
         then: Option<ExpressionId>,
-        r#else: Option<ExpressionId>,
+        else_: Option<ExpressionId>,
     },
     LetIn {
         bindings: Arc<[LetBinding]>,
@@ -183,7 +183,7 @@ pub struct TypeVariableBinding {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TypeRowItem {
     pub name: Option<SmolStr>,
-    pub ty: Option<TypeId>,
+    pub type_: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -192,10 +192,10 @@ pub enum TypeKind {
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
     Constructor { resolution: DeferredResolutionId },
-    Forall { bindings: Arc<[TypeVariableBinding]>, ty: Option<TypeId> },
+    Forall { bindings: Arc<[TypeVariableBinding]>, type_: Option<TypeId> },
     Hole,
     Integer,
-    Kinded { ty: Option<TypeId>, kind: Option<TypeId> },
+    Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
     Operator { resolution: DeferredResolutionId },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
@@ -329,7 +329,7 @@ pub struct NewtypeIr {
 #[derive(Debug, PartialEq, Eq)]
 pub struct SynonymIr {
     pub variables: Arc<[TypeVariableBinding]>,
-    pub ty: Option<TypeId>,
+    pub type_: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

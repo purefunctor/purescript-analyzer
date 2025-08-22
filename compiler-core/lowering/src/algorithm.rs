@@ -220,7 +220,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
         }
         TermItemKind::Foreign { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
-            let signature = cst.ty().map(|t| recursive::lower_type(s, e, &t));
+            let signature = cst.type_().map(|t| recursive::lower_type(s, e, &t));
             let kind = TermItemIr::Foreign { signature };
             s.intermediate.insert_term_item(item_id, kind);
         }
@@ -317,7 +317,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
             let signature = signature.and_then(|id| {
                 let cst = &e.indexed.source[id].to_node(root);
                 s.push_forall_scope();
-                cst.ty().map(|t| recursive::lower_forall(s, e, &t))
+                cst.type_().map(|t| recursive::lower_forall(s, e, &t))
             });
 
             let data = equation.map(|id| {
@@ -343,7 +343,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
             let signature = signature.and_then(|id| {
                 let cst = &e.indexed.source[id].to_node(root);
                 s.push_forall_scope();
-                cst.ty().map(|t| recursive::lower_forall(s, e, &t))
+                cst.type_().map(|t| recursive::lower_forall(s, e, &t))
             });
 
             let newtype = equation.map(|id| {
@@ -369,7 +369,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
             let signature = signature.and_then(|id| {
                 let cst = &e.indexed.source[id].to_node(root);
                 s.push_forall_scope();
-                cst.ty().map(|t| recursive::lower_forall(s, e, &t))
+                cst.type_().map(|t| recursive::lower_forall(s, e, &t))
             });
 
             let synonym = equation.map(|id| {
@@ -381,9 +381,9 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
                     .map(|cst| recursive::lower_type_variable_binding(s, e, &cst))
                     .collect();
 
-                let ty = cst.ty().map(|cst| recursive::lower_type(s, e, &cst));
+                let type_ = cst.type_().map(|cst| recursive::lower_type(s, e, &cst));
 
-                SynonymIr { variables, ty }
+                SynonymIr { variables, type_ }
             });
 
             let kind = TypeItemIr::SynonymGroup { signature, synonym };
@@ -393,7 +393,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
             let signature = signature.and_then(|id| {
                 let cst = &e.indexed.source[id].to_node(root);
                 s.push_forall_scope();
-                cst.ty().map(|t| recursive::lower_forall(s, e, &t))
+                cst.type_().map(|t| recursive::lower_forall(s, e, &t))
             });
 
             let class = declaration.map(|id| {
@@ -426,7 +426,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
         }
         TypeItemKind::Foreign { id } => {
             let cst = &e.indexed.source[*id].to_node(root);
-            let signature = cst.ty().map(|t| recursive::lower_type(s, e, &t));
+            let signature = cst.type_().map(|t| recursive::lower_type(s, e, &t));
 
             let kind = TypeItemIr::Foreign { signature };
             s.intermediate.insert_type_item(item_id, kind);
@@ -478,7 +478,7 @@ fn lower_class_members(s: &mut State, e: &Environment, id: TypeItemId) {
         };
 
         let cst = &e.indexed.source[id].to_node(root);
-        let signature = cst.ty().map(|t| recursive::lower_type(s, e, &t));
+        let signature = cst.type_().map(|t| recursive::lower_type(s, e, &t));
 
         let kind = TermItemIr::ClassMember { signature };
         s.intermediate.insert_term_item(item_id, kind);
@@ -539,7 +539,7 @@ fn lower_instance_statements(
                 s.push_forall_scope();
                 let signature = signature.and_then(|id| {
                     let cst = s.source[id].to_node(root);
-                    cst.ty().map(|t| recursive::lower_forall(s, e, &t))
+                    cst.type_().map(|t| recursive::lower_forall(s, e, &t))
                 });
                 let equations = equations
                     .iter()
