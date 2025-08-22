@@ -306,7 +306,7 @@ fn lower_expression_kind(
         cst::Expression::ExpressionOperatorName(cst) => {
             let (qualifier, name) = cst
                 .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::lower))
+                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
             let id = lower_qualified_name_v2(
                 s,
