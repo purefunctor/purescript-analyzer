@@ -4,7 +4,7 @@ use files::{FileId, Files};
 use indexing::ImportItemId;
 use lowering::{
     BinderId, BinderKind, DeferredResolutionId, Domain, ExpressionId, ExpressionKind,
-    FullLoweredModule, TermResolution, TypeId, TypeVariableResolution,
+    FullLoweredModule, QualifiedNameId, TermResolution, TypeId, TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
@@ -221,8 +221,8 @@ fn definition_binder(
 
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
-        BinderKind::Constructor { resolution, .. } => {
-            definition_deferred(engine, files, &resolved, &lowered, *resolution)
+        BinderKind::Constructor { id: Some(id), .. } => {
+            definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
         _ => None,
     }
@@ -245,8 +245,8 @@ fn definition_expression(
 
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
-        ExpressionKind::Constructor { resolution, .. } => {
-            definition_deferred(engine, files, &resolved, &lowered, *resolution)
+        ExpressionKind::Constructor { id: Some(id), .. } => {
+            definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -284,8 +284,8 @@ fn definition_expression(
                 }
             }
         }
-        ExpressionKind::OperatorName { resolution, .. } => {
-            definition_deferred(engine, files, &resolved, &lowered, *resolution)
+        ExpressionKind::OperatorName { id: Some(id), .. } => {
+            definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
         _ => None,
     }
@@ -308,11 +308,11 @@ fn definition_type(
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        lowering::TypeKind::Constructor { resolution, .. } => {
-            definition_deferred(engine, files, &resolved, &lowered, *resolution)
+        lowering::TypeKind::Constructor { id: Some(id), .. } => {
+            definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
-        lowering::TypeKind::Operator { resolution, .. } => {
-            definition_deferred(engine, files, &resolved, &lowered, *resolution)
+        lowering::TypeKind::Operator { id: Some(id), .. } => {
+            definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
         lowering::TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -347,6 +347,80 @@ fn definition_deferred(
     let name = deferred.name.as_deref()?;
 
     match deferred.domain {
+        Domain::Term => {
+            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
+
+            let uri = {
+                let path = files.path(f_id);
+                let content = files.content(f_id);
+                let uri = Url::parse(&path).ok()?;
+                prim::handle_generated(uri, &content)?
+            };
+
+            let (content, parsed, indexed) = {
+                let content = engine.content(f_id);
+                let (parsed, _) = engine.parsed(f_id).ok()?;
+                let indexed = engine.indexed(f_id).ok()?;
+                (content, parsed, indexed)
+            };
+
+            // TODO: Once we implement textDocument/typeDefinition, we
+            // should probably also add a term_item_type_ptr function.
+            let root = parsed.syntax_node();
+            let ptrs = indexed.term_item_ptr(t_id);
+            let range = ptrs
+                .into_iter()
+                .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+                .reduce(|start, end| Range { start: start.start, end: end.end })?;
+
+            Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+        }
+        Domain::Type => {
+            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
+
+            let uri = {
+                let path = files.path(f_id);
+                let content = files.content(f_id);
+                let uri = Url::parse(&path).ok()?;
+                prim::handle_generated(uri, &content)?
+            };
+
+            let (content, parsed, indexed) = {
+                let content = engine.content(f_id);
+                let (parsed, _) = engine.parsed(f_id).ok()?;
+                let indexed = engine.indexed(f_id).ok()?;
+                (content, parsed, indexed)
+            };
+
+            let root = parsed.syntax_node();
+            let ptrs = indexed.type_item_ptr(t_id);
+            let range = ptrs
+                .into_iter()
+                .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+                .reduce(|start, end| Range { start: start.start, end: end.end })?;
+
+            Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+        }
+    }
+}
+
+fn definition_qualified_name(
+    engine: &QueryEngine,
+    files: &Files,
+    resolved: &FullResolvedModule,
+    lowered: &FullLoweredModule,
+    id: QualifiedNameId,
+) -> Option<GotoDefinitionResponse> {
+    let prim = {
+        let id = engine.prim_id();
+        engine.resolved(id).ok()?
+    };
+
+    let ir = lowered.intermediate.index_qualified_name(id)?;
+    let prefix = ir.qualifier.as_deref();
+    let name = ir.name.as_str();
+
+    match ir.domain {
         Domain::Term => {
             let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
 
