@@ -118,6 +118,15 @@ impl State {
         }
     }
 
+    fn resolve_term_v2(&mut self, id: QualifiedNameId) -> Option<TermResolution> {
+        let ir = self.intermediate.index_qualified_name(id)?;
+        if ir.qualifier.is_some() {
+            Some(TermResolution::Reference(id))
+        } else {
+            self.resolve_term_local(&ir.name).or(Some(TermResolution::Reference(id)))
+        }
+    }
+
     fn resolve_term_local(&self, name: &str) -> Option<TermResolution> {
         let id = self.graph_scope?;
         self.graph.traverse(id).find_map(|(_, graph)| match graph {
@@ -186,7 +195,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let cst = &e.indexed.source[*id].to_node(root);
 
             let qualified = cst.instance_head().and_then(|cst| cst.qualified());
-            let id = recursive::lower_qualified_name_v2(
+            let id = recursive::lower_qualified_name(
                 s,
                 Domain::Type,
                 qualified,
@@ -222,7 +231,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let cst = &e.indexed.source[*id].to_node(root);
 
             let qualified = cst.instance_head().and_then(|cst| cst.qualified());
-            let id = recursive::lower_qualified_name_v2(
+            let id = recursive::lower_qualified_name(
                 s,
                 Domain::Type,
                 qualified,
@@ -257,7 +266,7 @@ fn lower_term_item(s: &mut State, e: &Environment, item_id: TermItemId, item: &T
             let cst = &e.indexed.source[*id].to_node(root);
 
             let qualified = cst.qualified();
-            let id = recursive::lower_qualified_name_v2(
+            let id = recursive::lower_qualified_name(
                 s,
                 Domain::Term,
                 qualified,
@@ -423,7 +432,7 @@ fn lower_type_item(s: &mut State, e: &Environment, item_id: TypeItemId, item: &T
             let cst = &e.indexed.source[*id].to_node(root);
 
             let qualified = cst.qualified();
-            let id = recursive::lower_qualified_name_v2(
+            let id = recursive::lower_qualified_name(
                 s,
                 Domain::Type,
                 qualified,

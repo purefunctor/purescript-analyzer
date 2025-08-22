@@ -209,6 +209,9 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
             let resolution = resolution.as_ref()?;
             match resolution {
                 TermResolution::Deferred(id) => hover_deferred(engine, &resolved, &lowered, *id),
+                TermResolution::Reference(id) => {
+                    hover_qualified_name(engine, &resolved, &lowered, *id)
+                }
                 TermResolution::Binder(_) => None,
                 TermResolution::Let(let_binding) => {
                     let (parsed, _) = engine.parsed(f_id).ok()?;

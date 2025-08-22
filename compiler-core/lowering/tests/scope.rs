@@ -36,6 +36,9 @@ fn variable_scope_check(content: &str) -> String {
                 TermResolution::Deferred(_) => {
                     writeln!(snapshot, "  resolves to top-level name").unwrap();
                 }
+                TermResolution::Reference(_) => {
+                    writeln!(snapshot, "  resolves to top-level name").unwrap();
+                }
                 TermResolution::Binder(binder) => {
                     let cst = &source[*binder];
                     let range = cst.syntax_node_ptr().text_range();

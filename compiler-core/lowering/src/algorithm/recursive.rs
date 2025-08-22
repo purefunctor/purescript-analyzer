@@ -44,8 +44,7 @@ fn lower_binder_kind(
         cst::Binder::BinderInteger(_) => BinderKind::Integer,
         cst::Binder::BinderNumber(_) => BinderKind::Number,
         cst::Binder::BinderConstructor(cst) => {
-            let id =
-                lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
+            let id = lower_qualified_name(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
             let arguments = cst.children().map(|cst| lower_binder(s, e, &cst)).collect();
             BinderKind::Constructor { id, arguments }
         }
@@ -279,22 +278,16 @@ fn lower_expression_kind(
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
-            let id =
-                lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
+            let id = lower_qualified_name(s, Domain::Term, cst.name(), cst::QualifiedName::upper);
             ExpressionKind::Constructor { id }
         }
         cst::Expression::ExpressionVariable(cst) => {
-            let (qualifier, name) = cst
-                .name()
-                .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::lower))
-                .unwrap_or_default();
-            let id =
-                lower_qualified_name_v2(s, Domain::Term, cst.name(), cst::QualifiedName::lower);
-            let resolution = s.resolve_term(qualifier, name);
-            ExpressionKind::Variable { resolution, id }
+            let id = lower_qualified_name(s, Domain::Term, cst.name(), cst::QualifiedName::lower);
+            let resolution = id.and_then(|id| s.resolve_term_v2(id));
+            ExpressionKind::Variable { id, resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
-            let id = lower_qualified_name_v2(
+            let id = lower_qualified_name(
                 s,
                 Domain::Term,
                 cst.name(),
@@ -665,8 +658,7 @@ fn lower_type_kind(s: &mut State, e: &Environment<'_>, cst: &cst::Type, id: Type
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
-            let id =
-                lower_qualified_name_v2(s, Domain::Type, cst.name(), cst::QualifiedName::upper);
+            let id = lower_qualified_name(s, Domain::Type, cst.name(), cst::QualifiedName::upper);
             TypeKind::Constructor { id }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
@@ -686,7 +678,7 @@ fn lower_type_kind(s: &mut State, e: &Environment<'_>, cst: &cst::Type, id: Type
             TypeKind::Kinded { type_, kind }
         }
         cst::Type::TypeOperator(cst) => {
-            let id = lower_qualified_name_v2(
+            let id = lower_qualified_name(
                 s,
                 Domain::Type,
                 cst.name(),
@@ -766,27 +758,11 @@ fn lower_pair<T>(
     qualified: Option<cst::QualifiedName>,
     element: Option<T>,
 ) -> OperatorPair<T> {
-    let id = lower_qualified_name_v2(state, domain, qualified, cst::QualifiedName::operator);
+    let id = lower_qualified_name(state, domain, qualified, cst::QualifiedName::operator);
     OperatorPair { id, element }
 }
 
 pub(crate) fn lower_qualified_name(
-    cst: &cst::QualifiedName,
-    token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
-) -> (Option<SmolStr>, Option<SmolStr>) {
-    let qualifier = cst.qualifier().and_then(|cst| {
-        let token = cst.text()?;
-        let text = token.text().trim_end_matches(".");
-        Some(SmolStr::from(text))
-    });
-    let name = token(cst).map(|cst| {
-        let text = cst.text().trim_start_matches("(").trim_end_matches(")");
-        SmolStr::from(text)
-    });
-    (qualifier, name)
-}
-
-pub(crate) fn lower_qualified_name_v2(
     state: &mut State,
     domain: Domain,
     qualified: Option<cst::QualifiedName>,
@@ -797,7 +773,7 @@ pub(crate) fn lower_qualified_name_v2(
 
     let qualifier = qualified.qualifier().and_then(|cst| {
         let token = cst.text()?;
-        let text = token.text().trim_end_matches(".");
+        let text = token.text().trim_end_matches('.');
         Some(SmolStr::from(text))
     });
 

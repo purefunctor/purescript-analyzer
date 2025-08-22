@@ -4,7 +4,7 @@ use files::{FileId, Files};
 use indexing::ImportItemId;
 use lowering::{
     BinderId, BinderKind, DeferredResolutionId, Domain, ExpressionId, ExpressionKind,
-    FullLoweredModule, QualifiedNameId, TermResolution, TypeId, TypeVariableResolution,
+    FullLoweredModule, QualifiedNameId, TermResolution, TypeId, TypeKind, TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
@@ -254,6 +254,9 @@ fn definition_expression(
                 TermResolution::Deferred(id) => {
                     definition_deferred(engine, files, &resolved, &lowered, *id)
                 }
+                TermResolution::Reference(id) => {
+                    definition_qualified_name(engine, files, &resolved, &lowered, *id)
+                }
                 TermResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
                     let ptr = &lowered.source[*binder].syntax_node_ptr();
@@ -308,13 +311,13 @@ fn definition_type(
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        lowering::TypeKind::Constructor { id: Some(id), .. } => {
+        TypeKind::Constructor { id: Some(id), .. } => {
             definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
-        lowering::TypeKind::Operator { id: Some(id), .. } => {
+        TypeKind::Operator { id: Some(id), .. } => {
             definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
-        lowering::TypeKind::Variable { resolution, .. } => {
+        TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
                 TypeVariableResolution::Forall(binding) => {
@@ -479,10 +482,14 @@ fn definition_qualified_name(
 }
 
 /// Convenience function that converts name-only references into
-/// [`DeferredResolutionId`] to be used with [`definition_deferred`].
+/// [`QualifiedNameId`] to be used with [`definition_qualified_name`].
 ///
 /// This is particularly useful for things like operators which
 /// we don't currently track during [`lowering`].
+///
+/// TODO: We now track QualifiedNameId in operator chains, so this
+/// should be removed in favor of extracing that ID from the operator
+/// chain directly.
 fn definition_nominal(
     engine: &QueryEngine,
     files: &Files,
@@ -493,13 +500,9 @@ fn definition_nominal(
     let resolved = engine.resolved(f_id).ok()?;
     let lowered = engine.lowered(f_id).ok()?;
 
-    let id = lowered.graph.deferred().find_map(|(id, deferred)| {
-        if deferred.domain == domain && deferred.name.as_ref() == Some(&text) {
-            Some(id)
-        } else {
-            None
-        }
+    let id = lowered.intermediate.iter_qualified_name().find_map(|(id, ir)| {
+        if ir.domain == domain && ir.name == text { Some(id) } else { None }
     })?;
 
-    definition_deferred(engine, files, &resolved, &lowered, id)
+    definition_qualified_name(engine, files, &resolved, &lowered, id)
 }

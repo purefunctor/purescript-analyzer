@@ -31,6 +31,7 @@ use crate::{source::*, Domain};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermResolution {
     Deferred(DeferredResolutionId),
+    Reference(QualifiedNameId),
     Binder(BinderId),
     Let(LetBindingResolution),
 }
