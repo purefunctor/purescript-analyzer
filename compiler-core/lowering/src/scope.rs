@@ -25,12 +25,11 @@ use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
 use syntax::create_association;
 
-use crate::{source::*, Domain};
+use crate::source::*;
 
 /// A resolution for term names.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermResolution {
-    Deferred(DeferredResolutionId),
     Reference(QualifiedNameId),
     Binder(BinderId),
     Let(LetBindingResolution),
@@ -125,21 +124,10 @@ pub enum GraphNode {
 
 pub type GraphNodeId = Idx<GraphNode>;
 
-/// A resolution to a non-local binding.
-#[derive(Debug, PartialEq, Eq)]
-pub struct DeferredResolution {
-    pub domain: Domain,
-    pub qualifier: Option<SmolStr>,
-    pub name: Option<SmolStr>,
-}
-
-pub type DeferredResolutionId = Idx<DeferredResolution>;
-
 /// A scope graph for PureScript.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct LoweringGraph {
     pub(crate) inner: Arena<GraphNode>,
-    pub(crate) deferred: Arena<DeferredResolution>,
 }
 
 impl LoweringGraph {
@@ -149,11 +137,6 @@ impl LoweringGraph {
         let queue = VecDeque::from([id]);
         GraphIter { inner, queue }
     }
-
-    /// An iterator over the current set of [`DeferredResolution`].
-    pub fn deferred(&self) -> impl Iterator<Item = (DeferredResolutionId, &DeferredResolution)> {
-        self.deferred.iter()
-    }
 }
 
 impl ops::Index<GraphNodeId> for LoweringGraph {
@@ -161,14 +144,6 @@ impl ops::Index<GraphNodeId> for LoweringGraph {
 
     fn index(&self, index: GraphNodeId) -> &Self::Output {
         &self.inner[index]
-    }
-}
-
-impl ops::Index<DeferredResolutionId> for LoweringGraph {
-    type Output = DeferredResolution;
-
-    fn index(&self, index: DeferredResolutionId) -> &Self::Output {
-        &self.deferred[index]
     }
 }
 

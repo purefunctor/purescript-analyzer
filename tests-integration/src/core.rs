@@ -3,7 +3,6 @@ use std::fmt::Write;
 use analyzer::QueryEngine;
 use files::FileId;
 use indexing::ImportKind;
-use lowering::Domain;
 
 pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let resolved = engine.resolved(id).unwrap();
@@ -83,57 +82,6 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     writeln!(buffer, "Errors:").unwrap();
     for error in &resolved.errors {
         writeln!(buffer, "  - {error:?}").unwrap();
-    }
-
-    buffer
-}
-
-pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
-    let prim = {
-        let id = engine.prim_id();
-        engine.resolved(id).ok().unwrap()
-    };
-
-    let resolved = engine.resolved(id).unwrap();
-    let lowered = engine.lowered(id).unwrap();
-
-    let mut buffer = String::default();
-    for (id, deferred) in lowered.graph.deferred() {
-        let prefix = deferred.qualifier.as_ref().map(|name| name.as_str());
-        let Some(name) = &deferred.name else { continue };
-
-        match deferred.domain {
-            Domain::Term => {
-                let Some((f_id, t_id)) = resolved.lookup_term(&prim, prefix, name) else {
-                    continue;
-                };
-                let (module, _) = engine.parsed(f_id).unwrap();
-                let module = module.module_name().unwrap();
-
-                let indexed = engine.indexed(f_id).unwrap();
-                let item = &indexed.items[t_id];
-
-                let Some(item) = &item.name else { continue };
-                writeln!(buffer, "{id:?} = {module}.{item}").unwrap();
-            }
-            Domain::Type => {
-                let Some((f_id, t_id)) = resolved.lookup_type(&prim, prefix, name) else {
-                    continue;
-                };
-                let (module, _) = engine.parsed(f_id).unwrap();
-                let module = module.module_name().unwrap();
-
-                let indexed = engine.indexed(f_id).unwrap();
-                let item = &indexed.items[t_id];
-
-                let Some(item) = &item.name else { continue };
-                writeln!(buffer, "{id:?} = {module}.{item}").unwrap();
-            }
-        }
-    }
-
-    if buffer.is_empty() {
-        writeln!(buffer, "<empty>").unwrap()
     }
 
     buffer

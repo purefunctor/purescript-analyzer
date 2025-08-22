@@ -3,7 +3,7 @@ use std::sync::Arc;
 use building_types::QueryResult;
 use files::FileId;
 use indexing::FullIndexedModule;
-use lowering::{DeferredResolutionId, ExpressionId, FullLoweredModule};
+use lowering::{ExpressionId, FullLoweredModule, QualifiedNameId};
 use resolving::FullResolvedModule;
 use rustc_hash::FxHashMap;
 
@@ -114,7 +114,7 @@ where
 
 #[derive(Debug)]
 pub enum BracketError {
-    FailedToResolve(DeferredResolutionId),
+    FailedToResolve(QualifiedNameId),
     NonAssociative,
     MixedAssociativity,
 }
@@ -190,6 +190,6 @@ pub enum BracketError {
 
 #[derive(Debug)]
 pub enum Tree {
-    Branch(DeferredResolutionId, Vec<Tree>),
+    Branch(QualifiedNameId, Vec<Tree>),
     Leaf(Option<ExpressionId>),
 }

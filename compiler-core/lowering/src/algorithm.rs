@@ -92,30 +92,12 @@ impl State {
         *collecting = false;
     }
 
-    fn resolve_deferred(
-        &mut self,
-        domain: Domain,
-        qualifier: Option<SmolStr>,
-        name: Option<SmolStr>,
-    ) -> DeferredResolutionId {
-        self.graph.deferred.alloc(DeferredResolution { domain, qualifier, name })
-    }
-
     fn resolve_term(
         &mut self,
-        qualifier: Option<SmolStr>,
-        name: Option<SmolStr>,
+        _qualifier: Option<SmolStr>,
+        _name: Option<SmolStr>,
     ) -> Option<TermResolution> {
-        if qualifier.is_some() {
-            let r = self.resolve_deferred(Domain::Term, qualifier, name);
-            Some(TermResolution::Deferred(r))
-        } else {
-            let name = name?;
-            self.resolve_term_local(&name).or_else(|| {
-                let r = self.resolve_deferred(Domain::Term, None, Some(name));
-                Some(TermResolution::Deferred(r))
-            })
-        }
+        todo!("TODO");
     }
 
     fn resolve_term_v2(&mut self, id: QualifiedNameId) -> Option<TermResolution> {

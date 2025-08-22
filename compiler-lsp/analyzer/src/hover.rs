@@ -10,8 +10,8 @@ use indexing::{
 use itertools::Itertools;
 use la_arena::Idx;
 use lowering::{
-    BinderId, BinderKind, DeferredResolutionId, Domain, ExpressionId, ExpressionKind,
-    FullLoweredModule, LetBindingResolution, QualifiedNameId, TermResolution, TypeId, TypeKind,
+    BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
+    LetBindingResolution, QualifiedNameId, TermResolution, TypeId, TypeKind,
 };
 use resolving::FullResolvedModule;
 use rowan::{
@@ -208,7 +208,6 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Deferred(id) => hover_deferred(engine, &resolved, &lowered, *id),
                 TermResolution::Reference(id) => {
                     hover_qualified_name(engine, &resolved, &lowered, *id)
                 }
@@ -286,33 +285,6 @@ fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover>
             hover_qualified_name(engine, &resolved, &lowered, *id)
         }
         _ => None,
-    }
-}
-
-fn hover_deferred(
-    engine: &QueryEngine,
-    resolved: &FullResolvedModule,
-    lowered: &FullLoweredModule,
-    id: DeferredResolutionId,
-) -> Option<Hover> {
-    let prim = {
-        let id = engine.prim_id();
-        engine.resolved(id).ok()?
-    };
-
-    let deferred = &lowered.graph[id];
-    let prefix = deferred.qualifier.as_deref();
-    let name = deferred.name.as_deref()?;
-
-    match deferred.domain {
-        Domain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
-            hover_file_term(engine, f_id, t_id)
-        }
-        Domain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
-            hover_file_type(engine, f_id, t_id)
-        }
     }
 }
 
