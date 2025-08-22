@@ -689,9 +689,10 @@ fn lower_type_kind(
                 .name()
                 .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::upper))
                 .unwrap_or_default();
-            let _ = lower_qualified_name_v2(s, Domain::Type, cst.name(), cst::QualifiedName::upper);
+            let id =
+                lower_qualified_name_v2(s, Domain::Type, cst.name(), cst::QualifiedName::upper);
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
-            TypeKind::Constructor { resolution }
+            TypeKind::Constructor { resolution, id }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
         cst::Type::TypeForall(cst) => s.with_scope(|s| {
@@ -714,14 +715,14 @@ fn lower_type_kind(
                 .name()
                 .map(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name))
                 .unwrap_or_default();
-            let _ = lower_qualified_name_v2(
+            let id = lower_qualified_name_v2(
                 s,
                 Domain::Type,
                 cst.name(),
                 cst::QualifiedName::operator_name,
             );
             let resolution = s.resolve_deferred(Domain::Type, qualifier, name);
-            TypeKind::Operator { resolution }
+            TypeKind::Operator { resolution, id }
         }
         cst::Type::TypeOperatorChain(cst) => {
             let head = cst.type_().map(|cst| lower_type(s, e, &cst));
