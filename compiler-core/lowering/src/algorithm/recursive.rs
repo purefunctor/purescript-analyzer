@@ -21,7 +21,7 @@ fn lower_binder_kind(
     s: &mut State,
     e: &Environment<'_>,
     cst: &cst::Binder,
-    id: la_arena::Idx<rowan::ast::AstPtr<cst::Binder>>,
+    id: BinderId,
 ) -> Option<BinderKind> {
     Some(match cst {
         cst::Binder::BinderTyped(cst) => {
@@ -647,7 +647,7 @@ fn lower_type_kind(
     s: &mut State,
     e: &Environment<'_>,
     cst: &cst::Type,
-    id: la_arena::Idx<rowan::ast::AstPtr<cst::Type>>,
+    id: TypeId,
 ) -> Option<TypeKind> {
     Some(match cst {
         cst::Type::TypeApplicationChain(cst) => {
