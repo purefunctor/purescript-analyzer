@@ -835,7 +835,7 @@ pub(crate) fn lower_qualified_name_v2(
 
     let token = token(&qualified)?;
     let text = token.text().trim_start_matches('(').trim_end_matches(')');
-    let name = Some(SmolStr::from(text));
+    let name = SmolStr::from(text);
 
     let ir = QualifiedNameIr { domain, qualifier, name };
     state.intermediate.insert_qualified_name(id, ir);

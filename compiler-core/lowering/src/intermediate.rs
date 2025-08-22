@@ -379,7 +379,7 @@ pub enum Domain {
 pub struct QualifiedNameIr {
     pub domain: Domain,
     pub qualifier: Option<SmolStr>,
-    pub name: Option<SmolStr>,
+    pub name: SmolStr,
 }
 
 syntax::create_association! {

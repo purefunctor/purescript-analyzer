@@ -24,29 +24,3 @@ pub fn lower_module(module: &cst::Module, indexed: &FullIndexedModule) -> FullLo
         algorithm::lower_module(module, indexed);
     FullLoweredModule { intermediate, source, graph, graph_info }
 }
-
-/*
- * Quick and easy summary of what we want to change
- *
- * We nede to rethink if we should continue to use DeferredResolution as an
- * abstraction for qualified names, then have a separate QualifiedNameId for
- * the purpose of source-mapping or completely replace it with the latter.
- *
- * I mean ultimately they mean the same thing, just that DeferredResolution
- * contains the extracted contents of a QualifiedName as well as the domain
- * that it was extracted from.
- *
- * Why not just have QualifiedNameId point to that information though?
- *
- * QualifiedNameId => QualifiedNameIr
- *
- * struct QualifiedNameIr {
- *   domain: Domain,
- *   qualifier: Option<SmolStr>,
- *   name: Option<SmolStr>,
- * }
- *
- * DeferredResolution is a redundant abstraction and I reckon we're better
- * off with using QualifiedNameIr for this.
- *
- * */
