@@ -5,12 +5,11 @@ use building::QueryEngine;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
-use lowering::{BinderId, Domain, ExpressionId, FullLoweredModule, TypeId};
+use lowering::{BinderId, ExpressionId, FullLoweredModule, QualifiedNameId, TypeId};
 use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
 };
-use smol_str::SmolStr;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
@@ -54,7 +53,7 @@ pub enum Located {
     Binder(BinderId),
     Expression(ExpressionId),
     Type(TypeId),
-    OperatorInChain(Domain, SmolStr),
+    Operator(QualifiedNameId),
     Nothing,
 }
 
@@ -119,23 +118,22 @@ fn locate_node(
         let id = lowered.source.lookup_ty(&ptr)?;
         Some(Located::Type(id))
     } else if cst::QualifiedName::can_cast(kind) {
-        let domain = node.ancestors().find_map(|node| {
-            let kind = node.kind();
-            if cst::Expression::can_cast(kind) {
-                Some(Domain::Term)
-            } else if cst::Type::can_cast(kind) {
-                Some(Domain::Type)
-            } else {
-                None
-            }
+        let cst = cst::QualifiedName::cast(node)?;
+
+        let _ = cst.syntax().ancestors().find(|cst| {
+            let kind = cst.kind();
+            matches!(
+                kind,
+                SyntaxKind::BinderOperatorPair
+                    | SyntaxKind::ExpressionOperatorPair
+                    | SyntaxKind::TypeOperatorPair
+            )
         })?;
 
-        let node = cst::QualifiedName::cast(node)?;
-        let token = node.operator()?;
-        let text = token.text();
-        let text = SmolStr::new(text);
+        let ptr = AstPtr::new(&cst);
+        let id = lowered.source.lookup_qualified_name(&ptr)?;
 
-        Some(Located::OperatorInChain(domain, text))
+        Some(Located::Operator(id))
     } else {
         None
     }

@@ -42,7 +42,11 @@ pub fn implementation(
         locate::Located::Binder(b_id) => hover_binder(engine, f_id, b_id),
         locate::Located::Expression(e_id) => hover_expression(engine, f_id, e_id),
         locate::Located::Type(t_id) => hover_type(engine, f_id, t_id),
-        locate::Located::OperatorInChain(_, _) => None,
+        locate::Located::Operator(q_id) => {
+            let resolved = engine.resolved(f_id).ok()?;
+            let lowered = engine.lowered(f_id).ok()?;
+            hover_qualified_name(engine, &resolved, &lowered, q_id)
+        }
         locate::Located::Nothing => None,
     }
 }

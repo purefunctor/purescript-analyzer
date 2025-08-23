@@ -8,7 +8,7 @@ use lowering::{
 };
 use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
-use smol_str::{SmolStr, SmolStrBuilder};
+use smol_str::SmolStrBuilder;
 use syntax::cst;
 
 use crate::locate;
@@ -31,8 +31,10 @@ pub fn implementation(
         locate::Located::Binder(b_id) => definition_binder(engine, files, f_id, b_id),
         locate::Located::Expression(e_id) => definition_expression(engine, files, uri, f_id, e_id),
         locate::Located::Type(t_id) => definition_type(engine, files, uri, f_id, t_id),
-        locate::Located::OperatorInChain(domain, text) => {
-            definition_nominal(engine, files, f_id, domain, text)
+        locate::Located::Operator(q_id) => {
+            let resolved = engine.resolved(f_id).ok()?;
+            let lowered = engine.lowered(f_id).ok()?;
+            definition_qualified_name(engine, files, &resolved, &lowered, q_id)
         }
         locate::Located::Nothing => None,
     }
@@ -418,30 +420,4 @@ fn definition_nominal_v2(
             Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }
     }
-}
-
-/// Convenience function that converts name-only references into
-/// [`QualifiedNameId`] to be used with [`definition_qualified_name`].
-///
-/// This is particularly useful for things like operators which
-/// we don't currently track during [`lowering`].
-///
-/// TODO: We now track QualifiedNameId in operator chains, so this
-/// should be removed in favor of extracing that ID from the operator
-/// chain directly.
-fn definition_nominal(
-    engine: &QueryEngine,
-    files: &Files,
-    f_id: FileId,
-    domain: Domain,
-    text: SmolStr,
-) -> Option<GotoDefinitionResponse> {
-    let resolved = engine.resolved(f_id).ok()?;
-    let lowered = engine.lowered(f_id).ok()?;
-
-    let id = lowered.intermediate.iter_qualified_name().find_map(|(id, ir)| {
-        if ir.domain == domain && ir.name == text { Some(id) } else { None }
-    })?;
-
-    definition_qualified_name(engine, files, &resolved, &lowered, id)
 }
