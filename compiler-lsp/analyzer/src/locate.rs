@@ -96,6 +96,12 @@ fn locate_node(
     lowered: &FullLoweredModule,
     node: SyntaxNode,
 ) -> Option<Located> {
+    macro_rules! child_of {
+        ($pattern:pat) => {
+            node.ancestors().find(|cst| matches!(cst.kind(), $pattern)).is_some()
+        };
+    }
+
     let kind = node.kind();
     let ptr = SyntaxNodePtr::new(&node);
     if cst::ModuleName::can_cast(kind) {
@@ -117,22 +123,15 @@ fn locate_node(
         let ptr = ptr.cast()?;
         let id = lowered.source.lookup_ty(&ptr)?;
         Some(Located::Type(id))
-    } else if cst::QualifiedName::can_cast(kind) {
-        let cst = cst::QualifiedName::cast(node)?;
-
-        let _ = cst.syntax().ancestors().find(|cst| {
-            let kind = cst.kind();
-            matches!(
-                kind,
-                SyntaxKind::BinderOperatorPair
-                    | SyntaxKind::ExpressionOperatorPair
-                    | SyntaxKind::TypeOperatorPair
-            )
-        })?;
-
-        let ptr = AstPtr::new(&cst);
+    } else if cst::QualifiedName::can_cast(kind)
+        && child_of!(
+            SyntaxKind::BinderOperatorPair
+                | SyntaxKind::ExpressionOperatorPair
+                | SyntaxKind::TypeOperatorPair
+        )
+    {
+        let ptr = ptr.cast()?;
         let id = lowered.source.lookup_qualified_name(&ptr)?;
-
         Some(Located::Operator(id))
     } else {
         None
