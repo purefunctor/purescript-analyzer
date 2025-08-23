@@ -33,6 +33,7 @@ pub enum TermResolution {
     Reference(QualifiedNameId),
     Binder(BinderId),
     Let(LetBindingResolution),
+    AdHoc { qualifier: Option<SmolStr>, name: SmolStr },
 }
 
 /// A resolution to a `let`-bound name.

@@ -217,6 +217,11 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
+                TermResolution::AdHoc { qualifier, name } => {
+                    let qualifier = qualifier.as_deref();
+                    let name = name.as_str();
+                    hover_nominal(engine, &resolved, Domain::Term, qualifier, name)
+                }
             }
         }
         ExpressionKind::OperatorName { id: Some(id), .. } => {
@@ -294,22 +299,31 @@ fn hover_qualified_name(
     lowered: &FullLoweredModule,
     id: QualifiedNameId,
 ) -> Option<Hover> {
+    let ir = lowered.intermediate.index_qualified_name(id)?;
+    let domain = ir.domain;
+    let qualifier = ir.qualifier.as_deref();
+    let name = ir.name.as_str();
+    hover_nominal(engine, resolved, domain, qualifier, name)
+}
+
+fn hover_nominal(
+    engine: &QueryEngine,
+    resolved: &FullResolvedModule,
+    domain: Domain,
+    qualifier: Option<&str>,
+    name: &str,
+) -> Option<Hover> {
     let prim = {
         let id = engine.prim_id();
         engine.resolved(id).ok()?
     };
-
-    let ir = lowered.intermediate.index_qualified_name(id)?;
-    let prefix = ir.qualifier.as_deref();
-    let name = ir.name.as_str();
-
-    match ir.domain {
+    match domain {
         Domain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_term(&prim, qualifier, name)?;
             hover_file_term(engine, f_id, t_id)
         }
         Domain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_type(&prim, qualifier, name)?;
             hover_file_type(engine, f_id, t_id)
         }
     }

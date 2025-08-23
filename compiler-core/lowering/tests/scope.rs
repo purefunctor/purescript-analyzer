@@ -53,6 +53,9 @@ fn variable_scope_check(content: &str) -> String {
                         writeln!(snapshot, "  resolves to equation {range:?}").unwrap();
                     }
                 }
+                TermResolution::AdHoc { .. } => {
+                    writeln!(snapshot, "  resolves to top-level name").unwrap();
+                }
             }
         } else {
             writeln!(snapshot, "  resolves to nothing").unwrap();

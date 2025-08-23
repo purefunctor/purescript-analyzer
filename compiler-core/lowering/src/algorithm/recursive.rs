@@ -243,11 +243,11 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            const BIND: Option<SmolStr> = Some(SmolStr::new_inline("bind"));
-            const DISCARD: Option<SmolStr> = Some(SmolStr::new_inline("discard"));
+            const BIND: SmolStr = SmolStr::new_static("bind");
+            const DISCARD: SmolStr = SmolStr::new_static("discard");
 
-            let bind = s.resolve_term(qualifier.clone(), BIND);
-            let discard = s.resolve_term(qualifier.clone(), DISCARD);
+            let bind = s.resolve_ad_hoc(qualifier.clone(), BIND);
+            let discard = s.resolve_ad_hoc(qualifier.clone(), DISCARD);
 
             let statements = cst
                 .statements()
@@ -263,11 +263,11 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            const MAP: Option<SmolStr> = Some(SmolStr::new_inline("map"));
-            const APPLY: Option<SmolStr> = Some(SmolStr::new_inline("apply"));
+            const MAP: SmolStr = SmolStr::new_static("map");
+            const APPLY: SmolStr = SmolStr::new_static("apply");
 
-            let map = s.resolve_term(qualifier.clone(), MAP);
-            let apply = s.resolve_term(qualifier.clone(), APPLY);
+            let map = s.resolve_ad_hoc(qualifier.clone(), MAP);
+            let apply = s.resolve_ad_hoc(qualifier.clone(), APPLY);
 
             let statements = cst
                 .statements()
@@ -283,7 +283,7 @@ fn lower_expression_kind(
         }
         cst::Expression::ExpressionVariable(cst) => {
             let id = lower_qualified_name(s, Domain::Term, cst.name(), cst::QualifiedName::lower);
-            let resolution = id.and_then(|id| s.resolve_term_v2(id));
+            let resolution = id.and_then(|id| s.resolve_qualified_name(id));
             ExpressionKind::Variable { id, resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
@@ -324,7 +324,10 @@ fn lower_expression_kind(
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
-                    let resolution = s.resolve_term(None, name.clone());
+                    let resolution = name.as_ref().and_then(|name| {
+                        let name = SmolStr::clone(name);
+                        s.resolve_ad_hoc(None, name)
+                    });
                     ExpressionRecordItem::RecordPun { name, resolution }
                 }
             };

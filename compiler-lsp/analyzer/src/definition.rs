@@ -282,6 +282,11 @@ fn definition_expression(
 
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
+                TermResolution::AdHoc { qualifier, name } => {
+                    let qualifier = qualifier.as_deref();
+                    let name = name.as_str();
+                    definition_nominal_v2(engine, files, &resolved, Domain::Term, qualifier, name)
+                }
             }
         }
         ExpressionKind::OperatorName { id: Some(id), .. } => {
@@ -337,18 +342,29 @@ fn definition_qualified_name(
     lowered: &FullLoweredModule,
     id: QualifiedNameId,
 ) -> Option<GotoDefinitionResponse> {
+    let ir = lowered.intermediate.index_qualified_name(id)?;
+    let domain = ir.domain;
+    let qualifier = ir.qualifier.as_deref();
+    let name = ir.name.as_str();
+    definition_nominal_v2(engine, files, resolved, domain, qualifier, name)
+}
+
+fn definition_nominal_v2(
+    engine: &QueryEngine,
+    files: &Files,
+    resolved: &FullResolvedModule,
+    domain: Domain,
+    qualifier: Option<&str>,
+    name: &str,
+) -> Option<GotoDefinitionResponse> {
     let prim = {
         let id = engine.prim_id();
         engine.resolved(id).ok()?
     };
 
-    let ir = lowered.intermediate.index_qualified_name(id)?;
-    let prefix = ir.qualifier.as_deref();
-    let name = ir.name.as_str();
-
-    match ir.domain {
+    match domain {
         Domain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_term(&prim, qualifier, name)?;
 
             let uri = {
                 let path = files.path(f_id);
@@ -376,7 +392,7 @@ fn definition_qualified_name(
             Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
         }
         Domain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
+            let (f_id, t_id) = resolved.lookup_type(&prim, qualifier, name)?;
 
             let uri = {
                 let path = files.path(f_id);

@@ -92,15 +92,19 @@ impl State {
         *collecting = false;
     }
 
-    fn resolve_term(
+    fn resolve_ad_hoc(
         &mut self,
-        _qualifier: Option<SmolStr>,
-        _name: Option<SmolStr>,
+        qualifier: Option<SmolStr>,
+        name: SmolStr,
     ) -> Option<TermResolution> {
-        todo!("TODO");
+        if qualifier.is_some() {
+            Some(TermResolution::AdHoc { qualifier, name })
+        } else {
+            self.resolve_term_local(&name).or(Some(TermResolution::AdHoc { qualifier, name }))
+        }
     }
 
-    fn resolve_term_v2(&mut self, id: QualifiedNameId) -> Option<TermResolution> {
+    fn resolve_qualified_name(&mut self, id: QualifiedNameId) -> Option<TermResolution> {
         let ir = self.intermediate.index_qualified_name(id)?;
         if ir.qualifier.is_some() {
             Some(TermResolution::Reference(id))
