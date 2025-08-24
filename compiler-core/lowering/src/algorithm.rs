@@ -115,16 +115,18 @@ impl State {
         qualifier: Option<SmolStr>,
         name: SmolStr,
     ) -> Option<TermVariableResolution> {
-        if qualifier.is_some() {
-            let (file_id, term_id) =
-                context.resolved.lookup_term(context.prim, qualifier.as_deref(), &name)?;
+        let qualifier = qualifier.as_deref();
+        let name = name.as_str();
+
+        let resolve_reference = || {
+            let (file_id, term_id) = context.resolved.lookup_term(context.prim, qualifier, name)?;
             Some(TermVariableResolution::Reference(file_id, term_id))
+        };
+
+        if qualifier.is_some() {
+            resolve_reference()
         } else {
-            self.resolve_term_local(&name).or_else(|| {
-                let (file_id, term_id) =
-                    context.resolved.lookup_term(context.prim, qualifier.as_deref(), &name)?;
-                Some(TermVariableResolution::Reference(file_id, term_id))
-            })
+            self.resolve_term_local(&name).or_else(resolve_reference)
         }
     }
 
