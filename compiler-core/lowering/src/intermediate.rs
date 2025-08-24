@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{source::*, TermResolution, TypeVariableResolution};
+use crate::{source::*, TermVariableResolution, TypeVariableResolution};
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
@@ -56,7 +56,7 @@ pub enum DoStatement {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExpressionRecordItem {
     RecordField { name: Option<SmolStr>, value: Option<ExpressionId> },
-    RecordPun { name: Option<SmolStr>, resolution: Option<TermResolution> },
+    RecordPun { name: Option<SmolStr>, resolution: Option<TermVariableResolution> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -98,13 +98,13 @@ pub enum ExpressionKind {
         branches: Arc<[CaseBranch]>,
     },
     Do {
-        bind: Option<TermResolution>,
-        discard: Option<TermResolution>,
+        bind: Option<TermVariableResolution>,
+        discard: Option<TermVariableResolution>,
         statements: Arc<[DoStatement]>,
     },
     Ado {
-        map: Option<TermResolution>,
-        apply: Option<TermResolution>,
+        map: Option<TermVariableResolution>,
+        apply: Option<TermVariableResolution>,
         statements: Arc<[DoStatement]>,
         expression: Option<ExpressionId>,
     },
@@ -113,7 +113,7 @@ pub enum ExpressionKind {
     },
     Variable {
         id: Option<QualifiedNameId>,
-        resolution: Option<TermResolution>,
+        resolution: Option<TermVariableResolution>,
     },
     OperatorName {
         id: Option<QualifiedNameId>,
@@ -354,7 +354,7 @@ syntax::create_association! {
     ///
     /// This associates stable IDs allocated during [`indexing`] and
     /// [`lowering`] with their intermediate representations. Unlike
-    /// traditional lowering designs, we do not need to represent the 
+    /// traditional lowering designs, we do not need to represent the
     /// full structure of the module as an abstract syntax tree.
     ///
     /// [`lowering`]: crate

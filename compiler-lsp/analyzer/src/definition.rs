@@ -3,8 +3,9 @@ use building::QueryEngine;
 use files::{FileId, Files};
 use indexing::ImportItemId;
 use lowering::{
-    BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule, QualifiedNameId,
-    TermResolution, TypeId, TypeKind, TypeVariableResolution,
+    BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
+    ImplicitTypeVariable, Nominal, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
+    TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
@@ -253,16 +254,16 @@ fn definition_expression(
         ExpressionKind::Variable { id: Some(id), resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Global => {
+                TermVariableResolution::Global => {
                     definition_qualified_name(engine, files, &resolved, &lowered, *id)
                 }
-                TermResolution::Binder(binder) => {
+                TermVariableResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
                     let ptr = &lowered.source[*binder].syntax_node_ptr();
                     let range = locate::range_without_annotation(&content, ptr, &root)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
-                TermResolution::Let(binding) => {
+                TermVariableResolution::Let(binding) => {
                     let root = parsed.syntax_node();
 
                     let signature = binding
@@ -284,7 +285,7 @@ fn definition_expression(
 
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
-                TermResolution::AdHoc { qualifier, name } => {
+                TermVariableResolution::Nominal(Nominal { qualifier, name }) => {
                     let qualifier = qualifier.as_deref();
                     let name = name.as_str();
                     definition_nominal_v2(engine, files, &resolved, Domain::Term, qualifier, name)
@@ -330,7 +331,7 @@ fn definition_type(
                     let range = locate::range_without_annotation(&content, ptr, &root)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
-                TypeVariableResolution::Implicit { .. } => None,
+                TypeVariableResolution::Implicit(ImplicitTypeVariable { .. }) => None,
             }
         }
         _ => None,

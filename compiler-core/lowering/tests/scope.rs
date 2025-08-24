@@ -1,8 +1,8 @@
 mod shared;
 
 use lowering::{
-    ExpressionKind, FullLoweredModule, GraphNode, LetBindingResolution, TermResolution, TypeKind,
-    TypeVariableResolution,
+    ExpressionKind, FullLoweredModule, GraphNode, ImplicitTypeVariable, LetBound, Nominal,
+    TermVariableResolution, TypeKind, TypeVariableResolution,
 };
 use rowan::ast::AstNode;
 use std::fmt::Write;
@@ -33,15 +33,15 @@ fn variable_scope_check(content: &str) -> String {
         writeln!(snapshot, "{}@{:?}", text.trim(), range).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
-                TermResolution::Global => {
+                TermVariableResolution::Global => {
                     writeln!(snapshot, "  resolves to top-level name").unwrap();
                 }
-                TermResolution::Binder(binder) => {
+                TermVariableResolution::Binder(binder) => {
                     let cst = &source[*binder];
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to binder {range:?}").unwrap();
                 }
-                TermResolution::Let(LetBindingResolution { signature, equations }) => {
+                TermVariableResolution::Let(LetBound { signature, equations }) => {
                     if let Some(signature) = signature {
                         let cst = &source[*signature];
                         let range = cst.syntax_node_ptr().text_range();
@@ -53,7 +53,7 @@ fn variable_scope_check(content: &str) -> String {
                         writeln!(snapshot, "  resolves to equation {range:?}").unwrap();
                     }
                 }
-                TermResolution::AdHoc { .. } => {
+                TermVariableResolution::Nominal(Nominal { .. }) => {
                     writeln!(snapshot, "  resolves to top-level name").unwrap();
                 }
             }
@@ -79,7 +79,7 @@ fn variable_scope_check(content: &str) -> String {
                     let range = cst.syntax_node_ptr().text_range();
                     writeln!(snapshot, "  resolves to forall {range:?}").unwrap();
                 }
-                TypeVariableResolution::Implicit { binding, node, id } => {
+                TypeVariableResolution::Implicit(ImplicitTypeVariable { binding, node, id }) => {
                     if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
                         let (name, type_ids) =
                             bindings.get_index(*id).expect("invariant violated: invalid index");

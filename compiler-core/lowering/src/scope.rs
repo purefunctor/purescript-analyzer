@@ -23,16 +23,22 @@ use crate::source::*;
 
 /// A resolution for term names.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TermResolution {
+pub enum TermVariableResolution {
     Global,
     Binder(BinderId),
-    Let(LetBindingResolution),
-    AdHoc { qualifier: Option<SmolStr>, name: SmolStr },
+    Let(LetBound),
+    Nominal(Nominal),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Nominal {
+    pub qualifier: Option<SmolStr>,
+    pub name: SmolStr,
 }
 
 /// A resolution to a `let`-bound name.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LetBindingResolution {
+pub struct LetBound {
     pub signature: Option<LetBindingSignatureId>,
     pub equations: Arc<[LetBindingEquationId]>,
 }
@@ -41,7 +47,14 @@ pub struct LetBindingResolution {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    Implicit { binding: bool, node: GraphNodeId, id: ImplicitTypeVariableBindingId },
+    Implicit(ImplicitTypeVariable),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ImplicitTypeVariable {
+    pub binding: bool,
+    pub node: GraphNodeId,
+    pub id: ImplicitTypeVariableBindingId,
 }
 
 /// See documentation for [`GraphNode::Implicit`].
@@ -81,7 +94,7 @@ pub enum GraphNode {
     /// Explicitly quantified type variabbles.
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
     /// Names bound by `let`.
-    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
+    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBound> },
     /// Implicitly quantified type variables.
     Implicit {
         parent: Option<GraphNodeId>,

@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
-use crate::*;
+use crate::{ImplicitTypeVariable, Nominal, *};
 
 #[derive(Default)]
 pub(crate) struct State {
@@ -98,37 +98,39 @@ impl State {
         *collecting = false;
     }
 
-    fn resolve_ad_hoc(
+    fn resolve_nominal(
         &mut self,
         qualifier: Option<SmolStr>,
         name: SmolStr,
-    ) -> Option<TermResolution> {
-        if qualifier.is_some() {
-            Some(TermResolution::AdHoc { qualifier, name })
+    ) -> Option<TermVariableResolution> {
+        let nominal = Nominal { qualifier, name };
+        if nominal.qualifier.is_some() {
+            Some(TermVariableResolution::Nominal(nominal))
         } else {
-            self.resolve_term_local(&name).or(Some(TermResolution::AdHoc { qualifier, name }))
+            self.resolve_term_local(&nominal.name)
+                .or(Some(TermVariableResolution::Nominal(nominal)))
         }
     }
 
-    fn resolve_term_variable(&mut self, id: QualifiedNameId) -> Option<TermResolution> {
+    fn resolve_term_variable(&mut self, id: QualifiedNameId) -> Option<TermVariableResolution> {
         let ir = self.intermediate.index_qualified_name(id)?;
         if ir.qualifier.is_some() {
-            Some(TermResolution::Global)
+            Some(TermVariableResolution::Global)
         } else {
-            self.resolve_term_local(&ir.name).or(Some(TermResolution::Global))
+            self.resolve_term_local(&ir.name).or(Some(TermVariableResolution::Global))
         }
     }
 
-    fn resolve_term_local(&self, name: &str) -> Option<TermResolution> {
+    fn resolve_term_local(&self, name: &str) -> Option<TermVariableResolution> {
         let id = self.graph_scope?;
         self.graph.traverse(id).find_map(|(_, graph)| match graph {
             GraphNode::Binder { bindings, .. } => {
                 let r = *bindings.get(name)?;
-                Some(TermResolution::Binder(r))
+                Some(TermVariableResolution::Binder(r))
             }
             GraphNode::Let { bindings, .. } => {
                 let r = bindings.get(name)?.clone();
-                Some(TermResolution::Let(r))
+                Some(TermVariableResolution::Let(r))
             }
             _ => None,
         })
@@ -139,10 +141,18 @@ impl State {
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
             if *collecting {
                 let id = bindings.bind(name, id);
-                Some(TypeVariableResolution::Implicit { binding: true, node, id })
+                Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                    binding: true,
+                    node,
+                    id,
+                }))
             } else {
                 let id = bindings.get(name)?;
-                Some(TypeVariableResolution::Implicit { binding: false, node, id })
+                Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                    binding: false,
+                    node,
+                    id,
+                }))
             }
         } else {
             self.graph.traverse(node).find_map(|(node, graph)| match graph {
@@ -151,7 +161,11 @@ impl State {
                 }
                 GraphNode::Implicit { bindings, .. } => {
                     let id = bindings.get(name)?;
-                    Some(TypeVariableResolution::Implicit { binding: false, node, id })
+                    Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                        binding: false,
+                        node,
+                        id,
+                    }))
                 }
                 _ => None,
             })

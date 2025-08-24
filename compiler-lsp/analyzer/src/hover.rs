@@ -10,8 +10,8 @@ use indexing::{
 use itertools::Itertools;
 use la_arena::Idx;
 use lowering::{
-    BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
-    LetBindingResolution, QualifiedNameId, TermResolution, TypeId, TypeKind,
+    BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule, LetBound,
+    Nominal, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
 };
 use resolving::FullResolvedModule;
 use rowan::{
@@ -212,14 +212,16 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
         ExpressionKind::Variable { id: Some(id), resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Global => hover_qualified_name(engine, &resolved, &lowered, *id),
-                TermResolution::Binder(_) => None,
-                TermResolution::Let(let_binding) => {
+                TermVariableResolution::Global => {
+                    hover_qualified_name(engine, &resolved, &lowered, *id)
+                }
+                TermVariableResolution::Binder(_) => None,
+                TermVariableResolution::Let(let_binding) => {
                     let (parsed, _) = engine.parsed(f_id).ok()?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
-                TermResolution::AdHoc { qualifier, name } => {
+                TermVariableResolution::Nominal(Nominal { qualifier, name }) => {
                     let qualifier = qualifier.as_deref();
                     let name = name.as_str();
                     hover_nominal(engine, &resolved, Domain::Term, qualifier, name)
@@ -236,7 +238,7 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
 fn hover_let(
     root: &SyntaxNode,
     lowered: &FullLoweredModule,
-    let_binding: &LetBindingResolution,
+    let_binding: &LetBound,
 ) -> Option<Hover> {
     let signature = let_binding.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use indexing::{FullIndexedModule, TermItemKind};
 use itertools::Itertools;
-use lowering::FullLoweredModule;
+use lowering::{FullLoweredModule, ImplicitTypeVariable};
 
 use crate::{
     core::{CoreStorage, ForallBinder, Type, TypeId},
@@ -102,7 +102,11 @@ fn core_of_cst<S: CoreStorage>(
                     let index = c.bound.index_of(id);
                     c.storage.allocate(Type::Variable(index))
                 }
-                lowering::TypeVariableResolution::Implicit { binding, node, id } => {
+                lowering::TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                    binding,
+                    node,
+                    id,
+                }) => {
                     let id = debruijn::Binding::Implicit(*node, *id);
                     if *binding {
                         let level = c.bound.bind(id);

@@ -258,8 +258,8 @@ fn lower_expression_kind(
             const BIND: SmolStr = SmolStr::new_static("bind");
             const DISCARD: SmolStr = SmolStr::new_static("discard");
 
-            let bind = s.resolve_ad_hoc(qualifier.clone(), BIND);
-            let discard = s.resolve_ad_hoc(qualifier.clone(), DISCARD);
+            let bind = s.resolve_nominal(qualifier.clone(), BIND);
+            let discard = s.resolve_nominal(qualifier.clone(), DISCARD);
 
             let statements = cst
                 .statements()
@@ -278,8 +278,8 @@ fn lower_expression_kind(
             const MAP: SmolStr = SmolStr::new_static("map");
             const APPLY: SmolStr = SmolStr::new_static("apply");
 
-            let map = s.resolve_ad_hoc(qualifier.clone(), MAP);
-            let apply = s.resolve_ad_hoc(qualifier.clone(), APPLY);
+            let map = s.resolve_nominal(qualifier.clone(), MAP);
+            let apply = s.resolve_nominal(qualifier.clone(), APPLY);
 
             let statements = cst
                 .statements()
@@ -340,7 +340,7 @@ fn lower_expression_kind(
                     });
                     let resolution = name.as_ref().and_then(|name| {
                         let name = SmolStr::clone(name);
-                        state.resolve_ad_hoc(None, name)
+                        state.resolve_nominal(None, name)
                     });
                     ExpressionRecordItem::RecordPun { name, resolution }
                 }
@@ -546,7 +546,7 @@ fn lower_equation_bindings(
         });
 
         let equations = equations.into();
-        let resolution = LetBindingResolution { signature, equations };
+        let resolution = LetBound { signature, equations };
 
         if let Some(name) = name {
             in_scope.insert(name, resolution);
