@@ -1,4 +1,4 @@
-//! Scope Graphs for PureScript
+//! Scope graphs for local resolution.
 //!
 //! This module implements a [scope graph] for PureScript. Scope graphs are
 //! a novel take on name resolution which allow resolution semantics to be
@@ -11,7 +11,6 @@
 //! can be as easy as obtaining the type of a [`BinderId`].
 //!
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
-//! [deferred resolutions]: DeferredResolution
 use std::{collections::VecDeque, ops, sync::Arc};
 
 use indexmap::IndexMap;
@@ -21,7 +20,7 @@ use smol_str::SmolStr;
 
 use crate::source::*;
 
-/// A resolution for term names.
+/// The result of resolving a term variable.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermVariableResolution {
     Global,
@@ -36,14 +35,13 @@ pub struct Nominal {
     pub name: SmolStr,
 }
 
-/// A resolution to a `let`-bound name.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LetBound {
     pub signature: Option<LetBindingSignatureId>,
     pub equations: Arc<[LetBindingEquationId]>,
 }
 
-/// A resolution for type variables.
+/// The result of resolving a type variable.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),

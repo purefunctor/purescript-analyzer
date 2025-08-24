@@ -1,8 +1,10 @@
+//! Types of intermediate representations.
 use std::sync::Arc;
 
-use crate::{source::*, TermVariableResolution, TypeVariableResolution};
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
+
+use crate::{source::*, TermVariableResolution, TypeVariableResolution};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {
