@@ -4,8 +4,8 @@ use analyzer::QueryEngine;
 use files::FileId;
 use indexing::ImportKind;
 use lowering::{
-    ExpressionKind, GraphNode, ImplicitTypeVariable, LetBound, Nominal, TermVariableResolution,
-    TypeKind, TypeVariableResolution,
+    ExpressionKind, GraphNode, ImplicitTypeVariable, LetBound, TermVariableResolution, TypeKind,
+    TypeVariableResolution,
 };
 use rowan::ast::AstNode;
 
@@ -124,9 +124,6 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         writeln!(buffer, "{}@{:?}", text.trim(), range).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
-                TermVariableResolution::Global => {
-                    writeln!(buffer, "  resolves to top-level name").unwrap();
-                }
                 TermVariableResolution::Binder(binder) => {
                     let cst = &source[*binder];
                     let range = cst.syntax_node_ptr().text_range();
@@ -144,12 +141,9 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                         writeln!(buffer, "  resolves to equation {range:?}").unwrap();
                     }
                 }
-                TermVariableResolution::Nominal(Nominal { .. }) => {
-                    writeln!(buffer, "  resolves to top-level name").unwrap();
-                }
                 TermVariableResolution::Reference(_, _) => {
                     writeln!(buffer, "  resolves to top-level name").unwrap();
-                },
+                }
             }
         } else {
             writeln!(buffer, "  resolves to nothing").unwrap();

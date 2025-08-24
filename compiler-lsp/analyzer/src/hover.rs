@@ -11,7 +11,7 @@ use itertools::Itertools;
 use la_arena::Idx;
 use lowering::{
     BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule, LetBound,
-    Nominal, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
+    QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
 };
 use resolving::FullResolvedModule;
 use rowan::{
@@ -209,22 +209,14 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
         ExpressionKind::Constructor { id: Some(id), .. } => {
             hover_qualified_name(engine, &resolved, &lowered, *id)
         }
-        ExpressionKind::Variable { id: Some(id), resolution } => {
+        ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermVariableResolution::Global => {
-                    hover_qualified_name(engine, &resolved, &lowered, *id)
-                }
                 TermVariableResolution::Binder(_) => None,
                 TermVariableResolution::Let(let_binding) => {
                     let (parsed, _) = engine.parsed(f_id).ok()?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
-                }
-                TermVariableResolution::Nominal(Nominal { qualifier, name }) => {
-                    let qualifier = qualifier.as_deref();
-                    let name = name.as_str();
-                    hover_nominal(engine, &resolved, Domain::Term, qualifier, name)
                 }
                 TermVariableResolution::Reference(f_id, t_id) => {
                     hover_file_term(engine, *f_id, *t_id)

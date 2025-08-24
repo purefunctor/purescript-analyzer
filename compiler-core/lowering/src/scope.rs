@@ -25,19 +25,8 @@ use crate::source::*;
 /// The result of resolving a term variable.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermVariableResolution {
-    Global,
     Binder(BinderId),
     Let(LetBound),
-    /// An arbitrary resolution request.
-    ///
-    /// This is used for qualified [`Do`] and [`Ado`], as there is no
-    /// [`QualifiedName`] node to associate a [`QualifiedNameIr`] with.
-    ///
-    /// [`Do`]: crate::intermediate::ExpressionKind::Do
-    /// [`Ado`]: crate::intermediate::ExpressionKind::Ado
-    /// [`QualifiedName`]: syntax::cst::QualifiedName
-    /// [`QualifiedNameIr`]: crate::intermediate::QualifiedNameIr
-    Nominal(Nominal),
     Reference(FileId, TermItemId),
 }
 
@@ -45,12 +34,6 @@ pub enum TermVariableResolution {
 pub struct LetBound {
     pub signature: Option<LetBindingSignatureId>,
     pub equations: Arc<[LetBindingEquationId]>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Nominal {
-    pub qualifier: Option<SmolStr>,
-    pub name: SmolStr,
 }
 
 /// The result of resolving a type variable.

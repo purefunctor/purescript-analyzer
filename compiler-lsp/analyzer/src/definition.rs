@@ -4,7 +4,7 @@ use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use lowering::{
     BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
-    ImplicitTypeVariable, Nominal, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
+    ImplicitTypeVariable, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
     TypeVariableResolution,
 };
 use resolving::FullResolvedModule;
@@ -251,12 +251,9 @@ fn definition_expression(
         ExpressionKind::Constructor { id: Some(id), .. } => {
             definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
-        ExpressionKind::Variable { id: Some(id), resolution } => {
+        ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermVariableResolution::Global => {
-                    definition_qualified_name(engine, files, &resolved, &lowered, *id)
-                }
                 TermVariableResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
                     let ptr = &lowered.source[*binder].syntax_node_ptr();
@@ -284,11 +281,6 @@ fn definition_expression(
                         .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
-                }
-                TermVariableResolution::Nominal(Nominal { qualifier, name }) => {
-                    let qualifier = qualifier.as_deref();
-                    let name = name.as_str();
-                    definition_nominal(engine, files, &resolved, Domain::Term, qualifier, name)
                 }
                 TermVariableResolution::Reference(f_id, t_id) => {
                     definition_file_term(engine, files, *f_id, *t_id)
