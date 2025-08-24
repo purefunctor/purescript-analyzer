@@ -2,6 +2,7 @@ mod recursive;
 
 use std::{mem, sync::Arc};
 
+use files::FileId;
 use indexing::{
     FullIndexedModule, TermItem, TermItemId, TermItemKind, TypeItem, TypeItemId, TypeItemKind,
     TypeRoleId,
@@ -100,31 +101,38 @@ impl State {
         *collecting = false;
     }
 
+    fn resolve_term_reference(
+        &self,
+        context: &Context,
+        id: QualifiedNameId,
+    ) -> Option<(FileId, TermItemId)> {
+        let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
+        context.resolved.lookup_term(context.prim, qualifier.as_deref(), name.as_str())
+    }
+
     fn resolve_term_variable(
-        &mut self,
+        &self,
         context: &Context,
         id: QualifiedNameId,
     ) -> Option<TermVariableResolution> {
         let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
-        self.resolve_nominal(context, qualifier.clone(), name.clone())
+        self.resolve_term_nominal(context, qualifier.as_deref(), name.as_str())
     }
 
-    fn resolve_nominal(
-        &mut self,
+    fn resolve_term_nominal(
+        &self,
         context: &Context,
-        qualifier: Option<SmolStr>,
-        name: SmolStr,
+        qualifier: Option<&str>,
+        name: &str,
     ) -> Option<TermVariableResolution> {
         let resolve_reference = || {
-            let qualifier = qualifier.as_deref();
-            let name = name.as_str();
-            let (file_id, term_id) = context.resolved.lookup_term(context.prim, qualifier, name)?;
+            let (file_id, term_id) = context.lookup_term(qualifier, name)?;
             Some(TermVariableResolution::Reference(file_id, term_id))
         };
         if qualifier.is_some() {
             resolve_reference()
         } else {
-            self.resolve_term_local(&name).or_else(resolve_reference)
+            self.resolve_term_local(name).or_else(resolve_reference)
         }
     }
 
@@ -177,6 +185,12 @@ impl State {
                 _ => None,
             })
         }
+    }
+}
+
+impl Context<'_> {
+    fn lookup_term(&self, qualifier: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
+        self.resolved.lookup_term(self.prim, qualifier, name)
     }
 }
 

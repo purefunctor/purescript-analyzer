@@ -1,6 +1,7 @@
 //! Types of intermediate representations.
 use std::sync::Arc;
 
+use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
@@ -112,6 +113,7 @@ pub enum ExpressionKind {
     },
     Constructor {
         id: Option<QualifiedNameId>,
+        resolution: Option<(FileId, TermItemId)>,
     },
     Variable {
         id: Option<QualifiedNameId>,
@@ -119,6 +121,7 @@ pub enum ExpressionKind {
     },
     OperatorName {
         id: Option<QualifiedNameId>,
+        resolution: Option<(FileId, TermItemId)>,
     },
     Section,
     Hole,

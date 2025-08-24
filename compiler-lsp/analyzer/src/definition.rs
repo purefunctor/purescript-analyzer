@@ -238,18 +238,18 @@ fn definition_expression(
     f_id: FileId,
     e_id: ExpressionId,
 ) -> Option<GotoDefinitionResponse> {
-    let (content, parsed, resolved, lowered) = {
+    let (content, parsed, lowered) = {
         let content = engine.content(f_id);
         let (parsed, _) = engine.parsed(f_id).ok()?;
-        let resolved = engine.resolved(f_id).ok()?;
         let lowered = engine.lowered(f_id).ok()?;
-        (content, parsed, resolved, lowered)
+        (content, parsed, lowered)
     };
 
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
-        ExpressionKind::Constructor { id: Some(id), .. } => {
-            definition_qualified_name(engine, files, &resolved, &lowered, *id)
+        ExpressionKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            definition_file_term(engine, files, *f_id, *t_id)
         }
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -287,8 +287,9 @@ fn definition_expression(
                 }
             }
         }
-        ExpressionKind::OperatorName { id: Some(id), .. } => {
-            definition_qualified_name(engine, files, &resolved, &lowered, *id)
+        ExpressionKind::OperatorName { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            definition_file_term(engine, files, *f_id, *t_id)
         }
         _ => None,
     }
