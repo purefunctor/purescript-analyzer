@@ -106,9 +106,7 @@ impl State {
         id: QualifiedNameId,
     ) -> Option<TermVariableResolution> {
         let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
-        let qualifier = qualifier.clone();
-        let name = name.clone();
-        self.resolve_nominal(context, qualifier, name)
+        self.resolve_nominal(context, qualifier.clone(), name.clone())
     }
 
     fn resolve_nominal(
