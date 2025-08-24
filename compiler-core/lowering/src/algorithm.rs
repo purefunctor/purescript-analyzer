@@ -19,7 +19,7 @@ pub(crate) struct State {
     pub(crate) intermediate: Intermediate,
     pub(crate) source: LoweringSource,
     pub(crate) graph: LoweringGraph,
-    pub(crate) graph_info: LoweringGraphInfo,
+    pub(crate) nodes: LoweringGraphNodes,
     pub(crate) graph_scope: Option<GraphNodeId>,
 }
 
@@ -39,13 +39,19 @@ impl State {
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
         self.intermediate.insert_binder_kind(id, kind);
         let Some(node) = self.graph_scope else { return };
-        self.graph_info.insert_bd(id, node);
+        self.nodes.insert_binder(id, node);
+    }
+
+    fn associate_expression_info(&mut self, id: ExpressionId, kind: ExpressionKind) {
+        self.intermediate.insert_expression_kind(id, kind);
+        let Some(node) = self.graph_scope else { return };
+        self.nodes.insert_expression(id, node);
     }
 
     fn associate_type_info(&mut self, id: TypeId, kind: TypeKind) {
         self.intermediate.insert_type_kind(id, kind);
         let Some(node) = self.graph_scope else { return };
-        self.graph_info.insert_ty(id, node);
+        self.nodes.insert_type_(id, node);
     }
 
     fn insert_binder(&mut self, name: &str, id: BinderId) {

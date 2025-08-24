@@ -350,6 +350,14 @@ pub struct QualifiedNameIr {
 }
 
 syntax::create_association! {
+    /// Core structure for intermediate representations.
+    ///
+    /// This associates stable IDs allocated during [`indexing`] and
+    /// [`lowering`] with their intermediate representations. Unlike
+    /// traditional lowering designs, we do not need to represent the 
+    /// full structure of the module as an abstract syntax tree.
+    ///
+    /// [`lowering`]: crate
     pub struct Intermediate {
         binder_kind: BinderId => BinderKind,
         expression_kind: ExpressionId => ExpressionKind,

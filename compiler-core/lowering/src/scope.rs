@@ -10,11 +10,6 @@
 //! information to resolved nodes. For instance, knowing the type of a variable
 //! can be as easy as obtaining the type of a [`BinderId`].
 //!
-//! Names that cannot be resolved locally become [deferred resolutions]—they
-//! depend on the module-level context in order to be resolved. For instance,
-//! knowing the type of an imported value depends on type checking that module
-//! first, then associating the type to the [`DeferredResolutionId`].
-//!
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
 //! [deferred resolutions]: DeferredResolution
 use std::{collections::VecDeque, ops, sync::Arc};
@@ -23,7 +18,6 @@ use indexmap::IndexMap;
 use la_arena::{Arena, Idx, RawIdx};
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
-use syntax::create_association;
 
 use crate::source::*;
 
@@ -148,13 +142,12 @@ impl ops::Index<GraphNodeId> for LoweringGraph {
     }
 }
 
-create_association! {
+syntax::create_association! {
     /// Tracks [`GraphNodeId`] for IR nodes.
-    pub struct LoweringGraphInfo {
-        bd: BinderId => GraphNodeId,
-        ex: ExpressionId => GraphNodeId,
-        ty: TypeId => GraphNodeId,
-        ds: DoStatementId => GraphNodeId,
+    pub struct LoweringGraphNodes {
+        binder: BinderId => GraphNodeId,
+        expression: ExpressionId => GraphNodeId,
+        type_: TypeId => GraphNodeId,
     }
 }
 

@@ -1,3 +1,5 @@
+//! See documentation for [`indexing::IndexingSource`].
+
 syntax::create_source! {
     pub struct LoweringSource {
         bd: syntax::cst::Binder as Binder,

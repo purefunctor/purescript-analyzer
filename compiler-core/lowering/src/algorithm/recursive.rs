@@ -119,7 +119,7 @@ pub(crate) fn lower_expression(
 ) -> ExpressionId {
     let id = state.source.allocate_ex(cst);
     let kind = lower_expression_kind(state, context, cst);
-    state.intermediate.insert_expression_kind(id, kind);
+    state.associate_expression_info(id, kind);
     id
 }
 
