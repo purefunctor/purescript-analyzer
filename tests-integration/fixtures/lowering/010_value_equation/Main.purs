@@ -13,3 +13,5 @@ const a _ =
 
 life :: Int
 life = add 21 21
+
+add = 42

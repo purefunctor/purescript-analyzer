@@ -1,7 +1,7 @@
 use async_lsp::lsp_types::*;
 use building::{QueryEngine, prim};
 use files::{FileId, Files};
-use indexing::ImportItemId;
+use indexing::{ImportItemId, TermItemId, TypeItemId};
 use lowering::{
     BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
     ImplicitTypeVariable, Nominal, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
@@ -290,7 +290,9 @@ fn definition_expression(
                     let name = name.as_str();
                     definition_nominal(engine, files, &resolved, Domain::Term, qualifier, name)
                 }
-                TermVariableResolution::Reference(_, _) => None,
+                TermVariableResolution::Reference(f_id, t_id) => {
+                    definition_file_term(engine, files, *f_id, *t_id)
+                }
             }
         }
         ExpressionKind::OperatorName { id: Some(id), .. } => {
@@ -369,57 +371,73 @@ fn definition_nominal(
     match domain {
         Domain::Term => {
             let (f_id, t_id) = resolved.lookup_term(&prim, qualifier, name)?;
-
-            let uri = {
-                let path = files.path(f_id);
-                let content = files.content(f_id);
-                let uri = Url::parse(&path).ok()?;
-                prim::handle_generated(uri, &content)?
-            };
-
-            let (content, parsed, indexed) = {
-                let content = engine.content(f_id);
-                let (parsed, _) = engine.parsed(f_id).ok()?;
-                let indexed = engine.indexed(f_id).ok()?;
-                (content, parsed, indexed)
-            };
-
-            // TODO: Once we implement textDocument/typeDefinition, we
-            // should probably also add a term_item_type_ptr function.
-            let root = parsed.syntax_node();
-            let ptrs = indexed.term_item_ptr(t_id);
-            let range = ptrs
-                .into_iter()
-                .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
-                .reduce(|start, end| Range { start: start.start, end: end.end })?;
-
-            Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+            definition_file_term(engine, files, f_id, t_id)
         }
         Domain::Type => {
             let (f_id, t_id) = resolved.lookup_type(&prim, qualifier, name)?;
-
-            let uri = {
-                let path = files.path(f_id);
-                let content = files.content(f_id);
-                let uri = Url::parse(&path).ok()?;
-                prim::handle_generated(uri, &content)?
-            };
-
-            let (content, parsed, indexed) = {
-                let content = engine.content(f_id);
-                let (parsed, _) = engine.parsed(f_id).ok()?;
-                let indexed = engine.indexed(f_id).ok()?;
-                (content, parsed, indexed)
-            };
-
-            let root = parsed.syntax_node();
-            let ptrs = indexed.type_item_ptr(t_id);
-            let range = ptrs
-                .into_iter()
-                .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
-                .reduce(|start, end| Range { start: start.start, end: end.end })?;
-
-            Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+            definition_file_type(engine, files, f_id, t_id)
         }
     }
+}
+
+fn definition_file_term(
+    engine: &QueryEngine,
+    files: &Files,
+    f_id: FileId,
+    t_id: TermItemId,
+) -> Option<GotoDefinitionResponse> {
+    let uri = {
+        let path = files.path(f_id);
+        let content = files.content(f_id);
+        let uri = Url::parse(&path).ok()?;
+        prim::handle_generated(uri, &content)?
+    };
+
+    let (content, parsed, indexed) = {
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
+        (content, parsed, indexed)
+    };
+
+    // TODO: Once we implement textDocument/typeDefinition, we
+    // should probably also add a term_item_type_ptr function.
+    let root = parsed.syntax_node();
+    let ptrs = indexed.term_item_ptr(t_id);
+    let range = ptrs
+        .into_iter()
+        .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+        .reduce(|start, end| Range { start: start.start, end: end.end })?;
+
+    Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
+}
+
+fn definition_file_type(
+    engine: &QueryEngine,
+    files: &Files,
+    f_id: FileId,
+    t_id: TypeItemId,
+) -> Option<GotoDefinitionResponse> {
+    let uri = {
+        let path = files.path(f_id);
+        let content = files.content(f_id);
+        let uri = Url::parse(&path).ok()?;
+        prim::handle_generated(uri, &content)?
+    };
+
+    let (content, parsed, indexed) = {
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
+        (content, parsed, indexed)
+    };
+
+    let root = parsed.syntax_node();
+    let ptrs = indexed.type_item_ptr(t_id);
+    let range = ptrs
+        .into_iter()
+        .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+        .reduce(|start, end| Range { start: start.start, end: end.end })?;
+
+    Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
 }

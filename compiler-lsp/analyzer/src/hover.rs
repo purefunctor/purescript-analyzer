@@ -226,7 +226,9 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
                     let name = name.as_str();
                     hover_nominal(engine, &resolved, Domain::Term, qualifier, name)
                 }
-                TermVariableResolution::Reference(_, _) => None,
+                TermVariableResolution::Reference(f_id, t_id) => {
+                    hover_file_term(engine, *f_id, *t_id)
+                }
             }
         }
         ExpressionKind::OperatorName { id: Some(id), .. } => {

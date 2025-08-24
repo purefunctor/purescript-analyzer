@@ -147,7 +147,9 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                 TermVariableResolution::Nominal(Nominal { .. }) => {
                     writeln!(buffer, "  resolves to top-level name").unwrap();
                 }
-                TermVariableResolution::Reference(_, _) => (),
+                TermVariableResolution::Reference(_, _) => {
+                    writeln!(buffer, "  resolves to top-level name").unwrap();
+                },
             }
         } else {
             writeln!(buffer, "  resolves to nothing").unwrap();

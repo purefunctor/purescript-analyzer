@@ -11,3 +11,6 @@ instance Eq  => Eq (Maybe a) where
 instance TypeEquals b b where
   proof :: forall p. p b -> p b
   proof b = b
+
+eqIntImpl = 42
+eqMaybeImpl = 42
