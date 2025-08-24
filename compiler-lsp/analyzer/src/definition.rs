@@ -288,7 +288,7 @@ fn definition_expression(
                 TermVariableResolution::Nominal(Nominal { qualifier, name }) => {
                     let qualifier = qualifier.as_deref();
                     let name = name.as_str();
-                    definition_nominal_v2(engine, files, &resolved, Domain::Term, qualifier, name)
+                    definition_nominal(engine, files, &resolved, Domain::Term, qualifier, name)
                 }
             }
         }
@@ -349,10 +349,10 @@ fn definition_qualified_name(
     let domain = ir.domain;
     let qualifier = ir.qualifier.as_deref();
     let name = ir.name.as_str();
-    definition_nominal_v2(engine, files, resolved, domain, qualifier, name)
+    definition_nominal(engine, files, resolved, domain, qualifier, name)
 }
 
-fn definition_nominal_v2(
+fn definition_nominal(
     engine: &QueryEngine,
     files: &Files,
     resolved: &FullResolvedModule,
