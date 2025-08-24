@@ -1,8 +1,9 @@
 ---
-source: compiler-core/lowering/tests/scope.rs
-expression: snapshot
-snapshot_kind: text
+source: tests-integration/tests/lowering.rs
+expression: report
 ---
+module Main
+
 Expressions:
 
 

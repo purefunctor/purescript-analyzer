@@ -1685,6 +1685,7 @@ dependencies = [
  "lowering",
  "prim",
  "resolving",
+ "rowan",
  "smol_str",
  "sugar",
  "tabled",
