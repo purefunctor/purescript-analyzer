@@ -5,11 +5,11 @@ pub mod scope;
 pub mod source;
 
 pub use intermediate::*;
-use resolving::FullResolvedModule;
 pub use scope::*;
 pub use source::*;
 
 use indexing::FullIndexedModule;
+use resolving::FullResolvedModule;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]
