@@ -1,9 +1,12 @@
-use std::sync::Arc;
+use std::{iter::Peekable, sync::Arc};
 
 use building_types::QueryResult;
 use files::FileId;
 use indexing::FullIndexedModule;
-use lowering::{ExpressionId, FullLoweredModule, QualifiedNameId};
+use lowering::{
+    Associativity, ExpressionId, ExpressionKind, FullLoweredModule, OperatorPair, QualifiedNameId,
+    QualifiedNameIr, TermItemIr,
+};
 use resolving::FullResolvedModule;
 use rustc_hash::FxHashMap;
 
@@ -17,176 +20,167 @@ pub trait External {
     fn prim_id(&self) -> FileId;
 }
 
+struct Context<'c> {
+    prim: &'c FullResolvedModule,
+    resolved: &'c FullResolvedModule,
+    lowered: &'c FullLoweredModule,
+}
+
 pub fn bracketed<E>(
-    _external: &E,
-    _id: FileId,
+    external: &E,
+    id: FileId,
 ) -> QueryResult<FxHashMap<ExpressionId, Result<Tree, BracketError>>>
 where
     E: External,
 {
-    Ok(FxHashMap::default())
-    // let prim = {
-    //     let id = external.prim_id();
-    //     external.resolved(id)?
-    // };
-    //
-    // let resolved = external.resolved(id)?;
-    // let lowered = external.lowered(id)?;
-    //
-    // let operators = resolve_operators(external, &prim, &resolved, &lowered)?;
-    // let mut expressions = FxHashMap::default();
-    //
-    // for (id, expression) in lowered.intermediate.iter_expression() {
-    //     if let ExpressionKind::OperatorChain { head, tail } = expression {
-    //         expressions.insert(id, rebracket(&operators, *head, tail));
-    //     }
-    // }
-    //
-    // Ok(expressions)
+    let prim_id = external.prim_id();
+
+    let prim = external.resolved(prim_id)?;
+    let resolved = external.resolved(id)?;
+    let lowered = external.lowered(id)?;
+
+    let context = Context { prim: &prim, resolved: &resolved, lowered: &lowered };
+
+    let mut expressions = FxHashMap::default();
+
+    for (id, expression) in lowered.intermediate.iter_expression() {
+        if let ExpressionKind::OperatorChain { head, tail } = expression {
+            expressions.insert(id, rebracket(external, &context, *head, tail));
+        }
+    }
+
+    Ok(expressions)
 }
 
-// type OperatorMap = FxHashMap<DeferredResolutionId, (DeferredResolutionId, Associativity, u8)>;
-//
-// fn resolve_operators<E>(
-//     external: &E,
-//     prim: &FullResolvedModule,
-//     resolved: &FullResolvedModule,
-//     lowered: &FullLoweredModule,
-// ) -> QueryResult<OperatorMap>
-// where
-//     E: External,
-// {
-//     let mut operators = FxHashMap::default();
-//
-//     for (id, deferred) in lowered.graph.deferred() {
-//         let prefix = deferred.qualifier.as_deref();
-//         let Some(name) = deferred.name.as_deref() else { continue };
-//         match deferred.domain {
-//             Domain::Term => {
-//                 let Some((file_id, term_id)) = resolved.lookup_term(prim, prefix, name) else {
-//                     continue;
-//                 };
-//
-//                 let lowered = external.lowered(file_id)?;
-//
-//                 let Some(TermItemIr::Operator { resolution, associativity, precedence, .. }) =
-//                     lowered.intermediate.index_term_item(term_id)
-//                 else {
-//                     continue;
-//                 };
-//
-//                 if let Some((associativity, precedence)) = associativity.zip(*precedence) {
-//                     operators.insert(id, (*resolution, associativity, precedence));
-//                 }
-//             }
-//             Domain::Type => {
-//                 let Some((file_id, type_id)) = resolved.lookup_type(prim, prefix, name) else {
-//                     continue;
-//                 };
-//
-//                 let lowered = external.lowered(file_id)?;
-//
-//                 let Some(TypeItemIr::Operator { resolution, associativity, precedence, .. }) =
-//                     lowered.intermediate.index_type_item(type_id)
-//                 else {
-//                     continue;
-//                 };
-//
-//                 if let Some((associativity, precedence)) = associativity.zip(*precedence) {
-//                     operators.insert(id, (*resolution, associativity, precedence));
-//                 }
-//             }
-//         }
-//     }
-//
-//     Ok(operators)
-// }
-//
-// fn binding_power(associativity: Associativity, precedence: u8) -> (u8, u8) {
-//     let bp_0 = precedence.saturating_add(1);
-//     let bp_1 = precedence.saturating_add(2);
-//     match associativity {
-//         Associativity::None => (bp_0, bp_0),
-//         Associativity::Left => (bp_0, bp_1),
-//         Associativity::Right => (bp_1, bp_0),
-//     }
-// }
+fn resolve_operator<E>(
+    external: &E,
+    context: &Context,
+    id: QualifiedNameId,
+) -> Option<(Associativity, u8)>
+where
+    E: External,
+{
+    let QualifiedNameIr { qualifier, name, .. } =
+        context.lowered.intermediate.index_qualified_name(id)?;
 
-#[derive(Debug)]
+    let (file_id, term_id) =
+        context.resolved.lookup_term(context.prim, qualifier.as_deref(), name)?;
+
+    let lowered = external.lowered(file_id).ok()?;
+    let Some(TermItemIr::Operator { associativity, precedence, .. }) =
+        lowered.intermediate.index_term_item(term_id)
+    else {
+        return None;
+    };
+
+    associativity.zip(*precedence)
+}
+
+fn rebracket<E>(
+    external: &E,
+    context: &Context,
+    head: Option<ExpressionId>,
+    tail: &[OperatorPair<ExpressionId>],
+) -> Result<Tree, BracketError>
+where
+    E: External,
+{
+    match tail {
+        [OperatorPair { id, element }] => {
+            let id = id.ok_or(BracketError::InvalidOperatorPair)?;
+            Ok(Tree::Branch(id, vec![Tree::Leaf(head), Tree::Leaf(*element)]))
+        }
+        _ => {
+            let mut tail = tail.iter().copied().peekable();
+            rebracket_core(external, context, head, &mut tail, 0, None)
+        }
+    }
+}
+
+fn rebracket_core<E, I>(
+    external: &E,
+    context: &Context,
+    head: Option<ExpressionId>,
+    tail: &mut Peekable<I>,
+    minimum_binding_power: u8,
+    previous_operator: Option<Operator>,
+) -> Result<Tree, BracketError>
+where
+    E: External,
+    I: Iterator<Item = OperatorPair<ExpressionId>>,
+{
+    let mut left = Tree::Leaf(head);
+
+    loop {
+        let Some(OperatorPair { id, element }) = tail.peek().copied() else {
+            break;
+        };
+
+        let id = id.ok_or(BracketError::InvalidOperatorPair)?;
+
+        let (associativity, precedence) =
+            resolve_operator(external, context, id).ok_or(BracketError::FailedToResolve(id))?;
+
+        let operator = Operator { id, associativity, precedence };
+
+        let (left_binding_power, right_binding_power) = binding_power(associativity, precedence);
+        if left_binding_power < minimum_binding_power {
+            break;
+        }
+
+        if let Some(previous) = previous_operator
+            && associativity == Associativity::None
+            && previous.associativity == Associativity::None
+        {
+            return Err(BracketError::NonAssociative { previous, operator });
+        } else if let Some(previous) = previous_operator
+            && previous.associativity != associativity
+            && previous.precedence == precedence
+        {
+            return Err(BracketError::MixedAssociativity { previous, operator });
+        }
+
+        tail.next();
+
+        let right = rebracket_core(
+            external,
+            context,
+            element,
+            tail,
+            right_binding_power,
+            Some(Operator { id, associativity, precedence }),
+        )?;
+
+        left = Tree::Branch(id, vec![left, right]);
+    }
+
+    Ok(left)
+}
+
+fn binding_power(associativity: Associativity, precedence: u8) -> (u8, u8) {
+    let bp_0 = precedence.saturating_add(1);
+    let bp_1 = precedence.saturating_add(2);
+    match associativity {
+        Associativity::None => (bp_0, bp_0),
+        Associativity::Left => (bp_0, bp_1),
+        Associativity::Right => (bp_1, bp_0),
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Operator {
+    pub id: QualifiedNameId,
+    pub associativity: Associativity,
+    pub precedence: u8,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum BracketError {
+    InvalidOperatorPair,
     FailedToResolve(QualifiedNameId),
-    NonAssociative,
-    MixedAssociativity,
+    NonAssociative { previous: Operator, operator: Operator },
+    MixedAssociativity { previous: Operator, operator: Operator },
 }
-
-// fn rebracket(
-//     operators: &OperatorMap,
-//     head: Option<ExpressionId>,
-//     tail: &[OperatorPair<ExpressionId>],
-// ) -> Result<Tree, BracketError> {
-//     match tail {
-//         [OperatorPair { resolution, element, .. }] => {
-//             let (resolution, _, _) =
-//                 operators.get(resolution).ok_or(BracketError::FailedToResolve(*resolution))?;
-//             Ok(Tree::Branch(*resolution, vec![Tree::Leaf(head), Tree::Leaf(*element)]))
-//         }
-//         _ => {
-//             let mut tail = tail.iter().copied().peekable();
-//             rebracket_core(operators, head, &mut tail, 0, None)
-//         }
-//     }
-// }
-//
-// fn rebracket_core<I>(
-//     operators: &OperatorMap,
-//     head: Option<ExpressionId>,
-//     tail: &mut Peekable<I>,
-//     minimum_binding_power: u8,
-//     previous_op: Option<(Associativity, u8)>,
-// ) -> Result<Tree, BracketError>
-// where
-//     I: Iterator<Item = OperatorPair<ExpressionId>>,
-// {
-//     let mut left = Tree::Leaf(head);
-//
-//     loop {
-//         let Some(OperatorPair { resolution, element, .. }) = tail.peek().copied() else {
-//             break;
-//         };
-//
-//         let (resolution, associativity, precedence) =
-//             operators.get(&resolution).copied().ok_or(BracketError::FailedToResolve(resolution))?;
-//
-//         let (left_binding_power, right_binding_power) = binding_power(associativity, precedence);
-//         if left_binding_power < minimum_binding_power {
-//             break;
-//         }
-//
-//         if previous_op.is_some_and(|(previous_associativity, _)| {
-//             previous_associativity == Associativity::None && associativity == Associativity::None
-//         }) {
-//             return Err(BracketError::NonAssociative);
-//         } else if previous_op.is_some_and(|(previous_associativity, previous_precedence)| {
-//             previous_associativity != associativity && previous_precedence == precedence
-//         }) {
-//             return Err(BracketError::MixedAssociativity);
-//         }
-//
-//         tail.next();
-//
-//         let right = rebracket_core(
-//             operators,
-//             element,
-//             tail,
-//             right_binding_power,
-//             Some((associativity, precedence)),
-//         )?;
-//
-//         left = Tree::Branch(resolution, vec![left, right]);
-//     }
-//
-//     Ok(left)
-// }
 
 #[derive(Debug)]
 pub enum Tree {

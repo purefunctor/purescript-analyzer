@@ -71,13 +71,14 @@ infixl 5 add as +
 infixr 0 apply as $
 infixl 4 map as <$>
 
-test = 1 $ 2 $ 3 $ 4
+test = 1 == 2 == 3 == 4
 "#,
         );
         let content = files.content(id);
 
         engine.set_content(id, content);
 
-        let _ = sugar::bracketed(&engine, id);
+        let result = sugar::bracketed(&engine, id);
+        println!("{result:#?}");
     }
 }
