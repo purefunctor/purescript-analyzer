@@ -15,20 +15,43 @@ pub enum BinderRecordItem {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderKind {
-    Typed { binder: Option<BinderId>, type_: Option<TypeId> },
-    OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<BinderId>]> },
+    Typed {
+        binder: Option<BinderId>,
+        type_: Option<TypeId>,
+    },
+    OperatorChain {
+        head: Option<BinderId>,
+        tail: Arc<[OperatorPair<BinderId>]>,
+    },
     Integer,
     Number,
-    Constructor { id: Option<QualifiedNameId>, arguments: Arc<[BinderId]> },
-    Variable { variable: Option<SmolStr> },
-    Named { named: Option<SmolStr>, binder: Option<BinderId> },
+    Constructor {
+        id: Option<QualifiedNameId>,
+        resolution: Option<(FileId, TermItemId)>,
+        arguments: Arc<[BinderId]>,
+    },
+    Variable {
+        variable: Option<SmolStr>,
+    },
+    Named {
+        named: Option<SmolStr>,
+        binder: Option<BinderId>,
+    },
     Wildcard,
     String,
     Char,
-    Boolean { boolean: bool },
-    Array { array: Arc<[BinderId]> },
-    Record { record: Arc<[BinderRecordItem]> },
-    Parenthesized { parenthesized: Option<BinderId> },
+    Boolean {
+        boolean: bool,
+    },
+    Array {
+        array: Arc<[BinderId]>,
+    },
+    Record {
+        record: Arc<[BinderRecordItem]>,
+    },
+    Parenthesized {
+        parenthesized: Option<BinderId>,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -169,12 +192,12 @@ pub enum TypeKind {
     ApplicationChain { function: Option<TypeId>, arguments: Arc<[TypeId]> },
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
-    Constructor { id: Option<QualifiedNameId> },
+    Constructor { id: Option<QualifiedNameId>, resolution: Option<(FileId, TypeItemId)> },
     Forall { bindings: Arc<[TypeVariableBinding]>, type_: Option<TypeId> },
     Hole,
     Integer,
     Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
-    Operator { id: Option<QualifiedNameId> },
+    Operator { id: Option<QualifiedNameId>, resolution: Option<(FileId, TypeItemId)> },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },

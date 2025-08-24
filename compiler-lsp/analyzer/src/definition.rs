@@ -216,16 +216,12 @@ fn definition_binder(
     f_id: FileId,
     b_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
-        BinderKind::Constructor { id: Some(id), .. } => {
-            definition_qualified_name(engine, files, &resolved, &lowered, *id)
+        BinderKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            definition_file_term(engine, files, *f_id, *t_id)
         }
         _ => None,
     }
@@ -302,21 +298,22 @@ fn definition_type(
     f_id: FileId,
     t_id: TypeId,
 ) -> Option<GotoDefinitionResponse> {
-    let (content, parsed, resolved, lowered) = {
+    let (content, parsed, lowered) = {
         let content = engine.content(f_id);
         let (parsed, _) = engine.parsed(f_id).ok()?;
-        let resolved = engine.resolved(f_id).ok()?;
         let lowered = engine.lowered(f_id).ok()?;
-        (content, parsed, resolved, lowered)
+        (content, parsed, lowered)
     };
 
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        TypeKind::Constructor { id: Some(id), .. } => {
-            definition_qualified_name(engine, files, &resolved, &lowered, *id)
+        TypeKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            definition_file_type(engine, files, *f_id, *t_id)
         }
-        TypeKind::Operator { id: Some(id), .. } => {
-            definition_qualified_name(engine, files, &resolved, &lowered, *id)
+        TypeKind::Operator { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            definition_file_type(engine, files, *f_id, *t_id)
         }
         TypeKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;

@@ -182,32 +182,24 @@ fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Optio
 }
 
 fn hover_binder(engine: &QueryEngine, f_id: FileId, b_id: BinderId) -> Option<Hover> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
-        BinderKind::Constructor { id: Some(id), .. } => {
-            hover_qualified_name(engine, &resolved, &lowered, *id)
+        BinderKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_term(engine, *f_id, *t_id)
         }
         _ => None,
     }
 }
 
 fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
-        ExpressionKind::Constructor { id: Some(id), .. } => {
-            hover_qualified_name(engine, &resolved, &lowered, *id)
+        ExpressionKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_term(engine, *f_id, *t_id)
         }
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -223,8 +215,9 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
                 }
             }
         }
-        ExpressionKind::OperatorName { id: Some(id), .. } => {
-            hover_qualified_name(engine, &resolved, &lowered, *id)
+        ExpressionKind::OperatorName { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_term(engine, *f_id, *t_id)
         }
         _ => None,
     }
@@ -277,16 +270,12 @@ fn hover_let(
 }
 
 fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        TypeKind::Constructor { id: Some(id), .. } => {
-            hover_qualified_name(engine, &resolved, &lowered, *id)
+        TypeKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_type(engine, *f_id, *t_id)
         }
         _ => None,
     }

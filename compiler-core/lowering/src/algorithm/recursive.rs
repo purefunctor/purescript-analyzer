@@ -46,8 +46,9 @@ fn lower_binder_kind(
         cst::Binder::BinderConstructor(cst) => {
             let id =
                 lower_qualified_name(state, Domain::Term, cst.name(), cst::QualifiedName::upper);
+            let resolution = id.and_then(|id| state.resolve_term_reference(context, id));
             let arguments = cst.children().map(|cst| lower_binder(state, context, &cst)).collect();
-            BinderKind::Constructor { id, arguments }
+            BinderKind::Constructor { id, resolution, arguments }
         }
         cst::Binder::BinderVariable(cst) => {
             let variable = cst.name_token().map(|cst| {
@@ -686,7 +687,8 @@ fn lower_type_kind(
         cst::Type::TypeConstructor(cst) => {
             let id =
                 lower_qualified_name(state, Domain::Type, cst.name(), cst::QualifiedName::upper);
-            TypeKind::Constructor { id }
+            let resolution = id.and_then(|id| state.resolve_type_reference(context, id));
+            TypeKind::Constructor { id, resolution }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
         cst::Type::TypeForall(cst) => state.with_scope(|s| {
@@ -711,7 +713,8 @@ fn lower_type_kind(
                 cst.name(),
                 cst::QualifiedName::operator_name,
             );
-            TypeKind::Operator { id }
+            let resolution = id.and_then(|id| state.resolve_type_reference(context, id));
+            TypeKind::Operator { id, resolution }
         }
         cst::Type::TypeOperatorChain(cst) => {
             let head = cst.type_().map(|cst| lower_type(state, context, &cst));

@@ -151,6 +151,15 @@ impl State {
         })
     }
 
+    fn resolve_type_reference(
+        &self,
+        context: &Context,
+        id: QualifiedNameId,
+    ) -> Option<(FileId, TypeItemId)> {
+        let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
+        context.resolved.lookup_type(context.prim, qualifier.as_deref(), name.as_str())
+    }
+
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
         let node = self.graph_scope?;
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
