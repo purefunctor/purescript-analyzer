@@ -2,7 +2,7 @@ mod render;
 
 use std::fmt::Write;
 
-use analyzer::QueryEngine;
+use analyzer::{QueryEngine, prim};
 use async_lsp::lsp_types::{
     CompletionList, CompletionResponse, GotoDefinitionResponse, HoverContents, LanguageString,
     Location, MarkedString, Position, Url,

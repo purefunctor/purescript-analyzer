@@ -19,7 +19,9 @@ rustc-hash = "2.1.1"
 smol_str = "0.3.2"
 string-interner = "0.19.0"
 sugar = { version = "0.1.0", path = "../sugar" }
+tempfile = "3.21.0"
 thread_local = "1.1.9"
+url = "2.5.7"
 
 [dev-dependencies]
 la-arena = "0.3.1"

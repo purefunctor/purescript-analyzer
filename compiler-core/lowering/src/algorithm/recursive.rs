@@ -258,8 +258,8 @@ fn lower_expression_kind(
             const BIND: SmolStr = SmolStr::new_static("bind");
             const DISCARD: SmolStr = SmolStr::new_static("discard");
 
-            let bind = s.resolve_nominal(qualifier.clone(), BIND);
-            let discard = s.resolve_nominal(qualifier.clone(), DISCARD);
+            let bind = s.resolve_nominal(context, qualifier.clone(), BIND);
+            let discard = s.resolve_nominal(context, qualifier.clone(), DISCARD);
 
             let statements = cst
                 .statements()
@@ -278,8 +278,8 @@ fn lower_expression_kind(
             const MAP: SmolStr = SmolStr::new_static("map");
             const APPLY: SmolStr = SmolStr::new_static("apply");
 
-            let map = s.resolve_nominal(qualifier.clone(), MAP);
-            let apply = s.resolve_nominal(qualifier.clone(), APPLY);
+            let map = s.resolve_nominal(context, qualifier.clone(), MAP);
+            let apply = s.resolve_nominal(context, qualifier.clone(), APPLY);
 
             let statements = cst
                 .statements()
@@ -297,7 +297,7 @@ fn lower_expression_kind(
         cst::Expression::ExpressionVariable(cst) => {
             let id =
                 lower_qualified_name(state, Domain::Term, cst.name(), cst::QualifiedName::lower);
-            let resolution = id.and_then(|id| state.resolve_term_variable(id));
+            let resolution = id.and_then(|id| state.resolve_term_variable(context, id));
             ExpressionKind::Variable { id, resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
@@ -340,7 +340,7 @@ fn lower_expression_kind(
                     });
                     let resolution = name.as_ref().and_then(|name| {
                         let name = SmolStr::clone(name);
-                        state.resolve_nominal(None, name)
+                        state.resolve_nominal(context, None, name)
                     });
                     ExpressionRecordItem::RecordPun { name, resolution }
                 }

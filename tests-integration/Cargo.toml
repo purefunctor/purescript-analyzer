@@ -13,7 +13,6 @@ indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
 itertools = "0.14.0"
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
-prim = { version = "0.1.0", path = "../compiler-core/prim" }
 resolving = { version = "0.1.0", path = "../compiler-core/resolving" }
 rowan = "0.16.1"
 smol_str = "0.3.2"

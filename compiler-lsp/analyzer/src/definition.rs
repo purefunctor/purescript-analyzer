@@ -1,5 +1,5 @@
 use async_lsp::lsp_types::*;
-use building::QueryEngine;
+use building::{QueryEngine, prim};
 use files::{FileId, Files};
 use indexing::ImportItemId;
 use lowering::{
@@ -290,6 +290,7 @@ fn definition_expression(
                     let name = name.as_str();
                     definition_nominal(engine, files, &resolved, Domain::Term, qualifier, name)
                 }
+                TermVariableResolution::Reference(_, _) => None,
             }
         }
         ExpressionKind::OperatorName { id: Some(id), .. } => {

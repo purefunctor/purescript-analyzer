@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use analyzer::QueryEngine;
+use analyzer::{QueryEngine, prim};
 use files::Files;
 use glob::glob;
 
@@ -48,7 +48,7 @@ pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
 mod manual_tests {
     use files::Files;
 
-    use crate::QueryEngine;
+    use crate::{QueryEngine, prim};
 
     #[test]
     fn test_rebracketing() {

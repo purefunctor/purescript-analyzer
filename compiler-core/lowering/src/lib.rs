@@ -5,6 +5,7 @@ pub mod scope;
 pub mod source;
 
 pub use intermediate::*;
+use resolving::FullResolvedModule;
 pub use scope::*;
 pub use source::*;
 
@@ -19,8 +20,13 @@ pub struct FullLoweredModule {
     pub nodes: LoweringGraphNodes,
 }
 
-pub fn lower_module(module: &cst::Module, indexed: &FullIndexedModule) -> FullLoweredModule {
+pub fn lower_module(
+    module: &cst::Module,
+    prim: &FullResolvedModule,
+    indexed: &FullIndexedModule,
+    resolved: &FullResolvedModule,
+) -> FullLoweredModule {
     let algorithm::State { intermediate, source, graph, nodes, .. } =
-        algorithm::lower_module(module, indexed);
+        algorithm::lower_module(module, prim, indexed, resolved);
     FullLoweredModule { intermediate, source, graph, nodes }
 }

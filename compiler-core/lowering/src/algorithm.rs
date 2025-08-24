@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::cst;
 
-use crate::{ImplicitTypeVariable, Nominal, *};
+use crate::{ImplicitTypeVariable, *};
 
 #[derive(Default)]
 pub(crate) struct State {
@@ -25,7 +25,9 @@ pub(crate) struct State {
 
 struct Context<'c> {
     module: &'c cst::Module,
+    prim: &'c FullResolvedModule,
     indexed: &'c FullIndexedModule,
+    resolved: &'c FullResolvedModule,
 }
 
 impl State {
@@ -98,26 +100,33 @@ impl State {
         *collecting = false;
     }
 
+    fn resolve_term_variable(
+        &mut self,
+        context: &Context,
+        id: QualifiedNameId,
+    ) -> Option<TermVariableResolution> {
+        let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
+        let qualifier = qualifier.clone();
+        let name = name.clone();
+        self.resolve_nominal(context, qualifier, name)
+    }
+
     fn resolve_nominal(
         &mut self,
+        context: &Context,
         qualifier: Option<SmolStr>,
         name: SmolStr,
     ) -> Option<TermVariableResolution> {
-        let nominal = Nominal { qualifier, name };
-        if nominal.qualifier.is_some() {
-            Some(TermVariableResolution::Nominal(nominal))
+        if qualifier.is_some() {
+            let (file_id, term_id) =
+                context.resolved.lookup_term(context.prim, qualifier.as_deref(), &name)?;
+            Some(TermVariableResolution::Reference(file_id, term_id))
         } else {
-            self.resolve_term_local(&nominal.name)
-                .or(Some(TermVariableResolution::Nominal(nominal)))
-        }
-    }
-
-    fn resolve_term_variable(&mut self, id: QualifiedNameId) -> Option<TermVariableResolution> {
-        let ir = self.intermediate.index_qualified_name(id)?;
-        if ir.qualifier.is_some() {
-            Some(TermVariableResolution::Global)
-        } else {
-            self.resolve_term_local(&ir.name).or(Some(TermVariableResolution::Global))
+            self.resolve_term_local(&name).or_else(|| {
+                let (file_id, term_id) =
+                    context.resolved.lookup_term(context.prim, qualifier.as_deref(), &name)?;
+                Some(TermVariableResolution::Reference(file_id, term_id))
+            })
         }
     }
 
@@ -173,9 +182,14 @@ impl State {
     }
 }
 
-pub(super) fn lower_module(module: &cst::Module, indexed: &FullIndexedModule) -> State {
+pub(super) fn lower_module(
+    module: &cst::Module,
+    prim: &FullResolvedModule,
+    indexed: &FullIndexedModule,
+    resolved: &FullResolvedModule,
+) -> State {
     let mut state = State::default();
-    let environment = Context { module, indexed };
+    let environment = Context { module, prim, indexed, resolved };
 
     for (id, item) in environment.indexed.items.iter_terms() {
         state.with_scope(|state| {

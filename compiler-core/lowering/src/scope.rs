@@ -13,6 +13,8 @@
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
 use std::{collections::VecDeque, ops, sync::Arc};
 
+use files::FileId;
+use indexing::TermItemId;
 use indexmap::IndexMap;
 use la_arena::{Arena, Idx, RawIdx};
 use rustc_hash::{FxBuildHasher, FxHashMap};
@@ -36,6 +38,7 @@ pub enum TermVariableResolution {
     /// [`QualifiedName`]: syntax::cst::QualifiedName
     /// [`QualifiedNameIr`]: crate::intermediate::QualifiedNameIr
     Nominal(Nominal),
+    Reference(FileId, TermItemId),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
