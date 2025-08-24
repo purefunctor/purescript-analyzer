@@ -297,7 +297,7 @@ fn lower_expression_kind(
         cst::Expression::ExpressionVariable(cst) => {
             let id =
                 lower_qualified_name(state, Domain::Term, cst.name(), cst::QualifiedName::lower);
-            let resolution = id.and_then(|id| state.resolve_qualified_name(id));
+            let resolution = id.and_then(|id| state.resolve_term_variable(id));
             ExpressionKind::Variable { id, resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {

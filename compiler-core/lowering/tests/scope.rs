@@ -33,7 +33,7 @@ fn variable_scope_check(content: &str) -> String {
         writeln!(snapshot, "{}@{:?}", text.trim(), range).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
-                TermResolution::Reference(_) => {
+                TermResolution::Global => {
                     writeln!(snapshot, "  resolves to top-level name").unwrap();
                 }
                 TermResolution::Binder(binder) => {

@@ -209,12 +209,10 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
         ExpressionKind::Constructor { id: Some(id), .. } => {
             hover_qualified_name(engine, &resolved, &lowered, *id)
         }
-        ExpressionKind::Variable { resolution, .. } => {
+        ExpressionKind::Variable { id: Some(id), resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Reference(id) => {
-                    hover_qualified_name(engine, &resolved, &lowered, *id)
-                }
+                TermResolution::Global => hover_qualified_name(engine, &resolved, &lowered, *id),
                 TermResolution::Binder(_) => None,
                 TermResolution::Let(let_binding) => {
                     let (parsed, _) = engine.parsed(f_id).ok()?;

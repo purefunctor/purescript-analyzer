@@ -24,7 +24,7 @@ use crate::source::*;
 /// A resolution for term names.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TermResolution {
-    Reference(QualifiedNameId),
+    Global,
     Binder(BinderId),
     Let(LetBindingResolution),
     AdHoc { qualifier: Option<SmolStr>, name: SmolStr },

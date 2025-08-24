@@ -110,12 +110,12 @@ impl State {
         }
     }
 
-    fn resolve_qualified_name(&mut self, id: QualifiedNameId) -> Option<TermResolution> {
+    fn resolve_term_variable(&mut self, id: QualifiedNameId) -> Option<TermResolution> {
         let ir = self.intermediate.index_qualified_name(id)?;
         if ir.qualifier.is_some() {
-            Some(TermResolution::Reference(id))
+            Some(TermResolution::Global)
         } else {
-            self.resolve_term_local(&ir.name).or(Some(TermResolution::Reference(id)))
+            self.resolve_term_local(&ir.name).or(Some(TermResolution::Global))
         }
     }
 

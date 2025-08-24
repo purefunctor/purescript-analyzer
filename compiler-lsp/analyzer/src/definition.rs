@@ -250,10 +250,10 @@ fn definition_expression(
         ExpressionKind::Constructor { id: Some(id), .. } => {
             definition_qualified_name(engine, files, &resolved, &lowered, *id)
         }
-        ExpressionKind::Variable { resolution, .. } => {
+        ExpressionKind::Variable { id: Some(id), resolution } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Reference(id) => {
+                TermResolution::Global => {
                     definition_qualified_name(engine, files, &resolved, &lowered, *id)
                 }
                 TermResolution::Binder(binder) => {
