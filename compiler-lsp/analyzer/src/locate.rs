@@ -5,7 +5,7 @@ use building::QueryEngine;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
-use lowering::{BinderId, ExpressionId, FullLoweredModule, QualifiedNameId, TypeId};
+use lowering::{BinderId, ExpressionId, FullLoweredModule, TermOperatorId, TypeId, TypeOperatorId};
 use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
@@ -53,7 +53,8 @@ pub enum Located {
     Binder(BinderId),
     Expression(ExpressionId),
     Type(TypeId),
-    Operator(QualifiedNameId),
+    TermOperator(TermOperatorId),
+    TypeOperator(TypeOperatorId),
     Nothing,
 }
 
@@ -96,12 +97,6 @@ fn locate_node(
     lowered: &FullLoweredModule,
     node: SyntaxNode,
 ) -> Option<Located> {
-    macro_rules! child_of {
-        ($pattern:pat) => {
-            node.ancestors().find(|cst| matches!(cst.kind(), $pattern)).is_some()
-        };
-    }
-
     let kind = node.kind();
     let ptr = SyntaxNodePtr::new(&node);
     if cst::ModuleName::can_cast(kind) {
@@ -123,16 +118,14 @@ fn locate_node(
         let ptr = ptr.cast()?;
         let id = lowered.source.lookup_ty(&ptr)?;
         Some(Located::Type(id))
-    } else if cst::QualifiedName::can_cast(kind)
-        && child_of!(
-            SyntaxKind::BinderOperatorPair
-                | SyntaxKind::ExpressionOperatorPair
-                | SyntaxKind::TypeOperatorPair
-        )
-    {
+    } else if cst::TermOperator::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = lowered.source.lookup_qualified_name(&ptr)?;
-        Some(Located::Operator(id))
+        let id = lowered.source.lookup_term_operator(&ptr)?;
+        Some(Located::TermOperator(id))
+    } else if cst::TypeOperator::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = lowered.source.lookup_type_operator(&ptr)?;
+        Some(Located::TypeOperator(id))
     } else {
         None
     }

@@ -3,11 +3,9 @@ use building::{QueryEngine, prim};
 use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use lowering::{
-    BinderId, BinderKind, Domain, ExpressionId, ExpressionKind, FullLoweredModule,
-    ImplicitTypeVariable, QualifiedNameId, TermVariableResolution, TypeId, TypeKind,
-    TypeVariableResolution,
+    BinderId, BinderKind, ExpressionId, ExpressionKind, ImplicitTypeVariable,
+    TermVariableResolution, TypeId, TypeKind, TypeVariableResolution,
 };
-use resolving::FullResolvedModule;
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::SmolStrBuilder;
 use syntax::cst;
@@ -32,10 +30,15 @@ pub fn implementation(
         locate::Located::Binder(b_id) => definition_binder(engine, files, f_id, b_id),
         locate::Located::Expression(e_id) => definition_expression(engine, files, uri, f_id, e_id),
         locate::Located::Type(t_id) => definition_type(engine, files, uri, f_id, t_id),
-        locate::Located::Operator(q_id) => {
-            let resolved = engine.resolved(f_id).ok()?;
+        locate::Located::TermOperator(o_id) => {
             let lowered = engine.lowered(f_id).ok()?;
-            definition_qualified_name(engine, files, &resolved, &lowered, q_id)
+            let (f_id, t_id) = lowered.intermediate.index_term_operator(o_id)?;
+            definition_file_term(engine, files, *f_id, *t_id)
+        }
+        locate::Located::TypeOperator(o_id) => {
+            let lowered = engine.lowered(f_id).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_type_operator(o_id)?;
+            definition_file_type(engine, files, *f_id, *t_id)
         }
         locate::Located::Nothing => None,
     }
@@ -328,45 +331,6 @@ fn definition_type(
             }
         }
         _ => None,
-    }
-}
-
-fn definition_qualified_name(
-    engine: &QueryEngine,
-    files: &Files,
-    resolved: &FullResolvedModule,
-    lowered: &FullLoweredModule,
-    id: QualifiedNameId,
-) -> Option<GotoDefinitionResponse> {
-    let ir = lowered.intermediate.index_qualified_name(id)?;
-    let domain = ir.domain;
-    let qualifier = ir.qualifier.as_deref();
-    let name = ir.name.as_str();
-    definition_nominal(engine, files, resolved, domain, qualifier, name)
-}
-
-fn definition_nominal(
-    engine: &QueryEngine,
-    files: &Files,
-    resolved: &FullResolvedModule,
-    domain: Domain,
-    qualifier: Option<&str>,
-    name: &str,
-) -> Option<GotoDefinitionResponse> {
-    let prim = {
-        let id = engine.prim_id();
-        engine.resolved(id).ok()?
-    };
-
-    match domain {
-        Domain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(&prim, qualifier, name)?;
-            definition_file_term(engine, files, f_id, t_id)
-        }
-        Domain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(&prim, qualifier, name)?;
-            definition_file_type(engine, files, f_id, t_id)
-        }
     }
 }
 
