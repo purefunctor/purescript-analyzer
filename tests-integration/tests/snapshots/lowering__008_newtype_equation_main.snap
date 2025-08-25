@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+
+Types:
+
+36..38
+  resolves to forall 29..31
+62..64
+  resolves to forall 59..61
+88..90
+  resolves to forall 59..61
+102..104
+  resolves to forall 82..91

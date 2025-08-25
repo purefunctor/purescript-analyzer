@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+
+Types:
+
+44..46
+  introduces a constraint variable "a"
+82..84
+  introduces a constraint variable "a"

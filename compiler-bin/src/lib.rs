@@ -9,7 +9,7 @@ use std::{
     time::Instant,
 };
 
-use analyzer::{Files, QueryEngine};
+use analyzer::{Files, QueryEngine, prim};
 use async_lsp::{
     ClientSocket, ErrorCode, ResponseError, client_monitor::ClientProcessMonitorLayer,
     concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,

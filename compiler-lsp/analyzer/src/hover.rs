@@ -10,10 +10,9 @@ use indexing::{
 use itertools::Itertools;
 use la_arena::Idx;
 use lowering::{
-    BinderId, BinderKind, DeferredResolutionId, ExpressionId, ExpressionKind, FullLoweredModule,
-    LetBindingResolution, ResolutionDomain, TermResolution, TypeId, TypeKind,
+    BinderId, BinderKind, ExpressionId, ExpressionKind, FullLoweredModule, LetBound,
+    TermVariableResolution, TypeId, TypeKind,
 };
-use resolving::FullResolvedModule;
 use rowan::{
     TextRange,
     ast::{AstNode, AstPtr},
@@ -42,7 +41,16 @@ pub fn implementation(
         locate::Located::Binder(b_id) => hover_binder(engine, f_id, b_id),
         locate::Located::Expression(e_id) => hover_expression(engine, f_id, e_id),
         locate::Located::Type(t_id) => hover_type(engine, f_id, t_id),
-        locate::Located::OperatorInChain(_, _) => None,
+        locate::Located::TermOperator(o_id) => {
+            let lowered = engine.lowered(f_id).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_term_operator(o_id)?;
+            hover_file_term(engine, *f_id, *t_id)
+        }
+        locate::Located::TypeOperator(o_id) => {
+            let lowered = engine.lowered(f_id).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_type_operator(o_id)?;
+            hover_file_type(engine, *f_id, *t_id)
+        }
         locate::Located::Nothing => None,
     }
 }
@@ -178,47 +186,42 @@ fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Optio
 }
 
 fn hover_binder(engine: &QueryEngine, f_id: FileId, b_id: BinderId) -> Option<Hover> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_binder_kind(b_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            hover_deferred(engine, &resolved, &lowered, *resolution)
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_term(engine, *f_id, *t_id)
         }
         _ => None,
     }
 }
 
 fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_expression_kind(e_id)?;
     match kind {
-        ExpressionKind::Constructor { resolution } => {
-            hover_deferred(engine, &resolved, &lowered, *resolution)
+        ExpressionKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_term(engine, *f_id, *t_id)
         }
-        ExpressionKind::Variable { resolution } => {
+        ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
             match resolution {
-                TermResolution::Deferred(id) => hover_deferred(engine, &resolved, &lowered, *id),
-                TermResolution::Binder(_) => None,
-                TermResolution::Let(let_binding) => {
+                TermVariableResolution::Binder(_) => None,
+                TermVariableResolution::Let(let_binding) => {
                     let (parsed, _) = engine.parsed(f_id).ok()?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
+                TermVariableResolution::Reference(f_id, t_id) => {
+                    hover_file_term(engine, *f_id, *t_id)
+                }
             }
         }
-        ExpressionKind::OperatorName { resolution } => {
-            hover_deferred(engine, &resolved, &lowered, *resolution)
+        ExpressionKind::OperatorName { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_term(engine, *f_id, *t_id)
         }
         _ => None,
     }
@@ -227,7 +230,7 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
 fn hover_let(
     root: &SyntaxNode,
     lowered: &FullLoweredModule,
-    let_binding: &LetBindingResolution,
+    let_binding: &LetBound,
 ) -> Option<Hover> {
     let signature = let_binding.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();
@@ -271,45 +274,14 @@ fn hover_let(
 }
 
 fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover> {
-    let (resolved, lowered) = {
-        let resolved = engine.resolved(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (resolved, lowered)
-    };
-
+    let lowered = engine.lowered(f_id).ok()?;
     let kind = lowered.intermediate.index_type_kind(t_id)?;
     match kind {
-        TypeKind::Constructor { resolution } => {
-            hover_deferred(engine, &resolved, &lowered, *resolution)
+        TypeKind::Constructor { resolution, .. } => {
+            let (f_id, t_id) = resolution.as_ref()?;
+            hover_file_type(engine, *f_id, *t_id)
         }
         _ => None,
-    }
-}
-
-fn hover_deferred(
-    engine: &QueryEngine,
-    resolved: &FullResolvedModule,
-    lowered: &FullLoweredModule,
-    id: DeferredResolutionId,
-) -> Option<Hover> {
-    let prim = {
-        let id = engine.prim_id();
-        engine.resolved(id).ok()?
-    };
-
-    let deferred = &lowered.graph[id];
-    let prefix = deferred.qualifier.as_deref();
-    let name = deferred.name.as_deref()?;
-
-    match deferred.domain {
-        ResolutionDomain::Term => {
-            let (f_id, t_id) = resolved.lookup_term(&prim, prefix, name)?;
-            hover_file_term(engine, f_id, t_id)
-        }
-        ResolutionDomain::Type => {
-            let (f_id, t_id) = resolved.lookup_type(&prim, prefix, name)?;
-            hover_file_type(engine, f_id, t_id)
-        }
     }
 }
 

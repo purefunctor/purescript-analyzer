@@ -69,10 +69,11 @@ expression: "(node, errors)"
                         TEXT@66..71 "\n    "
                       LOWER@71..72 "x"
                   ExpressionOperatorPair@72..76
-                    QualifiedName@72..74
-                      Annotation@72..73
-                        TEXT@72..73 " "
-                      OPERATOR@73..74 "+"
+                    TermOperator@72..74
+                      QualifiedName@72..74
+                        Annotation@72..73
+                          TEXT@72..73 " "
+                        OPERATOR@73..74 "+"
                     ExpressionVariable@74..76
                       QualifiedName@74..76
                         Annotation@74..75

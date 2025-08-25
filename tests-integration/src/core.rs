@@ -3,7 +3,11 @@ use std::fmt::Write;
 use analyzer::QueryEngine;
 use files::FileId;
 use indexing::ImportKind;
-use lowering::ResolutionDomain;
+use lowering::{
+    ExpressionKind, GraphNode, ImplicitTypeVariable, LetBound, TermVariableResolution, TypeKind,
+    TypeVariableResolution,
+};
+use rowan::ast::AstNode;
 
 pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let resolved = engine.resolved(id).unwrap();
@@ -88,52 +92,105 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     buffer
 }
 
-pub fn report_deferred_resolution(engine: &QueryEngine, id: FileId) -> String {
-    let prim = {
-        let id = engine.prim_id();
-        engine.resolved(id).ok().unwrap()
-    };
-
-    let resolved = engine.resolved(id).unwrap();
+pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
+    let (parsed, _) = engine.parsed(id).unwrap();
     let lowered = engine.lowered(id).unwrap();
 
+    let module = parsed.cst();
+    let intermediate = &lowered.intermediate;
+    let source = &lowered.source;
+    let graph = &lowered.graph;
+
     let mut buffer = String::default();
-    for (id, deferred) in lowered.graph.deferred() {
-        let prefix = deferred.qualifier.as_ref().map(|name| name.as_str());
-        let Some(name) = &deferred.name else { continue };
+    writeln!(buffer, "module {name}").unwrap();
 
-        match deferred.domain {
-            ResolutionDomain::Term => {
-                let Some((f_id, t_id)) = resolved.lookup_term(&prim, prefix, name) else {
-                    continue;
-                };
-                let (module, _) = engine.parsed(f_id).unwrap();
-                let module = module.module_name().unwrap();
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Expressions:").unwrap();
+    writeln!(buffer).unwrap();
+    for (expression_id, _) in intermediate.iter_expression() {
+        let Some(ExpressionKind::Variable { resolution, .. }) =
+            intermediate.index_expression_kind(expression_id)
+        else {
+            continue;
+        };
 
-                let indexed = engine.indexed(f_id).unwrap();
-                let item = &indexed.items[t_id];
+        let cst = &source[expression_id];
+        let root = module.syntax();
 
-                let Some(item) = &item.name else { continue };
-                writeln!(buffer, "{id:?} = {module}.{item}").unwrap();
+        let node = cst.syntax_node_ptr().to_node(root);
+        let text = node.text().to_string();
+        let range = node.text_range();
+
+        writeln!(buffer, "{}@{:?}", text.trim(), range).unwrap();
+        if let Some(resolution) = resolution {
+            match resolution {
+                TermVariableResolution::Binder(binder) => {
+                    let cst = &source[*binder];
+                    let range = cst.syntax_node_ptr().text_range();
+                    writeln!(buffer, "  resolves to binder {range:?}").unwrap();
+                }
+                TermVariableResolution::Let(LetBound { signature, equations }) => {
+                    if let Some(signature) = signature {
+                        let cst = &source[*signature];
+                        let range = cst.syntax_node_ptr().text_range();
+                        writeln!(buffer, "  resolves to signature {range:?}").unwrap();
+                    }
+                    for equation in equations.iter() {
+                        let cst = &source[*equation];
+                        let range = cst.syntax_node_ptr().text_range();
+                        writeln!(buffer, "  resolves to equation {range:?}").unwrap();
+                    }
+                }
+                TermVariableResolution::Reference(_, _) => {
+                    writeln!(buffer, "  resolves to top-level name").unwrap();
+                }
             }
-            ResolutionDomain::Type => {
-                let Some((f_id, t_id)) = resolved.lookup_type(&prim, prefix, name) else {
-                    continue;
-                };
-                let (module, _) = engine.parsed(f_id).unwrap();
-                let module = module.module_name().unwrap();
-
-                let indexed = engine.indexed(f_id).unwrap();
-                let item = &indexed.items[t_id];
-
-                let Some(item) = &item.name else { continue };
-                writeln!(buffer, "{id:?} = {module}.{item}").unwrap();
-            }
+        } else {
+            writeln!(buffer, "  resolves to nothing").unwrap();
         }
     }
 
-    if buffer.is_empty() {
-        writeln!(buffer, "<empty>").unwrap()
+    writeln!(buffer, "\nTypes:\n").unwrap();
+
+    for (type_id, _) in intermediate.iter_type() {
+        let Some(TypeKind::Variable { resolution, .. }) = intermediate.index_type_kind(type_id)
+        else {
+            continue;
+        };
+        let cst = &source[type_id];
+        let range = cst.syntax_node_ptr().text_range();
+        writeln!(buffer, "{range:?}").unwrap();
+        if let Some(resolution) = resolution {
+            match resolution {
+                TypeVariableResolution::Forall(id) => {
+                    let cst = &source[*id];
+                    let range = cst.syntax_node_ptr().text_range();
+                    writeln!(buffer, "  resolves to forall {range:?}").unwrap();
+                }
+                TypeVariableResolution::Implicit(ImplicitTypeVariable { binding, node, id }) => {
+                    if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
+                        let (name, type_ids) =
+                            bindings.get_index(*id).expect("invariant violated: invalid index");
+                        if *binding {
+                            writeln!(buffer, "  introduces a constraint variable {name:?}")
+                                .unwrap();
+                        } else {
+                            writeln!(buffer, "  resolves to a constraint variable {name:?}")
+                                .unwrap();
+                            for &type_id in type_ids {
+                                let cst = &source[type_id];
+                                let range = cst.syntax_node_ptr().text_range();
+                                writeln!(buffer, "    {range:?}").unwrap();
+                            }
+                        }
+                    } else {
+                        writeln!(buffer, "  did not resolve to constraint variable!").unwrap();
+                    }
+                }
+            }
+        } else {
+            writeln!(buffer, "  resolves to nothing").unwrap();
+        }
     }
 
     buffer

@@ -1,0 +1,12 @@
+[package]
+name = "sugar"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+building-types = { version = "0.1.0", path = "../building-types" }
+files = { version = "0.1.0", path = "../files" }
+indexing = { version = "0.1.0", path = "../indexing" }
+lowering = { version = "0.1.0", path = "../lowering" }
+resolving = { version = "0.1.0", path = "../resolving" }
+rustc-hash = "2.1.1"

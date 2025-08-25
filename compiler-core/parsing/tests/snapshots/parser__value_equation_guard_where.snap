@@ -73,10 +73,11 @@ expression: "(node, errors)"
                         TEXT@70..71 " "
                       LOWER@71..72 "c"
                   ExpressionOperatorPair@72..77
-                    QualifiedName@72..75
-                      Annotation@72..73
-                        TEXT@72..73 " "
-                      OPERATOR@73..75 "<<"
+                    TermOperator@72..75
+                      QualifiedName@72..75
+                        Annotation@72..73
+                          TEXT@72..73 " "
+                        OPERATOR@73..75 "<<"
                     ExpressionVariable@75..77
                       QualifiedName@75..77
                         Annotation@75..76
@@ -112,10 +113,11 @@ expression: "(node, errors)"
                                 TEXT@95..96 " "
                               LOWER@96..97 "c"
                           ExpressionOperatorPair@97..101
-                            QualifiedName@97..99
-                              Annotation@97..98
-                                TEXT@97..98 " "
-                              OPERATOR@98..99 "+"
+                            TermOperator@97..99
+                              QualifiedName@97..99
+                                Annotation@97..98
+                                  TEXT@97..98 " "
+                                OPERATOR@98..99 "+"
                             ExpressionVariable@99..101
                               QualifiedName@99..101
                                 Annotation@99..100

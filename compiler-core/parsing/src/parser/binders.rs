@@ -21,7 +21,9 @@ pub(super) fn binder_1(p: &mut Parser) {
     binder_2(p);
     while p.at_in(names::OPERATOR) && !p.at_eof() {
         let mut n = p.start();
+        let mut o = p.start();
         names::operator(p);
+        o.end(p, SyntaxKind::TermOperator);
         binder_2(p);
         n.end(p, SyntaxKind::BinderOperatorPair);
         i += 1;

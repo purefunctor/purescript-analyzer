@@ -29,20 +29,22 @@ expression: "(node, errors)"
                   TEXT@38..39 " "
                 UPPER@39..40 "A"
             TypeOperatorPair@40..44
-              QualifiedName@40..42
-                Annotation@40..41
-                  TEXT@40..41 " "
-                OPERATOR@41..42 "+"
+              TypeOperator@40..42
+                QualifiedName@40..42
+                  Annotation@40..41
+                    TEXT@40..41 " "
+                  OPERATOR@41..42 "+"
               TypeConstructor@42..44
                 QualifiedName@42..44
                   Annotation@42..43
                     TEXT@42..43 " "
                   UPPER@43..44 "B"
             TypeOperatorPair@44..48
-              QualifiedName@44..46
-                Annotation@44..45
-                  TEXT@44..45 " "
-                OPERATOR@45..46 "+"
+              TypeOperator@44..46
+                QualifiedName@44..46
+                  Annotation@44..45
+                    TEXT@44..45 " "
+                  OPERATOR@45..46 "+"
               TypeConstructor@46..48
                 QualifiedName@46..48
                   Annotation@46..47

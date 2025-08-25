@@ -32,11 +32,11 @@ impl FullResolvedModule {
     pub fn lookup_term(
         &self,
         prim: &FullResolvedModule,
-        prefix: Option<&str>,
+        qualifier: Option<&str>,
         name: &str,
     ) -> Option<(FileId, TermItemId)> {
-        if let Some(prefix) = prefix {
-            let import = self.qualified.get(prefix)?;
+        if let Some(qualifier) = qualifier {
+            let import = self.qualified.get(qualifier)?;
             let (file, id, kind) = import.lookup_term(name)?;
             if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
         } else {
@@ -69,11 +69,11 @@ impl FullResolvedModule {
     pub fn lookup_type(
         &self,
         prim: &FullResolvedModule,
-        prefix: Option<&str>,
+        qualifier: Option<&str>,
         name: &str,
     ) -> Option<(FileId, TypeItemId)> {
-        if let Some(prefix) = prefix {
-            let import = self.qualified.get(prefix)?;
+        if let Some(qualifier) = qualifier {
+            let import = self.qualified.get(qualifier)?;
             let (file, id, kind) = import.lookup_type(name)?;
             if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
         } else {

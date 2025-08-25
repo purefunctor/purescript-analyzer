@@ -2,4 +2,4 @@
 source: tests-integration/tests/deferred_resolution.rs
 expression: report
 ---
-Idx::<DeferredResolution>(0) = Prim.Type
+<empty>

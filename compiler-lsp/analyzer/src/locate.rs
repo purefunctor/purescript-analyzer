@@ -5,12 +5,11 @@ use building::QueryEngine;
 use files::FileId;
 use indexing::{FullIndexedModule, ImportItemId};
 use line_index::{LineCol, LineIndex};
-use lowering::{BinderId, ExpressionId, FullLoweredModule, ResolutionDomain, TypeId};
+use lowering::{BinderId, ExpressionId, FullLoweredModule, TermOperatorId, TypeId, TypeOperatorId};
 use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
 };
-use smol_str::SmolStr;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
@@ -54,7 +53,8 @@ pub enum Located {
     Binder(BinderId),
     Expression(ExpressionId),
     Type(TypeId),
-    OperatorInChain(ResolutionDomain, SmolStr),
+    TermOperator(TermOperatorId),
+    TypeOperator(TypeOperatorId),
     Nothing,
 }
 
@@ -118,24 +118,14 @@ fn locate_node(
         let ptr = ptr.cast()?;
         let id = lowered.source.lookup_ty(&ptr)?;
         Some(Located::Type(id))
-    } else if cst::QualifiedName::can_cast(kind) {
-        let domain = node.ancestors().find_map(|node| {
-            let kind = node.kind();
-            if cst::Expression::can_cast(kind) {
-                Some(ResolutionDomain::Term)
-            } else if cst::Type::can_cast(kind) {
-                Some(ResolutionDomain::Type)
-            } else {
-                None
-            }
-        })?;
-
-        let node = cst::QualifiedName::cast(node)?;
-        let token = node.operator()?;
-        let text = token.text();
-        let text = SmolStr::new(text);
-
-        Some(Located::OperatorInChain(domain, text))
+    } else if cst::TermOperator::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = lowered.source.lookup_term_operator(&ptr)?;
+        Some(Located::TermOperator(id))
+    } else if cst::TypeOperator::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = lowered.source.lookup_type_operator(&ptr)?;
+        Some(Located::TypeOperator(id))
     } else {
         None
     }

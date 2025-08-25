@@ -153,7 +153,7 @@ pub enum SyntaxKind {
     TypeHole,
     TypeInteger,
     TypeKinded,
-    TypeOperator,
+    TypeOperatorName,
     TypeOperatorChain,
     TypeOperatorPair,
     TypeString,
@@ -273,6 +273,9 @@ pub enum SyntaxKind {
     DataConstructor,
 
     DeriveDeclaration,
+
+    TermOperator,
+    TypeOperator,
 
     #[doc(hidden)]
     __LAST,

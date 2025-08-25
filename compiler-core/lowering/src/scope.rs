@@ -1,4 +1,4 @@
-//! Scope Graphs for PureScript
+//! Scope graphs for local resolution.
 //!
 //! This module implements a [scope graph] for PureScript. Scope graphs are
 //! a novel take on name resolution which allow resolution semantics to be
@@ -10,43 +10,44 @@
 //! information to resolved nodes. For instance, knowing the type of a variable
 //! can be as easy as obtaining the type of a [`BinderId`].
 //!
-//! Names that cannot be resolved locally become [deferred resolutions]—they
-//! depend on the module-level context in order to be resolved. For instance,
-//! knowing the type of an imported value depends on type checking that module
-//! first, then associating the type to the [`DeferredResolutionId`].
-//!
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
-//! [deferred resolutions]: DeferredResolution
 use std::{collections::VecDeque, ops, sync::Arc};
 
+use files::FileId;
+use indexing::TermItemId;
 use indexmap::IndexMap;
 use la_arena::{Arena, Idx, RawIdx};
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
-use syntax::create_association;
 
 use crate::source::*;
 
-/// A resolution for term names.
+/// The result of resolving a term variable.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TermResolution {
-    Deferred(DeferredResolutionId),
+pub enum TermVariableResolution {
     Binder(BinderId),
-    Let(LetBindingResolution),
+    Let(LetBound),
+    Reference(FileId, TermItemId),
 }
 
-/// A resolution to a `let`-bound name.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LetBindingResolution {
+pub struct LetBound {
     pub signature: Option<LetBindingSignatureId>,
     pub equations: Arc<[LetBindingEquationId]>,
 }
 
-/// A resolution for type variables.
+/// The result of resolving a type variable.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeVariableResolution {
     Forall(TypeVariableBindingId),
-    Implicit { binding: bool, node: GraphNodeId, id: ImplicitTypeVariableBindingId },
+    Implicit(ImplicitTypeVariable),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ImplicitTypeVariable {
+    pub binding: bool,
+    pub node: GraphNodeId,
+    pub id: ImplicitTypeVariableBindingId,
 }
 
 /// See documentation for [`GraphNode::Implicit`].
@@ -86,7 +87,7 @@ pub enum GraphNode {
     /// Explicitly quantified type variabbles.
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
     /// Names bound by `let`.
-    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingResolution> },
+    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBound> },
     /// Implicitly quantified type variables.
     Implicit {
         parent: Option<GraphNodeId>,
@@ -124,28 +125,10 @@ pub enum GraphNode {
 
 pub type GraphNodeId = Idx<GraphNode>;
 
-/// The domain of a root resolution.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResolutionDomain {
-    Term,
-    Type,
-}
-
-/// A resolution to a non-local binding.
-#[derive(Debug, PartialEq, Eq)]
-pub struct DeferredResolution {
-    pub domain: ResolutionDomain,
-    pub qualifier: Option<SmolStr>,
-    pub name: Option<SmolStr>,
-}
-
-pub type DeferredResolutionId = Idx<DeferredResolution>;
-
 /// A scope graph for PureScript.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct LoweringGraph {
     pub(crate) inner: Arena<GraphNode>,
-    pub(crate) deferred: Arena<DeferredResolution>,
 }
 
 impl LoweringGraph {
@@ -154,11 +137,6 @@ impl LoweringGraph {
         let inner = &self.inner;
         let queue = VecDeque::from([id]);
         GraphIter { inner, queue }
-    }
-
-    /// An iterator over the current set of [`DeferredResolution`].
-    pub fn deferred(&self) -> impl Iterator<Item = (DeferredResolutionId, &DeferredResolution)> {
-        self.deferred.iter()
     }
 }
 
@@ -170,21 +148,12 @@ impl ops::Index<GraphNodeId> for LoweringGraph {
     }
 }
 
-impl ops::Index<DeferredResolutionId> for LoweringGraph {
-    type Output = DeferredResolution;
-
-    fn index(&self, index: DeferredResolutionId) -> &Self::Output {
-        &self.deferred[index]
-    }
-}
-
-create_association! {
+syntax::create_association! {
     /// Tracks [`GraphNodeId`] for IR nodes.
-    pub struct LoweringGraphInfo {
-        bd: BinderId => GraphNodeId,
-        ex: ExpressionId => GraphNodeId,
-        ty: TypeId => GraphNodeId,
-        ds: DoStatementId => GraphNodeId,
+    pub struct LoweringGraphNodes {
+        binder: BinderId => GraphNodeId,
+        expression: ExpressionId => GraphNodeId,
+        type_: TypeId => GraphNodeId,
     }
 }
 

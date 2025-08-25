@@ -36,10 +36,11 @@ expression: "(node, errors)"
                       TEXT@46..47 " "
                     LOWER@47..48 "a"
                   BinderOperatorPair@48..53
-                    QualifiedName@48..51
-                      Annotation@48..49
-                        TEXT@48..49 " "
-                      OPERATOR@49..51 "/\\"
+                    TermOperator@48..51
+                      QualifiedName@48..51
+                        Annotation@48..49
+                          TEXT@48..49 " "
+                        OPERATOR@49..51 "/\\"
                     BinderVariable@51..53
                       Annotation@51..52
                         TEXT@51..52 " "

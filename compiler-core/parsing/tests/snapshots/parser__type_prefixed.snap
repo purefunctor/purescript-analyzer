@@ -37,7 +37,7 @@ expression: "(node, errors)"
           Annotation@64..65
             TEXT@64..65 " "
           DOUBLE_COLON@65..67 "::"
-          TypeOperator@67..89
+          TypeOperatorName@67..89
             QualifiedName@67..89
               Annotation@67..68
                 TEXT@67..68 " "

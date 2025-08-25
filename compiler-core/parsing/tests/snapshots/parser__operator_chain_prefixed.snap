@@ -30,23 +30,25 @@ expression: "(node, errors)"
                     TEXT@48..49 " "
                   INTEGER@49..50 "1"
                 ExpressionOperatorPair@50..56
-                  QualifiedName@50..54
-                    Annotation@50..51
-                      TEXT@50..51 " "
-                    Qualifier@51..53
-                      TEXT@51..53 "L."
-                    OPERATOR@53..54 ":"
+                  TermOperator@50..54
+                    QualifiedName@50..54
+                      Annotation@50..51
+                        TEXT@50..51 " "
+                      Qualifier@51..53
+                        TEXT@51..53 "L."
+                      OPERATOR@53..54 ":"
                   ExpressionInteger@54..56
                     Annotation@54..55
                       TEXT@54..55 " "
                     INTEGER@55..56 "2"
                 ExpressionOperatorPair@56..66
-                  QualifiedName@56..60
-                    Annotation@56..57
-                      TEXT@56..57 " "
-                    Qualifier@57..59
-                      TEXT@57..59 "L."
-                    OPERATOR@59..60 ":"
+                  TermOperator@56..60
+                    QualifiedName@56..60
+                      Annotation@56..57
+                        TEXT@56..57 " "
+                      Qualifier@57..59
+                        TEXT@57..59 "L."
+                      OPERATOR@59..60 ":"
                   ExpressionConstructor@60..66
                     QualifiedName@60..66
                       Annotation@60..61
@@ -68,23 +70,25 @@ expression: "(node, errors)"
                 BinderVariable@76..77
                   LOWER@76..77 "a"
                 BinderOperatorPair@77..83
-                  QualifiedName@77..81
-                    Annotation@77..78
-                      TEXT@77..78 " "
-                    Qualifier@78..80
-                      TEXT@78..80 "L."
-                    OPERATOR@80..81 ":"
+                  TermOperator@77..81
+                    QualifiedName@77..81
+                      Annotation@77..78
+                        TEXT@77..78 " "
+                      Qualifier@78..80
+                        TEXT@78..80 "L."
+                      OPERATOR@80..81 ":"
                   BinderVariable@81..83
                     Annotation@81..82
                       TEXT@81..82 " "
                     LOWER@82..83 "b"
                 BinderOperatorPair@83..93
-                  QualifiedName@83..87
-                    Annotation@83..84
-                      TEXT@83..84 " "
-                    Qualifier@84..86
-                      TEXT@84..86 "L."
-                    OPERATOR@86..87 ":"
+                  TermOperator@83..87
+                    QualifiedName@83..87
+                      Annotation@83..84
+                        TEXT@83..84 " "
+                      Qualifier@84..86
+                        TEXT@84..86 "L."
+                      OPERATOR@86..87 ":"
                   BinderConstructor@87..93
                     QualifiedName@87..93
                       Annotation@87..88
@@ -105,12 +109,13 @@ expression: "(node, errors)"
                       TEXT@96..97 " "
                     LOWER@97..98 "a"
                 ExpressionOperatorPair@98..104
-                  QualifiedName@98..102
-                    Annotation@98..99
-                      TEXT@98..99 " "
-                    Qualifier@99..101
-                      TEXT@99..101 "S."
-                    OPERATOR@101..102 "+"
+                  TermOperator@98..102
+                    QualifiedName@98..102
+                      Annotation@98..99
+                        TEXT@98..99 " "
+                      Qualifier@99..101
+                        TEXT@99..101 "S."
+                      OPERATOR@101..102 "+"
                   ExpressionVariable@102..104
                     QualifiedName@102..104
                       Annotation@102..103
@@ -134,24 +139,26 @@ expression: "(node, errors)"
                   TEXT@117..118 " "
                 UPPER@118..125 "Integer"
             TypeOperatorPair@125..137
-              QualifiedName@125..129
-                Annotation@125..126
-                  TEXT@125..126 " "
-                Qualifier@126..128
-                  TEXT@126..128 "L."
-                OPERATOR@128..129 ":"
+              TypeOperator@125..129
+                QualifiedName@125..129
+                  Annotation@125..126
+                    TEXT@125..126 " "
+                  Qualifier@126..128
+                    TEXT@126..128 "L."
+                  OPERATOR@128..129 ":"
               TypeConstructor@129..137
                 QualifiedName@129..137
                   Annotation@129..130
                     TEXT@129..130 " "
                   UPPER@130..137 "Integer"
             TypeOperatorPair@137..147
-              QualifiedName@137..141
-                Annotation@137..138
-                  TEXT@137..138 " "
-                Qualifier@138..140
-                  TEXT@138..140 "L."
-                OPERATOR@140..141 ":"
+              TypeOperator@137..141
+                QualifiedName@137..141
+                  Annotation@137..138
+                    TEXT@137..138 " "
+                  Qualifier@138..140
+                    TEXT@138..140 "L."
+                  OPERATOR@140..141 ":"
               TypeConstructor@141..147
                 QualifiedName@141..147
                   Annotation@141..142

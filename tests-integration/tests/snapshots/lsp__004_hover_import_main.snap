@@ -149,4 +149,6 @@ type TypeOpChain = Int ++ Int
 --                     $
 ```
 
-<empty>
+```purescript
+infix 5 type Cons as ++
+```

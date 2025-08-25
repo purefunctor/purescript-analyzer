@@ -97,13 +97,14 @@ impl<N: AstNode> Eq for AstPtrMap<N> {}
 /// See documentation of [`AstPtrMap`] for more information.
 #[macro_export]
 macro_rules! create_source {
-    (pub struct $t:ident { $($field:ident: $cst:ty as $name:ident),* $(,)? }) => {
+    ($(#[$outer:meta])* pub struct $t:ident { $($field:ident: $cst:ty as $name:ident),* $(,)? }) => {
         paste::paste! {
             $(
                 pub type [<$name Ptr>] = rowan::ast::AstPtr<$cst>;
                 pub type [<$name Id>] = la_arena::Idx<[<$name Ptr>]>;
             )*
 
+            $(#[$outer])*
             #[derive(Debug, Default, PartialEq, Eq)]
             pub struct $t {
                 $(
