@@ -63,22 +63,26 @@ module Main where
 
 eq a a = false
 add a a = 0
+mult a a = 0
 apply f a = f a
 map f a = f a
 
 infix 4 eq as ==
 infixl 5 add as +
+infixl 6 mult as *
 infixr 0 apply as $
 infixl 4 map as <$>
 
-test = 1 == 2 == 3 == 4
+test = 1 + 2 * 3 + 4
 "#,
         );
         let content = files.content(id);
 
         engine.set_content(id, content);
 
-        let result = sugar::bracketed(&engine, id);
+        let lowered = engine.lowered(id).unwrap();
+        let result = sugar::bracketing::bracketed(&engine, &lowered);
+
         println!("{result:#?}");
     }
 }

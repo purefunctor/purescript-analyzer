@@ -16,7 +16,7 @@ pub enum BinderRecordItem {
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderKind {
     Typed { binder: Option<BinderId>, type_: Option<TypeId> },
-    OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<TermOperatorId, BinderId>]> },
+    OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<BinderId>]> },
     Integer,
     Number,
     Constructor { resolution: Option<(FileId, TermItemId)>, arguments: Arc<[BinderId]> },
@@ -70,7 +70,7 @@ pub enum ExpressionKind {
     },
     OperatorChain {
         head: Option<ExpressionId>,
-        tail: Arc<[OperatorPair<TermOperatorId, ExpressionId>]>,
+        tail: Arc<[OperatorPair<ExpressionId>]>,
     },
     InfixChain {
         head: Option<ExpressionId>,
@@ -172,7 +172,7 @@ pub enum TypeKind {
     Integer,
     Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
     Operator { resolution: Option<(FileId, TypeItemId)> },
-    OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeOperatorId, TypeId>]> },
+    OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
     Wildcard,
@@ -217,10 +217,26 @@ pub struct PatternGuard {
     pub expression: Option<ExpressionId>,
 }
 
+pub trait IsElement: Copy {
+    type OperatorId: Copy;
+}
+
+impl IsElement for BinderId {
+    type OperatorId = TermOperatorId;
+}
+
+impl IsElement for ExpressionId {
+    type OperatorId = TermOperatorId;
+}
+
+impl IsElement for TypeId {
+    type OperatorId = TypeOperatorId;
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct OperatorPair<I, T> {
-    pub id: Option<I>,
-    pub element: Option<T>,
+pub struct OperatorPair<I: IsElement> {
+    pub id: Option<I::OperatorId>,
+    pub element: Option<I>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
