@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fs, path::PathBuf, sync::Arc, time::Instant};
 
+use building::prim;
 use files::Files;
 use parsing::ParseError;
 use tests_package_set::all_source_files;
@@ -32,8 +33,9 @@ fn test_parallel_parse_package_set() {
     use building::QueryEngine;
     use rayon::prelude::*;
 
+    let mut engine = QueryEngine::default();
     let mut files = Files::default();
-    let engine = QueryEngine::default();
+    prim::configure(&mut engine, &mut files);
 
     let mut source = vec![];
     for path in all_source_files() {
