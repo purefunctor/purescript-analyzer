@@ -706,7 +706,7 @@ fn lower_type_kind(
             let kind = children.next();
             TypeKind::Kinded { type_, kind }
         }
-        cst::Type::TypeOperator(cst) => {
+        cst::Type::TypeOperatorName(cst) => {
             let id = lower_qualified_name(
                 state,
                 Domain::Type,

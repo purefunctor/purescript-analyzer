@@ -112,7 +112,7 @@ create_cst_enum!(
         | TypeHole
         | TypeInteger
         | TypeKinded
-        | TypeOperator
+        | TypeOperatorName
         | TypeOperatorChain
         | TypeString
         | TypeVariable
@@ -1023,7 +1023,7 @@ has_children!(
 );
 
 has_child!(
-    TypeOperator
+    TypeOperatorName
     | name() -> QualifiedName
 );
 

@@ -153,7 +153,7 @@ pub enum SyntaxKind {
     TypeHole,
     TypeInteger,
     TypeKinded,
-    TypeOperator,
+    TypeOperatorName,
     TypeOperatorChain,
     TypeOperatorPair,
     TypeString,
