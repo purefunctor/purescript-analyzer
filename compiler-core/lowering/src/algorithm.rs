@@ -104,24 +104,6 @@ impl State {
     fn resolve_term_reference(
         &self,
         context: &Context,
-        id: QualifiedNameId,
-    ) -> Option<(FileId, TermItemId)> {
-        let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
-        context.resolved.lookup_term(context.prim, qualifier.as_deref(), name.as_str())
-    }
-
-    fn resolve_term_variable(
-        &self,
-        context: &Context,
-        id: QualifiedNameId,
-    ) -> Option<TermVariableResolution> {
-        let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
-        self.resolve_term_nominal(context, qualifier.as_deref(), name.as_str())
-    }
-
-    fn resolve_term_nominal(
-        &self,
-        context: &Context,
         qualifier: Option<&str>,
         name: &str,
     ) -> Option<TermVariableResolution> {
@@ -129,6 +111,7 @@ impl State {
             let (file_id, term_id) = context.lookup_term(qualifier, name)?;
             Some(TermVariableResolution::Reference(file_id, term_id))
         };
+
         if qualifier.is_some() {
             resolve_reference()
         } else {
@@ -149,15 +132,6 @@ impl State {
             }
             _ => None,
         })
-    }
-
-    fn resolve_type_reference(
-        &self,
-        context: &Context,
-        id: QualifiedNameId,
-    ) -> Option<(FileId, TypeItemId)> {
-        let QualifiedNameIr { qualifier, name, .. } = self.intermediate.index_qualified_name(id)?;
-        context.resolved.lookup_type(context.prim, qualifier.as_deref(), name.as_str())
     }
 
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
@@ -198,11 +172,23 @@ impl State {
 }
 
 impl Context<'_> {
-    fn lookup_term(&self, qualifier: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
+    fn lookup_term<Q, N>(&self, qualifier: Option<Q>, name: N) -> Option<(FileId, TermItemId)>
+    where
+        Q: AsRef<str>,
+        N: AsRef<str>,
+    {
+        let qualifier = qualifier.as_ref().map(Q::as_ref);
+        let name = name.as_ref();
         self.resolved.lookup_term(self.prim, qualifier, name)
     }
 
-    fn lookup_type(&self, qualifier: Option<&str>, name: &str) -> Option<(FileId, TypeItemId)> {
+    fn lookup_type<Q, N>(&self, qualifier: Option<Q>, name: N) -> Option<(FileId, TypeItemId)>
+    where
+        Q: AsRef<str>,
+        N: AsRef<str>,
+    {
+        let qualifier = qualifier.as_ref().map(Q::as_ref);
+        let name = name.as_ref();
         self.resolved.lookup_type(self.prim, qualifier, name)
     }
 }
@@ -239,14 +225,6 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Derive { id } => {
             let cst = &context.indexed.source[*id].to_node(root);
 
-            let qualified = cst.instance_head().and_then(|cst| cst.qualified());
-            let id = recursive::lower_qualified_name(
-                state,
-                Domain::Type,
-                qualified,
-                cst::QualifiedName::upper,
-            );
-
             let arguments = cst
                 .instance_head()
                 .map(|cst| {
@@ -267,7 +245,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 })
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Derive { id, constraints, arguments };
+            let kind = TermItemIr::Derive { constraints, arguments };
             state.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Foreign { id } => {
@@ -278,14 +256,6 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         }
         TermItemKind::Instance { id } => {
             let cst = &context.indexed.source[*id].to_node(root);
-
-            let qualified = cst.instance_head().and_then(|cst| cst.qualified());
-            let id = recursive::lower_qualified_name(
-                state,
-                Domain::Type,
-                qualified,
-                cst::QualifiedName::upper,
-            );
 
             let arguments = cst
                 .instance_head()
@@ -312,19 +282,11 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 .map(|cst| lower_instance_statements(state, context, &cst))
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Instance { id, constraints, arguments, members };
+            let kind = TermItemIr::Instance { constraints, arguments, members };
             state.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Operator { id } => {
             let cst = &context.indexed.source[*id].to_node(root);
-
-            let qualified = cst.qualified();
-            let id = recursive::lower_qualified_name(
-                state,
-                Domain::Term,
-                qualified,
-                cst::QualifiedName::lower,
-            );
 
             let associativity = cst
                 .infix()
@@ -333,7 +295,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 .or_else(|| cst.infixr().map(|_| Associativity::Right));
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
-            let kind = TermItemIr::Operator { id, associativity, precedence };
+            let kind = TermItemIr::Operator { associativity, precedence };
             state.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Value { signature, equations } => {
@@ -486,14 +448,6 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         TypeItemKind::Operator { id } => {
             let cst = &context.indexed.source[*id].to_node(root);
 
-            let qualified = cst.qualified();
-            let id = recursive::lower_qualified_name(
-                state,
-                Domain::Type,
-                qualified,
-                cst::QualifiedName::upper,
-            );
-
             let associativity = cst
                 .infix()
                 .map(|_| Associativity::None)
@@ -501,7 +455,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 .or_else(|| cst.infixr().map(|_| Associativity::Right));
             let precedence = cst.precedence().and_then(|t| t.text().parse().ok());
 
-            let kind = TypeItemIr::Operator { id, associativity, precedence };
+            let kind = TypeItemIr::Operator { associativity, precedence };
             state.intermediate.insert_type_item(item_id, kind);
         }
     }

@@ -15,7 +15,6 @@ syntax::create_source! {
         le: cst::LetBindingEquation as LetBindingEquation,
         is: cst::InstanceSignatureStatement as InstanceSignature,
         ie: cst::InstanceEquationStatement as InstanceEquation,
-        qualified_name: syntax::cst::QualifiedName as QualifiedName,
         term_operator: cst::TermOperator as TermOperator,
         type_operator: cst::TypeOperator as TypeOperator,
     }

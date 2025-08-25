@@ -15,43 +15,20 @@ pub enum BinderRecordItem {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderKind {
-    Typed {
-        binder: Option<BinderId>,
-        type_: Option<TypeId>,
-    },
-    OperatorChain {
-        head: Option<BinderId>,
-        tail: Arc<[OperatorPair<TermOperatorId, BinderId>]>,
-    },
+    Typed { binder: Option<BinderId>, type_: Option<TypeId> },
+    OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<TermOperatorId, BinderId>]> },
     Integer,
     Number,
-    Constructor {
-        id: Option<QualifiedNameId>,
-        resolution: Option<(FileId, TermItemId)>,
-        arguments: Arc<[BinderId]>,
-    },
-    Variable {
-        variable: Option<SmolStr>,
-    },
-    Named {
-        named: Option<SmolStr>,
-        binder: Option<BinderId>,
-    },
+    Constructor { resolution: Option<(FileId, TermItemId)>, arguments: Arc<[BinderId]> },
+    Variable { variable: Option<SmolStr> },
+    Named { named: Option<SmolStr>, binder: Option<BinderId> },
     Wildcard,
     String,
     Char,
-    Boolean {
-        boolean: bool,
-    },
-    Array {
-        array: Arc<[BinderId]>,
-    },
-    Record {
-        record: Arc<[BinderRecordItem]>,
-    },
-    Parenthesized {
-        parenthesized: Option<BinderId>,
-    },
+    Boolean { boolean: bool },
+    Array { array: Arc<[BinderId]> },
+    Record { record: Arc<[BinderRecordItem]> },
+    Parenthesized { parenthesized: Option<BinderId> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -135,15 +112,12 @@ pub enum ExpressionKind {
         expression: Option<ExpressionId>,
     },
     Constructor {
-        id: Option<QualifiedNameId>,
         resolution: Option<(FileId, TermItemId)>,
     },
     Variable {
-        id: Option<QualifiedNameId>,
         resolution: Option<TermVariableResolution>,
     },
     OperatorName {
-        id: Option<QualifiedNameId>,
         resolution: Option<(FileId, TermItemId)>,
     },
     Section,
@@ -192,12 +166,12 @@ pub enum TypeKind {
     ApplicationChain { function: Option<TypeId>, arguments: Arc<[TypeId]> },
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
-    Constructor { id: Option<QualifiedNameId>, resolution: Option<(FileId, TypeItemId)> },
+    Constructor { resolution: Option<(FileId, TypeItemId)> },
     Forall { bindings: Arc<[TypeVariableBinding]>, type_: Option<TypeId> },
     Hole,
     Integer,
     Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
-    Operator { id: Option<QualifiedNameId>, resolution: Option<(FileId, TypeItemId)> },
+    Operator { resolution: Option<(FileId, TypeItemId)> },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeOperatorId, TypeId>]> },
     String,
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
@@ -280,7 +254,6 @@ pub enum TermItemIr {
         arguments: Arc<[TypeId]>,
     },
     Derive {
-        id: Option<QualifiedNameId>,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
     },
@@ -288,13 +261,11 @@ pub enum TermItemIr {
         signature: Option<TypeId>,
     },
     Instance {
-        id: Option<QualifiedNameId>,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },
     Operator {
-        id: Option<QualifiedNameId>,
         associativity: Option<Associativity>,
         precedence: Option<u8>,
     },
@@ -336,45 +307,18 @@ pub struct ClassIr {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeItemIr {
-    DataGroup {
-        signature: Option<TypeId>,
-        data: Option<DataIr>,
-        roles: Arc<[Role]>,
-    },
-    NewtypeGroup {
-        signature: Option<TypeId>,
-        newtype: Option<NewtypeIr>,
-        roles: Arc<[Role]>,
-    },
-    SynonymGroup {
-        signature: Option<TypeId>,
-        synonym: Option<SynonymIr>,
-    },
-    ClassGroup {
-        signature: Option<TypeId>,
-        class: Option<ClassIr>,
-    },
-    Foreign {
-        signature: Option<TypeId>,
-    },
-    Operator {
-        id: Option<QualifiedNameId>,
-        associativity: Option<Associativity>,
-        precedence: Option<u8>,
-    },
+    DataGroup { signature: Option<TypeId>, data: Option<DataIr>, roles: Arc<[Role]> },
+    NewtypeGroup { signature: Option<TypeId>, newtype: Option<NewtypeIr>, roles: Arc<[Role]> },
+    SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
+    ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
+    Foreign { signature: Option<TypeId> },
+    Operator { associativity: Option<Associativity>, precedence: Option<u8> },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Domain {
     Term,
     Type,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct QualifiedNameIr {
-    pub domain: Domain,
-    pub qualifier: Option<SmolStr>,
-    pub name: SmolStr,
 }
 
 syntax::create_association! {
@@ -392,7 +336,6 @@ syntax::create_association! {
         type_kind: TypeId => TypeKind,
         term_item: TermItemId => TermItemIr,
         type_item: TypeItemId => TypeItemIr,
-        qualified_name: QualifiedNameId => QualifiedNameIr,
         term_operator: TermOperatorId => (FileId, TermItemId),
         type_operator: TypeOperatorId => (FileId, TypeItemId),
     }
@@ -409,9 +352,5 @@ impl Intermediate {
 
     pub fn iter_type(&self) -> impl Iterator<Item = (TypeId, &TypeKind)> {
         self.type_kind.iter()
-    }
-
-    pub fn iter_qualified_name(&self) -> impl Iterator<Item = (QualifiedNameId, &QualifiedNameIr)> {
-        self.qualified_name.iter()
     }
 }
