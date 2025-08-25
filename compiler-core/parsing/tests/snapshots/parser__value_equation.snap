@@ -40,10 +40,11 @@ expression: "(node, errors)"
                       TEXT@35..36 " "
                     LOWER@36..38 "a2"
                 ExpressionOperatorPair@38..43
-                  QualifiedName@38..40
-                    Annotation@38..39
-                      TEXT@38..39 " "
-                    OPERATOR@39..40 "+"
+                  TermOperator@38..40
+                    QualifiedName@38..40
+                      Annotation@38..39
+                        TEXT@38..39 " "
+                      OPERATOR@39..40 "+"
                   ExpressionVariable@40..43
                     QualifiedName@40..43
                       Annotation@40..41
@@ -70,10 +71,11 @@ expression: "(node, errors)"
                               TEXT@58..59 " "
                             LOWER@59..60 "a"
                         ExpressionOperatorPair@60..64
-                          QualifiedName@60..62
-                            Annotation@60..61
-                              TEXT@60..61 " "
-                            OPERATOR@61..62 "*"
+                          TermOperator@60..62
+                            QualifiedName@60..62
+                              Annotation@60..61
+                                TEXT@60..61 " "
+                              OPERATOR@61..62 "*"
                           ExpressionVariable@62..64
                             QualifiedName@62..64
                               Annotation@62..63
@@ -96,10 +98,11 @@ expression: "(node, errors)"
                               TEXT@71..72 " "
                             LOWER@72..73 "b"
                         ExpressionOperatorPair@73..77
-                          QualifiedName@73..75
-                            Annotation@73..74
-                              TEXT@73..74 " "
-                            OPERATOR@74..75 "*"
+                          TermOperator@73..75
+                            QualifiedName@73..75
+                              Annotation@73..74
+                                TEXT@73..74 " "
+                              OPERATOR@74..75 "*"
                           ExpressionVariable@75..77
                             QualifiedName@75..77
                               Annotation@75..76

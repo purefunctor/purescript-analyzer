@@ -201,6 +201,10 @@ impl Context<'_> {
     fn lookup_term(&self, qualifier: Option<&str>, name: &str) -> Option<(FileId, TermItemId)> {
         self.resolved.lookup_term(self.prim, qualifier, name)
     }
+
+    fn lookup_type(&self, qualifier: Option<&str>, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.resolved.lookup_type(self.prim, qualifier, name)
+    }
 }
 
 pub(super) fn lower_module(

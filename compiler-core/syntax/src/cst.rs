@@ -212,6 +212,8 @@ create_cst_struct!(RecordUpdates);
 
 create_cst_enum!(RecordUpdate | RecordUpdateLeaf | RecordUpdateBranch);
 
+create_cst_struct!(TermOperator, TypeOperator);
+
 has_child!(
     Module
     | header() -> ModuleHeader
@@ -662,7 +664,7 @@ has_children!(
 
 has_child!(
     ExpressionOperatorPair
-    | qualified() -> QualifiedName
+    | operator() -> TermOperator
     | expression() -> Expression
 );
 
@@ -932,7 +934,7 @@ has_children!(
 
 has_child!(
     BinderOperatorPair
-    | qualified() -> QualifiedName
+    | operator() -> TermOperator
     | binder() -> Binder
 );
 
@@ -1039,7 +1041,7 @@ has_children!(
 
 has_child!(
     TypeOperatorPair
-    | qualified() -> QualifiedName
+    | operator() -> TypeOperator
     | type_() -> Type
 );
 
@@ -1104,5 +1106,15 @@ has_child!(
 
 has_child!(
     ExpressionVariable
+    | qualified() -> QualifiedName
+);
+
+has_child!(
+    TermOperator
+    | qualified() -> QualifiedName
+);
+
+has_child!(
+    TypeOperator
     | qualified() -> QualifiedName
 );

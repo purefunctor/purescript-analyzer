@@ -21,7 +21,7 @@ pub enum BinderKind {
     },
     OperatorChain {
         head: Option<BinderId>,
-        tail: Arc<[OperatorPair<BinderId>]>,
+        tail: Arc<[OperatorPair<TermOperatorId, BinderId>]>,
     },
     Integer,
     Number,
@@ -93,7 +93,7 @@ pub enum ExpressionKind {
     },
     OperatorChain {
         head: Option<ExpressionId>,
-        tail: Arc<[OperatorPair<ExpressionId>]>,
+        tail: Arc<[OperatorPair<TermOperatorId, ExpressionId>]>,
     },
     InfixChain {
         head: Option<ExpressionId>,
@@ -198,7 +198,7 @@ pub enum TypeKind {
     Integer,
     Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
     Operator { id: Option<QualifiedNameId>, resolution: Option<(FileId, TypeItemId)> },
-    OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
+    OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeOperatorId, TypeId>]> },
     String,
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
     Wildcard,
@@ -244,8 +244,8 @@ pub struct PatternGuard {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct OperatorPair<T> {
-    pub id: Option<QualifiedNameId>,
+pub struct OperatorPair<I, T> {
+    pub id: Option<I>,
     pub element: Option<T>,
 }
 
@@ -393,6 +393,8 @@ syntax::create_association! {
         term_item: TermItemId => TermItemIr,
         type_item: TypeItemId => TypeItemIr,
         qualified_name: QualifiedNameId => QualifiedNameIr,
+        term_operator: TermOperatorId => (FileId, TermItemId),
+        type_operator: TypeOperatorId => (FileId, TypeItemId),
     }
 }
 

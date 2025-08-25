@@ -20,10 +20,12 @@ fn expression_1(p: &mut Parser) {
 
     expression_2(p);
     while p.at_in(names::OPERATOR) && !p.at_eof() {
-        let mut m = p.start();
+        let mut n = p.start();
+        let mut o = p.start();
         names::operator(p);
+        o.end(p, SyntaxKind::TermOperator);
         expression_2(p);
-        m.end(p, SyntaxKind::ExpressionOperatorPair);
+        n.end(p, SyntaxKind::ExpressionOperatorPair);
         i += 1;
     }
 

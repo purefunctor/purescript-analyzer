@@ -274,6 +274,9 @@ pub enum SyntaxKind {
 
     DeriveDeclaration,
 
+    TermOperator,
+    TypeOperator,
+
     #[doc(hidden)]
     __LAST,
 }

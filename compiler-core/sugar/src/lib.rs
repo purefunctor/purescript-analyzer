@@ -4,8 +4,8 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::FullIndexedModule;
 use lowering::{
-    Associativity, ExpressionId, ExpressionKind, FullLoweredModule, OperatorPair, QualifiedNameId,
-    QualifiedNameIr, TermItemIr,
+    Associativity, ExpressionId, ExpressionKind, FullLoweredModule, OperatorPair, TermItemIr,
+    TermOperatorId,
 };
 use resolving::FullResolvedModule;
 use rustc_hash::FxHashMap;
@@ -21,8 +21,6 @@ pub trait External {
 }
 
 struct Context<'c> {
-    prim: &'c FullResolvedModule,
-    resolved: &'c FullResolvedModule,
     lowered: &'c FullLoweredModule,
 }
 
@@ -33,16 +31,10 @@ pub fn bracketed<E>(
 where
     E: External,
 {
-    let prim_id = external.prim_id();
-
-    let prim = external.resolved(prim_id)?;
-    let resolved = external.resolved(id)?;
     let lowered = external.lowered(id)?;
-
-    let context = Context { prim: &prim, resolved: &resolved, lowered: &lowered };
+    let context = Context { lowered: &lowered };
 
     let mut expressions = FxHashMap::default();
-
     for (id, expression) in lowered.intermediate.iter_expression() {
         if let ExpressionKind::OperatorChain { head, tail } = expression {
             expressions.insert(id, rebracket(external, &context, *head, tail));
@@ -55,20 +47,16 @@ where
 fn resolve_operator<E>(
     external: &E,
     context: &Context,
-    id: QualifiedNameId,
+    id: TermOperatorId,
 ) -> Option<(Associativity, u8)>
 where
     E: External,
 {
-    let QualifiedNameIr { qualifier, name, .. } =
-        context.lowered.intermediate.index_qualified_name(id)?;
+    let (file_id, term_id) = context.lowered.intermediate.index_term_operator(id)?;
 
-    let (file_id, term_id) =
-        context.resolved.lookup_term(context.prim, qualifier.as_deref(), name)?;
-
-    let lowered = external.lowered(file_id).ok()?;
+    let lowered = external.lowered(*file_id).ok()?;
     let Some(TermItemIr::Operator { associativity, precedence, .. }) =
-        lowered.intermediate.index_term_item(term_id)
+        lowered.intermediate.index_term_item(*term_id)
     else {
         return None;
     };
@@ -80,7 +68,7 @@ fn rebracket<E>(
     external: &E,
     context: &Context,
     head: Option<ExpressionId>,
-    tail: &[OperatorPair<ExpressionId>],
+    tail: &[OperatorPair<TermOperatorId, ExpressionId>],
 ) -> Result<Tree, BracketError>
 where
     E: External,
@@ -107,7 +95,7 @@ fn rebracket_core<E, I>(
 ) -> Result<Tree, BracketError>
 where
     E: External,
-    I: Iterator<Item = OperatorPair<ExpressionId>>,
+    I: Iterator<Item = OperatorPair<TermOperatorId, ExpressionId>>,
 {
     let mut left = Tree::Leaf(head);
 
@@ -169,7 +157,7 @@ fn binding_power(associativity: Associativity, precedence: u8) -> (u8, u8) {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Operator {
-    pub id: QualifiedNameId,
+    pub id: TermOperatorId,
     pub associativity: Associativity,
     pub precedence: u8,
 }
@@ -177,13 +165,13 @@ pub struct Operator {
 #[derive(Debug, Clone, Copy)]
 pub enum BracketError {
     InvalidOperatorPair,
-    FailedToResolve(QualifiedNameId),
+    FailedToResolve(TermOperatorId),
     NonAssociative { previous: Operator, operator: Operator },
     MixedAssociativity { previous: Operator, operator: Operator },
 }
 
 #[derive(Debug)]
 pub enum Tree {
-    Branch(QualifiedNameId, Vec<Tree>),
+    Branch(TermOperatorId, Vec<Tree>),
     Leaf(Option<ExpressionId>),
 }

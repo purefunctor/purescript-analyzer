@@ -34,9 +34,10 @@ fn lower_binder_kind(
             let tail = cst
                 .children()
                 .map(|cst| {
-                    let qualified = cst.qualified();
-                    let binder = cst.binder().map(|cst| lower_binder(state, context, &cst));
-                    lower_pair(state, Domain::Term, qualified, binder)
+                    let operator = cst.operator();
+                    let id = operator.and_then(|cst| lower_term_operator(state, context, &cst));
+                    let element = cst.binder().map(|cst| lower_binder(state, context, &cst));
+                    OperatorPair { id, element }
                 })
                 .collect();
             BinderKind::OperatorChain { head, tail }
@@ -140,10 +141,11 @@ fn lower_expression_kind(
             let tail = cst
                 .children()
                 .map(|cst| {
-                    let qualified = cst.qualified();
-                    let expression =
-                        cst.expression().map(|cst| lower_expression(state, context, &cst));
-                    lower_pair(state, Domain::Term, qualified, expression)
+                    let operator = cst.operator();
+                    let id = operator.and_then(|cst| lower_term_operator(state, context, &cst));
+                    let expression = cst.expression();
+                    let element = expression.map(|cst| lower_expression(state, context, &cst));
+                    OperatorPair { id, element }
                 })
                 .collect();
             ExpressionKind::OperatorChain { head, tail }
@@ -721,9 +723,10 @@ fn lower_type_kind(
             let tail = cst
                 .children()
                 .map(|cst| {
-                    let qualified = cst.qualified();
-                    let type_ = cst.type_().map(|cst| lower_type(state, context, &cst));
-                    lower_pair(state, Domain::Type, qualified, type_)
+                    let operator = cst.operator();
+                    let id = operator.and_then(|cst| lower_type_operator(state, context, &cst));
+                    let element = cst.type_().as_ref().map(|cst| lower_type(state, context, cst));
+                    OperatorPair { id, element }
                 })
                 .collect();
             TypeKind::OperatorChain { head, tail }
@@ -783,14 +786,64 @@ pub(crate) fn lower_forall(state: &mut State, context: &Context, cst: &cst::Type
     }
 }
 
-fn lower_pair<T>(
+fn lower_term_operator(
     state: &mut State,
-    domain: Domain,
-    qualified: Option<cst::QualifiedName>,
-    element: Option<T>,
-) -> OperatorPair<T> {
-    let id = lower_qualified_name(state, domain, qualified, cst::QualifiedName::operator);
-    OperatorPair { id, element }
+    context: &Context,
+    cst: &cst::TermOperator,
+) -> Option<TermOperatorId> {
+    let id = state.source.allocate_term_operator(cst);
+
+    let (qualifier, name) = cst.qualified().and_then(|cst| {
+        let qualifier = cst.qualifier().and_then(|cst| {
+            let token = cst.text()?;
+            let text = token.text().trim_end_matches('.');
+            Some(SmolStr::from(text))
+        });
+
+        let token = cst.operator()?;
+        let text = token.text().trim_start_matches('(').trim_end_matches(')');
+        let name = SmolStr::from(text);
+
+        Some((qualifier, name))
+    })?;
+
+    let qualifier = qualifier.as_deref();
+    let name = name.as_str();
+
+    let (file_id, term_id) = context.lookup_term(qualifier, name)?;
+    state.intermediate.insert_term_operator(id, (file_id, term_id));
+
+    Some(id)
+}
+
+fn lower_type_operator(
+    state: &mut State,
+    context: &Context,
+    cst: &cst::TypeOperator,
+) -> Option<TypeOperatorId> {
+    let id = state.source.allocate_type_operator(cst);
+
+    let (qualifier, name) = cst.qualified().and_then(|cst| {
+        let qualifier = cst.qualifier().and_then(|cst| {
+            let token = cst.text()?;
+            let text = token.text().trim_end_matches('.');
+            Some(SmolStr::from(text))
+        });
+
+        let token = cst.operator()?;
+        let text = token.text().trim_start_matches('(').trim_end_matches(')');
+        let name = SmolStr::from(text);
+
+        Some((qualifier, name))
+    })?;
+
+    let qualifier = qualifier.as_deref();
+    let name = name.as_str();
+
+    let (file_id, type_id) = context.lookup_type(qualifier, name)?;
+    state.intermediate.insert_type_operator(id, (file_id, type_id));
+
+    Some(id)
 }
 
 pub(crate) fn lower_qualified_name(
