@@ -628,10 +628,17 @@ impl QueryEngine {
             |storage| storage.derived.lowered.entry(id),
             |this| {
                 let (parsed, _) = this.parsed(id)?;
+
+                let prim = {
+                    let prim_id = this.prim_id();
+                    this.resolved(prim_id)?
+                };
+
                 let indexed = this.indexed(id)?;
+                let resolved = this.resolved(id)?;
 
                 let module = parsed.cst();
-                let lowered = lowering::lower_module(&module, &indexed);
+                let lowered = lowering::lower_module(&module, &prim, &indexed, &resolved);
 
                 Ok(Arc::new(lowered))
             },
@@ -671,6 +678,24 @@ impl resolving::External for QueryEngine {
     }
 }
 
+impl sugar::External for QueryEngine {
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
+        QueryEngine::indexed(self, id)
+    }
+
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+        QueryEngine::resolved(self, id)
+    }
+
+    fn lowered(&self, id: FileId) -> QueryResult<Arc<FullLoweredModule>> {
+        QueryEngine::lowered(self, id)
+    }
+
+    fn prim_id(&self) -> FileId {
+        QueryEngine::prim_id(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -682,6 +707,8 @@ mod tests {
     use files::{FileId, Files};
     use la_arena::RawIdx;
     use resolving::FullResolvedModule;
+
+    use crate::prim;
 
     use super::{DerivedState, QueryEngine, QueryKey};
 
@@ -725,8 +752,9 @@ mod tests {
 
     #[test]
     fn test_pointer_equality() {
-        let engine = QueryEngine::default();
-        let mut files = files::Files::default();
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
 
         let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
         let content = files.content(id);
@@ -747,8 +775,9 @@ mod tests {
 
     #[test]
     fn test_verifying_step_traces() {
-        let runtime = QueryEngine::default();
-        let mut files = files::Files::default();
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
 
         macro_rules! assert_trace {
             ($storage:expr, $field:ident($id:expr) => $trace:expr) => {
@@ -759,78 +788,63 @@ mod tests {
         let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
         let content = files.content(id);
 
-        runtime.set_content(id, content);
-        let indexed_a = runtime.indexed(id).unwrap();
-        let lowered_a = runtime.lowered(id).unwrap();
+        engine.set_content(id, content);
+        let indexed_a = engine.indexed(id).unwrap();
+        let lowered_a = engine.lowered(id).unwrap();
 
         {
-            let storage = runtime.storage.read();
+            let storage = engine.storage.read();
             assert_trace!(storage, parsed(id) => Trace {
-                built: 1,
-                changed: 1,
+                built: 19,
+                changed: 19,
                 dependencies: &[QueryKey::Content(id)]
             });
             assert_trace!(storage, indexed(id) => Trace {
-                built: 1,
-                changed: 1,
+                built: 19,
+                changed: 19,
                 dependencies: &[QueryKey::Parsed(id)]
-            });
-            assert_trace!(storage, lowered(id) => Trace {
-                built: 1,
-                changed: 1,
-                dependencies: &[QueryKey::Parsed(id), QueryKey::Indexed(id)]
             });
         }
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let content = files.content(id);
 
-        runtime.set_content(id, content);
-        let indexed_b = runtime.indexed(id).unwrap();
-        let lowered_b = runtime.lowered(id).unwrap();
+        engine.set_content(id, content);
+        let indexed_b = engine.indexed(id).unwrap();
+        let lowered_b = engine.lowered(id).unwrap();
 
         {
-            let storage = runtime.storage.read();
+            let storage = engine.storage.read();
             assert_trace!(storage, parsed(id) => Trace {
-                built: 2,
-                changed: 2,
+                built: 20,
+                changed: 20,
                 dependencies: &[QueryKey::Content(id)]
             });
             assert_trace!(storage, indexed(id) => Trace {
-                built: 2,
-                changed: 2,
+                built: 20,
+                changed: 20,
                 dependencies: &[QueryKey::Parsed(id)]
-            });
-            assert_trace!(storage, lowered(id) => Trace {
-                built: 2,
-                changed: 2,
-                dependencies: &[QueryKey::Parsed(id), QueryKey::Indexed(id)]
             });
         }
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
         let content = files.content(id);
 
-        runtime.set_content(id, content);
-        let indexed_c = runtime.indexed(id).unwrap();
-        let lowered_c = runtime.lowered(id).unwrap();
+        engine.set_content(id, content);
+        let indexed_c = engine.indexed(id).unwrap();
+        let lowered_c = engine.lowered(id).unwrap();
 
         {
-            let storage = runtime.storage.read();
+            let storage = engine.storage.read();
             assert_trace!(storage, parsed(id) => Trace {
-                built: 3,
-                changed: 3,
+                built: 21,
+                changed: 21,
                 dependencies: &[QueryKey::Content(id)]
             });
             assert_trace!(storage, indexed(id) => Trace {
-                built: 3,
-                changed: 2,
+                built: 21,
+                changed: 20,
                 dependencies: &[QueryKey::Parsed(id)]
-            });
-            assert_trace!(storage, lowered(id) => Trace {
-                built: 3,
-                changed: 2,
-                dependencies: &[QueryKey::Parsed(id), QueryKey::Indexed(id)]
             });
         }
 
@@ -845,42 +859,44 @@ mod tests {
 
     #[test]
     fn test_local_state_cleanup() {
-        let runtime = QueryEngine::default();
-        let mut files = files::Files::default();
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let content = files.content(id);
 
-        runtime.set_content(id, content);
+        engine.set_content(id, content);
         let key = QueryKey::Parsed(id);
 
-        let indexed_a = runtime.indexed(id).unwrap();
-        assert!(!runtime.control.local.is_in_progress(key));
+        let indexed_a = engine.indexed(id).unwrap();
+        assert!(!engine.control.local.is_in_progress(key));
 
-        let indexed_b = runtime.indexed(id).unwrap();
-        assert!(!runtime.control.local.is_in_progress(key));
+        let indexed_b = engine.indexed(id).unwrap();
+        assert!(!engine.control.local.is_in_progress(key));
 
         assert_eq!(indexed_a, indexed_b);
     }
 
     #[test]
     fn test_cancellation_cleanup() {
-        let runtime = QueryEngine::default();
-        let mut files = files::Files::default();
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let key = QueryKey::Indexed(id);
 
         // Simulate the current thread starting a computation.
         {
-            let mut storage = runtime.storage.write();
-            storage.derived.indexed.insert(id, DerivedState::in_progress(runtime.control.id));
-            runtime.control.local.add_in_progress(key);
+            let mut storage = engine.storage.write();
+            storage.derived.indexed.insert(id, DerivedState::in_progress(engine.control.id));
+            engine.control.local.add_in_progress(key);
         }
 
         // Finally, enable cancellation and run the query on this thread.
-        runtime.control.global.cancelled.store(true, Ordering::Relaxed);
-        let result = runtime.query(
+        engine.control.global.cancelled.store(true, Ordering::Relaxed);
+        let result = engine.query(
             key,
             |storage| storage.derived.indexed.get(&id),
             |storage| storage.derived.indexed.entry(id),
@@ -891,30 +907,31 @@ mod tests {
 
         // Observe that the storage has been edited.
         {
-            let storage = runtime.storage.read();
+            let storage = engine.storage.read();
             assert!(!storage.derived.indexed.contains_key(&id));
         }
     }
 
     #[test]
     fn test_cancellation_no_cleanup() {
-        let runtime = QueryEngine::default();
-        let mut files = files::Files::default();
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let key = QueryKey::Indexed(id);
 
         // Simulate the current thread starting a computation.
         {
-            let mut storage = runtime.storage.write();
-            storage.derived.indexed.insert(id, DerivedState::in_progress(runtime.control.id));
-            runtime.control.local.add_in_progress(key);
+            let mut storage = engine.storage.write();
+            storage.derived.indexed.insert(id, DerivedState::in_progress(engine.control.id));
+            engine.control.local.add_in_progress(key);
         }
 
         // Finally, enable cancellation and run the query on another thread.
-        runtime.control.global.cancelled.store(true, Ordering::Relaxed);
+        engine.control.global.cancelled.store(true, Ordering::Relaxed);
         let result = std::thread::scope(|scope| {
-            let runtime = runtime.snapshot();
+            let runtime = engine.snapshot();
             let thread = scope.spawn(move || {
                 runtime.query(
                     key,
@@ -930,11 +947,11 @@ mod tests {
 
         // Observe that the storage is not edited.
         {
-            let storage = runtime.storage.read();
+            let storage = engine.storage.read();
             assert!(storage.derived.indexed.contains_key(&id));
         }
 
-        let result = runtime.query(
+        let result = engine.query(
             key,
             |storage| storage.derived.indexed.get(&id),
             |storage| storage.derived.indexed.entry(id),
@@ -945,7 +962,7 @@ mod tests {
 
         // Finally, observe that the storage is edited.
         {
-            let storage = runtime.storage.read();
+            let storage = engine.storage.read();
             assert!(!storage.derived.indexed.contains_key(&id));
         }
     }
@@ -1064,8 +1081,9 @@ mod tests {
 
     #[test]
     fn test_resolving_cycle() {
-        let engine = QueryEngine::default();
+        let mut engine = QueryEngine::default();
         let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
 
         let main = files.insert("Main.purs", "module Main where\n\nimport Lib (b)\n\na = 123");
         let library = files.insert("Lib.purs", "module Lib where\n\nimport Main (a)\n\nb = 123");

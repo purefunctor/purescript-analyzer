@@ -50,7 +50,9 @@ pub(super) fn type_3(p: &mut Parser) {
     type_4(p);
     while p.at_in(names::OPERATOR) && !p.at_eof() {
         let mut n = p.start();
+        let mut o = p.start();
         names::operator(p);
+        o.end(p, SyntaxKind::TypeOperator);
         type_4(p);
         n.end(p, SyntaxKind::TypeOperatorPair);
         i += 1;
@@ -102,7 +104,7 @@ pub(super) fn type_atom(p: &mut Parser) {
         m.end(p, SyntaxKind::TypeConstructor);
     } else if p.at_in(names::OPERATOR_NAME) {
         names::operator_name(p);
-        m.end(p, SyntaxKind::TypeOperator);
+        m.end(p, SyntaxKind::TypeOperatorName);
     } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
         m.end(p, SyntaxKind::TypeString);
     } else if p.at(SyntaxKind::MINUS) || p.at(SyntaxKind::INTEGER) {

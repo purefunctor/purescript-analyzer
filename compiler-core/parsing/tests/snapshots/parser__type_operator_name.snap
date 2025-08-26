@@ -22,7 +22,7 @@ expression: "(node, errors)"
           Annotation@44..45
             TEXT@44..45 " "
           DOUBLE_COLON@45..47 "::"
-          TypeOperator@47..51
+          TypeOperatorName@47..51
             QualifiedName@47..51
               Annotation@47..48
                 TEXT@47..48 " "

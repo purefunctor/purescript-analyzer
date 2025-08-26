@@ -80,20 +80,22 @@ expression: "(node, errors)"
                             TEXT@86..89 "\n  "
                           LOWER@89..93 "pure"
                       ExpressionOperatorPair@93..100
-                        QualifiedName@93..95
-                          Annotation@93..94
-                            TEXT@93..94 " "
-                          OPERATOR@94..95 "$"
+                        TermOperator@93..95
+                          QualifiedName@93..95
+                            Annotation@93..94
+                              TEXT@93..94 " "
+                            OPERATOR@94..95 "$"
                         ExpressionVariable@95..100
                           QualifiedName@95..100
                             Annotation@95..96
                               TEXT@95..96 " "
                             LOWER@96..100 "life"
                       ExpressionOperatorPair@100..111
-                        QualifiedName@100..102
-                          Annotation@100..101
-                            TEXT@100..101 " "
-                          OPERATOR@101..102 "+"
+                        TermOperator@100..102
+                          QualifiedName@100..102
+                            Annotation@100..101
+                              TEXT@100..101 " "
+                            OPERATOR@101..102 "+"
                         ExpressionVariable@102..111
                           QualifiedName@102..111
                             Annotation@102..103

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use indexing::{FullIndexedModule, TermItemKind};
 use itertools::Itertools;
-use lowering::FullLoweredModule;
+use lowering::{FullLoweredModule, ImplicitTypeVariable};
 
 use crate::{
     core::{CoreStorage, ForallBinder, Type, TypeId},
@@ -69,7 +69,7 @@ fn core_of_cst<S: CoreStorage>(
         }
         lowering::TypeKind::Constrained { .. } => c.storage.unknown(),
         lowering::TypeKind::Constructor { .. } => c.storage.unknown(),
-        lowering::TypeKind::Forall { bindings, r#type } => {
+        lowering::TypeKind::Forall { bindings, type_ } => {
             let binders = bindings.iter().filter_map(|binding| {
                 let visible = binding.visible;
                 let name = binding.name.clone()?;
@@ -82,7 +82,7 @@ fn core_of_cst<S: CoreStorage>(
                 Some(ForallBinder { visible, name, level, kind })
             });
             let binders = binders.collect_vec().into_iter();
-            let inner = r#type.map(|id| core_of_cst(c, e, id));
+            let inner = type_.map(|id| core_of_cst(c, e, id));
             let inner = inner.unwrap_or_else(|| c.storage.unknown());
             binders.rfold(inner, |inner, binder| c.storage.allocate(Type::Forall(binder, inner)))
         }
@@ -102,7 +102,11 @@ fn core_of_cst<S: CoreStorage>(
                     let index = c.bound.index_of(id);
                     c.storage.allocate(Type::Variable(index))
                 }
-                lowering::TypeVariableResolution::Implicit { binding, node, id } => {
+                lowering::TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                    binding,
+                    node,
+                    id,
+                }) => {
                     let id = debruijn::Binding::Implicit(*node, *id);
                     if *binding {
                         let level = c.bound.bind(id);

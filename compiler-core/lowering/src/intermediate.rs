@@ -1,8 +1,11 @@
+//! Types of intermediate representations.
 use std::sync::Arc;
 
-use crate::{source::*, DeferredResolutionId, TermResolution, TypeVariableResolution};
+use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
+
+use crate::{source::*, TermVariableResolution, TypeVariableResolution};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {
@@ -12,11 +15,11 @@ pub enum BinderRecordItem {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderKind {
-    Typed { binder: Option<BinderId>, r#type: Option<TypeId> },
+    Typed { binder: Option<BinderId>, type_: Option<TypeId> },
     OperatorChain { head: Option<BinderId>, tail: Arc<[OperatorPair<BinderId>]> },
     Integer,
     Number,
-    Constructor { resolution: DeferredResolutionId, arguments: Arc<[BinderId]> },
+    Constructor { resolution: Option<(FileId, TermItemId)>, arguments: Arc<[BinderId]> },
     Variable { variable: Option<SmolStr> },
     Named { named: Option<SmolStr>, binder: Option<BinderId> },
     Wildcard,
@@ -56,14 +59,14 @@ pub enum DoStatement {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExpressionRecordItem {
     RecordField { name: Option<SmolStr>, value: Option<ExpressionId> },
-    RecordPun { name: Option<SmolStr>, resolution: Option<TermResolution> },
+    RecordPun { name: Option<SmolStr>, resolution: Option<TermVariableResolution> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExpressionKind {
     Typed {
         expression: Option<ExpressionId>,
-        r#type: Option<TypeId>,
+        type_: Option<TypeId>,
     },
     OperatorChain {
         head: Option<ExpressionId>,
@@ -81,9 +84,9 @@ pub enum ExpressionKind {
         arguments: Arc<[ExpressionArgument]>,
     },
     IfThenElse {
-        r#if: Option<ExpressionId>,
+        if_: Option<ExpressionId>,
         then: Option<ExpressionId>,
-        r#else: Option<ExpressionId>,
+        else_: Option<ExpressionId>,
     },
     LetIn {
         bindings: Arc<[LetBinding]>,
@@ -98,24 +101,24 @@ pub enum ExpressionKind {
         branches: Arc<[CaseBranch]>,
     },
     Do {
-        bind: Option<TermResolution>,
-        discard: Option<TermResolution>,
+        bind: Option<TermVariableResolution>,
+        discard: Option<TermVariableResolution>,
         statements: Arc<[DoStatement]>,
     },
     Ado {
-        map: Option<TermResolution>,
-        apply: Option<TermResolution>,
+        map: Option<TermVariableResolution>,
+        apply: Option<TermVariableResolution>,
         statements: Arc<[DoStatement]>,
         expression: Option<ExpressionId>,
     },
     Constructor {
-        resolution: DeferredResolutionId,
+        resolution: Option<(FileId, TermItemId)>,
     },
     Variable {
-        resolution: Option<TermResolution>,
+        resolution: Option<TermVariableResolution>,
     },
     OperatorName {
-        resolution: DeferredResolutionId,
+        resolution: Option<(FileId, TermItemId)>,
     },
     Section,
     Hole,
@@ -155,7 +158,7 @@ pub struct TypeVariableBinding {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TypeRowItem {
     pub name: Option<SmolStr>,
-    pub r#type: Option<TypeId>,
+    pub type_: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -163,12 +166,12 @@ pub enum TypeKind {
     ApplicationChain { function: Option<TypeId>, arguments: Arc<[TypeId]> },
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
-    Constructor { resolution: DeferredResolutionId },
-    Forall { bindings: Arc<[TypeVariableBinding]>, r#type: Option<TypeId> },
+    Constructor { resolution: Option<(FileId, TypeItemId)> },
+    Forall { bindings: Arc<[TypeVariableBinding]>, type_: Option<TypeId> },
     Hole,
     Integer,
-    Kinded { r#type: Option<TypeId>, kind: Option<TypeId> },
-    Operator { resolution: DeferredResolutionId },
+    Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
+    Operator { resolution: Option<(FileId, TypeItemId)> },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
     String,
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
@@ -214,10 +217,26 @@ pub struct PatternGuard {
     pub expression: Option<ExpressionId>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct OperatorPair<T> {
-    pub resolution: DeferredResolutionId,
-    pub element: Option<T>,
+pub trait IsElement: Copy {
+    type OperatorId: Copy;
+}
+
+impl IsElement for BinderId {
+    type OperatorId = TermOperatorId;
+}
+
+impl IsElement for ExpressionId {
+    type OperatorId = TermOperatorId;
+}
+
+impl IsElement for TypeId {
+    type OperatorId = TypeOperatorId;
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OperatorPair<I: IsElement> {
+    pub id: Option<I::OperatorId>,
+    pub element: Option<I>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -232,6 +251,16 @@ pub struct InstanceMemberGroup {
     pub equations: Arc<[Equation]>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Associativity {
+    /// infix
+    None,
+    /// infixl
+    Left,
+    /// infixr
+    Right,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum TermItemIr {
     ClassMember {
@@ -241,7 +270,6 @@ pub enum TermItemIr {
         arguments: Arc<[TypeId]>,
     },
     Derive {
-        resolution: DeferredResolutionId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
     },
@@ -249,14 +277,13 @@ pub enum TermItemIr {
         signature: Option<TypeId>,
     },
     Instance {
-        resolution: DeferredResolutionId,
         constraints: Arc<[TypeId]>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },
     Operator {
-        resolution: DeferredResolutionId,
-        precedence: Option<u16>,
+        associativity: Option<Associativity>,
+        precedence: Option<u8>,
     },
     ValueGroup {
         signature: Option<TypeId>,
@@ -285,7 +312,7 @@ pub struct NewtypeIr {
 #[derive(Debug, PartialEq, Eq)]
 pub struct SynonymIr {
     pub variables: Arc<[TypeVariableBinding]>,
-    pub r#type: Option<TypeId>,
+    pub type_: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -301,16 +328,32 @@ pub enum TypeItemIr {
     SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
     ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
     Foreign { signature: Option<TypeId> },
-    Operator { resolution: DeferredResolutionId, precedence: Option<u16> },
+    Operator { associativity: Option<Associativity>, precedence: Option<u8> },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Domain {
+    Term,
+    Type,
 }
 
 syntax::create_association! {
+    /// Core structure for intermediate representations.
+    ///
+    /// This associates stable IDs allocated during [`indexing`] and
+    /// [`lowering`] with their intermediate representations. Unlike
+    /// traditional lowering designs, we do not need to represent the
+    /// full structure of the module as an abstract syntax tree.
+    ///
+    /// [`lowering`]: crate
     pub struct Intermediate {
         binder_kind: BinderId => BinderKind,
         expression_kind: ExpressionId => ExpressionKind,
         type_kind: TypeId => TypeKind,
         term_item: TermItemId => TermItemIr,
         type_item: TypeItemId => TypeItemIr,
+        term_operator: TermOperatorId => (FileId, TermItemId),
+        type_operator: TypeOperatorId => (FileId, TypeItemId),
     }
 }
 

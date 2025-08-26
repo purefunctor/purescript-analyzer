@@ -2,6 +2,4 @@
 source: tests-integration/tests/deferred_resolution.rs
 expression: report
 ---
-Idx::<DeferredResolution>(0) = Main.a
-Idx::<DeferredResolution>(1) = Main.b
-Idx::<DeferredResolution>(2) = Main.Void
+<empty>

@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+y'equation@56..67
+  resolves to equation 34..76
+a'binder@67..76
+  resolves to binder 45..54
+pure@93..98
+  resolves to top-level name
+x'notBinder@98..110
+  resolves to top-level name
+pure@110..117
+  resolves to top-level name
+x'notBinder@117..129
+  resolves to binder 76..90
+
+Types:

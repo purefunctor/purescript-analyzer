@@ -85,10 +85,11 @@ expression: "(node, errors)"
                     TEXT@112..113 " "
                   INTEGER@113..114 "1"
                 ExpressionOperatorPair@114..119
-                  QualifiedName@114..117
-                    Annotation@114..115
-                      TEXT@114..115 " "
-                    OPERATOR@115..117 ".."
+                  TermOperator@114..117
+                    QualifiedName@114..117
+                      Annotation@114..115
+                        TEXT@114..115 " "
+                      OPERATOR@115..117 ".."
                   ExpressionInteger@117..119
                     Annotation@117..118
                       TEXT@117..118 " "

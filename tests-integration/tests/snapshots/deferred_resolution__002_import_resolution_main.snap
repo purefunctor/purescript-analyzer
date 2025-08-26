@@ -2,7 +2,4 @@
 source: tests-integration/tests/deferred_resolution.rs
 expression: report
 ---
-Idx::<DeferredResolution>(0) = ImplicitLib.implicit
-Idx::<DeferredResolution>(1) = ExplicitLib.explicit
-Idx::<DeferredResolution>(2) = ImplicitLib.ImplicitVoid
-Idx::<DeferredResolution>(3) = ExplicitLib.ExplicitVoid
+<empty>

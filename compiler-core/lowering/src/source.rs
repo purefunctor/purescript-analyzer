@@ -1,13 +1,21 @@
+//! Offset-independent source mapping.
+use syntax::cst;
+
 syntax::create_source! {
+    /// Offset-independent indices for lowering.
+    ///
+    /// See also: [`indexing::IndexingSource`]
     pub struct LoweringSource {
-        bd: syntax::cst::Binder as Binder,
-        ex: syntax::cst::Expression as Expression,
-        ty: syntax::cst::Type as Type,
-        tv: syntax::cst::TypeVariableBinding as TypeVariableBinding,
-        ds: syntax::cst::DoStatement as DoStatement,
-        ls: syntax::cst::LetBindingSignature as LetBindingSignature,
-        le: syntax::cst::LetBindingEquation as LetBindingEquation,
-        is: syntax::cst::InstanceSignatureStatement as InstanceSignature,
-        ie: syntax::cst::InstanceEquationStatement as InstanceEquation,
+        bd: cst::Binder as Binder,
+        ex: cst::Expression as Expression,
+        ty: cst::Type as Type,
+        tv: cst::TypeVariableBinding as TypeVariableBinding,
+        ds: cst::DoStatement as DoStatement,
+        ls: cst::LetBindingSignature as LetBindingSignature,
+        le: cst::LetBindingEquation as LetBindingEquation,
+        is: cst::InstanceSignatureStatement as InstanceSignature,
+        ie: cst::InstanceEquationStatement as InstanceEquation,
+        term_operator: cst::TermOperator as TermOperator,
+        type_operator: cst::TypeOperator as TypeOperator,
     }
 }
