@@ -175,14 +175,8 @@ where
 
         items.next();
 
-        let right = bracket_loop(
-            external,
-            lowered,
-            element,
-            items,
-            right_binding_power,
-            Some(OperatorInfo { id, associativity, precedence }),
-        )?;
+        let right =
+            bracket_loop(external, lowered, element, items, right_binding_power, Some(operator))?;
 
         left = OperatorTree::Branch(id, [left, right].into());
     }
