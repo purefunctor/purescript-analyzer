@@ -14,13 +14,21 @@ use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);
-    let range = line_index.line(position.line)?;
+
+    let line_range = line_index.line(position.line)?;
+    let line_content = content[line_range].trim_end_matches(['\n', '\r']);
 
     let line = position.line;
-    let col = content[range]
-        .char_indices()
-        .nth(position.character as usize)
-        .map(|(column, _)| column as u32)?;
+    let col = if line_content.is_empty() {
+        0
+    } else {
+        let last_column = || line_content.chars().count() as u32;
+        line_content
+            .char_indices()
+            .nth(position.character as usize)
+            .map(|(column, _)| column as u32)
+            .unwrap_or_else(last_column)
+    };
 
     let line_col = LineCol { line, col };
     line_index.offset(line_col)
@@ -197,4 +205,75 @@ pub fn annotation_syntax_range(
     });
 
     (annotation, syntax)
+}
+
+#[cfg(test)]
+mod tests {
+    use async_lsp::lsp_types::Position;
+    use rowan::TextSize;
+
+    use super::position_to_offset;
+
+    #[test]
+    fn zero_on_blank_line() {
+        let content = "";
+        let position = Position::new(0, 0);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(0)));
+    }
+
+    #[test]
+    fn zero_or_lf_line() {
+        let content = "\n";
+        let position = Position::new(0, 0);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(0)));
+    }
+
+    #[test]
+    fn zero_or_crlf_line() {
+        let content = "\r\n";
+        let position = Position::new(0, 0);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(0)));
+    }
+
+    #[test]
+    fn last_on_line() {
+        let content = "abcdef";
+        let position = Position::new(0, 6);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(6)));
+    }
+
+    #[test]
+    fn last_on_line_clamp() {
+        let content = "abcdef";
+        let position = Position::new(0, 600);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(6)));
+    }
+
+    #[test]
+    fn last_on_lf_line() {
+        let content = "abcdef\n";
+        let position = Position::new(0, 6);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(6)));
+    }
+
+    #[test]
+    fn last_on_crlf_line_clamp() {
+        let content = "abcdef\r\n";
+        let position = Position::new(0, 600);
+
+        let offset = position_to_offset(content, position);
+        assert_eq!(offset, Some(TextSize::new(6)));
+    }
 }
