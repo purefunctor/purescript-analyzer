@@ -96,6 +96,7 @@ pub fn completion_item(
         label: name.to_string(),
         label_details: Some(CompletionItemLabelDetails { detail: None, description }),
         kind: Some(kind),
+        filter_text: Some(edit.to_string()),
         text_edit: range.map(|range| {
             let new_text = edit.to_string();
             CompletionTextEdit::Edit(TextEdit { range, new_text })
