@@ -4,7 +4,10 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Parser)]
 #[command(about, version(VERSION))]
-struct Cli {}
+struct Cli {
+    #[arg(long)]
+    stdio: bool,
+}
 
 #[tokio::main(flavor = "current_thread")]
 async fn analyzer_main() {
