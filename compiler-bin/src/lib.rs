@@ -87,7 +87,9 @@ fn initialize(
                     work_done_progress_options: WorkDoneProgressOptions {
                         work_done_progress: None,
                     },
-                    completion_item: None,
+                    completion_item: Some(CompletionOptionsCompletionItem {
+                        label_details_support: Some(true),
+                    }),
                 }),
                 definition_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
