@@ -3,9 +3,11 @@ use files::FileId;
 use indexing::{ImportKind, TermItemId, TypeItemId};
 use resolving::FullResolvedModule;
 use smol_str::SmolStr;
-use strsim::jaro_winkler;
 
-use super::{edit, item::CompletionItemSpec, prelude::*, resolve::CompletionResolveData};
+use super::{
+    edit, filter::PerfectSegmentFuzzy, item::CompletionItemSpec, prelude::*,
+    resolve::CompletionResolveData,
+};
 
 /// Yields the qualified names of imports.
 ///
@@ -575,8 +577,10 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
             continue;
         };
 
-        if parsed.module_name().is_some_and(|module_name| jaro_winkler(prefix, &module_name) < 0.5)
-        {
+        if parsed.module_name().is_some_and(|module_name| {
+            let filter = PerfectSegmentFuzzy(&module_name);
+            !filter.matches(prefix)
+        }) {
             continue;
         }
 

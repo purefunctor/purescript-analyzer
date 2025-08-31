@@ -28,3 +28,17 @@ impl Filter for FuzzyMatch<'_> {
         jaro_winkler(self.0, name) >= 0.5
     }
 }
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct PerfectSegmentFuzzy<'a>(pub &'a str);
+
+impl Filter for PerfectSegmentFuzzy<'_> {
+    fn matches(&self, name: &str) -> bool {
+        let mut segments = self.0.split('.');
+
+        let perfect = segments.any(|segment| segment.starts_with(name));
+        let fuzzy = jaro_winkler(self.0, name) >= 0.5;
+
+        perfect || fuzzy
+    }
+}
