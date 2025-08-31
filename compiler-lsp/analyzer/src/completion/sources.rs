@@ -111,14 +111,19 @@ impl Source for ImportedTerms {
             source.filter_map(|(name, f, t, _)| {
                 let (parsed, _) = context.engine.parsed(f).ok()?;
                 let description = parsed.module_name().map(|name| name.to_string());
-                Some(completion_item(
-                    name,
-                    name,
-                    CompletionItemKind::VALUE,
-                    description,
+
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
                     context.range,
+                    CompletionItemKind::VALUE,
                     CompletionResolveData::TermItem(f, t),
-                ))
+                );
+
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                Some(item.build())
             })
         })
     }
@@ -141,14 +146,19 @@ impl Source for ImportedTypes {
             source.filter_map(|(name, f, t, _)| {
                 let (parsed, _) = context.engine.parsed(f).ok()?;
                 let description = parsed.module_name().map(|name| name.to_string());
-                Some(completion_item(
-                    name,
-                    name,
-                    CompletionItemKind::STRUCT,
-                    description,
+
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
                     context.range,
+                    CompletionItemKind::STRUCT,
                     CompletionResolveData::TypeItem(f, t),
-                ))
+                );
+
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                Some(item.build())
             })
         })
     }
