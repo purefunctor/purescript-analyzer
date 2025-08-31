@@ -180,16 +180,21 @@ impl Source for QualifiedTerms<'_> {
             });
             source.filter_map(|(name, f, t, _)| {
                 let (parsed, _) = context.engine.parsed(f).ok()?;
-                let edit = format!("{}.{}", self.0, name);
                 let description = parsed.module_name().map(|name| name.to_string());
-                Some(completion_item(
-                    name,
-                    edit,
-                    CompletionItemKind::VALUE,
-                    description,
+
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
                     context.range,
+                    CompletionItemKind::VALUE,
                     CompletionResolveData::TermItem(f, t),
-                ))
+                );
+
+                item.edit_text(format!("{}.{name}", self.0));
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                Some(item.build())
             })
         })
     }
@@ -211,16 +216,21 @@ impl Source for QualifiedTypes<'_> {
             });
             source.filter_map(|(name, f, t, _)| {
                 let (parsed, _) = context.engine.parsed(f).ok()?;
-                let edit = format!("{}.{}", self.0, name);
                 let description = parsed.module_name().map(|name| name.to_string());
-                Some(completion_item(
-                    name,
-                    edit,
-                    CompletionItemKind::STRUCT,
-                    description,
+
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
                     context.range,
+                    CompletionItemKind::STRUCT,
                     CompletionResolveData::TypeItem(f, t),
-                ))
+                );
+
+                item.edit_text(format!("{}.{name}", self.0));
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                Some(item.build())
             })
         })
     }
