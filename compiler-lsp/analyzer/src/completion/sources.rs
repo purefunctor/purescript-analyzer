@@ -58,15 +58,14 @@ impl Source for LocalTerms {
         let source =
             context.resolved.locals.iter_terms().filter(move |(name, _, _)| filter.matches(name));
         source.map(|(name, f, t)| {
-            let description = Some("Local".to_string());
-            completion_item(
-                name,
-                name,
-                CompletionItemKind::VALUE,
-                description,
+            let mut item = CompletionItemSpec::new(
+                name.to_string(),
                 context.range,
+                CompletionItemKind::VALUE,
                 CompletionResolveData::TermItem(f, t),
-            )
+            );
+            item.label_description("Local".to_string());
+            item.build()
         })
     }
 }
@@ -83,15 +82,14 @@ impl Source for LocalTypes {
         let source =
             context.resolved.locals.iter_types().filter(move |(name, _, _)| filter.matches(name));
         source.map(|(name, f, t)| {
-            let description = Some("Local".to_string());
-            completion_item(
-                name,
-                name,
-                CompletionItemKind::STRUCT,
-                description,
+            let mut item = CompletionItemSpec::new(
+                name.to_string(),
                 context.range,
+                CompletionItemKind::STRUCT,
                 CompletionResolveData::TypeItem(f, t),
-            )
+            );
+            item.label_description("Local".to_string());
+            item.build()
         })
     }
 }
