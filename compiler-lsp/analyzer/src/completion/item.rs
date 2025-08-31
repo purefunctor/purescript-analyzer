@@ -13,6 +13,7 @@ pub struct CompletionItemSpec {
     edit_text: Option<String>,
     sort_text: Option<String>,
     filter_text: Option<String>,
+    additional_text_edits: Option<Vec<TextEdit>>,
 }
 
 impl CompletionItemSpec {
@@ -32,14 +33,14 @@ impl CompletionItemSpec {
             edit_text: None,
             sort_text: None,
             filter_text: None,
+            additional_text_edits: None,
         }
     }
 
     pub fn build(self) -> CompletionItem {
         let label = self.name;
         let kind = self.kind;
-        let data = serde_json::to_value(self.data)
-            .expect("invariant violated: invalid CompletionResolveData");
+        let additional_text_edits = self.additional_text_edits;
 
         let label_details = CompletionItemLabelDetails {
             detail: self.label_detail,
@@ -55,13 +56,17 @@ impl CompletionItemSpec {
             CompletionTextEdit::Edit(TextEdit { range, new_text })
         });
 
+        let data = serde_json::to_value(self.data)
+            .expect("invariant violated: invalid CompletionResolveData");
+
         CompletionItem {
             label,
             text_edit,
+            additional_text_edits,
             label_details: Some(label_details),
+            kind: Some(kind),
             sort_text: Some(sort_text),
             filter_text: Some(filter_text),
-            kind: Some(kind),
             data: Some(data),
             ..Default::default()
         }
@@ -86,5 +91,5 @@ create_setters!(
     label_description -> String,
     edit_text -> String,
     sort_text -> String,
-    filter_text -> String,
+    additional_text_edits -> Vec<TextEdit>,
 );

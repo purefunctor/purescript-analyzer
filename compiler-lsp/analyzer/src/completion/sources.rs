@@ -281,30 +281,28 @@ impl SuggestionsHelper for SuggestedTerms {
         let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;
 
-        let description = Some(module_name.to_string());
-        let mut item = completion_item(
-            name,
-            name,
-            CompletionItemKind::VALUE,
-            description,
+        let mut item = CompletionItemSpec::new(
+            name.to_string(),
             context.range,
+            CompletionItemKind::VALUE,
             CompletionResolveData::TermItem(file_id, item_id),
         );
 
         let (import_text, import_range) =
             edit::term_import_item(context, &module_name, name, file_id, item_id);
 
-        let text_edit = import_range.or_else(|| context.insert_import_range()).zip(import_text);
+        let range_new_text =
+            import_range.or_else(|| context.insert_import_range()).zip(import_text);
 
-        if let Some(label_details) = item.label_details.as_mut() {
-            label_details.detail = Some(format!(" (import {module_name})"));
+        item.label_detail(format!(" (import {module_name})"));
+        item.label_description(format!("{module_name}"));
+        item.sort_text(format!("{module_name}.{name}"));
+
+        if let Some((range, new_text)) = range_new_text {
+            item.additional_text_edits(vec![TextEdit { range, new_text }]);
         }
 
-        item.sort_text = Some(module_name.to_string());
-        item.additional_text_edits =
-            text_edit.map(|(range, new_text)| vec![TextEdit { range, new_text }]);
-
-        Some(item)
+        Some(item.build())
     }
 }
 
