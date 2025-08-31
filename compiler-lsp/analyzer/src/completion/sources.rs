@@ -487,33 +487,28 @@ impl SuggestionsHelper for QualifiedTermsSuggestions<'_> {
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
-        let insert_import_range = context.insert_import_range();
-
         let (parsed, _) = context.engine.parsed(import_id).ok()?;
         let module_name = parsed.module_name()?;
 
-        let edit = format!("{}.{}", self.0, name);
-        let description = Some(module_name.to_string());
-
-        let mut item = completion_item(
-            name,
-            edit,
-            CompletionItemKind::VALUE,
-            description,
+        let mut item = CompletionItemSpec::new(
+            name.to_string(),
             context.range,
+            CompletionItemKind::VALUE,
             CompletionResolveData::TermItem(file_id, item_id),
         );
 
-        if let Some(label_details) = item.label_details.as_mut() {
-            label_details.detail = Some(format!(" (import {} as {})", module_name, self.0));
+        item.label_detail(format!(" (import {module_name} as {})", self.0));
+        item.label_description(format!("{module_name}"));
+
+        item.edit_text(format!("{}.{name}", self.0));
+        item.sort_text(format!("{module_name}.{name}"));
+
+        if let Some(range) = context.insert_import_range() {
+            let new_text = format!("import {module_name} as {}\n", self.0);
+            item.additional_text_edits(vec![TextEdit { range, new_text }]);
         }
 
-        item.sort_text = Some(module_name.to_string());
-        item.additional_text_edits = insert_import_range.map(|range| {
-            vec![TextEdit { range, new_text: format!("import {module_name} as {}\n", self.0) }]
-        });
-
-        Some(item)
+        Some(item.build())
     }
 }
 
@@ -534,33 +529,28 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
-        let insert_import_range = context.insert_import_range();
-
         let (parsed, _) = context.engine.parsed(import_id).ok()?;
         let module_name = parsed.module_name()?;
 
-        let edit = format!("{}.{}", self.0, name);
-        let description = Some(module_name.to_string());
-
-        let mut item = completion_item(
-            name,
-            edit,
-            CompletionItemKind::STRUCT,
-            description,
+        let mut item = CompletionItemSpec::new(
+            name.to_string(),
             context.range,
+            CompletionItemKind::STRUCT,
             CompletionResolveData::TypeItem(file_id, item_id),
         );
 
-        if let Some(label_details) = item.label_details.as_mut() {
-            label_details.detail = Some(format!(" (import {} as {})", module_name, self.0));
+        item.label_detail(format!(" (import {module_name} as {})", self.0));
+        item.label_description(format!("{module_name}"));
+
+        item.edit_text(format!("{}.{name}", self.0));
+        item.sort_text(format!("{module_name}.{name}"));
+
+        if let Some(range) = context.insert_import_range() {
+            let new_text = format!("import {module_name} as {}\n", self.0);
+            item.additional_text_edits(vec![TextEdit { range, new_text }]);
         }
 
-        item.sort_text = Some(module_name.to_string());
-        item.additional_text_edits = insert_import_range.map(|range| {
-            vec![TextEdit { range, new_text: format!("import {module_name} as {}\n", self.0) }]
-        });
-
-        Some(item)
+        Some(item.build())
     }
 }
 
