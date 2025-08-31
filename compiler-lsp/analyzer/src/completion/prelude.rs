@@ -8,7 +8,7 @@ use rowan::{TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
 use syntax::{SyntaxToken, cst};
 
-use crate::{completion::resolve::CompletionResolveData, locate};
+use crate::locate;
 
 pub struct Context<'c, 'a> {
     pub engine: &'c QueryEngine,
@@ -81,29 +81,6 @@ pub trait Source {
 /// A trait for describing completion filters.
 pub trait Filter: Copy {
     fn matches(&self, name: &str) -> bool;
-}
-
-pub fn completion_item(
-    name: impl ToString,
-    edit: impl ToString,
-    kind: CompletionItemKind,
-    description: Option<String>,
-    range: Option<Range>,
-    data: CompletionResolveData,
-) -> CompletionItem {
-    let data = serde_json::to_value(data).ok();
-    CompletionItem {
-        label: name.to_string(),
-        label_details: Some(CompletionItemLabelDetails { detail: None, description }),
-        kind: Some(kind),
-        filter_text: Some(edit.to_string()),
-        text_edit: range.map(|range| {
-            let new_text = edit.to_string();
-            CompletionTextEdit::Edit(TextEdit { range, new_text })
-        }),
-        data,
-        ..Default::default()
-    }
 }
 
 #[derive(Debug)]
