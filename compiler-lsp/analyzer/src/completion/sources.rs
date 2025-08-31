@@ -5,7 +5,7 @@ use resolving::FullResolvedModule;
 use smol_str::SmolStr;
 use strsim::jaro_winkler;
 
-use super::{edit, prelude::*, resolve::CompletionResolveData};
+use super::{edit, item::CompletionItemSpec, prelude::*, resolve::CompletionResolveData};
 
 /// Yields the qualified names of imports.
 ///
@@ -29,14 +29,19 @@ impl Source for QualifiedModules {
         source.filter_map(|(name, import)| {
             let (parsed, _) = context.engine.parsed(import.file).ok()?;
             let description = parsed.module_name().map(|name| name.to_string());
-            Some(completion_item(
-                name,
-                name,
-                CompletionItemKind::MODULE,
-                description,
+
+            let mut item = CompletionItemSpec::new(
+                name.to_string(),
                 context.range,
+                CompletionItemKind::MODULE,
                 CompletionResolveData::Import(import.file),
-            ))
+            );
+
+            if let Some(description) = description {
+                item.label_description(description);
+            }
+
+            Some(item.build())
         })
     }
 }
