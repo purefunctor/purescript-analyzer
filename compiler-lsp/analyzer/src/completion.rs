@@ -1,5 +1,6 @@
 mod edit;
 mod filter;
+mod item;
 mod prelude;
 mod sources;
 
