@@ -631,15 +631,16 @@ impl Source for WorkspaceModules {
                 return None;
             }
 
-            let description = Some(module_name.to_string());
-            Some(completion_item(
-                &module_name,
-                &module_name,
-                CompletionItemKind::MODULE,
-                description,
+            let mut item = CompletionItemSpec::new(
+                module_name.to_string(),
                 context.range,
+                CompletionItemKind::MODULE,
                 CompletionResolveData::Import(id),
-            ))
+            );
+
+            item.label_description(format!("{module_name}"));
+
+            Some(item.build())
         })
     }
 }
