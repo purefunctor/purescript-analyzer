@@ -1,0 +1,50 @@
+{
+  "name": "purescript-analyzer",
+  "description": "PureScript Analyzer integration for Visual Studio Code",
+  "author": "Justin Garcia",
+  "license": "BSD-3-Clause",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/purefunctor/purescript-analyzer"
+  },
+  "publisher": "purefunctor",
+  "categories": [],
+  "keywords": [],
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "activationEvents": [
+    "onLanguage:purescript",
+    "workspaceContains:src/**/*.purs"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "check": "tsc --noEmit",
+    "compile": "npm run check && node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "format": "prettier -w src/**/*.ts tsconfig.json package.json esbuild.js"
+  },
+  "dependencies": {
+    "glob": "^11.0.0",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@stylistic/eslint-plugin": "^2.9.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^22",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.13.0",
+    "mocha": "^10.3.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0"
+  },
+  "extensionDependencies": [
+    "nwolverson.language-purescript"
+  ]
+}
