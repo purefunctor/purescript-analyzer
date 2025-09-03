@@ -193,10 +193,20 @@ fn dispatch_cursor(
     }
 }
 
-fn redact_paths(result: String) -> String {
+fn redact_paths(mut result: String) -> String {
     let manifest_directory = env!("CARGO_MANIFEST_DIR");
-    let temporary_directory = prim::TEMPORARY_DIRECTORY.path().to_str().unwrap();
+    let temporary_directory = prim::TEMPORARY_DIRECTORY.path();
+
+    let manifest_directory_url = url::Url::from_file_path(manifest_directory).unwrap();
+    let temporary_directory_url = url::Url::from_file_path(temporary_directory).unwrap();
+
+    for (url, redacted) in [
+        (manifest_directory_url, "file:///tests-integration"),
+        (temporary_directory_url, "file:///temporary-directory"),
+    ] {
+        let uri = url.to_string();
+        result = result.replace(&uri, redacted);
+    }
+
     result
-        .replace(manifest_directory, "/tests-integration")
-        .replace(temporary_directory, "/temporary-directory")
 }
