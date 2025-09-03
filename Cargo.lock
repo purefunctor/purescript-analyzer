@@ -1255,6 +1255,7 @@ dependencies = [
  "tower",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]
@@ -1681,6 +1682,7 @@ dependencies = [
  "smol_str",
  "sugar",
  "tabled",
+ "url",
 ]
 
 [[package]]
@@ -1696,6 +1698,7 @@ dependencies = [
  "parsing",
  "rayon",
  "smol_str",
+ "url",
 ]
 
 [[package]]

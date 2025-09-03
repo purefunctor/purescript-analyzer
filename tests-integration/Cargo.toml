@@ -18,6 +18,7 @@ rowan = "0.16.1"
 smol_str = "0.3.2"
 sugar = { version = "0.1.0", path = "../compiler-core/sugar" }
 tabled = "0.20.0"
+url = "2.5.7"
 
 [build-dependencies]
 convert_case = "0.8.0"

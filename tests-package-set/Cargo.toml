@@ -13,6 +13,7 @@ lexing = { version = "0.1.0", path = "../compiler-core/lexing" }
 parsing = { version = "0.1.0", path = "../compiler-core/parsing" }
 rayon = "1.10.0"
 smol_str = "0.3.2"
+url = "2.5.7"
 
 [[bench]]
 name = "parsing"

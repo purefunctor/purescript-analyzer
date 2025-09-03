@@ -109,7 +109,8 @@ fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp
     if let Some(files) = files {
         tracing::info!("Loading {} files.", files.len());
         for file in &files {
-            let uri = format!("file://{}", file.to_str().unwrap());
+            let url = url::Url::from_file_path(file).unwrap();
+            let uri = url.to_string();
             let text = fs::read_to_string(file).unwrap();
             on_change(state, &uri, &text);
         }
