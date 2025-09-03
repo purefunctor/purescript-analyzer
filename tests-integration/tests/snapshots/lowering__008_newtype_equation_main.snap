@@ -9,11 +9,11 @@ Expressions:
 
 Types:
 
-36..38
-  resolves to forall 29..31
-62..64
-  resolves to forall 59..61
-88..90
-  resolves to forall 59..61
-102..104
-  resolves to forall 82..91
+a@Position { line: 2, character: 17 }
+  resolves to forall Position { line: 2, character: 10 }
+k@Position { line: 4, character: 22 }
+  resolves to forall Position { line: 4, character: 19 }
+k@Position { line: 5, character: 15 }
+  resolves to forall Position { line: 4, character: 19 }
+a@Position { line: 5, character: 29 }
+  resolves to forall Position { line: 5, character: 9 }

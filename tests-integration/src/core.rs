@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use analyzer::QueryEngine;
+use analyzer::{QueryEngine, locate};
 use files::FileId;
 use indexing::ImportKind;
 use lowering::{
@@ -93,6 +93,7 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 }
 
 pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
+    let content = engine.content(id);
     let (parsed, _) = engine.parsed(id).unwrap();
     let lowered = engine.lowered(id).unwrap();
 
@@ -119,26 +120,31 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
 
         let node = cst.syntax_node_ptr().to_node(root);
         let text = node.text().to_string();
-        let range = node.text_range();
 
-        writeln!(buffer, "{}@{:?}", text.trim(), range).unwrap();
+        let range = node.text_range();
+        let position = locate::offset_to_position(&content, range.start());
+
+        writeln!(buffer, "{}@{:?}", text.trim(), position).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
                 TermVariableResolution::Binder(binder) => {
                     let cst = &source[*binder];
                     let range = cst.syntax_node_ptr().text_range();
-                    writeln!(buffer, "  resolves to binder {range:?}").unwrap();
+                    let position = locate::offset_to_position(&content, range.start());
+                    writeln!(buffer, "  resolves to binder {position:?}").unwrap();
                 }
                 TermVariableResolution::Let(LetBound { signature, equations }) => {
                     if let Some(signature) = signature {
                         let cst = &source[*signature];
                         let range = cst.syntax_node_ptr().text_range();
-                        writeln!(buffer, "  resolves to signature {range:?}").unwrap();
+                        let position = locate::offset_to_position(&content, range.start());
+                        writeln!(buffer, "  resolves to signature {position:?}").unwrap();
                     }
                     for equation in equations.iter() {
                         let cst = &source[*equation];
                         let range = cst.syntax_node_ptr().text_range();
-                        writeln!(buffer, "  resolves to equation {range:?}").unwrap();
+                        let position = locate::offset_to_position(&content, range.start());
+                        writeln!(buffer, "  resolves to equation {position:?}").unwrap();
                     }
                 }
                 TermVariableResolution::Reference(_, _) => {
@@ -157,15 +163,24 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         else {
             continue;
         };
+
         let cst = &source[type_id];
+        let root = module.syntax();
+
+        let node = cst.syntax_node_ptr().to_node(root);
+        let text = node.text().to_string();
+
         let range = cst.syntax_node_ptr().text_range();
-        writeln!(buffer, "{range:?}").unwrap();
+        let position = locate::offset_to_position(&content, range.start());
+
+        writeln!(buffer, "{}@{:?}", text.trim(), position).unwrap();
         if let Some(resolution) = resolution {
             match resolution {
                 TypeVariableResolution::Forall(id) => {
                     let cst = &source[*id];
                     let range = cst.syntax_node_ptr().text_range();
-                    writeln!(buffer, "  resolves to forall {range:?}").unwrap();
+                    let position = locate::offset_to_position(&content, range.start());
+                    writeln!(buffer, "  resolves to forall {position:?}").unwrap();
                 }
                 TypeVariableResolution::Implicit(ImplicitTypeVariable { binding, node, id }) => {
                     if let GraphNode::Implicit { bindings, .. } = &graph[*node] {
@@ -180,7 +195,8 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                             for &type_id in type_ids {
                                 let cst = &source[type_id];
                                 let range = cst.syntax_node_ptr().text_range();
-                                writeln!(buffer, "    {range:?}").unwrap();
+                                let position = locate::offset_to_position(&content, range.start());
+                                writeln!(buffer, "    {position:?}").unwrap();
                             }
                         }
                     } else {

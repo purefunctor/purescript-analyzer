@@ -6,29 +6,29 @@ module Main
 
 Expressions:
 
-a@57..58
-  resolves to binder 46..47
-a@137..139
-  resolves to binder 104..106
-z@144..150
-  resolves to signature 116..129
-  resolves to equation 129..139
-add@170..174
+a@Position { line: 3, character: 15 }
+  resolves to binder Position { line: 3, character: 4 }
+a@Position { line: 9, character: 7 }
+  resolves to binder Position { line: 6, character: 5 }
+z@Position { line: 10, character: 4 }
+  resolves to signature Position { line: 7, character: 5 }
+  resolves to equation Position { line: 8, character: 12 }
+add@Position { line: 14, character: 6 }
   resolves to top-level name
 
 Types:
 
-34..36
-  resolves to forall 31..33
-39..41
-  resolves to forall 31..33
-50..52
-  resolves to forall 31..33
-61..63
-  resolves to forall 31..33
-86..88
-  resolves to forall 81..83
-91..93
-  resolves to forall 83..85
-96..98
-  resolves to forall 81..83
+a@Position { line: 2, character: 15 }
+  resolves to forall Position { line: 2, character: 12 }
+a@Position { line: 2, character: 20 }
+  resolves to forall Position { line: 2, character: 12 }
+a@Position { line: 3, character: 8 }
+  resolves to forall Position { line: 2, character: 12 }
+a@Position { line: 3, character: 19 }
+  resolves to forall Position { line: 2, character: 12 }
+a@Position { line: 5, character: 20 }
+  resolves to forall Position { line: 5, character: 15 }
+b@Position { line: 5, character: 25 }
+  resolves to forall Position { line: 5, character: 17 }
+a@Position { line: 5, character: 30 }
+  resolves to forall Position { line: 5, character: 15 }
