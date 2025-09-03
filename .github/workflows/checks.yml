@@ -10,9 +10,13 @@ env:
 jobs:
   build_and_test:
     name: Compilation
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
         toolchain:
           - stable
 
@@ -27,7 +31,7 @@ jobs:
         uses: Swatinem/rust-cache@v2.7.8
         with:
           cache-bin: "false"
-          prefix-key: "v5-maho"
+          prefix-key: "v6-maho"
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.10.7
@@ -60,7 +64,7 @@ jobs:
         uses: Swatinem/rust-cache@v2.7.8
         with:
           cache-bin: "false"
-          prefix-key: "v4-maho"
+          prefix-key: "v5-maho-${{ matrix.os }}-${{ matrix.toolchain }}"
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.10.7
