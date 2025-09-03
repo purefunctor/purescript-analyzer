@@ -22,6 +22,7 @@ fn test_lockfile_sources() {
         .sorted()
         .filter_map(|source| {
             let source = source.to_str()?;
+            let source = source.replace('\\', "/");
             Some(source.to_string())
         })
         .join("\n");
@@ -31,12 +32,17 @@ fn test_lockfile_sources() {
 
 #[test]
 fn test_source_files() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let manifest_directory = env!("CARGO_MANIFEST_DIR");
+
+    let path = Path::new(manifest_directory);
     let fixture = path.join("tests/fixture");
 
     let files = spago::source_files(fixture);
     let snapshot = format!("{files:#?}");
-    let snapshot = snapshot.replace(env!("CARGO_MANIFEST_DIR"), "./spago");
+
+    let path = path.to_str().unwrap();
+    let path = path.replace('\\', "/");
+    let snapshot = snapshot.replace(&path, "./spago");
 
     insta::assert_snapshot!(snapshot);
 }
