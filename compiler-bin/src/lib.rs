@@ -258,10 +258,17 @@ pub async fn analyzer_loop() {
     let subscriber = Registry::default().with(fmt).with(SpanTimingLayer);
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
+    #[cfg(unix)]
     let (stdin, stdout) = (
         async_lsp::stdio::PipeStdin::lock_tokio().unwrap(),
         async_lsp::stdio::PipeStdout::lock_tokio().unwrap(),
     );
 
-    server.run_buffered(stdin, stdout).await.unwrap()
+    #[cfg(not(unix))]
+    let (stdin, stdout) = (
+        tokio_util::compat::TokioAsyncReadCompatExt::compat(tokio::io::stdin()),
+        tokio_util::compat::TokioAsyncWriteCompatExt::compat_write(tokio::io::stdout()),
+    );
+
+    server.run_buffered(stdin, stdout).await.unwrap();
 }
