@@ -10,6 +10,7 @@ on:
 
 jobs:
   create-release:
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
