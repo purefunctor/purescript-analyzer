@@ -54,5 +54,6 @@ jobs:
         with:
           bin: purescript-analyzer
           package: purescript-analyzer
+          locked: true
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
