@@ -1,6 +1,6 @@
 [package]
 name = "purescript-analyzer"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2024"
 authors = ["Justin Garcia <purefunctor@gmail.com>"]
 license = "BSD-3-Clause"
