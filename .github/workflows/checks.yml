@@ -31,7 +31,7 @@ jobs:
         uses: Swatinem/rust-cache@v2.7.8
         with:
           cache-bin: "false"
-          prefix-key: "v6-maho"
+          prefix-key: "v5-maho-${{ matrix.os }}-${{ matrix.toolchain }}"
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.10.7
@@ -64,7 +64,7 @@ jobs:
         uses: Swatinem/rust-cache@v2.7.8
         with:
           cache-bin: "false"
-          prefix-key: "v5-maho-${{ matrix.os }}-${{ matrix.toolchain }}"
+          prefix-key: "v5-maho-${{ matrix.toolchain }}"
 
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@v1.10.7
