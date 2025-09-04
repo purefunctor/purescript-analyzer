@@ -7,7 +7,8 @@ use std::fmt::Write;
 use syntax::cst;
 
 fn index_source(source: &str) -> (cst::Module, FullIndexedModule) {
-    let lexed = lexing::lex(source);
+    let source = source.replace("\r\n", "\n").replace("\r", "\n");
+    let lexed = lexing::lex(&source);
     let tokens = lexing::layout(&lexed);
 
     let (parsed, _) = parsing::parse(&lexed, &tokens);

@@ -6,11 +6,11 @@ module Main
 
 Expressions:
 
-pure@46..51
+pure@Position { line: 3, character: 16 }
   resolves to top-level name
-x'notBinder@51..63
+x'notBinder@Position { line: 3, character: 21 }
   resolves to top-level name
-x'notBinder@68..80
-  resolves to binder 29..43
+x'notBinder@Position { line: 4, character: 4 }
+  resolves to binder Position { line: 2, character: 10 }
 
 Types:

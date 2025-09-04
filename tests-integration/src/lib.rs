@@ -9,11 +9,13 @@ use std::{
 use analyzer::{QueryEngine, prim};
 use files::Files;
 use glob::glob;
+use url::Url;
 
 fn load_file(engine: &mut QueryEngine, files: &mut Files, path: &Path) {
-    let uri = format!("file://{}", path.to_str().unwrap());
+    let url = Url::from_file_path(path).unwrap();
     let file = fs::read_to_string(path).unwrap();
 
+    let uri = url.to_string();
     let id = files.insert(uri, file);
     let content = files.content(id);
 

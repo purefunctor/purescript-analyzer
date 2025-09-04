@@ -9,7 +9,7 @@ Expressions:
 
 Types:
 
-44..46
+a@Position { line: 2, character: 25 }
   introduces a constraint variable "a"
-82..84
+a@Position { line: 3, character: 34 }
   introduces a constraint variable "a"

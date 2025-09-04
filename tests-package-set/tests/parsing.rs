@@ -40,9 +40,10 @@ fn test_parallel_parse_package_set() {
     let mut source = vec![];
     for path in all_source_files() {
         let content = std::fs::read_to_string(&path).unwrap();
-        let path = format!("file://{}", path.to_str().unwrap());
+        let url = url::Url::from_file_path(path).unwrap();
+        let uri = url.to_string();
 
-        let id = files.insert(path, content);
+        let id = files.insert(uri, content);
         let content = files.content(id);
 
         engine.set_content(id, content);

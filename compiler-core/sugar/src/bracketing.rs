@@ -237,21 +237,21 @@ pub fn bracketed(
     let mut binders = FxHashMap::default();
     for (id, kind) in lowered.intermediate.iter_binder() {
         if let BinderKind::OperatorChain { head, tail } = kind {
-            binders.insert(id, bracket(external, &lowered, *head, tail));
+            binders.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 
     let mut expressions = FxHashMap::default();
     for (id, kind) in lowered.intermediate.iter_expression() {
         if let ExpressionKind::OperatorChain { head, tail } = kind {
-            expressions.insert(id, bracket(external, &lowered, *head, tail));
+            expressions.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 
     let mut types = FxHashMap::default();
     for (id, kind) in lowered.intermediate.iter_type() {
         if let TypeKind::OperatorChain { head, tail } = kind {
-            types.insert(id, bracket(external, &lowered, *head, tail));
+            types.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 

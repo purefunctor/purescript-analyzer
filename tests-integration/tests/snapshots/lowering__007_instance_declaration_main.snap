@@ -6,36 +6,36 @@ module Main
 
 Expressions:
 
-eqIntImpl@77..87
+eqIntImpl@Position { line: 4, character: 6 }
   resolves to top-level name
-eqMaybeImpl@168..180
+eqMaybeImpl@Position { line: 8, character: 6 }
   resolves to top-level name
-b@255..257
-  resolves to binder 251..253
+b@Position { line: 12, character: 11 }
+  resolves to binder Position { line: 12, character: 7 }
 
 Types:
 
-114..116
+a@Position { line: 6, character: 25 }
   introduces a constraint variable "a"
-137..139
+a@Position { line: 7, character: 13 }
   resolves to a constraint variable "a"
-    114..116
-148..150
+    Position { line: 6, character: 25 }
+a@Position { line: 7, character: 24 }
   resolves to a constraint variable "a"
-    114..116
-201..203
+    Position { line: 6, character: 25 }
+b@Position { line: 10, character: 19 }
   introduces a constraint variable "b"
-203..205
+b@Position { line: 10, character: 21 }
   introduces a constraint variable "b"
-232..234
-  resolves to forall 229..231
-234..236
+p@Position { line: 11, character: 20 }
+  resolves to forall Position { line: 11, character: 17 }
+b@Position { line: 11, character: 22 }
   resolves to a constraint variable "b"
-    201..203
-    203..205
-239..241
-  resolves to forall 229..231
-241..243
+    Position { line: 10, character: 19 }
+    Position { line: 10, character: 21 }
+p@Position { line: 11, character: 27 }
+  resolves to forall Position { line: 11, character: 17 }
+b@Position { line: 11, character: 29 }
   resolves to a constraint variable "b"
-    201..203
-    203..205
+    Position { line: 10, character: 19 }
+    Position { line: 10, character: 21 }

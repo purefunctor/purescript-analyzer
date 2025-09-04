@@ -3,7 +3,8 @@ use test_each_file::test_each_file;
 test_each_file! { in "./compiler-core/lexing/tests/lexer" => |content: &str| {
     use std::fmt::Write;
 
-    let lexed = lexing::lex(content);
+    let content = content.replace("\r\n", "\n").replace("\r", "\n");
+    let lexed = lexing::lex(&content);
 
     let mut snapshot = String::new();
     for index in 0..lexed.len() {

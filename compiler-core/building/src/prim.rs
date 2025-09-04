@@ -6,7 +6,7 @@ use url::Url;
 
 use crate::QueryEngine;
 
-pub const HOST: &str = "generated";
+pub const SCHEME: &str = "prim";
 pub const PRIM: &str = include_str!("prim/Prim.purs");
 pub const PRIM_BOOLEAN: &str = include_str!("prim/Prim.Boolean.purs");
 pub const PRIM_COERCE: &str = include_str!("prim/Prim.Coerce.purs");
@@ -29,7 +29,7 @@ pub fn configure(engine: &mut QueryEngine, files: &mut Files) {
         ("Prim.Symbol", PRIM_SYMBOL),
         ("Prim.TypeError", PRIM_TYPE_ERROR),
     ] {
-        let path = format!("file://{HOST}/{name}.purs");
+        let path = format!("{SCHEME}://localhost/{name}.purs");
         let id = files.insert(path, content);
 
         engine.set_content(id, content);
@@ -44,15 +44,12 @@ pub static TEMPORARY_DIRECTORY: LazyLock<TempDir> = LazyLock::new(|| {
         .expect("invariant violated: failed to create TEMPORARY_DIRECTORY")
 });
 
-pub fn handle_generated(mut uri: Url, content: &str) -> Option<Url> {
-    if uri.host_str() != Some(HOST) {
+pub fn handle_generated(uri: Url, content: &str) -> Option<Url> {
+    if uri.scheme() != SCHEME {
         return Some(uri);
     }
 
-    uri.set_host(Some("localhost")).ok()?;
-    let original = uri.to_file_path().ok()?;
-
-    let file = original.components().next_back()?;
+    let file = uri.path_segments()?.next_back()?;
     let path = TEMPORARY_DIRECTORY.path().join(file);
 
     let mut file = File::create(&path).ok()?;

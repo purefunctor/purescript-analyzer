@@ -109,7 +109,8 @@ fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp
     if let Some(files) = files {
         tracing::info!("Loading {} files.", files.len());
         for file in &files {
-            let uri = format!("file://{}", file.to_str().unwrap());
+            let url = url::Url::from_file_path(file).unwrap();
+            let uri = url.to_string();
             let text = fs::read_to_string(file).unwrap();
             on_change(state, &uri, &text);
         }
@@ -258,10 +259,17 @@ pub async fn analyzer_loop() {
     let subscriber = Registry::default().with(fmt).with(SpanTimingLayer);
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
+    #[cfg(unix)]
     let (stdin, stdout) = (
         async_lsp::stdio::PipeStdin::lock_tokio().unwrap(),
         async_lsp::stdio::PipeStdout::lock_tokio().unwrap(),
     );
 
-    server.run_buffered(stdin, stdout).await.unwrap()
+    #[cfg(not(unix))]
+    let (stdin, stdout) = (
+        tokio_util::compat::TokioAsyncReadCompatExt::compat(tokio::io::stdin()),
+        tokio_util::compat::TokioAsyncWriteCompatExt::compat_write(tokio::io::stdout()),
+    );
+
+    server.run_buffered(stdin, stdout).await.unwrap();
 }

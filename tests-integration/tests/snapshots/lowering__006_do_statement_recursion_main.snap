@@ -6,17 +6,17 @@ module Main
 
 Expressions:
 
-y'equation@56..67
-  resolves to equation 34..76
-a'binder@67..76
-  resolves to binder 45..54
-pure@93..98
+y'equation@Position { line: 3, character: 27 }
+  resolves to equation Position { line: 3, character: 5 }
+a'binder@Position { line: 3, character: 38 }
+  resolves to binder Position { line: 3, character: 16 }
+pure@Position { line: 4, character: 16 }
   resolves to top-level name
-x'notBinder@98..110
+x'notBinder@Position { line: 4, character: 21 }
   resolves to top-level name
-pure@110..117
+pure@Position { line: 4, character: 33 }
   resolves to top-level name
-x'notBinder@117..129
-  resolves to binder 76..90
+x'notBinder@Position { line: 5, character: 6 }
+  resolves to binder Position { line: 3, character: 47 }
 
 Types:

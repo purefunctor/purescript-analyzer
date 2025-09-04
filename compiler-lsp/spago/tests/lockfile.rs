@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::path::Path;
 
 use itertools::Itertools;
@@ -22,6 +23,7 @@ fn test_lockfile_sources() {
         .sorted()
         .filter_map(|source| {
             let source = source.to_str()?;
+            let source = source.replace('\\', "/");
             Some(source.to_string())
         })
         .join("\n");
@@ -31,12 +33,20 @@ fn test_lockfile_sources() {
 
 #[test]
 fn test_source_files() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let manifest_directory = env!("CARGO_MANIFEST_DIR");
+    let manifest_directory_url = url::Url::from_file_path(manifest_directory).unwrap();
+    let manifest_directory_uri = manifest_directory_url.to_string();
+
+    let path = Path::new(manifest_directory);
     let fixture = path.join("tests/fixture");
 
-    let files = spago::source_files(fixture);
-    let snapshot = format!("{files:#?}");
-    let snapshot = snapshot.replace(env!("CARGO_MANIFEST_DIR"), "./spago");
+    let mut snapshot = String::default();
+
+    spago::source_files(fixture).unwrap().into_iter().for_each(|file| {
+        let url = url::Url::from_file_path(file).unwrap();
+        let uri = url.to_string().replace(&manifest_directory_uri, "./spago");
+        writeln!(&mut snapshot, "{}", uri).unwrap();
+    });
 
     insta::assert_snapshot!(snapshot);
 }

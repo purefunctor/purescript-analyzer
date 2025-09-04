@@ -39,16 +39,17 @@ impl Lockfile {
             [src, test]
         });
 
+        let base = Path::new(".spago").join("p");
         let packages = self.packages.iter().flat_map(move |(name, package)| match package {
             PackageEntry::Git { rev } => {
-                let src = Path::new(".spago/p").join(name).join(rev).join("src");
-                let test = Path::new(".spago/p").join(name).join(rev).join("test");
+                let src = base.join(name).join(rev).join("src");
+                let test = base.join(name).join(rev).join("test");
                 [src, test]
             }
             PackageEntry::Registry { version } => {
                 let name_version = format!("{name}-{version}");
-                let src = Path::new(".spago/p").join(&name_version).join("src");
-                let test = Path::new(".spago/p").join(&name_version).join("test");
+                let src = base.join(&name_version).join("src");
+                let test = base.join(&name_version).join("test");
                 [src, test]
             }
         });
