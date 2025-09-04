@@ -44,8 +44,8 @@ fn test_source_files() {
 
     spago::source_files(fixture).unwrap().into_iter().for_each(|file| {
         let url = url::Url::from_file_path(file).unwrap();
-        let uri = url.to_string();
-        writeln!(&mut snapshot, "{}", uri.replace(&manifest_directory_uri, "./spago")).unwrap();
+        let uri = url.to_string().replace(&manifest_directory_uri, "./spago");
+        writeln!(&mut snapshot, "{}", uri).unwrap();
     });
 
     insta::assert_snapshot!(snapshot);
