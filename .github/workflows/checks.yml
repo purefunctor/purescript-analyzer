@@ -34,7 +34,7 @@ jobs:
           prefix-key: "v5-maho-${{ matrix.os }}-${{ matrix.toolchain }}"
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@v1.10.7
+        uses: cargo-bins/cargo-binstall@v1.15.3
 
       - name: Install cargo-nextest
         run: cargo binstall cargo-nextest just
