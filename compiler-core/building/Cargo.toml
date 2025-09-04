@@ -7,17 +7,13 @@ edition = "2021"
 building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
-interner = { version = "0.1.0", path = "../interner" }
 lexing = { version = "0.1.0", path = "../lexing" }
 lock_api = "0.4.13"
 lowering = { version = "0.1.0", path = "../lowering" }
 parking_lot = "0.12.4"
 parsing = { version = "0.1.0", path = "../parsing" }
-rayon = "1.11.0"
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"
-smol_str = "0.3.2"
-string-interner = "0.19.0"
 sugar = { version = "0.1.0", path = "../sugar" }
 tempfile = "3.21.0"
 thread_local = "1.1.9"

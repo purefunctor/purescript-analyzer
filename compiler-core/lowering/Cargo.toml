@@ -21,3 +21,6 @@ insta = "1.43.2"
 lexing = { path = "../lexing" }
 parsing = { path = "../parsing" }
 test_each_file = "0.3.5"
+
+[package.metadata.cargo-machete]
+ignored = ["paste"]

@@ -6,11 +6,7 @@ edition = "2024"
 [dependencies]
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
-interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.14.0"
 la-arena = "0.3.1"
-lexing = { version = "0.1.0", path = "../lexing" }
 lowering = { version = "0.1.0", path = "../lowering" }
-parsing = { version = "0.1.0", path = "../parsing" }
 smol_str = "0.3.2"
-syntax = { version = "0.1.0", path = "../syntax" }
