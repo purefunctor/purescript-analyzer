@@ -41,5 +41,6 @@ jobs:
         uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: purescript-analyzer
+          package: purescript-analyzer
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
