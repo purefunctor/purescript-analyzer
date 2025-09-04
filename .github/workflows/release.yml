@@ -1,0 +1,45 @@
+name: Cargo Build & Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+jobs:
+  build_and_release:
+    name: Build & Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+
+          - os: macos-latest
+            target: x86_64-apple-darwin
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        if: startsWith(matrix.os, 'ubuntu')
+        with:
+          target: ${{ matrix.target }}
+      
+      - name: Build and Release
+        uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: purescript-analyzer
+          target: ${{ matrix.target }}
+          token: ${{ secrets.GITHUB_TOKEN }}
