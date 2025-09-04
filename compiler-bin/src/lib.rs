@@ -248,10 +248,13 @@ pub async fn analyzer_loop() {
             .service(router)
     });
 
+    let temporary_directory = env::temp_dir();
+    let log_file_path = temporary_directory.join("purescript-analyzer.log");
+
     let log_file = fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open("/tmp/purescript-analyzer.log")
+        .open(log_file_path)
         .expect("Failed to open log file");
 
     let fmt = tracing_subscriber::fmt::layer().with_writer(log_file).with_filter(LevelFilter::INFO);
