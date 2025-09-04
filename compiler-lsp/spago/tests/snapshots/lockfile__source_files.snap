@@ -2,9 +2,5 @@
 source: compiler-lsp/spago/tests/lockfile.rs
 expression: snapshot
 ---
-Ok(
-    [
-        "./spago/tests/fixture/src/Main.purs",
-        "./spago/tests/fixture/test/Test/Main.purs",
-    ],
-)
+./spago/tests/fixture/src/Main.purs
+./spago/tests/fixture/test/Test/Main.purs
