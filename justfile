@@ -27,3 +27,8 @@ coverage-html:
 [doc("Apply clippy fixes and format")]
 fix:
   cargo clippy --workspace --fix && cargo fmt
+
+[doc("Update THIRDPARTY.toml")]
+[working-directory: 'compiler-bin']
+licenses:
+  cargo bundle-licenses --prefer MIT -o ../THIRDPARTY.toml

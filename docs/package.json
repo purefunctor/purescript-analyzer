@@ -14,14 +14,14 @@
   "devDependencies": {
     "@fontsource-variable/montserrat": "^5.2.6",
     "@sveltejs/adapter-auto": "^3.3.1",
-    "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.25.0",
+    "@sveltejs/adapter-static": "^3.0.9",
+    "@sveltejs/kit": "^2.37.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.4",
     "comlink": "^4.4.2",
     "docs-lib": "workspace:*",
-    "svelte": "^5.36.7",
-    "svelte-check": "^4.3.0",
-    "typescript": "^5.8.3",
+    "svelte": "^5.38.6",
+    "svelte-check": "^4.3.1",
+    "typescript": "^5.9.2",
     "vite": "^5.4.19"
   },
   "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"

@@ -8,14 +8,12 @@ build = "build.rs"
 analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
 files = { version = "0.1.0", path = "../compiler-core/files" }
-glob = "0.3.2"
+glob = "0.3.3"
 indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
 itertools = "0.14.0"
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
-resolving = { version = "0.1.0", path = "../compiler-core/resolving" }
 rowan = "0.16.1"
-smol_str = "0.3.2"
 sugar = { version = "0.1.0", path = "../compiler-core/sugar" }
 tabled = "0.20.0"
 url = "2.5.7"
@@ -25,4 +23,4 @@ convert_case = "0.8.0"
 itertools = "0.14.0"
 
 [dev-dependencies]
-insta = "1.43.1"
+insta = "1.43.2"

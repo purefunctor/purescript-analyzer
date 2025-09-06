@@ -563,21 +563,24 @@ fn lower_equation_bindings(
     bindings.extend(to_traverse.into_iter().map(|resolution| {
         state.with_scope(|s| {
             let signature = resolution.signature.and_then(|id| {
-                let cst = s.source[id].to_node(root);
-                cst.type_().map(|t| lower_forall(s, context, &t))
+                let cst = s.source[id].try_to_node(root);
+                cst.and_then(|cst| {
+                    let cst = cst.type_()?;
+                    Some(lower_forall(s, context, &cst))
+                })
             });
             let equations = resolution
                 .equations
                 .iter()
-                .map(|&id| {
-                    let cst = s.source[id].to_node(root);
-                    lower_equation_like(
+                .filter_map(|&id| {
+                    let cst = s.source[id].try_to_node(root)?;
+                    Some(lower_equation_like(
                         s,
                         context,
                         cst,
                         cst::LetBindingEquation::function_binders,
                         cst::LetBindingEquation::guarded_expression,
-                    )
+                    ))
                 })
                 .collect();
             LetBinding::Name { signature, equations }
