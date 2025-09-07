@@ -155,14 +155,26 @@ fn dispatch_cursor(
                 match response.contents {
                     HoverContents::Scalar(marked) => {
                         let marked = convert(marked);
-                        writeln!(result, "{marked}").unwrap();
+                        if marked.is_empty() {
+                            writeln!(result, "<empty>").unwrap();
+                        } else {
+                            writeln!(result, "{marked}").unwrap();
+                        }
                     }
                     HoverContents::Array(marked) => {
                         let marked = marked.into_iter().map(convert).join("\n");
-                        writeln!(result, "{marked}").unwrap();
+                        if marked.is_empty() {
+                            writeln!(result, "<empty>").unwrap();
+                        } else {
+                            writeln!(result, "{marked}").unwrap();
+                        }
                     }
                     HoverContents::Markup(markup) => {
-                        writeln!(result, "{}", markup.value).unwrap();
+                        if markup.value.is_empty() {
+                            writeln!(result, "<empty>").unwrap();
+                        } else {
+                            writeln!(result, "{}", markup.value).unwrap();
+                        }
                     }
                 }
             } else {
