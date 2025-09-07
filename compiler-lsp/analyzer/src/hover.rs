@@ -291,7 +291,10 @@ fn hover_file_term(engine: &QueryEngine, f_id: FileId, t_id: TermItemId) -> Opti
     let annotation = annotation.map(|range| render_annotation(&root, range));
     let syntax = syntax.map(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+    let array = [syntax, annotation].into_iter().flatten().flatten();
+    let separator = MarkedString::String("---".to_string());
+    let array = Itertools::intersperse(array, separator).collect();
+
     let contents = HoverContents::Array(array);
     let range = None;
 
@@ -335,7 +338,10 @@ fn hover_file_type(engine: &QueryEngine, f_id: FileId, t_id: TypeItemId) -> Opti
     let annotation = annotation.map(|range| render_annotation(&root, range));
     let syntax = syntax.map(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+    let array = [syntax, annotation].into_iter().flatten().flatten();
+    let separator = MarkedString::String("---".to_string());
+    let array = Itertools::intersperse(array, separator).collect();
+
     let contents = HoverContents::Array(array);
     let range = None;
 
@@ -400,16 +406,13 @@ where
     signature.or_else(equation)
 }
 
-fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
+fn render_annotation(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
     let cleaned = extract::extract_annotation(root, range);
-    if cleaned.is_empty() {
-        vec![]
-    } else {
-        vec![MarkedString::String("---".to_string()), MarkedString::String(cleaned)]
-    }
+    if cleaned.is_empty() { None } else { Some(MarkedString::String(cleaned)) }
 }
 
-fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
+fn render_syntax(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
     let value = extract::extract_syntax(root, range);
-    vec![MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })]
+    let string = LanguageString { language: "purescript".to_string(), value };
+    Some(MarkedString::LanguageString(string))
 }

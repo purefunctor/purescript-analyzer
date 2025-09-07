@@ -29,3 +29,13 @@ const :: forall a b.
   b ->
   a
 ```
+
+
+Hover at Position { line: 21, character: 8 }
+
+```
+test3 = docOnly
+--      $
+```
+
+Documentation only

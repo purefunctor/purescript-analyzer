@@ -15,3 +15,9 @@ const a _ = a
 
 test2 = const
 --      $
+
+-- | Documentation only
+docOnly = 123
+
+test3 = docOnly
+--      $
