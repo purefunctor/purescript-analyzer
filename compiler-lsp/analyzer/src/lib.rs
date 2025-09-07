@@ -1,5 +1,6 @@
 pub mod completion;
 pub mod definition;
+pub mod extract;
 pub mod hover;
 pub mod locate;
 

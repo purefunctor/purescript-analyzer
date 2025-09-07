@@ -8,7 +8,7 @@ use rowan::TextRange;
 use serde::{Deserialize, Serialize};
 use syntax::SyntaxNode;
 
-use crate::hover;
+use crate::{extract, hover};
 
 pub fn implementation(engine: &QueryEngine, mut item: CompletionItem) -> CompletionItem {
     let Some(value) = mem::take(&mut item.data) else { return item };
@@ -39,7 +39,7 @@ fn resolve_documentation(
     (root, annotation, syntax): (SyntaxNode, Option<TextRange>, Option<TextRange>),
     item: &mut CompletionItem,
 ) {
-    let annotation = annotation.map(|range| hover::render_annotation_string(&root, range));
+    let annotation = annotation.map(|range| extract::extract_annotation(&root, range));
     let syntax = syntax.map(|range| hover::render_syntax_string(&root, range));
 
     item.detail = syntax;

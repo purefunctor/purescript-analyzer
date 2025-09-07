@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Hover at Position { line: 6, character: 7 }
+
+```
+test = id
+--     $
+```
+
+```purescript
+id :: forall a. a -> a
+```
+---
+The identity function

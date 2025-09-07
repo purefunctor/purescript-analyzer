@@ -189,6 +189,7 @@ pub fn annotation_syntax_range(
     let Some(node) = ptr.try_to_node(root) else {
         return (None, None);
     };
+
     let mut children = node.children_with_tokens().peekable();
 
     let annotation = children

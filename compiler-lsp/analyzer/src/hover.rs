@@ -20,7 +20,7 @@ use rowan::{
 use smol_str::SmolStrBuilder;
 use syntax::{SyntaxKind, SyntaxNode, cst};
 
-use crate::locate;
+use crate::{extract, locate};
 
 pub fn implementation(
     engine: &QueryEngine,
@@ -401,18 +401,12 @@ where
 }
 
 fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
-    let cleaned = render_annotation_string(root, range);
+    let cleaned = extract::extract_annotation(root, range);
     if cleaned.is_empty() {
         vec![]
     } else {
         vec![MarkedString::String("---".to_string()), MarkedString::String(cleaned)]
     }
-}
-
-pub(crate) fn render_annotation_string(root: &SyntaxNode, range: TextRange) -> String {
-    let source = root.text().slice(range).to_string();
-    let source = source.trim();
-    source.lines().map(|line| line.trim_start_matches("-- |").trim()).join("\n")
 }
 
 fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
