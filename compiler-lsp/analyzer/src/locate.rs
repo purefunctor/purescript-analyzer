@@ -162,11 +162,11 @@ pub fn range_without_annotation(
     ptr: &SyntaxNodePtr,
     root: &SyntaxNode,
 ) -> Option<Range> {
-    let range = text_range_after_annotation(ptr, root)?;
+    let range = text_range_after_annotation(root, ptr)?;
     Some(text_range_to_range(content, range))
 }
 
-pub fn text_range_after_annotation(ptr: &SyntaxNodePtr, root: &SyntaxNode) -> Option<TextRange> {
+pub fn text_range_after_annotation(root: &SyntaxNode, ptr: &SyntaxNodePtr) -> Option<TextRange> {
     let node = ptr.try_to_node(root)?;
 
     let mut children = node.children_with_tokens().peekable();
