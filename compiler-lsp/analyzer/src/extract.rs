@@ -38,13 +38,20 @@ pub fn extract_annotation(root: &SyntaxNode, range: TextRange) -> String {
     let mut annotation = String::default();
 
     text.for_each_chunk(|chunk| {
-        for line in chunk.lines() {
-            let doc_line = line.trim_start_matches("-- |");
-            if line != doc_line {
-                let doc_line = doc_line.trim();
-                annotation.push_str(doc_line);
-            }
+        let lines = chunk.lines().filter_map(|line| {
+            let trimmed = line.trim_start_matches("-- | ");
+            if line != trimmed { Some(trimmed) } else { None }
+        });
+
+        let mut lines = lines.peekable();
+        if let Some(line) = lines.next() {
+            annotation.push_str(line);
         }
+
+        lines.for_each(|line| {
+            annotation.push('\n');
+            annotation.push_str(line);
+        });
     });
 
     annotation
