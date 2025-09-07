@@ -150,7 +150,7 @@ fn definition_import(
         let ptrs = indexed.term_item_ptr(t_id);
         let range = ptrs
             .into_iter()
-            .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+            .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
             .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
@@ -178,7 +178,7 @@ fn definition_import(
         let ptrs = indexed.type_item_ptr(t_id);
         let range = ptrs
             .into_iter()
-            .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+            .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
             .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
@@ -255,8 +255,8 @@ fn definition_expression(
             match resolution {
                 TermVariableResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
-                    let ptr = &lowered.source[*binder].syntax_node_ptr();
-                    let range = locate::range_without_annotation(&content, ptr, &root)?;
+                    let ptr = lowered.source[*binder].syntax_node_ptr();
+                    let range = locate::syntax_range(&content, &root, &ptr)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
                 TermVariableResolution::Let(binding) => {
@@ -266,13 +266,13 @@ fn definition_expression(
                         .signature
                         .and_then(|id| {
                             let ptr = lowered.source[id].syntax_node_ptr();
-                            locate::range_without_annotation(&content, &ptr, &root)
+                            locate::syntax_range(&content, &root, &ptr)
                         })
                         .into_iter();
 
                     let equations = binding.equations.iter().filter_map(|&id| {
                         let ptr = lowered.source[id].syntax_node_ptr();
-                        locate::range_without_annotation(&content, &ptr, &root)
+                        locate::syntax_range(&content, &root, &ptr)
                     });
 
                     let range = signature
@@ -323,8 +323,8 @@ fn definition_type(
             match resolution {
                 TypeVariableResolution::Forall(binding) => {
                     let root = parsed.syntax_node();
-                    let ptr = &lowered.source[*binding].syntax_node_ptr();
-                    let range = locate::range_without_annotation(&content, ptr, &root)?;
+                    let ptr = lowered.source[*binding].syntax_node_ptr();
+                    let range = locate::syntax_range(&content, &root, &ptr)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
                 TypeVariableResolution::Implicit(ImplicitTypeVariable { .. }) => None,
@@ -360,7 +360,7 @@ fn definition_file_term(
     let ptrs = indexed.term_item_ptr(t_id);
     let range = ptrs
         .into_iter()
-        .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
@@ -390,7 +390,7 @@ fn definition_file_type(
     let ptrs = indexed.type_item_ptr(t_id);
     let range = ptrs
         .into_iter()
-        .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))

@@ -10,7 +10,9 @@ use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
 };
-use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
+use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
+
+use crate::extract::AnnotationSyntaxRange;
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);
@@ -50,6 +52,11 @@ pub fn text_range_to_range(content: &str, range: TextRange) -> Range {
     let end = Position { line: end.line, character: end.col };
 
     Range { start, end }
+}
+
+pub fn syntax_range(content: &str, root: &SyntaxNode, ptr: &SyntaxNodePtr) -> Option<Range> {
+    let range = AnnotationSyntaxRange::from_ptr(root, ptr);
+    range.syntax.map(|range| text_range_to_range(content, range))
 }
 
 type ModuleNamePtr = AstPtr<cst::ModuleName>;
@@ -155,31 +162,6 @@ fn locate_between(
         // otherwise, lean towards the right.
         (_, _) => right,
     }
-}
-
-pub fn range_without_annotation(
-    content: &str,
-    ptr: &SyntaxNodePtr,
-    root: &SyntaxNode,
-) -> Option<Range> {
-    let range = text_range_after_annotation(root, ptr)?;
-    Some(text_range_to_range(content, range))
-}
-
-pub fn text_range_after_annotation(root: &SyntaxNode, ptr: &SyntaxNodePtr) -> Option<TextRange> {
-    let node = ptr.try_to_node(root)?;
-
-    let mut children = node.children_with_tokens().peekable();
-    children.next_if(|child| matches!(child.kind(), SyntaxKind::Annotation));
-
-    let first = children.peek().map(|child| child.text_range());
-    let last = children.last().map(|child| child.text_range());
-
-    first.zip(last).map(|(start, end)| {
-        let start = start.start();
-        let end = end.end();
-        TextRange::new(start, end)
-    })
 }
 
 #[cfg(test)]
