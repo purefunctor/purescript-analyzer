@@ -63,3 +63,17 @@ test5 = multiLine2
 Line 1
 Line 2
 Line 3
+
+
+Hover at Position { line: 50, character: 8 }
+
+```
+test6 = multiLine3
+--      $
+```
+
+Line 1
+
+Line 2
+
+Line 3

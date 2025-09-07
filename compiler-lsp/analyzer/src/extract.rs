@@ -39,8 +39,8 @@ pub fn extract_annotation(root: &SyntaxNode, range: TextRange) -> String {
 
     text.for_each_chunk(|chunk| {
         let lines = chunk.lines().filter_map(|line| {
-            let trimmed = line.trim_start_matches("-- | ");
-            if line != trimmed { Some(trimmed) } else { None }
+            let trimmed = line.trim_start_matches("-- |");
+            if line != trimmed { Some(trimmed.trim_matches(' ')) } else { None }
         });
 
         let mut lines = lines.peekable();

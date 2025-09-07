@@ -39,3 +39,14 @@ multiLine2 = 123
 
 test5 = multiLine2
 --      $
+
+
+-- | Line 1
+-- |
+-- | Line 2
+-- |
+-- | Line 3
+multiLine3 = 123
+
+test6 = multiLine3
+--      $
