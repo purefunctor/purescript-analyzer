@@ -40,7 +40,7 @@ fn resolve_documentation(
     item: &mut CompletionItem,
 ) {
     let annotation = annotation.map(|range| extract::extract_annotation(&root, range));
-    let syntax = syntax.map(|range| hover::render_syntax_string(&root, range));
+    let syntax = syntax.map(|range| extract::extract_syntax(&root, range));
 
     item.detail = syntax;
     item.documentation = annotation.map(|annotation| {

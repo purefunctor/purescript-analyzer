@@ -410,11 +410,6 @@ fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
 }
 
 fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
-    let value = render_syntax_string(root, range);
+    let value = extract::extract_syntax(root, range);
     vec![MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })]
-}
-
-pub(crate) fn render_syntax_string(root: &SyntaxNode, range: TextRange) -> String {
-    let source = root.text().slice(range).to_string();
-    source.trim().to_string()
 }

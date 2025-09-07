@@ -14,3 +14,18 @@ id :: forall a. a -> a
 ```
 ---
 The identity function
+
+
+Hover at Position { line: 15, character: 8 }
+
+```
+test2 = const
+--      $
+```
+
+```purescript
+const :: forall a b.
+  a ->
+  b ->
+  a
+```

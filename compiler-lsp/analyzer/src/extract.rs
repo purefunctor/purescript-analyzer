@@ -49,3 +49,7 @@ pub fn extract_annotation(root: &SyntaxNode, range: TextRange) -> String {
 
     annotation
 }
+
+pub fn extract_syntax(root: &SyntaxNode, range: TextRange) -> String {
+    root.text().slice(range).to_string()
+}
