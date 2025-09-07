@@ -78,10 +78,10 @@ fn hover_module_name(
 
     let (root, range) = AnnotationSyntaxRange::of_file(engine, module_id)?;
 
-    let annotation = range.annotation.map(|range| render_annotation(&root, range));
-    let syntax = range.syntax.map(|range| render_syntax(&root, range));
+    let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
+    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect_vec();
+    let array = [syntax, annotation].into_iter().flatten().collect_vec();
     let contents = HoverContents::Array(array);
     let range = None;
 
@@ -202,14 +202,17 @@ fn hover_let(
 ) -> Option<Hover> {
     let signature = let_binding.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();
-        locate::annotation_syntax_range(root, ptr)
+        AnnotationSyntaxRange::from_ptr(root, &ptr)
     });
 
-    if let Some((annotation, syntax)) = signature {
-        let annotation = annotation.map(|range| render_annotation(root, range));
-        let syntax = syntax.map(|range| render_syntax(root, range));
+    if let Some(range) = signature {
+        let annotation = range.annotation.and_then(|range| render_annotation(root, range));
+        let syntax = range.syntax.and_then(|range| render_syntax(root, range));
 
-        let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+        let array = [syntax, annotation].into_iter().flatten();
+        let separator = MarkedString::String("---".to_string());
+        let array = Itertools::intersperse(array, separator).collect();
+
         let contents = HoverContents::Array(array);
         let range = None;
 
@@ -256,10 +259,10 @@ fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover>
 fn hover_file_term(engine: &QueryEngine, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
     let (root, range) = AnnotationSyntaxRange::of_file_term(engine, f_id, t_id)?;
 
-    let annotation = range.annotation.map(|range| render_annotation(&root, range));
-    let syntax = range.syntax.map(|range| render_syntax(&root, range));
+    let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
+    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten().flatten();
+    let array = [syntax, annotation].into_iter().flatten();
     let separator = MarkedString::String("---".to_string());
     let array = Itertools::intersperse(array, separator).collect();
 
@@ -272,10 +275,10 @@ fn hover_file_term(engine: &QueryEngine, f_id: FileId, t_id: TermItemId) -> Opti
 fn hover_file_type(engine: &QueryEngine, f_id: FileId, t_id: TypeItemId) -> Option<Hover> {
     let (root, range) = AnnotationSyntaxRange::of_file_type(engine, f_id, t_id)?;
 
-    let annotation = range.annotation.map(|range| render_annotation(&root, range));
-    let syntax = range.syntax.map(|range| render_syntax(&root, range));
+    let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
+    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten().flatten();
+    let array = [syntax, annotation].into_iter().flatten();
     let separator = MarkedString::String("---".to_string());
     let array = Itertools::intersperse(array, separator).collect();
 

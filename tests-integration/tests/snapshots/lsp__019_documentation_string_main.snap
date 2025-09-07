@@ -77,3 +77,31 @@ Line 1
 Line 2
 
 Line 3
+
+
+Hover at Position { line: 60, character: 6 }
+
+```
+    [ valueOnly
+--    $
+```
+
+```purescript
+valueOnly :: _
+```
+---
+`valueOnly` is a `let`-bound name.
+---
+note: type information is currently not available
+
+
+Hover at Position { line: 62, character: 6 }
+
+```
+    , withSignature
+--    $
+```
+
+```purescript
+withSignature :: Int
+```

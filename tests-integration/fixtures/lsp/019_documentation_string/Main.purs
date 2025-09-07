@@ -50,3 +50,16 @@ multiLine3 = 123
 
 test6 = multiLine3
 --      $
+
+letBinding =
+  let
+    valueOnly = 123
+
+    withSignature :: Int
+    withSignature = 123
+  in
+    [ valueOnly
+--    $
+    , withSignature
+--    $
+    ]

@@ -182,32 +182,6 @@ pub fn text_range_after_annotation(root: &SyntaxNode, ptr: &SyntaxNodePtr) -> Op
     })
 }
 
-pub fn annotation_syntax_range(
-    root: &SyntaxNode,
-    ptr: SyntaxNodePtr,
-) -> (Option<TextRange>, Option<TextRange>) {
-    let Some(node) = ptr.try_to_node(root) else {
-        return (None, None);
-    };
-
-    let mut children = node.children_with_tokens().peekable();
-
-    let annotation = children
-        .next_if(|child| matches!(child.kind(), SyntaxKind::Annotation))
-        .map(|child| child.text_range());
-
-    let first = children.peek().map(|child| child.text_range());
-    let last = children.last().map(|child| child.text_range());
-
-    let syntax = first.zip(last).map(|(start, end)| {
-        let start = start.start();
-        let end = end.end();
-        TextRange::new(start, end)
-    });
-
-    (annotation, syntax)
-}
-
 #[cfg(test)]
 mod tests {
     use async_lsp::lsp_types::Position;
