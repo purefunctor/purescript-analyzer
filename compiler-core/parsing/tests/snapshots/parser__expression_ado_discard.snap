@@ -33,15 +33,15 @@ expression: "(node, errors)"
                   DoStatementDiscard@45..57
                     ExpressionApplicationChain@45..57
                       ExpressionVariable@45..52
-                        QualifiedName@45..52
-                          Annotation@45..48
-                            TEXT@45..48 "\n  "
+                        Annotation@45..48
+                          TEXT@45..48 "\n  "
+                        QualifiedName@48..52
                           LOWER@48..52 "pure"
                       ExpressionTermArgument@52..57
                         ExpressionVariable@52..57
-                          QualifiedName@52..57
-                            Annotation@52..53
-                              TEXT@52..53 " "
+                          Annotation@52..53
+                            TEXT@52..53 " "
+                          QualifiedName@53..57
                             LOWER@53..57 "unit"
                   LAYOUT_END@57..57 ""
                 Annotation@57..60

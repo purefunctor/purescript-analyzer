@@ -25,9 +25,9 @@ expression: "(node, errors)"
             EQUAL@42..43 "="
             WhereExpression@43..58
               ExpressionVariable@43..58
-                QualifiedName@43..58
-                  Annotation@43..44
-                    TEXT@43..44 " "
+                Annotation@43..44
+                  TEXT@43..44 " "
+                QualifiedName@44..58
                   Qualifier@44..54
                     TEXT@44..54 "Data.List."
                   LOWER@54..58 "head"
@@ -42,9 +42,9 @@ expression: "(node, errors)"
             EQUAL@68..69 "="
             WhereExpression@69..84
               ExpressionConstructor@69..84
-                QualifiedName@69..84
-                  Annotation@69..70
-                    TEXT@69..70 " "
+                Annotation@69..70
+                  TEXT@69..70 " "
+                QualifiedName@70..84
                   Qualifier@70..80
                     TEXT@70..80 "Data.List."
                   UPPER@80..84 "Cons"
@@ -59,9 +59,9 @@ expression: "(node, errors)"
             EQUAL@94..95 "="
             WhereExpression@95..109
               ExpressionOperatorName@95..109
-                QualifiedName@95..109
-                  Annotation@95..96
-                    TEXT@95..96 " "
+                Annotation@95..96
+                  TEXT@95..96 " "
+                QualifiedName@96..109
                   Qualifier@96..106
                     TEXT@96..106 "Data.List."
                   OPERATOR_NAME@106..109 "(:)"

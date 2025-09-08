@@ -51,9 +51,9 @@ expression: "(node, errors)"
                   LOWER@71..72 "x"
                 BinderOperatorPair@72..76
                   TermOperator@72..74
-                    QualifiedName@72..74
-                      Annotation@72..73
-                        TEXT@72..73 " "
+                    Annotation@72..73
+                      TEXT@72..73 " "
+                    QualifiedName@73..74
                       OPERATOR@73..74 "+"
                   BinderVariable@74..76
                     Annotation@74..75

@@ -42,9 +42,9 @@ expression: "(node, errors)"
                   TEXT@49..50 " "
                 LEFT_ARROW@50..52 "<-"
                 ExpressionVariable@52..54
-                  QualifiedName@52..54
-                    Annotation@52..53
-                      TEXT@52..53 " "
+                  Annotation@52..53
+                    TEXT@52..53 " "
+                  QualifiedName@53..54
                     LOWER@53..54 "a"
               Annotation@54..57
                 TEXT@54..57 "\n  "
@@ -58,9 +58,9 @@ expression: "(node, errors)"
                   TEXT@60..61 " "
                 LEFT_ARROW@61..63 "<-"
                 ExpressionVariable@63..65
-                  QualifiedName@63..65
-                    Annotation@63..64
-                      TEXT@63..64 " "
+                  Annotation@63..64
+                    TEXT@63..64 " "
+                  QualifiedName@64..65
                     LOWER@64..65 "b"
               Annotation@65..69
                 TEXT@65..69 " \n  "
@@ -68,29 +68,29 @@ expression: "(node, errors)"
               PatternGuardExpression@70..77
                 ExpressionOperatorChain@70..77
                   ExpressionVariable@70..72
-                    QualifiedName@70..72
-                      Annotation@70..71
-                        TEXT@70..71 " "
+                    Annotation@70..71
+                      TEXT@70..71 " "
+                    QualifiedName@71..72
                       LOWER@71..72 "c"
                   ExpressionOperatorPair@72..77
                     TermOperator@72..75
-                      QualifiedName@72..75
-                        Annotation@72..73
-                          TEXT@72..73 " "
+                      Annotation@72..73
+                        TEXT@72..73 " "
+                      QualifiedName@73..75
                         OPERATOR@73..75 "<<"
                     ExpressionVariable@75..77
-                      QualifiedName@75..77
-                        Annotation@75..76
-                          TEXT@75..76 " "
+                      Annotation@75..76
+                        TEXT@75..76 " "
+                      QualifiedName@76..77
                         LOWER@76..77 "d"
               Annotation@77..78
                 TEXT@77..78 " "
               EQUAL@78..79 "="
               WhereExpression@79..101
                 ExpressionVariable@79..81
-                  QualifiedName@79..81
-                    Annotation@79..80
-                      TEXT@79..80 " "
+                  Annotation@79..80
+                    TEXT@79..80 " "
+                  QualifiedName@80..81
                     LOWER@80..81 "e"
                 Annotation@81..84
                   TEXT@81..84 "\n  "
@@ -108,20 +108,20 @@ expression: "(node, errors)"
                       WhereExpression@95..101
                         ExpressionOperatorChain@95..101
                           ExpressionVariable@95..97
-                            QualifiedName@95..97
-                              Annotation@95..96
-                                TEXT@95..96 " "
+                            Annotation@95..96
+                              TEXT@95..96 " "
+                            QualifiedName@96..97
                               LOWER@96..97 "c"
                           ExpressionOperatorPair@97..101
                             TermOperator@97..99
-                              QualifiedName@97..99
-                                Annotation@97..98
-                                  TEXT@97..98 " "
+                              Annotation@97..98
+                                TEXT@97..98 " "
+                              QualifiedName@98..99
                                 OPERATOR@98..99 "+"
                             ExpressionVariable@99..101
-                              QualifiedName@99..101
-                                Annotation@99..100
-                                  TEXT@99..100 " "
+                              Annotation@99..100
+                                TEXT@99..100 " "
+                              QualifiedName@100..101
                                 LOWER@100..101 "d"
                   LAYOUT_END@101..101 ""
       LAYOUT_END@101..101 ""

@@ -55,9 +55,9 @@ expression: "(node, errors)"
                   TEXT@57..60 "\n  "
                 IN@60..62 "in"
                 ExpressionVariable@62..67
-                  QualifiedName@62..67
-                    Annotation@62..63
-                      TEXT@62..63 " "
+                  Annotation@62..63
+                    TEXT@62..63 " "
+                  QualifiedName@63..67
                     LOWER@63..67 "life"
       LAYOUT_END@67..67 ""
       Annotation@67..68

@@ -39,9 +39,9 @@ expression: "(node, errors)"
                           LOWER@49..50 "a"
                         BinderOperatorPair@50..55
                           TermOperator@50..53
-                            QualifiedName@50..53
-                              Annotation@50..51
-                                TEXT@50..51 " "
+                            Annotation@50..51
+                              TEXT@50..51 " "
+                            QualifiedName@51..53
                               OPERATOR@51..53 "/\\"
                           BinderVariable@53..55
                             Annotation@53..54
@@ -52,9 +52,9 @@ expression: "(node, errors)"
                       DOUBLE_COLON@56..58 "::"
                       TypeApplicationChain@58..68
                         TypeConstructor@58..64
-                          QualifiedName@58..64
-                            Annotation@58..59
-                              TEXT@58..59 " "
+                          Annotation@58..59
+                            TEXT@58..59 " "
+                          QualifiedName@59..64
                             UPPER@59..64 "Tuple"
                         TypeVariable@64..66
                           Annotation@64..65
@@ -69,21 +69,21 @@ expression: "(node, errors)"
                     LEFT_ARROW@69..71 "<-"
                     ExpressionApplicationChain@71..81
                       ExpressionConstructor@71..77
-                        QualifiedName@71..77
-                          Annotation@71..72
-                            TEXT@71..72 " "
+                        Annotation@71..72
+                          TEXT@71..72 " "
+                        QualifiedName@72..77
                           UPPER@72..77 "Tuple"
                       ExpressionTermArgument@77..79
                         ExpressionVariable@77..79
-                          QualifiedName@77..79
-                            Annotation@77..78
-                              TEXT@77..78 " "
+                          Annotation@77..78
+                            TEXT@77..78 " "
+                          QualifiedName@78..79
                             LOWER@78..79 "a"
                       ExpressionTermArgument@79..81
                         ExpressionVariable@79..81
-                          QualifiedName@79..81
-                            Annotation@79..80
-                              TEXT@79..80 " "
+                          Annotation@79..80
+                            TEXT@79..80 " "
+                          QualifiedName@80..81
                             LOWER@80..81 "b"
                   LAYOUT_SEPARATOR@81..81 ""
                   DoStatementLet@81..111
@@ -100,9 +100,9 @@ expression: "(node, errors)"
                             LOWER@93..94 "a"
                           BinderOperatorPair@94..99
                             TermOperator@94..97
-                              QualifiedName@94..97
-                                Annotation@94..95
-                                  TEXT@94..95 " "
+                              Annotation@94..95
+                                TEXT@94..95 " "
+                              QualifiedName@95..97
                                 OPERATOR@95..97 "/\\"
                             BinderVariable@97..99
                               Annotation@97..98
@@ -114,30 +114,30 @@ expression: "(node, errors)"
                         WhereExpression@101..111
                           ExpressionApplicationChain@101..111
                             ExpressionConstructor@101..107
-                              QualifiedName@101..107
-                                Annotation@101..102
-                                  TEXT@101..102 " "
+                              Annotation@101..102
+                                TEXT@101..102 " "
+                              QualifiedName@102..107
                                 UPPER@102..107 "Tuple"
                             ExpressionTermArgument@107..109
                               ExpressionVariable@107..109
-                                QualifiedName@107..109
-                                  Annotation@107..108
-                                    TEXT@107..108 " "
+                                Annotation@107..108
+                                  TEXT@107..108 " "
+                                QualifiedName@108..109
                                   LOWER@108..109 "a"
                             ExpressionTermArgument@109..111
                               ExpressionVariable@109..111
-                                QualifiedName@109..111
-                                  Annotation@109..110
-                                    TEXT@109..110 " "
+                                Annotation@109..110
+                                  TEXT@109..110 " "
+                                QualifiedName@110..111
                                   LOWER@110..111 "b"
                       LAYOUT_END@111..111 ""
                   LAYOUT_SEPARATOR@111..111 ""
                   DoStatementDiscard@111..127
                     ExpressionApplicationChain@111..127
                       ExpressionVariable@111..118
-                        QualifiedName@111..118
-                          Annotation@111..114
-                            TEXT@111..114 "\n  "
+                        Annotation@111..114
+                          TEXT@111..114 "\n  "
+                        QualifiedName@114..118
                           LOWER@114..118 "pure"
                       ExpressionTermArgument@118..127
                         ExpressionRecord@118..127

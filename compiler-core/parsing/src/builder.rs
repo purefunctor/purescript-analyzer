@@ -9,7 +9,8 @@ use crate::{ParseError, ParsedModule};
 #[derive(Debug)]
 pub(crate) enum Output {
     Start { kind: SyntaxKind },
-    Prefix,
+    Annotate,
+    Qualify,
     Token { kind: SyntaxKind },
     Error { message: Arc<str> },
     Finish,
@@ -18,7 +19,8 @@ pub(crate) enum Output {
 struct Builder<'l, 's> {
     lexed: &'l Lexed<'s>,
     index: usize,
-    prefixed: bool,
+    annotated: bool,
+    qualified: bool,
     builder: GreenNodeBuilder<'static>,
     errors: Vec<ParseError>,
 }
@@ -26,10 +28,11 @@ struct Builder<'l, 's> {
 impl<'l, 's> Builder<'l, 's> {
     fn new(lexed: &'l Lexed<'s>) -> Builder<'l, 's> {
         let index = 0;
-        let prefixed = false;
+        let annotated = false;
+        let qualified = false;
         let builder = GreenNodeBuilder::new();
         let errors = vec![];
-        Builder { lexed, index, prefixed, builder, errors }
+        Builder { lexed, index, annotated, qualified, builder, errors }
     }
 
     fn build(self) -> (ParsedModule, Vec<ParseError>) {
@@ -43,20 +46,28 @@ impl<'l, 's> Builder<'l, 's> {
         }
     }
 
-    fn prefix(&mut self) {
-        if let Some(annotation) = self.lexed.annotation(self.index) {
+    fn annotate(&mut self) {
+        if let Some(annotation) = self.lexed.annotation(self.index)
+            && !self.annotated
+        {
             self.builder.start_node(SyntaxKind::Annotation.into());
             self.builder.token(SyntaxKind::TEXT.into(), annotation);
             self.builder.finish_node();
         }
 
-        if let Some(qualifier) = self.lexed.qualifier(self.index) {
+        self.annotated = true;
+    }
+
+    fn qualify(&mut self) {
+        if let Some(qualifier) = self.lexed.qualifier(self.index)
+            && !self.qualified
+        {
             self.builder.start_node(SyntaxKind::Qualifier.into());
             self.builder.token(SyntaxKind::TEXT.into(), qualifier);
             self.builder.finish_node();
         }
 
-        self.prefixed = true;
+        self.qualified = true;
     }
 
     fn token(&mut self, kind: SyntaxKind) {
@@ -64,27 +75,13 @@ impl<'l, 's> Builder<'l, 's> {
             return self.builder.token(kind.into(), "");
         }
 
-        match self.lexed.annotation(self.index) {
-            Some(annotation) if !self.prefixed => {
-                self.builder.start_node(SyntaxKind::Annotation.into());
-                self.builder.token(SyntaxKind::TEXT.into(), annotation);
-                self.builder.finish_node();
-            }
-            _ => (),
-        }
+        self.annotate();
 
         if let Some(message) = self.lexed.error(self.index) {
             self.error(message);
         }
 
-        match self.lexed.qualifier(self.index) {
-            Some(qualifier) if !self.prefixed => {
-                self.builder.start_node(SyntaxKind::Qualifier.into());
-                self.builder.token(SyntaxKind::TEXT.into(), qualifier);
-                self.builder.finish_node();
-            }
-            _ => (),
-        }
+        self.qualify();
 
         if !matches!(kind, SyntaxKind::ERROR) {
             let text = self.lexed.text(self.index);
@@ -92,7 +89,8 @@ impl<'l, 's> Builder<'l, 's> {
         }
 
         self.index += 1;
-        self.prefixed = false;
+        self.annotated = false;
+        self.qualified = false;
     }
 
     fn error(&mut self, message: impl Into<Arc<str>>) {
@@ -115,7 +113,8 @@ pub(crate) fn build(lexed: &Lexed<'_>, output: Vec<Output>) -> (ParsedModule, Ve
     for event in output {
         match event {
             Output::Start { kind } => builder.start(kind),
-            Output::Prefix => builder.prefix(),
+            Output::Annotate => builder.annotate(),
+            Output::Qualify => builder.qualify(),
             Output::Token { kind } => builder.token(kind),
             Output::Error { message } => builder.error(message),
             Output::Finish => builder.finish(),

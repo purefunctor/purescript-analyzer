@@ -30,9 +30,9 @@ expression: "(node, errors)"
               TEXT@44..45 " "
             UPPER@45..49 "Year"
             TypeConstructor@49..53
-              QualifiedName@49..53
-                Annotation@49..50
-                  TEXT@49..50 " "
+              Annotation@49..50
+                TEXT@49..50 " "
+              QualifiedName@50..53
                 UPPER@50..53 "Int"
       LAYOUT_END@53..53 ""
       Annotation@53..54

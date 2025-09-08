@@ -26,9 +26,9 @@ expression: "(node, errors)"
             TEXT@43..44 " "
           DOUBLE_COLON@44..46 "::"
           TypeConstructor@46..51
-            QualifiedName@46..51
-              Annotation@46..47
-                TEXT@46..47 " "
+            Annotation@46..47
+              TEXT@46..47 " "
+            QualifiedName@47..51
               UPPER@47..51 "Type"
       LAYOUT_END@51..51 ""
       Annotation@51..52

@@ -25,9 +25,9 @@ expression: "(node, errors)"
             EQUAL@34..35 "="
             WhereExpression@35..40
               ExpressionVariable@35..40
-                QualifiedName@35..40
-                  Annotation@35..36
-                    TEXT@35..36 " "
+                Annotation@35..36
+                  TEXT@35..36 " "
+                QualifiedName@36..40
                   LOWER@36..40 "head"
         LAYOUT_SEPARATOR@40..40 ""
         ValueEquation@40..52
@@ -40,9 +40,9 @@ expression: "(node, errors)"
             EQUAL@46..47 "="
             WhereExpression@47..52
               ExpressionConstructor@47..52
-                QualifiedName@47..52
-                  Annotation@47..48
-                    TEXT@47..48 " "
+                Annotation@47..48
+                  TEXT@47..48 " "
+                QualifiedName@48..52
                   UPPER@48..52 "Cons"
         LAYOUT_SEPARATOR@52..52 ""
         ValueEquation@52..63
@@ -55,9 +55,9 @@ expression: "(node, errors)"
             EQUAL@58..59 "="
             WhereExpression@59..63
               ExpressionOperatorName@59..63
-                QualifiedName@59..63
-                  Annotation@59..60
-                    TEXT@59..60 " "
+                Annotation@59..60
+                  TEXT@59..60 " "
+                QualifiedName@60..63
                   OPERATOR_NAME@60..63 "(:)"
       LAYOUT_END@63..63 ""
       Annotation@63..64

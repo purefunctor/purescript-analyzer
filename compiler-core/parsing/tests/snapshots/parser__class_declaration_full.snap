@@ -22,9 +22,9 @@ expression: "(node, errors)"
           ClassConstraints@40..58
             TypeApplicationChain@40..55
               TypeConstructor@40..51
-                QualifiedName@40..51
-                  Annotation@40..41
-                    TEXT@40..41 " "
+                Annotation@40..41
+                  TEXT@40..41 " "
+                QualifiedName@41..51
                   UPPER@41..51 "TypeEquals"
               TypeVariable@51..53
                 Annotation@51..52
@@ -123,9 +123,9 @@ expression: "(node, errors)"
             COMMA@137..138 ","
             TypeApplicationChain@138..153
               TypeConstructor@138..149
-                QualifiedName@138..149
-                  Annotation@138..139
-                    TEXT@138..139 " "
+                Annotation@138..139
+                  TEXT@138..139 " "
+                QualifiedName@139..149
                   UPPER@139..149 "TypeEquals"
               TypeVariable@149..151
                 Annotation@149..150

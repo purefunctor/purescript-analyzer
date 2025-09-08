@@ -36,29 +36,29 @@ expression: "(node, errors)"
               PatternGuardExpression@42..48
                 ExpressionOperatorChain@42..48
                   ExpressionVariable@42..44
-                    QualifiedName@42..44
-                      Annotation@42..43
-                        TEXT@42..43 " "
+                    Annotation@42..43
+                      TEXT@42..43 " "
+                    QualifiedName@43..44
                       LOWER@43..44 "a"
                   ExpressionOperatorPair@44..48
                     TermOperator@44..46
-                      QualifiedName@44..46
-                        Annotation@44..45
-                          TEXT@44..45 " "
+                      Annotation@44..45
+                        TEXT@44..45 " "
+                      QualifiedName@45..46
                         OPERATOR@45..46 "<"
                     ExpressionVariable@46..48
-                      QualifiedName@46..48
-                        Annotation@46..47
-                          TEXT@46..47 " "
+                      Annotation@46..47
+                        TEXT@46..47 " "
+                      QualifiedName@47..48
                         LOWER@47..48 "b"
               Annotation@48..49
                 TEXT@48..49 " "
               EQUAL@49..50 "="
               WhereExpression@50..52
                 ExpressionVariable@50..52
-                  QualifiedName@50..52
-                    Annotation@50..51
-                      TEXT@50..51 " "
+                  Annotation@50..51
+                    TEXT@50..51 " "
+                  QualifiedName@51..52
                     LOWER@51..52 "a"
             PatternGuarded@52..66
               Annotation@52..55
@@ -67,29 +67,29 @@ expression: "(node, errors)"
               PatternGuardExpression@56..62
                 ExpressionOperatorChain@56..62
                   ExpressionVariable@56..58
-                    QualifiedName@56..58
-                      Annotation@56..57
-                        TEXT@56..57 " "
+                    Annotation@56..57
+                      TEXT@56..57 " "
+                    QualifiedName@57..58
                       LOWER@57..58 "b"
                   ExpressionOperatorPair@58..62
                     TermOperator@58..60
-                      QualifiedName@58..60
-                        Annotation@58..59
-                          TEXT@58..59 " "
+                      Annotation@58..59
+                        TEXT@58..59 " "
+                      QualifiedName@59..60
                         OPERATOR@59..60 "<"
                     ExpressionVariable@60..62
-                      QualifiedName@60..62
-                        Annotation@60..61
-                          TEXT@60..61 " "
+                      Annotation@60..61
+                        TEXT@60..61 " "
+                      QualifiedName@61..62
                         LOWER@61..62 "a"
               Annotation@62..63
                 TEXT@62..63 " "
               EQUAL@63..64 "="
               WhereExpression@64..66
                 ExpressionVariable@64..66
-                  QualifiedName@64..66
-                    Annotation@64..65
-                      TEXT@64..65 " "
+                  Annotation@64..65
+                    TEXT@64..65 " "
+                  QualifiedName@65..66
                     LOWER@65..66 "b"
       LAYOUT_END@66..66 ""
       Annotation@66..67

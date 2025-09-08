@@ -26,9 +26,9 @@ expression: "(node, errors)"
             WhereExpression@45..56
               ExpressionRecordAccess@45..56
                 ExpressionVariable@45..52
-                  QualifiedName@45..52
-                    Annotation@45..46
-                      TEXT@45..46 " "
+                  Annotation@45..46
+                    TEXT@45..46 " "
+                  QualifiedName@46..52
                     LOWER@46..52 "record"
                 PERIOD@52..53 "."
                 LabelName@53..56
@@ -45,9 +45,9 @@ expression: "(node, errors)"
             WhereExpression@65..80
               ExpressionRecordAccess@65..80
                 ExpressionVariable@65..72
-                  QualifiedName@65..72
-                    Annotation@65..66
-                      TEXT@65..66 " "
+                  Annotation@65..66
+                    TEXT@65..66 " "
+                  QualifiedName@66..72
                     LOWER@66..72 "record"
                 PERIOD@72..73 "."
                 LabelName@73..76
@@ -67,9 +67,9 @@ expression: "(node, errors)"
             WhereExpression@91..105
               ExpressionRecordAccess@91..105
                 ExpressionVariable@91..98
-                  QualifiedName@91..98
-                    Annotation@91..92
-                      TEXT@91..92 " "
+                  Annotation@91..92
+                    TEXT@91..92 " "
+                  QualifiedName@92..98
                     LOWER@92..98 "record"
                 PERIOD@98..99 "."
                 LabelName@99..105
@@ -86,9 +86,9 @@ expression: "(node, errors)"
             WhereExpression@115..136
               ExpressionRecordAccess@115..136
                 ExpressionVariable@115..122
-                  QualifiedName@115..122
-                    Annotation@115..116
-                      TEXT@115..116 " "
+                  Annotation@115..116
+                    TEXT@115..116 " "
+                  QualifiedName@116..122
                     LOWER@116..122 "record"
                 PERIOD@122..123 "."
                 LabelName@123..129
@@ -108,9 +108,9 @@ expression: "(node, errors)"
             WhereExpression@146..161
               ExpressionRecordAccess@146..161
                 ExpressionVariable@146..153
-                  QualifiedName@146..153
-                    Annotation@146..147
-                      TEXT@146..147 " "
+                  Annotation@146..147
+                    TEXT@146..147 " "
+                  QualifiedName@147..153
                     LOWER@147..153 "record"
                 PERIOD@153..154 "."
                 LabelName@154..161
@@ -127,9 +127,9 @@ expression: "(node, errors)"
             WhereExpression@170..193
               ExpressionRecordAccess@170..193
                 ExpressionVariable@170..177
-                  QualifiedName@170..177
-                    Annotation@170..171
-                      TEXT@170..171 " "
+                  Annotation@170..171
+                    TEXT@170..171 " "
+                  QualifiedName@171..177
                     LOWER@171..177 "record"
                 PERIOD@177..178 "."
                 LabelName@178..185
@@ -149,9 +149,9 @@ expression: "(node, errors)"
             WhereExpression@207..226
               ExpressionRecordAccess@207..226
                 ExpressionVariable@207..214
-                  QualifiedName@207..214
-                    Annotation@207..208
-                      TEXT@207..208 " "
+                  Annotation@207..208
+                    TEXT@207..208 " "
+                  QualifiedName@208..214
                     LOWER@208..214 "record"
                 PERIOD@214..215 "."
                 LabelName@215..226
@@ -168,9 +168,9 @@ expression: "(node, errors)"
             WhereExpression@239..272
               ExpressionRecordAccess@239..272
                 ExpressionVariable@239..246
-                  QualifiedName@239..246
-                    Annotation@239..240
-                      TEXT@239..240 " "
+                  Annotation@239..240
+                    TEXT@239..240 " "
+                  QualifiedName@240..246
                     LOWER@240..246 "record"
                 PERIOD@246..247 "."
                 LabelName@247..258

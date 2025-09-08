@@ -26,9 +26,9 @@ expression: "(node, errors)"
             TEXT@35..36 " "
           DOUBLE_COLON@36..38 "::"
           TypeConstructor@38..43
-            QualifiedName@38..43
-              Annotation@38..39
-                TEXT@38..39 " "
+            Annotation@38..39
+              TEXT@38..39 " "
+            QualifiedName@39..43
               UPPER@39..43 "Type"
         LAYOUT_SEPARATOR@43..43 ""
         TypeSynonymEquation@43..59
@@ -42,9 +42,9 @@ expression: "(node, errors)"
             TEXT@53..54 " "
           EQUAL@54..55 "="
           TypeConstructor@55..59
-            QualifiedName@55..59
-              Annotation@55..56
-                TEXT@55..56 " "
+            Annotation@55..56
+              TEXT@55..56 " "
+            QualifiedName@56..59
               UPPER@56..59 "Int"
         LAYOUT_SEPARATOR@59..59 ""
         TypeSynonymSignature@59..90
@@ -59,17 +59,17 @@ expression: "(node, errors)"
           DOUBLE_COLON@75..77 "::"
           TypeArrow@77..90
             TypeConstructor@77..82
-              QualifiedName@77..82
-                Annotation@77..78
-                  TEXT@77..78 " "
+              Annotation@77..78
+                TEXT@77..78 " "
+              QualifiedName@78..82
                 UPPER@78..82 "Type"
             Annotation@82..83
               TEXT@82..83 " "
             RIGHT_ARROW@83..85 "->"
             TypeConstructor@85..90
-              QualifiedName@85..90
-                Annotation@85..86
-                  TEXT@85..86 " "
+              Annotation@85..86
+                TEXT@85..86 " "
+              QualifiedName@86..90
                 UPPER@86..90 "Type"
         LAYOUT_SEPARATOR@90..90 ""
         TypeSynonymEquation@90..110

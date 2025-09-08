@@ -35,15 +35,15 @@ expression: "(node, errors)"
                   DoStatementDiscard@51..63
                     ExpressionApplicationChain@51..63
                       ExpressionVariable@51..58
-                        QualifiedName@51..58
-                          Annotation@51..54
-                            TEXT@51..54 "\n  "
+                        Annotation@51..54
+                          TEXT@51..54 "\n  "
+                        QualifiedName@54..58
                           LOWER@54..58 "pure"
                       ExpressionTermArgument@58..63
                         ExpressionVariable@58..63
-                          QualifiedName@58..63
-                            Annotation@58..59
-                              TEXT@58..59 " "
+                          Annotation@58..59
+                            TEXT@58..59 " "
+                          QualifiedName@59..63
                             LOWER@59..63 "unit"
                   LAYOUT_END@63..63 ""
         LAYOUT_SEPARATOR@63..63 ""
@@ -67,24 +67,24 @@ expression: "(node, errors)"
                   DoStatementDiscard@81..93
                     ExpressionApplicationChain@81..93
                       ExpressionVariable@81..88
-                        QualifiedName@81..88
-                          Annotation@81..84
-                            TEXT@81..84 "\n  "
+                        Annotation@81..84
+                          TEXT@81..84 "\n  "
+                        QualifiedName@84..88
                           LOWER@84..88 "pure"
                       ExpressionTermArgument@88..93
                         ExpressionVariable@88..93
-                          QualifiedName@88..93
-                            Annotation@88..89
-                              TEXT@88..89 " "
+                          Annotation@88..89
+                            TEXT@88..89 " "
+                          QualifiedName@89..93
                             LOWER@89..93 "unit"
                   LAYOUT_END@93..93 ""
                 Annotation@93..96
                   TEXT@93..96 "\n  "
                 IN@96..98 "in"
                 ExpressionVariable@98..103
-                  QualifiedName@98..103
-                    Annotation@98..99
-                      TEXT@98..99 " "
+                  Annotation@98..99
+                    TEXT@98..99 " "
+                  QualifiedName@99..103
                     LOWER@99..103 "unit"
       LAYOUT_END@103..103 ""
       Annotation@103..104

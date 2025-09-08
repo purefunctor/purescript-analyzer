@@ -27,17 +27,17 @@ expression: "(node, errors)"
           DOUBLE_COLON@39..41 "::"
           TypeArrow@41..54
             TypeConstructor@41..46
-              QualifiedName@41..46
-                Annotation@41..42
-                  TEXT@41..42 " "
+              Annotation@41..42
+                TEXT@41..42 " "
+              QualifiedName@42..46
                 UPPER@42..46 "Type"
             Annotation@46..47
               TEXT@46..47 " "
             RIGHT_ARROW@47..49 "->"
             TypeConstructor@49..54
-              QualifiedName@49..54
-                Annotation@49..50
-                  TEXT@49..50 " "
+              Annotation@49..50
+                TEXT@49..50 " "
+              QualifiedName@50..54
                 UPPER@50..54 "Type"
       LAYOUT_END@54..54 ""
       Annotation@54..55

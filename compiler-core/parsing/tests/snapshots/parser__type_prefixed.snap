@@ -23,9 +23,9 @@ expression: "(node, errors)"
             TEXT@35..36 " "
           DOUBLE_COLON@36..38 "::"
           TypeConstructor@38..55
-            QualifiedName@38..55
-              Annotation@38..39
-                TEXT@38..39 " "
+            Annotation@38..39
+              TEXT@38..39 " "
+            QualifiedName@39..55
               Qualifier@39..50
                 TEXT@39..50 "Data.Tuple."
               UPPER@50..55 "Tuple"
@@ -38,9 +38,9 @@ expression: "(node, errors)"
             TEXT@64..65 " "
           DOUBLE_COLON@65..67 "::"
           TypeOperatorName@67..89
-            QualifiedName@67..89
-              Annotation@67..68
-                TEXT@67..68 " "
+            Annotation@67..68
+              TEXT@67..68 " "
+            QualifiedName@68..89
               Qualifier@68..86
                 TEXT@68..86 "Data.Tuple.Nested."
               OPERATOR_NAME@86..89 "(/)"

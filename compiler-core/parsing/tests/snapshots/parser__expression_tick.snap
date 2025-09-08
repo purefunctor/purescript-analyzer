@@ -78,9 +78,9 @@ expression: "(node, errors)"
                     ExpressionOperatorChain@66..71
                       ExpressionInteger@66..67
                         INTEGER@66..67 "2"
-                      QualifiedName@67..69
-                        Annotation@67..68
-                          TEXT@67..68 " "
+                      Annotation@67..68
+                        TEXT@67..68 " "
+                      QualifiedName@68..69
                         OPERATOR@68..69 "+"
                       ExpressionInteger@69..71
                         Annotation@69..70
@@ -99,9 +99,9 @@ expression: "(node, errors)"
                     ExpressionOperatorChain@76..81
                       ExpressionInteger@76..77
                         INTEGER@76..77 "5"
-                      QualifiedName@77..79
-                        Annotation@77..78
-                          TEXT@77..78 " "
+                      Annotation@77..78
+                        TEXT@77..78 " "
+                      QualifiedName@78..79
                         OPERATOR@78..79 "+"
                       ExpressionInteger@79..81
                         Annotation@79..80

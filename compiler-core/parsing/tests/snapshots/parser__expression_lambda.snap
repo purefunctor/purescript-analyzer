@@ -35,9 +35,9 @@ expression: "(node, errors)"
                   TEXT@42..43 " "
                 RIGHT_ARROW@43..45 "->"
                 ExpressionVariable@45..47
-                  QualifiedName@45..47
-                    Annotation@45..46
-                      TEXT@45..46 " "
+                  Annotation@45..46
+                    TEXT@45..46 " "
+                  QualifiedName@46..47
                     LOWER@46..47 "x"
         LAYOUT_SEPARATOR@47..47 ""
         ValueEquation@47..68
@@ -65,15 +65,15 @@ expression: "(node, errors)"
                 RIGHT_ARROW@62..64 "->"
                 ExpressionApplicationChain@64..68
                   ExpressionVariable@64..66
-                    QualifiedName@64..66
-                      Annotation@64..65
-                        TEXT@64..65 " "
+                    Annotation@64..65
+                      TEXT@64..65 " "
+                    QualifiedName@65..66
                       LOWER@65..66 "f"
                   ExpressionTermArgument@66..68
                     ExpressionVariable@66..68
-                      QualifiedName@66..68
-                        Annotation@66..67
-                          TEXT@66..67 " "
+                      Annotation@66..67
+                        TEXT@66..67 " "
+                      QualifiedName@67..68
                         LOWER@67..68 "a"
       LAYOUT_END@68..68 ""
       Annotation@68..69

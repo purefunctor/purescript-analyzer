@@ -21,18 +21,18 @@ expression: "(node, errors)"
               TEXT@29..31 "\n\n"
             INSTANCE@31..39 "instance"
             InstanceHead@39..55
-              QualifiedName@39..49
-                Annotation@39..40
-                  TEXT@39..40 " "
+              Annotation@39..40
+                TEXT@39..40 " "
+              QualifiedName@40..49
                 UPPER@40..49 "Serialise"
               TypeVariable@49..51
                 Annotation@49..50
                   TEXT@49..50 " "
                 LOWER@50..51 "s"
               TypeConstructor@51..55
-                QualifiedName@51..55
-                  Annotation@51..52
-                    TEXT@51..52 " "
+                Annotation@51..52
+                  TEXT@51..52 " "
+                QualifiedName@52..55
                   UPPER@52..55 "Int"
         LAYOUT_SEPARATOR@55..55 ""
         InstanceChain@55..83
@@ -41,18 +41,18 @@ expression: "(node, errors)"
               TEXT@55..56 "\n"
             INSTANCE@56..64 "instance"
             InstanceHead@64..83
-              QualifiedName@64..74
-                Annotation@64..65
-                  TEXT@64..65 " "
+              Annotation@64..65
+                TEXT@64..65 " "
+              QualifiedName@65..74
                 UPPER@65..74 "Serialise"
               TypeVariable@74..76
                 Annotation@74..75
                   TEXT@74..75 " "
                 LOWER@75..76 "s"
               TypeConstructor@76..83
-                QualifiedName@76..83
-                  Annotation@76..77
-                    TEXT@76..77 " "
+                Annotation@76..77
+                  TEXT@76..77 " "
+                QualifiedName@77..83
                   UPPER@77..83 "Number"
       LAYOUT_END@83..83 ""
       Annotation@83..84

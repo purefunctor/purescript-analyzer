@@ -24,17 +24,17 @@ expression: "(node, errors)"
           DOUBLE_COLON@42..44 "::"
           TypeConstrained@44..51
             TypeConstructor@44..46
-              QualifiedName@44..46
-                Annotation@44..45
-                  TEXT@44..45 " "
+              Annotation@44..45
+                TEXT@44..45 " "
+              QualifiedName@45..46
                 UPPER@45..46 "A"
             Annotation@46..47
               TEXT@46..47 " "
             RIGHT_THICK_ARROW@47..49 "=>"
             TypeConstructor@49..51
-              QualifiedName@49..51
-                Annotation@49..50
-                  TEXT@49..50 " "
+              Annotation@49..50
+                TEXT@49..50 " "
+              QualifiedName@50..51
                 UPPER@50..51 "B"
         LAYOUT_SEPARATOR@51..51 ""
         ValueSignature@51..78
@@ -46,26 +46,26 @@ expression: "(node, errors)"
           DOUBLE_COLON@64..66 "::"
           TypeConstrained@66..78
             TypeConstructor@66..68
-              QualifiedName@66..68
-                Annotation@66..67
-                  TEXT@66..67 " "
+              Annotation@66..67
+                TEXT@66..67 " "
+              QualifiedName@67..68
                 UPPER@67..68 "A"
             Annotation@68..69
               TEXT@68..69 " "
             RIGHT_THICK_ARROW@69..71 "=>"
             TypeConstrained@71..78
               TypeConstructor@71..73
-                QualifiedName@71..73
-                  Annotation@71..72
-                    TEXT@71..72 " "
+                Annotation@71..72
+                  TEXT@71..72 " "
+                QualifiedName@72..73
                   UPPER@72..73 "B"
               Annotation@73..74
                 TEXT@73..74 " "
               RIGHT_THICK_ARROW@74..76 "=>"
               TypeConstructor@76..78
-                QualifiedName@76..78
-                  Annotation@76..77
-                    TEXT@76..77 " "
+                Annotation@76..77
+                  TEXT@76..77 " "
+                QualifiedName@77..78
                   UPPER@77..78 "C"
       LAYOUT_END@78..78 ""
       Annotation@78..79

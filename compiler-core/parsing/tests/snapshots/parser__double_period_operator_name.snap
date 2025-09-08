@@ -65,9 +65,9 @@ expression: "(node, errors)"
             EQUAL@95..96 "="
             WhereExpression@96..101
               ExpressionOperatorName@96..101
-                QualifiedName@96..101
-                  Annotation@96..97
-                    TEXT@96..97 " "
+                Annotation@96..97
+                  TEXT@96..97 " "
+                QualifiedName@97..101
                   OPERATOR_NAME@97..101 "(..)"
         LAYOUT_SEPARATOR@101..101 ""
         ValueEquation@101..119
@@ -86,9 +86,9 @@ expression: "(node, errors)"
                   INTEGER@113..114 "1"
                 ExpressionOperatorPair@114..119
                   TermOperator@114..117
-                    QualifiedName@114..117
-                      Annotation@114..115
-                        TEXT@114..115 " "
+                    Annotation@114..115
+                      TEXT@114..115 " "
+                    QualifiedName@115..117
                       OPERATOR@115..117 ".."
                   ExpressionInteger@117..119
                     Annotation@117..118

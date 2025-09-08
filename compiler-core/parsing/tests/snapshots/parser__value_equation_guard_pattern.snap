@@ -37,9 +37,9 @@ expression: "(node, errors)"
                     LOWER@47..48 "a"
                   BinderOperatorPair@48..53
                     TermOperator@48..51
-                      QualifiedName@48..51
-                        Annotation@48..49
-                          TEXT@48..49 " "
+                      Annotation@48..49
+                        TEXT@48..49 " "
+                      QualifiedName@49..51
                         OPERATOR@49..51 "/\\"
                     BinderVariable@51..53
                       Annotation@51..52
@@ -49,9 +49,9 @@ expression: "(node, errors)"
                   TEXT@53..54 " "
                 LEFT_ARROW@54..56 "<-"
                 ExpressionVariable@56..58
-                  QualifiedName@56..58
-                    Annotation@56..57
-                      TEXT@56..57 " "
+                  Annotation@56..57
+                    TEXT@56..57 " "
+                  QualifiedName@57..58
                     LOWER@57..58 "c"
               Annotation@58..59
                 TEXT@58..59 " "

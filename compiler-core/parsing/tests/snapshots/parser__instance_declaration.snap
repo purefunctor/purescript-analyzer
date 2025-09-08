@@ -21,14 +21,14 @@ expression: "(node, errors)"
               TEXT@32..34 "\n\n"
             INSTANCE@34..42 "instance"
             InstanceHead@42..56
-              QualifiedName@42..50
-                Annotation@42..43
-                  TEXT@42..43 " "
+              Annotation@42..43
+                TEXT@42..43 " "
+              QualifiedName@43..50
                 UPPER@43..50 "Functor"
               TypeConstructor@50..56
-                QualifiedName@50..56
-                  Annotation@50..51
-                    TEXT@50..51 " "
+                Annotation@50..51
+                  TEXT@50..51 " "
+                QualifiedName@51..56
                   UPPER@51..56 "Maybe"
             Annotation@56..57
               TEXT@56..57 " "
@@ -77,9 +77,9 @@ expression: "(node, errors)"
                     TypeArrow@95..114
                       TypeApplicationChain@95..103
                         TypeConstructor@95..101
-                          QualifiedName@95..101
-                            Annotation@95..96
-                              TEXT@95..96 " "
+                          Annotation@95..96
+                            TEXT@95..96 " "
+                          QualifiedName@96..101
                             UPPER@96..101 "Maybe"
                         TypeVariable@101..103
                           Annotation@101..102
@@ -90,9 +90,9 @@ expression: "(node, errors)"
                       RIGHT_ARROW@104..106 "->"
                       TypeApplicationChain@106..114
                         TypeConstructor@106..112
-                          QualifiedName@106..112
-                            Annotation@106..107
-                              TEXT@106..107 " "
+                          Annotation@106..107
+                            TEXT@106..107 " "
+                          QualifiedName@107..112
                             UPPER@107..112 "Maybe"
                         TypeVariable@112..114
                           Annotation@112..113
@@ -127,9 +127,9 @@ expression: "(node, errors)"
                   WhereExpression@133..144
                     ExpressionApplicationChain@133..144
                       ExpressionConstructor@133..138
-                        QualifiedName@133..138
-                          Annotation@133..134
-                            TEXT@133..134 " "
+                        Annotation@133..134
+                          TEXT@133..134 " "
+                        QualifiedName@134..138
                           UPPER@134..138 "Just"
                       ExpressionTermArgument@138..144
                         ExpressionParenthesized@138..144
@@ -142,9 +142,9 @@ expression: "(node, errors)"
                                 LOWER@140..141 "f"
                             ExpressionTermArgument@141..143
                               ExpressionVariable@141..143
-                                QualifiedName@141..143
-                                  Annotation@141..142
-                                    TEXT@141..142 " "
+                                Annotation@141..142
+                                  TEXT@141..142 " "
+                                QualifiedName@142..143
                                   LOWER@142..143 "a"
                           RIGHT_PARENTHESIS@143..144 ")"
               LAYOUT_SEPARATOR@144..144 ""
@@ -158,9 +158,9 @@ expression: "(node, errors)"
                       TEXT@150..151 " "
                     LOWER@151..152 "f"
                   BinderConstructor@152..160
-                    QualifiedName@152..160
-                      Annotation@152..153
-                        TEXT@152..153 " "
+                    Annotation@152..153
+                      TEXT@152..153 " "
+                    QualifiedName@153..160
                       UPPER@153..160 "Nothing"
                 Unconditional@160..170
                   Annotation@160..161
@@ -168,9 +168,9 @@ expression: "(node, errors)"
                   EQUAL@161..162 "="
                   WhereExpression@162..170
                     ExpressionConstructor@162..170
-                      QualifiedName@162..170
-                        Annotation@162..163
-                          TEXT@162..163 " "
+                      Annotation@162..163
+                        TEXT@162..163 " "
+                      QualifiedName@163..170
                         UPPER@163..170 "Nothing"
               LAYOUT_END@170..170 ""
       LAYOUT_END@170..170 ""

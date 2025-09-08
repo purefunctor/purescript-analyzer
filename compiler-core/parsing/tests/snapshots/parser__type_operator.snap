@@ -24,31 +24,31 @@ expression: "(node, errors)"
           DOUBLE_COLON@36..38 "::"
           TypeOperatorChain@38..48
             TypeConstructor@38..40
-              QualifiedName@38..40
-                Annotation@38..39
-                  TEXT@38..39 " "
+              Annotation@38..39
+                TEXT@38..39 " "
+              QualifiedName@39..40
                 UPPER@39..40 "A"
             TypeOperatorPair@40..44
               TypeOperator@40..42
-                QualifiedName@40..42
-                  Annotation@40..41
-                    TEXT@40..41 " "
+                Annotation@40..41
+                  TEXT@40..41 " "
+                QualifiedName@41..42
                   OPERATOR@41..42 "+"
               TypeConstructor@42..44
-                QualifiedName@42..44
-                  Annotation@42..43
-                    TEXT@42..43 " "
+                Annotation@42..43
+                  TEXT@42..43 " "
+                QualifiedName@43..44
                   UPPER@43..44 "B"
             TypeOperatorPair@44..48
               TypeOperator@44..46
-                QualifiedName@44..46
-                  Annotation@44..45
-                    TEXT@44..45 " "
+                Annotation@44..45
+                  TEXT@44..45 " "
+                QualifiedName@45..46
                   OPERATOR@45..46 "+"
               TypeConstructor@46..48
-                QualifiedName@46..48
-                  Annotation@46..47
-                    TEXT@46..47 " "
+                Annotation@46..47
+                  TEXT@46..47 " "
+                QualifiedName@47..48
                   UPPER@47..48 "C"
       LAYOUT_END@48..48 ""
       Annotation@48..49

@@ -38,9 +38,9 @@ expression: "(node, errors)"
                 TEXT@50..51 " "
               DOUBLE_COLON@51..53 "::"
               TypeConstructor@53..60
-                QualifiedName@53..60
-                  Annotation@53..54
-                    TEXT@53..54 " "
+                Annotation@53..54
+                  TEXT@53..54 " "
+                QualifiedName@54..60
                   UPPER@54..60 "String"
             Annotation@60..61
               TEXT@60..61 " "
@@ -69,9 +69,9 @@ expression: "(node, errors)"
                 TEXT@83..84 " "
               DOUBLE_COLON@84..86 "::"
               TypeConstructor@86..93
-                QualifiedName@86..93
-                  Annotation@86..87
-                    TEXT@86..87 " "
+                Annotation@86..87
+                  TEXT@86..87 " "
+                QualifiedName@87..93
                   UPPER@87..93 "String"
             Annotation@93..94
               TEXT@93..94 " "
@@ -100,9 +100,9 @@ expression: "(node, errors)"
                 TEXT@115..116 " "
               DOUBLE_COLON@116..118 "::"
               TypeConstructor@118..125
-                QualifiedName@118..125
-                  Annotation@118..119
-                    TEXT@118..119 " "
+                Annotation@118..119
+                  TEXT@118..119 " "
+                QualifiedName@119..125
                   UPPER@119..125 "String"
             COMMA@125..126 ","
             TypeRowItem@126..144
@@ -114,9 +114,9 @@ expression: "(node, errors)"
                 TEXT@134..135 " "
               DOUBLE_COLON@135..137 "::"
               TypeConstructor@137..144
-                QualifiedName@137..144
-                  Annotation@137..138
-                    TEXT@137..138 " "
+                Annotation@137..138
+                  TEXT@137..138 " "
+                QualifiedName@138..144
                   UPPER@138..144 "String"
             Annotation@144..145
               TEXT@144..145 " "

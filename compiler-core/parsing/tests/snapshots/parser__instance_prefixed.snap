@@ -21,16 +21,16 @@ expression: "(node, errors)"
               TEXT@29..31 "\n\n"
             INSTANCE@31..39 "instance"
             InstanceHead@39..54
-              QualifiedName@39..50
-                Annotation@39..40
-                  TEXT@39..40 " "
+              Annotation@39..40
+                TEXT@39..40 " "
+              QualifiedName@40..50
                 Qualifier@40..48
                   TEXT@40..48 "Data.Eq."
                 UPPER@48..50 "Eq"
               TypeConstructor@50..54
-                QualifiedName@50..54
-                  Annotation@50..51
-                    TEXT@50..51 " "
+                Annotation@50..51
+                  TEXT@50..51 " "
+                QualifiedName@51..54
                   UPPER@51..54 "Int"
       LAYOUT_END@54..54 ""
       Annotation@54..55

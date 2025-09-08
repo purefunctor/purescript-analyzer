@@ -23,14 +23,14 @@ expression: "(node, errors)"
             TEXT@38..39 " "
           INSTANCE@39..47 "instance"
           InstanceHead@47..62
-            QualifiedName@47..55
-              Annotation@47..48
-                TEXT@47..48 " "
+            Annotation@47..48
+              TEXT@47..48 " "
+            QualifiedName@48..55
               UPPER@48..55 "Functor"
             TypeConstructor@55..62
-              QualifiedName@55..62
-                Annotation@55..56
-                  TEXT@55..56 " "
+              Annotation@55..56
+                TEXT@55..56 " "
+              QualifiedName@56..62
                 UPPER@56..62 "Parser"
         LAYOUT_SEPARATOR@62..62 ""
         DeriveDeclaration@62..101
@@ -44,14 +44,14 @@ expression: "(node, errors)"
             TEXT@77..78 " "
           INSTANCE@78..86 "instance"
           InstanceHead@86..101
-            QualifiedName@86..94
-              Annotation@86..87
-                TEXT@86..87 " "
+            Annotation@86..87
+              TEXT@86..87 " "
+            QualifiedName@87..94
               UPPER@87..94 "Functor"
             TypeConstructor@94..101
-              QualifiedName@94..101
-                Annotation@94..95
-                  TEXT@94..95 " "
+              Annotation@94..95
+                TEXT@94..95 " "
+              QualifiedName@95..101
                 UPPER@95..101 "Parser"
       LAYOUT_END@101..101 ""
       Annotation@101..102

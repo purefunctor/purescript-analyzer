@@ -28,14 +28,14 @@ expression: "(node, errors)"
                 TEXT@49..50 " "
               DOUBLE_COLON@50..52 "::"
             InstanceHead@52..67
-              QualifiedName@52..60
-                Annotation@52..53
-                  TEXT@52..53 " "
+              Annotation@52..53
+                TEXT@52..53 " "
+              QualifiedName@53..60
                 UPPER@53..60 "Functor"
               TypeConstructor@60..67
-                QualifiedName@60..67
-                  Annotation@60..61
-                    TEXT@60..61 " "
+                Annotation@60..61
+                  TEXT@60..61 " "
+                QualifiedName@61..67
                   UPPER@61..67 "Parser"
       LAYOUT_END@67..67 ""
       Annotation@67..68

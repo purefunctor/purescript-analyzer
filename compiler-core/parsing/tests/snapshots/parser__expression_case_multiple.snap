@@ -30,15 +30,15 @@ expression: "(node, errors)"
                 CASE@43..47 "case"
                 CaseTrunk@47..52
                   ExpressionVariable@47..49
-                    QualifiedName@47..49
-                      Annotation@47..48
-                        TEXT@47..48 " "
+                    Annotation@47..48
+                      TEXT@47..48 " "
+                    QualifiedName@48..49
                       LOWER@48..49 "a"
                   COMMA@49..50 ","
                   ExpressionVariable@50..52
-                    QualifiedName@50..52
-                      Annotation@50..51
-                        TEXT@50..51 " "
+                    Annotation@50..51
+                      TEXT@50..51 " "
+                    QualifiedName@51..52
                       LOWER@51..52 "b"
                 Annotation@52..53
                   TEXT@52..53 " "

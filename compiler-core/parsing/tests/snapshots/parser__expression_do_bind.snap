@@ -40,9 +40,9 @@ expression: "(node, errors)"
                     LEFT_ARROW@44..46 "<-"
                     ExpressionApplicationChain@46..54
                       ExpressionVariable@46..51
-                        QualifiedName@46..51
-                          Annotation@46..47
-                            TEXT@46..47 " "
+                        Annotation@46..47
+                          TEXT@46..47 " "
+                        QualifiedName@47..51
                           LOWER@47..51 "pure"
                       ExpressionTermArgument@51..54
                         ExpressionInteger@51..54

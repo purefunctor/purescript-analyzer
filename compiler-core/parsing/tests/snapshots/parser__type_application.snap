@@ -24,9 +24,9 @@ expression: "(node, errors)"
           DOUBLE_COLON@42..44 "::"
           TypeApplicationChain@44..50
             TypeConstructor@44..46
-              QualifiedName@44..46
-                Annotation@44..45
-                  TEXT@44..45 " "
+              Annotation@44..45
+                TEXT@44..45 " "
+              QualifiedName@45..46
                 UPPER@45..46 "F"
             TypeVariable@46..48
               Annotation@46..47

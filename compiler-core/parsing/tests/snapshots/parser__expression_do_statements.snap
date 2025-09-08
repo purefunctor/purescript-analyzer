@@ -61,45 +61,45 @@ expression: "(node, errors)"
                     LEFT_ARROW@74..76 "<-"
                     ExpressionApplicationChain@76..86
                       ExpressionVariable@76..81
-                        QualifiedName@76..81
-                          Annotation@76..77
-                            TEXT@76..77 " "
+                        Annotation@76..77
+                          TEXT@76..77 " "
+                        QualifiedName@77..81
                           LOWER@77..81 "pure"
                       ExpressionTermArgument@81..86
                         ExpressionVariable@81..86
-                          QualifiedName@81..86
-                            Annotation@81..82
-                              TEXT@81..82 " "
+                          Annotation@81..82
+                            TEXT@81..82 " "
+                          QualifiedName@82..86
                             LOWER@82..86 "life"
                   LAYOUT_SEPARATOR@86..86 ""
                   DoStatementDiscard@86..111
                     ExpressionOperatorChain@86..111
                       ExpressionVariable@86..93
-                        QualifiedName@86..93
-                          Annotation@86..89
-                            TEXT@86..89 "\n  "
+                        Annotation@86..89
+                          TEXT@86..89 "\n  "
+                        QualifiedName@89..93
                           LOWER@89..93 "pure"
                       ExpressionOperatorPair@93..100
                         TermOperator@93..95
-                          QualifiedName@93..95
-                            Annotation@93..94
-                              TEXT@93..94 " "
+                          Annotation@93..94
+                            TEXT@93..94 " "
+                          QualifiedName@94..95
                             OPERATOR@94..95 "$"
                         ExpressionVariable@95..100
-                          QualifiedName@95..100
-                            Annotation@95..96
-                              TEXT@95..96 " "
+                          Annotation@95..96
+                            TEXT@95..96 " "
+                          QualifiedName@96..100
                             LOWER@96..100 "life"
                       ExpressionOperatorPair@100..111
                         TermOperator@100..102
-                          QualifiedName@100..102
-                            Annotation@100..101
-                              TEXT@100..101 " "
+                          Annotation@100..101
+                            TEXT@100..101 " "
+                          QualifiedName@101..102
                             OPERATOR@101..102 "+"
                         ExpressionVariable@102..111
-                          QualifiedName@102..111
-                            Annotation@102..103
-                              TEXT@102..103 " "
+                          Annotation@102..103
+                            TEXT@102..103 " "
+                          QualifiedName@103..111
                             LOWER@103..111 "universe"
                   LAYOUT_END@111..111 ""
       LAYOUT_END@111..111 ""

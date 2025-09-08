@@ -35,9 +35,9 @@ expression: "(node, errors)"
               TEXT@46..47 " "
             DOUBLE_COLON@47..49 "::"
             TypeConstructor@49..54
-              QualifiedName@49..54
-                Annotation@49..50
-                  TEXT@49..50 " "
+              Annotation@49..50
+                TEXT@49..50 " "
+              QualifiedName@50..54
                 UPPER@50..54 "Type"
             RIGHT_PARENTHESIS@54..55 ")"
         LAYOUT_SEPARATOR@55..55 ""
@@ -97,9 +97,9 @@ expression: "(node, errors)"
                 TEXT@98..99 " "
               DOUBLE_COLON@99..101 "::"
               TypeConstructor@101..106
-                QualifiedName@101..106
-                  Annotation@101..102
-                    TEXT@101..102 " "
+                Annotation@101..102
+                  TEXT@101..102 " "
+                QualifiedName@102..106
                   UPPER@102..106 "Type"
             Annotation@106..107
               TEXT@106..107 " "
@@ -125,9 +125,9 @@ expression: "(node, errors)"
                 TEXT@125..126 " "
               DOUBLE_COLON@126..128 "::"
               TypeConstructor@128..133
-                QualifiedName@128..133
-                  Annotation@128..129
-                    TEXT@128..129 " "
+                Annotation@128..129
+                  TEXT@128..129 " "
+                QualifiedName@129..133
                   UPPER@129..133 "Type"
             TypeRowTail@133..137
               Annotation@133..134
@@ -161,9 +161,9 @@ expression: "(node, errors)"
                 TEXT@153..154 " "
               DOUBLE_COLON@154..156 "::"
               TypeConstructor@156..161
-                QualifiedName@156..161
-                  Annotation@156..157
-                    TEXT@156..157 " "
+                Annotation@156..157
+                  TEXT@156..157 " "
+                QualifiedName@157..161
                   UPPER@157..161 "Type"
             COMMA@161..162 ","
             TypeRowItem@162..172
@@ -175,9 +175,9 @@ expression: "(node, errors)"
                 TEXT@164..165 " "
               DOUBLE_COLON@165..167 "::"
               TypeConstructor@167..172
-                QualifiedName@167..172
-                  Annotation@167..168
-                    TEXT@167..168 " "
+                Annotation@167..168
+                  TEXT@167..168 " "
+                QualifiedName@168..172
                   UPPER@168..172 "Type"
             Annotation@172..173
               TEXT@172..173 " "
@@ -203,9 +203,9 @@ expression: "(node, errors)"
                 TEXT@192..193 " "
               DOUBLE_COLON@193..195 "::"
               TypeConstructor@195..200
-                QualifiedName@195..200
-                  Annotation@195..196
-                    TEXT@195..196 " "
+                Annotation@195..196
+                  TEXT@195..196 " "
+                QualifiedName@196..200
                   UPPER@196..200 "Type"
             COMMA@200..201 ","
             TypeRowItem@201..211
@@ -217,9 +217,9 @@ expression: "(node, errors)"
                 TEXT@203..204 " "
               DOUBLE_COLON@204..206 "::"
               TypeConstructor@206..211
-                QualifiedName@206..211
-                  Annotation@206..207
-                    TEXT@206..207 " "
+                Annotation@206..207
+                  TEXT@206..207 " "
+                QualifiedName@207..211
                   UPPER@207..211 "Type"
             TypeRowTail@211..215
               Annotation@211..212

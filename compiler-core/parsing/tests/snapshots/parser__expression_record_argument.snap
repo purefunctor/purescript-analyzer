@@ -26,9 +26,9 @@ expression: "(node, errors)"
             WhereExpression@46..67
               ExpressionApplicationChain@46..67
                 ExpressionConstructor@46..52
-                  QualifiedName@46..52
-                    Annotation@46..47
-                      TEXT@46..47 " "
+                  Annotation@46..47
+                    TEXT@46..47 " "
+                  QualifiedName@47..52
                     UPPER@47..52 "Point"
                 ExpressionTermArgument@52..67
                   ExpressionRecord@52..67

@@ -23,9 +23,9 @@ expression: "(node, errors)"
             InstanceConstraints@42..57
               TypeApplicationChain@42..54
                 TypeConstructor@42..52
-                  QualifiedName@42..52
-                    Annotation@42..43
-                      TEXT@42..43 " "
+                  Annotation@42..43
+                    TEXT@42..43 " "
+                  QualifiedName@43..52
                     UPPER@43..52 "Serialise"
                 TypeVariable@52..54
                   Annotation@52..53
@@ -35,9 +35,9 @@ expression: "(node, errors)"
                 TEXT@54..55 " "
               RIGHT_THICK_ARROW@55..57 "=>"
             InstanceHead@57..79
-              QualifiedName@57..67
-                Annotation@57..58
-                  TEXT@57..58 " "
+              Annotation@57..58
+                TEXT@57..58 " "
+              QualifiedName@58..67
                 UPPER@58..67 "Serialise"
               TypeVariable@67..69
                 Annotation@67..68
@@ -78,9 +78,9 @@ expression: "(node, errors)"
               COMMA@106..107 ","
               TypeApplicationChain@107..119
                 TypeConstructor@107..117
-                  QualifiedName@107..117
-                    Annotation@107..108
-                      TEXT@107..108 " "
+                  Annotation@107..108
+                    TEXT@107..108 " "
+                  QualifiedName@108..117
                     UPPER@108..117 "Serialise"
                 TypeVariable@117..119
                   Annotation@117..118
@@ -91,9 +91,9 @@ expression: "(node, errors)"
                 TEXT@120..121 " "
               RIGHT_THICK_ARROW@121..123 "=>"
             InstanceHead@123..148
-              QualifiedName@123..133
-                Annotation@123..124
-                  TEXT@123..124 " "
+              Annotation@123..124
+                TEXT@123..124 " "
+              QualifiedName@124..133
                 UPPER@124..133 "Serialise"
               TypeVariable@133..135
                 Annotation@133..134
