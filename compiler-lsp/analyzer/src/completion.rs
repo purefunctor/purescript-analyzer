@@ -19,6 +19,7 @@ use sources::{
     QualifiedTerms, QualifiedTermsSuggestions, QualifiedTypes, QualifiedTypesSuggestions,
     SuggestedTerms, SuggestedTypes, WorkspaceModules,
 };
+use syntax::SyntaxKind;
 
 use crate::locate;
 
@@ -43,7 +44,13 @@ pub fn implementation(
     let token = match token {
         TokenAtOffset::None => return None,
         TokenAtOffset::Single(token) => token,
-        TokenAtOffset::Between(token, _) => token,
+        TokenAtOffset::Between(left, right) => {
+            let left_annotation = left.parent_ancestors().any(|node| {
+                let kind = node.kind();
+                matches!(kind, SyntaxKind::Annotation)
+            });
+            if left_annotation { right } else { left }
+        }
     };
 
     let semantics = CursorSemantics::new(&content, position);
