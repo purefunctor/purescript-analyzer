@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use crate::{lexed::Lexed, Position};
+use crate::{Position, lexed::Lexed};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Delimiter {
@@ -429,10 +429,9 @@ impl<'l, 's> Insert<'l, 's> {
     fn insert_start(&mut self, delimiter: Delimiter) {
         if let Some((past_position, _)) =
             self.layout.stack.iter().rfind(|(_, delimiter)| delimiter.is_indented())
+            && self.next.column <= past_position.column
         {
-            if self.next.column <= past_position.column {
-                return;
-            }
+            return;
         }
 
         self.push_stack(self.next, delimiter);
@@ -545,11 +544,7 @@ impl<'l, 's> Insert<'l, 's> {
     }
 
     fn where_p(&self, position: Position, delimiter: Delimiter) -> bool {
-        if let Delimiter::Do = delimiter {
-            true
-        } else {
-            self.offside_end_p(position, delimiter)
-        }
+        if let Delimiter::Do = delimiter { true } else { self.offside_end_p(position, delimiter) }
     }
 
     fn in_p(&self, _: Position, delimiter: Delimiter) -> bool {
