@@ -5,7 +5,7 @@ use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
-use crate::{source::*, TermVariableResolution, TypeVariableResolution};
+use crate::{TermVariableResolution, TypeVariableResolution, source::*};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {

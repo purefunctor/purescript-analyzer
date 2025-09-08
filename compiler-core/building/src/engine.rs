@@ -29,8 +29,8 @@ use std::{
     cell::RefCell,
     collections::hash_map::Entry,
     sync::{
-        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
         Arc,
+        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
     },
 };
 
@@ -700,7 +700,7 @@ impl sugar::External for QueryEngine {
 mod tests {
     use std::{
         fmt::Debug,
-        sync::{atomic::Ordering, Arc},
+        sync::{Arc, atomic::Ordering},
     };
 
     use building_types::{QueryError, QueryResult};
@@ -1039,9 +1039,11 @@ mod tests {
         assert!(result_b.is_err());
 
         // Either result can return `Cancelled`, but at least one of should be `Cycle`
-        assert!([result_a, result_b]
-            .iter()
-            .any(|result| matches!(result, Err(QueryError::Cycle { .. }))));
+        assert!(
+            [result_a, result_b]
+                .iter()
+                .any(|result| matches!(result, Err(QueryError::Cycle { .. })))
+        );
     }
 
     #[test]

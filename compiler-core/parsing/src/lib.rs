@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use lexing::{Lexed, Position};
-use rowan::{ast::AstNode, GreenNode};
+use rowan::{GreenNode, ast::AstNode};
 use smol_str::{SmolStr, SmolStrBuilder};
-use syntax::{cst, SyntaxKind, SyntaxNode};
+use syntax::{SyntaxKind, SyntaxNode, cst};
 
 mod builder;
 mod parser;
