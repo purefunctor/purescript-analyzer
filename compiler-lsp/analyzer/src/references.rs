@@ -2,7 +2,9 @@ use async_lsp::lsp_types::*;
 use building::{QueryEngine, prim};
 use files::{FileId, Files};
 use indexing::{ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
-use lowering::{BinderId, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind};
+use lowering::{
+    BinderId, BinderKind, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind,
+};
 use resolving::ResolvedImport;
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
@@ -249,6 +251,17 @@ fn references_file_term(
             {
                 let root = parsed.syntax_node();
                 let ptr = lowered.source[expr_id].syntax_node_ptr();
+                let range = locate::syntax_range(&content, &root, &ptr)?;
+                locations.push(Location { uri: uri.clone(), range });
+            }
+        }
+
+        for (binder_id, binder_kind) in lowered.intermediate.iter_binder() {
+            if let BinderKind::Constructor { resolution: Some((f_id, t_id)), .. } = binder_kind
+                && (*f_id, *t_id) == (file_id, term_id)
+            {
+                let root = parsed.syntax_node();
+                let ptr = lowered.source[binder_id].syntax_node_ptr();
                 let range = locate::syntax_range(&content, &root, &ptr)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
