@@ -93,6 +93,7 @@ fn initialize(
                 }),
                 definition_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                references_provider: Some(OneOf::Left(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
@@ -149,6 +150,15 @@ fn resolve_completion_item(
     item: CompletionItem,
 ) -> Result<CompletionItem, ResponseError> {
     Ok(analyzer::completion::resolve::implementation(&snapshot.engine, item))
+}
+
+fn references(
+    snapshot: StateSnapshot,
+    p: ReferenceParams,
+) -> Result<Option<Vec<Location>>, ResponseError> {
+    let uri = p.text_document_position.text_document.uri;
+    let position = p.text_document_position.position;
+    Ok(analyzer::references::implementation(&snapshot.engine, &snapshot.files(), uri, position))
 }
 
 fn did_change(
@@ -233,6 +243,7 @@ pub async fn analyzer_loop() {
             .request_snapshot::<request::HoverRequest>(hover)
             .request_snapshot::<request::Completion>(completion)
             .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
+            .request_snapshot::<request::References>(references)
             .notification::<notification::Initialized>(initialized)
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
