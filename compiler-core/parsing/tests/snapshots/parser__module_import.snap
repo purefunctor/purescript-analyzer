@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..285
       ModuleHeader@0..25
         MODULE@0..6 "module"
-        ModuleName@6..19
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..19
           UPPER@7..19 "ModuleImport"
         Annotation@19..20
           TEXT@19..20 " "
@@ -19,18 +19,18 @@ expression: "(node, errors)"
           Annotation@25..27
             TEXT@25..27 "\n\n"
           IMPORT@27..33 "import"
-          ModuleName@33..41
-            Annotation@33..34
-              TEXT@33..34 " "
+          Annotation@33..34
+            TEXT@33..34 " "
+          ModuleName@34..41
             UPPER@34..41 "Prelude"
         LAYOUT_SEPARATOR@41..41 ""
         ImportStatement@41..58
           Annotation@41..42
             TEXT@41..42 "\n"
           IMPORT@42..48 "import"
-          ModuleName@48..58
-            Annotation@48..49
-              TEXT@48..49 " "
+          Annotation@48..49
+            TEXT@48..49 " "
+          ModuleName@49..58
             Qualifier@49..54
               TEXT@49..54 "Data."
             UPPER@54..58 "List"
@@ -39,9 +39,9 @@ expression: "(node, errors)"
           Annotation@58..59
             TEXT@58..59 "\n"
           IMPORT@59..65 "import"
-          ModuleName@65..71
-            Annotation@65..66
-              TEXT@65..66 " "
+          Annotation@65..66
+            TEXT@65..66 " "
+          ModuleName@66..71
             UPPER@66..71 "Value"
           ImportList@71..79
             Annotation@71..72
@@ -55,9 +55,9 @@ expression: "(node, errors)"
           Annotation@79..80
             TEXT@79..80 "\n"
           IMPORT@80..86 "import"
-          ModuleName@86..92
-            Annotation@86..87
-              TEXT@86..87 " "
+          Annotation@86..87
+            TEXT@86..87 " "
+          ModuleName@87..92
             UPPER@87..92 "Class"
           ImportList@92..106
             Annotation@92..93
@@ -74,9 +74,9 @@ expression: "(node, errors)"
           Annotation@106..107
             TEXT@106..107 "\n"
           IMPORT@107..113 "import"
-          ModuleName@113..118
-            Annotation@113..114
-              TEXT@113..114 " "
+          Annotation@113..114
+            TEXT@113..114 " "
+          ModuleName@114..118
             UPPER@114..118 "Type"
           ImportList@118..125
             Annotation@118..119
@@ -90,9 +90,9 @@ expression: "(node, errors)"
           Annotation@125..126
             TEXT@125..126 "\n"
           IMPORT@126..132 "import"
-          ModuleName@132..141
-            Annotation@132..133
-              TEXT@132..133 " "
+          Annotation@132..133
+            TEXT@132..133 " "
+          ModuleName@133..141
             UPPER@133..141 "DataList"
           ImportList@141..154
             Annotation@141..142
@@ -114,9 +114,9 @@ expression: "(node, errors)"
           Annotation@154..155
             TEXT@154..155 "\n"
           IMPORT@155..161 "import"
-          ModuleName@161..169
-            Annotation@161..162
-              TEXT@161..162 " "
+          Annotation@161..162
+            TEXT@161..162 " "
+          ModuleName@162..169
             UPPER@162..169 "DataAll"
           ImportList@169..180
             Annotation@169..170
@@ -132,26 +132,26 @@ expression: "(node, errors)"
           Annotation@180..181
             TEXT@180..181 "\n"
           IMPORT@181..187 "import"
-          ModuleName@187..192
-            Annotation@187..188
-              TEXT@187..188 " "
+          Annotation@187..188
+            TEXT@187..188 " "
+          ModuleName@188..192
             UPPER@188..192 "Prim"
           ImportAlias@192..200
             Annotation@192..193
               TEXT@192..193 " "
             AS@193..195 "as"
-            ModuleName@195..200
-              Annotation@195..196
-                TEXT@195..196 " "
+            Annotation@195..196
+              TEXT@195..196 " "
+            ModuleName@196..200
               UPPER@196..200 "Prim"
         LAYOUT_SEPARATOR@200..200 ""
         ImportStatement@200..231
           Annotation@200..201
             TEXT@200..201 "\n"
           IMPORT@201..207 "import"
-          ModuleName@207..217
-            Annotation@207..208
-              TEXT@207..208 " "
+          Annotation@207..208
+            TEXT@207..208 " "
+          ModuleName@208..217
             Qualifier@208..213
               TEXT@208..213 "Data."
             UPPER@213..217 "List"
@@ -170,9 +170,9 @@ expression: "(node, errors)"
           Annotation@231..232
             TEXT@231..232 "\n"
           IMPORT@232..238 "import"
-          ModuleName@238..247
-            Annotation@238..239
-              TEXT@238..239 " "
+          Annotation@238..239
+            TEXT@238..239 " "
+          ModuleName@239..247
             UPPER@239..247 "Operator"
           ImportList@247..253
             Annotation@247..248
@@ -186,9 +186,9 @@ expression: "(node, errors)"
           Annotation@253..254
             TEXT@253..254 "\n"
           IMPORT@254..260 "import"
-          ModuleName@260..273
-            Annotation@260..261
-              TEXT@260..261 " "
+          Annotation@260..261
+            TEXT@260..261 " "
+          ModuleName@261..273
             UPPER@261..273 "TypeOperator"
           ImportList@273..284
             Annotation@273..274

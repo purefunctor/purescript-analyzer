@@ -21,8 +21,8 @@ pub(super) const OPERATOR_NAME: TokenSet =
     TokenSet::new(&[SyntaxKind::OPERATOR_NAME, SyntaxKind::DOUBLE_PERIOD_OPERATOR_NAME]);
 
 pub(super) fn module_name(p: &mut Parser) {
-    let mut m = p.start();
     p.annotate();
+    let mut m = p.start();
     p.qualify();
     p.expect(SyntaxKind::UPPER);
     m.end(p, SyntaxKind::ModuleName);

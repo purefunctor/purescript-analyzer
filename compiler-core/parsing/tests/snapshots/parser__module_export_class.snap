@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..59
       ModuleHeader@0..58
         MODULE@0..6 "module"
-        ModuleName@6..24
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..24
           UPPER@7..24 "ModuleExportClass"
         ExportList@24..52
           Annotation@24..25

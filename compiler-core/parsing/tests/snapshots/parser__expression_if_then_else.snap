@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..69
       ModuleHeader@0..33
         MODULE@0..6 "module"
-        ModuleName@6..27
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..27
           UPPER@7..27 "ExpressionIfThenElse"
         Annotation@27..28
           TEXT@27..28 " "

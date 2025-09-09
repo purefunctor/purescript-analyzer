@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..150
       ModuleHeader@0..37
         MODULE@0..6 "module"
-        ModuleName@6..31
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..31
           UPPER@7..31 "InstanceChainElseNewline"
         Annotation@31..32
           TEXT@31..32 " "

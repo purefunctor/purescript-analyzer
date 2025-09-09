@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..120
       ModuleHeader@0..55
         MODULE@0..6 "module"
-        ModuleName@6..31
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..31
           UPPER@7..31 "DoublePeriodOperatorName"
         ExportList@31..49
           Annotation@31..32
@@ -34,9 +34,9 @@ expression: "(node, errors)"
           Annotation@55..57
             TEXT@55..57 "\n\n"
           IMPORT@57..63 "import"
-          ModuleName@63..70
-            Annotation@63..64
-              TEXT@63..64 " "
+          Annotation@63..64
+            TEXT@63..64 " "
+          ModuleName@64..70
             UPPER@64..70 "Import"
           ImportList@70..88
             Annotation@70..71

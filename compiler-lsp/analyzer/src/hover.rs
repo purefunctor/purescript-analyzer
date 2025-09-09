@@ -11,7 +11,7 @@ use rowan::{
     TextRange,
     ast::{AstNode, AstPtr},
 };
-use smol_str::SmolStrBuilder;
+use smol_str::ToSmolStr;
 use syntax::{SyntaxNode, cst};
 
 use crate::{
@@ -60,21 +60,10 @@ fn hover_module_name(
     let (parsed, _) = engine.parsed(f_id).ok()?;
 
     let root = parsed.syntax_node();
-    let module = cst.try_to_node(&root)?;
-    let module = {
-        let mut buffer = SmolStrBuilder::default();
+    let module_name = cst.try_to_node(&root)?;
+    let module_name = module_name.syntax().text().to_smolstr();
 
-        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
-            buffer.push_str(token.text());
-        }
-
-        let token = module.name_token()?;
-        buffer.push_str(token.text());
-
-        buffer.finish()
-    };
-
-    let module_id = engine.module_file(&module)?;
+    let module_id = engine.module_file(&module_name)?;
 
     let (root, range) = AnnotationSyntaxRange::of_file(engine, module_id)?;
 
@@ -102,23 +91,10 @@ fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Optio
     };
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
-    let module = statement.module_name()?;
-
-    let module = {
-        let mut buffer = SmolStrBuilder::default();
-
-        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
-            buffer.push_str(token.text());
-        }
-
-        let token = module.name_token()?;
-        buffer.push_str(token.text());
-
-        buffer.finish()
-    };
+    let module_name = statement.module_name()?.syntax().text().to_smolstr();
 
     let import_resolved = {
-        let import_id = engine.module_file(&module)?;
+        let import_id = engine.module_file(&module_name)?;
         engine.resolved(import_id).ok()?
     };
 

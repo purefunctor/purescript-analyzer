@@ -1,8 +1,9 @@
 use std::collections::hash_map::Entry;
 
 use la_arena::Idx;
+use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
-use smol_str::{SmolStr, SmolStrBuilder};
+use smol_str::{SmolStr, ToSmolStr};
 use syntax::{SyntaxToken, cst};
 
 use crate::{
@@ -72,7 +73,7 @@ impl State {
 pub(super) fn index_module(cst: &cst::Module) -> State {
     let name = cst.header().and_then(|cst| {
         let cst = cst.name()?;
-        extract_module_name(&cst)
+        Some(cst.syntax().text().to_smolstr())
     });
 
     let mut state = State::new(name);
@@ -711,27 +712,15 @@ fn index_type_items(
     }
 }
 
-fn extract_module_name(cst: &cst::ModuleName) -> Option<SmolStr> {
-    let mut buffer = SmolStrBuilder::default();
-    if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-        buffer.push_str(token.text());
-    }
-
-    let token = cst.name_token()?;
-    buffer.push_str(token.text());
-
-    Some(buffer.finish())
-}
-
 fn extract_name(cst: &cst::ImportStatement) -> Option<SmolStr> {
     let cst = cst.module_name()?;
-    extract_module_name(&cst)
+    Some(cst.syntax().text().to_smolstr())
 }
 
 fn extract_alias(cst: &cst::ImportStatement) -> Option<SmolStr> {
     let cst = cst.import_alias()?;
     let cst = cst.module_name()?;
-    extract_module_name(&cst)
+    Some(cst.syntax().text().to_smolstr())
 }
 
 // Exports
@@ -897,14 +886,5 @@ fn index_module_export(state: &mut State, cst: &cst::ExportModule) {
 
 fn extracted_exported_module(cst: &cst::ExportModule) -> Option<SmolStr> {
     let cst = cst.module_name()?;
-
-    let mut buffer = SmolStrBuilder::default();
-    if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-        buffer.push_str(token.text());
-    }
-
-    let token = cst.name_token()?;
-    buffer.push_str(token.text());
-
-    Some(buffer.finish())
+    Some(cst.syntax().text().to_smolstr())
 }
