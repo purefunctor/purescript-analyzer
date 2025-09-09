@@ -23,8 +23,9 @@ pub fn implementation(
         files.id(uri)?
     };
 
-    let thing = locate::locate(engine, f_id, position);
-    match thing {
+    let located = locate::locate(engine, f_id, position);
+
+    match located {
         locate::Located::ModuleName(cst) => definition_module_name(engine, files, f_id, cst),
         locate::Located::ImportItem(i_id) => definition_import(engine, files, f_id, i_id),
         locate::Located::Binder(b_id) => definition_binder(engine, files, f_id, b_id),
