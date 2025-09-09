@@ -8,7 +8,7 @@ use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
 use syntax::cst;
 
-use crate::{extract::AnnotationSyntaxRange, locate};
+use crate::locate;
 
 pub fn implementation(
     engine: &QueryEngine,
@@ -71,11 +71,8 @@ fn references_module_name(
         let root = parsed.syntax_node();
 
         let indexed = engine.indexed(candidate_id).ok()?;
-        let import = indexed.source[import_id].try_to_node(&root)?;
-        let import = import.syntax();
-
-        let range = AnnotationSyntaxRange::from_node(import);
-        let range = locate::text_range_to_range(&content, range.syntax?);
+        let ptr = indexed.source[import_id].syntax_node_ptr();
+        let range = locate::syntax_range(&content, &root, &ptr)?;
 
         locations.push(Location { uri, range });
     }
@@ -377,6 +374,7 @@ fn probe_imports_for(
     module_id: FileId,
 ) -> Option<Vec<(FileId, ImportId)>> {
     let mut probe = vec![];
+
     for workspace_file_id in files.iter_id() {
         if workspace_file_id == file_id {
             continue;
@@ -394,5 +392,6 @@ fn probe_imports_for(
             }
         }
     }
+
     Some(probe)
 }
