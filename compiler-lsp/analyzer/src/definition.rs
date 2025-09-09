@@ -54,27 +54,24 @@ fn definition_module_name(
 
     let root = parsed.syntax_node();
     let module_name = cst.try_to_node(&root)?;
+
     let module_name = module_name.syntax().text().to_smolstr();
+    let module_id = engine.module_file(&module_name)?;
 
-    let (uri, range) = {
-        let id = engine.module_file(&module_name)?;
-        let path = files.path(id);
-        let content = engine.content(id);
+    let path = files.path(module_id);
+    let content = engine.content(module_id);
 
-        let (parsed, _) = engine.parsed(id).ok()?;
-        let root = parsed.syntax_node();
+    let (parsed, _) = engine.parsed(module_id).ok()?;
+    let root = parsed.syntax_node();
 
-        let range = root.text_range();
-        let start = locate::offset_to_position(&content, range.start());
-        let end = locate::offset_to_position(&content, range.end());
+    let range = root.text_range();
+    let start = locate::offset_to_position(&content, range.start());
+    let end = locate::offset_to_position(&content, range.end());
 
-        let uri = Url::parse(&path).ok()?;
-        let uri = prim::handle_generated(uri, &content)?;
+    let uri = Url::parse(&path).ok()?;
+    let uri = prim::handle_generated(uri, &content)?;
 
-        let range = Range { start, end };
-
-        (uri, range)
-    };
+    let range = Range { start, end };
 
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
 }

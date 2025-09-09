@@ -61,8 +61,8 @@ fn hover_module_name(
 
     let root = parsed.syntax_node();
     let module_name = cst.try_to_node(&root)?;
-    let module_name = module_name.syntax().text().to_smolstr();
 
+    let module_name = module_name.syntax().text().to_smolstr();
     let module_id = engine.module_file(&module_name)?;
 
     let (root, range) = AnnotationSyntaxRange::of_file(engine, module_id)?;

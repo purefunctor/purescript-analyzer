@@ -1,11 +1,14 @@
 use async_lsp::lsp_types::*;
 use building::{QueryEngine, prim};
 use files::{FileId, Files};
-use indexing::{ImportKind, TermItemId, TypeItemId};
+use indexing::{ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
 use lowering::{BinderId, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind};
 use resolving::ResolvedImport;
+use rowan::ast::{AstNode, AstPtr};
+use smol_str::ToSmolStr;
+use syntax::cst;
 
-use crate::locate;
+use crate::{extract::AnnotationSyntaxRange, locate};
 
 pub fn implementation(
     engine: &QueryEngine,
@@ -21,8 +24,8 @@ pub fn implementation(
     let located = locate::locate(engine, f_id, position);
 
     match located {
-        locate::Located::ModuleName(_) => None,
-        locate::Located::ImportItem(_) => None,
+        locate::Located::ModuleName(cst) => references_module_name(engine, files, f_id, cst),
+        locate::Located::ImportItem(i_id) => references_import(engine, files, f_id, i_id),
         locate::Located::Binder(b_id) => references_binder(engine, files, f_id, b_id),
         locate::Located::Expression(e_id) => references_expression(engine, files, f_id, e_id),
         locate::Located::Type(t_id) => references_type(engine, files, f_id, t_id),
@@ -37,6 +40,111 @@ pub fn implementation(
             references_file_type(engine, files, *f_id, *t_id)
         }
         locate::Located::Nothing => None,
+    }
+}
+
+fn references_module_name(
+    engine: &QueryEngine,
+    files: &Files,
+    file_id: FileId,
+    cst: AstPtr<cst::ModuleName>,
+) -> Option<Vec<Location>> {
+    let (parsed, _) = engine.parsed(file_id).ok()?;
+
+    let root = parsed.syntax_node();
+    let module_name = cst.try_to_node(&root)?;
+
+    let module_name = module_name.syntax().text().to_smolstr();
+    let module_id = engine.module_file(&module_name)?;
+
+    let candidates = probe_imports_for(engine, files, file_id, module_id)?;
+
+    let mut locations = vec![];
+    for (candidate_id, import_id) in candidates {
+        let path = files.path(candidate_id);
+        let content = files.content(candidate_id);
+
+        let uri = Url::parse(&path).ok()?;
+        let uri = prim::handle_generated(uri, &content)?;
+
+        let (parsed, _) = engine.parsed(candidate_id).ok()?;
+        let root = parsed.syntax_node();
+
+        let indexed = engine.indexed(candidate_id).ok()?;
+        let import = indexed.source[import_id].try_to_node(&root)?;
+        let import = import.syntax();
+
+        let range = AnnotationSyntaxRange::from_node(import);
+        let range = locate::text_range_to_range(&content, range.syntax?);
+
+        locations.push(Location { uri, range });
+    }
+
+    Some(locations)
+}
+
+fn references_import(
+    engine: &QueryEngine,
+    files: &Files,
+    f_id: FileId,
+    i_id: ImportItemId,
+) -> Option<Vec<Location>> {
+    let (parsed, indexed) = {
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
+        (parsed, indexed)
+    };
+
+    let root = parsed.syntax_node();
+    let ptr = &indexed.source[i_id];
+    let node = ptr.try_to_node(&root)?;
+
+    let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
+    let module_name = statement.module_name()?.syntax().to_smolstr();
+
+    let import_resolved = {
+        let import_id = engine.module_file(&module_name)?;
+        engine.resolved(import_id).ok()?
+    };
+
+    let references_term = |engine: &QueryEngine, files: &Files, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
+        let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
+        references_file_term(engine, files, f_id, t_id)
+    };
+
+    let references_type = |engine: &QueryEngine, files: &Files, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
+        let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
+        references_file_type(engine, files, f_id, t_id)
+    };
+
+    match node {
+        cst::ImportItem::ImportValue(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            references_term(engine, files, name)
+        }
+        cst::ImportItem::ImportClass(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            references_type(engine, files, name)
+        }
+        cst::ImportItem::ImportType(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            references_type(engine, files, name)
+        }
+        cst::ImportItem::ImportOperator(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            references_term(engine, files, name)
+        }
+        cst::ImportItem::ImportTypeOperator(cst) => {
+            let token = cst.name_token()?;
+            let name = token.text();
+            references_type(engine, files, name)
+        }
     }
 }
 
@@ -241,5 +349,32 @@ fn probe_workspace_imports(
         }
     }
 
+    Some(probe)
+}
+
+fn probe_imports_for(
+    engine: &QueryEngine,
+    files: &Files,
+    file_id: FileId,
+    module_id: FileId,
+) -> Option<Vec<(FileId, ImportId)>> {
+    let mut probe = vec![];
+    for workspace_file_id in files.iter_id() {
+        if workspace_file_id == file_id {
+            continue;
+        }
+
+        let resolved = engine.resolved(workspace_file_id).ok()?;
+
+        let unqualified = resolved.unqualified.values().flatten();
+        let qualified = resolved.qualified.values();
+        let imports = unqualified.chain(qualified);
+
+        for import in imports {
+            if import.file == module_id {
+                probe.push((workspace_file_id, import.id));
+            }
+        }
+    }
     Some(probe)
 }
