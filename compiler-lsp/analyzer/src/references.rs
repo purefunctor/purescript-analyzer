@@ -57,7 +57,7 @@ fn references_module_name(
     let module_name = module_name.syntax().text().to_smolstr();
     let module_id = engine.module_file(&module_name)?;
 
-    let candidates = probe_imports_for(engine, files, file_id, module_id)?;
+    let candidates = probe_imports_for(engine, files, module_id)?;
 
     let mut locations = vec![];
     for (candidate_id, import_id) in candidates {
@@ -370,16 +370,11 @@ fn probe_workspace_imports(
 fn probe_imports_for(
     engine: &QueryEngine,
     files: &Files,
-    file_id: FileId,
     module_id: FileId,
 ) -> Option<Vec<(FileId, ImportId)>> {
     let mut probe = vec![];
 
     for workspace_file_id in files.iter_id() {
-        if workspace_file_id == file_id {
-            continue;
-        }
-
         let resolved = engine.resolved(workspace_file_id).ok()?;
 
         let unqualified = resolved.unqualified.values().flatten();
