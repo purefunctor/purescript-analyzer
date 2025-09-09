@@ -256,6 +256,15 @@ fn references_file_term(
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
+
+        for (operator_id, f_id, t_id) in lowered.intermediate.iter_term_operator() {
+            if (f_id, t_id) == (file_id, term_id) {
+                let root = parsed.syntax_node();
+                let ptr = lowered.source[operator_id].syntax_node_ptr();
+                let range = locate::syntax_range(&content, &root, &ptr)?;
+                locations.push(Location { uri: uri.clone(), range });
+            }
+        }
     }
 
     Some(locations)
@@ -288,6 +297,15 @@ fn references_file_type(
             {
                 let root = parsed.syntax_node();
                 let ptr = lowered.source[ty_id].syntax_node_ptr();
+                let range = locate::syntax_range(&content, &root, &ptr)?;
+                locations.push(Location { uri: uri.clone(), range });
+            }
+        }
+
+        for (operator_id, f_id, t_id) in lowered.intermediate.iter_type_operator() {
+            if (f_id, t_id) == (file_id, type_id) {
+                let root = parsed.syntax_node();
+                let ptr = lowered.source[operator_id].syntax_node_ptr();
                 let range = locate::syntax_range(&content, &root, &ptr)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
