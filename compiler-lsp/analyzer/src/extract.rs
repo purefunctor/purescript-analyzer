@@ -123,8 +123,12 @@ impl AnnotationSyntaxRange {
             TermItemKind::Foreign { id } => {
                 signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
             }
-            TermItemKind::Instance { .. } => return None,
-            TermItemKind::Operator { .. } => return None,
+            TermItemKind::Instance { id } => {
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+            }
+            TermItemKind::Operator { id } => {
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+            }
             TermItemKind::Value { signature, equations } => {
                 let equation = equations.first().copied();
                 signature_equation_range(&indexed, &root, signature, &equation)?
