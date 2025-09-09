@@ -129,7 +129,9 @@ opName = (+)
 --        $
 ```
 
-<empty>
+```purescript
+infix 5 plus as +
+```
 
 
 Hover at Position { line: 24, character: 12 }
@@ -139,7 +141,9 @@ opChain = 9 + 10
 --          $
 ```
 
-<empty>
+```purescript
+infix 5 plus as +
+```
 
 
 Hover at Position { line: 27, character: 23 }
