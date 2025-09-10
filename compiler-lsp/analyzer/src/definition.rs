@@ -18,27 +18,37 @@ pub fn implementation(
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
-    let f_id = {
+    let current_file = {
         let uri = uri.as_str();
         files.id(uri)?
     };
 
-    let located = locate::locate(engine, f_id, position);
+    let located = locate::locate(engine, current_file, position);
 
     match located {
-        locate::Located::ModuleName(cst) => definition_module_name(engine, files, f_id, cst),
-        locate::Located::ImportItem(i_id) => definition_import(engine, files, f_id, i_id),
-        locate::Located::Binder(b_id) => definition_binder(engine, files, f_id, b_id),
-        locate::Located::Expression(e_id) => definition_expression(engine, files, uri, f_id, e_id),
-        locate::Located::Type(t_id) => definition_type(engine, files, uri, f_id, t_id),
-        locate::Located::TermOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_term_operator(o_id)?;
+        locate::Located::ModuleName(module_name) => {
+            definition_module_name(engine, files, current_file, module_name)
+        }
+        locate::Located::ImportItem(import_id) => {
+            definition_import(engine, files, current_file, import_id)
+        }
+        locate::Located::Binder(binder_id) => {
+            definition_binder(engine, files, current_file, binder_id)
+        }
+        locate::Located::Expression(expression_id) => {
+            definition_expression(engine, files, uri, current_file, expression_id)
+        }
+        locate::Located::Type(type_id) => {
+            definition_type(engine, files, uri, current_file, type_id)
+        }
+        locate::Located::TermOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_term_operator(operator_id)?;
             definition_file_term(engine, files, *f_id, *t_id)
         }
-        locate::Located::TypeOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_type_operator(o_id)?;
+        locate::Located::TypeOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_type_operator(operator_id)?;
             definition_file_type(engine, files, *f_id, *t_id)
         }
         locate::Located::Nothing => None,
@@ -48,13 +58,13 @@ pub fn implementation(
 fn definition_module_name(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    cst: AstPtr<cst::ModuleName>,
+    current_file: FileId,
+    module_name: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
-    let (parsed, _) = engine.parsed(f_id).ok()?;
+    let (parsed, _) = engine.parsed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let module_name = cst.try_to_node(&root)?;
+    let module_name = module_name.try_to_node(&root)?;
 
     let module_name = module_name.syntax().text().to_smolstr();
     let module_id = engine.module_file(&module_name)?;
@@ -80,17 +90,14 @@ fn definition_module_name(
 fn definition_import(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    i_id: ImportItemId,
+    current_file: FileId,
+    import_id: ImportItemId,
 ) -> Option<GotoDefinitionResponse> {
-    let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (parsed, indexed)
-    };
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let indexed = engine.indexed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[i_id];
+    let ptr = &indexed.source[import_id];
     let node = ptr.try_to_node(&root)?;
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
@@ -113,12 +120,9 @@ fn definition_import(
             prim::handle_generated(uri, &content)?
         };
 
-        let (content, parsed, indexed) = {
-            let content = engine.content(f_id);
-            let (parsed, _) = engine.parsed(f_id).ok()?;
-            let indexed = engine.indexed(f_id).ok()?;
-            (content, parsed, indexed)
-        };
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
 
         let root = parsed.syntax_node();
         let ptrs = indexed.term_item_ptr(t_id);
@@ -141,12 +145,9 @@ fn definition_import(
             prim::handle_generated(uri, &content)?
         };
 
-        let (content, parsed, indexed) = {
-            let content = engine.content(f_id);
-            let (parsed, _) = engine.parsed(f_id).ok()?;
-            let indexed = engine.indexed(f_id).ok()?;
-            (content, parsed, indexed)
-        };
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
 
         let root = parsed.syntax_node();
         let ptrs = indexed.type_item_ptr(t_id);
@@ -190,11 +191,11 @@ fn definition_import(
 fn definition_binder(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    b_id: BinderId,
+    current_file: FileId,
+    binder_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_binder_kind(b_id)?;
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_binder_kind(binder_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -208,17 +209,14 @@ fn definition_expression(
     engine: &QueryEngine,
     files: &Files,
     uri: Url,
-    f_id: FileId,
-    e_id: ExpressionId,
+    current_file: FileId,
+    expression_id: ExpressionId,
 ) -> Option<GotoDefinitionResponse> {
-    let (content, parsed, lowered) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (content, parsed, lowered)
-    };
+    let content = engine.content(current_file);
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let lowered = engine.lowered(current_file).ok()?;
 
-    let kind = lowered.intermediate.index_expression_kind(e_id)?;
+    let kind = lowered.intermediate.index_expression_kind(expression_id)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -272,17 +270,14 @@ fn definition_type(
     engine: &QueryEngine,
     files: &Files,
     uri: Url,
-    f_id: FileId,
-    t_id: TypeId,
+    current_file: FileId,
+    type_id: TypeId,
 ) -> Option<GotoDefinitionResponse> {
-    let (content, parsed, lowered) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (content, parsed, lowered)
-    };
+    let content = engine.content(current_file);
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let lowered = engine.lowered(current_file).ok()?;
 
-    let kind = lowered.intermediate.index_type_kind(t_id)?;
+    let kind = lowered.intermediate.index_type_kind(type_id)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -311,27 +306,24 @@ fn definition_type(
 fn definition_file_term(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    t_id: TermItemId,
+    file_id: FileId,
+    term_id: TermItemId,
 ) -> Option<GotoDefinitionResponse> {
     let uri = {
-        let path = files.path(f_id);
-        let content = files.content(f_id);
+        let path = files.path(file_id);
+        let content = files.content(file_id);
         let uri = Url::parse(&path).ok()?;
         prim::handle_generated(uri, &content)?
     };
 
-    let (content, parsed, indexed) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (content, parsed, indexed)
-    };
+    let content = engine.content(file_id);
+    let (parsed, _) = engine.parsed(file_id).ok()?;
+    let indexed = engine.indexed(file_id).ok()?;
 
     // TODO: Once we implement textDocument/typeDefinition, we
     // should probably also add a term_item_type_ptr function.
     let root = parsed.syntax_node();
-    let ptrs = indexed.term_item_ptr(t_id);
+    let ptrs = indexed.term_item_ptr(term_id);
     let range = ptrs
         .into_iter()
         .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
@@ -343,25 +335,22 @@ fn definition_file_term(
 fn definition_file_type(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    t_id: TypeItemId,
+    file_id: FileId,
+    type_id: TypeItemId,
 ) -> Option<GotoDefinitionResponse> {
     let uri = {
-        let path = files.path(f_id);
-        let content = files.content(f_id);
+        let path = files.path(file_id);
+        let content = files.content(file_id);
         let uri = Url::parse(&path).ok()?;
         prim::handle_generated(uri, &content)?
     };
 
-    let (content, parsed, indexed) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (content, parsed, indexed)
-    };
+    let content = engine.content(file_id);
+    let (parsed, _) = engine.parsed(file_id).ok()?;
+    let indexed = engine.indexed(file_id).ok()?;
 
     let root = parsed.syntax_node();
-    let ptrs = indexed.type_item_ptr(t_id);
+    let ptrs = indexed.type_item_ptr(type_id);
     let range = ptrs
         .into_iter()
         .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
