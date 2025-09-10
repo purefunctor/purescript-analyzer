@@ -17,3 +17,6 @@ type Test4 = Int : Int : Int
 
 type Test5 = Int
 --           %
+
+type Test6 = (:)
+--            %

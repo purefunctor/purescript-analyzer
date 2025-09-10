@@ -1,14 +1,19 @@
+use std::ops;
+
 use async_lsp::lsp_types::*;
 use building::{QueryEngine, prim};
 use files::{FileId, Files};
 use indexing::{ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
+use la_arena::Idx;
 use lowering::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind,
+    BinderId, BinderKind, ExpressionId, ExpressionKind, FullLoweredModule, LoweringSource,
+    TermVariableResolution, TypeId, TypeKind,
 };
+use parsing::ParsedModule;
 use resolving::ResolvedImport;
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
-use syntax::cst;
+use syntax::{PureScript, cst};
 
 use crate::locate;
 
@@ -216,6 +221,21 @@ fn references_type(
     }
 }
 
+fn id_range<T>(
+    content: &str,
+    parsed: &ParsedModule,
+    lowered: &FullLoweredModule,
+    id: Idx<AstPtr<T>>,
+) -> Option<Range>
+where
+    T: AstNode<Language = PureScript>,
+    LoweringSource: ops::Index<Idx<AstPtr<T>>, Output = AstPtr<T>>,
+{
+    let root = parsed.syntax_node();
+    let ptr = lowered.source[id].syntax_node_ptr();
+    locate::syntax_range(content, &root, &ptr)
+}
+
 fn references_file_term(
     engine: &QueryEngine,
     files: &Files,
@@ -229,6 +249,7 @@ fn references_file_term(
         let uri = {
             let path = files.path(candidate_id);
             let content = files.content(candidate_id);
+
             let uri = Url::parse(&path).ok()?;
             prim::handle_generated(uri, &content)?
         };
@@ -241,17 +262,19 @@ fn references_file_term(
             if let ExpressionKind::Constructor { resolution: Some((f_id, t_id)) } = expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let root = parsed.syntax_node();
-                let ptr = lowered.source[expr_id].syntax_node_ptr();
-                let range = locate::syntax_range(&content, &root, &ptr)?;
+                let range = id_range(&content, &parsed, &lowered, expr_id)?;
+                locations.push(Location { uri: uri.clone(), range });
+            } else if let ExpressionKind::OperatorName { resolution: Some((f_id, t_id)) } =
+                expr_kind
+                && (*f_id, *t_id) == (file_id, term_id)
+            {
+                let range = id_range(&content, &parsed, &lowered, expr_id)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::Variable { resolution: Some(resolution) } = expr_kind
                 && let TermVariableResolution::Reference(f_id, t_id) = resolution
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let root = parsed.syntax_node();
-                let ptr = lowered.source[expr_id].syntax_node_ptr();
-                let range = locate::syntax_range(&content, &root, &ptr)?;
+                let range = id_range(&content, &parsed, &lowered, expr_id)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
@@ -260,18 +283,14 @@ fn references_file_term(
             if let BinderKind::Constructor { resolution: Some((f_id, t_id)), .. } = binder_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let root = parsed.syntax_node();
-                let ptr = lowered.source[binder_id].syntax_node_ptr();
-                let range = locate::syntax_range(&content, &root, &ptr)?;
+                let range = id_range(&content, &parsed, &lowered, binder_id)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
         for (operator_id, f_id, t_id) in lowered.intermediate.iter_term_operator() {
             if (f_id, t_id) == (file_id, term_id) {
-                let root = parsed.syntax_node();
-                let ptr = lowered.source[operator_id].syntax_node_ptr();
-                let range = locate::syntax_range(&content, &root, &ptr)?;
+                let range = id_range(&content, &parsed, &lowered, operator_id)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
@@ -306,18 +325,20 @@ fn references_file_type(
             if let TypeKind::Constructor { resolution: Some((f_id, t_id)) } = ty_kind
                 && (*f_id, *t_id) == (file_id, type_id)
             {
-                let root = parsed.syntax_node();
-                let ptr = lowered.source[ty_id].syntax_node_ptr();
-                let range = locate::syntax_range(&content, &root, &ptr)?;
+                let range = id_range(&content, &parsed, &lowered, ty_id)?;
+                locations.push(Location { uri: uri.clone(), range });
+            }
+            if let TypeKind::Operator { resolution: Some((f_id, t_id)) } = ty_kind
+                && (*f_id, *t_id) == (file_id, type_id)
+            {
+                let range = id_range(&content, &parsed, &lowered, ty_id)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
         for (operator_id, f_id, t_id) in lowered.intermediate.iter_type_operator() {
             if (f_id, t_id) == (file_id, type_id) {
-                let root = parsed.syntax_node();
-                let ptr = lowered.source[operator_id].syntax_node_ptr();
-                let range = locate::syntax_range(&content, &root, &ptr)?;
+                let range = id_range(&content, &parsed, &lowered, operator_id)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
