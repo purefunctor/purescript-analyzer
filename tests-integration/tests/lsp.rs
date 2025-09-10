@@ -219,3 +219,14 @@ fn test_020_references_baseline_main() {
     let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_021_references_qualified_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/021_references_qualified"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}
