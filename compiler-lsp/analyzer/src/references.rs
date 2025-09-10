@@ -293,6 +293,7 @@ fn references_file_type(
         let uri = {
             let path = files.path(candidate_id);
             let content = files.content(candidate_id);
+
             let uri = Url::parse(&path).ok()?;
             prim::handle_generated(uri, &content)?
         };
