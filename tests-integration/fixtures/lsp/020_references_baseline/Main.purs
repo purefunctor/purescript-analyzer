@@ -20,3 +20,6 @@ type Test5 = Int
 
 type Test6 = (:)
 --            %
+
+test7 = [test2, test2]
+--       %

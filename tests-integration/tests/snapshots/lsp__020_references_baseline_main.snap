@@ -117,3 +117,14 @@ type Test6 = (:)
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 20:13..20:16
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:17..14:18
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:23..14:24
+
+
+References at Position { line: 23, character: 9 }
+
+```
+test7 = [test2, test2]
+--       %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 23:9..23:14
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 23:16..23:21
