@@ -368,7 +368,7 @@ fn suggestions_candidates<T: SuggestionsHelper>(
         .any(|import| import.file == context.prim_id);
 
     let file_ids = context.files.iter_id().filter(move |&id| {
-        let not_self = id != context.id;
+        let not_self = id != context.current_file;
         let not_prim = id != context.prim_id;
         not_self && (not_prim || has_prim)
     });
@@ -565,7 +565,7 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
     let has_prim = context.resolved.qualified.values().any(|import| import.file == context.prim_id);
 
     let file_ids = context.files.iter_id().filter(move |&id| {
-        let not_self = id != context.id;
+        let not_self = id != context.current_file;
         let not_prim = id != context.prim_id;
         not_self && (not_prim || has_prim)
     });

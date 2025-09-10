@@ -29,12 +29,14 @@ pub fn implementation(
     uri: Url,
     position: Position,
 ) -> Option<CompletionResponse> {
-    let uri = uri.as_str();
+    let current_file = {
+        let uri = uri.as_str();
+        files.id(uri)?
+    };
 
-    let id = files.id(uri)?;
     let prim_id = engine.prim_id();
-    let content = engine.content(id);
-    let (parsed, _) = engine.parsed(id).ok()?;
+    let content = engine.content(current_file);
+    let (parsed, _) = engine.parsed(current_file).ok()?;
 
     let offset = locate::position_to_offset(&content, position)?;
 
@@ -56,14 +58,14 @@ pub fn implementation(
     let semantics = CursorSemantics::new(&content, position);
     let (text, range) = CursorText::new(&content, &token);
 
-    let indexed = engine.indexed(id).ok()?;
-    let resolved = engine.resolved(id).ok()?;
+    let indexed = engine.indexed(current_file).ok()?;
+    let resolved = engine.resolved(current_file).ok()?;
     let prim_resolved = engine.resolved(prim_id).ok()?;
 
     let context = Context {
         engine,
         files,
-        id,
+        current_file,
         content: &content,
         indexed: &indexed,
         parsed: &parsed,
