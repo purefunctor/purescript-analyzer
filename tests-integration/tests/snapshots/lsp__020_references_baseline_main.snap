@@ -100,7 +100,11 @@ type Test5 = Int
 --           %
 ```
 
-
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 11:26..11:29
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:13..14:16
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:19..14:22
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:25..14:28
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 17:13..17:16
 
 
 References at Position { line: 20, character: 14 }

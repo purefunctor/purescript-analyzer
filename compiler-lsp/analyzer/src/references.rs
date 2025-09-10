@@ -23,28 +23,36 @@ pub fn implementation(
     uri: Url,
     position: Position,
 ) -> Option<Vec<Location>> {
-    let f_id = {
+    let current_file = {
         let uri = uri.as_str();
         files.id(uri)?
     };
 
-    let located = locate::locate(engine, f_id, position);
+    let located = locate::locate(engine, current_file, position);
 
     match located {
-        locate::Located::ModuleName(cst) => references_module_name(engine, files, f_id, cst),
-        locate::Located::ImportItem(i_id) => references_import(engine, files, f_id, i_id),
-        locate::Located::Binder(b_id) => references_binder(engine, files, f_id, b_id),
-        locate::Located::Expression(e_id) => references_expression(engine, files, f_id, e_id),
-        locate::Located::Type(t_id) => references_type(engine, files, f_id, t_id),
-        locate::Located::TermOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_term_operator(o_id)?;
-            references_file_term(engine, files, *f_id, *t_id)
+        locate::Located::ModuleName(module_name) => {
+            references_module_name(engine, files, current_file, module_name)
         }
-        locate::Located::TypeOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_type_operator(o_id)?;
-            references_file_type(engine, files, *f_id, *t_id)
+        locate::Located::ImportItem(import_id) => {
+            references_import(engine, files, current_file, import_id)
+        }
+        locate::Located::Binder(binder_id) => {
+            references_binder(engine, files, current_file, binder_id)
+        }
+        locate::Located::Expression(expression_id) => {
+            references_expression(engine, files, current_file, expression_id)
+        }
+        locate::Located::Type(type_id) => references_type(engine, files, current_file, type_id),
+        locate::Located::TermOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_term_operator(operator_id)?;
+            references_file_term(engine, files, current_file, *f_id, *t_id)
+        }
+        locate::Located::TypeOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_type_operator(operator_id)?;
+            references_file_type(engine, files, current_file, *f_id, *t_id)
         }
         locate::Located::Nothing => None,
     }
@@ -53,13 +61,13 @@ pub fn implementation(
 fn references_module_name(
     engine: &QueryEngine,
     files: &Files,
-    file_id: FileId,
-    cst: AstPtr<cst::ModuleName>,
+    current_file: FileId,
+    module_name: AstPtr<cst::ModuleName>,
 ) -> Option<Vec<Location>> {
-    let (parsed, _) = engine.parsed(file_id).ok()?;
+    let (parsed, _) = engine.parsed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let module_name = cst.try_to_node(&root)?;
+    let module_name = module_name.try_to_node(&root)?;
 
     let module_name = module_name.syntax().text().to_smolstr();
     let module_id = engine.module_file(&module_name)?;
@@ -90,17 +98,17 @@ fn references_module_name(
 fn references_import(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    i_id: ImportItemId,
+    current_file: FileId,
+    import_id: ImportItemId,
 ) -> Option<Vec<Location>> {
     let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
+        let (parsed, _) = engine.parsed(current_file).ok()?;
+        let indexed = engine.indexed(current_file).ok()?;
         (parsed, indexed)
     };
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[i_id];
+    let ptr = &indexed.source[import_id];
     let node = ptr.try_to_node(&root)?;
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
@@ -114,13 +122,13 @@ fn references_import(
     let references_term = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
-        references_file_term(engine, files, f_id, t_id)
+        references_file_term(engine, files, current_file, f_id, t_id)
     };
 
     let references_type = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
-        references_file_type(engine, files, f_id, t_id)
+        references_file_type(engine, files, current_file, f_id, t_id)
     };
 
     match node {
@@ -155,15 +163,15 @@ fn references_import(
 fn references_binder(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    b_id: BinderId,
+    current_file: FileId,
+    binder_id: BinderId,
 ) -> Option<Vec<Location>> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_binder_kind(b_id)?;
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_binder_kind(binder_id)?;
     match kind {
         lowering::BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
-            references_file_term(engine, files, *f_id, *t_id)
+            references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         _ => None,
     }
@@ -172,15 +180,15 @@ fn references_binder(
 fn references_expression(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    e_id: ExpressionId,
+    current_file: FileId,
+    expression_id: ExpressionId,
 ) -> Option<Vec<Location>> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_expression_kind(e_id)?;
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_expression_kind(expression_id)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
-            references_file_term(engine, files, *f_id, *t_id)
+            references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref()?;
@@ -188,13 +196,13 @@ fn references_expression(
                 TermVariableResolution::Binder(_) => None,
                 TermVariableResolution::Let(_) => None,
                 TermVariableResolution::Reference(f_id, t_id) => {
-                    references_file_term(engine, files, *f_id, *t_id)
+                    references_file_term(engine, files, current_file, *f_id, *t_id)
                 }
             }
         }
         ExpressionKind::OperatorName { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
-            references_file_term(engine, files, *f_id, *t_id)
+            references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         _ => None,
     }
@@ -203,19 +211,19 @@ fn references_expression(
 fn references_type(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    t_id: TypeId,
+    current_file: FileId,
+    type_id: TypeId,
 ) -> Option<Vec<Location>> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_type_kind(t_id)?;
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_type_kind(type_id)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
-            references_file_type(engine, files, *f_id, *t_id)
+            references_file_type(engine, files, current_file, *f_id, *t_id)
         }
         TypeKind::Operator { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
-            references_file_type(engine, files, *f_id, *t_id)
+            references_file_type(engine, files, current_file, *f_id, *t_id)
         }
         _ => None,
     }
@@ -225,24 +233,25 @@ fn id_range<T>(
     content: &str,
     parsed: &ParsedModule,
     lowered: &FullLoweredModule,
-    id: Idx<AstPtr<T>>,
+    item_id: Idx<AstPtr<T>>,
 ) -> Option<Range>
 where
     T: AstNode<Language = PureScript>,
     LoweringSource: ops::Index<Idx<AstPtr<T>>, Output = AstPtr<T>>,
 {
     let root = parsed.syntax_node();
-    let ptr = lowered.source[id].syntax_node_ptr();
+    let ptr = lowered.source[item_id].syntax_node_ptr();
     locate::syntax_range(content, &root, &ptr)
 }
 
 fn references_file_term(
     engine: &QueryEngine,
     files: &Files,
+    current_file: FileId,
     file_id: FileId,
     term_id: TermItemId,
 ) -> Option<Vec<Location>> {
-    let candidates = probe_term_references(engine, files, file_id, term_id)?;
+    let candidates = probe_term_references(engine, files, current_file, file_id, term_id)?;
 
     let mut locations = vec![];
     for candidate_id in candidates {
@@ -302,10 +311,11 @@ fn references_file_term(
 fn references_file_type(
     engine: &QueryEngine,
     files: &Files,
+    current_file: FileId,
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Option<Vec<Location>> {
-    let candidates = probe_type_references(engine, files, file_id, type_id)?;
+    let candidates = probe_type_references(engine, files, current_file, file_id, type_id)?;
 
     let mut locations = vec![];
     for candidate_id in candidates {
@@ -350,10 +360,11 @@ fn references_file_type(
 fn probe_term_references(
     engine: &QueryEngine,
     files: &Files,
+    current_file: FileId,
     file_id: FileId,
     term_id: TermItemId,
 ) -> Option<Vec<FileId>> {
-    probe_workspace_imports(engine, files, file_id, |import| {
+    probe_workspace_imports(engine, files, current_file, |import| {
         import.iter_terms().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, term_id)
         })
@@ -363,10 +374,11 @@ fn probe_term_references(
 fn probe_type_references(
     engine: &QueryEngine,
     files: &Files,
+    current_file: FileId,
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Option<Vec<FileId>> {
-    probe_workspace_imports(engine, files, file_id, |import| {
+    probe_workspace_imports(engine, files, current_file, |import| {
         import.iter_types().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, type_id)
         })
@@ -376,13 +388,13 @@ fn probe_type_references(
 fn probe_workspace_imports(
     engine: &QueryEngine,
     files: &Files,
-    file_id: FileId,
+    current_file: FileId,
     check_import: impl Fn(&ResolvedImport) -> bool,
 ) -> Option<Vec<FileId>> {
-    let mut probe = vec![file_id];
+    let mut probe = vec![current_file];
 
     for workspace_file_id in files.iter_id() {
-        if workspace_file_id == file_id {
+        if workspace_file_id == current_file {
             continue;
         }
 
