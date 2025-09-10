@@ -74,13 +74,10 @@ pub enum Located {
 }
 
 pub fn locate(engine: &QueryEngine, id: FileId, position: Position) -> Located {
-    let (content, parsed, indexed, lowered) = {
-        let content = engine.content(id);
-        let Ok((parsed, _)) = engine.parsed(id) else { return Located::Nothing };
-        let Ok(indexed) = engine.indexed(id) else { return Located::Nothing };
-        let Ok(lowered) = engine.lowered(id) else { return Located::Nothing };
-        (content, parsed, indexed, lowered)
-    };
+    let content = engine.content(id);
+    let Ok((parsed, _)) = engine.parsed(id) else { return Located::Nothing };
+    let Ok(indexed) = engine.indexed(id) else { return Located::Nothing };
+    let Ok(lowered) = engine.lowered(id) else { return Located::Nothing };
 
     let Some(offset) = position_to_offset(&content, position) else {
         return Located::Nothing;
