@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..70
       ModuleHeader@0..41
         MODULE@0..6 "module"
-        ModuleName@6..35
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..35
           UPPER@7..35 "ExpressionRecordUpdat ..."
         Annotation@35..36
           TEXT@35..36 " "
@@ -26,9 +26,9 @@ expression: "(node, errors)"
             WhereExpression@51..69
               ExpressionRecordUpdate@51..69
                 ExpressionVariable@51..53
-                  QualifiedName@51..53
-                    Annotation@51..52
-                      TEXT@51..52 " "
+                  Annotation@51..52
+                    TEXT@51..52 " "
+                  QualifiedName@52..53
                     LOWER@52..53 "a"
                 RecordUpdates@53..69
                   Annotation@53..54
@@ -52,9 +52,9 @@ expression: "(node, errors)"
                           TEXT@61..62 " "
                         EQUAL@62..63 "="
                         ExpressionVariable@63..65
-                          QualifiedName@63..65
-                            Annotation@63..64
-                              TEXT@63..64 " "
+                          Annotation@63..64
+                            TEXT@63..64 " "
+                          QualifiedName@64..65
                             LOWER@64..65 "d"
                       Annotation@65..66
                         TEXT@65..66 " "

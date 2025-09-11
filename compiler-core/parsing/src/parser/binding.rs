@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{binders, expressions, generic, Parser};
+use super::{Parser, binders, expressions, generic};
 
 const LET_BINDING_START: TokenSet = TokenSet::new(&[SyntaxKind::LOWER])
     .union(expressions::EXPRESSION_START)

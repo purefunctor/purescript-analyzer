@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{names, Parser};
+use super::{Parser, names};
 
 pub(super) fn type_(p: &mut Parser) {
     let mut m = p.start();

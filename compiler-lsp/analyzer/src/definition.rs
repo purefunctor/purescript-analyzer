@@ -7,7 +7,7 @@ use lowering::{
     TermVariableResolution, TypeId, TypeKind, TypeVariableResolution,
 };
 use rowan::ast::{AstNode, AstPtr};
-use smol_str::SmolStrBuilder;
+use smol_str::ToSmolStr;
 use syntax::cst;
 
 use crate::locate;
@@ -18,26 +18,37 @@ pub fn implementation(
     uri: Url,
     position: Position,
 ) -> Option<GotoDefinitionResponse> {
-    let f_id = {
+    let current_file = {
         let uri = uri.as_str();
         files.id(uri)?
     };
 
-    let thing = locate::locate(engine, f_id, position);
-    match thing {
-        locate::Located::ModuleName(cst) => definition_module_name(engine, files, f_id, cst),
-        locate::Located::ImportItem(i_id) => definition_import(engine, files, f_id, i_id),
-        locate::Located::Binder(b_id) => definition_binder(engine, files, f_id, b_id),
-        locate::Located::Expression(e_id) => definition_expression(engine, files, uri, f_id, e_id),
-        locate::Located::Type(t_id) => definition_type(engine, files, uri, f_id, t_id),
-        locate::Located::TermOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_term_operator(o_id)?;
+    let located = locate::locate(engine, current_file, position);
+
+    match located {
+        locate::Located::ModuleName(module_name) => {
+            definition_module_name(engine, files, current_file, module_name)
+        }
+        locate::Located::ImportItem(import_id) => {
+            definition_import(engine, files, current_file, import_id)
+        }
+        locate::Located::Binder(binder_id) => {
+            definition_binder(engine, files, current_file, binder_id)
+        }
+        locate::Located::Expression(expression_id) => {
+            definition_expression(engine, files, uri, current_file, expression_id)
+        }
+        locate::Located::Type(type_id) => {
+            definition_type(engine, files, uri, current_file, type_id)
+        }
+        locate::Located::TermOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_term_operator(operator_id)?;
             definition_file_term(engine, files, *f_id, *t_id)
         }
-        locate::Located::TypeOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_type_operator(o_id)?;
+        locate::Located::TypeOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_type_operator(operator_id)?;
             definition_file_type(engine, files, *f_id, *t_id)
         }
         locate::Located::Nothing => None,
@@ -47,45 +58,31 @@ pub fn implementation(
 fn definition_module_name(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    cst: AstPtr<cst::ModuleName>,
+    current_file: FileId,
+    module_name: AstPtr<cst::ModuleName>,
 ) -> Option<GotoDefinitionResponse> {
-    let (parsed, _) = engine.parsed(f_id).ok()?;
+    let (parsed, _) = engine.parsed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let module = cst.try_to_node(&root)?;
-    let module = {
-        let mut buffer = SmolStrBuilder::default();
+    let module_name = module_name.try_to_node(&root)?;
 
-        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
-            buffer.push_str(token.text());
-        }
+    let module_name = module_name.syntax().text().to_smolstr();
+    let module_id = engine.module_file(&module_name)?;
 
-        let token = module.name_token()?;
-        buffer.push_str(token.text());
+    let path = files.path(module_id);
+    let content = engine.content(module_id);
 
-        buffer.finish()
-    };
+    let (parsed, _) = engine.parsed(module_id).ok()?;
+    let root = parsed.syntax_node();
 
-    let (uri, range) = {
-        let id = engine.module_file(&module)?;
-        let path = files.path(id);
-        let content = engine.content(id);
+    let range = root.text_range();
+    let start = locate::offset_to_position(&content, range.start());
+    let end = locate::offset_to_position(&content, range.end());
 
-        let (parsed, _) = engine.parsed(id).ok()?;
-        let root = parsed.syntax_node();
+    let uri = Url::parse(&path).ok()?;
+    let uri = prim::handle_generated(uri, &content)?;
 
-        let range = root.text_range();
-        let start = locate::offset_to_position(&content, range.start());
-        let end = locate::offset_to_position(&content, range.end());
-
-        let uri = Url::parse(&path).ok()?;
-        let uri = prim::handle_generated(uri, &content)?;
-
-        let range = Range { start, end };
-
-        (uri, range)
-    };
+    let range = Range { start, end };
 
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
 }
@@ -93,37 +90,21 @@ fn definition_module_name(
 fn definition_import(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    i_id: ImportItemId,
+    current_file: FileId,
+    import_id: ImportItemId,
 ) -> Option<GotoDefinitionResponse> {
-    let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (parsed, indexed)
-    };
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let indexed = engine.indexed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[i_id];
+    let ptr = &indexed.source[import_id];
     let node = ptr.try_to_node(&root)?;
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
-    let module = statement.module_name()?;
-
-    let module = {
-        let mut buffer = SmolStrBuilder::default();
-
-        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
-            buffer.push_str(token.text());
-        }
-
-        let token = module.name_token()?;
-        buffer.push_str(token.text());
-
-        buffer.finish()
-    };
+    let module_name = statement.module_name()?.syntax().to_smolstr();
 
     let import_resolved = {
-        let import_id = engine.module_file(&module)?;
+        let import_id = engine.module_file(&module_name)?;
         engine.resolved(import_id).ok()?
     };
 
@@ -139,18 +120,15 @@ fn definition_import(
             prim::handle_generated(uri, &content)?
         };
 
-        let (content, parsed, indexed) = {
-            let content = engine.content(f_id);
-            let (parsed, _) = engine.parsed(f_id).ok()?;
-            let indexed = engine.indexed(f_id).ok()?;
-            (content, parsed, indexed)
-        };
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
 
         let root = parsed.syntax_node();
         let ptrs = indexed.term_item_ptr(t_id);
         let range = ptrs
             .into_iter()
-            .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+            .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
             .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
@@ -167,18 +145,15 @@ fn definition_import(
             prim::handle_generated(uri, &content)?
         };
 
-        let (content, parsed, indexed) = {
-            let content = engine.content(f_id);
-            let (parsed, _) = engine.parsed(f_id).ok()?;
-            let indexed = engine.indexed(f_id).ok()?;
-            (content, parsed, indexed)
-        };
+        let content = engine.content(f_id);
+        let (parsed, _) = engine.parsed(f_id).ok()?;
+        let indexed = engine.indexed(f_id).ok()?;
 
         let root = parsed.syntax_node();
         let ptrs = indexed.type_item_ptr(t_id);
         let range = ptrs
             .into_iter()
-            .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+            .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
             .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
         Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
@@ -216,11 +191,11 @@ fn definition_import(
 fn definition_binder(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    b_id: BinderId,
+    current_file: FileId,
+    binder_id: BinderId,
 ) -> Option<GotoDefinitionResponse> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_binder_kind(b_id)?;
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_binder_kind(binder_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -234,17 +209,14 @@ fn definition_expression(
     engine: &QueryEngine,
     files: &Files,
     uri: Url,
-    f_id: FileId,
-    e_id: ExpressionId,
+    current_file: FileId,
+    expression_id: ExpressionId,
 ) -> Option<GotoDefinitionResponse> {
-    let (content, parsed, lowered) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (content, parsed, lowered)
-    };
+    let content = engine.content(current_file);
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let lowered = engine.lowered(current_file).ok()?;
 
-    let kind = lowered.intermediate.index_expression_kind(e_id)?;
+    let kind = lowered.intermediate.index_expression_kind(expression_id)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -255,8 +227,8 @@ fn definition_expression(
             match resolution {
                 TermVariableResolution::Binder(binder) => {
                     let root = parsed.syntax_node();
-                    let ptr = &lowered.source[*binder].syntax_node_ptr();
-                    let range = locate::range_without_annotation(&content, ptr, &root)?;
+                    let ptr = lowered.source[*binder].syntax_node_ptr();
+                    let range = locate::syntax_range(&content, &root, &ptr)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
                 TermVariableResolution::Let(binding) => {
@@ -266,13 +238,13 @@ fn definition_expression(
                         .signature
                         .and_then(|id| {
                             let ptr = lowered.source[id].syntax_node_ptr();
-                            locate::range_without_annotation(&content, &ptr, &root)
+                            locate::syntax_range(&content, &root, &ptr)
                         })
                         .into_iter();
 
                     let equations = binding.equations.iter().filter_map(|&id| {
                         let ptr = lowered.source[id].syntax_node_ptr();
-                        locate::range_without_annotation(&content, &ptr, &root)
+                        locate::syntax_range(&content, &root, &ptr)
                     });
 
                     let range = signature
@@ -298,17 +270,14 @@ fn definition_type(
     engine: &QueryEngine,
     files: &Files,
     uri: Url,
-    f_id: FileId,
-    t_id: TypeId,
+    current_file: FileId,
+    type_id: TypeId,
 ) -> Option<GotoDefinitionResponse> {
-    let (content, parsed, lowered) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let lowered = engine.lowered(f_id).ok()?;
-        (content, parsed, lowered)
-    };
+    let content = engine.content(current_file);
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let lowered = engine.lowered(current_file).ok()?;
 
-    let kind = lowered.intermediate.index_type_kind(t_id)?;
+    let kind = lowered.intermediate.index_type_kind(type_id)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -323,8 +292,8 @@ fn definition_type(
             match resolution {
                 TypeVariableResolution::Forall(binding) => {
                     let root = parsed.syntax_node();
-                    let ptr = &lowered.source[*binding].syntax_node_ptr();
-                    let range = locate::range_without_annotation(&content, ptr, &root)?;
+                    let ptr = lowered.source[*binding].syntax_node_ptr();
+                    let range = locate::syntax_range(&content, &root, &ptr)?;
                     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
                 }
                 TypeVariableResolution::Implicit(ImplicitTypeVariable { .. }) => None,
@@ -337,30 +306,27 @@ fn definition_type(
 fn definition_file_term(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    t_id: TermItemId,
+    file_id: FileId,
+    term_id: TermItemId,
 ) -> Option<GotoDefinitionResponse> {
     let uri = {
-        let path = files.path(f_id);
-        let content = files.content(f_id);
+        let path = files.path(file_id);
+        let content = files.content(file_id);
         let uri = Url::parse(&path).ok()?;
         prim::handle_generated(uri, &content)?
     };
 
-    let (content, parsed, indexed) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (content, parsed, indexed)
-    };
+    let content = engine.content(file_id);
+    let (parsed, _) = engine.parsed(file_id).ok()?;
+    let indexed = engine.indexed(file_id).ok()?;
 
     // TODO: Once we implement textDocument/typeDefinition, we
     // should probably also add a term_item_type_ptr function.
     let root = parsed.syntax_node();
-    let ptrs = indexed.term_item_ptr(t_id);
+    let ptrs = indexed.term_item_ptr(term_id);
     let range = ptrs
         .into_iter()
-        .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))
@@ -369,28 +335,25 @@ fn definition_file_term(
 fn definition_file_type(
     engine: &QueryEngine,
     files: &Files,
-    f_id: FileId,
-    t_id: TypeItemId,
+    file_id: FileId,
+    type_id: TypeItemId,
 ) -> Option<GotoDefinitionResponse> {
     let uri = {
-        let path = files.path(f_id);
-        let content = files.content(f_id);
+        let path = files.path(file_id);
+        let content = files.content(file_id);
         let uri = Url::parse(&path).ok()?;
         prim::handle_generated(uri, &content)?
     };
 
-    let (content, parsed, indexed) = {
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (content, parsed, indexed)
-    };
+    let content = engine.content(file_id);
+    let (parsed, _) = engine.parsed(file_id).ok()?;
+    let indexed = engine.indexed(file_id).ok()?;
 
     let root = parsed.syntax_node();
-    let ptrs = indexed.type_item_ptr(t_id);
+    let ptrs = indexed.type_item_ptr(type_id);
     let range = ptrs
         .into_iter()
-        .filter_map(|ptr| locate::range_without_annotation(&content, &ptr, &root))
+        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })?;
 
     Some(GotoDefinitionResponse::Scalar(Location { uri, range }))

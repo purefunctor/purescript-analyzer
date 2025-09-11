@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..68
       ModuleHeader@0..35
         MODULE@0..6 "module"
-        ModuleName@6..29
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..29
           UPPER@7..29 "ExpressionRecordUpdate"
         Annotation@29..30
           TEXT@29..30 " "
@@ -26,9 +26,9 @@ expression: "(node, errors)"
             WhereExpression@46..67
               ExpressionApplicationChain@46..67
                 ExpressionConstructor@46..52
-                  QualifiedName@46..52
-                    Annotation@46..47
-                      TEXT@46..47 " "
+                  Annotation@46..47
+                    TEXT@46..47 " "
+                  QualifiedName@47..52
                     UPPER@47..52 "Point"
                 ExpressionTermArgument@52..67
                   ExpressionRecord@52..67

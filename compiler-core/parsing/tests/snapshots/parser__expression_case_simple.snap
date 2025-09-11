@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..77
       ModuleHeader@0..33
         MODULE@0..6 "module"
-        ModuleName@6..27
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..27
           UPPER@7..27 "ExpressionCaseSimple"
         Annotation@27..28
           TEXT@27..28 " "
@@ -30,9 +30,9 @@ expression: "(node, errors)"
                 CASE@42..46 "case"
                 CaseTrunk@46..48
                   ExpressionVariable@46..48
-                    QualifiedName@46..48
-                      Annotation@46..47
-                        TEXT@46..47 " "
+                    Annotation@46..47
+                      TEXT@46..47 " "
+                    QualifiedName@47..48
                       LOWER@47..48 "n"
                 Annotation@48..49
                   TEXT@48..49 " "

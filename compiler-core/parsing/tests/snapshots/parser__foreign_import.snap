@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..96
       ModuleHeader@0..26
         MODULE@0..6 "module"
-        ModuleName@6..20
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..20
           UPPER@7..20 "ForeignImport"
         Annotation@20..21
           TEXT@20..21 " "
@@ -32,9 +32,9 @@ expression: "(node, errors)"
             TEXT@52..53 " "
           DOUBLE_COLON@53..55 "::"
           TypeConstructor@55..60
-            QualifiedName@55..60
-              Annotation@55..56
-                TEXT@55..56 " "
+            Annotation@55..56
+              TEXT@55..56 " "
+            QualifiedName@56..60
               UPPER@56..60 "Type"
         LAYOUT_SEPARATOR@60..60 ""
         ForeignImportValueDeclaration@60..95
@@ -52,17 +52,17 @@ expression: "(node, errors)"
           DOUBLE_COLON@82..84 "::"
           TypeArrow@84..95
             TypeConstructor@84..88
-              QualifiedName@84..88
-                Annotation@84..85
-                  TEXT@84..85 " "
+              Annotation@84..85
+                TEXT@84..85 " "
+              QualifiedName@85..88
                 UPPER@85..88 "Int"
             Annotation@88..89
               TEXT@88..89 " "
             RIGHT_ARROW@89..91 "->"
             TypeConstructor@91..95
-              QualifiedName@91..95
-                Annotation@91..92
-                  TEXT@91..92 " "
+              Annotation@91..92
+                TEXT@91..92 " "
+              QualifiedName@92..95
                 UPPER@92..95 "Int"
       LAYOUT_END@95..95 ""
       Annotation@95..96

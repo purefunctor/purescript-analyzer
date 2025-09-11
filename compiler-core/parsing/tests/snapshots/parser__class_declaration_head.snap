@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..92
       ModuleHeader@0..33
         MODULE@0..6 "module"
-        ModuleName@6..27
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..27
           UPPER@7..27 "ClassDeclarationHead"
         Annotation@27..28
           TEXT@27..28 " "
@@ -48,9 +48,9 @@ expression: "(node, errors)"
           ClassConstraints@70..83
             TypeApplicationChain@70..80
               TypeConstructor@70..78
-                QualifiedName@70..78
-                  Annotation@70..71
-                    TEXT@70..71 " "
+                Annotation@70..71
+                  TEXT@70..71 " "
+                QualifiedName@71..78
                   UPPER@71..78 "Functor"
               TypeVariable@78..80
                 Annotation@78..79

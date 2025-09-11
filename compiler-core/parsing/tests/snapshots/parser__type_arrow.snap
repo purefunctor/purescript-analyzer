@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..61
       ModuleHeader@0..22
         MODULE@0..6 "module"
-        ModuleName@6..16
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..16
           UPPER@7..16 "TypeArrow"
         Annotation@16..17
           TEXT@16..17 " "
@@ -24,17 +24,17 @@ expression: "(node, errors)"
           DOUBLE_COLON@30..32 "::"
           TypeArrow@32..39
             TypeConstructor@32..34
-              QualifiedName@32..34
-                Annotation@32..33
-                  TEXT@32..33 " "
+              Annotation@32..33
+                TEXT@32..33 " "
+              QualifiedName@33..34
                 UPPER@33..34 "A"
             Annotation@34..35
               TEXT@34..35 " "
             RIGHT_ARROW@35..37 "->"
             TypeConstructor@37..39
-              QualifiedName@37..39
-                Annotation@37..38
-                  TEXT@37..38 " "
+              Annotation@37..38
+                TEXT@37..38 " "
+              QualifiedName@38..39
                 UPPER@38..39 "B"
         LAYOUT_SEPARATOR@39..39 ""
         ValueSignature@39..60
@@ -46,26 +46,26 @@ expression: "(node, errors)"
           DOUBLE_COLON@46..48 "::"
           TypeArrow@48..60
             TypeConstructor@48..50
-              QualifiedName@48..50
-                Annotation@48..49
-                  TEXT@48..49 " "
+              Annotation@48..49
+                TEXT@48..49 " "
+              QualifiedName@49..50
                 UPPER@49..50 "A"
             Annotation@50..51
               TEXT@50..51 " "
             RIGHT_ARROW@51..53 "->"
             TypeArrow@53..60
               TypeConstructor@53..55
-                QualifiedName@53..55
-                  Annotation@53..54
-                    TEXT@53..54 " "
+                Annotation@53..54
+                  TEXT@53..54 " "
+                QualifiedName@54..55
                   UPPER@54..55 "B"
               Annotation@55..56
                 TEXT@55..56 " "
               RIGHT_ARROW@56..58 "->"
               TypeConstructor@58..60
-                QualifiedName@58..60
-                  Annotation@58..59
-                    TEXT@58..59 " "
+                Annotation@58..59
+                  TEXT@58..59 " "
+                QualifiedName@59..60
                   UPPER@59..60 "C"
       LAYOUT_END@60..60 ""
       Annotation@60..61

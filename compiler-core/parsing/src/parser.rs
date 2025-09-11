@@ -48,8 +48,12 @@ impl<'t> Parser<'t> {
         self.output.push(Output::Token { kind });
     }
 
-    fn prefix(&mut self) {
-        self.output.push(Output::Prefix);
+    fn annotate(&mut self) {
+        self.output.push(Output::Annotate);
+    }
+
+    fn qualify(&mut self) {
+        self.output.push(Output::Qualify);
     }
 
     fn start(&mut self) -> NodeMarker {

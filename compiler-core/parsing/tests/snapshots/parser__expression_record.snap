@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..122
       ModuleHeader@0..29
         MODULE@0..6 "module"
-        ModuleName@6..23
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..23
           UPPER@7..23 "ExpressionRecord"
         Annotation@23..24
           TEXT@23..24 " "
@@ -90,9 +90,9 @@ expression: "(node, errors)"
                     TEXT@82..83 "x"
                   COLON@83..84 ":"
                   ExpressionVariable@84..86
-                    QualifiedName@84..86
-                      Annotation@84..85
-                        TEXT@84..85 " "
+                    Annotation@84..85
+                      TEXT@84..85 " "
+                    QualifiedName@85..86
                       LOWER@85..86 "y"
                 COMMA@86..87 ","
                 RecordField@87..92
@@ -102,9 +102,9 @@ expression: "(node, errors)"
                     TEXT@88..89 "y"
                   COLON@89..90 ":"
                   ExpressionVariable@90..92
-                    QualifiedName@90..92
-                      Annotation@90..91
-                        TEXT@90..91 " "
+                    Annotation@90..91
+                      TEXT@90..91 " "
+                    QualifiedName@91..92
                       LOWER@91..92 "x"
                 RIGHT_CURLY@92..93 "}"
         LAYOUT_SEPARATOR@93..93 ""
@@ -132,9 +132,9 @@ expression: "(node, errors)"
                     TEXT@107..108 "b"
                   COLON@108..109 ":"
                   ExpressionVariable@109..111
-                    QualifiedName@109..111
-                      Annotation@109..110
-                        TEXT@109..110 " "
+                    Annotation@109..110
+                      TEXT@109..110 " "
+                    QualifiedName@110..111
                       LOWER@110..111 "c"
                 COMMA@111..112 ","
                 RecordPun@112..114
@@ -150,9 +150,9 @@ expression: "(node, errors)"
                     TEXT@116..117 "e"
                   COLON@117..118 ":"
                   ExpressionVariable@118..120
-                    QualifiedName@118..120
-                      Annotation@118..119
-                        TEXT@118..119 " "
+                    Annotation@118..119
+                      TEXT@118..119 " "
+                    QualifiedName@119..120
                       LOWER@119..120 "f"
                 RIGHT_CURLY@120..121 "}"
       LAYOUT_END@121..121 ""

@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..343
       ModuleHeader@0..45
         MODULE@0..6 "module"
-        ModuleName@6..39
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..39
           UPPER@7..39 "DeriveDeclarationName ..."
         Annotation@39..40
           TEXT@39..40 " "
@@ -32,27 +32,27 @@ expression: "(node, errors)"
           InstanceConstraints@80..97
             TypeApplicationChain@80..94
               TypeConstructor@80..87
-                QualifiedName@80..87
-                  Annotation@80..81
-                    TEXT@80..81 " "
+                Annotation@80..81
+                  TEXT@80..81 " "
+                QualifiedName@81..87
                   UPPER@81..87 "Monoid"
               TypeConstructor@87..94
-                QualifiedName@87..94
-                  Annotation@87..88
-                    TEXT@87..88 " "
+                Annotation@87..88
+                  TEXT@87..88 " "
+                QualifiedName@88..94
                   UPPER@88..94 "Parser"
             Annotation@94..95
               TEXT@94..95 " "
             RIGHT_THICK_ARROW@95..97 "=>"
           InstanceHead@97..112
-            QualifiedName@97..105
-              Annotation@97..98
-                TEXT@97..98 " "
+            Annotation@97..98
+              TEXT@97..98 " "
+            QualifiedName@98..105
               UPPER@98..105 "Functor"
             TypeConstructor@105..112
-              QualifiedName@105..112
-                Annotation@105..106
-                  TEXT@105..106 " "
+              Annotation@105..106
+                TEXT@105..106 " "
+              QualifiedName@106..112
                 UPPER@106..112 "Parser"
         LAYOUT_SEPARATOR@112..112 ""
         DeriveDeclaration@112..185
@@ -75,27 +75,27 @@ expression: "(node, errors)"
           InstanceConstraints@153..170
             TypeApplicationChain@153..167
               TypeConstructor@153..160
-                QualifiedName@153..160
-                  Annotation@153..154
-                    TEXT@153..154 " "
+                Annotation@153..154
+                  TEXT@153..154 " "
+                QualifiedName@154..160
                   UPPER@154..160 "Monoid"
               TypeConstructor@160..167
-                QualifiedName@160..167
-                  Annotation@160..161
-                    TEXT@160..161 " "
+                Annotation@160..161
+                  TEXT@160..161 " "
+                QualifiedName@161..167
                   UPPER@161..167 "Parser"
             Annotation@167..168
               TEXT@167..168 " "
             RIGHT_THICK_ARROW@168..170 "=>"
           InstanceHead@170..185
-            QualifiedName@170..178
-              Annotation@170..171
-                TEXT@170..171 " "
+            Annotation@170..171
+              TEXT@170..171 " "
+            QualifiedName@171..178
               UPPER@171..178 "Functor"
             TypeConstructor@178..185
-              QualifiedName@178..185
-                Annotation@178..179
-                  TEXT@178..179 " "
+              Annotation@178..179
+                TEXT@178..179 " "
+              QualifiedName@179..185
                 UPPER@179..185 "Parser"
         LAYOUT_SEPARATOR@185..185 ""
         DeriveDeclaration@185..260
@@ -127,9 +127,9 @@ expression: "(node, errors)"
             COMMA@227..228 ","
             TypeApplicationChain@228..237
               TypeConstructor@228..235
-                QualifiedName@228..235
-                  Annotation@228..229
-                    TEXT@228..229 " "
+                Annotation@228..229
+                  TEXT@228..229 " "
+                QualifiedName@229..235
                   UPPER@229..235 "Monoid"
               TypeVariable@235..237
                 Annotation@235..236
@@ -140,9 +140,9 @@ expression: "(node, errors)"
               TEXT@238..239 " "
             RIGHT_THICK_ARROW@239..241 "=>"
           InstanceHead@241..260
-            QualifiedName@241..248
-              Annotation@241..242
-                TEXT@241..242 " "
+            Annotation@241..242
+              TEXT@241..242 " "
+            QualifiedName@242..248
               UPPER@242..248 "Monoid"
             TypeParenthesized@248..260
               Annotation@248..249
@@ -194,9 +194,9 @@ expression: "(node, errors)"
             COMMA@309..310 ","
             TypeApplicationChain@310..319
               TypeConstructor@310..317
-                QualifiedName@310..317
-                  Annotation@310..311
-                    TEXT@310..311 " "
+                Annotation@310..311
+                  TEXT@310..311 " "
+                QualifiedName@311..317
                   UPPER@311..317 "Monoid"
               TypeVariable@317..319
                 Annotation@317..318
@@ -207,9 +207,9 @@ expression: "(node, errors)"
               TEXT@320..321 " "
             RIGHT_THICK_ARROW@321..323 "=>"
           InstanceHead@323..342
-            QualifiedName@323..330
-              Annotation@323..324
-                TEXT@323..324 " "
+            Annotation@323..324
+              TEXT@323..324 " "
+            QualifiedName@324..330
               UPPER@324..330 "Monoid"
             TypeParenthesized@330..342
               Annotation@330..331

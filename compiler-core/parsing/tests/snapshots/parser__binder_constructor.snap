@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..139
       ModuleHeader@0..30
         MODULE@0..6 "module"
-        ModuleName@6..24
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..24
           UPPER@7..24 "BinderConstructor"
         Annotation@24..25
           TEXT@24..25 " "
@@ -52,9 +52,9 @@ expression: "(node, errors)"
           LOWER@60..71 "constructor"
           FunctionBinders@71..75
             BinderConstructor@71..75
-              QualifiedName@71..75
-                Annotation@71..72
-                  TEXT@71..72 " "
+              Annotation@71..72
+                TEXT@71..72 " "
+              QualifiedName@72..75
                 UPPER@72..75 "Nil"
           Unconditional@75..79
             Annotation@75..76
@@ -105,9 +105,9 @@ expression: "(node, errors)"
           LOWER@114..125 "constructor"
           FunctionBinders@125..134
             BinderConstructor@125..134
-              QualifiedName@125..134
-                Annotation@125..126
-                  TEXT@125..126 " "
+              Annotation@125..126
+                TEXT@125..126 " "
+              QualifiedName@126..134
                 Qualifier@126..131
                   TEXT@126..131 "List."
                 UPPER@131..134 "Nil"

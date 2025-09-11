@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{binders, binding, generic, names, types, NodeMarker, Parser};
+use super::{NodeMarker, Parser, binders, binding, generic, names, types};
 
 pub fn expression(p: &mut Parser) {
     let mut m = p.start();

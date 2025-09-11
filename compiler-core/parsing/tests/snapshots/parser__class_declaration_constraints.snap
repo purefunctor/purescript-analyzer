@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..190
       ModuleHeader@0..40
         MODULE@0..6 "module"
-        ModuleName@6..34
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..34
           UPPER@7..34 "ClassDeclarationConst ..."
         Annotation@34..35
           TEXT@34..35 " "
@@ -22,9 +22,9 @@ expression: "(node, errors)"
           ClassConstraints@47..58
             TypeApplicationChain@47..55
               TypeConstructor@47..53
-                QualifiedName@47..53
-                  Annotation@47..48
-                    TEXT@47..48 " "
+                Annotation@47..48
+                  TEXT@47..48 " "
+                QualifiedName@48..53
                   UPPER@48..53 "Apply"
               TypeVariable@53..55
                 Annotation@53..54
@@ -100,9 +100,9 @@ expression: "(node, errors)"
             COMMA@125..126 ","
             TypeApplicationChain@126..140
               TypeConstructor@126..138
-                QualifiedName@126..138
-                  Annotation@126..127
-                    TEXT@126..127 " "
+                Annotation@126..127
+                  TEXT@126..127 " "
+                QualifiedName@127..138
                   UPPER@127..138 "Applicative"
               TypeVariable@138..140
                 Annotation@138..139

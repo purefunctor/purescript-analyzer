@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..107
       ModuleHeader@0..32
         MODULE@0..6 "module"
-        ModuleName@6..26
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..26
           UPPER@7..26 "ExpressionCaseGuard"
         Annotation@26..27
           TEXT@26..27 " "
@@ -30,9 +30,9 @@ expression: "(node, errors)"
                 CASE@41..45 "case"
                 CaseTrunk@45..47
                   ExpressionVariable@45..47
-                    QualifiedName@45..47
-                      Annotation@45..46
-                        TEXT@45..46 " "
+                    Annotation@45..46
+                      TEXT@45..46 " "
+                    QualifiedName@46..47
                       LOWER@46..47 "n"
                 Annotation@47..48
                   TEXT@47..48 " "
@@ -53,15 +53,15 @@ expression: "(node, errors)"
                         PatternGuardExpression@56..63
                           ExpressionOperatorChain@56..63
                             ExpressionVariable@56..58
-                              QualifiedName@56..58
-                                Annotation@56..57
-                                  TEXT@56..57 " "
+                              Annotation@56..57
+                                TEXT@56..57 " "
+                              QualifiedName@57..58
                                 LOWER@57..58 "n"
                             ExpressionOperatorPair@58..63
                               TermOperator@58..61
-                                QualifiedName@58..61
-                                  Annotation@58..59
-                                    TEXT@58..59 " "
+                                Annotation@58..59
+                                  TEXT@58..59 " "
+                                QualifiedName@59..61
                                   OPERATOR@59..61 "=="
                               ExpressionInteger@61..63
                                 Annotation@61..62
@@ -96,9 +96,9 @@ expression: "(node, errors)"
                             TEXT@79..80 " "
                           LEFT_ARROW@80..82 "<-"
                           ExpressionVariable@82..84
-                            QualifiedName@82..84
-                              Annotation@82..83
-                                TEXT@82..83 " "
+                            Annotation@82..83
+                              TEXT@82..83 " "
+                            QualifiedName@83..84
                               LOWER@83..84 "n"
                         Annotation@84..89
                           TEXT@84..89 "\n    "
@@ -106,20 +106,20 @@ expression: "(node, errors)"
                         PatternGuardExpression@90..97
                           ExpressionOperatorChain@90..97
                             ExpressionVariable@90..92
-                              QualifiedName@90..92
-                                Annotation@90..91
-                                  TEXT@90..91 " "
+                              Annotation@90..91
+                                TEXT@90..91 " "
+                              QualifiedName@91..92
                                 LOWER@91..92 "m"
                             ExpressionOperatorPair@92..97
                               TermOperator@92..95
-                                QualifiedName@92..95
-                                  Annotation@92..93
-                                    TEXT@92..93 " "
+                                Annotation@92..93
+                                  TEXT@92..93 " "
+                                QualifiedName@93..95
                                   OPERATOR@93..95 "=="
                               ExpressionVariable@95..97
-                                QualifiedName@95..97
-                                  Annotation@95..96
-                                    TEXT@95..96 " "
+                                Annotation@95..96
+                                  TEXT@95..96 " "
+                                QualifiedName@96..97
                                   LOWER@96..97 "n"
                         Annotation@97..98
                           TEXT@97..98 " "

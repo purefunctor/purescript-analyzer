@@ -74,8 +74,8 @@ where
         let import_text = format!("import {module_name} ({import_list})");
 
         let import_range = {
-            let text_range = locate::text_range_after_annotation(&ptr.syntax_node_ptr(), &root);
-            text_range.map(|range| locate::text_range_to_range(context.content, range))
+            let ptr = ptr.syntax_node_ptr();
+            locate::syntax_range(context.content, &root, &ptr)
         };
 
         (Some(import_text), import_range)

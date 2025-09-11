@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..52
       ModuleHeader@0..29
         MODULE@0..6 "module"
-        ModuleName@6..23
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..23
           UPPER@7..23 "NewtypeSignature"
         Annotation@23..24
           TEXT@23..24 " "
@@ -26,9 +26,9 @@ expression: "(node, errors)"
             TEXT@43..44 " "
           DOUBLE_COLON@44..46 "::"
           TypeConstructor@46..51
-            QualifiedName@46..51
-              Annotation@46..47
-                TEXT@46..47 " "
+            Annotation@46..47
+              TEXT@46..47 " "
+            QualifiedName@47..51
               UPPER@47..51 "Type"
       LAYOUT_END@51..51 ""
       Annotation@51..52

@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..69
       ModuleHeader@0..33
         MODULE@0..6 "module"
-        ModuleName@6..27
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..27
           UPPER@7..27 "ExpressionIfThenElse"
         Annotation@27..28
           TEXT@27..28 " "
@@ -30,27 +30,27 @@ expression: "(node, errors)"
                 IF@50..52 "if"
                 ExpressionIf@52..54
                   ExpressionVariable@52..54
-                    QualifiedName@52..54
-                      Annotation@52..53
-                        TEXT@52..53 " "
+                    Annotation@52..53
+                      TEXT@52..53 " "
+                    QualifiedName@53..54
                       LOWER@53..54 "x"
                 Annotation@54..55
                   TEXT@54..55 " "
                 THEN@55..59 "then"
                 ExpressionThen@59..61
                   ExpressionVariable@59..61
-                    QualifiedName@59..61
-                      Annotation@59..60
-                        TEXT@59..60 " "
+                    Annotation@59..60
+                      TEXT@59..60 " "
+                    QualifiedName@60..61
                       LOWER@60..61 "y"
                 Annotation@61..62
                   TEXT@61..62 " "
                 ELSE@62..66 "else"
                 ExpressionElse@66..68
                   ExpressionVariable@66..68
-                    QualifiedName@66..68
-                      Annotation@66..67
-                        TEXT@66..67 " "
+                    Annotation@66..67
+                      TEXT@66..67 " "
+                    QualifiedName@67..68
                       LOWER@67..68 "z"
       LAYOUT_END@68..68 ""
       Annotation@68..69

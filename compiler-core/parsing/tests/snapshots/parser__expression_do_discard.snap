@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..56
       ModuleHeader@0..32
         MODULE@0..6 "module"
-        ModuleName@6..26
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..26
           UPPER@7..26 "ExpressionDoDiscard"
         Annotation@26..27
           TEXT@26..27 " "
@@ -33,15 +33,15 @@ expression: "(node, errors)"
                   DoStatementDiscard@43..55
                     ExpressionApplicationChain@43..55
                       ExpressionVariable@43..50
-                        QualifiedName@43..50
-                          Annotation@43..46
-                            TEXT@43..46 "\n  "
+                        Annotation@43..46
+                          TEXT@43..46 "\n  "
+                        QualifiedName@46..50
                           LOWER@46..50 "pure"
                       ExpressionTermArgument@50..55
                         ExpressionVariable@50..55
-                          QualifiedName@50..55
-                            Annotation@50..51
-                              TEXT@50..51 " "
+                          Annotation@50..51
+                            TEXT@50..51 " "
+                          QualifiedName@51..55
                             LOWER@51..55 "unit"
                   LAYOUT_END@55..55 ""
       LAYOUT_END@55..55 ""

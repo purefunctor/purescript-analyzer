@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..32
       ModuleHeader@0..17
         MODULE@0..6 "module"
-        ModuleName@6..11
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..11
           UPPER@7..11 "Main"
         Annotation@11..12
           TEXT@11..12 " "
@@ -19,9 +19,9 @@ expression: "(node, errors)"
           Annotation@17..19
             TEXT@17..19 "\n\n"
           IMPORT@19..25 "import"
-          ModuleName@25..31
-            Annotation@25..26
-              TEXT@25..26 " "
+          Annotation@25..26
+            TEXT@25..26 " "
+          ModuleName@26..31
             Qualifier@26..31
               TEXT@26..31 "Data."
             ERROR@31..31 ""

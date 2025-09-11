@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..108
       ModuleHeader@0..32
         MODULE@0..6 "module"
-        ModuleName@6..26
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..26
           UPPER@7..26 "BinderParenthesized"
         Annotation@26..27
           TEXT@26..27 " "
@@ -51,9 +51,9 @@ expression: "(node, errors)"
                   LOWER@71..72 "x"
                 BinderOperatorPair@72..76
                   TermOperator@72..74
-                    QualifiedName@72..74
-                      Annotation@72..73
-                        TEXT@72..73 " "
+                    Annotation@72..73
+                      TEXT@72..73 " "
+                    QualifiedName@73..74
                       OPERATOR@73..74 "+"
                   BinderVariable@74..76
                     Annotation@74..75

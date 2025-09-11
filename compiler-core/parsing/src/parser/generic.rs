@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{binders, binding, expressions, names, types, Parser};
+use super::{Parser, binders, binding, expressions, names, types};
 
 pub(super) fn record_item(p: &mut Parser, k: impl Fn(&mut Parser)) {
     let mut m = p.start();

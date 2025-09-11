@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..55
       ModuleHeader@0..25
         MODULE@0..6 "module"
-        ModuleName@6..19
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..19
           UPPER@7..19 "ExpressionDo"
         Annotation@19..20
           TEXT@19..20 " "
@@ -40,9 +40,9 @@ expression: "(node, errors)"
                     LEFT_ARROW@44..46 "<-"
                     ExpressionApplicationChain@46..54
                       ExpressionVariable@46..51
-                        QualifiedName@46..51
-                          Annotation@46..47
-                            TEXT@46..47 " "
+                        Annotation@46..47
+                          TEXT@46..47 " "
+                        QualifiedName@47..51
                           LOWER@47..51 "pure"
                       ExpressionTermArgument@51..54
                         ExpressionInteger@51..54

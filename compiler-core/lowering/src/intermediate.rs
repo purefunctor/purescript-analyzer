@@ -5,7 +5,7 @@ use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use smol_str::SmolStr;
 
-use crate::{source::*, TermVariableResolution, TypeVariableResolution};
+use crate::{TermVariableResolution, TypeVariableResolution, source::*};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {
@@ -368,5 +368,13 @@ impl Intermediate {
 
     pub fn iter_type(&self) -> impl Iterator<Item = (TypeId, &TypeKind)> {
         self.type_kind.iter()
+    }
+
+    pub fn iter_term_operator(&self) -> impl Iterator<Item = (TermOperatorId, FileId, TermItemId)> {
+        self.term_operator.iter().map(|(o_id, (f_id, t_id))| (o_id, *f_id, *t_id))
+    }
+
+    pub fn iter_type_operator(&self) -> impl Iterator<Item = (TypeOperatorId, FileId, TypeItemId)> {
+        self.type_operator.iter().map(|(o_id, (f_id, t_id))| (o_id, *f_id, *t_id))
     }
 }

@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..150
       ModuleHeader@0..37
         MODULE@0..6 "module"
-        ModuleName@6..31
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..31
           UPPER@7..31 "InstanceChainElseNewline"
         Annotation@31..32
           TEXT@31..32 " "
@@ -21,14 +21,14 @@ expression: "(node, errors)"
               TEXT@37..111 "\n\n-- Instance chains  ..."
             INSTANCE@111..119 "instance"
             InstanceHead@119..127
-              QualifiedName@119..123
-                Annotation@119..120
-                  TEXT@119..120 " "
+              Annotation@119..120
+                TEXT@119..120 " "
+              QualifiedName@120..123
                 UPPER@120..123 "Foo"
               TypeConstructor@123..127
-                QualifiedName@123..127
-                  Annotation@123..124
-                    TEXT@123..124 " "
+                Annotation@123..124
+                  TEXT@123..124 " "
+                QualifiedName@124..127
                   UPPER@124..127 "Bar"
           InstanceDeclaration@127..149
             Annotation@127..128
@@ -39,14 +39,14 @@ expression: "(node, errors)"
               TEXT@132..133 "\n"
             INSTANCE@133..141 "instance"
             InstanceHead@141..149
-              QualifiedName@141..145
-                Annotation@141..142
-                  TEXT@141..142 " "
+              Annotation@141..142
+                TEXT@141..142 " "
+              QualifiedName@142..145
                 UPPER@142..145 "Foo"
               TypeConstructor@145..149
-                QualifiedName@145..149
-                  Annotation@145..146
-                    TEXT@145..146 " "
+                Annotation@145..146
+                  TEXT@145..146 " "
+                QualifiedName@146..149
                   UPPER@146..149 "Baz"
       LAYOUT_END@149..149 ""
       Annotation@149..150

@@ -4,7 +4,7 @@ use itertools::Itertools;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use syntax::{cst, SyntaxToken};
+use syntax::{SyntaxToken, cst};
 
 use crate::*;
 

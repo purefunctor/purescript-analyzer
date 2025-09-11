@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use lexing::{Lexed, Position};
-use rowan::{ast::AstNode, GreenNode};
-use smol_str::{SmolStr, SmolStrBuilder};
-use syntax::{cst, SyntaxKind, SyntaxNode};
+use rowan::{GreenNode, ast::AstNode};
+use smol_str::{SmolStr, ToSmolStr};
+use syntax::{SyntaxKind, SyntaxNode, cst};
 
 mod builder;
 mod parser;
@@ -36,19 +36,7 @@ impl ParsedModule {
     }
 
     pub fn module_name(&self) -> Option<SmolStr> {
-        let cst = self.cst();
-        let cst = cst.header()?;
-        let cst = cst.name()?;
-
-        let mut builder = SmolStrBuilder::default();
-        if let Some(token) = cst.qualifier().and_then(|cst| cst.text()) {
-            builder.push_str(token.text());
-        }
-        if let Some(token) = cst.name_token() {
-            builder.push_str(token.text());
-        }
-
-        Some(builder.finish())
+        Some(self.cst().header()?.name()?.syntax().text().to_smolstr())
     }
 }
 

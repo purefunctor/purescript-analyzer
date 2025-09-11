@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..349
       ModuleHeader@0..28
         MODULE@0..6 "module"
-        ModuleName@6..22
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..22
           UPPER@7..22 "ValueAnnotation"
         Annotation@22..23
           TEXT@22..23 " "
@@ -105,9 +105,9 @@ expression: "(node, errors)"
                 TEXT@116..117 " "
               DOUBLE_COLON@117..119 "::"
               TypeConstructor@119..124
-                QualifiedName@119..124
-                  Annotation@119..120
-                    TEXT@119..120 " "
+                Annotation@119..120
+                  TEXT@119..120 " "
+                QualifiedName@120..124
                   UPPER@120..124 "Type"
               RIGHT_PARENTHESIS@124..125 ")"
             PERIOD@125..126 "."
@@ -144,9 +144,9 @@ expression: "(node, errors)"
                 TEXT@152..153 " "
               DOUBLE_COLON@153..155 "::"
               TypeConstructor@155..160
-                QualifiedName@155..160
-                  Annotation@155..156
-                    TEXT@155..156 " "
+                Annotation@155..156
+                  TEXT@155..156 " "
+                QualifiedName@156..160
                   UPPER@156..160 "Type"
               RIGHT_PARENTHESIS@160..161 ")"
             TypeVariableBinding@161..173
@@ -158,9 +158,9 @@ expression: "(node, errors)"
                 TEXT@164..165 " "
               DOUBLE_COLON@165..167 "::"
               TypeConstructor@167..172
-                QualifiedName@167..172
-                  Annotation@167..168
-                    TEXT@167..168 " "
+                Annotation@167..168
+                  TEXT@167..168 " "
+                QualifiedName@168..172
                   UPPER@168..172 "Type"
               RIGHT_PARENTHESIS@172..173 ")"
             PERIOD@173..174 "."
@@ -279,9 +279,9 @@ expression: "(node, errors)"
                 TEXT@276..277 " "
               DOUBLE_COLON@277..279 "::"
               TypeConstructor@279..284
-                QualifiedName@279..284
-                  Annotation@279..280
-                    TEXT@279..280 " "
+                Annotation@279..280
+                  TEXT@279..280 " "
+                QualifiedName@280..284
                   UPPER@280..284 "Type"
               RIGHT_PARENTHESIS@284..285 ")"
             PERIOD@285..286 "."
@@ -319,9 +319,9 @@ expression: "(node, errors)"
                 TEXT@313..314 " "
               DOUBLE_COLON@314..316 "::"
               TypeConstructor@316..321
-                QualifiedName@316..321
-                  Annotation@316..317
-                    TEXT@316..317 " "
+                Annotation@316..317
+                  TEXT@316..317 " "
+                QualifiedName@317..321
                   UPPER@317..321 "Type"
               RIGHT_PARENTHESIS@321..322 ")"
             TypeVariableBinding@322..335
@@ -334,9 +334,9 @@ expression: "(node, errors)"
                 TEXT@326..327 " "
               DOUBLE_COLON@327..329 "::"
               TypeConstructor@329..334
-                QualifiedName@329..334
-                  Annotation@329..330
-                    TEXT@329..330 " "
+                Annotation@329..330
+                  TEXT@329..330 " "
+                QualifiedName@330..334
                   UPPER@330..334 "Type"
               RIGHT_PARENTHESIS@334..335 ")"
             PERIOD@335..336 "."

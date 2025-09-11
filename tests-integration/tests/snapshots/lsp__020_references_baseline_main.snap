@@ -1,0 +1,137 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+References at Position { line: 2, character: 7 }
+
+```
+import Lib
+--     %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 2:0..2:10
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 2:0..2:10
+
+
+References at Position { line: 5, character: 7 }
+
+```
+test1 (Just _) = Just
+--     %         %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 5:17..5:21
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 5:7..5:13
+
+
+References at Position { line: 5, character: 17 }
+
+```
+test1 (Just _) = Just
+--     %         %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 5:17..5:21
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 5:7..5:13
+
+
+References at Position { line: 8, character: 9 }
+
+```
+test2 (_ + _) = [1 + 2, (+)]
+--       %         %     %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:24..8:27
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:9..8:10
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:19..8:20
+file:///tests-integration/fixtures/lsp/020_references_baseline/Lib.purs @ 12:12..12:15
+file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 4:11..4:14
+
+
+References at Position { line: 8, character: 19 }
+
+```
+test2 (_ + _) = [1 + 2, (+)]
+--       %         %     %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:24..8:27
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:9..8:10
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:19..8:20
+file:///tests-integration/fixtures/lsp/020_references_baseline/Lib.purs @ 12:12..12:15
+file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 4:11..4:14
+
+
+References at Position { line: 8, character: 25 }
+
+```
+test2 (_ + _) = [1 + 2, (+)]
+--       %         %     %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:24..8:27
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:9..8:10
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:19..8:20
+file:///tests-integration/fixtures/lsp/020_references_baseline/Lib.purs @ 12:12..12:15
+file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 4:11..4:14
+
+
+References at Position { line: 11, character: 13 }
+
+```
+type Test3 = Maybe (Maybe Int)
+--           %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 11:13..11:18
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 11:20..11:25
+
+
+References at Position { line: 14, character: 17 }
+
+```
+type Test4 = Int : Int : Int
+--               %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 20:13..20:16
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:17..14:18
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:23..14:24
+
+
+References at Position { line: 17, character: 13 }
+
+```
+type Test5 = Int
+--           %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 11:26..11:29
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:13..14:16
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:19..14:22
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:25..14:28
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 17:13..17:16
+
+
+References at Position { line: 20, character: 14 }
+
+```
+type Test6 = (:)
+--            %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 20:13..20:16
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:17..14:18
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 14:23..14:24
+
+
+References at Position { line: 23, character: 9 }
+
+```
+test7 = [test2, test2]
+--       %
+```
+
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 23:9..23:14
+file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 23:16..23:21

@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..63
       ModuleHeader@0..26
         MODULE@0..6 "module"
-        ModuleName@6..20
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..20
           UPPER@7..20 "BinderBoolean"
         Annotation@20..21
           TEXT@20..21 " "

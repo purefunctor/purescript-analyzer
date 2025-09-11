@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..82
       ModuleHeader@0..36
         MODULE@0..6 "module"
-        ModuleName@6..30
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..30
           UPPER@7..30 "ExpressionParenthesized"
         Annotation@30..31
           TEXT@30..31 " "

@@ -1,0 +1,57 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+References at Position { line: 2, character: 12 }
+
+```
+import Lib (Maybe(..), plus, (+), type (:), class Eq)
+--          %           %     %         %         %
+```
+
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 9:13..9:18
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 9:20..9:25
+
+
+References at Position { line: 2, character: 24 }
+
+```
+import Lib (Maybe(..), plus, (+), type (:), class Eq)
+--          %           %     %         %         %
+```
+
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 18:8..18:12
+
+
+References at Position { line: 2, character: 30 }
+
+```
+import Lib (Maybe(..), plus, (+), type (:), class Eq)
+--          %           %     %         %         %
+```
+
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 7:24..7:27
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 7:9..7:10
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 7:19..7:20
+
+
+References at Position { line: 2, character: 40 }
+
+```
+import Lib (Maybe(..), plus, (+), type (:), class Eq)
+--          %           %     %         %         %
+```
+
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 15:13..15:16
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 11:17..11:18
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 11:23..11:24
+
+
+References at Position { line: 2, character: 50 }
+
+```
+import Lib (Maybe(..), plus, (+), type (:), class Eq)
+--          %           %     %         %         %
+```
+
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 17:9..17:11

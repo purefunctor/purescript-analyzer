@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..42
       ModuleHeader@0..23
         MODULE@0..6 "module"
-        ModuleName@6..17
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..17
           UPPER@7..17 "TypeKinded"
         Annotation@17..18
           TEXT@17..18 " "
@@ -24,17 +24,17 @@ expression: "(node, errors)"
           DOUBLE_COLON@32..34 "::"
           TypeKinded@34..41
             TypeConstructor@34..36
-              QualifiedName@34..36
-                Annotation@34..35
-                  TEXT@34..35 " "
+              Annotation@34..35
+                TEXT@34..35 " "
+              QualifiedName@35..36
                 UPPER@35..36 "T"
             Annotation@36..37
               TEXT@36..37 " "
             DOUBLE_COLON@37..39 "::"
             TypeConstructor@39..41
-              QualifiedName@39..41
-                Annotation@39..40
-                  TEXT@39..40 " "
+              Annotation@39..40
+                TEXT@39..40 " "
+              QualifiedName@40..41
                 UPPER@40..41 "T"
       LAYOUT_END@41..41 ""
       Annotation@41..42

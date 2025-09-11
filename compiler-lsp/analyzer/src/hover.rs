@@ -1,14 +1,8 @@
-use std::ops::Index;
-
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::{FileId, Files};
-use indexing::{
-    FullIndexedModule, ImportItemId, IndexingSource, TermItemId, TermItemKind, TypeItemId,
-    TypeItemKind,
-};
+use indexing::{ImportItemId, TermItemId, TypeItemId};
 use itertools::Itertools;
-use la_arena::Idx;
 use lowering::{
     BinderId, BinderKind, ExpressionId, ExpressionKind, FullLoweredModule, LetBound,
     TermVariableResolution, TypeId, TypeKind,
@@ -17,10 +11,13 @@ use rowan::{
     TextRange,
     ast::{AstNode, AstPtr},
 };
-use smol_str::SmolStrBuilder;
-use syntax::{SyntaxKind, SyntaxNode, cst};
+use smol_str::ToSmolStr;
+use syntax::{SyntaxNode, cst};
 
-use crate::locate;
+use crate::{
+    extract::{self, AnnotationSyntaxRange},
+    locate,
+};
 
 pub fn implementation(
     engine: &QueryEngine,
@@ -28,27 +25,31 @@ pub fn implementation(
     uri: Url,
     position: Position,
 ) -> Option<Hover> {
-    let f_id = {
+    let current_file = {
         let uri = uri.as_str();
         files.id(uri)?
     };
 
-    let located = locate::locate(engine, f_id, position);
+    let located = locate::locate(engine, current_file, position);
 
     match located {
-        locate::Located::ModuleName(cst) => hover_module_name(engine, f_id, cst),
-        locate::Located::ImportItem(i_id) => hover_import(engine, f_id, i_id),
-        locate::Located::Binder(b_id) => hover_binder(engine, f_id, b_id),
-        locate::Located::Expression(e_id) => hover_expression(engine, f_id, e_id),
-        locate::Located::Type(t_id) => hover_type(engine, f_id, t_id),
-        locate::Located::TermOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_term_operator(o_id)?;
+        locate::Located::ModuleName(module_name) => {
+            hover_module_name(engine, current_file, module_name)
+        }
+        locate::Located::ImportItem(import_id) => hover_import(engine, current_file, import_id),
+        locate::Located::Binder(binder_id) => hover_binder(engine, current_file, binder_id),
+        locate::Located::Expression(expression_id) => {
+            hover_expression(engine, current_file, expression_id)
+        }
+        locate::Located::Type(type_id) => hover_type(engine, current_file, type_id),
+        locate::Located::TermOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_term_operator(operator_id)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        locate::Located::TypeOperator(o_id) => {
-            let lowered = engine.lowered(f_id).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_type_operator(o_id)?;
+        locate::Located::TypeOperator(operator_id) => {
+            let lowered = engine.lowered(current_file).ok()?;
+            let (f_id, t_id) = lowered.intermediate.index_type_operator(operator_id)?;
             hover_file_type(engine, *f_id, *t_id)
         }
         locate::Located::Nothing => None,
@@ -57,102 +58,45 @@ pub fn implementation(
 
 fn hover_module_name(
     engine: &QueryEngine,
-    f_id: FileId,
-    cst: AstPtr<cst::ModuleName>,
+    current_file: FileId,
+    module_name: AstPtr<cst::ModuleName>,
 ) -> Option<Hover> {
-    let (parsed, _) = engine.parsed(f_id).ok()?;
+    let (parsed, _) = engine.parsed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let module = cst.try_to_node(&root)?;
-    let module = {
-        let mut buffer = SmolStrBuilder::default();
+    let module_name = module_name.try_to_node(&root)?;
 
-        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
-            buffer.push_str(token.text());
-        }
+    let module_name = module_name.syntax().text().to_smolstr();
+    let module_id = engine.module_file(&module_name)?;
 
-        let token = module.name_token()?;
-        buffer.push_str(token.text());
+    let (root, range) = AnnotationSyntaxRange::of_file(engine, module_id)?;
 
-        buffer.finish()
-    };
+    let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
+    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let module_id = engine.module_file(&module)?;
-
-    let (root, annotation, syntax) = annotation_syntax_file(engine, module_id)?;
-
-    let annotation = annotation.map(|range| render_annotation(&root, range));
-    let syntax = syntax.map(|range| render_syntax(&root, range));
-
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect_vec();
+    let array = [syntax, annotation].into_iter().flatten().collect_vec();
     let contents = HoverContents::Array(array);
     let range = None;
 
     Some(Hover { contents, range })
 }
 
-pub(crate) fn annotation_syntax_file(
+fn hover_import(
     engine: &QueryEngine,
-    f_id: FileId,
-) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = engine.parsed(f_id).ok()?;
+    current_file: FileId,
+    import_id: ImportItemId,
+) -> Option<Hover> {
+    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let indexed = engine.indexed(current_file).ok()?;
 
     let root = parsed.syntax_node();
-    let cst = parsed.cst().header()?;
-    let node = cst.syntax();
-
-    let annotation = node
-        .first_child_by_kind(&|kind| matches!(kind, SyntaxKind::Annotation))
-        .map(|annotation| annotation.text_range());
-
-    let syntax = || {
-        let module_token =
-            node.first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::MODULE))?;
-        let where_token =
-            node.first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::WHERE))?;
-        let start = module_token.text_range().start();
-        let end = where_token.text_range().end();
-        Some(TextRange::new(start, end))
-    };
-
-    let syntax = syntax();
-
-    Some((root, annotation, syntax))
-}
-
-fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Option<Hover> {
-    let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(f_id).ok()?;
-        let indexed = engine.indexed(f_id).ok()?;
-        (parsed, indexed)
-    };
-
-    let node = {
-        let root = parsed.syntax_node();
-        let ptr = &indexed.source[i_id];
-        ptr.try_to_node(&root)?
-    };
+    let node = indexed.source[import_id].try_to_node(&root)?;
 
     let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
-    let module = statement.module_name()?;
+    let module_name = statement.module_name()?.syntax().text().to_smolstr();
 
-    let module = {
-        let mut buffer = SmolStrBuilder::default();
-
-        if let Some(token) = module.qualifier().and_then(|cst| cst.text()) {
-            buffer.push_str(token.text());
-        }
-
-        let token = module.name_token()?;
-        buffer.push_str(token.text());
-
-        buffer.finish()
-    };
-
-    let import_resolved = {
-        let import_id = engine.module_file(&module)?;
-        engine.resolved(import_id).ok()?
-    };
+    let import_id = engine.module_file(&module_name)?;
+    let import_resolved = engine.resolved(import_id).ok()?;
 
     let hover_term_import = |engine: &QueryEngine, name: &str| {
         let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
@@ -185,9 +129,9 @@ fn hover_import(engine: &QueryEngine, f_id: FileId, i_id: ImportItemId) -> Optio
     }
 }
 
-fn hover_binder(engine: &QueryEngine, f_id: FileId, b_id: BinderId) -> Option<Hover> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_binder_kind(b_id)?;
+fn hover_binder(engine: &QueryEngine, current_file: FileId, binder_id: BinderId) -> Option<Hover> {
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_binder_kind(binder_id)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -197,9 +141,13 @@ fn hover_binder(engine: &QueryEngine, f_id: FileId, b_id: BinderId) -> Option<Ho
     }
 }
 
-fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> Option<Hover> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_expression_kind(e_id)?;
+fn hover_expression(
+    engine: &QueryEngine,
+    current_file: FileId,
+    expression_id: ExpressionId,
+) -> Option<Hover> {
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_expression_kind(expression_id)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -210,7 +158,7 @@ fn hover_expression(engine: &QueryEngine, f_id: FileId, e_id: ExpressionId) -> O
             match resolution {
                 TermVariableResolution::Binder(_) => None,
                 TermVariableResolution::Let(let_binding) => {
-                    let (parsed, _) = engine.parsed(f_id).ok()?;
+                    let (parsed, _) = engine.parsed(current_file).ok()?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
@@ -234,14 +182,17 @@ fn hover_let(
 ) -> Option<Hover> {
     let signature = let_binding.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();
-        locate::annotation_syntax_range(root, ptr)
+        AnnotationSyntaxRange::from_ptr(root, &ptr)
     });
 
-    if let Some((annotation, syntax)) = signature {
-        let annotation = annotation.map(|range| render_annotation(root, range));
-        let syntax = syntax.map(|range| render_syntax(root, range));
+    if let Some(range) = signature {
+        let annotation = range.annotation.and_then(|range| render_annotation(root, range));
+        let syntax = range.syntax.and_then(|range| render_syntax(root, range));
 
-        let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+        let array = [syntax, annotation].into_iter().flatten();
+        let separator = MarkedString::String("---".to_string());
+        let array = Itertools::intersperse(array, separator).collect();
+
         let contents = HoverContents::Array(array);
         let range = None;
 
@@ -273,9 +224,9 @@ fn hover_let(
     }
 }
 
-fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover> {
-    let lowered = engine.lowered(f_id).ok()?;
-    let kind = lowered.intermediate.index_type_kind(t_id)?;
+fn hover_type(engine: &QueryEngine, current_file: FileId, type_id: TypeId) -> Option<Hover> {
+    let lowered = engine.lowered(current_file).ok()?;
+    let kind = lowered.intermediate.index_type_kind(type_id)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref()?;
@@ -285,142 +236,45 @@ fn hover_type(engine: &QueryEngine, f_id: FileId, t_id: TypeId) -> Option<Hover>
     }
 }
 
-fn hover_file_term(engine: &QueryEngine, f_id: FileId, t_id: TermItemId) -> Option<Hover> {
-    let (root, annotation, syntax) = annotation_syntax_file_term(engine, f_id, t_id)?;
+fn hover_file_term(engine: &QueryEngine, file_id: FileId, term_id: TermItemId) -> Option<Hover> {
+    let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)?;
 
-    let annotation = annotation.map(|range| render_annotation(&root, range));
-    let syntax = syntax.map(|range| render_syntax(&root, range));
+    let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
+    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
+    let array = [syntax, annotation].into_iter().flatten();
+    let separator = MarkedString::String("---".to_string());
+    let array = Itertools::intersperse(array, separator).collect();
+
     let contents = HoverContents::Array(array);
     let range = None;
 
     Some(Hover { contents, range })
 }
 
-pub(super) fn annotation_syntax_file_term(
-    engine: &QueryEngine,
-    f_id: FileId,
-    t_id: TermItemId,
-) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = engine.parsed(f_id).ok()?;
-    let indexed = engine.indexed(f_id).ok()?;
+fn hover_file_type(engine: &QueryEngine, file_id: FileId, type_id: TypeItemId) -> Option<Hover> {
+    let (root, range) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id)?;
 
-    let root = parsed.syntax_node();
-    let item = &indexed.items[t_id];
+    let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
+    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let (annotation, syntax) = match &item.kind {
-        TermItemKind::ClassMember { id } => {
-            annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
-        }
-        TermItemKind::Constructor { id } => {
-            annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
-        }
-        TermItemKind::Derive { .. } => return None,
-        TermItemKind::Foreign { id } => annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?,
-        TermItemKind::Instance { .. } => return None,
-        TermItemKind::Operator { .. } => return None,
-        TermItemKind::Value { signature, equations } => {
-            let equation = equations.first().copied();
-            annotation_syntax(&indexed, &root, signature, &equation)?
-        }
-    };
+    let array = [syntax, annotation].into_iter().flatten();
+    let separator = MarkedString::String("---".to_string());
+    let array = Itertools::intersperse(array, separator).collect();
 
-    Some((root, annotation, syntax))
-}
-
-fn hover_file_type(engine: &QueryEngine, f_id: FileId, t_id: TypeItemId) -> Option<Hover> {
-    let (root, annotation, syntax) = annotation_syntax_file_type(engine, f_id, t_id)?;
-
-    let annotation = annotation.map(|range| render_annotation(&root, range));
-    let syntax = syntax.map(|range| render_syntax(&root, range));
-
-    let array = [syntax, annotation].into_iter().flatten().flatten().collect();
     let contents = HoverContents::Array(array);
     let range = None;
 
     Some(Hover { contents, range })
 }
 
-pub(crate) fn annotation_syntax_file_type(
-    engine: &QueryEngine,
-    f_id: FileId,
-    t_id: TypeItemId,
-) -> Option<(SyntaxNode, Option<TextRange>, Option<TextRange>)> {
-    let (parsed, _) = engine.parsed(f_id).ok()?;
-    let indexed = engine.indexed(f_id).ok()?;
-
-    let root = parsed.syntax_node();
-    let item = &indexed.items[t_id];
-
-    let (annotation, syntax) = match &item.kind {
-        TypeItemKind::Data { signature, equation, .. } => {
-            annotation_syntax(&indexed, &root, signature, equation)?
-        }
-        TypeItemKind::Newtype { signature, equation, .. } => {
-            annotation_syntax(&indexed, &root, signature, equation)?
-        }
-        TypeItemKind::Synonym { signature, equation, .. } => {
-            annotation_syntax(&indexed, &root, signature, equation)?
-        }
-        TypeItemKind::Class { signature, declaration, .. } => {
-            annotation_syntax(&indexed, &root, signature, declaration)?
-        }
-        TypeItemKind::Foreign { id } => annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?,
-        TypeItemKind::Operator { id } => {
-            annotation_syntax(&indexed, &root, &Some(*id), &Some(*id))?
-        }
-    };
-
-    Some((root, annotation, syntax))
+fn render_annotation(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
+    let cleaned = extract::extract_annotation(root, range);
+    if cleaned.is_empty() { None } else { Some(MarkedString::String(cleaned)) }
 }
 
-fn annotation_syntax<S, E>(
-    indexed: &FullIndexedModule,
-    root: &SyntaxNode,
-    signature: &Option<Idx<AstPtr<S>>>,
-    equation: &Option<Idx<AstPtr<E>>>,
-) -> Option<(Option<TextRange>, Option<TextRange>)>
-where
-    S: AstNode<Language = syntax::PureScript>,
-    E: AstNode<Language = syntax::PureScript>,
-    IndexingSource: Index<Idx<AstPtr<S>>, Output = AstPtr<S>>,
-    IndexingSource: Index<Idx<AstPtr<E>>, Output = AstPtr<E>>,
-{
-    let signature = signature.map(|id| {
-        let ptr = indexed.source[id].syntax_node_ptr();
-        locate::annotation_syntax_range(root, ptr)
-    });
-    let equation = || {
-        let id = equation.as_ref()?;
-        let ptr = indexed.source[*id].syntax_node_ptr();
-        let (annotation, _) = locate::annotation_syntax_range(root, ptr);
-        Some((annotation, None))
-    };
-    signature.or_else(equation)
-}
-
-fn render_annotation(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
-    let cleaned = render_annotation_string(root, range);
-    if cleaned.is_empty() {
-        vec![]
-    } else {
-        vec![MarkedString::String("---".to_string()), MarkedString::String(cleaned)]
-    }
-}
-
-pub(crate) fn render_annotation_string(root: &SyntaxNode, range: TextRange) -> String {
-    let source = root.text().slice(range).to_string();
-    let source = source.trim();
-    source.lines().map(|line| line.trim_start_matches("-- |").trim()).join("\n")
-}
-
-fn render_syntax(root: &SyntaxNode, range: TextRange) -> Vec<MarkedString> {
-    let value = render_syntax_string(root, range);
-    vec![MarkedString::LanguageString(LanguageString { language: "purescript".to_string(), value })]
-}
-
-pub(crate) fn render_syntax_string(root: &SyntaxNode, range: TextRange) -> String {
-    let source = root.text().slice(range).to_string();
-    source.trim().to_string()
+fn render_syntax(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
+    let value = extract::extract_syntax(root, range);
+    let string = LanguageString { language: "purescript".to_string(), value };
+    Some(MarkedString::LanguageString(string))
 }

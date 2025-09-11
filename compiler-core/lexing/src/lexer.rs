@@ -3,9 +3,9 @@ use std::str::Chars;
 use syntax::SyntaxKind;
 
 use crate::{
+    Lexed, Position,
     categories::LexerCategories,
     lexed::{LexedBuilder, SyntaxKindInfo},
-    Lexed, Position,
 };
 
 const EOF_CHAR: char = '\0';

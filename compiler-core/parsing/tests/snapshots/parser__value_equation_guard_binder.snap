@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..75
       ModuleHeader@0..37
         MODULE@0..6 "module"
-        ModuleName@6..31
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..31
           UPPER@7..31 "ValueEquationGuardBinder"
         Annotation@31..32
           TEXT@31..32 " "
@@ -42,18 +42,18 @@ expression: "(node, errors)"
                   TEXT@50..51 " "
                 LEFT_ARROW@51..53 "<-"
                 ExpressionVariable@53..55
-                  QualifiedName@53..55
-                    Annotation@53..54
-                      TEXT@53..54 " "
+                  Annotation@53..54
+                    TEXT@53..54 " "
+                  QualifiedName@54..55
                     LOWER@54..55 "a"
               Annotation@55..56
                 TEXT@55..56 " "
               EQUAL@56..57 "="
               WhereExpression@57..59
                 ExpressionVariable@57..59
-                  QualifiedName@57..59
-                    Annotation@57..58
-                      TEXT@57..58 " "
+                  Annotation@57..58
+                    TEXT@57..58 " "
+                  QualifiedName@58..59
                     LOWER@58..59 "c"
             PatternGuarded@59..74
               Annotation@59..62
@@ -68,18 +68,18 @@ expression: "(node, errors)"
                   TEXT@65..66 " "
                 LEFT_ARROW@66..68 "<-"
                 ExpressionVariable@68..70
-                  QualifiedName@68..70
-                    Annotation@68..69
-                      TEXT@68..69 " "
+                  Annotation@68..69
+                    TEXT@68..69 " "
+                  QualifiedName@69..70
                     LOWER@69..70 "b"
               Annotation@70..71
                 TEXT@70..71 " "
               EQUAL@71..72 "="
               WhereExpression@72..74
                 ExpressionVariable@72..74
-                  QualifiedName@72..74
-                    Annotation@72..73
-                      TEXT@72..73 " "
+                  Annotation@72..73
+                    TEXT@72..73 " "
+                  QualifiedName@73..74
                     LOWER@73..74 "d"
       LAYOUT_END@74..74 ""
       Annotation@74..75

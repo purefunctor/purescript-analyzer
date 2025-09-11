@@ -1,6 +1,6 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use super::{generic, names, types, NodeMarker, Parser};
+use super::{NodeMarker, Parser, generic, names, types};
 
 pub(super) fn binder(p: &mut Parser) {
     let mut m = p.start();

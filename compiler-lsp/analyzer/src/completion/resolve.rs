@@ -4,11 +4,10 @@ use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
-use rowan::TextRange;
 use serde::{Deserialize, Serialize};
 use syntax::SyntaxNode;
 
-use crate::hover;
+use crate::extract::{self, AnnotationSyntaxRange};
 
 pub fn implementation(engine: &QueryEngine, mut item: CompletionItem) -> CompletionItem {
     let Some(value) = mem::take(&mut item.data) else { return item };
@@ -16,18 +15,18 @@ pub fn implementation(engine: &QueryEngine, mut item: CompletionItem) -> Complet
 
     match resolve {
         CompletionResolveData::Import(f_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file(engine, f_id) {
-                resolve_documentation(ranges, &mut item);
+            if let Some((root, range)) = AnnotationSyntaxRange::of_file(engine, f_id) {
+                resolve_documentation(root, range, &mut item);
             }
         }
         CompletionResolveData::TermItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_term(engine, f_id, t_id) {
-                resolve_documentation(ranges, &mut item);
+            if let Some((root, range)) = AnnotationSyntaxRange::of_file_term(engine, f_id, t_id) {
+                resolve_documentation(root, range, &mut item);
             }
         }
         CompletionResolveData::TypeItem(f_id, t_id) => {
-            if let Some(ranges) = hover::annotation_syntax_file_type(engine, f_id, t_id) {
-                resolve_documentation(ranges, &mut item);
+            if let Some((root, range)) = AnnotationSyntaxRange::of_file_type(engine, f_id, t_id) {
+                resolve_documentation(root, range, &mut item);
             }
         }
     }
@@ -36,11 +35,12 @@ pub fn implementation(engine: &QueryEngine, mut item: CompletionItem) -> Complet
 }
 
 fn resolve_documentation(
-    (root, annotation, syntax): (SyntaxNode, Option<TextRange>, Option<TextRange>),
+    root: SyntaxNode,
+    range: AnnotationSyntaxRange,
     item: &mut CompletionItem,
 ) {
-    let annotation = annotation.map(|range| hover::render_annotation_string(&root, range));
-    let syntax = syntax.map(|range| hover::render_syntax_string(&root, range));
+    let annotation = range.annotation.map(|range| extract::extract_annotation(&root, range));
+    let syntax = range.syntax.map(|range| extract::extract_syntax(&root, range));
 
     item.detail = syntax;
     item.documentation = annotation.map(|annotation| {

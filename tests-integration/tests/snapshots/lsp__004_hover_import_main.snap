@@ -33,7 +33,7 @@ import Lib (life, Maybe(..), (+),  type (++))
 --      $    $     $          $          $
 ```
 
-
+<empty>
 
 
 Hover at Position { line: 2, character: 30 }
@@ -75,7 +75,7 @@ just :: forall a. a -> Maybe a
 --                      $    $
 ```
 
-
+<empty>
 
 
 Hover at Position { line: 9, character: 29 }
@@ -107,7 +107,7 @@ nothing :: forall a. Maybe a
 --                    $
 ```
 
-
+<empty>
 
 
 Hover at Position { line: 16, character: 11 }
@@ -129,7 +129,9 @@ opName = (+)
 --        $
 ```
 
-<empty>
+```purescript
+infix 5 plus as +
+```
 
 
 Hover at Position { line: 24, character: 12 }
@@ -139,7 +141,9 @@ opChain = 9 + 10
 --          $
 ```
 
-<empty>
+```purescript
+infix 5 plus as +
+```
 
 
 Hover at Position { line: 27, character: 23 }

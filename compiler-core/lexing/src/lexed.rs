@@ -127,11 +127,7 @@ impl Lexed<'_> {
         let low = if index > 0 { self.infos[index - 1].token as usize } else { 0 };
         let high = self.infos[index].annotation as usize;
 
-        if low < high {
-            Some(&self.source[low..high])
-        } else {
-            None
-        }
+        if low < high { Some(&self.source[low..high]) } else { None }
     }
 
     pub fn qualifier(&self, index: usize) -> Option<&str> {
@@ -140,11 +136,7 @@ impl Lexed<'_> {
         let low = self.infos[index].annotation as usize;
         let high = self.infos[index].qualifier as usize;
 
-        if low < high {
-            Some(&self.source[low..high])
-        } else {
-            None
-        }
+        if low < high { Some(&self.source[low..high]) } else { None }
     }
 
     pub fn error(&self, index: usize) -> Option<Arc<str>> {

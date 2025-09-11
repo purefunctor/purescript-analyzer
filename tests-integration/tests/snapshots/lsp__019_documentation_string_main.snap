@@ -1,0 +1,107 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Hover at Position { line: 6, character: 7 }
+
+```
+test = id
+--     $
+```
+
+```purescript
+id :: forall a. a -> a
+```
+---
+The identity function
+
+
+Hover at Position { line: 15, character: 8 }
+
+```
+test2 = const
+--      $
+```
+
+```purescript
+const :: forall a b.
+  a ->
+  b ->
+  a
+```
+
+
+Hover at Position { line: 21, character: 8 }
+
+```
+test3 = docOnly
+--      $
+```
+
+Documentation only
+
+
+Hover at Position { line: 29, character: 8 }
+
+```
+test4 = multiLine
+--      $
+```
+
+Line 1
+Line 2
+Line 3
+
+
+Hover at Position { line: 39, character: 8 }
+
+```
+test5 = multiLine2
+--      $
+```
+
+Line 1
+Line 2
+Line 3
+
+
+Hover at Position { line: 50, character: 8 }
+
+```
+test6 = multiLine3
+--      $
+```
+
+Line 1
+
+Line 2
+
+Line 3
+
+
+Hover at Position { line: 60, character: 6 }
+
+```
+    [ valueOnly
+--    $
+```
+
+```purescript
+valueOnly :: _
+```
+---
+`valueOnly` is a `let`-bound name.
+---
+note: type information is currently not available
+
+
+Hover at Position { line: 62, character: 6 }
+
+```
+    , withSignature
+--    $
+```
+
+```purescript
+withSignature :: Int
+```

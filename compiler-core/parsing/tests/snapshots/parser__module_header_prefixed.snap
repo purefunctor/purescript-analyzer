@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..29
       ModuleHeader@0..28
         MODULE@0..6 "module"
-        ModuleName@6..22
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..22
           Qualifier@7..18
             TEXT@7..18 "PureScript."
           UPPER@18..22 "Main"

@@ -49,8 +49,7 @@ just :: Maybe Int
 --       $
 ```
 
----
---    $     $
+<empty>
 
 
 Hover at Position { line: 24, character: 8 }
@@ -72,8 +71,7 @@ nothing :: Maybe Int
 --          $
 ```
 
----
---    $     $
+<empty>
 
 
 Hover at Position { line: 29, character: 11 }

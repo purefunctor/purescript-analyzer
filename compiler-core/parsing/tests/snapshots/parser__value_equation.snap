@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..78
       ModuleHeader@0..26
         MODULE@0..6 "module"
-        ModuleName@6..20
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..20
           UPPER@7..20 "ValueEquation"
         Annotation@20..21
           TEXT@20..21 " "
@@ -35,20 +35,20 @@ expression: "(node, errors)"
             WhereExpression@35..77
               ExpressionOperatorChain@35..43
                 ExpressionVariable@35..38
-                  QualifiedName@35..38
-                    Annotation@35..36
-                      TEXT@35..36 " "
+                  Annotation@35..36
+                    TEXT@35..36 " "
+                  QualifiedName@36..38
                     LOWER@36..38 "a2"
                 ExpressionOperatorPair@38..43
                   TermOperator@38..40
-                    QualifiedName@38..40
-                      Annotation@38..39
-                        TEXT@38..39 " "
+                    Annotation@38..39
+                      TEXT@38..39 " "
+                    QualifiedName@39..40
                       OPERATOR@39..40 "+"
                   ExpressionVariable@40..43
-                    QualifiedName@40..43
-                      Annotation@40..41
-                        TEXT@40..41 " "
+                    Annotation@40..41
+                      TEXT@40..41 " "
+                    QualifiedName@41..43
                       LOWER@41..43 "b2"
               Annotation@43..46
                 TEXT@43..46 "\n  "
@@ -66,20 +66,20 @@ expression: "(node, errors)"
                     WhereExpression@58..64
                       ExpressionOperatorChain@58..64
                         ExpressionVariable@58..60
-                          QualifiedName@58..60
-                            Annotation@58..59
-                              TEXT@58..59 " "
+                          Annotation@58..59
+                            TEXT@58..59 " "
+                          QualifiedName@59..60
                             LOWER@59..60 "a"
                         ExpressionOperatorPair@60..64
                           TermOperator@60..62
-                            QualifiedName@60..62
-                              Annotation@60..61
-                                TEXT@60..61 " "
+                            Annotation@60..61
+                              TEXT@60..61 " "
+                            QualifiedName@61..62
                               OPERATOR@61..62 "*"
                           ExpressionVariable@62..64
-                            QualifiedName@62..64
-                              Annotation@62..63
-                                TEXT@62..63 " "
+                            Annotation@62..63
+                              TEXT@62..63 " "
+                            QualifiedName@63..64
                               LOWER@63..64 "a"
                 LAYOUT_SEPARATOR@64..64 ""
                 LetBindingEquation@64..77
@@ -93,20 +93,20 @@ expression: "(node, errors)"
                     WhereExpression@71..77
                       ExpressionOperatorChain@71..77
                         ExpressionVariable@71..73
-                          QualifiedName@71..73
-                            Annotation@71..72
-                              TEXT@71..72 " "
+                          Annotation@71..72
+                            TEXT@71..72 " "
+                          QualifiedName@72..73
                             LOWER@72..73 "b"
                         ExpressionOperatorPair@73..77
                           TermOperator@73..75
-                            QualifiedName@73..75
-                              Annotation@73..74
-                                TEXT@73..74 " "
+                            Annotation@73..74
+                              TEXT@73..74 " "
+                            QualifiedName@74..75
                               OPERATOR@74..75 "*"
                           ExpressionVariable@75..77
-                            QualifiedName@75..77
-                              Annotation@75..76
-                                TEXT@75..76 " "
+                            Annotation@75..76
+                              TEXT@75..76 " "
+                            QualifiedName@76..77
                               LOWER@76..77 "b"
                 LAYOUT_END@77..77 ""
       LAYOUT_END@77..77 ""

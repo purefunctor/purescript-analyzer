@@ -14,7 +14,7 @@ pub struct Context<'c, 'a> {
     pub engine: &'c QueryEngine,
     pub files: &'c Files,
 
-    pub id: FileId,
+    pub current_file: FileId,
     pub content: &'a str,
     pub indexed: &'a FullIndexedModule,
     pub parsed: &'a ParsedModule,

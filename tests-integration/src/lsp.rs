@@ -21,16 +21,18 @@ enum CursorKind {
     GotoDefinition,
     Hover,
     Completion,
+    References,
 }
 
 impl CursorKind {
-    const CHARACTERS: &[char] = &['@', '$', '^'];
+    const CHARACTERS: &[char] = &['@', '$', '^', '%'];
 
     fn parse(text: &str) -> Option<CursorKind> {
         match text {
             "@" => Some(CursorKind::GotoDefinition),
             "$" => Some(CursorKind::Hover),
             "^" => Some(CursorKind::Completion),
+            "%" => Some(CursorKind::References),
             _ => None,
         }
     }
@@ -110,29 +112,29 @@ fn dispatch_cursor(
     cursor: CursorKind,
     uri: Url,
 ) {
+    let render_location = |location: Location| -> String {
+        format!(
+            "{} @ {}:{}..{}:{}",
+            location.uri,
+            location.range.start.line,
+            location.range.start.character,
+            location.range.end.line,
+            location.range.end.character,
+        )
+    };
+
     match cursor {
         CursorKind::GotoDefinition => {
             if let Some(response) =
                 analyzer::definition::implementation(engine, files, uri, position)
             {
-                let convert = |location: Location| -> String {
-                    format!(
-                        "{} @ {}:{}..{}:{}",
-                        location.uri,
-                        location.range.start.line,
-                        location.range.start.character,
-                        location.range.end.line,
-                        location.range.end.character,
-                    )
-                };
-
                 match response {
                     GotoDefinitionResponse::Scalar(location) => {
-                        let location = convert(location);
+                        let location = render_location(location);
                         writeln!(result, "{location}").unwrap();
                     }
                     GotoDefinitionResponse::Array(location) => {
-                        let location = location.into_iter().map(convert).join("\n");
+                        let location = location.into_iter().map(render_location).join("\n");
                         writeln!(result, "{location}").unwrap();
                     }
                     GotoDefinitionResponse::Link(_) => (),
@@ -155,14 +157,26 @@ fn dispatch_cursor(
                 match response.contents {
                     HoverContents::Scalar(marked) => {
                         let marked = convert(marked);
-                        writeln!(result, "{marked}").unwrap();
+                        if marked.is_empty() {
+                            writeln!(result, "<empty>").unwrap();
+                        } else {
+                            writeln!(result, "{marked}").unwrap();
+                        }
                     }
                     HoverContents::Array(marked) => {
                         let marked = marked.into_iter().map(convert).join("\n");
-                        writeln!(result, "{marked}").unwrap();
+                        if marked.is_empty() {
+                            writeln!(result, "<empty>").unwrap();
+                        } else {
+                            writeln!(result, "{marked}").unwrap();
+                        }
                     }
                     HoverContents::Markup(markup) => {
-                        writeln!(result, "{}", markup.value).unwrap();
+                        if markup.value.is_empty() {
+                            writeln!(result, "<empty>").unwrap();
+                        } else {
+                            writeln!(result, "{}", markup.value).unwrap();
+                        }
                     }
                 }
             } else {
@@ -176,6 +190,10 @@ fn dispatch_cursor(
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
+                        let items = items.into_iter().map(|item| {
+                            analyzer::completion::resolve::implementation(engine, item)
+                        });
+
                         let items: Vec<TabledCompletionItem> =
                             items.into_iter().map(TabledCompletionItem::from).collect();
 
@@ -186,6 +204,16 @@ fn dispatch_cursor(
                         writeln!(result, "{table}").unwrap();
                     }
                 }
+            } else {
+                writeln!(result, "<empty>").unwrap();
+            }
+        }
+        CursorKind::References => {
+            if let Some(location) =
+                analyzer::references::implementation(engine, files, uri, position)
+            {
+                let location = location.into_iter().map(render_location).join("\n");
+                writeln!(result, "{location}").unwrap();
             } else {
                 writeln!(result, "<empty>").unwrap();
             }

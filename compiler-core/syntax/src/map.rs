@@ -194,9 +194,9 @@ macro_rules! create_association {
 
 #[cfg(test)]
 mod tests {
-    use rowan::{ast::AstNode, GreenNode, GreenToken, NodeOrToken};
+    use rowan::{GreenNode, GreenToken, NodeOrToken, ast::AstNode};
 
-    use crate::{cst, SyntaxKind, SyntaxNode};
+    use crate::{SyntaxKind, SyntaxNode, cst};
 
     use super::AstPtrMap;
 

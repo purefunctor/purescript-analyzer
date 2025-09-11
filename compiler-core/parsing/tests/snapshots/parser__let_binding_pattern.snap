@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..77
       ModuleHeader@0..30
         MODULE@0..6 "module"
-        ModuleName@6..24
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..24
           UPPER@7..24 "LetBindingPattern"
         Annotation@24..25
           TEXT@24..25 " "
@@ -54,9 +54,9 @@ expression: "(node, errors)"
                     EQUAL@58..59 "="
                     WhereExpression@59..61
                       ExpressionVariable@59..61
-                        QualifiedName@59..61
-                          Annotation@59..60
-                            TEXT@59..60 " "
+                        Annotation@59..60
+                          TEXT@59..60 " "
+                        QualifiedName@60..61
                           LOWER@60..61 "z"
                   LAYOUT_END@61..61 ""
                 Annotation@61..64
@@ -64,20 +64,20 @@ expression: "(node, errors)"
                 IN@64..66 "in"
                 ExpressionOperatorChain@66..76
                   ExpressionVariable@66..72
-                    QualifiedName@66..72
-                      Annotation@66..71
-                        TEXT@66..71 "\n    "
+                    Annotation@66..71
+                      TEXT@66..71 "\n    "
+                    QualifiedName@71..72
                       LOWER@71..72 "x"
                   ExpressionOperatorPair@72..76
                     TermOperator@72..74
-                      QualifiedName@72..74
-                        Annotation@72..73
-                          TEXT@72..73 " "
+                      Annotation@72..73
+                        TEXT@72..73 " "
+                      QualifiedName@73..74
                         OPERATOR@73..74 "+"
                     ExpressionVariable@74..76
-                      QualifiedName@74..76
-                        Annotation@74..75
-                          TEXT@74..75 " "
+                      Annotation@74..75
+                        TEXT@74..75 " "
+                      QualifiedName@75..76
                         LOWER@75..76 "y"
       LAYOUT_END@76..76 ""
       Annotation@76..77

@@ -6,9 +6,9 @@ expression: "(node, errors)"
     Module@0..66
       ModuleHeader@0..37
         MODULE@0..6 "module"
-        ModuleName@6..18
-          Annotation@6..7
-            TEXT@6..7 " "
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..18
           UPPER@7..18 "NonReserved"
         ExportList@18..31
           Annotation@18..19
@@ -35,9 +35,9 @@ expression: "(node, errors)"
             TEXT@45..46 " "
           DOUBLE_COLON@46..48 "::"
           TypeConstructor@48..55
-            QualifiedName@48..55
-              Annotation@48..49
-                TEXT@48..49 " "
+            Annotation@48..49
+              TEXT@48..49 " "
+            QualifiedName@49..55
               UPPER@49..55 "Hiding"
         LAYOUT_SEPARATOR@55..55 ""
         ValueSignature@55..65
@@ -48,9 +48,9 @@ expression: "(node, errors)"
             TEXT@59..60 " "
           DOUBLE_COLON@60..62 "::"
           TypeConstructor@62..65
-            QualifiedName@62..65
-              Annotation@62..63
-                TEXT@62..63 " "
+            Annotation@62..63
+              TEXT@62..63 " "
+            QualifiedName@63..65
               UPPER@63..65 "As"
       LAYOUT_END@65..65 ""
       Annotation@65..66
