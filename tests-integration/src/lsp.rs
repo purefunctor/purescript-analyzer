@@ -190,6 +190,10 @@ fn dispatch_cursor(
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
+                        let items = items.into_iter().map(|item| {
+                            analyzer::completion::resolve::implementation(engine, item)
+                        });
+
                         let items: Vec<TabledCompletionItem> =
                             items.into_iter().map(TabledCompletionItem::from).collect();
 
