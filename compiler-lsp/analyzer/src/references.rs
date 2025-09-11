@@ -364,7 +364,7 @@ fn probe_term_references(
     file_id: FileId,
     term_id: TermItemId,
 ) -> Option<Vec<FileId>> {
-    probe_workspace_imports(engine, files, current_file, |import| {
+    probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_terms().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, term_id)
         })
@@ -378,7 +378,7 @@ fn probe_type_references(
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Option<Vec<FileId>> {
-    probe_workspace_imports(engine, files, current_file, |import| {
+    probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_types().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, type_id)
         })
@@ -389,9 +389,14 @@ fn probe_workspace_imports(
     engine: &QueryEngine,
     files: &Files,
     current_file: FileId,
+    source_file: FileId,
     check_import: impl Fn(&ResolvedImport) -> bool,
 ) -> Option<Vec<FileId>> {
-    let mut probe = vec![current_file];
+    let mut probe = if current_file == source_file {
+        vec![current_file]
+    } else {
+        vec![current_file, source_file]
+    };
 
     for workspace_file_id in files.iter_id() {
         if workspace_file_id == current_file {

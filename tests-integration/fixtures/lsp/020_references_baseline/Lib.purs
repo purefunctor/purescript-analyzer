@@ -9,3 +9,5 @@ infix 5 plus as +
 foreign import data Cons :: Type -> Type -> Type
 
 infix 5 type Cons as :
+
+plusInLib = (+)

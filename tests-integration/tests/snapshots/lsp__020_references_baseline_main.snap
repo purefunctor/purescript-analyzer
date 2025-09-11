@@ -45,6 +45,7 @@ test2 (_ + _) = [1 + 2, (+)]
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:24..8:27
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:9..8:10
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:19..8:20
+file:///tests-integration/fixtures/lsp/020_references_baseline/Lib.purs @ 12:12..12:15
 file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 4:11..4:14
 
 
@@ -58,6 +59,7 @@ test2 (_ + _) = [1 + 2, (+)]
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:24..8:27
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:9..8:10
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:19..8:20
+file:///tests-integration/fixtures/lsp/020_references_baseline/Lib.purs @ 12:12..12:15
 file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 4:11..4:14
 
 
@@ -71,6 +73,7 @@ test2 (_ + _) = [1 + 2, (+)]
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:24..8:27
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:9..8:10
 file:///tests-integration/fixtures/lsp/020_references_baseline/Main.purs @ 8:19..8:20
+file:///tests-integration/fixtures/lsp/020_references_baseline/Lib.purs @ 12:12..12:15
 file:///tests-integration/fixtures/lsp/020_references_baseline/External.purs @ 4:11..4:14
 
 
