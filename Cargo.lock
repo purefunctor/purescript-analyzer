@@ -1232,6 +1232,7 @@ dependencies = [
  "analyzer",
  "async-lsp",
  "clap",
+ "files",
  "parking_lot",
  "serde",
  "spago",

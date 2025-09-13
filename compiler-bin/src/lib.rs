@@ -15,6 +15,7 @@ use async_lsp::{
     concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
     server::LifecycleLayer,
 };
+use files::FileId;
 use parking_lot::RwLock;
 use tokio::task;
 use tower::ServiceBuilder;
@@ -173,18 +174,25 @@ fn did_change(
     ControlFlow::Continue(())
 }
 
-fn on_change(state: &mut State, uri: &str, text: &str) {
-    let (id, content) = {
-        let mut files = state.files.write();
-        let id = files.insert(uri, text);
-        (id, files.content(id))
-    };
-    state.engine.set_content(id, content);
+fn on_change(state: &mut State, uri: &str, content: &str) {
+    let id = edit_file(state, uri, content);
     let Ok((parsed, _)) = state.engine.parsed(id) else {
         return;
     };
     if let Some(name) = parsed.module_name() {
         state.engine.set_module_file(&name, id);
+    }
+}
+
+fn edit_file(state: &mut State, uri: &str, content: &str) -> FileId {
+    let mut files = state.files.upgradable_read();
+    if let Some(id) = files.id(uri) {
+        state.engine.set_content(id, content);
+        files.with_upgraded(|files| files.insert(uri, content))
+    } else {
+        let id = files.with_upgraded(|files| files.insert(uri, content));
+        state.engine.set_content(id, content);
+        id
     }
 }
 
