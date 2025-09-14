@@ -249,10 +249,32 @@ pub struct QueryEngine {
 }
 
 impl QueryEngine {
+    /// Creates a snapshot of the [`QueryEngine`].
+    ///
+    /// Snapshots are read locks over the [`QueryEngine`] that must 
+    /// be sent across threads to perform query execution.
+    ///
+    /// As with read locks, keeping snapshots alive indefinitely is
+    /// a logic error and will cause a deadlock on mutation or on a
+    /// [cancellation request].
+    ///
+    /// [cancellation request]: QueryEngine::request_cancel
     pub fn snapshot(&self) -> QueryEngine {
         let storage = self.storage.clone();
         let control = self.control.snapshot();
         QueryEngine { storage, control }
+    }
+
+    /// Creates a cancellation request for queries.
+    ///
+    /// Query cancellation is cooperative. A cancellation flag is read
+    /// at some point during query execution. This function also waits 
+    /// for all snapshots to be dropped, as in the expected consequence 
+    /// of cancelling all queries running across all threads.
+    pub fn request_cancel(&self) {
+        self.control.global.cancelled.store(true, Ordering::Relaxed);
+        let _query_lock = self.control.global.query_lock.write();
+        self.control.global.cancelled.store(false, Ordering::Relaxed);
     }
 }
 
