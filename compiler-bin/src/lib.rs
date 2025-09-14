@@ -125,12 +125,14 @@ fn definition(
     snapshot: StateSnapshot,
     p: GotoDefinitionParams,
 ) -> Result<Option<GotoDefinitionResponse>, ResponseError> {
+    let _span = tracing::info_span!("definition").entered();
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
     Ok(analyzer::definition::implementation(&snapshot.engine, &snapshot.files(), uri, position))
 }
 
 fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, ResponseError> {
+    let _span = tracing::info_span!("hover").entered();
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
     Ok(analyzer::hover::implementation(&snapshot.engine, &snapshot.files(), uri, position))
@@ -140,6 +142,7 @@ fn completion(
     snapshot: StateSnapshot,
     p: CompletionParams,
 ) -> Result<Option<CompletionResponse>, ResponseError> {
+    let _span = tracing::info_span!("completion").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
     Ok(analyzer::completion::implementation(&snapshot.engine, &snapshot.files(), uri, position))
@@ -149,6 +152,7 @@ fn resolve_completion_item(
     snapshot: StateSnapshot,
     item: CompletionItem,
 ) -> Result<CompletionItem, ResponseError> {
+    let _span = tracing::info_span!("resolve_completion_item").entered();
     Ok(analyzer::completion::resolve::implementation(&snapshot.engine, item))
 }
 
@@ -156,6 +160,7 @@ fn references(
     snapshot: StateSnapshot,
     p: ReferenceParams,
 ) -> Result<Option<Vec<Location>>, ResponseError> {
+    let _span = tracing::info_span!("references").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
     Ok(analyzer::references::implementation(&snapshot.engine, &snapshot.files(), uri, position))
