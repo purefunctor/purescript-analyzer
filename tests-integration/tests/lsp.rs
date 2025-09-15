@@ -241,3 +241,14 @@ fn test_022_references_import_main() {
     let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_023_references_duplicate_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/023_references_duplicate"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}

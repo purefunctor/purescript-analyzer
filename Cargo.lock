@@ -48,6 +48,7 @@ dependencies = [
  "parsing",
  "resolving",
  "rowan",
+ "rustc-hash 2.1.1",
  "serde",
  "serde_json",
  "smol_str",

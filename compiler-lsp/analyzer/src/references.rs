@@ -12,6 +12,7 @@ use lowering::{
 use parsing::ParsedModule;
 use resolving::ResolvedImport;
 use rowan::ast::{AstNode, AstPtr};
+use rustc_hash::FxHashSet;
 use smol_str::ToSmolStr;
 use syntax::{PureScript, cst};
 
@@ -363,7 +364,7 @@ fn probe_term_references(
     current_file: FileId,
     file_id: FileId,
     term_id: TermItemId,
-) -> Option<Vec<FileId>> {
+) -> Option<FxHashSet<FileId>> {
     probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_terms().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, term_id)
@@ -377,7 +378,7 @@ fn probe_type_references(
     current_file: FileId,
     file_id: FileId,
     type_id: TypeItemId,
-) -> Option<Vec<FileId>> {
+) -> Option<FxHashSet<FileId>> {
     probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_types().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, type_id)
@@ -391,15 +392,11 @@ fn probe_workspace_imports(
     current_file: FileId,
     source_file: FileId,
     check_import: impl Fn(&ResolvedImport) -> bool,
-) -> Option<Vec<FileId>> {
-    let mut probe = if current_file == source_file {
-        vec![current_file]
-    } else {
-        vec![current_file, source_file]
-    };
+) -> Option<FxHashSet<FileId>> {
+    let mut probe = FxHashSet::from_iter([current_file, source_file]);
 
     for workspace_file_id in files.iter_id() {
-        if workspace_file_id == current_file {
+        if workspace_file_id == current_file || workspace_file_id == source_file {
             continue;
         }
 
@@ -411,7 +408,7 @@ fn probe_workspace_imports(
 
         for import in imports {
             if check_import(import) {
-                probe.push(workspace_file_id);
+                probe.insert(workspace_file_id);
             }
         }
     }
@@ -423,8 +420,8 @@ fn probe_imports_for(
     engine: &QueryEngine,
     files: &Files,
     module_id: FileId,
-) -> Option<Vec<(FileId, ImportId)>> {
-    let mut probe = vec![];
+) -> Option<FxHashSet<(FileId, ImportId)>> {
+    let mut probe = FxHashSet::default();
 
     for workspace_file_id in files.iter_id() {
         let resolved = engine.resolved(workspace_file_id).ok()?;
@@ -435,7 +432,7 @@ fn probe_imports_for(
 
         for import in imports {
             if import.file == module_id {
-                probe.push((workspace_file_id, import.id));
+                probe.insert((workspace_file_id, import.id));
             }
         }
     }
