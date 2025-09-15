@@ -280,6 +280,10 @@ impl SuggestionsHelper for SuggestedTerms {
     ) -> Option<CompletionItem> {
         assert_eq!(import_id, file_id);
 
+        if context.has_term_import(None, name) {
+            return None;
+        }
+
         let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;
 
@@ -326,6 +330,10 @@ impl SuggestionsHelper for SuggestedTypes {
         item_id: Self::ItemId,
     ) -> Option<CompletionItem> {
         assert_eq!(import_id, file_id);
+
+        if context.has_type_import(None, name) {
+            return None;
+        }
 
         let (parsed, _) = context.engine.parsed(file_id).ok()?;
         let module_name = parsed.module_name()?;

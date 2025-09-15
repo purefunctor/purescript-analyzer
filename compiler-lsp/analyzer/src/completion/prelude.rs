@@ -67,6 +67,14 @@ impl Context<'_, '_> {
     pub fn has_qualified_import(&self, name: &str) -> bool {
         self.resolved.qualified.contains_key(name)
     }
+
+    pub fn has_term_import(&self, qualifier: Option<&str>, name: &str) -> bool {
+        self.resolved.lookup_term(self.prim_resolved, qualifier, name).is_some()
+    }
+
+    pub fn has_type_import(&self, qualifier: Option<&str>, name: &str) -> bool {
+        self.resolved.lookup_type(self.prim_resolved, qualifier, name).is_some()
+    }
 }
 
 /// A trait for describing completion sources.
