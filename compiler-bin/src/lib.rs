@@ -180,7 +180,7 @@ fn did_change(
 
 fn on_change(state: &mut State, uri: &str, content: &str) {
     // Cancel in-flight queries so that threads holding a read lock
-    // over `files` are terminated quickly, compared to having to 
+    // over `files` are terminated quickly, compared to having to
     // wait for expensive LSP requests to complete successfully.
     state.engine.request_cancel();
 

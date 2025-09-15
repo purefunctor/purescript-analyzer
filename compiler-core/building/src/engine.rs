@@ -251,7 +251,7 @@ pub struct QueryEngine {
 impl QueryEngine {
     /// Creates a snapshot of the [`QueryEngine`].
     ///
-    /// Snapshots are read locks over the [`QueryEngine`] that must 
+    /// Snapshots are read locks over the [`QueryEngine`] that must
     /// be sent across threads to perform query execution.
     ///
     /// As with read locks, keeping snapshots alive indefinitely is
@@ -268,8 +268,8 @@ impl QueryEngine {
     /// Creates a cancellation request for queries.
     ///
     /// Query cancellation is cooperative. A cancellation flag is read
-    /// at some point during query execution. This function also waits 
-    /// for all snapshots to be dropped, as in the expected consequence 
+    /// at some point during query execution. This function also waits
+    /// for all snapshots to be dropped, as in the expected consequence
     /// of cancelling all queries running across all threads.
     pub fn request_cancel(&self) {
         self.control.global.cancelled.store(true, Ordering::Relaxed);
