@@ -209,7 +209,7 @@ fn dispatch_cursor(
             }
         }
         CursorKind::References => {
-            if let Some(location) =
+            if let Ok(Some(location)) =
                 analyzer::references::implementation(engine, files, uri, position)
             {
                 let location = location.into_iter().map(render_location).join("\n");

@@ -30,7 +30,7 @@ pub fn implementation(
         files.id(uri)?
     };
 
-    let located = locate::locate(engine, current_file, position);
+    let located = locate::locate(engine, current_file, position).ok()?;
 
     match located {
         locate::Located::ModuleName(module_name) => {

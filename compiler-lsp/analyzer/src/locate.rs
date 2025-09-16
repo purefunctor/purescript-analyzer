@@ -12,7 +12,7 @@ use rowan::{
 };
 use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
-use crate::extract::AnnotationSyntaxRange;
+use crate::{AnalyzerError, extract::AnnotationSyntaxRange};
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);
@@ -73,24 +73,29 @@ pub enum Located {
     Nothing,
 }
 
-pub fn locate(engine: &QueryEngine, id: FileId, position: Position) -> Located {
+pub fn locate(
+    engine: &QueryEngine,
+    id: FileId,
+    position: Position,
+) -> Result<Located, AnalyzerError> {
     let content = engine.content(id);
-    let Ok((parsed, _)) = engine.parsed(id) else { return Located::Nothing };
-    let Ok(indexed) = engine.indexed(id) else { return Located::Nothing };
-    let Ok(lowered) = engine.lowered(id) else { return Located::Nothing };
+
+    let (parsed, _) = engine.parsed(id)?;
+    let indexed = engine.indexed(id)?;
+    let lowered = engine.lowered(id)?;
 
     let Some(offset) = position_to_offset(&content, position) else {
-        return Located::Nothing;
+        return Ok(Located::Nothing);
     };
 
     let node = parsed.syntax_node();
     let token = node.token_at_offset(offset);
 
-    match token {
+    Ok(match token {
         TokenAtOffset::None => Located::Nothing,
         TokenAtOffset::Single(token) => locate_single(&indexed, &lowered, token),
         TokenAtOffset::Between(left, right) => locate_between(&indexed, &lowered, left, right),
-    }
+    })
 }
 
 fn locate_single(

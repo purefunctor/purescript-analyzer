@@ -9,7 +9,7 @@ use std::{
     time::Instant,
 };
 
-use analyzer::{Files, QueryEngine, prim};
+use analyzer::{AnalyzerError, Files, QueryEngine, QueryError, prim};
 use async_lsp::{
     ClientSocket, ErrorCode, ResponseError, client_monitor::ClientProcessMonitorLayer,
     concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
@@ -163,7 +163,8 @@ fn references(
     let _span = tracing::info_span!("references").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    Ok(analyzer::references::implementation(&snapshot.engine, &snapshot.files(), uri, position))
+    analyzer::references::implementation(&snapshot.engine, &snapshot.files(), uri, position)
+        .into_response_error(None)
 }
 
 fn did_change(
@@ -242,6 +243,36 @@ trait RequestExtension: BorrowMut<Router<State>> {
 }
 
 impl RequestExtension for Router<State> {}
+
+trait AnalyzerResultExtension<T> {
+    /// Convenience method for transforming an [`AnalyzerError`] into a
+    /// [`ResponseError`], while also handling [`tracing`] and providing
+    /// a default value to be used for [`AnalyzerError::NonFatal`] errors.
+    fn into_response_error(self, item: T) -> Result<T, ResponseError>;
+}
+
+impl<T> AnalyzerResultExtension<T> for Result<T, AnalyzerError> {
+    fn into_response_error(self, item: T) -> Result<T, ResponseError> {
+        self.or_else(|error| match error {
+            AnalyzerError::NonFatal => Ok(item),
+            error => Err(error),
+        })
+        .map_err(|error| match error {
+            AnalyzerError::QueryError(QueryError::Cancelled) => {
+                tracing::warn!("{error}");
+                ResponseError::new(ErrorCode::REQUEST_CANCELLED, "Request cancelled")
+            }
+            AnalyzerError::QueryError(QueryError::Cycle { .. }) => {
+                tracing::error!("{error}");
+                ResponseError::new(ErrorCode::REQUEST_FAILED, "Request failed")
+            }
+            _ => {
+                tracing::error!("{error}");
+                ResponseError::new(ErrorCode::REQUEST_FAILED, "Request failed")
+            }
+        })
+    }
+}
 
 pub async fn analyzer_loop() {
     let (server, _) = async_lsp::MainLoop::new_server(|client| {

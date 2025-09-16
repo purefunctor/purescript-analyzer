@@ -16,20 +16,20 @@ use rustc_hash::FxHashSet;
 use smol_str::ToSmolStr;
 use syntax::{PureScript, cst};
 
-use crate::locate;
+use crate::{AnalyzerError, locate};
 
 pub fn implementation(
     engine: &QueryEngine,
     files: &Files,
     uri: Url,
     position: Position,
-) -> Option<Vec<Location>> {
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let current_file = {
         let uri = uri.as_str();
-        files.id(uri)?
+        files.id(uri).ok_or(AnalyzerError::NonFatal)?
     };
 
-    let located = locate::locate(engine, current_file, position);
+    let located = locate::locate(engine, current_file, position)?;
 
     match located {
         locate::Located::ModuleName(module_name) => {
@@ -46,16 +46,22 @@ pub fn implementation(
         }
         locate::Located::Type(type_id) => references_type(engine, files, current_file, type_id),
         locate::Located::TermOperator(operator_id) => {
-            let lowered = engine.lowered(current_file).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_term_operator(operator_id)?;
+            let lowered = engine.lowered(current_file)?;
+            let (f_id, t_id) = lowered
+                .intermediate
+                .index_term_operator(operator_id)
+                .ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
-            let lowered = engine.lowered(current_file).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_type_operator(operator_id)?;
+            let lowered = engine.lowered(current_file)?;
+            let (f_id, t_id) = lowered
+                .intermediate
+                .index_type_operator(operator_id)
+                .ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
         }
-        locate::Located::Nothing => None,
+        locate::Located::Nothing => Ok(None),
     }
 }
 
@@ -64,14 +70,14 @@ fn references_module_name(
     files: &Files,
     current_file: FileId,
     module_name: AstPtr<cst::ModuleName>,
-) -> Option<Vec<Location>> {
-    let (parsed, _) = engine.parsed(current_file).ok()?;
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
+    let (parsed, _) = engine.parsed(current_file)?;
 
     let root = parsed.syntax_node();
-    let module_name = module_name.try_to_node(&root)?;
+    let module_name = module_name.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let module_name = module_name.syntax().text().to_smolstr();
-    let module_id = engine.module_file(&module_name)?;
+    let module_id = engine.module_file(&module_name).ok_or(AnalyzerError::NonFatal)?;
 
     let candidates = probe_imports_for(engine, files, module_id)?;
 
@@ -80,20 +86,20 @@ fn references_module_name(
         let path = files.path(candidate_id);
         let content = files.content(candidate_id);
 
-        let uri = Url::parse(&path).ok()?;
-        let uri = prim::handle_generated(uri, &content)?;
+        let uri = Url::parse(&path)?;
+        let uri = prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?;
 
-        let (parsed, _) = engine.parsed(candidate_id).ok()?;
+        let (parsed, _) = engine.parsed(candidate_id)?;
         let root = parsed.syntax_node();
 
-        let indexed = engine.indexed(candidate_id).ok()?;
+        let indexed = engine.indexed(candidate_id)?;
         let ptr = indexed.source[import_id].syntax_node_ptr();
-        let range = locate::syntax_range(&content, &root, &ptr)?;
+        let range = locate::syntax_range(&content, &root, &ptr).ok_or(AnalyzerError::NonFatal)?;
 
         locations.push(Location { uri, range });
     }
 
-    Some(locations)
+    Ok(Some(locations))
 }
 
 fn references_import(
@@ -101,60 +107,66 @@ fn references_import(
     files: &Files,
     current_file: FileId,
     import_id: ImportItemId,
-) -> Option<Vec<Location>> {
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(current_file).ok()?;
-        let indexed = engine.indexed(current_file).ok()?;
+        let (parsed, _) = engine.parsed(current_file)?;
+        let indexed = engine.indexed(current_file)?;
         (parsed, indexed)
     };
 
     let root = parsed.syntax_node();
     let ptr = &indexed.source[import_id];
-    let node = ptr.try_to_node(&root)?;
+    let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
-    let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
-    let module_name = statement.module_name()?.syntax().to_smolstr();
+    let statement = node
+        .syntax()
+        .ancestors()
+        .find_map(cst::ImportStatement::cast)
+        .ok_or(AnalyzerError::NonFatal)?;
+    let module_name = statement.module_name().ok_or(AnalyzerError::NonFatal)?.syntax().to_smolstr();
 
     let import_resolved = {
-        let import_id = engine.module_file(&module_name)?;
-        engine.resolved(import_id).ok()?
+        let import_id = engine.module_file(&module_name).ok_or(AnalyzerError::NonFatal)?;
+        engine.resolved(import_id)?
     };
 
     let references_term = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
-        let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
+        let (f_id, t_id) =
+            import_resolved.exports.lookup_term(name).ok_or(AnalyzerError::NonFatal)?;
         references_file_term(engine, files, current_file, f_id, t_id)
     };
 
     let references_type = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
-        let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
+        let (f_id, t_id) =
+            import_resolved.exports.lookup_type(name).ok_or(AnalyzerError::NonFatal)?;
         references_file_type(engine, files, current_file, f_id, t_id)
     };
 
     match node {
         cst::ImportItem::ImportValue(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             references_term(engine, files, name)
         }
         cst::ImportItem::ImportClass(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             references_type(engine, files, name)
         }
         cst::ImportItem::ImportType(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             references_type(engine, files, name)
         }
         cst::ImportItem::ImportOperator(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             references_term(engine, files, name)
         }
         cst::ImportItem::ImportTypeOperator(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             references_type(engine, files, name)
         }
@@ -166,15 +178,15 @@ fn references_binder(
     files: &Files,
     current_file: FileId,
     binder_id: BinderId,
-) -> Option<Vec<Location>> {
-    let lowered = engine.lowered(current_file).ok()?;
-    let kind = lowered.intermediate.index_binder_kind(binder_id)?;
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
+    let lowered = engine.lowered(current_file)?;
+    let kind = lowered.intermediate.index_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         lowering::BinderKind::Constructor { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
@@ -183,29 +195,30 @@ fn references_expression(
     files: &Files,
     current_file: FileId,
     expression_id: ExpressionId,
-) -> Option<Vec<Location>> {
-    let lowered = engine.lowered(current_file).ok()?;
-    let kind = lowered.intermediate.index_expression_kind(expression_id)?;
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
+    let lowered = engine.lowered(current_file)?;
+    let kind =
+        lowered.intermediate.index_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         ExpressionKind::Variable { resolution, .. } => {
-            let resolution = resolution.as_ref()?;
+            let resolution = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             match resolution {
-                TermVariableResolution::Binder(_) => None,
-                TermVariableResolution::Let(_) => None,
+                TermVariableResolution::Binder(_) => Ok(None),
+                TermVariableResolution::Let(_) => Ok(None),
                 TermVariableResolution::Reference(f_id, t_id) => {
                     references_file_term(engine, files, current_file, *f_id, *t_id)
                 }
             }
         }
         ExpressionKind::OperatorName { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
@@ -214,19 +227,19 @@ fn references_type(
     files: &Files,
     current_file: FileId,
     type_id: TypeId,
-) -> Option<Vec<Location>> {
-    let lowered = engine.lowered(current_file).ok()?;
-    let kind = lowered.intermediate.index_type_kind(type_id)?;
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
+    let lowered = engine.lowered(current_file)?;
+    let kind = lowered.intermediate.index_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
         }
         TypeKind::Operator { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
@@ -251,7 +264,7 @@ fn references_file_term(
     current_file: FileId,
     file_id: FileId,
     term_id: TermItemId,
-) -> Option<Vec<Location>> {
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let candidates = probe_term_references(engine, files, current_file, file_id, term_id)?;
 
     let mut locations = vec![];
@@ -260,31 +273,34 @@ fn references_file_term(
             let path = files.path(candidate_id);
             let content = files.content(candidate_id);
 
-            let uri = Url::parse(&path).ok()?;
-            prim::handle_generated(uri, &content)?
+            let uri = Url::parse(&path)?;
+            prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
         };
 
         let content = engine.content(candidate_id);
-        let (parsed, _) = engine.parsed(candidate_id).ok()?;
-        let lowered = engine.lowered(candidate_id).ok()?;
+        let (parsed, _) = engine.parsed(candidate_id)?;
+        let lowered = engine.lowered(candidate_id)?;
 
         for (expr_id, expr_kind) in lowered.intermediate.iter_expression() {
             if let ExpressionKind::Constructor { resolution: Some((f_id, t_id)) } = expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, expr_id)?;
+                let range =
+                    id_range(&content, &parsed, &lowered, expr_id).ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::OperatorName { resolution: Some((f_id, t_id)) } =
                 expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, expr_id)?;
+                let range =
+                    id_range(&content, &parsed, &lowered, expr_id).ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::Variable { resolution: Some(resolution) } = expr_kind
                 && let TermVariableResolution::Reference(f_id, t_id) = resolution
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, expr_id)?;
+                let range =
+                    id_range(&content, &parsed, &lowered, expr_id).ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
@@ -293,20 +309,22 @@ fn references_file_term(
             if let BinderKind::Constructor { resolution: Some((f_id, t_id)), .. } = binder_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, binder_id)?;
+                let range = id_range(&content, &parsed, &lowered, binder_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
         for (operator_id, f_id, t_id) in lowered.intermediate.iter_term_operator() {
             if (f_id, t_id) == (file_id, term_id) {
-                let range = id_range(&content, &parsed, &lowered, operator_id)?;
+                let range = id_range(&content, &parsed, &lowered, operator_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
     }
 
-    Some(locations)
+    Ok(Some(locations))
 }
 
 fn references_file_type(
@@ -315,7 +333,7 @@ fn references_file_type(
     current_file: FileId,
     file_id: FileId,
     type_id: TypeItemId,
-) -> Option<Vec<Location>> {
+) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let candidates = probe_type_references(engine, files, current_file, file_id, type_id)?;
 
     let mut locations = vec![];
@@ -324,38 +342,41 @@ fn references_file_type(
             let path = files.path(candidate_id);
             let content = files.content(candidate_id);
 
-            let uri = Url::parse(&path).ok()?;
-            prim::handle_generated(uri, &content)?
+            let uri = Url::parse(&path)?;
+            prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
         };
 
         let content = engine.content(candidate_id);
-        let (parsed, _) = engine.parsed(candidate_id).ok()?;
-        let lowered = engine.lowered(candidate_id).ok()?;
+        let (parsed, _) = engine.parsed(candidate_id)?;
+        let lowered = engine.lowered(candidate_id)?;
 
         for (ty_id, ty_kind) in lowered.intermediate.iter_type() {
             if let TypeKind::Constructor { resolution: Some((f_id, t_id)) } = ty_kind
                 && (*f_id, *t_id) == (file_id, type_id)
             {
-                let range = id_range(&content, &parsed, &lowered, ty_id)?;
+                let range =
+                    id_range(&content, &parsed, &lowered, ty_id).ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
             if let TypeKind::Operator { resolution: Some((f_id, t_id)) } = ty_kind
                 && (*f_id, *t_id) == (file_id, type_id)
             {
-                let range = id_range(&content, &parsed, &lowered, ty_id)?;
+                let range =
+                    id_range(&content, &parsed, &lowered, ty_id).ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
         for (operator_id, f_id, t_id) in lowered.intermediate.iter_type_operator() {
             if (f_id, t_id) == (file_id, type_id) {
-                let range = id_range(&content, &parsed, &lowered, operator_id)?;
+                let range = id_range(&content, &parsed, &lowered, operator_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
     }
 
-    Some(locations)
+    Ok(Some(locations))
 }
 
 fn probe_term_references(
@@ -364,7 +385,7 @@ fn probe_term_references(
     current_file: FileId,
     file_id: FileId,
     term_id: TermItemId,
-) -> Option<FxHashSet<FileId>> {
+) -> Result<FxHashSet<FileId>, AnalyzerError> {
     probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_terms().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, term_id)
@@ -378,7 +399,7 @@ fn probe_type_references(
     current_file: FileId,
     file_id: FileId,
     type_id: TypeItemId,
-) -> Option<FxHashSet<FileId>> {
+) -> Result<FxHashSet<FileId>, AnalyzerError> {
     probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_types().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, type_id)
@@ -392,7 +413,7 @@ fn probe_workspace_imports(
     current_file: FileId,
     source_file: FileId,
     check_import: impl Fn(&ResolvedImport) -> bool,
-) -> Option<FxHashSet<FileId>> {
+) -> Result<FxHashSet<FileId>, AnalyzerError> {
     let mut probe = FxHashSet::from_iter([current_file, source_file]);
 
     for workspace_file_id in files.iter_id() {
@@ -400,7 +421,7 @@ fn probe_workspace_imports(
             continue;
         }
 
-        let resolved = engine.resolved(workspace_file_id).ok()?;
+        let resolved = engine.resolved(workspace_file_id)?;
 
         let unqualified = resolved.unqualified.values().flatten();
         let qualified = resolved.qualified.values();
@@ -413,18 +434,18 @@ fn probe_workspace_imports(
         }
     }
 
-    Some(probe)
+    Ok(probe)
 }
 
 fn probe_imports_for(
     engine: &QueryEngine,
     files: &Files,
     module_id: FileId,
-) -> Option<FxHashSet<(FileId, ImportId)>> {
+) -> Result<FxHashSet<(FileId, ImportId)>, AnalyzerError> {
     let mut probe = FxHashSet::default();
 
     for workspace_file_id in files.iter_id() {
-        let resolved = engine.resolved(workspace_file_id).ok()?;
+        let resolved = engine.resolved(workspace_file_id)?;
 
         let unqualified = resolved.unqualified.values().flatten();
         let qualified = resolved.qualified.values();
@@ -437,5 +458,5 @@ fn probe_imports_for(
         }
     }
 
-    Some(probe)
+    Ok(probe)
 }
