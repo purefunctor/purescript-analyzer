@@ -1,6 +1,7 @@
 use std::env;
 
 use clap::Parser;
+use purescript_analyzer::{analyzer_loop, logging};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -15,13 +16,15 @@ struct Cli {
 
 #[tokio::main(flavor = "current_thread")]
 async fn analyzer_main() {
-    purescript_analyzer::analyzer_loop().await
+    analyzer_loop().await
 }
 
 fn main() {
     let cli = Cli::parse();
     if cli.log_file {
-        eprintln!("Log file: {:?}", env::temp_dir().join("purescript-analyzer.log"));
+        eprintln!("Log file: {:?}", logging::temporary_log_file());
     }
+
+    logging::initialize();
     analyzer_main();
 }

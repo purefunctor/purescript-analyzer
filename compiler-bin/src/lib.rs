@@ -1,4 +1,5 @@
 pub mod extension;
+pub mod logging;
 
 use std::{
     borrow::BorrowMut,
@@ -6,7 +7,6 @@ use std::{
     ops::{ControlFlow, Deref},
     path::PathBuf,
     sync::Arc,
-    time::Instant,
 };
 
 use analyzer::{AnalyzerError, Files, QueryEngine, QueryError, prim};
@@ -18,11 +18,6 @@ use async_lsp::{
 use parking_lot::RwLock;
 use tokio::task;
 use tower::ServiceBuilder;
-use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{
-    Layer, Registry,
-    layer::{Context, SubscriberExt},
-};
 
 pub struct State {
     pub client: ClientSocket,
@@ -199,29 +194,6 @@ fn on_change(state: &mut State, uri: &str, content: &str) {
     }
 }
 
-struct SpanTimingLayer;
-
-impl<S> Layer<S> for SpanTimingLayer
-where
-    S: tracing::Subscriber + for<'lookup> tracing_subscriber::registry::LookupSpan<'lookup>,
-{
-    fn on_enter(&self, id: &tracing::span::Id, ctx: Context<'_, S>) {
-        if let Some(span) = ctx.span(id) {
-            span.extensions_mut().insert(Instant::now());
-        }
-    }
-
-    fn on_close(&self, id: tracing::span::Id, ctx: Context<'_, S>) {
-        if let Some(span) = ctx.span(&id)
-            && let Some(start) = span.extensions().get::<Instant>()
-        {
-            let duration = start.elapsed();
-            let name = span.name();
-            tracing::info!(duration = format!("{duration:?}"), "{name}");
-        }
-    }
-}
-
 trait RequestExtension: BorrowMut<Router<State>> {
     fn request_snapshot<R: request::Request>(
         &mut self,
@@ -299,20 +271,6 @@ pub async fn analyzer_loop() {
             .layer(ClientProcessMonitorLayer::new(client))
             .service(router)
     });
-
-    let temporary_directory = env::temp_dir();
-    let log_file_path = temporary_directory.join("purescript-analyzer.log");
-
-    let log_file = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_file_path)
-        .expect("Failed to open log file");
-
-    let fmt = tracing_subscriber::fmt::layer().with_writer(log_file).with_filter(LevelFilter::INFO);
-
-    let subscriber = Registry::default().with(fmt).with(SpanTimingLayer);
-    tracing::subscriber::set_global_default(subscriber).unwrap();
 
     #[cfg(unix)]
     let (stdin, stdout) = (
