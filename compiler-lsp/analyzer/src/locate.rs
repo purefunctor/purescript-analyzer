@@ -116,7 +116,9 @@ fn locate_node(
 ) -> Option<Located> {
     let kind = node.kind();
     let ptr = SyntaxNodePtr::new(&node);
-    if cst::ModuleName::can_cast(kind) {
+    if cst::Annotation::can_cast(kind) {
+        Some(Located::Nothing)
+    } else if cst::ModuleName::can_cast(kind) {
         let ptr = ptr.cast()?;
         Some(Located::ModuleName(ptr))
     } else if cst::ImportItem::can_cast(kind) {
