@@ -31,7 +31,7 @@ pub fn temporary_log_file() -> PathBuf {
     temporary_directory.join("purescript-analyzer.log")
 }
 
-pub fn initialize() {
+pub fn start() {
     let path = temporary_log_file();
     let file = fs::OpenOptions::new()
         .create(true)
