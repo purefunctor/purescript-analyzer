@@ -125,7 +125,7 @@ fn dispatch_cursor(
 
     match cursor {
         CursorKind::GotoDefinition => {
-            if let Some(response) =
+            if let Ok(Some(response)) =
                 analyzer::definition::implementation(engine, files, uri, position)
             {
                 match response {
@@ -144,7 +144,9 @@ fn dispatch_cursor(
             }
         }
         CursorKind::Hover => {
-            if let Some(response) = analyzer::hover::implementation(engine, files, uri, position) {
+            if let Ok(Some(response)) =
+                analyzer::hover::implementation(engine, files, uri, position)
+            {
                 let convert = |marked: MarkedString| -> String {
                     match marked {
                         MarkedString::String(string) => string,
@@ -184,7 +186,7 @@ fn dispatch_cursor(
             }
         }
         CursorKind::Completion => {
-            if let Some(response) =
+            if let Ok(Some(response)) =
                 analyzer::completion::implementation(engine, files, uri, position)
             {
                 match response {

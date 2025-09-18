@@ -122,14 +122,16 @@ fn definition(
     let _span = tracing::info_span!("definition").entered();
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    Ok(analyzer::definition::implementation(&snapshot.engine, &snapshot.files(), uri, position))
+    analyzer::definition::implementation(&snapshot.engine, &snapshot.files(), uri, position)
+        .into_response_error(None)
 }
 
 fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, ResponseError> {
     let _span = tracing::info_span!("hover").entered();
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
-    Ok(analyzer::hover::implementation(&snapshot.engine, &snapshot.files(), uri, position))
+    analyzer::hover::implementation(&snapshot.engine, &snapshot.files(), uri, position)
+        .into_response_error(None)
 }
 
 fn completion(
@@ -139,7 +141,8 @@ fn completion(
     let _span = tracing::info_span!("completion").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    Ok(analyzer::completion::implementation(&snapshot.engine, &snapshot.files(), uri, position))
+    analyzer::completion::implementation(&snapshot.engine, &snapshot.files(), uri, position)
+        .into_response_error(None)
 }
 
 fn resolve_completion_item(

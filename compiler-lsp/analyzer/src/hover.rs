@@ -15,6 +15,7 @@ use smol_str::ToSmolStr;
 use syntax::{SyntaxNode, cst};
 
 use crate::{
+    AnalyzerError,
     extract::{self, AnnotationSyntaxRange},
     locate,
 };
@@ -24,13 +25,13 @@ pub fn implementation(
     files: &Files,
     uri: Url,
     position: Position,
-) -> Option<Hover> {
+) -> Result<Option<Hover>, AnalyzerError> {
     let current_file = {
         let uri = uri.as_str();
-        files.id(uri)?
+        files.id(uri).ok_or(AnalyzerError::NonFatal)?
     };
 
-    let located = locate::locate(engine, current_file, position).ok()?;
+    let located = locate::locate(engine, current_file, position)?;
 
     match located {
         locate::Located::ModuleName(module_name) => {
@@ -43,16 +44,22 @@ pub fn implementation(
         }
         locate::Located::Type(type_id) => hover_type(engine, current_file, type_id),
         locate::Located::TermOperator(operator_id) => {
-            let lowered = engine.lowered(current_file).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_term_operator(operator_id)?;
+            let lowered = engine.lowered(current_file)?;
+            let (f_id, t_id) = lowered
+                .intermediate
+                .index_term_operator(operator_id)
+                .ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
-            let lowered = engine.lowered(current_file).ok()?;
-            let (f_id, t_id) = lowered.intermediate.index_type_operator(operator_id)?;
+            let lowered = engine.lowered(current_file)?;
+            let (f_id, t_id) = lowered
+                .intermediate
+                .index_type_operator(operator_id)
+                .ok_or(AnalyzerError::NonFatal)?;
             hover_file_type(engine, *f_id, *t_id)
         }
-        locate::Located::Nothing => None,
+        locate::Located::Nothing => Ok(None),
     }
 }
 
@@ -60,16 +67,17 @@ fn hover_module_name(
     engine: &QueryEngine,
     current_file: FileId,
     module_name: AstPtr<cst::ModuleName>,
-) -> Option<Hover> {
-    let (parsed, _) = engine.parsed(current_file).ok()?;
+) -> Result<Option<Hover>, AnalyzerError> {
+    let (parsed, _) = engine.parsed(current_file)?;
 
     let root = parsed.syntax_node();
-    let module_name = module_name.try_to_node(&root)?;
+    let module_name = module_name.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let module_name = module_name.syntax().text().to_smolstr();
-    let module_id = engine.module_file(&module_name)?;
+    let module_id = engine.module_file(&module_name).ok_or(AnalyzerError::NonFatal)?;
 
-    let (root, range) = AnnotationSyntaxRange::of_file(engine, module_id)?;
+    let (root, range) =
+        AnnotationSyntaxRange::of_file(engine, module_id).ok_or(AnalyzerError::NonFatal)?;
 
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
     let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
@@ -78,66 +86,77 @@ fn hover_module_name(
     let contents = HoverContents::Array(array);
     let range = None;
 
-    Some(Hover { contents, range })
+    Ok(Some(Hover { contents, range }))
 }
 
 fn hover_import(
     engine: &QueryEngine,
     current_file: FileId,
     import_id: ImportItemId,
-) -> Option<Hover> {
-    let (parsed, _) = engine.parsed(current_file).ok()?;
-    let indexed = engine.indexed(current_file).ok()?;
+) -> Result<Option<Hover>, AnalyzerError> {
+    let (parsed, _) = engine.parsed(current_file)?;
+    let indexed = engine.indexed(current_file)?;
 
     let root = parsed.syntax_node();
-    let node = indexed.source[import_id].try_to_node(&root)?;
+    let node = indexed.source[import_id].try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
-    let statement = node.syntax().ancestors().find_map(cst::ImportStatement::cast)?;
-    let module_name = statement.module_name()?.syntax().text().to_smolstr();
+    let statement = node
+        .syntax()
+        .ancestors()
+        .find_map(cst::ImportStatement::cast)
+        .ok_or(AnalyzerError::NonFatal)?;
+    let module_name =
+        statement.module_name().ok_or(AnalyzerError::NonFatal)?.syntax().text().to_smolstr();
 
-    let import_id = engine.module_file(&module_name)?;
-    let import_resolved = engine.resolved(import_id).ok()?;
+    let import_id = engine.module_file(&module_name).ok_or(AnalyzerError::NonFatal)?;
+    let import_resolved = engine.resolved(import_id)?;
 
     let hover_term_import = |engine: &QueryEngine, name: &str| {
-        let (f_id, t_id) = import_resolved.exports.lookup_term(name)?;
+        let (f_id, t_id) =
+            import_resolved.exports.lookup_term(name).ok_or(AnalyzerError::NonFatal)?;
         hover_file_term(engine, f_id, t_id)
     };
 
     let hover_type_import = |engine: &QueryEngine, name: &str| {
-        let (f_id, t_id) = import_resolved.exports.lookup_type(name)?;
+        let (f_id, t_id) =
+            import_resolved.exports.lookup_type(name).ok_or(AnalyzerError::NonFatal)?;
         hover_file_type(engine, f_id, t_id)
     };
 
     match node {
         cst::ImportItem::ImportValue(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             hover_term_import(engine, name)
         }
         cst::ImportItem::ImportClass(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             hover_type_import(engine, name)
         }
         cst::ImportItem::ImportType(cst) => {
-            let token = cst.name_token()?;
+            let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
             hover_type_import(engine, name)
         }
-        cst::ImportItem::ImportOperator(_) => None,
-        cst::ImportItem::ImportTypeOperator(_) => None,
+        cst::ImportItem::ImportOperator(_) => Ok(None),
+        cst::ImportItem::ImportTypeOperator(_) => Ok(None),
     }
 }
 
-fn hover_binder(engine: &QueryEngine, current_file: FileId, binder_id: BinderId) -> Option<Hover> {
-    let lowered = engine.lowered(current_file).ok()?;
-    let kind = lowered.intermediate.index_binder_kind(binder_id)?;
+fn hover_binder(
+    engine: &QueryEngine,
+    current_file: FileId,
+    binder_id: BinderId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let lowered = engine.lowered(current_file)?;
+    let kind = lowered.intermediate.index_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
@@ -145,20 +164,21 @@ fn hover_expression(
     engine: &QueryEngine,
     current_file: FileId,
     expression_id: ExpressionId,
-) -> Option<Hover> {
-    let lowered = engine.lowered(current_file).ok()?;
-    let kind = lowered.intermediate.index_expression_kind(expression_id)?;
+) -> Result<Option<Hover>, AnalyzerError> {
+    let lowered = engine.lowered(current_file)?;
+    let kind =
+        lowered.intermediate.index_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
         ExpressionKind::Variable { resolution, .. } => {
-            let resolution = resolution.as_ref()?;
+            let resolution = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             match resolution {
-                TermVariableResolution::Binder(_) => None,
+                TermVariableResolution::Binder(_) => Ok(None),
                 TermVariableResolution::Let(let_binding) => {
-                    let (parsed, _) = engine.parsed(current_file).ok()?;
+                    let (parsed, _) = engine.parsed(current_file)?;
                     let root = parsed.syntax_node();
                     hover_let(&root, &lowered, let_binding)
                 }
@@ -168,10 +188,10 @@ fn hover_expression(
             }
         }
         ExpressionKind::OperatorName { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
@@ -179,7 +199,7 @@ fn hover_let(
     root: &SyntaxNode,
     lowered: &FullLoweredModule,
     let_binding: &LetBound,
-) -> Option<Hover> {
+) -> Result<Option<Hover>, AnalyzerError> {
     let signature = let_binding.signature.map(|id| {
         let ptr = lowered.source[id].syntax_node_ptr();
         AnnotationSyntaxRange::from_ptr(root, &ptr)
@@ -196,14 +216,14 @@ fn hover_let(
         let contents = HoverContents::Array(array);
         let range = None;
 
-        Some(Hover { contents, range })
+        Ok(Some(Hover { contents, range }))
     } else {
-        let id = let_binding.equations.first().copied()?;
+        let id = let_binding.equations.first().copied().ok_or(AnalyzerError::NonFatal)?;
 
         let ptr = &lowered.source[id];
-        let node = ptr.try_to_node(root)?;
+        let node = ptr.try_to_node(root).ok_or(AnalyzerError::NonFatal)?;
 
-        let token = node.name_token()?;
+        let token = node.name_token().ok_or(AnalyzerError::NonFatal)?;
         let text = token.text();
 
         let array = vec![
@@ -220,24 +240,33 @@ fn hover_let(
         let contents = HoverContents::Array(array);
         let range = None;
 
-        Some(Hover { contents, range })
+        Ok(Some(Hover { contents, range }))
     }
 }
 
-fn hover_type(engine: &QueryEngine, current_file: FileId, type_id: TypeId) -> Option<Hover> {
-    let lowered = engine.lowered(current_file).ok()?;
-    let kind = lowered.intermediate.index_type_kind(type_id)?;
+fn hover_type(
+    engine: &QueryEngine,
+    current_file: FileId,
+    type_id: TypeId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let lowered = engine.lowered(current_file)?;
+    let kind = lowered.intermediate.index_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
-            let (f_id, t_id) = resolution.as_ref()?;
+            let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_type(engine, *f_id, *t_id)
         }
-        _ => None,
+        _ => Ok(None),
     }
 }
 
-fn hover_file_term(engine: &QueryEngine, file_id: FileId, term_id: TermItemId) -> Option<Hover> {
-    let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)?;
+fn hover_file_term(
+    engine: &QueryEngine,
+    file_id: FileId,
+    term_id: TermItemId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)
+        .ok_or(AnalyzerError::NonFatal)?;
 
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
     let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
@@ -249,11 +278,16 @@ fn hover_file_term(engine: &QueryEngine, file_id: FileId, term_id: TermItemId) -
     let contents = HoverContents::Array(array);
     let range = None;
 
-    Some(Hover { contents, range })
+    Ok(Some(Hover { contents, range }))
 }
 
-fn hover_file_type(engine: &QueryEngine, file_id: FileId, type_id: TypeItemId) -> Option<Hover> {
-    let (root, range) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id)?;
+fn hover_file_type(
+    engine: &QueryEngine,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let (root, range) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id)
+        .ok_or(AnalyzerError::NonFatal)?;
 
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
     let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
@@ -265,7 +299,7 @@ fn hover_file_type(engine: &QueryEngine, file_id: FileId, type_id: TypeItemId) -
     let contents = HoverContents::Array(array);
     let range = None;
 
-    Some(Hover { contents, range })
+    Ok(Some(Hover { contents, range }))
 }
 
 fn render_annotation(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
