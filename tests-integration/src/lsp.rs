@@ -192,8 +192,8 @@ fn dispatch_cursor(
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
-                        let items = items.into_iter().map(|item| {
-                            analyzer::completion::resolve::implementation(engine, item)
+                        let items = items.into_iter().filter_map(|item| {
+                            analyzer::completion::resolve::implementation(engine, item).ok()
                         });
 
                         let items: Vec<TabledCompletionItem> =

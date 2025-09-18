@@ -150,7 +150,8 @@ fn resolve_completion_item(
     item: CompletionItem,
 ) -> Result<CompletionItem, ResponseError> {
     let _span = tracing::info_span!("resolve_completion_item").entered();
-    Ok(analyzer::completion::resolve::implementation(&snapshot.engine, item))
+    analyzer::completion::resolve::implementation(&snapshot.engine, item)
+        .or_else(|(error, item)| Err(error).into_response_error(item))
 }
 
 fn references(

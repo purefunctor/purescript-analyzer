@@ -76,8 +76,7 @@ fn hover_module_name(
     let module_name = module_name.syntax().text().to_smolstr();
     let module_id = engine.module_file(&module_name).ok_or(AnalyzerError::NonFatal)?;
 
-    let (root, range) =
-        AnnotationSyntaxRange::of_file(engine, module_id).ok_or(AnalyzerError::NonFatal)?;
+    let (root, range) = AnnotationSyntaxRange::of_file(engine, module_id)?;
 
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
     let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
@@ -265,8 +264,7 @@ fn hover_file_term(
     file_id: FileId,
     term_id: TermItemId,
 ) -> Result<Option<Hover>, AnalyzerError> {
-    let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)
-        .ok_or(AnalyzerError::NonFatal)?;
+    let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)?;
 
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
     let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
@@ -286,8 +284,7 @@ fn hover_file_type(
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Result<Option<Hover>, AnalyzerError> {
-    let (root, range) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id)
-        .ok_or(AnalyzerError::NonFatal)?;
+    let (root, range) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id)?;
 
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
     let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
