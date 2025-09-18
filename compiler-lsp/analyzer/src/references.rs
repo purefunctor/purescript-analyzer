@@ -285,22 +285,22 @@ fn references_file_term(
             if let ExpressionKind::Constructor { resolution: Some((f_id, t_id)) } = expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range =
-                    id_range(&content, &parsed, &lowered, expr_id).ok_or(AnalyzerError::NonFatal)?;
+                let range = id_range(&content, &parsed, &lowered, expr_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::OperatorName { resolution: Some((f_id, t_id)) } =
                 expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range =
-                    id_range(&content, &parsed, &lowered, expr_id).ok_or(AnalyzerError::NonFatal)?;
+                let range = id_range(&content, &parsed, &lowered, expr_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::Variable { resolution: Some(resolution) } = expr_kind
                 && let TermVariableResolution::Reference(f_id, t_id) = resolution
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range =
-                    id_range(&content, &parsed, &lowered, expr_id).ok_or(AnalyzerError::NonFatal)?;
+                let range = id_range(&content, &parsed, &lowered, expr_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
