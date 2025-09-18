@@ -12,12 +12,11 @@ use crate::{
     extract::{AnnotationSyntaxRange, extract_annotation, extract_syntax},
 };
 
-type ErrorItem = (AnalyzerError, CompletionItem);
-
+#[allow(clippy::result_large_err)]
 pub fn implementation(
     engine: &QueryEngine,
     mut item: CompletionItem,
-) -> Result<CompletionItem, ErrorItem> {
+) -> Result<CompletionItem, (AnalyzerError, CompletionItem)> {
     let Some(value) = mem::take(&mut item.data) else {
         return Ok(item);
     };
