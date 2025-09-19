@@ -13,7 +13,7 @@ use rowan::TokenAtOffset;
 use smol_str::SmolStr;
 
 use filter::{FuzzyMatch, NoFilter, StartsWith};
-use prelude::{Context, CursorSemantics, CursorText, Source};
+use prelude::{CompletionSource, Context, CursorSemantics, CursorText};
 use sources::{
     ImportedTerms, ImportedTypes, LocalTerms, LocalTypes, PrimTerms, PrimTypes, QualifiedModules,
     QualifiedTerms, QualifiedTermsSuggestions, QualifiedTypes, QualifiedTypesSuggestions,
@@ -21,30 +21,30 @@ use sources::{
 };
 use syntax::SyntaxKind;
 
-use crate::locate;
+use crate::{AnalyzerError, locate};
 
 pub fn implementation(
     engine: &QueryEngine,
     files: &Files,
     uri: Url,
     position: Position,
-) -> Option<CompletionResponse> {
+) -> Result<Option<CompletionResponse>, AnalyzerError> {
     let current_file = {
         let uri = uri.as_str();
-        files.id(uri)?
+        files.id(uri).ok_or(AnalyzerError::NonFatal)?
     };
 
     let prim_id = engine.prim_id();
     let content = engine.content(current_file);
-    let (parsed, _) = engine.parsed(current_file).ok()?;
+    let (parsed, _) = engine.parsed(current_file)?;
 
-    let offset = locate::position_to_offset(&content, position)?;
+    let offset = locate::position_to_offset(&content, position).ok_or(AnalyzerError::NonFatal)?;
 
     let node = parsed.syntax_node();
     let token = node.token_at_offset(offset);
 
     let token = match token {
-        TokenAtOffset::None => return None,
+        TokenAtOffset::None => return Ok(None),
         TokenAtOffset::Single(token) => token,
         TokenAtOffset::Between(left, right) => {
             let left_annotation = left.parent_ancestors().any(|node| {
@@ -58,9 +58,9 @@ pub fn implementation(
     let semantics = CursorSemantics::new(&content, position);
     let (text, range) = CursorText::new(&content, &token);
 
-    let indexed = engine.indexed(current_file).ok()?;
-    let resolved = engine.resolved(current_file).ok()?;
-    let prim_resolved = engine.resolved(prim_id).ok()?;
+    let indexed = engine.indexed(current_file)?;
+    let resolved = engine.resolved(current_file)?;
+    let prim_resolved = engine.resolved(prim_id)?;
 
     let context = Context {
         engine,
@@ -77,68 +77,70 @@ pub fn implementation(
         range,
     };
 
-    let items = collect(&context);
+    let items = collect(&context)?;
     let is_incomplete = items.len() > 5;
 
-    Some(CompletionResponse::List(CompletionList { is_incomplete, items }))
+    Ok(Some(CompletionResponse::List(CompletionList { is_incomplete, items })))
 }
 
-fn collect(context: &Context) -> Vec<CompletionItem> {
+fn collect(context: &Context) -> Result<Vec<CompletionItem>, AnalyzerError> {
     let mut items = vec![];
+    let into = &mut items;
+
     match &context.text {
         CursorText::None => {
             if context.collect_modules() {
-                items.extend(WorkspaceModules.candidates(context, NoFilter));
+                WorkspaceModules.collect_into(context, NoFilter, into)?;
             } else {
-                items.extend(QualifiedModules.candidates(context, NoFilter));
+                QualifiedModules.collect_into(context, NoFilter, into)?;
             }
             if context.collect_terms() {
-                items.extend(LocalTerms.candidates(context, NoFilter));
+                LocalTerms.collect_into(context, NoFilter, into)?;
             }
             if context.collect_types() {
-                items.extend(LocalTypes.candidates(context, NoFilter));
+                LocalTypes.collect_into(context, NoFilter, into)?;
             }
         }
         CursorText::Prefix(p) => {
             let p = p.trim_end_matches('.');
             if context.collect_modules() {
-                items.extend(WorkspaceModules.candidates(context, StartsWith(p)));
+                WorkspaceModules.collect_into(context, StartsWith(p), into)?;
             } else {
-                items.extend(QualifiedModules.candidates(context, StartsWith(p)));
+                QualifiedModules.collect_into(context, StartsWith(p), into)?;
             }
             if context.collect_terms() {
-                items.extend(QualifiedTerms(p).candidates(context, NoFilter));
+                QualifiedTerms(p).collect_into(context, NoFilter, into)?;
                 if !context.has_qualified_import(p) {
-                    items.extend(QualifiedTermsSuggestions(p).candidates(context, NoFilter));
+                    QualifiedTermsSuggestions(p).collect_into(context, NoFilter, into)?;
                 }
             }
             if context.collect_types() {
-                items.extend(QualifiedTypes(p).candidates(context, NoFilter));
+                QualifiedTypes(p).collect_into(context, NoFilter, into)?;
                 if !context.has_qualified_import(p) {
-                    items.extend(QualifiedTypesSuggestions(p).candidates(context, NoFilter));
+                    QualifiedTypesSuggestions(p).collect_into(context, NoFilter, into)?;
                 }
             }
         }
         CursorText::Name(n) => {
             if context.collect_modules() {
-                items.extend(WorkspaceModules.candidates(context, StartsWith(n)));
+                WorkspaceModules.collect_into(context, StartsWith(n), into)?;
             } else {
-                items.extend(QualifiedModules.candidates(context, StartsWith(n)));
+                QualifiedModules.collect_into(context, StartsWith(n), into)?;
             }
             if context.collect_terms() {
-                items.extend(LocalTerms.candidates(context, FuzzyMatch(n)));
-                items.extend(ImportedTerms.candidates(context, FuzzyMatch(n)));
-                items.extend(SuggestedTerms.candidates(context, StartsWith(n)));
+                LocalTerms.collect_into(context, FuzzyMatch(n), into)?;
+                ImportedTerms.collect_into(context, FuzzyMatch(n), into)?;
+                SuggestedTerms.collect_into(context, StartsWith(n), into)?;
                 if context.collect_implicit_prim() {
-                    items.extend(PrimTerms.candidates(context, FuzzyMatch(n)));
+                    PrimTerms.collect_into(context, FuzzyMatch(n), into)?;
                 }
             }
             if context.collect_types() {
-                items.extend(LocalTypes.candidates(context, FuzzyMatch(n)));
-                items.extend(ImportedTypes.candidates(context, FuzzyMatch(n)));
-                items.extend(SuggestedTypes.candidates(context, StartsWith(n)));
+                LocalTypes.collect_into(context, FuzzyMatch(n), into)?;
+                ImportedTypes.collect_into(context, FuzzyMatch(n), into)?;
+                SuggestedTypes.collect_into(context, StartsWith(n), into)?;
                 if context.collect_implicit_prim() {
-                    items.extend(PrimTypes.candidates(context, FuzzyMatch(n)));
+                    PrimTypes.collect_into(context, FuzzyMatch(n), into)?;
                 }
             }
         }
@@ -146,25 +148,26 @@ fn collect(context: &Context) -> Vec<CompletionItem> {
             let t: SmolStr = p.chars().chain(n.chars()).collect();
 
             if context.collect_modules() {
-                items.extend(WorkspaceModules.candidates(context, StartsWith(&t)));
+                WorkspaceModules.collect_into(context, StartsWith(&t), into)?;
             } else {
-                items.extend(QualifiedModules.candidates(context, StartsWith(&t)));
+                QualifiedModules.collect_into(context, StartsWith(&t), into)?;
             }
 
             let p = p.trim_end_matches('.');
             if context.collect_terms() {
-                items.extend(QualifiedTerms(p).candidates(context, FuzzyMatch(n)));
+                QualifiedTerms(p).collect_into(context, FuzzyMatch(n), into)?;
                 if !context.has_qualified_import(p) {
-                    items.extend(QualifiedTermsSuggestions(p).candidates(context, FuzzyMatch(n)));
+                    QualifiedTermsSuggestions(p).collect_into(context, FuzzyMatch(n), into)?;
                 }
             }
             if context.collect_types() {
-                items.extend(QualifiedTypes(p).candidates(context, FuzzyMatch(n)));
+                QualifiedTypes(p).collect_into(context, FuzzyMatch(n), into)?;
                 if !context.has_qualified_import(p) {
-                    items.extend(QualifiedTypesSuggestions(p).candidates(context, FuzzyMatch(n)));
+                    QualifiedTypesSuggestions(p).collect_into(context, FuzzyMatch(n), into)?;
                 }
             }
         }
     }
-    items
+
+    Ok(items)
 }

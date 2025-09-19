@@ -125,7 +125,7 @@ fn dispatch_cursor(
 
     match cursor {
         CursorKind::GotoDefinition => {
-            if let Some(response) =
+            if let Ok(Some(response)) =
                 analyzer::definition::implementation(engine, files, uri, position)
             {
                 match response {
@@ -144,7 +144,9 @@ fn dispatch_cursor(
             }
         }
         CursorKind::Hover => {
-            if let Some(response) = analyzer::hover::implementation(engine, files, uri, position) {
+            if let Ok(Some(response)) =
+                analyzer::hover::implementation(engine, files, uri, position)
+            {
                 let convert = |marked: MarkedString| -> String {
                     match marked {
                         MarkedString::String(string) => string,
@@ -184,14 +186,14 @@ fn dispatch_cursor(
             }
         }
         CursorKind::Completion => {
-            if let Some(response) =
+            if let Ok(Some(response)) =
                 analyzer::completion::implementation(engine, files, uri, position)
             {
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
-                        let items = items.into_iter().map(|item| {
-                            analyzer::completion::resolve::implementation(engine, item)
+                        let items = items.into_iter().filter_map(|item| {
+                            analyzer::completion::resolve::implementation(engine, item).ok()
                         });
 
                         let items: Vec<TabledCompletionItem> =
@@ -209,7 +211,7 @@ fn dispatch_cursor(
             }
         }
         CursorKind::References => {
-            if let Some(location) =
+            if let Ok(Some(location)) =
                 analyzer::references::implementation(engine, files, uri, position)
             {
                 let location = location.into_iter().map(render_location).join("\n");

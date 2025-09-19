@@ -12,6 +12,8 @@ use rowan::{
 };
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
+use crate::AnalyzerError;
+
 #[derive(Debug, Default)]
 pub struct AnnotationSyntaxRange {
     pub annotation: Option<TextRange>,
@@ -74,12 +76,12 @@ impl AnnotationSyntaxRange {
     pub fn of_file(
         engine: &QueryEngine,
         file_id: FileId,
-    ) -> Option<(SyntaxNode, AnnotationSyntaxRange)> {
-        let (parsed, _) = engine.parsed(file_id).ok()?;
+    ) -> Result<(SyntaxNode, AnnotationSyntaxRange), AnalyzerError> {
+        let (parsed, _) = engine.parsed(file_id)?;
 
         let root = parsed.syntax_node();
 
-        let header = parsed.cst().header()?;
+        let header = parsed.cst().header().ok_or(AnalyzerError::NonFatal)?;
         let header = header.syntax();
 
         let annotation = header
@@ -87,10 +89,12 @@ impl AnnotationSyntaxRange {
             .map(|annotation| annotation.text_range());
 
         let syntax = {
-            let module_token =
-                header.first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::MODULE))?;
-            let where_token =
-                header.first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::WHERE))?;
+            let module_token = header
+                .first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::MODULE))
+                .ok_or(AnalyzerError::NonFatal)?;
+            let where_token = header
+                .first_child_or_token_by_kind(&|kind| matches!(kind, SyntaxKind::WHERE))
+                .ok_or(AnalyzerError::NonFatal)?;
 
             let start = module_token.text_range().start();
             let end = where_token.text_range().end();
@@ -98,79 +102,81 @@ impl AnnotationSyntaxRange {
             Some(TextRange::new(start, end))
         };
 
-        Some((root, AnnotationSyntaxRange { annotation, syntax }))
+        Ok((root, AnnotationSyntaxRange { annotation, syntax }))
     }
 
     pub fn of_file_term(
         engine: &QueryEngine,
         file_id: FileId,
         term_id: TermItemId,
-    ) -> Option<(SyntaxNode, AnnotationSyntaxRange)> {
-        let (parsed, _) = engine.parsed(file_id).ok()?;
-        let indexed = engine.indexed(file_id).ok()?;
+    ) -> Result<(SyntaxNode, AnnotationSyntaxRange), AnalyzerError> {
+        let (parsed, _) = engine.parsed(file_id)?;
+        let indexed = engine.indexed(file_id)?;
 
         let root = parsed.syntax_node();
         let item = &indexed.items[term_id];
 
         let range = match &item.kind {
             TermItemKind::ClassMember { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Constructor { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
-            TermItemKind::Derive { .. } => return None,
+            TermItemKind::Derive { id } => {
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+            }
             TermItemKind::Foreign { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Instance { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Operator { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Value { signature, equations } => {
                 let equation = equations.first().copied();
-                signature_equation_range(&indexed, &root, signature, &equation)?
+                signature_equation_range(&indexed, &root, signature, &equation)
             }
         };
 
-        Some((root, range))
+        Ok((root, range.ok_or(AnalyzerError::NonFatal)?))
     }
 
     pub fn of_file_type(
         engine: &QueryEngine,
         file_id: FileId,
         type_id: TypeItemId,
-    ) -> Option<(SyntaxNode, AnnotationSyntaxRange)> {
-        let (parsed, _) = engine.parsed(file_id).ok()?;
-        let indexed = engine.indexed(file_id).ok()?;
+    ) -> Result<(SyntaxNode, AnnotationSyntaxRange), AnalyzerError> {
+        let (parsed, _) = engine.parsed(file_id)?;
+        let indexed = engine.indexed(file_id)?;
 
         let root = parsed.syntax_node();
         let item = &indexed.items[type_id];
 
         let range = match &item.kind {
             TypeItemKind::Data { signature, equation, .. } => {
-                signature_equation_range(&indexed, &root, signature, equation)?
+                signature_equation_range(&indexed, &root, signature, equation)
             }
             TypeItemKind::Newtype { signature, equation, .. } => {
-                signature_equation_range(&indexed, &root, signature, equation)?
+                signature_equation_range(&indexed, &root, signature, equation)
             }
             TypeItemKind::Synonym { signature, equation, .. } => {
-                signature_equation_range(&indexed, &root, signature, equation)?
+                signature_equation_range(&indexed, &root, signature, equation)
             }
             TypeItemKind::Class { signature, declaration, .. } => {
-                signature_equation_range(&indexed, &root, signature, declaration)?
+                signature_equation_range(&indexed, &root, signature, declaration)
             }
             TypeItemKind::Foreign { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
             TypeItemKind::Operator { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))?
+                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
         };
 
-        Some((root, range))
+        Ok((root, range.ok_or(AnalyzerError::NonFatal)?))
     }
 }
 

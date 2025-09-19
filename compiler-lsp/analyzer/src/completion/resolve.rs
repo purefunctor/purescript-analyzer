@@ -7,40 +7,47 @@ use indexing::{TermItemId, TypeItemId};
 use serde::{Deserialize, Serialize};
 use syntax::SyntaxNode;
 
-use crate::extract::{self, AnnotationSyntaxRange};
+use crate::{
+    AnalyzerError,
+    extract::{AnnotationSyntaxRange, extract_annotation, extract_syntax},
+};
 
-pub fn implementation(engine: &QueryEngine, mut item: CompletionItem) -> CompletionItem {
-    let Some(value) = mem::take(&mut item.data) else { return item };
-    let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else { return item };
+#[allow(clippy::result_large_err)]
+pub fn implementation(
+    engine: &QueryEngine,
+    mut item: CompletionItem,
+) -> Result<CompletionItem, (AnalyzerError, CompletionItem)> {
+    let Some(value) = mem::take(&mut item.data) else {
+        return Ok(item);
+    };
 
-    match resolve {
-        CompletionResolveData::Import(f_id) => {
-            if let Some((root, range)) = AnnotationSyntaxRange::of_file(engine, f_id) {
-                resolve_documentation(root, range, &mut item);
-            }
-        }
+    let Ok(resolve) = serde_json::from_value::<CompletionResolveData>(value) else {
+        return Ok(item);
+    };
+
+    let root_range = match resolve {
+        CompletionResolveData::Import(f_id) => AnnotationSyntaxRange::of_file(engine, f_id),
         CompletionResolveData::TermItem(f_id, t_id) => {
-            if let Some((root, range)) = AnnotationSyntaxRange::of_file_term(engine, f_id, t_id) {
-                resolve_documentation(root, range, &mut item);
-            }
+            AnnotationSyntaxRange::of_file_term(engine, f_id, t_id)
         }
         CompletionResolveData::TypeItem(f_id, t_id) => {
-            if let Some((root, range)) = AnnotationSyntaxRange::of_file_type(engine, f_id, t_id) {
-                resolve_documentation(root, range, &mut item);
-            }
+            AnnotationSyntaxRange::of_file_type(engine, f_id, t_id)
         }
-    }
+    };
 
-    item
+    match root_range {
+        Ok((root, range)) => Ok(resolve_documentation(root, range, item)),
+        Err(error) => Err((error, item)),
+    }
 }
 
 fn resolve_documentation(
     root: SyntaxNode,
     range: AnnotationSyntaxRange,
-    item: &mut CompletionItem,
-) {
-    let annotation = range.annotation.map(|range| extract::extract_annotation(&root, range));
-    let syntax = range.syntax.map(|range| extract::extract_syntax(&root, range));
+    mut item: CompletionItem,
+) -> CompletionItem {
+    let annotation = range.annotation.map(|range| extract_annotation(&root, range));
+    let syntax = range.syntax.map(|range| extract_syntax(&root, range));
 
     item.detail = syntax;
     item.documentation = annotation.map(|annotation| {
@@ -48,7 +55,9 @@ fn resolve_documentation(
             kind: MarkupKind::Markdown,
             value: annotation,
         })
-    })
+    });
+
+    item
 }
 
 #[derive(Serialize, Deserialize)]

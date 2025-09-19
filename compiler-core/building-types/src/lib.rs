@@ -1,8 +1,10 @@
 pub mod module_name_map;
 pub use module_name_map::*;
 
-use files::FileId;
 use std::sync::Arc;
+
+use files::FileId;
+use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryKey {
@@ -14,9 +16,11 @@ pub enum QueryKey {
     Resolved(FileId),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Error, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QueryError {
+    #[error("Cancelled")]
     Cancelled,
+    #[error("Cycle detected")]
     Cycle { stack: Arc<[QueryKey]> },
 }
 

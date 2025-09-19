@@ -8,7 +8,7 @@ use rowan::{TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
 use syntax::{SyntaxToken, cst};
 
-use crate::locate;
+use crate::{AnalyzerError, locate};
 
 pub struct Context<'c, 'a> {
     pub engine: &'c QueryEngine,
@@ -77,13 +77,16 @@ impl Context<'_, '_> {
     }
 }
 
-/// A trait for describing completion sources.
-pub trait Source {
-    fn candidates<F: Filter>(
+/// A trait for completion sources.
+pub trait CompletionSource {
+    type T;
+
+    fn collect_into<F: Filter>(
         &self,
         context: &Context,
         filter: F,
-    ) -> impl Iterator<Item = CompletionItem>;
+        items: &mut Vec<CompletionItem>,
+    ) -> Result<Self::T, AnalyzerError>;
 }
 
 /// A trait for describing completion filters.
