@@ -43,7 +43,9 @@ import Lib (life, Maybe(..), (+),  type (++))
 --      $    $     $          $          $
 ```
 
-<empty>
+```purescript
+infix 5 plus as +
+```
 
 
 Hover at Position { line: 2, character: 41 }
@@ -53,7 +55,9 @@ import Lib (life, Maybe(..), (+),  type (++))
 --      $    $     $          $          $
 ```
 
-<empty>
+```purescript
+infix 5 type Cons as ++
+```
 
 
 Hover at Position { line: 6, character: 7 }

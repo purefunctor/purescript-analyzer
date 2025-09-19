@@ -4,9 +4,9 @@ use files::{FileId, Files};
 use indexing::FullIndexedModule;
 use parsing::ParsedModule;
 use resolving::FullResolvedModule;
-use rowan::{TokenAtOffset, ast::AstNode};
+use rowan::{TextRange, TextSize, TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
-use syntax::{SyntaxToken, cst};
+use syntax::{SyntaxKind, SyntaxToken, cst};
 
 use crate::{AnalyzerError, locate};
 
@@ -120,7 +120,7 @@ impl CursorSemantics {
         // Inserting a placeholder gets rid of this error, allowing the parser
         // to produce a valid parse tree that we can use for analysis:
         //
-        // component = Halogen.z'PureScript'z
+        // component = Halogen.Z'PureScript'Z
 
         let Some(offset) = locate::position_to_offset(content, position) else {
             return CursorSemantics::General;
@@ -196,9 +196,27 @@ impl CursorText {
             let prefix_range = prefix_token.as_ref().map(|token| token.text_range());
             let prefix = prefix_token.map(|token| token.text().into());
 
-            let name_token = qualified.lower().or_else(|| qualified.upper());
-            let name_range = name_token.as_ref().map(|token| token.text_range());
-            let name = name_token.map(|token| token.text().into());
+            let name_token = qualified
+                .lower()
+                .or_else(|| qualified.upper())
+                .or_else(|| qualified.operator())
+                .or_else(|| qualified.operator_name());
+
+            const ONE: TextSize = TextSize::new(1);
+
+            let name_range = name_token.as_ref().and_then(|token| {
+                let range = token.text_range();
+                if matches!(token.kind(), SyntaxKind::OPERATOR_NAME) {
+                    let start = range.start().checked_add(ONE)?;
+                    let end = range.end().checked_sub(ONE)?;
+                    Some(TextRange::new(start, end))
+                } else {
+                    Some(range)
+                }
+            });
+
+            let name = name_token
+                .map(|token| token.text().trim_start_matches('(').trim_end_matches(')').into());
 
             let range = match (prefix_range, name_range) {
                 (Some(p), Some(n)) => Some(p.cover(n)),

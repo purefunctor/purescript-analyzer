@@ -96,9 +96,11 @@ fn collect(context: &Context) -> Result<Vec<CompletionItem>, AnalyzerError> {
             }
             if context.collect_terms() {
                 LocalTerms.collect_into(context, NoFilter, into)?;
+                ImportedTerms.collect_into(context, NoFilter, into)?;
             }
             if context.collect_types() {
                 LocalTypes.collect_into(context, NoFilter, into)?;
+                ImportedTypes.collect_into(context, NoFilter, into)?;
             }
         }
         CursorText::Prefix(p) => {
