@@ -144,6 +144,8 @@ fn term_import_name(
             return None;
         };
         Some(format!("{type_name}(..)"))
+    } else if matches!(term_item.kind, TermItemKind::Operator { .. }) {
+        Some(format!("({term_name})"))
     } else {
         Some(term_name.to_string())
     }
@@ -157,6 +159,8 @@ fn type_import_name(
     let type_item = &import_indexed.items[type_id];
     if matches!(type_item.kind, TypeItemKind::Class { .. }) {
         Some(format!("class {type_name}"))
+    } else if matches!(type_item.kind, TypeItemKind::Operator { .. }) {
+        Some(format!("type ({type_name})"))
     } else {
         Some(type_name.to_string())
     }
