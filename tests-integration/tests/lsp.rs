@@ -318,3 +318,25 @@ fn test_029_locate_declaration_main() {
     let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_030_locate_constructor_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/030_locate_constructor"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_031_locate_class_member_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/031_locate_class_member"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}

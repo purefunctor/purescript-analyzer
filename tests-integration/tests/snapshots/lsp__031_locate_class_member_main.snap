@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+References at Position { line: 3, character: 3 }
+
+```
+  eq :: a -> a -> Boolean
+-- %
+```
+
+file:///tests-integration/fixtures/lsp/031_locate_class_member/Main.purs @ 6:7..6:9

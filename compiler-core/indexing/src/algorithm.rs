@@ -108,12 +108,12 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
         cst::Declaration::ValueSignature(cst) => {
             let id = state.source.allocate_value_signature(cst);
             let term_id = index_value_signature(state, id, cst);
-            state.pairs.term_declarations.push((declaration_id, term_id));
+            state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
         cst::Declaration::ValueEquation(cst) => {
             let id = state.source.allocate_value_equation(cst);
             let term_id = index_value_equation(state, id, cst);
-            state.pairs.term_declarations.push((declaration_id, term_id));
+            state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
         cst::Declaration::InfixDeclaration(cst) => {
             let id = state.source.allocate_infix(cst);
@@ -129,7 +129,7 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                 let instance_id = state.source.allocate_instance(&cst);
                 let term_id = index_instance(state, instance_id, &cst);
                 state.pairs.instance_chain.push((chain_id, instance_id));
-                state.pairs.term_declarations.push((declaration_id, term_id));
+                state.pairs.declaration_to_term.push((declaration_id, term_id));
                 if let Some(cst) = cst.instance_statements() {
                     for cst in cst.children() {
                         let m_id = state.source.allocate_instance_member(&cst);
@@ -159,7 +159,7 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                     }
                 },
             );
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::TypeSynonymEquation(cst) => {
             let id = state.source.allocate_type_equation(cst);
@@ -182,7 +182,7 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                     }
                 },
             );
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ClassSignature(cst) => {
             let id = state.source.allocate_class_signature(cst);
@@ -205,7 +205,7 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                     }
                 },
             );
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ClassDeclaration(cst) => {
             let id = state.source.allocate_class_declaration(cst);
@@ -233,19 +233,20 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                     let member_id = state.source.allocate_class_member(&cst);
                     let term_id = index_class_member(state, member_id, &cst);
                     state.pairs.class_members.push((type_id, term_id));
+                    state.pairs.class_member_to_term.push((member_id, term_id));
                 }
             }
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ForeignImportDataDeclaration(cst) => {
             let id = state.source.allocate_foreign_data(cst);
             let type_id = index_foreign_data(state, id, cst);
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ForeignImportValueDeclaration(cst) => {
             let id = state.source.allocate_foreign_value(cst);
             let term_id = index_foreign_value(state, id, cst);
-            state.pairs.term_declarations.push((declaration_id, term_id));
+            state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
         cst::Declaration::NewtypeSignature(cst) => {
             let id = state.source.allocate_newtype_signature(cst);
@@ -268,7 +269,7 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                     }
                 },
             );
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::NewtypeEquation(cst) => {
             let id = state.source.allocate_newtype_equation(cst);
@@ -295,8 +296,9 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                 let constructor_id = state.source.allocate_data_constructor(&cst);
                 let term_id = index_data_constructor(state, constructor_id, &cst);
                 state.pairs.data_constructors.push((type_id, term_id));
+                state.pairs.constructor_to_term.push((constructor_id, term_id));
             }
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::DataSignature(cst) => {
             let id = state.source.allocate_data_signature(cst);
@@ -319,7 +321,7 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                     }
                 },
             );
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::DataEquation(cst) => {
             let id = state.source.allocate_data_equation(cst);
@@ -346,13 +348,14 @@ fn index_declaration(state: &mut State, cst: &cst::Declaration) {
                 let constructor_id = state.source.allocate_data_constructor(&cst);
                 let term_id = index_data_constructor(state, constructor_id, &cst);
                 state.pairs.data_constructors.push((type_id, term_id));
+                state.pairs.constructor_to_term.push((constructor_id, term_id));
             }
-            state.pairs.type_declarations.push((declaration_id, type_id));
+            state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::DeriveDeclaration(cst) => {
             let id = state.source.allocate_derive(cst);
             let term_id = index_derive(state, id, cst);
-            state.pairs.term_declarations.push((declaration_id, term_id));
+            state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
     }
 }

@@ -150,8 +150,18 @@ fn locate_node(
     } else if cst::Declaration::can_cast(kind) {
         let ptr = ptr.cast()?;
         let id = indexed.source.lookup_declaration(&ptr)?;
-        None.or_else(|| indexed.pairs.declaration_term(id).map(Located::TermItem))
-            .or_else(|| indexed.pairs.declaration_type(id).map(Located::TypeItem))
+        None.or_else(|| indexed.pairs.declaration_to_term(id).map(Located::TermItem))
+            .or_else(|| indexed.pairs.declaration_to_type(id).map(Located::TypeItem))
+    } else if cst::DataConstructor::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = indexed.source.lookup_data_constructor(&ptr)?;
+        let id = indexed.pairs.constructor_to_term(id)?;
+        Some(Located::TermItem(id))
+    } else if cst::ClassMemberStatement::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = indexed.source.lookup_class_member(&ptr)?;
+        let id = indexed.pairs.class_member_to_term(id)?;
+        Some(Located::TermItem(id))
     } else {
         None
     }
