@@ -30,6 +30,7 @@ pub fn implementation(
     };
 
     let located = locate::locate(engine, current_file, position)?;
+    tracing::info!("{located:?}");
 
     match located {
         locate::Located::ModuleName(module_name) => {
@@ -60,6 +61,12 @@ pub fn implementation(
                 .index_type_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
+        }
+        locate::Located::TermItem(term_id) => {
+            references_file_term(engine, files, current_file, current_file, term_id)
+        }
+        locate::Located::TypeItem(type_id) => {
+            references_file_type(engine, files, current_file, current_file, type_id)
         }
         locate::Located::Nothing => Ok(None),
     }

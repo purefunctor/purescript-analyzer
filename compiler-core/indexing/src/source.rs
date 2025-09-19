@@ -27,7 +27,9 @@ syntax::create_source! {
     pub struct IndexingSource {
         export_item: cst::ExportItem as ExportItem,
         import_item: cst::ImportItem as ImportItem,
+
         import_statement: cst::ImportStatement as Import,
+        declaration: cst::Declaration as Declaration,
 
         data_signature: cst::DataSignature as DataSignature,
         data_equation: cst::DataEquation as DataEquation,

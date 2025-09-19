@@ -1,0 +1,36 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Hover at Position { line: 3, character: 20 }
+
+```
+foreign import data Effect :: Type -> Type
+--                  $ @ %
+```
+
+```purescript
+foreign import data Effect :: Type -> Type
+```
+---
+A safe abstraction over side-effects
+
+
+GotoDefinition at Position { line: 3, character: 22 }
+
+```
+foreign import data Effect :: Type -> Type
+--                  $ @ %
+```
+
+file:///tests-integration/fixtures/lsp/029_locate_declaration/Main.purs @ 3:0..3:42
+
+
+References at Position { line: 3, character: 24 }
+
+```
+foreign import data Effect :: Type -> Type
+--                  $ @ %
+```
+
+file:///tests-integration/fixtures/lsp/029_locate_declaration/Main.purs @ 6:17..6:23

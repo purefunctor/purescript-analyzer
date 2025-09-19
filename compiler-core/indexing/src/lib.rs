@@ -111,6 +111,8 @@ pub struct IndexingPairs {
     data_constructors: Vec<(TypeItemId, TermItemId)>,
     instance_chain: Vec<(InstanceChainId, InstanceId)>,
     instance_members: Vec<(InstanceId, InstanceMemberId)>,
+    term_declarations: Vec<(DeclarationId, TermItemId)>,
+    type_declarations: Vec<(DeclarationId, TypeItemId)>,
 }
 
 impl IndexingPairs {
@@ -130,6 +132,18 @@ impl IndexingPairs {
         self.class_members.iter().filter_map(
             move |(type_id, term_id)| if *type_id == id { Some(*term_id) } else { None },
         )
+    }
+
+    pub fn declaration_term(&self, id: DeclarationId) -> Option<TermItemId> {
+        self.term_declarations.iter().find_map(move |(declaration_id, term_id)| {
+            if *declaration_id == id { Some(*term_id) } else { None }
+        })
+    }
+
+    pub fn declaration_type(&self, id: DeclarationId) -> Option<TypeItemId> {
+        self.type_declarations.iter().find_map(move |(declaration_id, type_id)| {
+            if *declaration_id == id { Some(*type_id) } else { None }
+        })
     }
 }
 

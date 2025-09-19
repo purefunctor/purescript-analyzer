@@ -307,3 +307,14 @@ fn test_028_completion_type_operator_suggestion_main() {
     let report = tests_integration::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_029_locate_declaration_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/029_locate_declaration"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}
