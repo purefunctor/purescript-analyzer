@@ -30,7 +30,6 @@ pub fn implementation(
     };
 
     let located = locate::locate(engine, current_file, position)?;
-    tracing::info!("{located:?}");
 
     match located {
         locate::Located::ModuleName(module_name) => {
