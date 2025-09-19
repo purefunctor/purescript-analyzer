@@ -123,7 +123,7 @@ fn locate_node(
         Some(Located::ModuleName(ptr))
     } else if cst::ImportItem::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = indexed.source.lookup_import(&ptr)?;
+        let id = indexed.source.lookup_import_item(&ptr)?;
         Some(Located::ImportItem(id))
     } else if cst::Binder::can_cast(kind) {
         let ptr = ptr.cast()?;

@@ -25,8 +25,8 @@ syntax::create_source! {
     /// [`Idx`]: la_arena::Idx
     /// [`AstPtr`]: rowan::ast::AstPtr
     pub struct IndexingSource {
-        export: cst::ExportItem as ExportItem,
-        import: cst::ImportItem as ImportItem,
+        export_item: cst::ExportItem as ExportItem,
+        import_item: cst::ImportItem as ImportItem,
         import_statement: cst::ImportStatement as Import,
 
         data_signature: cst::DataSignature as DataSignature,

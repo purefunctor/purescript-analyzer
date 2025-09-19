@@ -634,7 +634,7 @@ fn index_import(state: &mut State, cst: &cst::ImportStatement) {
 }
 
 fn index_import_items(state: &mut State, import: &mut IndexingImport, cst: &cst::ImportItem) {
-    let id = state.source.allocate_import(cst);
+    let id = state.source.allocate_import_item(cst);
     match cst {
         cst::ImportItem::ImportValue(v) => {
             let Some(token) = v.name_token() else { return };
@@ -768,7 +768,7 @@ fn index_exports(state: &mut State, cst: &cst::ExportList) {
         };
 
     for cst in cst.children() {
-        let id = state.source.allocate_export(&cst);
+        let id = state.source.allocate_export_item(&cst);
         match cst {
             cst::ExportItem::ExportValue(cst) => {
                 let Some(name) = cst.name_token() else { continue };
