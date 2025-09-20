@@ -151,7 +151,9 @@ impl FullIndexedModule {
                     .reduce(|init, next| init.cover(next))
                     .expect("invariant violated: no signature or declaration")
             }
-            crate::TypeItemKind::Foreign { id } => self.source[*id].syntax_node_ptr().text_range(),
+            crate::TypeItemKind::Foreign { id, .. } => {
+                self.source[*id].syntax_node_ptr().text_range()
+            }
             crate::TypeItemKind::Operator { id } => self.source[*id].syntax_node_ptr().text_range(),
         }
     }
@@ -181,7 +183,7 @@ impl FullIndexedModule {
                 let equation = declaration.map(|id| self.source[id].syntax_node_ptr());
                 [signature, equation].into_iter().flatten().collect()
             }
-            crate::TypeItemKind::Foreign { id } => vec![self.source[*id].syntax_node_ptr()],
+            crate::TypeItemKind::Foreign { id, .. } => vec![self.source[*id].syntax_node_ptr()],
             crate::TypeItemKind::Operator { id } => vec![self.source[*id].syntax_node_ptr()],
         }
     }

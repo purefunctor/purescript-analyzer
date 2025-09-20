@@ -446,7 +446,10 @@ fn index_type_role(state: &mut State, id: TypeRoleId, cst: &cst::TypeRoleDeclara
         return state.errors.push(IndexingError::InvalidRole { id, existing: None });
     };
 
-    if let TypeItemKind::Data { role, .. } | TypeItemKind::Newtype { role, .. } = &mut active.kind {
+    if let TypeItemKind::Data { role, .. }
+    | TypeItemKind::Newtype { role, .. }
+    | TypeItemKind::Foreign { role, .. } = &mut active.kind
+    {
         if role.is_some() {
             state.errors.push(IndexingError::InvalidRole { id, existing: Some(active_id) });
         } else {
@@ -540,7 +543,8 @@ fn index_data_constructor(
         let text = t.text();
         SmolStr::from(text)
     });
-    state.alloc_term(TermItem { name, kind: TermItemKind::Constructor { id }, exported: false })
+    let kind = TermItemKind::Constructor { id };
+    state.items.terms.alloc(TermItem { name, kind, exported: false })
 }
 
 fn index_class_member(
@@ -552,7 +556,8 @@ fn index_class_member(
         let text = t.text();
         SmolStr::from(text)
     });
-    state.alloc_term(TermItem { name, kind: TermItemKind::ClassMember { id }, exported: false })
+    let kind = TermItemKind::ClassMember { id };
+    state.items.terms.alloc(TermItem { name, kind, exported: false })
 }
 
 fn index_foreign_data(
@@ -564,7 +569,8 @@ fn index_foreign_data(
         let text = t.text();
         SmolStr::from(text)
     });
-    state.alloc_type(TypeItem { name, kind: TypeItemKind::Foreign { id }, exported: false })
+    let kind = TypeItemKind::Foreign { id, role: None };
+    state.alloc_type(TypeItem { name, kind, exported: false })
 }
 
 fn index_foreign_value(

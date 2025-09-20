@@ -466,7 +466,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
 
             lower_class_members(state, context, item_id);
         }
-        TypeItemKind::Foreign { id } => {
+        TypeItemKind::Foreign { id, role } => {
             let cst = context.indexed.source[*id].try_to_node(root);
 
             let signature = cst.as_ref().and_then(|cst| {
@@ -474,7 +474,9 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 Some(recursive::lower_type(state, context, &cst))
             });
 
-            let kind = TypeItemIr::Foreign { signature };
+            let roles = role.map(|id| lower_roles(context, id)).unwrap_or_default();
+
+            let kind = TypeItemIr::Foreign { signature, roles };
             state.intermediate.insert_type_item(item_id, kind);
         }
         TypeItemKind::Operator { id } => {
