@@ -3,7 +3,7 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::FileId;
-use indexing::{FullIndexedModule, ImportItemId};
+use indexing::{FullIndexedModule, ImportItemId, TermItemId, TypeItemId};
 use line_index::{LineCol, LineIndex};
 use lowering::{BinderId, ExpressionId, FullLoweredModule, TermOperatorId, TypeId, TypeOperatorId};
 use rowan::{
@@ -70,6 +70,8 @@ pub enum Located {
     Type(TypeId),
     TermOperator(TermOperatorId),
     TypeOperator(TypeOperatorId),
+    TermItem(TermItemId),
+    TypeItem(TypeItemId),
     Nothing,
 }
 
@@ -123,7 +125,7 @@ fn locate_node(
         Some(Located::ModuleName(ptr))
     } else if cst::ImportItem::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = indexed.source.lookup_import(&ptr)?;
+        let id = indexed.source.lookup_import_item(&ptr)?;
         Some(Located::ImportItem(id))
     } else if cst::Binder::can_cast(kind) {
         let ptr = ptr.cast()?;
@@ -145,6 +147,21 @@ fn locate_node(
         let ptr = ptr.cast()?;
         let id = lowered.source.lookup_type_operator(&ptr)?;
         Some(Located::TypeOperator(id))
+    } else if cst::Declaration::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = indexed.source.lookup_declaration(&ptr)?;
+        None.or_else(|| indexed.pairs.declaration_to_term(id).map(Located::TermItem))
+            .or_else(|| indexed.pairs.declaration_to_type(id).map(Located::TypeItem))
+    } else if cst::DataConstructor::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = indexed.source.lookup_data_constructor(&ptr)?;
+        let id = indexed.pairs.constructor_to_term(id)?;
+        Some(Located::TermItem(id))
+    } else if cst::ClassMemberStatement::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = indexed.source.lookup_class_member(&ptr)?;
+        let id = indexed.pairs.class_member_to_term(id)?;
+        Some(Located::TermItem(id))
     } else {
         None
     }

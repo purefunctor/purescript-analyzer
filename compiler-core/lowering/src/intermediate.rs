@@ -327,7 +327,7 @@ pub enum TypeItemIr {
     NewtypeGroup { signature: Option<TypeId>, newtype: Option<NewtypeIr>, roles: Arc<[Role]> },
     SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
     ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
-    Foreign { signature: Option<TypeId> },
+    Foreign { signature: Option<TypeId>, roles: Arc<[Role]> },
     Operator { associativity: Option<Associativity>, precedence: Option<u8> },
 }
 

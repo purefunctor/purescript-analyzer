@@ -1,0 +1,70 @@
+---
+source: tests-integration/tests/lsp.rs
+expression: report
+---
+Hover at Position { line: 3, character: 20 }
+
+```
+foreign import data Effect :: Type -> Type
+--                  $ @ %
+```
+
+```purescript
+foreign import data Effect :: Type -> Type
+```
+---
+A safe abstraction over side-effects
+
+
+GotoDefinition at Position { line: 3, character: 22 }
+
+```
+foreign import data Effect :: Type -> Type
+--                  $ @ %
+```
+
+file:///tests-integration/fixtures/lsp/029_locate_declaration/Main.purs @ 3:0..3:42
+
+
+References at Position { line: 3, character: 24 }
+
+```
+foreign import data Effect :: Type -> Type
+--                  $ @ %
+```
+
+file:///tests-integration/fixtures/lsp/029_locate_declaration/Main.purs @ 6:17..6:23
+
+
+Hover at Position { line: 10, character: 3 }
+
+```
+effectEffectEffect = 123
+-- $ @ %
+```
+
+```purescript
+effectEffectEffect :: Int
+```
+---
+An example value
+
+
+GotoDefinition at Position { line: 10, character: 5 }
+
+```
+effectEffectEffect = 123
+-- $ @ %
+```
+
+file:///tests-integration/fixtures/lsp/029_locate_declaration/Main.purs @ 9:0..10:24
+
+
+References at Position { line: 10, character: 7 }
+
+```
+effectEffectEffect = 123
+-- $ @ %
+```
+
+file:///tests-integration/fixtures/lsp/029_locate_declaration/Main.purs @ 13:7..13:25

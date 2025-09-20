@@ -168,7 +168,7 @@ impl AnnotationSyntaxRange {
             TypeItemKind::Class { signature, declaration, .. } => {
                 signature_equation_range(&indexed, &root, signature, declaration)
             }
-            TypeItemKind::Foreign { id } => {
+            TypeItemKind::Foreign { id, .. } => {
                 signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
             }
             TypeItemKind::Operator { id } => {

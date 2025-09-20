@@ -59,6 +59,8 @@ pub fn implementation(
                 .ok_or(AnalyzerError::NonFatal)?;
             hover_file_type(engine, *f_id, *t_id)
         }
+        locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
+        locate::Located::TypeItem(type_id) => hover_file_type(engine, current_file, type_id),
         locate::Located::Nothing => Ok(None),
     }
 }

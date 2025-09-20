@@ -109,8 +109,14 @@ impl IndexingImport {
 pub struct IndexingPairs {
     class_members: Vec<(TypeItemId, TermItemId)>,
     data_constructors: Vec<(TypeItemId, TermItemId)>,
+
     instance_chain: Vec<(InstanceChainId, InstanceId)>,
     instance_members: Vec<(InstanceId, InstanceMemberId)>,
+
+    declaration_to_term: Vec<(DeclarationId, TermItemId)>,
+    declaration_to_type: Vec<(DeclarationId, TypeItemId)>,
+    constructor_to_term: Vec<(DataConstructorId, TermItemId)>,
+    class_member_to_term: Vec<(ClassMemberId, TermItemId)>,
 }
 
 impl IndexingPairs {
@@ -130,6 +136,30 @@ impl IndexingPairs {
         self.class_members.iter().filter_map(
             move |(type_id, term_id)| if *type_id == id { Some(*term_id) } else { None },
         )
+    }
+
+    pub fn declaration_to_term(&self, id: DeclarationId) -> Option<TermItemId> {
+        self.declaration_to_term.iter().find_map(move |(declaration_id, term_id)| {
+            if *declaration_id == id { Some(*term_id) } else { None }
+        })
+    }
+
+    pub fn declaration_to_type(&self, id: DeclarationId) -> Option<TypeItemId> {
+        self.declaration_to_type.iter().find_map(move |(declaration_id, type_id)| {
+            if *declaration_id == id { Some(*type_id) } else { None }
+        })
+    }
+
+    pub fn constructor_to_term(&self, id: DataConstructorId) -> Option<TermItemId> {
+        self.constructor_to_term.iter().find_map(move |(constructor_id, term_id)| {
+            if *constructor_id == id { Some(*term_id) } else { None }
+        })
+    }
+
+    pub fn class_member_to_term(&self, id: ClassMemberId) -> Option<TermItemId> {
+        self.class_member_to_term.iter().find_map(move |(class_member_id, term_id)| {
+            if *class_member_id == id { Some(*term_id) } else { None }
+        })
     }
 }
 

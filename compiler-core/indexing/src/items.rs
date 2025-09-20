@@ -52,6 +52,7 @@ pub enum TypeItemKind {
     },
     Foreign {
         id: ForeignDataId,
+        role: Option<TypeRoleId>,
     },
     Operator {
         id: InfixId,
