@@ -813,6 +813,7 @@ mod tests {
         engine.set_content(id, content);
         let indexed_a = engine.indexed(id).unwrap();
         let lowered_a = engine.lowered(id).unwrap();
+        let resolved_a = engine.resolved(id).unwrap();
 
         {
             let storage = engine.storage.read();
@@ -825,6 +826,11 @@ mod tests {
                 built: 19,
                 changed: 19,
                 dependencies: &[QueryKey::Parsed(id)]
+            });
+            assert_trace!(storage, resolved(id) => Trace {
+                built: 19,
+                changed: 19,
+                dependencies: &[QueryKey::Indexed(id)]
             });
         }
 
@@ -834,6 +840,7 @@ mod tests {
         engine.set_content(id, content);
         let indexed_b = engine.indexed(id).unwrap();
         let lowered_b = engine.lowered(id).unwrap();
+        let resolved_b = engine.resolved(id).unwrap();
 
         {
             let storage = engine.storage.read();
@@ -847,6 +854,11 @@ mod tests {
                 changed: 20,
                 dependencies: &[QueryKey::Parsed(id)]
             });
+            assert_trace!(storage, resolved(id) => Trace {
+                built: 20,
+                changed: 19,
+                dependencies: &[QueryKey::Indexed(id)]
+            });
         }
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
@@ -855,6 +867,7 @@ mod tests {
         engine.set_content(id, content);
         let indexed_c = engine.indexed(id).unwrap();
         let lowered_c = engine.lowered(id).unwrap();
+        let resolved_c = engine.resolved(id).unwrap();
 
         {
             let storage = engine.storage.read();
@@ -868,10 +881,18 @@ mod tests {
                 changed: 20,
                 dependencies: &[QueryKey::Parsed(id)]
             });
+            assert_trace!(storage, resolved(id) => Trace {
+                built: 21,
+                changed: 19,
+                dependencies: &[QueryKey::Indexed(id)]
+            });
         }
 
         assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
         assert!(Arc::ptr_eq(&lowered_b, &lowered_c));
+
+        assert!(Arc::ptr_eq(&resolved_a, &resolved_b));
+        assert!(Arc::ptr_eq(&resolved_b, &resolved_c));
 
         assert!(!Arc::ptr_eq(&indexed_a, &indexed_b));
         assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
