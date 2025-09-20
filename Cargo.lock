@@ -1682,6 +1682,7 @@ dependencies = [
  "criterion",
  "files",
  "glob",
+ "indexing",
  "lexing",
  "parsing",
  "rayon",
