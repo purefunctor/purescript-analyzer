@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs, path::PathBuf, time::Instant};
 
 use building::prim;
+use cst_id::cst_id;
 use files::Files;
 use tests_package_set::all_source_files;
 
@@ -93,6 +94,15 @@ fn test_parallel_parse_package_set() {
 
     let start = Instant::now();
     source.par_iter().for_each(|&id| {
+        let (parsed, _) = engine.parsed(id).unwrap();
+        let node = parsed.syntax_node();
+        let _cst_id = cst_id(&node);
+    });
+    let cst_id = start.elapsed();
+    println!("CstId {cst_id:?}");
+
+    let start = Instant::now();
+    source.par_iter().for_each(|&id| {
         let engine = engine.snapshot();
         let indexed = engine.indexed(id);
         assert!(indexed.is_ok());
@@ -118,5 +128,5 @@ fn test_parallel_parse_package_set() {
     let lowering = start.elapsed();
     println!("Lowering {lowering:?}");
 
-    println!("Total {:?}", parsing + indexing + resolving + lowering);
+    println!("Total {:?}", parsing + cst_id + indexing + resolving + lowering);
 }
