@@ -111,7 +111,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     writeln!(buffer).unwrap();
     for (expression_id, _) in intermediate.iter_expression() {
         let Some(ExpressionKind::Variable { resolution, .. }) =
-            intermediate.index_expression_kind(expression_id)
+            intermediate.get_expression_kind(expression_id)
         else {
             continue;
         };
@@ -160,7 +160,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     writeln!(buffer, "\nTypes:\n").unwrap();
 
     for (type_id, _) in intermediate.iter_type() {
-        let Some(TypeKind::Variable { resolution, .. }) = intermediate.index_type_kind(type_id)
+        let Some(TypeKind::Variable { resolution, .. }) = intermediate.get_type_kind(type_id)
         else {
             continue;
         };

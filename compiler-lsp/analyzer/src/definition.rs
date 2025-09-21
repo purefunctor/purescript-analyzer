@@ -45,17 +45,17 @@ pub fn implementation(
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) = lowered
                 .intermediate
-                .index_term_operator(operator_id)
+                .get_term_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
-            definition_file_term(engine, files, f_id, t_id)
+            definition_file_term(engine, files, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) = lowered
                 .intermediate
-                .index_type_operator(operator_id)
+                .get_type_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
-            definition_file_type(engine, files, f_id, t_id)
+            definition_file_type(engine, files, *f_id, *t_id)
         }
         locate::Located::TermItem(term_id) => {
             definition_file_term(engine, files, current_file, term_id)
@@ -174,7 +174,7 @@ fn definition_binder(
     binder_id: BinderId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind = lowered.intermediate.index_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.intermediate.get_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -198,7 +198,7 @@ fn definition_expression(
     let lowered = engine.lowered(current_file)?;
 
     let kind =
-        lowered.intermediate.index_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+        lowered.intermediate.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
 
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
@@ -263,7 +263,7 @@ fn definition_type(
     let stabilized = engine.stabilized(current_file)?;
     let lowered = engine.lowered(current_file)?;
 
-    let kind = lowered.intermediate.index_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.intermediate.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;

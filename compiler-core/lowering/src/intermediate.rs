@@ -370,31 +370,31 @@ impl Intermediate {
         self.type_operator.iter().map(|(o_id, (f_id, t_id))| (*o_id, *f_id, *t_id))
     }
 
-    pub fn index_binder_kind(&self, id: BinderId) -> Option<&BinderKind> {
+    pub fn get_binder_kind(&self, id: BinderId) -> Option<&BinderKind> {
         self.binder_kind.get(&id)
     }
 
-    pub fn index_expression_kind(&self, id: ExpressionId) -> Option<&ExpressionKind> {
+    pub fn get_expression_kind(&self, id: ExpressionId) -> Option<&ExpressionKind> {
         self.expression_kind.get(&id)
     }
 
-    pub fn index_type_kind(&self, id: TypeId) -> Option<&TypeKind> {
+    pub fn get_type_kind(&self, id: TypeId) -> Option<&TypeKind> {
         self.type_kind.get(&id)
     }
 
-    pub fn index_term_item(&self, id: TermItemId) -> Option<&TermItemIr> {
+    pub fn get_term_item(&self, id: TermItemId) -> Option<&TermItemIr> {
         self.term_item.get(&id)
     }
 
-    pub fn index_type_item(&self, id: TypeItemId) -> Option<&TypeItemIr> {
+    pub fn get_type_item(&self, id: TypeItemId) -> Option<&TypeItemIr> {
         self.type_item.get(&id)
     }
 
-    pub fn index_term_operator(&self, id: TermOperatorId) -> Option<(FileId, TermItemId)> {
-        self.term_operator.get(&id).copied()
+    pub fn get_term_operator(&self, id: TermOperatorId) -> Option<&(FileId, TermItemId)> {
+        self.term_operator.get(&id)
     }
 
-    pub fn index_type_operator(&self, id: TypeOperatorId) -> Option<(FileId, TypeItemId)> {
-        self.type_operator.get(&id).copied()
+    pub fn get_type_operator(&self, id: TypeOperatorId) -> Option<&(FileId, TypeItemId)> {
+        self.type_operator.get(&id)
     }
 }

@@ -46,12 +46,12 @@ impl ForOperatorId for TermOperatorId {
     type ItemId = TermItemId;
 
     fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.index_term_operator(id)
+        lowered.intermediate.get_term_operator(id).copied()
     }
 
     fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
         let Some(TermItemIr::Operator { associativity, precedence }) =
-            lowered.intermediate.index_term_item(id)
+            lowered.intermediate.get_term_item(id)
         else {
             return None;
         };
@@ -63,12 +63,12 @@ impl ForOperatorId for TypeOperatorId {
     type ItemId = TypeItemId;
 
     fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.index_type_operator(id)
+        lowered.intermediate.get_type_operator(id).copied()
     }
 
     fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
         let Some(TypeItemIr::Operator { associativity, precedence }) =
-            lowered.intermediate.index_type_item(id)
+            lowered.intermediate.get_type_item(id)
         else {
             return None;
         };
