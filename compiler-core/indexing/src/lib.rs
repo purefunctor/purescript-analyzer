@@ -13,7 +13,7 @@ use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use stabilize::StabilizedModule;
-use syntax::cst;
+use syntax::{SyntaxNodePtr, cst};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct FullIndexedModule {
@@ -22,6 +22,43 @@ pub struct FullIndexedModule {
     pub imports: IndexingImports,
     pub pairs: IndexingPairs,
     pub errors: Vec<IndexingError>,
+}
+
+impl FullIndexedModule {
+    pub fn term_item_ptr(
+        &self,
+        stabilized: &StabilizedModule,
+        id: TermItemId,
+    ) -> impl Iterator<Item = SyntaxNodePtr> {
+        const fn aux<T: Copy>(expected_id: TermItemId) -> impl Fn(&(T, TermItemId)) -> Option<T> {
+            move |(id, item_id)| if *item_id == expected_id { Some(*id) } else { None }
+        }
+
+        let declaration = self.pairs.declaration_to_term.iter().filter_map(aux(id));
+        let constructor = self.pairs.constructor_to_term.iter().filter_map(aux(id));
+        let class_member = self.pairs.class_member_to_term.iter().filter_map(aux(id));
+
+        let declaration = declaration.filter_map(|id| stabilized.syntax_ptr(id));
+        let constructor = constructor.filter_map(|id| stabilized.syntax_ptr(id));
+        let class_member = class_member.filter_map(|id| stabilized.syntax_ptr(id));
+
+        declaration.chain(constructor).chain(class_member)
+    }
+
+    pub fn type_item_ptr(
+        &self,
+        stabilized: &StabilizedModule,
+        id: TypeItemId,
+    ) -> impl Iterator<Item = SyntaxNodePtr> {
+        const fn aux<T: Copy>(expected_id: TypeItemId) -> impl Fn(&(T, TypeItemId)) -> Option<T> {
+            move |(id, item_id)| if *item_id == expected_id { Some(*id) } else { None }
+        }
+
+        let declaration = self.pairs.declaration_to_type.iter().filter_map(aux(id));
+        let declaration = declaration.filter_map(|id| stabilized.syntax_ptr(id));
+
+        declaration
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -168,9 +205,24 @@ impl IndexingPairs {
         })
     }
 
+    pub fn term_item_constructors(
+        &self,
+        id: TermItemId,
+    ) -> impl Iterator<Item = DataConstructorId> {
+        self.constructor_to_term.iter().filter_map(move |(constructor_id, term_id)| {
+            if *term_id == id { Some(*constructor_id) } else { None }
+        })
+    }
+
     pub fn class_member_to_term(&self, id: ClassMemberId) -> Option<TermItemId> {
         self.class_member_to_term.iter().find_map(move |(class_member_id, term_id)| {
             if *class_member_id == id { Some(*term_id) } else { None }
+        })
+    }
+
+    pub fn term_item_class_members(&self, id: TermItemId) -> impl Iterator<Item = ClassMemberId> {
+        self.class_member_to_term.iter().filter_map(move |(class_member_id, term_id)| {
+            if *term_id == id { Some(*class_member_id) } else { None }
         })
     }
 }

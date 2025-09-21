@@ -95,11 +95,12 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let content = engine.content(id);
     let (parsed, _) = engine.parsed(id).unwrap();
+
+    let stabilized = engine.stabilized(id).unwrap();
     let lowered = engine.lowered(id).unwrap();
 
     let module = parsed.cst();
     let intermediate = &lowered.intermediate;
-    let source = &lowered.source;
     let graph = &lowered.graph;
 
     let mut buffer = String::default();
@@ -115,7 +116,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
             continue;
         };
 
-        let cst = &source[expression_id];
+        let cst = stabilized.index(expression_id).unwrap();
         let root = module.syntax();
 
         let node = cst.syntax_node_ptr().to_node(root);
@@ -128,20 +129,20 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         if let Some(resolution) = resolution {
             match resolution {
                 TermVariableResolution::Binder(binder) => {
-                    let cst = &source[*binder];
+                    let cst = stabilized.index(*binder).unwrap();
                     let range = cst.syntax_node_ptr().text_range();
                     let position = locate::offset_to_position(&content, range.start());
                     writeln!(buffer, "  resolves to binder {position:?}").unwrap();
                 }
                 TermVariableResolution::Let(LetBound { signature, equations }) => {
                     if let Some(signature) = signature {
-                        let cst = &source[*signature];
+                        let cst = stabilized.index(*signature).unwrap();
                         let range = cst.syntax_node_ptr().text_range();
                         let position = locate::offset_to_position(&content, range.start());
                         writeln!(buffer, "  resolves to signature {position:?}").unwrap();
                     }
                     for equation in equations.iter() {
-                        let cst = &source[*equation];
+                        let cst = stabilized.index(*equation).unwrap();
                         let range = cst.syntax_node_ptr().text_range();
                         let position = locate::offset_to_position(&content, range.start());
                         writeln!(buffer, "  resolves to equation {position:?}").unwrap();
@@ -164,7 +165,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
             continue;
         };
 
-        let cst = &source[type_id];
+        let cst = stabilized.index(type_id).unwrap();
         let root = module.syntax();
 
         let node = cst.syntax_node_ptr().to_node(root);
@@ -177,7 +178,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         if let Some(resolution) = resolution {
             match resolution {
                 TypeVariableResolution::Forall(id) => {
-                    let cst = &source[*id];
+                    let cst = stabilized.index(*id).unwrap();
                     let range = cst.syntax_node_ptr().text_range();
                     let position = locate::offset_to_position(&content, range.start());
                     writeln!(buffer, "  resolves to forall {position:?}").unwrap();
@@ -193,7 +194,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                             writeln!(buffer, "  resolves to a constraint variable {name:?}")
                                 .unwrap();
                             for &type_id in type_ids {
-                                let cst = &source[type_id];
+                                let cst = stabilized.index(type_id).unwrap();
                                 let range = cst.syntax_node_ptr().text_range();
                                 let position = locate::offset_to_position(&content, range.start());
                                 writeln!(buffer, "    {position:?}").unwrap();

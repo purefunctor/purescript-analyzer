@@ -1,7 +1,6 @@
 ---
 source: tests-integration/tests/resolving.rs
 expression: report
-snapshot_kind: text
 ---
 module InvalidImport
 
@@ -29,8 +28,8 @@ Local Terms:
 Local Types:
 
 Errors:
-  - InvalidImportStatement { id: Idx::<ImportStatement>>(0) }
-  - InvalidImportStatement { id: Idx::<ImportStatement>>(1) }
-  - InvalidImportItem { id: Idx::<ImportItem>>(2) }
-  - InvalidImportItem { id: Idx::<ImportItem>>(0) }
-  - InvalidImportItem { id: Idx::<ImportItem>>(1) }
+  - InvalidImportStatement { id: AstId<syntax::cst::ImportStatement>(7) }
+  - InvalidImportStatement { id: AstId<syntax::cst::ImportStatement>(5) }
+  - InvalidImportItem { id: AstId<syntax::cst::ImportItem>(15) }
+  - InvalidImportItem { id: AstId<syntax::cst::ImportItem>(13) }
+  - InvalidImportItem { id: AstId<syntax::cst::ImportItem>(14) }

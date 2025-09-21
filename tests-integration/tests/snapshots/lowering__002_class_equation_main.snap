@@ -9,25 +9,25 @@ Expressions:
 
 Types:
 
-k@Position { line: 2, character: 25 }
-  resolves to forall Position { line: 2, character: 22 }
 k@Position { line: 2, character: 30 }
-  resolves to forall Position { line: 2, character: 22 }
-k@Position { line: 3, character: 18 }
-  resolves to forall Position { line: 2, character: 22 }
-k@Position { line: 3, character: 27 }
   resolves to forall Position { line: 2, character: 22 }
 p@Position { line: 4, character: 20 }
   resolves to forall Position { line: 4, character: 17 }
-a@Position { line: 4, character: 22 }
-  resolves to forall Position { line: 3, character: 12 }
 p@Position { line: 4, character: 27 }
   resolves to forall Position { line: 4, character: 17 }
-b@Position { line: 4, character: 29 }
-  resolves to forall Position { line: 3, character: 21 }
-a@Position { line: 6, character: 8 }
-  resolves to forall Position { line: 6, character: 17 }
-a@Position { line: 7, character: 12 }
-  resolves to forall Position { line: 6, character: 17 }
+k@Position { line: 2, character: 25 }
+  resolves to forall Position { line: 2, character: 22 }
 a@Position { line: 7, character: 17 }
   resolves to forall Position { line: 6, character: 17 }
+a@Position { line: 6, character: 8 }
+  resolves to forall Position { line: 6, character: 17 }
+a@Position { line: 4, character: 22 }
+  resolves to forall Position { line: 3, character: 12 }
+k@Position { line: 3, character: 27 }
+  resolves to forall Position { line: 2, character: 22 }
+b@Position { line: 4, character: 29 }
+  resolves to forall Position { line: 3, character: 21 }
+a@Position { line: 7, character: 12 }
+  resolves to forall Position { line: 6, character: 17 }
+k@Position { line: 3, character: 18 }
+  resolves to forall Position { line: 2, character: 22 }

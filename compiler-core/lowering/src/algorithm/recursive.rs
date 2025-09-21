@@ -4,6 +4,7 @@ use itertools::Itertools;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use stabilize::ExpectId;
 use syntax::{SyntaxToken, cst};
 
 use crate::*;
@@ -11,7 +12,7 @@ use crate::*;
 use super::{Context, State};
 
 pub(crate) fn lower_binder(state: &mut State, context: &Context, cst: &cst::Binder) -> BinderId {
-    let id = state.source.allocate_bd(cst);
+    let id = context.stabilized.lookup_cst(cst).expect_id();
     let kind = lower_binder_kind(state, context, cst, id);
     state.associate_binder_info(id, kind);
     id
@@ -120,7 +121,7 @@ pub(crate) fn lower_expression(
     context: &Context,
     cst: &cst::Expression,
 ) -> ExpressionId {
-    let id = state.source.allocate_ex(cst);
+    let id = context.stabilized.lookup_cst(cst).expect_id();
     let kind = lower_expression_kind(state, context, cst);
     state.associate_expression_info(id, kind);
     id
@@ -528,11 +529,11 @@ fn lower_equation_bindings(
                     );
                 }
                 cst::LetBinding::LetBindingSignature(cst) => {
-                    let id = state.source.allocate_ls(&cst);
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
                     signature = Some(id);
                 }
                 cst::LetBinding::LetBindingEquation(cst) => {
-                    let id = state.source.allocate_le(&cst);
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
                     equations.push(id);
                 }
             }
@@ -540,7 +541,7 @@ fn lower_equation_bindings(
 
         children.for_each(|cst| {
             if let cst::LetBinding::LetBindingEquation(cst) = cst {
-                let id = state.source.allocate_le(&cst);
+                let id = context.stabilized.lookup_cst(&cst).expect_id();
                 equations.push(id);
             }
         });
@@ -561,21 +562,19 @@ fn lower_equation_bindings(
 
     let root = context.module.syntax();
     bindings.extend(to_traverse.into_iter().map(|resolution| {
-        state.with_scope(|s| {
+        state.with_scope(|state| {
             let signature = resolution.signature.and_then(|id| {
-                let cst = s.source[id].try_to_node(root);
-                cst.and_then(|cst| {
-                    let cst = cst.type_()?;
-                    Some(lower_forall(s, context, &cst))
-                })
+                let cst = context.stabilized.index(id)?.try_to_node(root)?;
+                let cst = cst.type_()?;
+                Some(lower_forall(state, context, &cst))
             });
             let equations = resolution
                 .equations
                 .iter()
                 .filter_map(|&id| {
-                    let cst = s.source[id].try_to_node(root)?;
+                    let cst = context.stabilized.index(id)?.try_to_node(root)?;
                     Some(lower_equation_like(
-                        s,
+                        state,
                         context,
                         cst,
                         cst::LetBindingEquation::function_binders,
@@ -595,12 +594,12 @@ pub(crate) fn lower_equation_like<T: AstNode>(
     binders: impl Fn(&T) -> Option<cst::FunctionBinders>,
     guarded: impl Fn(&T) -> Option<cst::GuardedExpression>,
 ) -> Equation {
-    state.with_scope(|s| {
-        s.push_binder_scope();
+    state.with_scope(|state| {
+        state.push_binder_scope();
         let binders = binders(&equation)
-            .map(|cst| cst.children().map(|cst| lower_binder(s, context, &cst)).collect())
+            .map(|cst| cst.children().map(|cst| lower_binder(state, context, &cst)).collect())
             .unwrap_or_default();
-        let guarded = guarded(&equation).map(|cst| lower_guarded(s, context, &cst));
+        let guarded = guarded(&equation).map(|cst| lower_guarded(state, context, &cst));
         Equation { binders, guarded }
     })
 }
@@ -660,7 +659,7 @@ fn lower_record_updates(
 }
 
 pub(crate) fn lower_type(state: &mut State, context: &Context, cst: &cst::Type) -> TypeId {
-    let id = state.source.allocate_ty(cst);
+    let id = context.stabilized.lookup_cst(cst).expect_id();
     let kind = lower_type_kind(state, context, cst, id);
     state.associate_type_info(id, kind);
     id
@@ -777,7 +776,7 @@ pub(crate) fn lower_forall(state: &mut State, context: &Context, cst: &cst::Type
     // been lowered. In `lower_type`, the `TypeForall` branch explicitly calls
     // `with_scope` in order to scope Rank-N type variables.
     if let cst::Type::TypeForall(f) = cst {
-        let id = state.source.allocate_ty(cst);
+        let id = context.stabilized.lookup_cst(cst).expect_id();
         state.push_forall_scope();
         let bindings =
             f.children().map(|cst| lower_type_variable_binding(state, context, &cst)).collect();
@@ -795,7 +794,7 @@ fn lower_term_operator(
     context: &Context,
     cst: &cst::TermOperator,
 ) -> Option<TermOperatorId> {
-    let id = state.source.allocate_term_operator(cst);
+    let id = context.stabilized.lookup_cst(cst).expect_id();
 
     let (qualifier, name) = cst.qualified().and_then(|cst| {
         let qualifier = cst.qualifier().and_then(|cst| {
@@ -812,7 +811,7 @@ fn lower_term_operator(
     })?;
 
     let (file_id, term_id) = context.lookup_term(qualifier, name)?;
-    state.intermediate.insert_term_operator(id, (file_id, term_id));
+    state.intermediate.term_operator.insert(id, (file_id, term_id));
 
     Some(id)
 }
@@ -822,12 +821,12 @@ fn lower_type_operator(
     context: &Context,
     cst: &cst::TypeOperator,
 ) -> Option<TypeOperatorId> {
-    let id = state.source.allocate_type_operator(cst);
+    let id = context.stabilized.lookup_cst(cst).expect_id();
     let (qualifier, name) =
         cst.qualified().and_then(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator))?;
 
     let (file_id, type_id) = context.lookup_type(qualifier, name)?;
-    state.intermediate.insert_type_operator(id, (file_id, type_id));
+    state.intermediate.type_operator.insert(id, (file_id, type_id));
 
     Some(id)
 }
@@ -854,7 +853,7 @@ pub(crate) fn lower_type_variable_binding(
     context: &Context,
     cst: &cst::TypeVariableBinding,
 ) -> TypeVariableBinding {
-    let id = state.source.allocate_tv(cst);
+    let id = context.stabilized.lookup_cst(cst).expect_id();
     let visible = cst.at().is_some();
     let name = cst.name().map(|cst| {
         let text = cst.text();

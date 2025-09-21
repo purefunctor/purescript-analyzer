@@ -8,15 +8,15 @@ Expressions:
 
 y'equation@Position { line: 3, character: 27 }
   resolves to equation Position { line: 3, character: 5 }
-a'binder@Position { line: 3, character: 38 }
-  resolves to binder Position { line: 3, character: 16 }
-pure@Position { line: 4, character: 16 }
-  resolves to top-level name
-x'notBinder@Position { line: 4, character: 21 }
-  resolves to top-level name
 pure@Position { line: 4, character: 33 }
   resolves to top-level name
+pure@Position { line: 4, character: 16 }
+  resolves to top-level name
+a'binder@Position { line: 3, character: 38 }
+  resolves to binder Position { line: 3, character: 16 }
 x'notBinder@Position { line: 5, character: 6 }
   resolves to binder Position { line: 3, character: 47 }
+x'notBinder@Position { line: 4, character: 21 }
+  resolves to top-level name
 
 Types:

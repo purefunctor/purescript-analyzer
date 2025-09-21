@@ -6,13 +6,7 @@ module Main
 
 Expressions:
 
-action@Position { line: 2, character: 9 }
-  resolves to top-level name
 x@Position { line: 3, character: 8 }
-  resolves to top-level name
-y@Position { line: 3, character: 10 }
-  resolves to top-level name
-z@Position { line: 3, character: 12 }
   resolves to top-level name
 pure@Position { line: 5, character: 6 }
   resolves to top-level name
@@ -20,9 +14,15 @@ pure@Position { line: 6, character: 12 }
   resolves to top-level name
 x@Position { line: 7, character: 8 }
   resolves to equation Position { line: 4, character: 5 }
+action@Position { line: 2, character: 9 }
+  resolves to top-level name
 y@Position { line: 7, character: 12 }
   resolves to binder Position { line: 4, character: 12 }
 z@Position { line: 7, character: 16 }
   resolves to equation Position { line: 6, character: 5 }
+z@Position { line: 3, character: 12 }
+  resolves to top-level name
+y@Position { line: 3, character: 10 }
+  resolves to top-level name
 
 Types:

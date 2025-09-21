@@ -844,7 +844,7 @@ mod tests {
             assert_trace!(storage, indexed(id) => Trace {
                 built: 19,
                 changed: 19,
-                dependencies: &[QueryKey::Parsed(id)]
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
             });
             assert_trace!(storage, resolved(id) => Trace {
                 built: 19,
@@ -870,8 +870,8 @@ mod tests {
             });
             assert_trace!(storage, indexed(id) => Trace {
                 built: 20,
-                changed: 20,
-                dependencies: &[QueryKey::Parsed(id)]
+                changed: 19,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
             });
             assert_trace!(storage, resolved(id) => Trace {
                 built: 20,
@@ -897,8 +897,8 @@ mod tests {
             });
             assert_trace!(storage, indexed(id) => Trace {
                 built: 21,
-                changed: 20,
-                dependencies: &[QueryKey::Parsed(id)]
+                changed: 19,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
             });
             assert_trace!(storage, resolved(id) => Trace {
                 built: 21,
@@ -907,16 +907,14 @@ mod tests {
             });
         }
 
+        assert!(Arc::ptr_eq(&indexed_a, &indexed_b));
         assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
+
+        assert!(Arc::ptr_eq(&lowered_a, &lowered_b));
         assert!(Arc::ptr_eq(&lowered_b, &lowered_c));
 
         assert!(Arc::ptr_eq(&resolved_a, &resolved_b));
         assert!(Arc::ptr_eq(&resolved_b, &resolved_c));
-
-        assert!(!Arc::ptr_eq(&indexed_a, &indexed_b));
-        assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
-        assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
-        assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
     }
 
     #[test]

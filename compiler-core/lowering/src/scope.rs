@@ -148,13 +148,11 @@ impl ops::Index<GraphNodeId> for LoweringGraph {
     }
 }
 
-syntax::create_association! {
-    /// Tracks [`GraphNodeId`] for IR nodes.
-    pub struct LoweringGraphNodes {
-        binder: BinderId => GraphNodeId,
-        expression: ExpressionId => GraphNodeId,
-        type_: TypeId => GraphNodeId,
-    }
+#[derive(Default, Debug, PartialEq, Eq)]
+pub struct LoweringGraphNodes {
+    pub(crate) binder_node: FxHashMap<BinderId, GraphNodeId>,
+    pub(crate) expression_node: FxHashMap<ExpressionId, GraphNodeId>,
+    pub(crate) type_node: FxHashMap<TypeId, GraphNodeId>,
 }
 
 /// An iterator that traverses the [`LoweringGraph`].

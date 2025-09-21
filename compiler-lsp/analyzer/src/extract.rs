@@ -186,13 +186,13 @@ where
     E: AstNode<Language = syntax::PureScript>,
 {
     let signature = signature.and_then(|id| {
-        let ptr = stabilized.index(id)?.syntax_node_ptr();
+        let ptr = stabilized.syntax_ptr(id)?;
         Some(AnnotationSyntaxRange::from_ptr(root, &ptr))
     });
 
     let equation = || {
         let id = equation.as_ref()?;
-        let ptr = stabilized.index(*id)?.syntax_node_ptr();
+        let ptr = stabilized.syntax_ptr(*id)?;
         let range = AnnotationSyntaxRange::from_ptr(root, &ptr);
         Some(AnnotationSyntaxRange { syntax: None, ..range })
     };

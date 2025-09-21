@@ -4,14 +4,15 @@ use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use itertools::Itertools;
 use lowering::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, FullLoweredModule, LetBound,
-    TermVariableResolution, TypeId, TypeKind,
+    BinderId, BinderKind, ExpressionId, ExpressionKind, LetBound, TermVariableResolution, TypeId,
+    TypeKind,
 };
 use rowan::{
     TextRange,
     ast::{AstNode, AstPtr},
 };
 use smol_str::ToSmolStr;
+use stabilize::StabilizedModule;
 use syntax::{SyntaxNode, cst};
 
 use crate::{
@@ -49,7 +50,7 @@ pub fn implementation(
                 .intermediate
                 .index_term_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
-            hover_file_term(engine, *f_id, *t_id)
+            hover_file_term(engine, f_id, t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
@@ -57,7 +58,7 @@ pub fn implementation(
                 .intermediate
                 .index_type_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
-            hover_file_type(engine, *f_id, *t_id)
+            hover_file_type(engine, f_id, t_id)
         }
         locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
         locate::Located::TypeItem(type_id) => hover_file_type(engine, current_file, type_id),
@@ -178,8 +179,11 @@ fn hover_expression(
     expression_id: ExpressionId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
+
     let kind =
         lowered.intermediate.index_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -192,7 +196,7 @@ fn hover_expression(
                 TermVariableResolution::Let(let_binding) => {
                     let (parsed, _) = engine.parsed(current_file)?;
                     let root = parsed.syntax_node();
-                    hover_let(&root, &lowered, let_binding)
+                    hover_let(&root, &stabilized, let_binding)
                 }
                 TermVariableResolution::Reference(f_id, t_id) => {
                     hover_file_term(engine, *f_id, *t_id)
@@ -209,12 +213,12 @@ fn hover_expression(
 
 fn hover_let(
     root: &SyntaxNode,
-    lowered: &FullLoweredModule,
+    stabilized: &StabilizedModule,
     let_binding: &LetBound,
 ) -> Result<Option<Hover>, AnalyzerError> {
-    let signature = let_binding.signature.map(|id| {
-        let ptr = lowered.source[id].syntax_node_ptr();
-        AnnotationSyntaxRange::from_ptr(root, &ptr)
+    let signature = let_binding.signature.and_then(|id| {
+        let ptr = stabilized.syntax_ptr(id)?;
+        Some(AnnotationSyntaxRange::from_ptr(root, &ptr))
     });
 
     if let Some(range) = signature {
@@ -232,7 +236,7 @@ fn hover_let(
     } else {
         let id = let_binding.equations.first().copied().ok_or(AnalyzerError::NonFatal)?;
 
-        let ptr = &lowered.source[id];
+        let ptr = stabilized.index(id).ok_or(AnalyzerError::NonFatal)?;
         let node = ptr.try_to_node(root).ok_or(AnalyzerError::NonFatal)?;
 
         let token = node.name_token().ok_or(AnalyzerError::NonFatal)?;

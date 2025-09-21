@@ -9,9 +9,9 @@ Expressions:
 
 Types:
 
-k@Position { line: 2, character: 19 }
-  resolves to forall Position { line: 2, character: 16 }
 k@Position { line: 3, character: 12 }
+  resolves to forall Position { line: 2, character: 16 }
+k@Position { line: 2, character: 19 }
   resolves to forall Position { line: 2, character: 16 }
 a@Position { line: 3, character: 23 }
   resolves to forall Position { line: 3, character: 6 }

@@ -11,6 +11,7 @@ use itertools::Itertools;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use stabilize::ExpectId;
 use syntax::cst;
 
 use crate::{ImplicitTypeVariable, *};
@@ -18,7 +19,6 @@ use crate::{ImplicitTypeVariable, *};
 #[derive(Default)]
 pub(crate) struct State {
     pub(crate) intermediate: Intermediate,
-    pub(crate) source: LoweringSource,
     pub(crate) graph: LoweringGraph,
     pub(crate) nodes: LoweringGraphNodes,
     pub(crate) graph_scope: Option<GraphNodeId>,
@@ -41,21 +41,21 @@ impl State {
     }
 
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
-        self.intermediate.insert_binder_kind(id, kind);
+        self.intermediate.binder_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
-        self.nodes.insert_binder(id, node);
+        self.nodes.binder_node.insert(id, node);
     }
 
     fn associate_expression_info(&mut self, id: ExpressionId, kind: ExpressionKind) {
-        self.intermediate.insert_expression_kind(id, kind);
+        self.intermediate.expression_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
-        self.nodes.insert_expression(id, node);
+        self.nodes.expression_node.insert(id, node);
     }
 
     fn associate_type_info(&mut self, id: TypeId, kind: TypeKind) {
-        self.intermediate.insert_type_kind(id, kind);
+        self.intermediate.type_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
-        self.nodes.insert_type_(id, node);
+        self.nodes.type_node.insert(id, node);
     }
 
     fn insert_binder(&mut self, name: &str, id: BinderId) {
@@ -202,17 +202,17 @@ pub(super) fn lower_module(
     resolved: &FullResolvedModule,
 ) -> State {
     let mut state = State::default();
-    let environment = Context { module, prim, stabilized, indexed, resolved };
+    let context = Context { module, prim, stabilized, indexed, resolved };
 
-    for (id, item) in environment.indexed.items.iter_terms() {
+    for (id, item) in context.indexed.items.iter_terms() {
         state.with_scope(|state| {
-            lower_term_item(state, &environment, id, item);
+            lower_term_item(state, &context, id, item);
         });
     }
 
-    for (id, item) in environment.indexed.items.iter_types() {
+    for (id, item) in context.indexed.items.iter_types() {
         state.with_scope(|state| {
-            lower_type_item(state, &environment, id, item);
+            lower_type_item(state, &context, id, item);
         })
     }
 
@@ -254,7 +254,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 .unwrap_or_default();
 
             let kind = TermItemIr::Derive { constraints, arguments };
-            state.intermediate.insert_term_item(item_id, kind);
+            state.intermediate.term_item.insert(item_id, kind);
         }
         TermItemKind::Foreign { id } => {
             let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
@@ -265,7 +265,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             });
 
             let kind = TermItemIr::Foreign { signature };
-            state.intermediate.insert_term_item(item_id, kind);
+            state.intermediate.term_item.insert(item_id, kind);
         }
         TermItemKind::Instance { id } => {
             let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
@@ -305,7 +305,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 .unwrap_or_default();
 
             let kind = TermItemIr::Instance { constraints, arguments, members };
-            state.intermediate.insert_term_item(item_id, kind);
+            state.intermediate.term_item.insert(item_id, kind);
         }
         TermItemKind::Operator { id } => {
             let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
@@ -323,7 +323,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             });
 
             let kind = TermItemIr::Operator { associativity, precedence };
-            state.intermediate.insert_term_item(item_id, kind);
+            state.intermediate.term_item.insert(item_id, kind);
         }
         TermItemKind::Value { signature, equations } => {
             let signature = signature.and_then(|id| {
@@ -348,7 +348,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 .collect();
 
             let kind = TermItemIr::ValueGroup { signature, equations };
-            state.intermediate.insert_term_item(item_id, kind);
+            state.intermediate.term_item.insert(item_id, kind);
         }
     }
 }
@@ -378,7 +378,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             let roles = role.map(|id| lower_roles(context, id)).unwrap_or_default();
 
             let kind = TypeItemIr::DataGroup { signature, data, roles };
-            state.intermediate.insert_type_item(item_id, kind);
+            state.intermediate.type_item.insert(item_id, kind);
 
             lower_constructors(state, context, item_id);
         }
@@ -404,7 +404,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             let roles = role.map(|id| lower_roles(context, id)).unwrap_or_default();
 
             let kind = TypeItemIr::NewtypeGroup { signature, newtype, roles };
-            state.intermediate.insert_type_item(item_id, kind);
+            state.intermediate.type_item.insert(item_id, kind);
 
             lower_constructors(state, context, item_id);
         }
@@ -430,7 +430,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             });
 
             let kind = TypeItemIr::SynonymGroup { signature, synonym };
-            state.intermediate.insert_type_item(item_id, kind);
+            state.intermediate.type_item.insert(item_id, kind);
         }
         TypeItemKind::Class { signature, declaration } => {
             let signature = signature.and_then(|id| {
@@ -465,7 +465,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             });
 
             let kind = TypeItemIr::ClassGroup { signature, class };
-            state.intermediate.insert_type_item(item_id, kind);
+            state.intermediate.type_item.insert(item_id, kind);
 
             lower_class_members(state, context, item_id);
         }
@@ -480,7 +480,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             let roles = role.map(|id| lower_roles(context, id)).unwrap_or_default();
 
             let kind = TypeItemIr::Foreign { signature, roles };
-            state.intermediate.insert_type_item(item_id, kind);
+            state.intermediate.type_item.insert(item_id, kind);
         }
         TypeItemKind::Operator { id } => {
             let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
@@ -498,7 +498,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             });
 
             let kind = TypeItemIr::Operator { associativity, precedence };
-            state.intermediate.insert_type_item(item_id, kind);
+            state.intermediate.type_item.insert(item_id, kind);
         }
     }
 }
@@ -517,7 +517,7 @@ fn lower_constructors(state: &mut State, context: &Context, id: TypeItemId) {
         let arguments = cst.children().map(|t| recursive::lower_type(state, context, &t)).collect();
 
         let kind = TermItemIr::Constructor { arguments };
-        state.intermediate.insert_term_item(item_id, kind);
+        state.intermediate.term_item.insert(item_id, kind);
     }
 }
 
@@ -535,7 +535,7 @@ fn lower_class_members(state: &mut State, context: &Context, id: TypeItemId) {
         let signature = cst.type_().map(|t| recursive::lower_type(state, context, &t));
 
         let kind = TermItemIr::ClassMember { signature };
-        state.intermediate.insert_term_item(item_id, kind);
+        state.intermediate.term_item.insert(item_id, kind);
     }
 }
 
@@ -563,11 +563,11 @@ fn lower_instance_statements(
         if let Some(statement) = children.next() {
             match statement {
                 cst::InstanceMemberStatement::InstanceSignatureStatement(cst) => {
-                    let id = state.source.allocate_is(&cst);
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
                     signature = Some(id);
                 }
                 cst::InstanceMemberStatement::InstanceEquationStatement(cst) => {
-                    let id = state.source.allocate_ie(&cst);
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
                     equations.push(id);
                 }
             }
@@ -575,7 +575,7 @@ fn lower_instance_statements(
 
         children.for_each(|statement| {
             if let cst::InstanceMemberStatement::InstanceEquationStatement(cst) = statement {
-                let id = state.source.allocate_ie(&cst);
+                let id = context.stabilized.lookup_cst(&cst).expect_id();
                 equations.push(id);
             }
         });
@@ -589,18 +589,18 @@ fn lower_instance_statements(
     in_scope
         .into_iter()
         .map(|(_, (signature, equations))| {
-            state.with_scope(|s| {
-                s.push_forall_scope();
+            state.with_scope(|state| {
+                state.push_forall_scope();
                 let signature = signature.and_then(|id| {
-                    let cst = s.source[id].try_to_node(root)?;
-                    cst.type_().map(|t| recursive::lower_forall(s, context, &t))
+                    let cst = context.stabilized.index(id)?.try_to_node(root)?;
+                    cst.type_().map(|t| recursive::lower_forall(state, context, &t))
                 });
                 let equations = equations
                     .iter()
                     .filter_map(|&id| {
-                        let cst = s.source[id].try_to_node(root)?;
+                        let cst = context.stabilized.index(id)?.try_to_node(root)?;
                         Some(recursive::lower_equation_like(
-                            s,
+                            state,
                             context,
                             cst,
                             cst::InstanceEquationStatement::function_binders,

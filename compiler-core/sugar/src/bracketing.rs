@@ -46,7 +46,7 @@ impl ForOperatorId for TermOperatorId {
     type ItemId = TermItemId;
 
     fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.index_term_operator(id).copied()
+        lowered.intermediate.index_term_operator(id)
     }
 
     fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
@@ -63,7 +63,7 @@ impl ForOperatorId for TypeOperatorId {
     type ItemId = TypeItemId;
 
     fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.index_type_operator(id).copied()
+        lowered.intermediate.index_type_operator(id)
     }
 
     fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {

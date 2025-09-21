@@ -77,8 +77,8 @@ type Test3 = Lib.Maybe (Lib.Maybe Int)
 --           %
 ```
 
-file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 12:13..12:22
 file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 12:24..12:33
+file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 12:13..12:22
 
 
 References at Position { line: 15, character: 17 }
@@ -100,11 +100,11 @@ type Test5 = Prim.Int
 --           %
 ```
 
-file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 12:34..12:37
-file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 15:13..15:16
 file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 15:23..15:26
+file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 15:13..15:16
 file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 15:33..15:36
 file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 18:13..18:21
+file:///tests-integration/fixtures/lsp/021_references_qualified/Main.purs @ 12:34..12:37
 
 
 References at Position { line: 21, character: 13 }

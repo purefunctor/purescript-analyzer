@@ -116,7 +116,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
         }
         cst::Declaration::InfixDeclaration(cst) => {
             let id = stabilized.lookup_cst(cst).expect_id();
-            index_infix(state, id, cst);
+            index_infix(state, declaration_id, id, cst);
         }
         cst::Declaration::TypeRoleDeclaration(cst) => {
             let id = stabilized.lookup_cst(cst).expect_id();
@@ -419,31 +419,34 @@ fn index_value_equation(
 
 fn index_infix(
     state: &mut State,
-    id: InfixId,
+    declaration_id: DeclarationId,
+    infix_id: InfixId,
     cst: &cst::InfixDeclaration,
 ) {
     let type_token = cst.type_token();
     let operator_token = cst.operator_token();
 
-    let name = operator_token.map(|t| {
-        let text = t.text();
+    let name = operator_token.map(|token| {
+        let text = token.text();
         SmolStr::from(text)
     });
 
     if type_token.is_some() {
-        let item = TypeItem { name, kind: TypeItemKind::Operator { id }, exported: false };
-        state.alloc_type(item);
+        let kind = TypeItemKind::Operator { id: infix_id };
+        let item = TypeItem { name, kind, exported: false };
+
+        let type_id = state.alloc_type(item);
+        state.pairs.declaration_to_type.push((declaration_id, type_id))
     } else {
-        let item = TermItem { name, kind: TermItemKind::Operator { id }, exported: false };
-        state.alloc_term(item);
+        let kind = TermItemKind::Operator { id: infix_id };
+        let item = TermItem { name, kind, exported: false };
+
+        let term_id = state.alloc_term(item);
+        state.pairs.declaration_to_term.push((declaration_id, term_id))
     }
 }
 
-fn index_type_role(
-    state: &mut State,
-    id: TypeRoleId,
-    cst: &cst::TypeRoleDeclaration,
-) {
+fn index_type_role(state: &mut State, id: TypeRoleId, cst: &cst::TypeRoleDeclaration) {
     let name = cst.name_token().map(|t| {
         let text = t.text();
         SmolStr::from(text)
@@ -592,11 +595,7 @@ fn index_foreign_value(
     state.alloc_term(TermItem { name, kind: TermItemKind::Foreign { id }, exported: false })
 }
 
-fn index_instance(
-    state: &mut State,
-    id: InstanceId,
-    cst: &cst::InstanceDeclaration,
-) -> TermItemId {
+fn index_instance(state: &mut State, id: InstanceId, cst: &cst::InstanceDeclaration) -> TermItemId {
     let name = cst.instance_name().and_then(|n| {
         let token = n.name_token()?;
         let text = token.text();
@@ -605,11 +604,7 @@ fn index_instance(
     state.alloc_term(TermItem { name, kind: TermItemKind::Instance { id }, exported: true })
 }
 
-fn index_derive(
-    state: &mut State,
-    id: DeriveId,
-    cst: &cst::DeriveDeclaration,
-) -> TermItemId {
+fn index_derive(state: &mut State, id: DeriveId, cst: &cst::DeriveDeclaration) -> TermItemId {
     let name = cst.instance_name().and_then(|n| {
         let token = n.name_token()?;
         let text = token.text();
@@ -714,12 +709,7 @@ fn index_import_items(
     }
 }
 
-fn index_term_import(
-    state: &mut State,
-    import: &mut IndexingImport,
-    name: &str,
-    id: ImportItemId,
-) {
+fn index_term_import(state: &mut State, import: &mut IndexingImport, name: &str, id: ImportItemId) {
     if let Some(&existing) = import.terms.get(name) {
         state.errors.push(IndexingError::DuplicateImport { id, existing });
     } else {

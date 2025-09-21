@@ -43,8 +43,8 @@ import Lib (Maybe(..), plus, (+), type (:), class Eq)
 ```
 
 file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 15:13..15:16
-file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 11:17..11:18
 file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 11:23..11:24
+file:///tests-integration/fixtures/lsp/022_references_import/Main.purs @ 11:17..11:18
 
 
 References at Position { line: 2, character: 50 }

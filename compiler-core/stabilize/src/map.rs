@@ -61,6 +61,13 @@ impl StabilizedModule {
         arena_index(&self.arena, id.id)?.cast()
     }
 
+    pub fn syntax_ptr<N: AstNode<Language = PureScript>>(
+        &self,
+        id: AstId<N>,
+    ) -> Option<SyntaxNodePtr> {
+        arena_index(&self.arena, id.id)
+    }
+
     pub fn shrink_to_fit(&mut self) {
         self.arena.shrink_to_fit();
         self.table.shrink_to_fit(|&id| arena_hasher(&self.arena, id));

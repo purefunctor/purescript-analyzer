@@ -1,21 +1,14 @@
-//! Offset-independent source mapping.
+use stabilize::AstId;
 use syntax::cst;
 
-syntax::create_source! {
-    /// Offset-independent indices for lowering.
-    ///
-    /// See also: [`indexing::IndexingSource`]
-    pub struct LoweringSource {
-        bd: cst::Binder as Binder,
-        ex: cst::Expression as Expression,
-        ty: cst::Type as Type,
-        tv: cst::TypeVariableBinding as TypeVariableBinding,
-        ds: cst::DoStatement as DoStatement,
-        ls: cst::LetBindingSignature as LetBindingSignature,
-        le: cst::LetBindingEquation as LetBindingEquation,
-        is: cst::InstanceSignatureStatement as InstanceSignature,
-        ie: cst::InstanceEquationStatement as InstanceEquation,
-        term_operator: cst::TermOperator as TermOperator,
-        type_operator: cst::TypeOperator as TypeOperator,
-    }
-}
+pub type BinderId = AstId<cst::Binder>;
+pub type ExpressionId = AstId<cst::Expression>;
+pub type TypeId = AstId<cst::Type>;
+pub type TypeVariableBindingId = AstId<cst::TypeVariableBinding>;
+pub type DoStatementId = AstId<cst::DoStatement>;
+pub type LetBindingSignatureId = AstId<cst::LetBindingSignature>;
+pub type LetBindingEquationId = AstId<cst::LetBindingEquation>;
+pub type InstanceSignatureId = AstId<cst::InstanceSignatureStatement>;
+pub type InstanceEquationId = AstId<cst::InstanceEquationStatement>;
+pub type TermOperatorId = AstId<cst::TermOperator>;
+pub type TypeOperatorId = AstId<cst::TypeOperator>;
