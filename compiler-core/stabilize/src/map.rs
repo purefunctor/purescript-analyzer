@@ -113,7 +113,9 @@ fn arena_index(arena: &[SyntaxNodePtr], id: NonZeroU32) -> Option<&SyntaxNodePtr
 
 #[inline]
 fn arena_hasher(arena: &[SyntaxNodePtr], id: NonZeroU32) -> u64 {
-    let ptr = arena_index(arena, id);
+    let ptr = arena_index(arena, id).unwrap_or_else(|| {
+        unreachable!("invariant violated: id is not a valid index");
+    });
     FxBuildHasher.hash_one(ptr)
 }
 
