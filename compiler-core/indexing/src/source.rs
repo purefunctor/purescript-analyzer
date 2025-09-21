@@ -1,61 +1,35 @@
-//! Offset-independent source mapping.
+use stabilize::AstId;
 use syntax::cst;
 
-syntax::create_source! {
-    /// Offset-independent indices for indexing.
-    ///
-    /// Text ranges are often used to annotate syntax nodes with additional
-    /// information. However, they're unsuitable for tracking information
-    /// across non-semantic changes such as editing whitespace or comments.
-    ///
-    /// The syntax tree can be thought of as a combination of two pieces of
-    /// information, offsets and structures. Non-semantic edits will always
-    /// change the offsets but only semantic edits can change the structure.
-    ///
-    /// The [`IndexingSource`] provides offset-independent indices [`Idx`]
-    /// which can be used in place of text ranges [`AstPtr`]. These indices
-    /// are solely dependent on the structure bit of the syntax tree—they're
-    /// unaffected by non-semantic edits in a source file.
-    ///
-    /// An incremental compiler such as this project takes advantage of this
-    /// property for caching. The information that it collects is entirely
-    /// dependent on the structure bit of a source file, eliminating most
-    /// cache misses arising from shifting offsets.
-    ///
-    /// [`Idx`]: la_arena::Idx
-    /// [`AstPtr`]: rowan::ast::AstPtr
-    pub struct IndexingSource {
-        export_item: cst::ExportItem as ExportItem,
-        import_item: cst::ImportItem as ImportItem,
+pub type ExportItemId = AstId<cst::ExportItem>;
+pub type ImportItemId = AstId<cst::ImportItem>;
 
-        import_statement: cst::ImportStatement as Import,
-        declaration: cst::Declaration as Declaration,
+pub type ImportId = AstId<cst::ImportStatement>;
+pub type DeclarationId = AstId<cst::Declaration>;
 
-        data_signature: cst::DataSignature as DataSignature,
-        data_equation: cst::DataEquation as DataEquation,
-        data_constructor: cst::DataConstructor as DataConstructor,
+pub type DataSignatureId = AstId<cst::DataSignature>;
+pub type DataEquationId = AstId<cst::DataEquation>;
+pub type DataConstructorId = AstId<cst::DataConstructor>;
 
-        newtype_signature: cst::NewtypeSignature as NewtypeSignature,
-        newtype_equation: cst::NewtypeEquation as NewtypeEquation,
+pub type NewtypeSignatureId = AstId<cst::NewtypeSignature>;
+pub type NewtypeEquationId = AstId<cst::NewtypeEquation>;
 
-        type_role: cst::TypeRoleDeclaration as TypeRole,
-        type_signature: cst::TypeSynonymSignature as TypeSignature,
-        type_equation: cst::TypeSynonymEquation as TypeEquation,
+pub type TypeRoleId = AstId<cst::TypeRoleDeclaration>;
+pub type TypeSignatureId = AstId<cst::TypeSynonymSignature>;
+pub type TypeEquationId = AstId<cst::TypeSynonymEquation>;
 
-        class_signature: cst::ClassSignature as ClassSignature,
-        class_declaration: cst::ClassDeclaration as ClassDeclaration,
-        class_member: cst::ClassMemberStatement as ClassMember,
+pub type ClassSignatureId = AstId<cst::ClassSignature>;
+pub type ClassDeclarationId = AstId<cst::ClassDeclaration>;
+pub type ClassMemberId = AstId<cst::ClassMemberStatement>;
 
-        value_signature: cst::ValueSignature as ValueSignature,
-        value_equation: cst::ValueEquation as ValueEquation,
+pub type ValueSignatureId = AstId<cst::ValueSignature>;
+pub type ValueEquationId = AstId<cst::ValueEquation>;
 
-        chain: cst::InstanceChain as InstanceChain,
-        instance: cst::InstanceDeclaration as Instance,
-        instance_member: cst::InstanceMemberStatement as InstanceMember,
-        derive: cst::DeriveDeclaration as Derive,
+pub type InstanceChainId = AstId<cst::InstanceChain>;
+pub type InstanceId = AstId<cst::InstanceDeclaration>;
+pub type InstanceMemberId = AstId<cst::InstanceMemberStatement>;
+pub type DeriveId = AstId<cst::DeriveDeclaration>;
 
-        infix: cst::InfixDeclaration as Infix,
-        foreign_data: cst::ForeignImportDataDeclaration as ForeignData,
-        foreign_value: cst::ForeignImportValueDeclaration as ForeignValue,
-    }
-}
+pub type InfixId = AstId<cst::InfixDeclaration>;
+pub type ForeignDataId = AstId<cst::ForeignImportDataDeclaration>;
+pub type ForeignValueId = AstId<cst::ForeignImportValueDeclaration>;

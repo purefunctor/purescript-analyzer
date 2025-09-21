@@ -1,11 +1,10 @@
 use std::collections::hash_map::Entry;
 
-use la_arena::Idx;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, ToSmolStr};
-use stabilize::StabilizedModule;
-use syntax::{SyntaxToken, cst};
+use stabilize::{AstId, ExpectId, StabilizedModule};
+use syntax::{PureScript, SyntaxToken, cst};
 
 use crate::{
     ExistingKind, ExportKind, ImplicitItems, ImportKind, IndexingError, IndexingImport,
@@ -27,7 +26,6 @@ pub(super) struct State {
     pub(super) items: IndexingItems,
     pub(super) imports: IndexingImports,
     pub(super) pairs: IndexingPairs,
-    pub(super) source: IndexingSource,
     pub(super) errors: Vec<IndexingError>,
 }
 
@@ -89,7 +87,7 @@ pub(super) fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> 
 
     if let Some(imports) = cst.imports() {
         for import in imports.children() {
-            index_import(&mut state, &import);
+            index_import(&mut state, stabilized, &import);
         }
     }
 
@@ -97,52 +95,50 @@ pub(super) fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> 
         && let Some(exports) = header.exports()
     {
         state.kind = ExportKind::Explicit;
-        index_exports(&mut state, &exports);
+        index_exports(&mut state, stabilized, &exports);
     }
 
     state
 }
 
 fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst::Declaration) {
-    let declaration_id = state.source.allocate_declaration(cst);
-    debug_assert!(stabilized.lookup_cst(cst).is_some());
-
+    let declaration_id = stabilized.lookup_cst(cst).expect_id();
     match cst {
         cst::Declaration::ValueSignature(cst) => {
-            let id = state.source.allocate_value_signature(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let term_id = index_value_signature(state, id, cst);
             state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
         cst::Declaration::ValueEquation(cst) => {
-            let id = state.source.allocate_value_equation(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let term_id = index_value_equation(state, id, cst);
             state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
         cst::Declaration::InfixDeclaration(cst) => {
-            let id = state.source.allocate_infix(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             index_infix(state, id, cst);
         }
         cst::Declaration::TypeRoleDeclaration(cst) => {
-            let id = state.source.allocate_type_role(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             index_type_role(state, id, cst);
         }
         cst::Declaration::InstanceChain(cst) => {
-            let chain_id = state.source.allocate_chain(cst);
+            let chain_id = stabilized.lookup_cst(cst).expect_id();
             for cst in cst.instance_declarations() {
-                let instance_id = state.source.allocate_instance(&cst);
+                let instance_id = stabilized.lookup_cst(&cst).expect_id();
                 let term_id = index_instance(state, instance_id, &cst);
                 state.pairs.instance_chain.push((chain_id, instance_id));
                 state.pairs.declaration_to_term.push((declaration_id, term_id));
                 if let Some(cst) = cst.instance_statements() {
                     for cst in cst.children() {
-                        let m_id = state.source.allocate_instance_member(&cst);
+                        let m_id = stabilized.lookup_cst(&cst).expect_id();
                         state.pairs.instance_members.push((instance_id, m_id));
                     }
                 }
             }
         }
         cst::Declaration::TypeSynonymSignature(cst) => {
-            let id = state.source.allocate_type_signature(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_signature(
                 state,
@@ -165,7 +161,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::TypeSynonymEquation(cst) => {
-            let id = state.source.allocate_type_equation(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_declaration(
                 state,
@@ -188,7 +184,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ClassSignature(cst) => {
-            let id = state.source.allocate_class_signature(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_signature(
                 state,
@@ -211,7 +207,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ClassDeclaration(cst) => {
-            let id = state.source.allocate_class_declaration(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.class_head().and_then(|cst| cst.name_token());
             let type_id = index_type_declaration(
                 state,
@@ -233,7 +229,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             );
             if let Some(cst) = cst.class_statements() {
                 for cst in cst.children() {
-                    let member_id = state.source.allocate_class_member(&cst);
+                    let member_id = stabilized.lookup_cst(&cst).expect_id();
                     let term_id = index_class_member(state, member_id, &cst);
                     state.pairs.class_members.push((type_id, term_id));
                     state.pairs.class_member_to_term.push((member_id, term_id));
@@ -242,17 +238,17 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ForeignImportDataDeclaration(cst) => {
-            let id = state.source.allocate_foreign_data(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let type_id = index_foreign_data(state, id, cst);
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::ForeignImportValueDeclaration(cst) => {
-            let id = state.source.allocate_foreign_value(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let term_id = index_foreign_value(state, id, cst);
             state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
         cst::Declaration::NewtypeSignature(cst) => {
-            let id = state.source.allocate_newtype_signature(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_signature(
                 state,
@@ -275,7 +271,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::NewtypeEquation(cst) => {
-            let id = state.source.allocate_newtype_equation(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_declaration(
                 state,
@@ -296,7 +292,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
                 },
             );
             for cst in cst.data_constructors() {
-                let constructor_id = state.source.allocate_data_constructor(&cst);
+                let constructor_id = stabilized.lookup_cst(&cst).expect_id();
                 let term_id = index_data_constructor(state, constructor_id, &cst);
                 state.pairs.data_constructors.push((type_id, term_id));
                 state.pairs.constructor_to_term.push((constructor_id, term_id));
@@ -304,7 +300,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::DataSignature(cst) => {
-            let id = state.source.allocate_data_signature(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_signature(
                 state,
@@ -327,7 +323,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::DataEquation(cst) => {
-            let id = state.source.allocate_data_equation(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let token = cst.name_token();
             let type_id = index_type_declaration(
                 state,
@@ -348,7 +344,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
                 },
             );
             for cst in cst.data_constructors() {
-                let constructor_id = state.source.allocate_data_constructor(&cst);
+                let constructor_id = stabilized.lookup_cst(&cst).expect_id();
                 let term_id = index_data_constructor(state, constructor_id, &cst);
                 state.pairs.data_constructors.push((type_id, term_id));
                 state.pairs.constructor_to_term.push((constructor_id, term_id));
@@ -356,7 +352,7 @@ fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst
             state.pairs.declaration_to_type.push((declaration_id, type_id));
         }
         cst::Declaration::DeriveDeclaration(cst) => {
-            let id = state.source.allocate_derive(cst);
+            let id = stabilized.lookup_cst(cst).expect_id();
             let term_id = index_derive(state, id, cst);
             state.pairs.declaration_to_term.push((declaration_id, term_id));
         }
@@ -421,7 +417,11 @@ fn index_value_equation(
     active_id
 }
 
-fn index_infix(state: &mut State, id: InfixId, cst: &cst::InfixDeclaration) {
+fn index_infix(
+    state: &mut State,
+    id: InfixId,
+    cst: &cst::InfixDeclaration,
+) {
     let type_token = cst.type_token();
     let operator_token = cst.operator_token();
 
@@ -439,7 +439,11 @@ fn index_infix(state: &mut State, id: InfixId, cst: &cst::InfixDeclaration) {
     }
 }
 
-fn index_type_role(state: &mut State, id: TypeRoleId, cst: &cst::TypeRoleDeclaration) {
+fn index_type_role(
+    state: &mut State,
+    id: TypeRoleId,
+    cst: &cst::TypeRoleDeclaration,
+) {
     let name = cst.name_token().map(|t| {
         let text = t.text();
         SmolStr::from(text)
@@ -463,13 +467,13 @@ fn index_type_role(state: &mut State, id: TypeRoleId, cst: &cst::TypeRoleDeclara
     }
 }
 
-type Item<T> = fn(Option<SmolStr>, Idx<T>) -> TypeItem;
-type Extract<T> = fn(&mut TypeItem) -> Option<&mut Option<Idx<T>>>;
-type MakeItemKind<T> = fn(Idx<T>) -> ItemKind;
+type Item<T> = fn(Option<SmolStr>, AstId<T>) -> TypeItem;
+type Extract<T> = fn(&mut TypeItem) -> Option<&mut Option<AstId<T>>>;
+type MakeItemKind<T> = fn(AstId<T>) -> ItemKind;
 
-fn index_type_signature<T>(
+fn index_type_signature<T: AstNode<Language = PureScript>>(
     state: &mut State,
-    id: Idx<T>,
+    id: AstId<T>,
     token: Option<SyntaxToken>,
     item: Item<T>,
     kind: MakeItemKind<T>,
@@ -502,9 +506,9 @@ fn index_type_signature<T>(
     active_id
 }
 
-fn index_type_declaration<T>(
+fn index_type_declaration<T: AstNode<Language = PureScript>>(
     state: &mut State,
-    id: Idx<T>,
+    id: AstId<T>,
     token: Option<SyntaxToken>,
     item: Item<T>,
     kind: MakeItemKind<T>,
@@ -588,7 +592,11 @@ fn index_foreign_value(
     state.alloc_term(TermItem { name, kind: TermItemKind::Foreign { id }, exported: false })
 }
 
-fn index_instance(state: &mut State, id: InstanceId, cst: &cst::InstanceDeclaration) -> TermItemId {
+fn index_instance(
+    state: &mut State,
+    id: InstanceId,
+    cst: &cst::InstanceDeclaration,
+) -> TermItemId {
     let name = cst.instance_name().and_then(|n| {
         let token = n.name_token()?;
         let text = token.text();
@@ -597,7 +605,11 @@ fn index_instance(state: &mut State, id: InstanceId, cst: &cst::InstanceDeclarat
     state.alloc_term(TermItem { name, kind: TermItemKind::Instance { id }, exported: true })
 }
 
-fn index_derive(state: &mut State, id: DeriveId, cst: &cst::DeriveDeclaration) -> TermItemId {
+fn index_derive(
+    state: &mut State,
+    id: DeriveId,
+    cst: &cst::DeriveDeclaration,
+) -> TermItemId {
     let name = cst.instance_name().and_then(|n| {
         let token = n.name_token()?;
         let text = token.text();
@@ -642,8 +654,8 @@ fn validate_items(state: &mut State) {
 
 // Imports
 
-fn index_import(state: &mut State, cst: &cst::ImportStatement) {
-    let id = state.source.allocate_import_statement(cst);
+fn index_import(state: &mut State, stabilized: &StabilizedModule, cst: &cst::ImportStatement) {
+    let id = stabilized.lookup_cst(cst).expect_id();
 
     let name = extract_name(cst);
     let alias = extract_alias(cst);
@@ -657,15 +669,20 @@ fn index_import(state: &mut State, cst: &cst::ImportStatement) {
             import.kind = ImportKind::Explicit;
         }
         for cst in cst.children() {
-            index_import_items(state, &mut import, &cst);
+            index_import_items(state, stabilized, &mut import, &cst);
         }
     }
 
     state.imports.insert(id, import);
 }
 
-fn index_import_items(state: &mut State, import: &mut IndexingImport, cst: &cst::ImportItem) {
-    let id = state.source.allocate_import_item(cst);
+fn index_import_items(
+    state: &mut State,
+    stabilized: &StabilizedModule,
+    import: &mut IndexingImport,
+    cst: &cst::ImportItem,
+) {
+    let id = stabilized.lookup_cst(cst).expect_id();
     match cst {
         cst::ImportItem::ImportValue(v) => {
             let Some(token) = v.name_token() else { return };
@@ -697,7 +714,12 @@ fn index_import_items(state: &mut State, import: &mut IndexingImport, cst: &cst:
     }
 }
 
-fn index_term_import(state: &mut State, import: &mut IndexingImport, name: &str, id: ImportItemId) {
+fn index_term_import(
+    state: &mut State,
+    import: &mut IndexingImport,
+    name: &str,
+    id: ImportItemId,
+) {
     if let Some(&existing) = import.terms.get(name) {
         state.errors.push(IndexingError::DuplicateImport { id, existing });
     } else {
@@ -756,7 +778,7 @@ fn extract_alias(cst: &cst::ImportStatement) -> Option<SmolStr> {
 
 // Exports
 
-fn index_exports(state: &mut State, cst: &cst::ExportList) {
+fn index_exports(state: &mut State, stabilized: &StabilizedModule, cst: &cst::ExportList) {
     let mut terms = FxHashMap::default();
     let mut types = FxHashMap::default();
 
@@ -799,7 +821,7 @@ fn index_exports(state: &mut State, cst: &cst::ExportList) {
         };
 
     for cst in cst.children() {
-        let id = state.source.allocate_export_item(&cst);
+        let id = stabilized.lookup_cst(&cst).expect_id();
         match cst {
             cst::ExportItem::ExportValue(cst) => {
                 let Some(name) = cst.name_token() else { continue };

@@ -1,4 +1,4 @@
-use std::{hash::BuildHasher, num::NonZeroU32};
+use std::{any, hash::BuildHasher, num::NonZeroU32};
 
 use hashbrown::HashTable;
 use rowan::ast::{AstNode, AstPtr};
@@ -101,6 +101,20 @@ impl PartialEq for StabilizedModule {
 }
 
 impl Eq for StabilizedModule {}
+
+pub trait ExpectId<N>
+where
+    N: AstNode<Language = PureScript>,
+{
+    fn expect_id(&self) -> AstId<N>;
+}
+
+impl<N: AstNode<Language = PureScript>> ExpectId<N> for Option<AstId<N>> {
+    #[inline]
+    fn expect_id(&self) -> AstId<N> {
+        self.unwrap_or_else(|| unreachable!("invariant violated: {}", any::type_name::<N>()))
+    }
+}
 
 #[inline]
 fn arena_index(arena: &[SyntaxNodePtr], id: NonZeroU32) -> Option<SyntaxNodePtr> {

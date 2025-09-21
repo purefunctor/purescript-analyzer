@@ -21,7 +21,6 @@ pub struct FullIndexedModule {
     pub items: IndexingItems,
     pub imports: IndexingImports,
     pub pairs: IndexingPairs,
-    pub source: IndexingSource,
     pub errors: Vec<IndexingError>,
 }
 
@@ -165,7 +164,7 @@ impl IndexingPairs {
 }
 
 pub fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> FullIndexedModule {
-    let algorithm::State { kind, items, imports, pairs, source, errors, .. } =
+    let algorithm::State { kind, items, imports, pairs, errors, .. } =
         algorithm::index_module(cst, stabilized);
-    FullIndexedModule { kind, items, imports, pairs, source, errors }
+    FullIndexedModule { kind, items, imports, pairs, errors }
 }
