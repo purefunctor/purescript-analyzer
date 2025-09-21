@@ -21,7 +21,7 @@ impl Default for StabilizedModule {
 }
 
 impl StabilizedModule {
-    pub fn allocate(&mut self, node: &SyntaxNode) -> NonZeroU32 {
+    pub fn allocate(&mut self, node: &SyntaxNode) {
         let ptr = SyntaxNodePtr::new(node);
         let hash = FxBuildHasher.hash_one(ptr);
 
@@ -34,8 +34,6 @@ impl StabilizedModule {
         };
 
         self.table.insert_unique(hash, id, |&id| arena_hasher(&self.arena, id));
-
-        id
     }
 
     pub fn lookup_cst<N: AstNode<Language = PureScript>>(&self, cst: &N) -> Option<AstId<N>> {
