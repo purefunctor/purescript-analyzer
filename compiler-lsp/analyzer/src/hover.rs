@@ -96,10 +96,11 @@ fn hover_import(
     import_id: ImportItemId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let (parsed, _) = engine.parsed(current_file)?;
-    let indexed = engine.indexed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let node = indexed.source[import_id].try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
+    let ptr = stabilized.index(import_id).ok_or(AnalyzerError::NonFatal)?;
+    let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node
         .syntax()

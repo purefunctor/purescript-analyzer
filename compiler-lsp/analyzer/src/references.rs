@@ -98,8 +98,8 @@ fn references_module_name(
         let (parsed, _) = engine.parsed(candidate_id)?;
         let root = parsed.syntax_node();
 
-        let indexed = engine.indexed(candidate_id)?;
-        let ptr = indexed.source[import_id].syntax_node_ptr();
+        let stabilized = engine.stabilized(candidate_id)?;
+        let ptr = stabilized.index(import_id).ok_or(AnalyzerError::NonFatal)?.syntax_node_ptr();
         let range = locate::syntax_range(&content, &root, &ptr).ok_or(AnalyzerError::NonFatal)?;
 
         locations.push(Location { uri, range });
@@ -114,14 +114,11 @@ fn references_import(
     current_file: FileId,
     import_id: ImportItemId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
-    let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(current_file)?;
-        let indexed = engine.indexed(current_file)?;
-        (parsed, indexed)
-    };
+    let (parsed, _) = engine.parsed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[import_id];
+    let ptr = stabilized.index(import_id).ok_or(AnalyzerError::NonFatal)?;
     let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node

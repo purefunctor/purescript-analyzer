@@ -58,7 +58,7 @@ pub fn implementation(
     let semantics = CursorSemantics::new(&content, position);
     let (text, range) = CursorText::new(&content, &token);
 
-    let indexed = engine.indexed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
     let resolved = engine.resolved(current_file)?;
     let prim_resolved = engine.resolved(prim_id)?;
 
@@ -67,7 +67,7 @@ pub fn implementation(
         files,
         current_file,
         content: &content,
-        indexed: &indexed,
+        stabilized: &stabilized,
         parsed: &parsed,
         resolved: &resolved,
         prim_id,

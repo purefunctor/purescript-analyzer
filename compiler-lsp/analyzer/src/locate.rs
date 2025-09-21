@@ -10,6 +10,7 @@ use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
 };
+use stabilize::StabilizedModule;
 use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 use crate::{AnalyzerError, extract::AnnotationSyntaxRange};
@@ -83,6 +84,7 @@ pub fn locate(
     let content = engine.content(id);
 
     let (parsed, _) = engine.parsed(id)?;
+    let stabilized = engine.stabilized(id)?;
     let indexed = engine.indexed(id)?;
     let lowered = engine.lowered(id)?;
 
@@ -95,23 +97,27 @@ pub fn locate(
 
     Ok(match token {
         TokenAtOffset::None => Located::Nothing,
-        TokenAtOffset::Single(token) => locate_single(&indexed, &lowered, token),
-        TokenAtOffset::Between(left, right) => locate_between(&indexed, &lowered, left, right),
+        TokenAtOffset::Single(token) => locate_single(&stabilized, &indexed, &lowered, token),
+        TokenAtOffset::Between(left, right) => {
+            locate_between(&stabilized, &indexed, &lowered, left, right)
+        }
     })
 }
 
 fn locate_single(
+    stabilized: &StabilizedModule,
     indexed: &FullIndexedModule,
     lowered: &FullLoweredModule,
     token: SyntaxToken,
 ) -> Located {
     token
         .parent_ancestors()
-        .find_map(|node| locate_node(indexed, lowered, node))
+        .find_map(|node| locate_node(stabilized, indexed, lowered, node))
         .unwrap_or(Located::Nothing)
 }
 
 fn locate_node(
+    stabilized: &StabilizedModule,
     indexed: &FullIndexedModule,
     lowered: &FullLoweredModule,
     node: SyntaxNode,
@@ -125,7 +131,7 @@ fn locate_node(
         Some(Located::ModuleName(ptr))
     } else if cst::ImportItem::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = indexed.source.lookup_import_item(&ptr)?;
+        let id = stabilized.lookup_ptr(&ptr)?;
         Some(Located::ImportItem(id))
     } else if cst::Binder::can_cast(kind) {
         let ptr = ptr.cast()?;
@@ -149,17 +155,17 @@ fn locate_node(
         Some(Located::TypeOperator(id))
     } else if cst::Declaration::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = indexed.source.lookup_declaration(&ptr)?;
+        let id = stabilized.lookup_ptr(&ptr)?;
         None.or_else(|| indexed.pairs.declaration_to_term(id).map(Located::TermItem))
             .or_else(|| indexed.pairs.declaration_to_type(id).map(Located::TypeItem))
     } else if cst::DataConstructor::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = indexed.source.lookup_data_constructor(&ptr)?;
+        let id = stabilized.lookup_ptr(&ptr)?;
         let id = indexed.pairs.constructor_to_term(id)?;
         Some(Located::TermItem(id))
     } else if cst::ClassMemberStatement::can_cast(kind) {
         let ptr = ptr.cast()?;
-        let id = indexed.source.lookup_class_member(&ptr)?;
+        let id = stabilized.lookup_ptr(&ptr)?;
         let id = indexed.pairs.class_member_to_term(id)?;
         Some(Located::TermItem(id))
     } else {
@@ -168,13 +174,14 @@ fn locate_node(
 }
 
 fn locate_between(
+    stabilized: &StabilizedModule,
     indexed: &FullIndexedModule,
     lowered: &FullLoweredModule,
     left: SyntaxToken,
     right: SyntaxToken,
 ) -> Located {
-    let left = locate_single(indexed, lowered, left);
-    let right = locate_single(indexed, lowered, right);
+    let left = locate_single(stabilized, indexed, lowered, left);
+    let right = locate_single(stabilized, indexed, lowered, right);
     match (&left, &right) {
         // If left/right share an ancestor;
         (_, _) if left == right => left,

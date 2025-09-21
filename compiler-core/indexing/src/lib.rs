@@ -144,9 +144,21 @@ impl IndexingPairs {
         })
     }
 
+    pub fn term_item_declarations(&self, id: TermItemId) -> impl Iterator<Item = DeclarationId> {
+        self.declaration_to_term.iter().filter_map(move |(declaration_id, term_id)| {
+            if *term_id == id { Some(*declaration_id) } else { None }
+        })
+    }
+
     pub fn declaration_to_type(&self, id: DeclarationId) -> Option<TypeItemId> {
         self.declaration_to_type.iter().find_map(move |(declaration_id, type_id)| {
             if *declaration_id == id { Some(*type_id) } else { None }
+        })
+    }
+
+    pub fn type_item_declarations(&self, id: TypeItemId) -> impl Iterator<Item = DeclarationId> {
+        self.declaration_to_type.iter().filter_map(move |(declaration_id, type_id)| {
+            if *type_id == id { Some(*declaration_id) } else { None }
         })
     }
 

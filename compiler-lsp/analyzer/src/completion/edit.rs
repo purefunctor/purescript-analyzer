@@ -42,7 +42,10 @@ where
             return (None, None);
         }
 
-        let ptr = &context.indexed.source[import.id];
+        let Some(ptr) = context.stabilized.index(import.id) else {
+            return (None, None);
+        };
+
         let root = context.parsed.syntax_node();
         let Some(node) = ptr.try_to_node(&root) else {
             return (None, None);

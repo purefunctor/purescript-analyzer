@@ -106,10 +106,10 @@ fn definition_import(
     import_id: ImportItemId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
     let (parsed, _) = engine.parsed(current_file)?;
-    let indexed = engine.indexed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[import_id];
+    let ptr = stabilized.index(import_id).ok_or(AnalyzerError::NonFatal)?;
     let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node
@@ -139,11 +139,16 @@ fn definition_import(
 
         let content = engine.content(f_id);
         let (parsed, _) = engine.parsed(f_id)?;
+
+        let stabilized = engine.stabilized(f_id)?;
         let indexed = engine.indexed(f_id)?;
 
         let root = parsed.syntax_node();
-        let ptrs = indexed.term_item_ptr(t_id);
-        let range = ptrs
+
+        let declarations = indexed.pairs.term_item_declarations(t_id);
+        let pointers = declarations.filter_map(|id| Some(stabilized.index(id)?.syntax_node_ptr()));
+
+        let range = pointers
             .into_iter()
             .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
             .reduce(|start, end| Range { start: start.start, end: end.end })
@@ -166,11 +171,16 @@ fn definition_import(
 
         let content = engine.content(f_id);
         let (parsed, _) = engine.parsed(f_id)?;
+
+        let stabilized = engine.stabilized(f_id)?;
         let indexed = engine.indexed(f_id)?;
 
         let root = parsed.syntax_node();
-        let ptrs = indexed.type_item_ptr(t_id);
-        let range = ptrs
+
+        let declarations = indexed.pairs.type_item_declarations(t_id);
+        let pointers = declarations.filter_map(|id| Some(stabilized.index(id)?.syntax_node_ptr()));
+
+        let range = pointers
             .into_iter()
             .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
             .reduce(|start, end| Range { start: start.start, end: end.end })
@@ -342,13 +352,18 @@ fn definition_file_term(
 
     let content = engine.content(file_id);
     let (parsed, _) = engine.parsed(file_id)?;
+
+    let stabilized = engine.stabilized(file_id)?;
     let indexed = engine.indexed(file_id)?;
 
     // TODO: Once we implement textDocument/typeDefinition, we
     // should probably also add a term_item_type_ptr function.
     let root = parsed.syntax_node();
-    let ptrs = indexed.term_item_ptr(term_id);
-    let range = ptrs
+
+    let declarations = indexed.pairs.term_item_declarations(term_id);
+    let pointers = declarations.filter_map(|id| Some(stabilized.index(id)?.syntax_node_ptr()));
+
+    let range = pointers
         .into_iter()
         .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })
@@ -372,11 +387,16 @@ fn definition_file_type(
 
     let content = engine.content(file_id);
     let (parsed, _) = engine.parsed(file_id)?;
+
+    let stabilized = engine.stabilized(file_id)?;
     let indexed = engine.indexed(file_id)?;
 
     let root = parsed.syntax_node();
-    let ptrs = indexed.type_item_ptr(type_id);
-    let range = ptrs
+
+    let declarations = indexed.pairs.type_item_declarations(type_id);
+    let pointers = declarations.filter_map(|id| Some(stabilized.index(id)?.syntax_node_ptr()));
+
+    let range = pointers
         .into_iter()
         .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })

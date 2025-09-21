@@ -1,15 +1,8 @@
-use std::ops;
-
 use building::QueryEngine;
 use files::FileId;
-use indexing::{
-    FullIndexedModule, IndexingSource, TermItemId, TermItemKind, TypeItemId, TypeItemKind,
-};
-use la_arena::Idx;
-use rowan::{
-    TextRange,
-    ast::{AstNode, AstPtr},
-};
+use indexing::{TermItemId, TermItemKind, TypeItemId, TypeItemKind};
+use rowan::{TextRange, ast::AstNode};
+use stabilize::{AstId, StabilizedModule};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::AnalyzerError;
@@ -111,6 +104,7 @@ impl AnnotationSyntaxRange {
         term_id: TermItemId,
     ) -> Result<(SyntaxNode, AnnotationSyntaxRange), AnalyzerError> {
         let (parsed, _) = engine.parsed(file_id)?;
+        let stabilized = engine.stabilized(file_id)?;
         let indexed = engine.indexed(file_id)?;
 
         let root = parsed.syntax_node();
@@ -118,26 +112,26 @@ impl AnnotationSyntaxRange {
 
         let range = match &item.kind {
             TermItemKind::ClassMember { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Constructor { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Derive { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Foreign { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Instance { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Operator { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TermItemKind::Value { signature, equations } => {
                 let equation = equations.first().copied();
-                signature_equation_range(&indexed, &root, signature, &equation)
+                signature_equation_range(&stabilized, &root, signature, &equation)
             }
         };
 
@@ -150,6 +144,7 @@ impl AnnotationSyntaxRange {
         type_id: TypeItemId,
     ) -> Result<(SyntaxNode, AnnotationSyntaxRange), AnalyzerError> {
         let (parsed, _) = engine.parsed(file_id)?;
+        let stabilized = engine.stabilized(file_id)?;
         let indexed = engine.indexed(file_id)?;
 
         let root = parsed.syntax_node();
@@ -157,22 +152,22 @@ impl AnnotationSyntaxRange {
 
         let range = match &item.kind {
             TypeItemKind::Data { signature, equation, .. } => {
-                signature_equation_range(&indexed, &root, signature, equation)
+                signature_equation_range(&stabilized, &root, signature, equation)
             }
             TypeItemKind::Newtype { signature, equation, .. } => {
-                signature_equation_range(&indexed, &root, signature, equation)
+                signature_equation_range(&stabilized, &root, signature, equation)
             }
             TypeItemKind::Synonym { signature, equation, .. } => {
-                signature_equation_range(&indexed, &root, signature, equation)
+                signature_equation_range(&stabilized, &root, signature, equation)
             }
             TypeItemKind::Class { signature, declaration, .. } => {
-                signature_equation_range(&indexed, &root, signature, declaration)
+                signature_equation_range(&stabilized, &root, signature, declaration)
             }
             TypeItemKind::Foreign { id, .. } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
             TypeItemKind::Operator { id } => {
-                signature_equation_range(&indexed, &root, &Some(*id), &Some(*id))
+                signature_equation_range(&stabilized, &root, &Some(*id), &Some(*id))
             }
         };
 
@@ -181,25 +176,23 @@ impl AnnotationSyntaxRange {
 }
 
 fn signature_equation_range<S, E>(
-    indexed: &FullIndexedModule,
+    stabilized: &StabilizedModule,
     root: &SyntaxNode,
-    signature: &Option<Idx<AstPtr<S>>>,
-    equation: &Option<Idx<AstPtr<E>>>,
+    signature: &Option<AstId<S>>,
+    equation: &Option<AstId<E>>,
 ) -> Option<AnnotationSyntaxRange>
 where
     S: AstNode<Language = syntax::PureScript>,
     E: AstNode<Language = syntax::PureScript>,
-    IndexingSource: ops::Index<Idx<AstPtr<S>>, Output = AstPtr<S>>,
-    IndexingSource: ops::Index<Idx<AstPtr<E>>, Output = AstPtr<E>>,
 {
-    let signature = signature.map(|id| {
-        let ptr = indexed.source[id].syntax_node_ptr();
-        AnnotationSyntaxRange::from_ptr(root, &ptr)
+    let signature = signature.and_then(|id| {
+        let ptr = stabilized.index(id)?.syntax_node_ptr();
+        Some(AnnotationSyntaxRange::from_ptr(root, &ptr))
     });
 
     let equation = || {
         let id = equation.as_ref()?;
-        let ptr = indexed.source[*id].syntax_node_ptr();
+        let ptr = stabilized.index(*id)?.syntax_node_ptr();
         let range = AnnotationSyntaxRange::from_ptr(root, &ptr);
         Some(AnnotationSyntaxRange { syntax: None, ..range })
     };
