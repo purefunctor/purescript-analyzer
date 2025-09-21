@@ -55,9 +55,7 @@ impl FullIndexedModule {
         }
 
         let declaration = self.pairs.declaration_to_type.iter().filter_map(aux(id));
-        let declaration = declaration.filter_map(|id| stabilized.syntax_ptr(id));
-
-        declaration
+        declaration.filter_map(|id| stabilized.syntax_ptr(id))
     }
 }
 
