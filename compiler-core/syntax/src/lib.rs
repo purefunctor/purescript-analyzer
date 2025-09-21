@@ -2,6 +2,7 @@ pub mod cst;
 
 #[macro_use]
 pub mod map;
+pub mod map_v2;
 
 mod token_set;
 

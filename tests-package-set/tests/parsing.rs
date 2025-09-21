@@ -52,6 +52,32 @@ fn test_index_package_set() {
 }
 
 #[test]
+fn test_cst_id_package_set() {
+    let mut results = vec![];
+
+    for file in all_source_files() {
+        let Ok(source) = fs::read_to_string(&file) else {
+            continue;
+        };
+
+        let lexed = lexing::lex(&source);
+        let tokens = lexing::layout(&lexed);
+        let (parsed, _) = parsing::parse(&lexed, &tokens);
+        let node = parsed.syntax_node();
+
+        let start = Instant::now();
+        let _cst_id = cst_id::cst_id(&node);
+        results.push((start.elapsed(), file));
+    }
+
+    results.sort_by_key(|result| result.0);
+
+    for result in results {
+        eprintln!("{result:?}");
+    }
+}
+
+#[test]
 fn test_parallel_parse_package_set() {
     use building::QueryEngine;
     use rayon::prelude::*;
