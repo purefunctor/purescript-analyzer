@@ -4,6 +4,7 @@ use la_arena::Idx;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, ToSmolStr};
+use stabilize::StabilizedModule;
 use syntax::{SyntaxToken, cst};
 
 use crate::{
@@ -70,7 +71,7 @@ impl State {
     }
 }
 
-pub(super) fn index_module(cst: &cst::Module) -> State {
+pub(super) fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> State {
     let name = cst.header().and_then(|cst| {
         let cst = cst.name()?;
         Some(cst.syntax().text().to_smolstr())
@@ -80,7 +81,7 @@ pub(super) fn index_module(cst: &cst::Module) -> State {
 
     if let Some(statements) = cst.statements() {
         for declaration in statements.children() {
-            index_declaration(&mut state, &declaration);
+            index_declaration(&mut state, stabilized, &declaration);
         }
     }
 
@@ -102,8 +103,10 @@ pub(super) fn index_module(cst: &cst::Module) -> State {
     state
 }
 
-fn index_declaration(state: &mut State, cst: &cst::Declaration) {
+fn index_declaration(state: &mut State, stabilized: &StabilizedModule, cst: &cst::Declaration) {
     let declaration_id = state.source.allocate_declaration(cst);
+    debug_assert!(stabilized.lookup_cst(cst).is_some());
+
     match cst {
         cst::Declaration::ValueSignature(cst) => {
             let id = state.source.allocate_value_signature(cst);

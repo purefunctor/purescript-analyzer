@@ -40,7 +40,8 @@ fn test_index_package_set() {
         let tokens = lexing::layout(&lexed);
 
         let (parsed, _) = parsing::parse(&lexed, &tokens);
-        let indexed = indexing::index_module(&parsed.cst());
+        let stabilized = stabilize::stabilized(&parsed.syntax_node());
+        let indexed = indexing::index_module(&parsed.cst(), &stabilized);
 
         if !indexed.errors.is_empty() {
             all_errors.insert(file, indexed.errors);

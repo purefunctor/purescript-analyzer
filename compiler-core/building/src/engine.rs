@@ -650,9 +650,10 @@ impl QueryEngine {
             |storage| storage.derived.indexed.entry(id),
             |this| {
                 let (parsed, _) = this.parsed(id)?;
+                let stabilized = this.stabilized(id)?;
 
                 let module = parsed.cst();
-                let indexed = indexing::index_module(&module);
+                let indexed = indexing::index_module(&module, &stabilized);
 
                 Ok(Arc::new(indexed))
             },

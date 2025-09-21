@@ -12,6 +12,7 @@ use std::ops;
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use stabilize::StabilizedModule;
 use syntax::cst;
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -163,8 +164,8 @@ impl IndexingPairs {
     }
 }
 
-pub fn index_module(cst: &cst::Module) -> FullIndexedModule {
+pub fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> FullIndexedModule {
     let algorithm::State { kind, items, imports, pairs, source, errors, .. } =
-        algorithm::index_module(cst);
+        algorithm::index_module(cst, stabilized);
     FullIndexedModule { kind, items, imports, pairs, source, errors }
 }

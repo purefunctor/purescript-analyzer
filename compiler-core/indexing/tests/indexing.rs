@@ -13,8 +13,11 @@ fn index_source(source: &str) -> (cst::Module, FullIndexedModule) {
 
     let (parsed, _) = parsing::parse(&lexed, &tokens);
     let module = parsed.cst();
+    let node = parsed.syntax_node();
 
-    let indexed = index_module(&module);
+    let stabilized = stabilize::stabilized(&node);
+    let indexed = index_module(&module, &stabilized);
+
     (module, indexed)
 }
 
