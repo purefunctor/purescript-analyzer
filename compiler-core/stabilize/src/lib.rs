@@ -1,7 +1,7 @@
 use rowan::WalkEvent;
 use syntax::{SyntaxKind, SyntaxNode, map_v2::AstPtrMap};
 
-pub fn cst_id(node: &SyntaxNode) -> AstPtrMap {
+pub fn stabilize(node: &SyntaxNode) -> AstPtrMap {
     let mut ast_ptr_map = AstPtrMap::default();
 
     for event in node.preorder() {

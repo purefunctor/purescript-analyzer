@@ -450,18 +450,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
-name = "cst-id"
-version = "0.1.0"
-dependencies = [
- "la-arena",
- "lexing",
- "parsing",
- "paste",
- "rowan",
- "syntax",
-]
-
-[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1542,6 +1530,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "stabilize"
+version = "0.1.0"
+dependencies = [
+ "la-arena",
+ "lexing",
+ "parsing",
+ "paste",
+ "rowan",
+ "syntax",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1692,13 +1692,13 @@ version = "0.1.0"
 dependencies = [
  "building",
  "criterion",
- "cst-id",
  "files",
  "glob",
  "indexing",
  "lexing",
  "parsing",
  "rayon",
+ "stabilize",
  "url",
 ]
 

@@ -2,9 +2,9 @@ use std::{any, fmt, hash::BuildHasher, marker::PhantomData, num::NonZeroU32};
 
 use hashbrown::HashTable;
 use rowan::ast::{AstNode, AstPtr};
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::FxBuildHasher;
 
-use crate::{PureScript, SyntaxKind, SyntaxNode, SyntaxNodePtr};
+use crate::{PureScript, SyntaxNode, SyntaxNodePtr};
 
 pub struct AstId<N: AstNode<Language = PureScript>> {
     id: NonZeroU32,
@@ -25,7 +25,7 @@ impl<N: AstNode<Language = PureScript>> fmt::Debug for AstId<N> {
 
 impl<N: AstNode<Language = PureScript>> Clone for AstId<N> {
     fn clone(&self) -> AstId<N> {
-        AstId { id: self.id, phantom: PhantomData }
+        *self
     }
 }
 

@@ -1,8 +1,8 @@
 use std::{collections::HashMap, fs, path::PathBuf, time::Instant};
 
 use building::prim;
-use cst_id::cst_id;
 use files::Files;
+use stable_ptr::stable_ptr;
 use tests_package_set::all_source_files;
 
 type ErrorPerFile<E> = HashMap<PathBuf, E>;
@@ -66,7 +66,7 @@ fn test_cst_id_package_set() {
         let node = parsed.syntax_node();
 
         let start = Instant::now();
-        let _cst_id = cst_id::cst_id(&node);
+        let _cst_id = stable_ptr(&node);
         results.push((start.elapsed(), file));
     }
 
@@ -122,7 +122,7 @@ fn test_parallel_parse_package_set() {
     source.par_iter().for_each(|&id| {
         let (parsed, _) = engine.parsed(id).unwrap();
         let node = parsed.syntax_node();
-        let _cst_id = cst_id(&node);
+        let _cst_id = stable_ptr(&node);
     });
     let cst_id = start.elapsed();
     println!("CstId {cst_id:?}");

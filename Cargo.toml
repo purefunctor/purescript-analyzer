@@ -2,7 +2,7 @@
 members = [ 
   "compiler-bin",
   "compiler-core/*",
-  "compiler-lsp/*", "cst-id",
+  "compiler-lsp/*",
   "docs/src/wasm",
   "tests-integration",
   "tests-package-set",
