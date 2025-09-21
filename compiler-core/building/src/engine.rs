@@ -45,6 +45,7 @@ use parsing::FullParsedModule;
 use promise::{Future, Promise};
 use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
+use stabilize::AstPtrMap;
 use thread_local::ThreadLocal;
 
 #[derive(Debug, Clone, Copy)]
@@ -91,6 +92,7 @@ struct InputStorage {
 #[derive(Default)]
 struct DerivedStorage {
     parsed: FxHashMap<FileId, DerivedState<FullParsedModule>>,
+    stabilized: FxHashMap<FileId, DerivedState<Arc<AstPtrMap>>>,
     indexed: FxHashMap<FileId, DerivedState<Arc<FullIndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<FullLoweredModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<FullResolvedModule>>>,
@@ -414,6 +416,7 @@ impl QueryEngine {
                 QueryKey::Content(k) => input_changed!(content, k),
                 QueryKey::Module(k) => input_changed!(module, k),
                 QueryKey::Parsed(k) => derived_changed!(parsed, k),
+                QueryKey::Stabilized(k) => derived_changed!(stabilized, k),
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
@@ -623,6 +626,19 @@ impl QueryEngine {
                 let parsed = parsing::parse(&lexed, &tokens);
 
                 Ok(parsed)
+            },
+        )
+    }
+
+    pub fn stabilized(&self, id: FileId) -> QueryResult<Arc<AstPtrMap>> {
+        self.query(
+            QueryKey::Stabilized(id),
+            |storage| storage.derived.stabilized.get(&id),
+            |storage| storage.derived.stabilized.entry(id),
+            |this| {
+                let (parsed, _) = this.parsed(id)?;
+                let node = parsed.syntax_node();
+                Ok(Arc::new(stabilize::stabilized(&node)))
             },
         )
     }

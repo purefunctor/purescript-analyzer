@@ -125,6 +125,8 @@ impl PartialEq for AstPtrMap {
     }
 }
 
+impl Eq for AstPtrMap {}
+
 #[inline]
 fn arena_index(arena: &[SyntaxNodePtr], id: NonZeroU32) -> Option<&SyntaxNodePtr> {
     let index = id.get() as usize;
