@@ -74,7 +74,15 @@ impl AstPtrMap {
         AstId::new(id)
     }
 
-    pub fn lookup<N: AstNode<Language = PureScript>>(&self, ptr: &AstPtr<N>) -> Option<AstId<N>> {
+    pub fn lookup_cst<N: AstNode<Language = PureScript>>(&self, cst: &N) -> Option<AstId<N>> {
+        let ptr = AstPtr::new(cst);
+        self.lookup_ptr(&ptr)
+    }
+
+    pub fn lookup_ptr<N: AstNode<Language = PureScript>>(
+        &self,
+        ptr: &AstPtr<N>,
+    ) -> Option<AstId<N>> {
         let hash = FxBuildHasher.hash_one(ptr);
         let ptr = ptr.syntax_node_ptr();
         self.table
@@ -171,7 +179,9 @@ mod tests {
 
         let zero_ptr: AstPtr<Annotation> = SyntaxNodePtr::new(&zero).cast().unwrap();
         assert!(
-            map_1.lookup(&zero_ptr).is_some_and(|id| map_1.index(id).as_ref() == Some(&zero_ptr))
+            map_1
+                .lookup_ptr(&zero_ptr)
+                .is_some_and(|id| map_1.index(id).as_ref() == Some(&zero_ptr))
         );
 
         // In revision 2, we allocate zero and one
@@ -183,17 +193,19 @@ mod tests {
 
         // Zero is valid in revision 2
         assert!(
-            map_2.lookup(&zero_ptr).is_some_and(|id| map_2.index(id).as_ref() == Some(&zero_ptr))
+            map_2
+                .lookup_ptr(&zero_ptr)
+                .is_some_and(|id| map_2.index(id).as_ref() == Some(&zero_ptr))
         );
 
         // One is valid in revision 2
         assert!(
-            map_2.lookup(&one_ptr).is_some_and(|id| map_2.index(id).as_ref() == Some(&one_ptr))
+            map_2.lookup_ptr(&one_ptr).is_some_and(|id| map_2.index(id).as_ref() == Some(&one_ptr))
         );
 
         // One is invalid in revision 1.
         assert!(
-            map_1.lookup(&one_ptr).is_some_and(|id| map_1.index(id).as_ref() == Some(&one_ptr))
+            map_1.lookup_ptr(&one_ptr).is_some_and(|id| map_1.index(id).as_ref() == Some(&one_ptr))
         );
     }
 
@@ -218,7 +230,7 @@ mod tests {
         let mut map_1 = AstPtrMap::default();
 
         let zero_id = map_1.allocate_cst(&zero_cst);
-        assert_eq!(map_1.lookup(&zero_ptr), Some(zero_id));
+        assert_eq!(map_1.lookup_ptr(&zero_ptr), Some(zero_id));
         assert_eq!(map_1.index(zero_id).as_ref(), Some(&zero_ptr));
 
         // In revision 2, we allocate zero and one.
@@ -228,15 +240,15 @@ mod tests {
         let one_id = map_2.allocate_cst(&one_cst);
 
         // Zero is still valid in revision 2
-        assert_eq!(map_2.lookup(&zero_ptr), Some(zero_id));
+        assert_eq!(map_2.lookup_ptr(&zero_ptr), Some(zero_id));
         assert_eq!(map_2.index(zero_id).as_ref(), Some(&zero_ptr));
 
         // One is valid in revision 2
-        assert_eq!(map_2.lookup(&one_ptr), Some(one_id));
+        assert_eq!(map_2.lookup_ptr(&one_ptr), Some(one_id));
         assert_eq!(map_2.index(one_id).as_ref(), Some(&one_ptr));
 
         // One is invalid in revision 1.
-        assert_eq!(map_1.lookup(&one_ptr), None);
+        assert_eq!(map_1.lookup_ptr(&one_ptr), None);
         assert_eq!(map_1.index(one_id), None);
     }
 
