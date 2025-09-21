@@ -27,6 +27,7 @@ pub(crate) struct State {
 struct Context<'c> {
     module: &'c cst::Module,
     prim: &'c FullResolvedModule,
+    stabilized: &'c StabilizedModule,
     indexed: &'c FullIndexedModule,
     resolved: &'c FullResolvedModule,
 }
@@ -196,11 +197,12 @@ impl Context<'_> {
 pub(super) fn lower_module(
     module: &cst::Module,
     prim: &FullResolvedModule,
+    stabilized: &StabilizedModule,
     indexed: &FullIndexedModule,
     resolved: &FullResolvedModule,
 ) -> State {
     let mut state = State::default();
-    let environment = Context { module, prim, indexed, resolved };
+    let environment = Context { module, prim, stabilized, indexed, resolved };
 
     for (id, item) in environment.indexed.items.iter_terms() {
         state.with_scope(|state| {
@@ -223,7 +225,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::ClassMember { .. } => (), // See lower_type_item
         TermItemKind::Constructor { .. } => (), // See lower_type_item
         TermItemKind::Derive { id } => {
-            let cst = context.indexed.source[*id].try_to_node(root);
+            let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
 
             let arguments = cst
                 .as_ref()
@@ -255,7 +257,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             state.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Foreign { id } => {
-            let cst = context.indexed.source[*id].try_to_node(root);
+            let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
 
             let signature = cst.and_then(|cst| {
                 let cst = cst.type_()?;
@@ -266,7 +268,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             state.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Instance { id } => {
-            let cst = context.indexed.source[*id].try_to_node(root);
+            let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
 
             let arguments = cst
                 .as_ref()
@@ -306,7 +308,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             state.intermediate.insert_term_item(item_id, kind);
         }
         TermItemKind::Operator { id } => {
-            let cst = context.indexed.source[*id].try_to_node(root);
+            let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
 
             let associativity = cst.as_ref().and_then(|cst| {
                 cst.infix()
@@ -325,7 +327,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         }
         TermItemKind::Value { signature, equations } => {
             let signature = signature.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
                 let cst = cst.signature()?;
                 Some(recursive::lower_forall(state, context, &cst))
             });
@@ -333,7 +335,8 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             let equations = equations
                 .iter()
                 .filter_map(|id| {
-                    let cst = context.indexed.source[*id].try_to_node(root)?;
+                    let cst =
+                        context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root))?;
                     Some(recursive::lower_equation_like(
                         state,
                         context,
@@ -355,13 +358,13 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
     match &item.kind {
         TypeItemKind::Data { signature, equation, role } => {
             let signature = signature.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let data = equation.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -381,13 +384,13 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
         TypeItemKind::Newtype { signature, equation, role } => {
             let signature = signature.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let newtype = equation.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -407,13 +410,13 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
         TypeItemKind::Synonym { signature, equation } => {
             let signature = signature.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let synonym = equation.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -431,13 +434,13 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
         TypeItemKind::Class { signature, declaration } => {
             let signature = signature.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let class = declaration.and_then(|id| {
-                let cst = context.indexed.source[id].try_to_node(root)?;
+                let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -467,7 +470,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             lower_class_members(state, context, item_id);
         }
         TypeItemKind::Foreign { id, role } => {
-            let cst = context.indexed.source[*id].try_to_node(root);
+            let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
 
             let signature = cst.as_ref().and_then(|cst| {
                 let cst = cst.type_()?;
@@ -480,7 +483,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             state.intermediate.insert_type_item(item_id, kind);
         }
         TypeItemKind::Operator { id } => {
-            let cst = context.indexed.source[*id].try_to_node(root);
+            let cst = context.stabilized.index(*id).and_then(|cst| cst.try_to_node(root));
 
             let associativity = cst.as_ref().and_then(|cst| {
                 cst.infix()
@@ -507,7 +510,7 @@ fn lower_constructors(state: &mut State, context: &Context, id: TypeItemId) {
             unreachable!("invariant violated: expected TermItemKind::Constructor");
         };
 
-        let Some(cst) = context.indexed.source[id].try_to_node(root) else {
+        let Some(cst) = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root)) else {
             continue;
         };
 
@@ -525,7 +528,7 @@ fn lower_class_members(state: &mut State, context: &Context, id: TypeItemId) {
             unreachable!("invariant violated: expected TermItemKind::ClassMember");
         };
 
-        let Some(cst) = context.indexed.source[id].try_to_node(root) else {
+        let Some(cst) = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root)) else {
             continue;
         };
 
@@ -613,7 +616,7 @@ fn lower_instance_statements(
 
 fn lower_roles(context: &Context, id: TypeRoleId) -> Arc<[Role]> {
     let root = context.module.syntax();
-    let cst = context.indexed.source[id].try_to_node(root);
+    let cst = context.stabilized.index(id).and_then(|cst| cst.try_to_node(root));
     cst.map(|cst| {
         cst.children()
             .map(|cst| {

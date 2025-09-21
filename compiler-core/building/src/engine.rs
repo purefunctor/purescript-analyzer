@@ -673,11 +673,13 @@ impl QueryEngine {
                     this.resolved(prim_id)?
                 };
 
+                let stabilized = this.stabilized(id)?;
                 let indexed = this.indexed(id)?;
                 let resolved = this.resolved(id)?;
 
                 let module = parsed.cst();
-                let lowered = lowering::lower_module(&module, &prim, &indexed, &resolved);
+                let lowered =
+                    lowering::lower_module(&module, &prim, &stabilized, &indexed, &resolved);
 
                 Ok(Arc::new(lowered))
             },

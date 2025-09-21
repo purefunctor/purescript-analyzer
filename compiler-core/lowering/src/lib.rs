@@ -10,6 +10,7 @@ pub use source::*;
 
 use indexing::FullIndexedModule;
 use resolving::FullResolvedModule;
+use stabilize::StabilizedModule;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -23,10 +24,11 @@ pub struct FullLoweredModule {
 pub fn lower_module(
     module: &cst::Module,
     prim: &FullResolvedModule,
+    stabilized: &StabilizedModule,
     indexed: &FullIndexedModule,
     resolved: &FullResolvedModule,
 ) -> FullLoweredModule {
     let algorithm::State { intermediate, source, graph, nodes, .. } =
-        algorithm::lower_module(module, prim, indexed, resolved);
+        algorithm::lower_module(module, prim, stabilized, indexed, resolved);
     FullLoweredModule { intermediate, source, graph, nodes }
 }

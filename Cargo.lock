@@ -1005,6 +1005,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "smol_str",
+ "stabilize",
  "syntax",
  "test_each_file",
 ]

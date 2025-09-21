@@ -14,6 +14,7 @@ resolving = { version = "0.1.0", path = "../resolving" }
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
 smol_str = "0.3.2"
+stabilize = { version = "0.1.0", path = "../stabilize" }
 syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]
