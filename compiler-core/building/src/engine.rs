@@ -45,7 +45,7 @@ use parsing::FullParsedModule;
 use promise::{Future, Promise};
 use resolving::FullResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
-use stabilize::AstPtrMap;
+use stabilize::StabilizedModule;
 use thread_local::ThreadLocal;
 
 #[derive(Debug, Clone, Copy)]
@@ -92,7 +92,7 @@ struct InputStorage {
 #[derive(Default)]
 struct DerivedStorage {
     parsed: FxHashMap<FileId, DerivedState<FullParsedModule>>,
-    stabilized: FxHashMap<FileId, DerivedState<Arc<AstPtrMap>>>,
+    stabilized: FxHashMap<FileId, DerivedState<Arc<StabilizedModule>>>,
     indexed: FxHashMap<FileId, DerivedState<Arc<FullIndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<FullLoweredModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<FullResolvedModule>>>,
@@ -630,7 +630,7 @@ impl QueryEngine {
         )
     }
 
-    pub fn stabilized(&self, id: FileId) -> QueryResult<Arc<AstPtrMap>> {
+    pub fn stabilized(&self, id: FileId) -> QueryResult<Arc<StabilizedModule>> {
         self.query(
             QueryKey::Stabilized(id),
             |storage| storage.derived.stabilized.get(&id),

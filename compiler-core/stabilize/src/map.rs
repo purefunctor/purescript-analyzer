@@ -7,20 +7,20 @@ use syntax::{PureScript, SyntaxNode, SyntaxNodePtr};
 
 use crate::AstId;
 
-pub struct AstPtrMap {
+pub struct StabilizedModule {
     arena: Vec<SyntaxNodePtr>,
     table: HashTable<NonZeroU32>,
 }
 
-impl Default for AstPtrMap {
-    fn default() -> AstPtrMap {
+impl Default for StabilizedModule {
+    fn default() -> StabilizedModule {
         let arena = vec![];
         let table = HashTable::default();
-        AstPtrMap { arena, table }
+        StabilizedModule { arena, table }
     }
 }
 
-impl AstPtrMap {
+impl StabilizedModule {
     pub fn allocate(&mut self, node: &SyntaxNode) -> NonZeroU32 {
         let ptr = SyntaxNodePtr::new(node);
         let hash = FxBuildHasher.hash_one(ptr);
@@ -70,7 +70,7 @@ impl AstPtrMap {
     }
 }
 
-impl PartialEq for AstPtrMap {
+impl PartialEq for StabilizedModule {
     fn eq(&self, other: &Self) -> bool {
         if self.arena.len() != other.arena.len() {
             return false;
@@ -103,7 +103,7 @@ impl PartialEq for AstPtrMap {
     }
 }
 
-impl Eq for AstPtrMap {}
+impl Eq for StabilizedModule {}
 
 #[inline]
 fn arena_index(arena: &[SyntaxNodePtr], id: NonZeroU32) -> Option<&SyntaxNodePtr> {
@@ -125,7 +125,7 @@ mod tests {
     };
     use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 
-    use super::AstPtrMap;
+    use super::StabilizedModule;
 
     #[test]
     fn test_api() {
@@ -140,7 +140,7 @@ mod tests {
         ));
 
         // In revision 1, we only allocate zero
-        let mut map_1 = AstPtrMap::default();
+        let mut map_1 = StabilizedModule::default();
         map_1.allocate(&zero);
 
         let zero_ptr: AstPtr<cst::Annotation> = SyntaxNodePtr::new(&zero).cast().unwrap();
@@ -151,7 +151,7 @@ mod tests {
         );
 
         // In revision 2, we allocate zero and one
-        let mut map_2 = AstPtrMap::default();
+        let mut map_2 = StabilizedModule::default();
         map_2.allocate(&zero);
         map_2.allocate(&one);
 
@@ -191,27 +191,31 @@ mod tests {
         let one_ptr = AstPtr::new(&one_cst);
 
         // In revision 1, we only allocate zero.
-        let mut map_1 = AstPtrMap::default();
+        let mut map_1 = StabilizedModule::default();
 
         let zero_id = map_1.allocate_cst(&zero_cst);
+        assert_eq!(map_1.lookup_cst(&zero_cst), Some(zero_id));
         assert_eq!(map_1.lookup_ptr(&zero_ptr), Some(zero_id));
         assert_eq!(map_1.index(zero_id).as_ref(), Some(&zero_ptr));
 
         // In revision 2, we allocate zero and one.
-        let mut map_2 = AstPtrMap::default();
+        let mut map_2 = StabilizedModule::default();
 
         let _ = map_2.allocate_cst(&zero_cst);
         let one_id = map_2.allocate_cst(&one_cst);
 
         // Zero is still valid in revision 2
+        assert_eq!(map_2.lookup_cst(&zero_cst), Some(zero_id));
         assert_eq!(map_2.lookup_ptr(&zero_ptr), Some(zero_id));
         assert_eq!(map_2.index(zero_id).as_ref(), Some(&zero_ptr));
 
         // One is valid in revision 2
+        assert_eq!(map_2.lookup_cst(&one_cst), Some(one_id));
         assert_eq!(map_2.lookup_ptr(&one_ptr), Some(one_id));
         assert_eq!(map_2.index(one_id).as_ref(), Some(&one_ptr));
 
         // One is invalid in revision 1.
+        assert_eq!(map_1.lookup_cst(&one_cst), None);
         assert_eq!(map_1.lookup_ptr(&one_ptr), None);
         assert_eq!(map_1.index(one_id), None);
     }
@@ -236,9 +240,9 @@ mod tests {
         let two = cst::Annotation::cast(two).unwrap();
 
         {
-            let mut map_a = AstPtrMap::default();
-            let mut map_b = AstPtrMap::default();
-            let mut map_c = AstPtrMap::default();
+            let mut map_a = StabilizedModule::default();
+            let mut map_b = StabilizedModule::default();
+            let mut map_c = StabilizedModule::default();
 
             let _ = map_a.allocate_cst(&zero);
             let _ = map_b.allocate_cst(&zero);
@@ -254,8 +258,8 @@ mod tests {
         }
 
         {
-            let mut map_a = AstPtrMap::default();
-            let mut map_b = AstPtrMap::default();
+            let mut map_a = StabilizedModule::default();
+            let mut map_b = StabilizedModule::default();
 
             let _ = map_a.allocate_cst(&zero);
             let _ = map_a.allocate_cst(&two);
@@ -269,8 +273,8 @@ mod tests {
         }
 
         {
-            let mut map_a = AstPtrMap::default();
-            let mut map_b = AstPtrMap::default();
+            let mut map_a = StabilizedModule::default();
+            let mut map_b = StabilizedModule::default();
 
             let _ = map_a.allocate_cst(&zero);
             let _ = map_b.allocate_cst(&one);
@@ -281,8 +285,8 @@ mod tests {
         }
 
         {
-            let mut map_a = AstPtrMap::default();
-            let mut map_b = AstPtrMap::default();
+            let mut map_a = StabilizedModule::default();
+            let mut map_b = StabilizedModule::default();
 
             let _ = map_a.allocate_cst(&zero);
             let _ = map_a.allocate_cst(&one);

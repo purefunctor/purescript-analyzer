@@ -7,8 +7,8 @@ pub use map::*;
 use rowan::WalkEvent;
 use syntax::{SyntaxKind, SyntaxNode};
 
-pub fn stabilized(node: &SyntaxNode) -> AstPtrMap {
-    let mut ast_ptr_map = AstPtrMap::default();
+pub fn stabilized(node: &SyntaxNode) -> StabilizedModule {
+    let mut ast_ptr_map = StabilizedModule::default();
 
     for event in node.preorder() {
         if let WalkEvent::Enter(node) = event
