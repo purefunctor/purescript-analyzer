@@ -1,41 +1,11 @@
-use std::{any, fmt, hash::BuildHasher, marker::PhantomData, num::NonZeroU32};
+use std::{hash::BuildHasher, num::NonZeroU32};
 
 use hashbrown::HashTable;
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxBuildHasher;
+use syntax::{PureScript, SyntaxNode, SyntaxNodePtr};
 
-use crate::{PureScript, SyntaxNode, SyntaxNodePtr};
-
-pub struct AstId<N: AstNode<Language = PureScript>> {
-    id: NonZeroU32,
-    phantom: PhantomData<fn() -> AstPtr<N>>,
-}
-
-impl<N: AstNode<Language = PureScript>> AstId<N> {
-    fn new(id: NonZeroU32) -> AstId<N> {
-        AstId { id, phantom: PhantomData }
-    }
-}
-
-impl<N: AstNode<Language = PureScript>> fmt::Debug for AstId<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("AstId<{}>({})", any::type_name::<N>(), self.id))
-    }
-}
-
-impl<N: AstNode<Language = PureScript>> Clone for AstId<N> {
-    fn clone(&self) -> AstId<N> {
-        *self
-    }
-}
-
-impl<N: AstNode<Language = PureScript>> Copy for AstId<N> {}
-
-impl<N: AstNode<Language = PureScript>> PartialEq for AstId<N> {
-    fn eq(&self, other: &AstId<N>) -> bool {
-        self.id == other.id
-    }
-}
+use crate::AstId;
 
 pub struct AstPtrMap {
     arena: Vec<SyntaxNodePtr>,
@@ -83,8 +53,8 @@ impl AstPtrMap {
         &self,
         ptr: &AstPtr<N>,
     ) -> Option<AstId<N>> {
-        let hash = FxBuildHasher.hash_one(ptr);
         let ptr = ptr.syntax_node_ptr();
+        let hash = FxBuildHasher.hash_one(ptr);
         self.table
             .find(hash, |&id| arena_index(&self.arena, id) == Some(&ptr))
             .map(|&id| AstId::new(id))
@@ -153,11 +123,7 @@ mod tests {
         GreenNode, GreenToken, NodeOrToken,
         ast::{AstNode, AstPtr},
     };
-
-    use crate::{
-        SyntaxKind, SyntaxNode, SyntaxNodePtr,
-        cst::{self, Annotation},
-    };
+    use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 
     use super::AstPtrMap;
 
@@ -177,7 +143,7 @@ mod tests {
         let mut map_1 = AstPtrMap::default();
         map_1.allocate(&zero);
 
-        let zero_ptr: AstPtr<Annotation> = SyntaxNodePtr::new(&zero).cast().unwrap();
+        let zero_ptr: AstPtr<cst::Annotation> = SyntaxNodePtr::new(&zero).cast().unwrap();
         assert!(
             map_1
                 .lookup_ptr(&zero_ptr)
@@ -189,7 +155,7 @@ mod tests {
         map_2.allocate(&zero);
         map_2.allocate(&one);
 
-        let one_ptr: AstPtr<Annotation> = SyntaxNodePtr::new(&one).cast().unwrap();
+        let one_ptr: AstPtr<cst::Annotation> = SyntaxNodePtr::new(&one).cast().unwrap();
 
         // Zero is valid in revision 2
         assert!(
@@ -204,9 +170,7 @@ mod tests {
         );
 
         // One is invalid in revision 1.
-        assert!(
-            map_1.lookup_ptr(&one_ptr).is_some_and(|id| map_1.index(id).as_ref() == Some(&one_ptr))
-        );
+        assert!(map_1.lookup_ptr(&one_ptr).is_none());
     }
 
     #[test]
