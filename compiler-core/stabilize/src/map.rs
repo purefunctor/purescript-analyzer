@@ -38,12 +38,6 @@ impl StabilizedModule {
         id
     }
 
-    pub fn allocate_cst<N: AstNode<Language = PureScript>>(&mut self, cst: &N) -> AstId<N> {
-        let node = cst.syntax();
-        let id = self.allocate(node);
-        AstId::new(id)
-    }
-
     pub fn lookup_cst<N: AstNode<Language = PureScript>>(&self, cst: &N) -> Option<AstId<N>> {
         let ptr = AstPtr::new(cst);
         self.lookup_ptr(&ptr)
@@ -121,10 +115,7 @@ fn arena_hasher(arena: &[SyntaxNodePtr], id: NonZeroU32) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use rowan::{
-        GreenNode, GreenToken, NodeOrToken,
-        ast::{AstNode, AstPtr},
-    };
+    use rowan::{GreenNode, GreenToken, NodeOrToken, ast::AstPtr};
     use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 
     use super::StabilizedModule;
@@ -176,53 +167,6 @@ mod tests {
     }
 
     #[test]
-    fn test_api_cst() {
-        let zero = SyntaxNode::new_root(GreenNode::new(
-            SyntaxKind::Annotation.into(),
-            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "ZERO"))],
-        ));
-        let one = SyntaxNode::new_root(GreenNode::new(
-            SyntaxKind::Annotation.into(),
-            vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "ONE"))],
-        ));
-
-        let zero_cst = cst::Annotation::cast(zero).unwrap();
-        let zero_ptr = AstPtr::new(&zero_cst);
-
-        let one_cst = cst::Annotation::cast(one).unwrap();
-        let one_ptr = AstPtr::new(&one_cst);
-
-        // In revision 1, we only allocate zero.
-        let mut map_1 = StabilizedModule::default();
-
-        let zero_id = map_1.allocate_cst(&zero_cst);
-        assert_eq!(map_1.lookup_cst(&zero_cst), Some(zero_id));
-        assert_eq!(map_1.lookup_ptr(&zero_ptr), Some(zero_id));
-        assert_eq!(map_1.index(zero_id).as_ref(), Some(&zero_ptr));
-
-        // In revision 2, we allocate zero and one.
-        let mut map_2 = StabilizedModule::default();
-
-        let _ = map_2.allocate_cst(&zero_cst);
-        let one_id = map_2.allocate_cst(&one_cst);
-
-        // Zero is still valid in revision 2
-        assert_eq!(map_2.lookup_cst(&zero_cst), Some(zero_id));
-        assert_eq!(map_2.lookup_ptr(&zero_ptr), Some(zero_id));
-        assert_eq!(map_2.index(zero_id).as_ref(), Some(&zero_ptr));
-
-        // One is valid in revision 2
-        assert_eq!(map_2.lookup_cst(&one_cst), Some(one_id));
-        assert_eq!(map_2.lookup_ptr(&one_ptr), Some(one_id));
-        assert_eq!(map_2.index(one_id).as_ref(), Some(&one_ptr));
-
-        // One is invalid in revision 1.
-        assert_eq!(map_1.lookup_cst(&one_cst), None);
-        assert_eq!(map_1.lookup_ptr(&one_ptr), None);
-        assert_eq!(map_1.index(one_id), None);
-    }
-
-    #[test]
     fn test_equality() {
         let zero = SyntaxNode::new_root(GreenNode::new(
             SyntaxKind::Annotation.into(),
@@ -237,18 +181,14 @@ mod tests {
             vec![NodeOrToken::Token(GreenToken::new(SyntaxKind::TEXT.into(), "TWO TWO"))],
         ));
 
-        let zero = cst::Annotation::cast(zero).unwrap();
-        let one = cst::Annotation::cast(one).unwrap();
-        let two = cst::Annotation::cast(two).unwrap();
-
         {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
             let mut map_c = StabilizedModule::default();
 
-            let _ = map_a.allocate_cst(&zero);
-            let _ = map_b.allocate_cst(&zero);
-            let _ = map_c.allocate_cst(&zero);
+            let _ = map_a.allocate(&zero);
+            let _ = map_b.allocate(&zero);
+            let _ = map_c.allocate(&zero);
 
             // Symmetric
             assert!(map_a == map_b);
@@ -263,11 +203,11 @@ mod tests {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
 
-            let _ = map_a.allocate_cst(&zero);
-            let _ = map_a.allocate_cst(&two);
+            let _ = map_a.allocate(&zero);
+            let _ = map_a.allocate(&two);
 
-            let _ = map_b.allocate_cst(&one);
-            let _ = map_b.allocate_cst(&two);
+            let _ = map_b.allocate(&one);
+            let _ = map_b.allocate(&two);
 
             // Symmetric
             assert!(map_a != map_b);
@@ -278,9 +218,9 @@ mod tests {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
 
-            let _ = map_a.allocate_cst(&zero);
-            let _ = map_b.allocate_cst(&one);
-            let _ = map_b.allocate_cst(&two);
+            let _ = map_a.allocate(&zero);
+            let _ = map_b.allocate(&one);
+            let _ = map_b.allocate(&two);
 
             // Length check
             assert!(map_a != map_b);
@@ -290,11 +230,11 @@ mod tests {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
 
-            let _ = map_a.allocate_cst(&zero);
-            let _ = map_a.allocate_cst(&one);
+            let _ = map_a.allocate(&zero);
+            let _ = map_a.allocate(&one);
 
-            let _ = map_b.allocate_cst(&one);
-            let _ = map_b.allocate_cst(&zero);
+            let _ = map_b.allocate(&one);
+            let _ = map_b.allocate(&zero);
 
             // Index check
             assert!(map_a != map_b);
