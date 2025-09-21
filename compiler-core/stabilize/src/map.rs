@@ -50,7 +50,12 @@ impl StabilizedModule {
         let ptr = ptr.syntax_node_ptr();
         let hash = FxBuildHasher.hash_one(ptr);
         self.table
-            .find(hash, |&id| arena_index(&self.arena, id) == Some(&ptr))
+            .find(hash, |&id| {
+                let inner_ptr = arena_index(&self.arena, id).unwrap_or_else(|| {
+                    unreachable!("invariant violated: {id} is not a valid index");
+                });
+                inner_ptr == ptr
+            })
             .map(|&id| AstId::new(id))
     }
 
@@ -76,14 +81,14 @@ impl PartialEq for StabilizedModule {
 
         for &self_id in self.table.iter() {
             let self_ptr = arena_index(&self.arena, self_id).unwrap_or_else(|| {
-                unreachable!("invariant violated: self_id is not a valid index")
+                unreachable!("invariant violated: {self_id} is not a valid index");
             });
 
             let self_hash = FxBuildHasher.hash_one(self_ptr);
 
             let other_found = other.table.find(self_hash, |&other_id| {
                 let other_ptr = arena_index(&self.arena, other_id).unwrap_or_else(|| {
-                    unreachable!("invariant violated: other_id is not a valid index")
+                    unreachable!("invariant violated: {other_id} is not a valid index");
                 });
                 self_ptr == other_ptr
             });
@@ -100,15 +105,15 @@ impl PartialEq for StabilizedModule {
 impl Eq for StabilizedModule {}
 
 #[inline]
-fn arena_index(arena: &[SyntaxNodePtr], id: NonZeroU32) -> Option<&SyntaxNodePtr> {
+fn arena_index(arena: &[SyntaxNodePtr], id: NonZeroU32) -> Option<SyntaxNodePtr> {
     let index = id.get() as usize;
-    arena.get(index - 1)
+    arena.get(index - 1).copied()
 }
 
 #[inline]
 fn arena_hasher(arena: &[SyntaxNodePtr], id: NonZeroU32) -> u64 {
     let ptr = arena_index(arena, id).unwrap_or_else(|| {
-        unreachable!("invariant violated: id is not a valid index");
+        unreachable!("invariant violated: {id} is not a valid index");
     });
     FxBuildHasher.hash_one(ptr)
 }
