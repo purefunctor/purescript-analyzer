@@ -42,7 +42,7 @@ where
             return (None, None);
         }
 
-        let Some(ptr) = context.stabilized.index(import.id) else {
+        let Some(ptr) = context.stabilized.ast_ptr(import.id) else {
             return (None, None);
         };
 

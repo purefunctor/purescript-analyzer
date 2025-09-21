@@ -109,7 +109,7 @@ fn definition_import(
     let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let ptr = stabilized.index(import_id).ok_or(AnalyzerError::NonFatal)?;
+    let ptr = stabilized.ast_ptr(import_id).ok_or(AnalyzerError::NonFatal)?;
     let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node
@@ -279,7 +279,7 @@ fn definition_type(
                 TypeVariableResolution::Forall(binding) => {
                     let root = parsed.syntax_node();
                     let ptr = stabilized
-                        .index(*binding)
+                        .ast_ptr(*binding)
                         .ok_or(AnalyzerError::NonFatal)?
                         .syntax_node_ptr();
                     let range = locate::syntax_range(&content, &root, &ptr)

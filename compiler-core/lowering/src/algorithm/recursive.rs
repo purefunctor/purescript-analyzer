@@ -564,7 +564,7 @@ fn lower_equation_bindings(
     bindings.extend(to_traverse.into_iter().map(|resolution| {
         state.with_scope(|state| {
             let signature = resolution.signature.and_then(|id| {
-                let cst = context.stabilized.index(id)?.try_to_node(root)?;
+                let cst = context.stabilized.ast_ptr(id)?.try_to_node(root)?;
                 let cst = cst.type_()?;
                 Some(lower_forall(state, context, &cst))
             });
@@ -572,7 +572,7 @@ fn lower_equation_bindings(
                 .equations
                 .iter()
                 .filter_map(|&id| {
-                    let cst = context.stabilized.index(id)?.try_to_node(root)?;
+                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(root)?;
                     Some(lower_equation_like(
                         state,
                         context,

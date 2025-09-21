@@ -57,8 +57,8 @@ impl StabilizedModule {
             .map(|&id| AstId::new(id))
     }
 
-    pub fn index<N: AstNode<Language = PureScript>>(&self, id: AstId<N>) -> Option<AstPtr<N>> {
-        arena_index(&self.arena, id.id)?.cast()
+    pub fn ast_ptr<N: AstNode<Language = PureScript>>(&self, id: AstId<N>) -> Option<AstPtr<N>> {
+        self.syntax_ptr(id)?.cast()
     }
 
     pub fn syntax_ptr<N: AstNode<Language = PureScript>>(
@@ -164,7 +164,7 @@ mod tests {
         assert!(
             map_1
                 .lookup_ptr(&zero_ptr)
-                .is_some_and(|id| map_1.index(id).as_ref() == Some(&zero_ptr))
+                .is_some_and(|id| map_1.ast_ptr(id).as_ref() == Some(&zero_ptr))
         );
 
         // In revision 2, we allocate zero and one
@@ -178,12 +178,14 @@ mod tests {
         assert!(
             map_2
                 .lookup_ptr(&zero_ptr)
-                .is_some_and(|id| map_2.index(id).as_ref() == Some(&zero_ptr))
+                .is_some_and(|id| map_2.ast_ptr(id).as_ref() == Some(&zero_ptr))
         );
 
         // One is valid in revision 2
         assert!(
-            map_2.lookup_ptr(&one_ptr).is_some_and(|id| map_2.index(id).as_ref() == Some(&one_ptr))
+            map_2
+                .lookup_ptr(&one_ptr)
+                .is_some_and(|id| map_2.ast_ptr(id).as_ref() == Some(&one_ptr))
         );
 
         // One is invalid in revision 1.

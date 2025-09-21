@@ -115,7 +115,7 @@ fn references_import(
     let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let ptr = stabilized.index(import_id).ok_or(AnalyzerError::NonFatal)?;
+    let ptr = stabilized.ast_ptr(import_id).ok_or(AnalyzerError::NonFatal)?;
     let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node

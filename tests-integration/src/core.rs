@@ -116,7 +116,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
             continue;
         };
 
-        let cst = stabilized.index(expression_id).unwrap();
+        let cst = stabilized.ast_ptr(expression_id).unwrap();
         let root = module.syntax();
 
         let node = cst.syntax_node_ptr().to_node(root);
@@ -129,20 +129,20 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         if let Some(resolution) = resolution {
             match resolution {
                 TermVariableResolution::Binder(binder) => {
-                    let cst = stabilized.index(*binder).unwrap();
+                    let cst = stabilized.ast_ptr(*binder).unwrap();
                     let range = cst.syntax_node_ptr().text_range();
                     let position = locate::offset_to_position(&content, range.start());
                     writeln!(buffer, "  resolves to binder {position:?}").unwrap();
                 }
                 TermVariableResolution::Let(LetBound { signature, equations }) => {
                     if let Some(signature) = signature {
-                        let cst = stabilized.index(*signature).unwrap();
+                        let cst = stabilized.ast_ptr(*signature).unwrap();
                         let range = cst.syntax_node_ptr().text_range();
                         let position = locate::offset_to_position(&content, range.start());
                         writeln!(buffer, "  resolves to signature {position:?}").unwrap();
                     }
                     for equation in equations.iter() {
-                        let cst = stabilized.index(*equation).unwrap();
+                        let cst = stabilized.ast_ptr(*equation).unwrap();
                         let range = cst.syntax_node_ptr().text_range();
                         let position = locate::offset_to_position(&content, range.start());
                         writeln!(buffer, "  resolves to equation {position:?}").unwrap();
@@ -165,7 +165,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
             continue;
         };
 
-        let cst = stabilized.index(type_id).unwrap();
+        let cst = stabilized.ast_ptr(type_id).unwrap();
         let root = module.syntax();
 
         let node = cst.syntax_node_ptr().to_node(root);
@@ -178,7 +178,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         if let Some(resolution) = resolution {
             match resolution {
                 TypeVariableResolution::Forall(id) => {
-                    let cst = stabilized.index(*id).unwrap();
+                    let cst = stabilized.ast_ptr(*id).unwrap();
                     let range = cst.syntax_node_ptr().text_range();
                     let position = locate::offset_to_position(&content, range.start());
                     writeln!(buffer, "  resolves to forall {position:?}").unwrap();
@@ -194,7 +194,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                             writeln!(buffer, "  resolves to a constraint variable {name:?}")
                                 .unwrap();
                             for &type_id in type_ids {
-                                let cst = stabilized.index(type_id).unwrap();
+                                let cst = stabilized.ast_ptr(type_id).unwrap();
                                 let range = cst.syntax_node_ptr().text_range();
                                 let position = locate::offset_to_position(&content, range.start());
                                 writeln!(buffer, "    {position:?}").unwrap();
