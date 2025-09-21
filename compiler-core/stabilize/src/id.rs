@@ -1,4 +1,4 @@
-use std::{any, fmt, marker::PhantomData, num::NonZeroU32};
+use std::{any, fmt, hash, marker::PhantomData, num::NonZeroU32};
 
 use rowan::ast::{AstNode, AstPtr};
 use syntax::PureScript;
@@ -35,3 +35,9 @@ impl<N: AstNode<Language = PureScript>> PartialEq for AstId<N> {
 }
 
 impl<N: AstNode<Language = PureScript>> Eq for AstId<N> {}
+
+impl<N: AstNode<Language = PureScript>> hash::Hash for AstId<N> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
