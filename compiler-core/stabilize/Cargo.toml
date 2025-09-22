@@ -10,7 +10,3 @@ paste = "1.0.15"
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
 syntax = { version = "0.1.0", path = "../syntax" }
-
-[dev-dependencies]
-lexing = { path = "../lexing" }
-parsing = { path = "../parsing" }

@@ -1556,8 +1556,6 @@ version = "0.1.0"
 dependencies = [
  "hashbrown 0.16.0",
  "la-arena",
- "lexing",
- "parsing",
  "paste",
  "rowan",
  "rustc-hash 2.1.1",
