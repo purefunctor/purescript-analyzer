@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
-use indexing::{FullIndexedModule, TermItemKind};
+use indexing::{IndexedModule, TermItemKind};
 use itertools::Itertools;
-use lowering::{FullLoweredModule, ImplicitTypeVariable};
+use lowering::{ImplicitTypeVariable, LoweredModule};
 
 use crate::{
     core::{CoreStorage, ForallBinder, Type, TypeId},
@@ -33,12 +33,12 @@ where
 
 pub struct Environment<'e> {
     #[allow(unused)]
-    index: &'e FullIndexedModule,
-    lower: &'e FullLoweredModule,
+    index: &'e IndexedModule,
+    lower: &'e LoweredModule,
 }
 
 impl<'e> Environment<'e> {
-    pub fn new(index: &'e FullIndexedModule, lower: &'e FullLoweredModule) -> Environment<'e> {
+    pub fn new(index: &'e IndexedModule, lower: &'e LoweredModule) -> Environment<'e> {
         Environment { index, lower }
     }
 }
@@ -129,8 +129,8 @@ fn core_of_cst<S: CoreStorage>(
 
 pub fn check_module(
     storage: &mut (impl CoreStorage + Debug),
-    index: &FullIndexedModule,
-    lower: &FullLoweredModule,
+    index: &IndexedModule,
+    lower: &LoweredModule,
 ) {
     let foreign = index.items.iter_terms().filter_map(|(id, item)| {
         if let TermItemKind::Foreign { .. } = item.kind { Some(id) } else { None }
@@ -144,9 +144,7 @@ pub fn check_module(
     let environment = Environment::new(index, lower);
 
     for id in foreign {
-        if let Some(lowering::TermItemIr::Foreign { signature }) =
-            lower.info.get_term_item(id)
-        {
+        if let Some(lowering::TermItemIr::Foreign { signature }) = lower.info.get_term_item(id) {
             let _ = signature.map(|id| core_of_cst(&mut context, &environment, id));
         }
     }

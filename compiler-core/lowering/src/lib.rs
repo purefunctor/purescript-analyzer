@@ -8,13 +8,13 @@ pub use intermediate::*;
 pub use scope::*;
 pub use source::*;
 
-use indexing::FullIndexedModule;
-use resolving::FullResolvedModule;
+use indexing::IndexedModule;
+use resolving::ResolvedModule;
 use stabilize::StabilizedModule;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct FullLoweredModule {
+pub struct LoweredModule {
     pub info: LoweringInfo,
     pub graph: LoweringGraph,
     pub nodes: LoweringGraphNodes,
@@ -22,12 +22,12 @@ pub struct FullLoweredModule {
 
 pub fn lower_module(
     module: &cst::Module,
-    prim: &FullResolvedModule,
+    prim: &ResolvedModule,
     stabilized: &StabilizedModule,
-    indexed: &FullIndexedModule,
-    resolved: &FullResolvedModule,
-) -> FullLoweredModule {
+    indexed: &IndexedModule,
+    resolved: &ResolvedModule,
+) -> LoweredModule {
     let algorithm::State { info, graph, nodes, .. } =
         algorithm::lower_module(module, prim, stabilized, indexed, resolved);
-    FullLoweredModule { info, graph, nodes }
+    LoweredModule { info, graph, nodes }
 }

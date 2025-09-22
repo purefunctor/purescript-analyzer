@@ -1,8 +1,8 @@
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{
-    ExportKind, FullIndexedModule, ImplicitItems, ImportKind, IndexingImport, TermItemId,
-    TermItemKind, TypeItemId,
+    ExportKind, ImplicitItems, ImportKind, IndexedModule, IndexingImport, TermItemId, TermItemKind,
+    TypeItemId,
 };
 use smol_str::SmolStr;
 
@@ -33,7 +33,7 @@ pub(super) fn resolve_module(external: &impl External, file: FileId) -> QueryRes
 fn resolve_imports(
     external: &impl External,
     state: &mut State,
-    indexed: &FullIndexedModule,
+    indexed: &IndexedModule,
 ) -> QueryResult<()> {
     for (&id, indexing_import) in &indexed.imports {
         let Some(name) = &indexing_import.name else {
@@ -220,7 +220,7 @@ fn add_imported_type(
     }
 }
 
-fn resolve_exports(state: &mut State, indexed: &FullIndexedModule, file: FileId) {
+fn resolve_exports(state: &mut State, indexed: &IndexedModule, file: FileId) {
     export_module_items(state, indexed, file);
     export_module_imports(state, indexed);
 }
@@ -285,7 +285,7 @@ fn add_resolved_type(
     }
 }
 
-fn export_module_items(state: &mut State, indexed: &FullIndexedModule, file: FileId) {
+fn export_module_items(state: &mut State, indexed: &IndexedModule, file: FileId) {
     let local_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
         let name = item.name.as_ref()?;
         Some((name, file, id))
@@ -324,7 +324,7 @@ fn export_module_items(state: &mut State, indexed: &FullIndexedModule, file: Fil
     add_resolved_types(&mut state.exports, &mut state.errors, exported_types);
 }
 
-fn export_module_imports(state: &mut State, indexed: &FullIndexedModule) {
+fn export_module_imports(state: &mut State, indexed: &IndexedModule) {
     if matches!(indexed.kind, ExportKind::Implicit) {
         return;
     }

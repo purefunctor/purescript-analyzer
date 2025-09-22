@@ -16,7 +16,7 @@ use stabilize::StabilizedModule;
 use syntax::{SyntaxNodePtr, cst};
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct FullIndexedModule {
+pub struct IndexedModule {
     pub kind: ExportKind,
     pub items: IndexingItems,
     pub imports: IndexingImports,
@@ -24,7 +24,7 @@ pub struct FullIndexedModule {
     pub errors: Vec<IndexingError>,
 }
 
-impl FullIndexedModule {
+impl IndexedModule {
     pub fn term_item_ptr(
         &self,
         stabilized: &StabilizedModule,
@@ -198,8 +198,8 @@ impl IndexingPairs {
     }
 }
 
-pub fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> FullIndexedModule {
+pub fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> IndexedModule {
     let algorithm::State { kind, items, imports, pairs, errors, .. } =
         algorithm::index_module(cst, stabilized);
-    FullIndexedModule { kind, items, imports, pairs, errors }
+    IndexedModule { kind, items, imports, pairs, errors }
 }

@@ -44,18 +44,14 @@ pub fn implementation(
         locate::Located::Type(type_id) => references_type(engine, files, current_file, type_id),
         locate::Located::TermOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .info
-                .get_term_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_term_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .info
-                .get_type_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_type_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
         }
         locate::Located::TermItem(term_id) => {
@@ -197,8 +193,7 @@ fn references_expression(
     expression_id: ExpressionId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind =
-        lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;

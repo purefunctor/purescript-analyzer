@@ -4,7 +4,7 @@ use std::{mem, sync::Arc};
 
 use files::FileId;
 use indexing::{
-    FullIndexedModule, TermItem, TermItemId, TermItemKind, TypeItem, TypeItemId, TypeItemKind,
+    IndexedModule, TermItem, TermItemId, TermItemKind, TypeItem, TypeItemId, TypeItemKind,
     TypeRoleId,
 };
 use itertools::Itertools;
@@ -26,10 +26,10 @@ pub(crate) struct State {
 
 struct Context<'c> {
     module: &'c cst::Module,
-    prim: &'c FullResolvedModule,
+    prim: &'c ResolvedModule,
     stabilized: &'c StabilizedModule,
-    indexed: &'c FullIndexedModule,
-    resolved: &'c FullResolvedModule,
+    indexed: &'c IndexedModule,
+    resolved: &'c ResolvedModule,
 }
 
 impl State {
@@ -196,10 +196,10 @@ impl Context<'_> {
 
 pub(super) fn lower_module(
     module: &cst::Module,
-    prim: &FullResolvedModule,
+    prim: &ResolvedModule,
     stabilized: &StabilizedModule,
-    indexed: &FullIndexedModule,
-    resolved: &FullResolvedModule,
+    indexed: &IndexedModule,
+    resolved: &ResolvedModule,
 ) -> State {
     let mut state = State::default();
     let context = Context { module, prim, stabilized, indexed, resolved };

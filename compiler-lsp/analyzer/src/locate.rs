@@ -3,7 +3,7 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::FileId;
-use indexing::{FullIndexedModule, ImportItemId, TermItemId, TypeItemId};
+use indexing::{ImportItemId, IndexedModule, TermItemId, TypeItemId};
 use line_index::{LineCol, LineIndex};
 use lowering::{BinderId, ExpressionId, TermOperatorId, TypeId, TypeOperatorId};
 use rowan::{
@@ -103,7 +103,7 @@ pub fn locate(
 
 fn locate_single(
     stabilized: &StabilizedModule,
-    indexed: &FullIndexedModule,
+    indexed: &IndexedModule,
     token: SyntaxToken,
 ) -> Located {
     token
@@ -114,7 +114,7 @@ fn locate_single(
 
 fn locate_node(
     stabilized: &StabilizedModule,
-    indexed: &FullIndexedModule,
+    indexed: &IndexedModule,
     node: SyntaxNode,
 ) -> Option<Located> {
     let kind = node.kind();
@@ -170,7 +170,7 @@ fn locate_node(
 
 fn locate_between(
     stabilized: &StabilizedModule,
-    indexed: &FullIndexedModule,
+    indexed: &IndexedModule,
     left: SyntaxToken,
     right: SyntaxToken,
 ) -> Located {

@@ -160,8 +160,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     writeln!(buffer, "\nTypes:\n").unwrap();
 
     for (type_id, _) in info.iter_type() {
-        let Some(TypeKind::Variable { resolution, .. }) = info.get_type_kind(type_id)
-        else {
+        let Some(TypeKind::Variable { resolution, .. }) = info.get_type_kind(type_id) else {
             continue;
         };
 

@@ -46,18 +46,14 @@ pub fn implementation(
         locate::Located::Type(type_id) => hover_type(engine, current_file, type_id),
         locate::Located::TermOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .info
-                .get_term_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_term_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .info
-                .get_type_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_type_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             hover_file_type(engine, *f_id, *t_id)
         }
         locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
@@ -181,8 +177,7 @@ fn hover_expression(
     let lowered = engine.lowered(current_file)?;
     let stabilized = engine.stabilized(current_file)?;
 
-    let kind =
-        lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
 
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {

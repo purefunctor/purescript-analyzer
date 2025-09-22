@@ -2,7 +2,7 @@ use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::{FileId, Files};
 use parsing::ParsedModule;
-use resolving::FullResolvedModule;
+use resolving::ResolvedModule;
 use rowan::{TextRange, TextSize, TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
 use stabilize::StabilizedModule;
@@ -18,10 +18,10 @@ pub struct Context<'c, 'a> {
     pub content: &'a str,
     pub stabilized: &'a StabilizedModule,
     pub parsed: &'a ParsedModule,
-    pub resolved: &'a FullResolvedModule,
+    pub resolved: &'a ResolvedModule,
 
     pub prim_id: FileId,
-    pub prim_resolved: &'a FullResolvedModule,
+    pub prim_resolved: &'a ResolvedModule,
 
     pub semantics: CursorSemantics,
     pub text: CursorText,
