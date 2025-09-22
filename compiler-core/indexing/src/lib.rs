@@ -179,21 +179,9 @@ impl IndexingPairs {
         })
     }
 
-    pub fn term_item_declarations(&self, id: TermItemId) -> impl Iterator<Item = DeclarationId> {
-        self.declaration_to_term.iter().filter_map(move |(declaration_id, term_id)| {
-            if *term_id == id { Some(*declaration_id) } else { None }
-        })
-    }
-
     pub fn declaration_to_type(&self, id: DeclarationId) -> Option<TypeItemId> {
         self.declaration_to_type.iter().find_map(move |(declaration_id, type_id)| {
             if *declaration_id == id { Some(*type_id) } else { None }
-        })
-    }
-
-    pub fn type_item_declarations(&self, id: TypeItemId) -> impl Iterator<Item = DeclarationId> {
-        self.declaration_to_type.iter().filter_map(move |(declaration_id, type_id)| {
-            if *type_id == id { Some(*declaration_id) } else { None }
         })
     }
 
@@ -203,24 +191,9 @@ impl IndexingPairs {
         })
     }
 
-    pub fn term_item_constructors(
-        &self,
-        id: TermItemId,
-    ) -> impl Iterator<Item = DataConstructorId> {
-        self.constructor_to_term.iter().filter_map(move |(constructor_id, term_id)| {
-            if *term_id == id { Some(*constructor_id) } else { None }
-        })
-    }
-
     pub fn class_member_to_term(&self, id: ClassMemberId) -> Option<TermItemId> {
         self.class_member_to_term.iter().find_map(move |(class_member_id, term_id)| {
             if *class_member_id == id { Some(*term_id) } else { None }
-        })
-    }
-
-    pub fn term_item_class_members(&self, id: TermItemId) -> impl Iterator<Item = ClassMemberId> {
-        self.class_member_to_term.iter().filter_map(move |(class_member_id, term_id)| {
-            if *term_id == id { Some(*class_member_id) } else { None }
         })
     }
 }
