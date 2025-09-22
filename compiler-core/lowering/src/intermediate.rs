@@ -339,7 +339,7 @@ pub enum Domain {
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct Intermediate {
+pub struct LoweringInfo {
     pub(crate) binder_kind: FxHashMap<BinderId, BinderKind>,
     pub(crate) expression_kind: FxHashMap<ExpressionId, ExpressionKind>,
     pub(crate) type_kind: FxHashMap<TypeId, TypeKind>,
@@ -349,7 +349,7 @@ pub struct Intermediate {
     pub(crate) type_operator: FxHashMap<TypeOperatorId, (FileId, TypeItemId)>,
 }
 
-impl Intermediate {
+impl LoweringInfo {
     pub fn iter_binder(&self) -> impl Iterator<Item = (BinderId, &BinderKind)> {
         self.binder_kind.iter().map(|(k, v)| (*k, v))
     }

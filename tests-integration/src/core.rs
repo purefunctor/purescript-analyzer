@@ -100,7 +100,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let lowered = engine.lowered(id).unwrap();
 
     let module = parsed.cst();
-    let intermediate = &lowered.intermediate;
+    let info = &lowered.info;
     let graph = &lowered.graph;
 
     let mut buffer = String::default();
@@ -109,9 +109,9 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     writeln!(buffer).unwrap();
     writeln!(buffer, "Expressions:").unwrap();
     writeln!(buffer).unwrap();
-    for (expression_id, _) in intermediate.iter_expression() {
+    for (expression_id, _) in info.iter_expression() {
         let Some(ExpressionKind::Variable { resolution, .. }) =
-            intermediate.get_expression_kind(expression_id)
+            info.get_expression_kind(expression_id)
         else {
             continue;
         };
@@ -159,8 +159,8 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
 
     writeln!(buffer, "\nTypes:\n").unwrap();
 
-    for (type_id, _) in intermediate.iter_type() {
-        let Some(TypeKind::Variable { resolution, .. }) = intermediate.get_type_kind(type_id)
+    for (type_id, _) in info.iter_type() {
+        let Some(TypeKind::Variable { resolution, .. }) = info.get_type_kind(type_id)
         else {
             continue;
         };

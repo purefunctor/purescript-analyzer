@@ -46,12 +46,12 @@ impl ForOperatorId for TermOperatorId {
     type ItemId = TermItemId;
 
     fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.get_term_operator(id).copied()
+        lowered.info.get_term_operator(id).copied()
     }
 
     fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
         let Some(TermItemIr::Operator { associativity, precedence }) =
-            lowered.intermediate.get_term_item(id)
+            lowered.info.get_term_item(id)
         else {
             return None;
         };
@@ -63,12 +63,12 @@ impl ForOperatorId for TypeOperatorId {
     type ItemId = TypeItemId;
 
     fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.get_type_operator(id).copied()
+        lowered.info.get_type_operator(id).copied()
     }
 
     fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
         let Some(TypeItemIr::Operator { associativity, precedence }) =
-            lowered.intermediate.get_type_item(id)
+            lowered.info.get_type_item(id)
         else {
             return None;
         };
@@ -235,21 +235,21 @@ pub fn bracketed(
     lowered: &FullLoweredModule,
 ) -> QueryResult<Bracketed> {
     let mut binders = FxHashMap::default();
-    for (id, kind) in lowered.intermediate.iter_binder() {
+    for (id, kind) in lowered.info.iter_binder() {
         if let BinderKind::OperatorChain { head, tail } = kind {
             binders.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 
     let mut expressions = FxHashMap::default();
-    for (id, kind) in lowered.intermediate.iter_expression() {
+    for (id, kind) in lowered.info.iter_expression() {
         if let ExpressionKind::OperatorChain { head, tail } = kind {
             expressions.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 
     let mut types = FxHashMap::default();
-    for (id, kind) in lowered.intermediate.iter_type() {
+    for (id, kind) in lowered.info.iter_type() {
         if let TypeKind::OperatorChain { head, tail } = kind {
             types.insert(id, bracket(external, lowered, *head, tail));
         }

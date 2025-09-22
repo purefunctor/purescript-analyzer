@@ -48,7 +48,7 @@ fn core_of_cst<S: CoreStorage>(
     e: &Environment,
     id: lowering::TypeId,
 ) -> TypeId {
-    let Some(kind) = e.lower.intermediate.get_type_kind(id) else {
+    let Some(kind) = e.lower.info.get_type_kind(id) else {
         return c.storage.unknown();
     };
     match kind {
@@ -145,7 +145,7 @@ pub fn check_module(
 
     for id in foreign {
         if let Some(lowering::TermItemIr::Foreign { signature }) =
-            lower.intermediate.get_term_item(id)
+            lower.info.get_term_item(id)
         {
             let _ = signature.map(|id| core_of_cst(&mut context, &environment, id));
         }
@@ -153,7 +153,7 @@ pub fn check_module(
 
     for id in instance {
         if let Some(lowering::TermItemIr::Instance { arguments, constraints, members, .. }) =
-            lower.intermediate.get_term_item(id)
+            lower.info.get_term_item(id)
         {
             arguments.iter().for_each(|id| {
                 core_of_cst(&mut context, &environment, *id);

@@ -811,7 +811,7 @@ fn lower_term_operator(
     })?;
 
     let (file_id, term_id) = context.lookup_term(qualifier, name)?;
-    state.intermediate.term_operator.insert(id, (file_id, term_id));
+    state.info.term_operator.insert(id, (file_id, term_id));
 
     Some(id)
 }
@@ -826,7 +826,7 @@ fn lower_type_operator(
         cst.qualified().and_then(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator))?;
 
     let (file_id, type_id) = context.lookup_type(qualifier, name)?;
-    state.intermediate.type_operator.insert(id, (file_id, type_id));
+    state.info.type_operator.insert(id, (file_id, type_id));
 
     Some(id)
 }

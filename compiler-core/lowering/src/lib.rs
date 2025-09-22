@@ -15,7 +15,7 @@ use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FullLoweredModule {
-    pub intermediate: Intermediate,
+    pub info: LoweringInfo,
     pub graph: LoweringGraph,
     pub nodes: LoweringGraphNodes,
 }
@@ -27,7 +27,7 @@ pub fn lower_module(
     indexed: &FullIndexedModule,
     resolved: &FullResolvedModule,
 ) -> FullLoweredModule {
-    let algorithm::State { intermediate, graph, nodes, .. } =
+    let algorithm::State { info, graph, nodes, .. } =
         algorithm::lower_module(module, prim, stabilized, indexed, resolved);
-    FullLoweredModule { intermediate, graph, nodes }
+    FullLoweredModule { info, graph, nodes }
 }

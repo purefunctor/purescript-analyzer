@@ -45,7 +45,7 @@ pub fn implementation(
         locate::Located::TermOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) = lowered
-                .intermediate
+                .info
                 .get_term_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
@@ -53,7 +53,7 @@ pub fn implementation(
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) = lowered
-                .intermediate
+                .info
                 .get_type_operator(operator_id)
                 .ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
@@ -180,7 +180,7 @@ fn references_binder(
     binder_id: BinderId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind = lowered.intermediate.get_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         lowering::BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -198,7 +198,7 @@ fn references_expression(
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
     let kind =
-        lowered.intermediate.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+        lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -229,7 +229,7 @@ fn references_type(
     type_id: TypeId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind = lowered.intermediate.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -282,7 +282,7 @@ fn references_file_term(
         let stabilized = engine.stabilized(candidate_id)?;
         let lowered = engine.lowered(candidate_id)?;
 
-        for (expr_id, expr_kind) in lowered.intermediate.iter_expression() {
+        for (expr_id, expr_kind) in lowered.info.iter_expression() {
             if let ExpressionKind::Constructor { resolution: Some((f_id, t_id)) } = expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
@@ -306,7 +306,7 @@ fn references_file_term(
             }
         }
 
-        for (binder_id, binder_kind) in lowered.intermediate.iter_binder() {
+        for (binder_id, binder_kind) in lowered.info.iter_binder() {
             if let BinderKind::Constructor { resolution: Some((f_id, t_id)), .. } = binder_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
@@ -316,7 +316,7 @@ fn references_file_term(
             }
         }
 
-        for (operator_id, f_id, t_id) in lowered.intermediate.iter_term_operator() {
+        for (operator_id, f_id, t_id) in lowered.info.iter_term_operator() {
             if (f_id, t_id) == (file_id, term_id) {
                 let range = id_range(&content, &parsed, &stabilized, operator_id)
                     .ok_or(AnalyzerError::NonFatal)?;
@@ -353,7 +353,7 @@ fn references_file_type(
         let stabilized = engine.stabilized(candidate_id)?;
         let lowered = engine.lowered(candidate_id)?;
 
-        for (ty_id, ty_kind) in lowered.intermediate.iter_type() {
+        for (ty_id, ty_kind) in lowered.info.iter_type() {
             if let TypeKind::Constructor { resolution: Some((f_id, t_id)) } = ty_kind
                 && (*f_id, *t_id) == (file_id, type_id)
             {
@@ -370,7 +370,7 @@ fn references_file_type(
             }
         }
 
-        for (operator_id, f_id, t_id) in lowered.intermediate.iter_type_operator() {
+        for (operator_id, f_id, t_id) in lowered.info.iter_type_operator() {
             if (f_id, t_id) == (file_id, type_id) {
                 let range = id_range(&content, &parsed, &stabilized, operator_id)
                     .ok_or(AnalyzerError::NonFatal)?;
