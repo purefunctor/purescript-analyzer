@@ -302,6 +302,7 @@ fn definition_file_term(
     let uri = {
         let path = files.path(file_id);
         let content = files.content(file_id);
+
         let uri = Url::parse(&path)?;
         prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
     };
@@ -334,6 +335,7 @@ fn definition_file_type(
     let uri = {
         let path = files.path(file_id);
         let content = files.content(file_id);
+
         let uri = Url::parse(&path)?;
         prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
     };
