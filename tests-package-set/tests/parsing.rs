@@ -120,9 +120,8 @@ fn test_parallel_parse_package_set() {
 
     let start = Instant::now();
     source.par_iter().for_each(|&id| {
-        let (parsed, _) = engine.parsed(id).unwrap();
-        let node = parsed.syntax_node();
-        let _cst_id = stabilize::stabilized(&node);
+        let stabilized = engine.stabilized(id);
+        assert!(stabilized.is_ok());
     });
     let cst_id = start.elapsed();
     println!("CstId {cst_id:?}");

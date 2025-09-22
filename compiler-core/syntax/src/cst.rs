@@ -3,14 +3,6 @@ use rowan::ast::AstNode;
 #[macro_use]
 mod macros;
 
-pub(crate) trait Private {}
-
-#[allow(private_bounds)]
-pub trait IsCstStruct: Private {}
-
-#[allow(private_bounds)]
-pub trait IsCstEnum: Private {}
-
 create_cst_struct!(Annotation, Qualifier, QualifiedName, LabelName);
 
 has_token!(

@@ -6,9 +6,6 @@ macro_rules! create_cst_struct {
                 node: crate::SyntaxNode,
             }
 
-            impl crate::cst::Private for $kind {}
-            impl crate::cst::IsCstStruct for $kind {}
-
             impl rowan::ast::AstNode for $kind {
                 type Language = crate::PureScript;
 
@@ -47,9 +44,6 @@ macro_rules! create_cst_enum {
                 $key($key),
             )*
         }
-
-        impl crate::cst::Private for $kind {}
-        impl crate::cst::IsCstEnum for $kind {}
 
         create_cst_struct!($key_0);
         $(
