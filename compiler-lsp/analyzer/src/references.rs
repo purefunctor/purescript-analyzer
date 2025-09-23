@@ -10,7 +10,7 @@ use resolving::ResolvedImport;
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashSet;
 use smol_str::ToSmolStr;
-use stabilize::{AstId, StabilizedModule};
+use stabilizing::{AstId, StabilizedModule};
 use syntax::{PureScript, cst};
 
 use crate::{AnalyzerError, locate};

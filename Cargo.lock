@@ -52,7 +52,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smol_str",
- "stabilize",
+ "stabilizing",
  "strsim",
  "syntax",
  "thiserror",
@@ -203,7 +203,7 @@ dependencies = [
  "parsing",
  "resolving",
  "rustc-hash 2.1.1",
- "stabilize",
+ "stabilizing",
  "sugar",
  "tempfile",
  "thread_local",
@@ -828,7 +828,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "smol_str",
- "stabilize",
+ "stabilizing",
  "syntax",
  "test_each_file",
 ]
@@ -1006,7 +1006,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "smol_str",
- "stabilize",
+ "stabilizing",
  "syntax",
  "test_each_file",
 ]
@@ -1551,7 +1551,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "stabilize"
+name = "stabilizing"
 version = "0.1.0"
 dependencies = [
  "hashbrown 0.16.0",
@@ -1719,7 +1719,7 @@ dependencies = [
  "lexing",
  "parsing",
  "rayon",
- "stabilize",
+ "stabilizing",
  "url",
 ]
 

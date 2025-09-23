@@ -5,7 +5,7 @@ use parsing::ParsedModule;
 use resolving::ResolvedModule;
 use rowan::{TextRange, TextSize, TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
-use stabilize::StabilizedModule;
+use stabilizing::StabilizedModule;
 use syntax::{SyntaxKind, SyntaxToken, cst};
 
 use crate::{AnalyzerError, locate};

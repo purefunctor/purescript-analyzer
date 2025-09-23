@@ -45,7 +45,7 @@ use parsing::FullParsedModule;
 use promise::{Future, Promise};
 use resolving::ResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
-use stabilize::StabilizedModule;
+use stabilizing::StabilizedModule;
 use thread_local::ThreadLocal;
 
 #[derive(Debug, Clone, Copy)]
@@ -638,7 +638,7 @@ impl QueryEngine {
             |this| {
                 let (parsed, _) = this.parsed(id)?;
                 let node = parsed.syntax_node();
-                Ok(Arc::new(stabilize::stabilized(&node)))
+                Ok(Arc::new(stabilizing::stabilize(&node)))
             },
         )
     }

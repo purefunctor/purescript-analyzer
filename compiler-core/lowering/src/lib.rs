@@ -10,7 +10,7 @@ pub use source::*;
 
 use indexing::IndexedModule;
 use resolving::ResolvedModule;
-use stabilize::StabilizedModule;
+use stabilizing::StabilizedModule;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]

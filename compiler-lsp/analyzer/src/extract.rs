@@ -2,7 +2,7 @@ use building::QueryEngine;
 use files::FileId;
 use indexing::{TermItemId, TermItemKind, TypeItemId, TypeItemKind};
 use rowan::{TextRange, ast::AstNode};
-use stabilize::{AstId, StabilizedModule};
+use stabilizing::{AstId, StabilizedModule};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::AnalyzerError;

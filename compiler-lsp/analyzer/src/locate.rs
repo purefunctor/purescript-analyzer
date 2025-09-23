@@ -10,7 +10,7 @@ use rowan::{
     TextRange, TextSize, TokenAtOffset,
     ast::{AstNode, AstPtr},
 };
-use stabilize::StabilizedModule;
+use stabilizing::StabilizedModule;
 use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
 use crate::{AnalyzerError, extract::AnnotationSyntaxRange};

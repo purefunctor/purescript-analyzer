@@ -11,7 +11,7 @@ use itertools::Itertools;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use stabilize::ExpectId;
+use stabilizing::ExpectId;
 use syntax::cst;
 
 use crate::{ImplicitTypeVariable, *};

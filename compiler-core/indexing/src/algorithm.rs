@@ -3,7 +3,7 @@ use std::collections::hash_map::Entry;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, ToSmolStr};
-use stabilize::{AstId, ExpectId, StabilizedModule};
+use stabilizing::{AstId, ExpectId, StabilizedModule};
 use syntax::{PureScript, SyntaxToken, cst};
 
 use crate::{

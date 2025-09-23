@@ -12,7 +12,7 @@ use std::ops;
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use stabilize::StabilizedModule;
+use stabilizing::StabilizedModule;
 use syntax::{SyntaxNodePtr, cst};
 
 #[derive(Debug, Default, PartialEq, Eq)]

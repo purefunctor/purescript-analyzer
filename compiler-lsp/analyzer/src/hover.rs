@@ -12,7 +12,7 @@ use rowan::{
     ast::{AstNode, AstPtr},
 };
 use smol_str::ToSmolStr;
-use stabilize::StabilizedModule;
+use stabilizing::StabilizedModule;
 use syntax::{SyntaxNode, cst};
 
 use crate::{

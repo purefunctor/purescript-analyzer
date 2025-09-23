@@ -19,7 +19,7 @@ use syntax::{SyntaxKind, SyntaxNode};
 /// A separate stabilization pass enables better caching behaviour for
 /// algorithms like indexing and lowering, which used to have their own
 /// stabilization passes as they traversed the CST.
-pub fn stabilized(node: &SyntaxNode) -> StabilizedModule {
+pub fn stabilize(node: &SyntaxNode) -> StabilizedModule {
     let mut ast_ptr_map = StabilizedModule::default();
 
     for event in node.preorder() {

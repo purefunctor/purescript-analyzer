@@ -1,4 +1,4 @@
-use stabilize::AstId;
+use stabilizing::AstId;
 use syntax::cst;
 
 pub type BinderId = AstId<cst::Binder>;
