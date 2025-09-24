@@ -638,7 +638,7 @@ impl QueryEngine {
             |this| {
                 let (parsed, _) = this.parsed(id)?;
                 let node = parsed.syntax_node();
-                Ok(Arc::new(stabilizing::stabilize(&node)))
+                Ok(Arc::new(stabilizing::stabilize_module(&node)))
             },
         )
     }

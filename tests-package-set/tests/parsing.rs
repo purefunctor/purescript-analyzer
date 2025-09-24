@@ -40,7 +40,7 @@ fn test_index_package_set() {
         let tokens = lexing::layout(&lexed);
 
         let (parsed, _) = parsing::parse(&lexed, &tokens);
-        let stabilized = stabilizing::stabilize(&parsed.syntax_node());
+        let stabilized = stabilizing::stabilize_module(&parsed.syntax_node());
         let indexed = indexing::index_module(&parsed.cst(), &stabilized);
 
         if !indexed.errors.is_empty() {
@@ -66,7 +66,7 @@ fn test_cst_id_package_set() {
         let node = parsed.syntax_node();
 
         let start = Instant::now();
-        let _cst_id = stabilizing::stabilize(&node);
+        let _cst_id = stabilizing::stabilize_module(&node);
         results.push((start.elapsed(), file));
     }
 
