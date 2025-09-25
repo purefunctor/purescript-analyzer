@@ -4,7 +4,7 @@ instance Eq Int where
   eq :: Int -> Int -> Boolean
   eq = eqIntImpl
 
-instance Eq  => Eq (Maybe a) where
+instance Eq a => Eq (Maybe a) where
   eq :: Maybe a -> Maybe a -> Boolean
   eq = eqMaybeImpl
 

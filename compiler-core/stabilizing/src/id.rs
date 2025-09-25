@@ -9,7 +9,7 @@ pub struct AstId<N: AstNode<Language = PureScript>> {
 }
 
 impl<N: AstNode<Language = PureScript>> AstId<N> {
-    pub fn new(id: NonZeroU32) -> AstId<N> {
+    pub const fn new(id: NonZeroU32) -> AstId<N> {
         AstId { id, phantom: PhantomData }
     }
 }
