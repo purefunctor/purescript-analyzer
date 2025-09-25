@@ -1,7 +1,7 @@
 use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{ImportKind, TermItemId, TypeItemId};
-use resolving::FullResolvedModule;
+use resolving::ResolvedModule;
 use smol_str::SmolStr;
 
 use crate::AnalyzerError;
@@ -298,9 +298,8 @@ pub struct SuggestedTypes;
 trait SuggestionsHelper {
     type ItemId;
 
-    fn exports(
-        resolved: &FullResolvedModule,
-    ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)>;
+    fn exports(resolved: &ResolvedModule)
+    -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)>;
 
     fn candidate(
         &self,
@@ -315,9 +314,7 @@ trait SuggestionsHelper {
 impl SuggestionsHelper for SuggestedTerms {
     type ItemId = TermItemId;
 
-    fn exports(
-        resolved: &FullResolvedModule,
-    ) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+    fn exports(resolved: &ResolvedModule) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
         resolved.exports.iter_terms()
     }
 
@@ -369,7 +366,7 @@ impl SuggestionsHelper for SuggestedTypes {
     type ItemId = TypeItemId;
 
     fn exports(
-        resolved: &FullResolvedModule,
+        resolved: &ResolvedModule,
     ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
         resolved.exports.iter_types()
     }
@@ -559,7 +556,7 @@ impl SuggestionsHelper for QualifiedTermsSuggestions<'_> {
     type ItemId = TermItemId;
 
     fn exports(
-        resolved: &FullResolvedModule,
+        resolved: &ResolvedModule,
     ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
         resolved.exports.iter_terms()
     }
@@ -603,7 +600,7 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
     type ItemId = TypeItemId;
 
     fn exports(
-        resolved: &FullResolvedModule,
+        resolved: &ResolvedModule,
     ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
         resolved.exports.iter_types()
     }

@@ -8,25 +8,26 @@ pub use intermediate::*;
 pub use scope::*;
 pub use source::*;
 
-use indexing::FullIndexedModule;
-use resolving::FullResolvedModule;
+use indexing::IndexedModule;
+use resolving::ResolvedModule;
+use stabilizing::StabilizedModule;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct FullLoweredModule {
-    pub intermediate: Intermediate,
-    pub source: LoweringSource,
+pub struct LoweredModule {
+    pub info: LoweringInfo,
     pub graph: LoweringGraph,
     pub nodes: LoweringGraphNodes,
 }
 
 pub fn lower_module(
     module: &cst::Module,
-    prim: &FullResolvedModule,
-    indexed: &FullIndexedModule,
-    resolved: &FullResolvedModule,
-) -> FullLoweredModule {
-    let algorithm::State { intermediate, source, graph, nodes, .. } =
-        algorithm::lower_module(module, prim, indexed, resolved);
-    FullLoweredModule { intermediate, source, graph, nodes }
+    prim: &ResolvedModule,
+    stabilized: &StabilizedModule,
+    indexed: &IndexedModule,
+    resolved: &ResolvedModule,
+) -> LoweredModule {
+    let algorithm::State { info, graph, nodes, .. } =
+        algorithm::lower_module(module, prim, stabilized, indexed, resolved);
+    LoweredModule { info, graph, nodes }
 }

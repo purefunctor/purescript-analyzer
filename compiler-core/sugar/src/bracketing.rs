@@ -25,9 +25,8 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use lowering::{
-    Associativity, BinderId, BinderKind, ExpressionId, ExpressionKind, FullLoweredModule,
-    IsElement, OperatorPair, TermItemIr, TermOperatorId, TypeId, TypeItemIr, TypeKind,
-    TypeOperatorId,
+    Associativity, BinderId, BinderKind, ExpressionId, ExpressionKind, IsElement, LoweredModule,
+    OperatorPair, TermItemIr, TermOperatorId, TypeId, TypeItemIr, TypeKind, TypeOperatorId,
 };
 use rustc_hash::FxHashMap;
 
@@ -37,21 +36,21 @@ use rustc_hash::FxHashMap;
 trait ForOperatorId {
     type ItemId;
 
-    fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)>;
+    fn resolve_operator(lowered: &LoweredModule, id: Self) -> Option<(FileId, Self::ItemId)>;
 
-    fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)>;
+    fn operator_info(lowered: &LoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)>;
 }
 
 impl ForOperatorId for TermOperatorId {
     type ItemId = TermItemId;
 
-    fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.index_term_operator(id).copied()
+    fn resolve_operator(lowered: &LoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
+        lowered.info.get_term_operator(id).copied()
     }
 
-    fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
+    fn operator_info(lowered: &LoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
         let Some(TermItemIr::Operator { associativity, precedence }) =
-            lowered.intermediate.index_term_item(id)
+            lowered.info.get_term_item(id)
         else {
             return None;
         };
@@ -62,13 +61,13 @@ impl ForOperatorId for TermOperatorId {
 impl ForOperatorId for TypeOperatorId {
     type ItemId = TypeItemId;
 
-    fn resolve_operator(lowered: &FullLoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
-        lowered.intermediate.index_type_operator(id).copied()
+    fn resolve_operator(lowered: &LoweredModule, id: Self) -> Option<(FileId, Self::ItemId)> {
+        lowered.info.get_type_operator(id).copied()
     }
 
-    fn operator_info(lowered: &FullLoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
+    fn operator_info(lowered: &LoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
         let Some(TypeItemIr::Operator { associativity, precedence }) =
-            lowered.intermediate.index_type_item(id)
+            lowered.info.get_type_item(id)
         else {
             return None;
         };
@@ -79,7 +78,7 @@ impl ForOperatorId for TypeOperatorId {
 /// Resolves an operator and its associativity and precedence.
 fn operator_info<OperatorId>(
     external: &impl crate::External,
-    lowered: &FullLoweredModule,
+    lowered: &LoweredModule,
     id: OperatorId,
 ) -> Option<(Associativity, u8)>
 where
@@ -106,7 +105,7 @@ fn binding_power(associativity: Associativity, precedence: u8) -> (u8, u8) {
 /// Common entry point for bracketing.
 fn bracket<Id>(
     external: &impl crate::External,
-    lowered: &FullLoweredModule,
+    lowered: &LoweredModule,
     item: Option<Id>,
     items: &[OperatorPair<Id>],
 ) -> BracketingResult<Id>
@@ -132,7 +131,7 @@ where
 /// Core pratt parsing loop for bracketing.
 fn bracket_loop<Id>(
     external: &impl crate::External,
-    lowered: &FullLoweredModule,
+    lowered: &LoweredModule,
     item: Option<Id>,
     items: &mut Peekable<impl Iterator<Item = OperatorPair<Id>>>,
     minimum_binding_power: u8,
@@ -232,24 +231,24 @@ pub struct Bracketed {
 /// Performs bracketing across all operator chains in a module.
 pub fn bracketed(
     external: &impl crate::External,
-    lowered: &FullLoweredModule,
+    lowered: &LoweredModule,
 ) -> QueryResult<Bracketed> {
     let mut binders = FxHashMap::default();
-    for (id, kind) in lowered.intermediate.iter_binder() {
+    for (id, kind) in lowered.info.iter_binder() {
         if let BinderKind::OperatorChain { head, tail } = kind {
             binders.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 
     let mut expressions = FxHashMap::default();
-    for (id, kind) in lowered.intermediate.iter_expression() {
+    for (id, kind) in lowered.info.iter_expression() {
         if let ExpressionKind::OperatorChain { head, tail } = kind {
             expressions.insert(id, bracket(external, lowered, *head, tail));
         }
     }
 
     let mut types = FxHashMap::default();
-    for (id, kind) in lowered.intermediate.iter_type() {
+    for (id, kind) in lowered.info.iter_type() {
         if let TypeKind::OperatorChain { head, tail } = kind {
             types.insert(id, bracket(external, lowered, *head, tail));
         }

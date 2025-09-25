@@ -12,16 +12,51 @@ use std::ops;
 use la_arena::Arena;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use syntax::cst;
+use stabilizing::StabilizedModule;
+use syntax::{SyntaxNodePtr, cst};
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct FullIndexedModule {
+pub struct IndexedModule {
     pub kind: ExportKind,
     pub items: IndexingItems,
     pub imports: IndexingImports,
     pub pairs: IndexingPairs,
-    pub source: IndexingSource,
     pub errors: Vec<IndexingError>,
+}
+
+impl IndexedModule {
+    pub fn term_item_ptr(
+        &self,
+        stabilized: &StabilizedModule,
+        id: TermItemId,
+    ) -> impl Iterator<Item = SyntaxNodePtr> {
+        const fn aux<T: Copy>(expected_id: TermItemId) -> impl Fn(&(T, TermItemId)) -> Option<T> {
+            move |(id, item_id)| if *item_id == expected_id { Some(*id) } else { None }
+        }
+
+        let declaration = self.pairs.declaration_to_term.iter().filter_map(aux(id));
+        let constructor = self.pairs.constructor_to_term.iter().filter_map(aux(id));
+        let class_member = self.pairs.class_member_to_term.iter().filter_map(aux(id));
+
+        let declaration = declaration.filter_map(|id| stabilized.syntax_ptr(id));
+        let constructor = constructor.filter_map(|id| stabilized.syntax_ptr(id));
+        let class_member = class_member.filter_map(|id| stabilized.syntax_ptr(id));
+
+        declaration.chain(constructor).chain(class_member)
+    }
+
+    pub fn type_item_ptr(
+        &self,
+        stabilized: &StabilizedModule,
+        id: TypeItemId,
+    ) -> impl Iterator<Item = SyntaxNodePtr> {
+        const fn aux<T: Copy>(expected_id: TypeItemId) -> impl Fn(&(T, TypeItemId)) -> Option<T> {
+            move |(id, item_id)| if *item_id == expected_id { Some(*id) } else { None }
+        }
+
+        let declaration = self.pairs.declaration_to_type.iter().filter_map(aux(id));
+        declaration.filter_map(|id| stabilized.syntax_ptr(id))
+    }
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -163,8 +198,8 @@ impl IndexingPairs {
     }
 }
 
-pub fn index_module(cst: &cst::Module) -> FullIndexedModule {
-    let algorithm::State { kind, items, imports, pairs, source, errors, .. } =
-        algorithm::index_module(cst);
-    FullIndexedModule { kind, items, imports, pairs, source, errors }
+pub fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> IndexedModule {
+    let algorithm::State { kind, items, imports, pairs, errors, .. } =
+        algorithm::index_module(cst, stabilized);
+    IndexedModule { kind, items, imports, pairs, errors }
 }

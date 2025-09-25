@@ -43,18 +43,14 @@ pub fn implementation(
         }
         locate::Located::TermOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .intermediate
-                .index_term_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_term_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             definition_file_term(engine, files, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .intermediate
-                .index_type_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_type_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             definition_file_type(engine, files, *f_id, *t_id)
         }
         locate::Located::TermItem(term_id) => {
@@ -106,10 +102,10 @@ fn definition_import(
     import_id: ImportItemId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
     let (parsed, _) = engine.parsed(current_file)?;
-    let indexed = engine.indexed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[import_id];
+    let ptr = stabilized.ast_ptr(import_id).ok_or(AnalyzerError::NonFatal)?;
     let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node
@@ -128,55 +124,14 @@ fn definition_import(
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) =
             import_resolved.exports.lookup_term(name).ok_or(AnalyzerError::NonFatal)?;
-
-        let uri = {
-            let path = files.path(f_id);
-            let content = files.content(f_id);
-
-            let uri = Url::parse(&path)?;
-            prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
-        };
-
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id)?;
-        let indexed = engine.indexed(f_id)?;
-
-        let root = parsed.syntax_node();
-        let ptrs = indexed.term_item_ptr(t_id);
-        let range = ptrs
-            .into_iter()
-            .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
-            .reduce(|start, end| Range { start: start.start, end: end.end })
-            .ok_or(AnalyzerError::NonFatal)?;
-
-        Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
+        definition_file_term(engine, files, f_id, t_id)
     };
 
     let goto_type = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
         let (f_id, t_id) =
             import_resolved.exports.lookup_type(name).ok_or(AnalyzerError::NonFatal)?;
-
-        let uri = {
-            let path = files.path(f_id);
-            let content = files.content(f_id);
-            let uri = Url::parse(&path)?;
-            prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
-        };
-
-        let content = engine.content(f_id);
-        let (parsed, _) = engine.parsed(f_id)?;
-        let indexed = engine.indexed(f_id)?;
-
-        let root = parsed.syntax_node();
-        let ptrs = indexed.type_item_ptr(t_id);
-        let range = ptrs
-            .into_iter()
-            .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
-            .reduce(|start, end| Range { start: start.start, end: end.end })
-            .ok_or(AnalyzerError::NonFatal)?;
-
-        Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
+        definition_file_type(engine, files, f_id, t_id)
     };
 
     match node {
@@ -215,7 +170,7 @@ fn definition_binder(
     binder_id: BinderId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind = lowered.intermediate.index_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -234,10 +189,12 @@ fn definition_expression(
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
     let content = engine.content(current_file);
     let (parsed, _) = engine.parsed(current_file)?;
+
+    let stabilized = engine.stabilized(current_file)?;
     let lowered = engine.lowered(current_file)?;
 
-    let kind =
-        lowered.intermediate.index_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -246,9 +203,9 @@ fn definition_expression(
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             match resolution {
-                TermVariableResolution::Binder(binder) => {
+                TermVariableResolution::Binder(id) => {
                     let root = parsed.syntax_node();
-                    let ptr = lowered.source[*binder].syntax_node_ptr();
+                    let ptr = stabilized.syntax_ptr(*id).ok_or(AnalyzerError::NonFatal)?;
                     let range = locate::syntax_range(&content, &root, &ptr)
                         .ok_or(AnalyzerError::NonFatal)?;
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
@@ -259,13 +216,13 @@ fn definition_expression(
                     let signature = binding
                         .signature
                         .and_then(|id| {
-                            let ptr = lowered.source[id].syntax_node_ptr();
+                            let ptr = stabilized.syntax_ptr(id)?;
                             locate::syntax_range(&content, &root, &ptr)
                         })
                         .into_iter();
 
                     let equations = binding.equations.iter().filter_map(|&id| {
-                        let ptr = lowered.source[id].syntax_node_ptr();
+                        let ptr = stabilized.syntax_ptr(id)?;
                         locate::syntax_range(&content, &root, &ptr)
                     });
 
@@ -298,9 +255,10 @@ fn definition_type(
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
     let content = engine.content(current_file);
     let (parsed, _) = engine.parsed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
     let lowered = engine.lowered(current_file)?;
 
-    let kind = lowered.intermediate.index_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -315,7 +273,10 @@ fn definition_type(
             match resolution {
                 TypeVariableResolution::Forall(binding) => {
                     let root = parsed.syntax_node();
-                    let ptr = lowered.source[*binding].syntax_node_ptr();
+                    let ptr = stabilized
+                        .ast_ptr(*binding)
+                        .ok_or(AnalyzerError::NonFatal)?
+                        .syntax_node_ptr();
                     let range = locate::syntax_range(&content, &root, &ptr)
                         .ok_or(AnalyzerError::NonFatal)?;
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
@@ -336,20 +297,23 @@ fn definition_file_term(
     let uri = {
         let path = files.path(file_id);
         let content = files.content(file_id);
+
         let uri = Url::parse(&path)?;
         prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
     };
 
     let content = engine.content(file_id);
     let (parsed, _) = engine.parsed(file_id)?;
+
+    let stabilized = engine.stabilized(file_id)?;
     let indexed = engine.indexed(file_id)?;
 
     // TODO: Once we implement textDocument/typeDefinition, we
     // should probably also add a term_item_type_ptr function.
     let root = parsed.syntax_node();
-    let ptrs = indexed.term_item_ptr(term_id);
-    let range = ptrs
-        .into_iter()
+    let pointers = indexed.term_item_ptr(&stabilized, term_id);
+
+    let range = pointers
         .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })
         .ok_or(AnalyzerError::NonFatal)?;
@@ -366,18 +330,21 @@ fn definition_file_type(
     let uri = {
         let path = files.path(file_id);
         let content = files.content(file_id);
+
         let uri = Url::parse(&path)?;
         prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
     };
 
     let content = engine.content(file_id);
     let (parsed, _) = engine.parsed(file_id)?;
+
+    let stabilized = engine.stabilized(file_id)?;
     let indexed = engine.indexed(file_id)?;
 
     let root = parsed.syntax_node();
-    let ptrs = indexed.type_item_ptr(type_id);
-    let range = ptrs
-        .into_iter()
+    let pointers = indexed.type_item_ptr(&stabilized, type_id);
+
+    let range = pointers
         .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })
         .ok_or(AnalyzerError::NonFatal)?;

@@ -9,13 +9,13 @@ Expressions:
 
 Types:
 
-a@Position { line: 2, character: 19 }
-  resolves to forall Position { line: 2, character: 10 }
 a@Position { line: 4, character: 22 }
   resolves to forall Position { line: 4, character: 11 }
-b@Position { line: 4, character: 32 }
-  resolves to forall Position { line: 4, character: 13 }
 k@Position { line: 6, character: 23 }
   resolves to forall Position { line: 6, character: 20 }
 k@Position { line: 7, character: 16 }
   resolves to forall Position { line: 6, character: 20 }
+b@Position { line: 4, character: 32 }
+  resolves to forall Position { line: 4, character: 13 }
+a@Position { line: 2, character: 19 }
+  resolves to forall Position { line: 2, character: 10 }

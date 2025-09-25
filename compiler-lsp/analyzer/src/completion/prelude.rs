@@ -1,11 +1,11 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
 use files::{FileId, Files};
-use indexing::FullIndexedModule;
 use parsing::ParsedModule;
-use resolving::FullResolvedModule;
+use resolving::ResolvedModule;
 use rowan::{TextRange, TextSize, TokenAtOffset, ast::AstNode};
 use smol_str::SmolStr;
+use stabilizing::StabilizedModule;
 use syntax::{SyntaxKind, SyntaxToken, cst};
 
 use crate::{AnalyzerError, locate};
@@ -16,12 +16,12 @@ pub struct Context<'c, 'a> {
 
     pub current_file: FileId,
     pub content: &'a str,
-    pub indexed: &'a FullIndexedModule,
+    pub stabilized: &'a StabilizedModule,
     pub parsed: &'a ParsedModule,
-    pub resolved: &'a FullResolvedModule,
+    pub resolved: &'a ResolvedModule,
 
     pub prim_id: FileId,
-    pub prim_resolved: &'a FullResolvedModule,
+    pub prim_resolved: &'a ResolvedModule,
 
     pub semantics: CursorSemantics,
     pub text: CursorText,

@@ -40,7 +40,8 @@ fn test_index_package_set() {
         let tokens = lexing::layout(&lexed);
 
         let (parsed, _) = parsing::parse(&lexed, &tokens);
-        let indexed = indexing::index_module(&parsed.cst());
+        let stabilized = stabilizing::stabilize_module(&parsed.syntax_node());
+        let indexed = indexing::index_module(&parsed.cst(), &stabilized);
 
         if !indexed.errors.is_empty() {
             all_errors.insert(file, indexed.errors);
@@ -48,6 +49,32 @@ fn test_index_package_set() {
     }
 
     assert!(all_errors.is_empty(), "{all_errors:#?}");
+}
+
+#[test]
+fn test_cst_id_package_set() {
+    let mut results = vec![];
+
+    for file in all_source_files() {
+        let Ok(source) = fs::read_to_string(&file) else {
+            continue;
+        };
+
+        let lexed = lexing::lex(&source);
+        let tokens = lexing::layout(&lexed);
+        let (parsed, _) = parsing::parse(&lexed, &tokens);
+        let node = parsed.syntax_node();
+
+        let start = Instant::now();
+        let _cst_id = stabilizing::stabilize_module(&node);
+        results.push((start.elapsed(), file));
+    }
+
+    results.sort_by_key(|result| result.0);
+
+    for result in results {
+        eprintln!("{result:?}");
+    }
 }
 
 #[test]
@@ -93,6 +120,14 @@ fn test_parallel_parse_package_set() {
 
     let start = Instant::now();
     source.par_iter().for_each(|&id| {
+        let stabilized = engine.stabilized(id);
+        assert!(stabilized.is_ok());
+    });
+    let cst_id = start.elapsed();
+    println!("CstId {cst_id:?}");
+
+    let start = Instant::now();
+    source.par_iter().for_each(|&id| {
         let engine = engine.snapshot();
         let indexed = engine.indexed(id);
         assert!(indexed.is_ok());
@@ -118,5 +153,5 @@ fn test_parallel_parse_package_set() {
     let lowering = start.elapsed();
     println!("Lowering {lowering:?}");
 
-    println!("Total {:?}", parsing + indexing + resolving + lowering);
+    println!("Total {:?}", parsing + cst_id + indexing + resolving + lowering);
 }

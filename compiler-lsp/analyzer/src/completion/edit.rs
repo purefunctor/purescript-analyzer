@@ -2,7 +2,7 @@ use std::iter;
 
 use async_lsp::lsp_types::Range;
 use files::FileId;
-use indexing::{FullIndexedModule, ImportKind, TermItemId, TermItemKind, TypeItemId, TypeItemKind};
+use indexing::{ImportKind, IndexedModule, TermItemId, TermItemKind, TypeItemId, TypeItemKind};
 use itertools::Itertools;
 use resolving::ResolvedImport;
 use rowan::ast::AstNode;
@@ -19,7 +19,7 @@ fn import_item<F, G>(
 ) -> (Option<String>, Option<Range>)
 where
     F: Fn(&ResolvedImport) -> Option<ImportKind>,
-    G: Fn(&FullIndexedModule) -> Option<String>,
+    G: Fn(&IndexedModule) -> Option<String>,
 {
     let existing_import = context.resolved.unqualified.get(module_name);
     let import_with_item = existing_import
@@ -42,7 +42,10 @@ where
             return (None, None);
         }
 
-        let ptr = &context.indexed.source[import.id];
+        let Some(ptr) = context.stabilized.ast_ptr(import.id) else {
+            return (None, None);
+        };
+
         let root = context.parsed.syntax_node();
         let Some(node) = ptr.try_to_node(&root) else {
             return (None, None);
@@ -128,7 +131,7 @@ pub(super) fn type_import_item(
 }
 
 fn term_import_name(
-    import_indexed: &FullIndexedModule,
+    import_indexed: &IndexedModule,
     term_name: &str,
     term_id: TermItemId,
 ) -> Option<String> {
@@ -152,7 +155,7 @@ fn term_import_name(
 }
 
 fn type_import_name(
-    import_indexed: &FullIndexedModule,
+    import_indexed: &IndexedModule,
     type_name: &str,
     type_id: TypeItemId,
 ) -> Option<String> {

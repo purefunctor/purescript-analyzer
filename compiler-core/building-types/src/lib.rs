@@ -11,6 +11,7 @@ pub enum QueryKey {
     Content(FileId),
     Module(ModuleNameId),
     Parsed(FileId),
+    Stabilized(FileId),
     Indexed(FileId),
     Lowered(FileId),
     Resolved(FileId),

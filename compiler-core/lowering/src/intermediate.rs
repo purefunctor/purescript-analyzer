@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::{TermVariableResolution, TypeVariableResolution, source::*};
@@ -337,44 +338,63 @@ pub enum Domain {
     Type,
 }
 
-syntax::create_association! {
-    /// Core structure for intermediate representations.
-    ///
-    /// This associates stable IDs allocated during [`indexing`] and
-    /// [`lowering`] with their intermediate representations. Unlike
-    /// traditional lowering designs, we do not need to represent the
-    /// full structure of the module as an abstract syntax tree.
-    ///
-    /// [`lowering`]: crate
-    pub struct Intermediate {
-        binder_kind: BinderId => BinderKind,
-        expression_kind: ExpressionId => ExpressionKind,
-        type_kind: TypeId => TypeKind,
-        term_item: TermItemId => TermItemIr,
-        type_item: TypeItemId => TypeItemIr,
-        term_operator: TermOperatorId => (FileId, TermItemId),
-        type_operator: TypeOperatorId => (FileId, TypeItemId),
-    }
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct LoweringInfo {
+    pub(crate) binder_kind: FxHashMap<BinderId, BinderKind>,
+    pub(crate) expression_kind: FxHashMap<ExpressionId, ExpressionKind>,
+    pub(crate) type_kind: FxHashMap<TypeId, TypeKind>,
+    pub(crate) term_item: FxHashMap<TermItemId, TermItemIr>,
+    pub(crate) type_item: FxHashMap<TypeItemId, TypeItemIr>,
+    pub(crate) term_operator: FxHashMap<TermOperatorId, (FileId, TermItemId)>,
+    pub(crate) type_operator: FxHashMap<TypeOperatorId, (FileId, TypeItemId)>,
 }
 
-impl Intermediate {
+impl LoweringInfo {
     pub fn iter_binder(&self) -> impl Iterator<Item = (BinderId, &BinderKind)> {
-        self.binder_kind.iter()
+        self.binder_kind.iter().map(|(k, v)| (*k, v))
     }
 
     pub fn iter_expression(&self) -> impl Iterator<Item = (ExpressionId, &ExpressionKind)> {
-        self.expression_kind.iter()
+        self.expression_kind.iter().map(|(k, v)| (*k, v))
     }
 
     pub fn iter_type(&self) -> impl Iterator<Item = (TypeId, &TypeKind)> {
-        self.type_kind.iter()
+        self.type_kind.iter().map(|(k, v)| (*k, v))
     }
 
     pub fn iter_term_operator(&self) -> impl Iterator<Item = (TermOperatorId, FileId, TermItemId)> {
-        self.term_operator.iter().map(|(o_id, (f_id, t_id))| (o_id, *f_id, *t_id))
+        self.term_operator.iter().map(|(o_id, (f_id, t_id))| (*o_id, *f_id, *t_id))
     }
 
     pub fn iter_type_operator(&self) -> impl Iterator<Item = (TypeOperatorId, FileId, TypeItemId)> {
-        self.type_operator.iter().map(|(o_id, (f_id, t_id))| (o_id, *f_id, *t_id))
+        self.type_operator.iter().map(|(o_id, (f_id, t_id))| (*o_id, *f_id, *t_id))
+    }
+
+    pub fn get_binder_kind(&self, id: BinderId) -> Option<&BinderKind> {
+        self.binder_kind.get(&id)
+    }
+
+    pub fn get_expression_kind(&self, id: ExpressionId) -> Option<&ExpressionKind> {
+        self.expression_kind.get(&id)
+    }
+
+    pub fn get_type_kind(&self, id: TypeId) -> Option<&TypeKind> {
+        self.type_kind.get(&id)
+    }
+
+    pub fn get_term_item(&self, id: TermItemId) -> Option<&TermItemIr> {
+        self.term_item.get(&id)
+    }
+
+    pub fn get_type_item(&self, id: TypeItemId) -> Option<&TypeItemIr> {
+        self.type_item.get(&id)
+    }
+
+    pub fn get_term_operator(&self, id: TermOperatorId) -> Option<&(FileId, TermItemId)> {
+        self.term_operator.get(&id)
+    }
+
+    pub fn get_type_operator(&self, id: TypeOperatorId) -> Option<&(FileId, TypeItemId)> {
+        self.type_operator.get(&id)
     }
 }

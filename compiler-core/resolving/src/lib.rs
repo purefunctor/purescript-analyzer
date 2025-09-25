@@ -5,22 +5,22 @@ pub use error::*;
 
 use building_types::QueryResult;
 use files::FileId;
-use indexing::{FullIndexedModule, ImportId, ImportKind, TermItemId, TypeItemId};
+use indexing::{ImportId, ImportKind, IndexedModule, TermItemId, TypeItemId};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use std::sync::Arc;
 
 /// External dependencies used in name resolution.
 pub trait External {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>>;
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>>;
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>>;
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>>;
 
     fn module_file(&self, name: &str) -> Option<FileId>;
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct FullResolvedModule {
+pub struct ResolvedModule {
     pub unqualified: ResolvedImportsUnqualified,
     pub qualified: ResolvedImportsQualified,
     pub exports: ResolvedItems,
@@ -28,10 +28,10 @@ pub struct FullResolvedModule {
     pub errors: Vec<ResolvingError>,
 }
 
-impl FullResolvedModule {
+impl ResolvedModule {
     pub fn lookup_term(
         &self,
-        prim: &FullResolvedModule,
+        prim: &ResolvedModule,
         qualifier: Option<&str>,
         name: &str,
     ) -> Option<(FileId, TermItemId)> {
@@ -68,7 +68,7 @@ impl FullResolvedModule {
 
     pub fn lookup_type(
         &self,
-        prim: &FullResolvedModule,
+        prim: &ResolvedModule,
         qualifier: Option<&str>,
         name: &str,
     ) -> Option<(FileId, TypeItemId)> {
@@ -168,8 +168,8 @@ impl ResolvedImport {
     }
 }
 
-pub fn resolve_module(external: &impl External, file: FileId) -> QueryResult<FullResolvedModule> {
+pub fn resolve_module(external: &impl External, file: FileId) -> QueryResult<ResolvedModule> {
     let algorithm::State { unqualified, qualified, exports, locals, errors } =
         algorithm::resolve_module(external, file)?;
-    Ok(FullResolvedModule { unqualified, qualified, exports, locals, errors })
+    Ok(ResolvedModule { unqualified, qualified, exports, locals, errors })
 }

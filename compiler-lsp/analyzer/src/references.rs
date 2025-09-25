@@ -1,19 +1,16 @@
-use std::ops;
-
 use async_lsp::lsp_types::*;
 use building::{QueryEngine, prim};
 use files::{FileId, Files};
 use indexing::{ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
-use la_arena::Idx;
 use lowering::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, FullLoweredModule, LoweringSource,
-    TermVariableResolution, TypeId, TypeKind,
+    BinderId, BinderKind, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind,
 };
 use parsing::ParsedModule;
 use resolving::ResolvedImport;
 use rowan::ast::{AstNode, AstPtr};
 use rustc_hash::FxHashSet;
 use smol_str::ToSmolStr;
+use stabilizing::{AstId, StabilizedModule};
 use syntax::{PureScript, cst};
 
 use crate::{AnalyzerError, locate};
@@ -47,18 +44,14 @@ pub fn implementation(
         locate::Located::Type(type_id) => references_type(engine, files, current_file, type_id),
         locate::Located::TermOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .intermediate
-                .index_term_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_term_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             references_file_term(engine, files, current_file, *f_id, *t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
-            let (f_id, t_id) = lowered
-                .intermediate
-                .index_type_operator(operator_id)
-                .ok_or(AnalyzerError::NonFatal)?;
+            let (f_id, t_id) =
+                lowered.info.get_type_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
             references_file_type(engine, files, current_file, *f_id, *t_id)
         }
         locate::Located::TermItem(term_id) => {
@@ -98,8 +91,8 @@ fn references_module_name(
         let (parsed, _) = engine.parsed(candidate_id)?;
         let root = parsed.syntax_node();
 
-        let indexed = engine.indexed(candidate_id)?;
-        let ptr = indexed.source[import_id].syntax_node_ptr();
+        let stabilized = engine.stabilized(candidate_id)?;
+        let ptr = stabilized.syntax_ptr(import_id).ok_or(AnalyzerError::NonFatal)?;
         let range = locate::syntax_range(&content, &root, &ptr).ok_or(AnalyzerError::NonFatal)?;
 
         locations.push(Location { uri, range });
@@ -114,14 +107,11 @@ fn references_import(
     current_file: FileId,
     import_id: ImportItemId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
-    let (parsed, indexed) = {
-        let (parsed, _) = engine.parsed(current_file)?;
-        let indexed = engine.indexed(current_file)?;
-        (parsed, indexed)
-    };
+    let (parsed, _) = engine.parsed(current_file)?;
+    let stabilized = engine.stabilized(current_file)?;
 
     let root = parsed.syntax_node();
-    let ptr = &indexed.source[import_id];
+    let ptr = stabilized.ast_ptr(import_id).ok_or(AnalyzerError::NonFatal)?;
     let node = ptr.try_to_node(&root).ok_or(AnalyzerError::NonFatal)?;
 
     let statement = node
@@ -186,7 +176,7 @@ fn references_binder(
     binder_id: BinderId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind = lowered.intermediate.index_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         lowering::BinderKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -203,8 +193,7 @@ fn references_expression(
     expression_id: ExpressionId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind =
-        lowered.intermediate.index_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         ExpressionKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -235,7 +224,7 @@ fn references_type(
     type_id: TypeId,
 ) -> Result<Option<Vec<Location>>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let kind = lowered.intermediate.index_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
+    let kind = lowered.info.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
@@ -252,15 +241,14 @@ fn references_type(
 fn id_range<T>(
     content: &str,
     parsed: &ParsedModule,
-    lowered: &FullLoweredModule,
-    item_id: Idx<AstPtr<T>>,
+    stabilized: &StabilizedModule,
+    item_id: AstId<T>,
 ) -> Option<Range>
 where
     T: AstNode<Language = PureScript>,
-    LoweringSource: ops::Index<Idx<AstPtr<T>>, Output = AstPtr<T>>,
 {
     let root = parsed.syntax_node();
-    let ptr = lowered.source[item_id].syntax_node_ptr();
+    let ptr = stabilized.syntax_ptr(item_id)?;
     locate::syntax_range(content, &root, &ptr)
 }
 
@@ -285,45 +273,47 @@ fn references_file_term(
 
         let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;
+
+        let stabilized = engine.stabilized(candidate_id)?;
         let lowered = engine.lowered(candidate_id)?;
 
-        for (expr_id, expr_kind) in lowered.intermediate.iter_expression() {
+        for (expr_id, expr_kind) in lowered.info.iter_expression() {
             if let ExpressionKind::Constructor { resolution: Some((f_id, t_id)) } = expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, expr_id)
+                let range = id_range(&content, &parsed, &stabilized, expr_id)
                     .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::OperatorName { resolution: Some((f_id, t_id)) } =
                 expr_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, expr_id)
+                let range = id_range(&content, &parsed, &stabilized, expr_id)
                     .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             } else if let ExpressionKind::Variable { resolution: Some(resolution) } = expr_kind
                 && let TermVariableResolution::Reference(f_id, t_id) = resolution
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, expr_id)
+                let range = id_range(&content, &parsed, &stabilized, expr_id)
                     .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
-        for (binder_id, binder_kind) in lowered.intermediate.iter_binder() {
+        for (binder_id, binder_kind) in lowered.info.iter_binder() {
             if let BinderKind::Constructor { resolution: Some((f_id, t_id)), .. } = binder_kind
                 && (*f_id, *t_id) == (file_id, term_id)
             {
-                let range = id_range(&content, &parsed, &lowered, binder_id)
+                let range = id_range(&content, &parsed, &stabilized, binder_id)
                     .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
-        for (operator_id, f_id, t_id) in lowered.intermediate.iter_term_operator() {
+        for (operator_id, f_id, t_id) in lowered.info.iter_term_operator() {
             if (f_id, t_id) == (file_id, term_id) {
-                let range = id_range(&content, &parsed, &lowered, operator_id)
+                let range = id_range(&content, &parsed, &stabilized, operator_id)
                     .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
@@ -354,28 +344,30 @@ fn references_file_type(
 
         let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;
+
+        let stabilized = engine.stabilized(candidate_id)?;
         let lowered = engine.lowered(candidate_id)?;
 
-        for (ty_id, ty_kind) in lowered.intermediate.iter_type() {
+        for (ty_id, ty_kind) in lowered.info.iter_type() {
             if let TypeKind::Constructor { resolution: Some((f_id, t_id)) } = ty_kind
                 && (*f_id, *t_id) == (file_id, type_id)
             {
-                let range =
-                    id_range(&content, &parsed, &lowered, ty_id).ok_or(AnalyzerError::NonFatal)?;
+                let range = id_range(&content, &parsed, &stabilized, ty_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
             if let TypeKind::Operator { resolution: Some((f_id, t_id)) } = ty_kind
                 && (*f_id, *t_id) == (file_id, type_id)
             {
-                let range =
-                    id_range(&content, &parsed, &lowered, ty_id).ok_or(AnalyzerError::NonFatal)?;
+                let range = id_range(&content, &parsed, &stabilized, ty_id)
+                    .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }
         }
 
-        for (operator_id, f_id, t_id) in lowered.intermediate.iter_type_operator() {
+        for (operator_id, f_id, t_id) in lowered.info.iter_type_operator() {
             if (f_id, t_id) == (file_id, type_id) {
-                let range = id_range(&content, &parsed, &lowered, operator_id)
+                let range = id_range(&content, &parsed, &stabilized, operator_id)
                     .ok_or(AnalyzerError::NonFatal)?;
                 locations.push(Location { uri: uri.clone(), range });
             }

@@ -37,14 +37,15 @@ use std::{
 use building_types::{ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryResult};
 use files::FileId;
 use graph::SnapshotGraph;
-use indexing::FullIndexedModule;
+use indexing::IndexedModule;
 use lock_api::{RawRwLock, RawRwLockRecursive};
-use lowering::FullLoweredModule;
+use lowering::LoweredModule;
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use parsing::FullParsedModule;
 use promise::{Future, Promise};
-use resolving::FullResolvedModule;
+use resolving::ResolvedModule;
 use rustc_hash::{FxHashMap, FxHashSet};
+use stabilizing::StabilizedModule;
 use thread_local::ThreadLocal;
 
 #[derive(Debug, Clone, Copy)]
@@ -91,9 +92,10 @@ struct InputStorage {
 #[derive(Default)]
 struct DerivedStorage {
     parsed: FxHashMap<FileId, DerivedState<FullParsedModule>>,
-    indexed: FxHashMap<FileId, DerivedState<Arc<FullIndexedModule>>>,
-    lowered: FxHashMap<FileId, DerivedState<Arc<FullLoweredModule>>>,
-    resolved: FxHashMap<FileId, DerivedState<Arc<FullResolvedModule>>>,
+    stabilized: FxHashMap<FileId, DerivedState<Arc<StabilizedModule>>>,
+    indexed: FxHashMap<FileId, DerivedState<Arc<IndexedModule>>>,
+    lowered: FxHashMap<FileId, DerivedState<Arc<LoweredModule>>>,
+    resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
 }
 
 #[derive(Default)]
@@ -414,6 +416,7 @@ impl QueryEngine {
                 QueryKey::Content(k) => input_changed!(content, k),
                 QueryKey::Module(k) => input_changed!(module, k),
                 QueryKey::Parsed(k) => derived_changed!(parsed, k),
+                QueryKey::Stabilized(k) => derived_changed!(stabilized, k),
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
@@ -627,23 +630,37 @@ impl QueryEngine {
         )
     }
 
-    pub fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
+    pub fn stabilized(&self, id: FileId) -> QueryResult<Arc<StabilizedModule>> {
+        self.query(
+            QueryKey::Stabilized(id),
+            |storage| storage.derived.stabilized.get(&id),
+            |storage| storage.derived.stabilized.entry(id),
+            |this| {
+                let (parsed, _) = this.parsed(id)?;
+                let node = parsed.syntax_node();
+                Ok(Arc::new(stabilizing::stabilize_module(&node)))
+            },
+        )
+    }
+
+    pub fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
         self.query(
             QueryKey::Indexed(id),
             |storage| storage.derived.indexed.get(&id),
             |storage| storage.derived.indexed.entry(id),
             |this| {
                 let (parsed, _) = this.parsed(id)?;
+                let stabilized = this.stabilized(id)?;
 
                 let module = parsed.cst();
-                let indexed = indexing::index_module(&module);
+                let indexed = indexing::index_module(&module, &stabilized);
 
                 Ok(Arc::new(indexed))
             },
         )
     }
 
-    pub fn lowered(&self, id: FileId) -> QueryResult<Arc<FullLoweredModule>> {
+    pub fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
         self.query(
             QueryKey::Lowered(id),
             |storage| storage.derived.lowered.get(&id),
@@ -656,18 +673,20 @@ impl QueryEngine {
                     this.resolved(prim_id)?
                 };
 
+                let stabilized = this.stabilized(id)?;
                 let indexed = this.indexed(id)?;
                 let resolved = this.resolved(id)?;
 
                 let module = parsed.cst();
-                let lowered = lowering::lower_module(&module, &prim, &indexed, &resolved);
+                let lowered =
+                    lowering::lower_module(&module, &prim, &stabilized, &indexed, &resolved);
 
                 Ok(Arc::new(lowered))
             },
         )
     }
 
-    pub fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+    pub fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
         self.query(
             QueryKey::Resolved(id),
             |storage| storage.derived.resolved.get(&id),
@@ -687,11 +706,11 @@ impl QueryEngine {
 }
 
 impl resolving::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
         QueryEngine::indexed(self, id)
     }
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
         QueryEngine::resolved(self, id)
     }
 
@@ -701,15 +720,15 @@ impl resolving::External for QueryEngine {
 }
 
 impl sugar::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<FullIndexedModule>> {
+    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
         QueryEngine::indexed(self, id)
     }
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<FullResolvedModule>> {
+    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
         QueryEngine::resolved(self, id)
     }
 
-    fn lowered(&self, id: FileId) -> QueryResult<Arc<FullLoweredModule>> {
+    fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
         QueryEngine::lowered(self, id)
     }
 
@@ -728,7 +747,7 @@ mod tests {
     use building_types::{QueryError, QueryResult};
     use files::{FileId, Files};
     use la_arena::RawIdx;
-    use resolving::FullResolvedModule;
+    use resolving::ResolvedModule;
 
     use crate::prim;
 
@@ -825,7 +844,7 @@ mod tests {
             assert_trace!(storage, indexed(id) => Trace {
                 built: 19,
                 changed: 19,
-                dependencies: &[QueryKey::Parsed(id)]
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
             });
             assert_trace!(storage, resolved(id) => Trace {
                 built: 19,
@@ -851,8 +870,8 @@ mod tests {
             });
             assert_trace!(storage, indexed(id) => Trace {
                 built: 20,
-                changed: 20,
-                dependencies: &[QueryKey::Parsed(id)]
+                changed: 19,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
             });
             assert_trace!(storage, resolved(id) => Trace {
                 built: 20,
@@ -878,8 +897,8 @@ mod tests {
             });
             assert_trace!(storage, indexed(id) => Trace {
                 built: 21,
-                changed: 20,
-                dependencies: &[QueryKey::Parsed(id)]
+                changed: 19,
+                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
             });
             assert_trace!(storage, resolved(id) => Trace {
                 built: 21,
@@ -888,16 +907,14 @@ mod tests {
             });
         }
 
+        assert!(Arc::ptr_eq(&indexed_a, &indexed_b));
         assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
+
+        assert!(Arc::ptr_eq(&lowered_a, &lowered_b));
         assert!(Arc::ptr_eq(&lowered_b, &lowered_c));
 
         assert!(Arc::ptr_eq(&resolved_a, &resolved_b));
         assert!(Arc::ptr_eq(&resolved_b, &resolved_c));
-
-        assert!(!Arc::ptr_eq(&indexed_a, &indexed_b));
-        assert!(!Arc::ptr_eq(&indexed_a, &indexed_c));
-        assert!(!Arc::ptr_eq(&lowered_a, &lowered_b));
-        assert!(!Arc::ptr_eq(&lowered_a, &lowered_c));
     }
 
     #[test]
@@ -1015,7 +1032,7 @@ mod tests {
         const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
         const KEY: QueryKey = QueryKey::Resolved(ID);
 
-        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID),
                 |storage| storage.derived.resolved.get(&ID),
@@ -1033,7 +1050,7 @@ mod tests {
     fn test_cycle_recovery() {
         const ID: FileId = FileId::from_raw(RawIdx::from_u32(0));
 
-        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID),
                 |storage| storage.derived.resolved.get(&ID),
@@ -1052,7 +1069,7 @@ mod tests {
         const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
         const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
 
-        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_A),
                 |storage| storage.derived.resolved.get(&ID_A),
@@ -1061,7 +1078,7 @@ mod tests {
             )
         }
 
-        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_B),
                 |storage| storage.derived.resolved.get(&ID_B),
@@ -1094,7 +1111,7 @@ mod tests {
         const ID_A: FileId = FileId::from_raw(RawIdx::from_u32(0));
         const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
 
-        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+        fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_A),
                 |storage| storage.derived.resolved.get(&ID_A),
@@ -1103,7 +1120,7 @@ mod tests {
             )
         }
 
-        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<FullResolvedModule>> {
+        fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_B),
                 |storage| storage.derived.resolved.get(&ID_B),

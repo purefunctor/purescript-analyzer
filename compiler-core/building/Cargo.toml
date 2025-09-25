@@ -14,6 +14,7 @@ parking_lot = "0.12.4"
 parsing = { version = "0.1.0", path = "../parsing" }
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"
+stabilizing = { version = "0.1.0", path = "../stabilizing" }
 sugar = { version = "0.1.0", path = "../sugar" }
 tempfile = "3.21.0"
 thread_local = "1.1.9"

@@ -12,6 +12,7 @@ indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
 lexing = { version = "0.1.0", path = "../compiler-core/lexing" }
 parsing = { version = "0.1.0", path = "../compiler-core/parsing" }
 rayon = "1.11.0"
+stabilizing = { version = "0.1.0", path = "../compiler-core/stabilizing" }
 url = "2.5.7"
 
 [[bench]]

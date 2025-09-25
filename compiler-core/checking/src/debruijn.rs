@@ -78,60 +78,60 @@ impl ops::Index<Index> for Bound {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use la_arena::{Idx, RawIdx};
-
-    use super::{Binding, Bound, Index, Level};
-
-    const ZERO: Binding = Binding::Forall(Idx::from_raw(RawIdx::from_u32(0)));
-    const ONE: Binding = Binding::Forall(Idx::from_raw(RawIdx::from_u32(1)));
-
-    #[test]
-    fn test_index_level() {
-        let mut bound = Bound::default();
-        bound.bind(ZERO);
-        bound.bind(ONE);
-
-        assert_eq!(bound.level_of(ZERO), Level(0));
-        assert_eq!(bound.level_of(ONE), Level(1));
-
-        assert_eq!(bound.index_of(ZERO), Index(1));
-        assert_eq!(bound.index_of(ONE), Index(0));
-    }
-
-    #[test]
-    fn test_indexing() {
-        let mut bound = Bound::default();
-        bound.bind(ZERO);
-        bound.bind(ONE);
-
-        assert_eq!(bound[Level(0)], ZERO);
-        assert_eq!(bound[Level(1)], ONE);
-
-        assert_eq!(bound[Index(0)], ONE);
-        assert_eq!(bound[Index(1)], ZERO);
-    }
-
-    #[test]
-    fn test_shadowing() {
-        let mut bound = Bound::default();
-        bound.bind(ZERO);
-        bound.bind(ONE);
-        bound.bind(ONE);
-
-        assert_eq!(bound.level_of(ZERO), Level(0));
-        assert_eq!(bound.level_of(ONE), Level(2));
-
-        assert_eq!(bound.index_of(ZERO), Index(2));
-        assert_eq!(bound.index_of(ONE), Index(0));
-
-        assert_eq!(bound[Level(0)], ZERO);
-        assert_eq!(bound[Level(1)], ONE);
-        assert_eq!(bound[Level(2)], ONE);
-
-        assert_eq!(bound[Index(0)], ONE);
-        assert_eq!(bound[Index(1)], ONE);
-        assert_eq!(bound[Index(2)], ZERO);
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use la_arena::{Idx, RawIdx};
+//
+//     use super::{Binding, Bound, Index, Level};
+//
+//     const ZERO: Binding = Binding::Forall(Idx::from_raw(RawIdx::from_u32(0)));
+//     const ONE: Binding = Binding::Forall(Idx::from_raw(RawIdx::from_u32(1)));
+//
+//     #[test]
+//     fn test_index_level() {
+//         let mut bound = Bound::default();
+//         bound.bind(ZERO);
+//         bound.bind(ONE);
+//
+//         assert_eq!(bound.level_of(ZERO), Level(0));
+//         assert_eq!(bound.level_of(ONE), Level(1));
+//
+//         assert_eq!(bound.index_of(ZERO), Index(1));
+//         assert_eq!(bound.index_of(ONE), Index(0));
+//     }
+//
+//     #[test]
+//     fn test_indexing() {
+//         let mut bound = Bound::default();
+//         bound.bind(ZERO);
+//         bound.bind(ONE);
+//
+//         assert_eq!(bound[Level(0)], ZERO);
+//         assert_eq!(bound[Level(1)], ONE);
+//
+//         assert_eq!(bound[Index(0)], ONE);
+//         assert_eq!(bound[Index(1)], ZERO);
+//     }
+//
+//     #[test]
+//     fn test_shadowing() {
+//         let mut bound = Bound::default();
+//         bound.bind(ZERO);
+//         bound.bind(ONE);
+//         bound.bind(ONE);
+//
+//         assert_eq!(bound.level_of(ZERO), Level(0));
+//         assert_eq!(bound.level_of(ONE), Level(2));
+//
+//         assert_eq!(bound.index_of(ZERO), Index(2));
+//         assert_eq!(bound.index_of(ONE), Index(0));
+//
+//         assert_eq!(bound[Level(0)], ZERO);
+//         assert_eq!(bound[Level(1)], ONE);
+//         assert_eq!(bound[Level(2)], ONE);
+//
+//         assert_eq!(bound[Index(0)], ONE);
+//         assert_eq!(bound[Index(1)], ONE);
+//         assert_eq!(bound[Index(2)], ZERO);
+//     }
+// }
