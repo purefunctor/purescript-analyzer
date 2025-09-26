@@ -49,6 +49,22 @@ pub enum TypeVariableResolution {
 /// type variables do not have an [`AstId`] to anchor to. Instead, the
 /// type variables themselves introduce the name into the scope.
 ///
+/// Implicit type variables have multiple definition positions, much 
+/// like value signatures and equations. For example, both occurrences
+/// of `f` here are equally valid definition positions:
+///
+/// ```purescript
+/// instance Coerce (f a) (f b)
+/// ```
+///
+/// We use the [`GraphNode::Implicit`] node to group these positions 
+/// together using the [`ImplicitBindings`], with the condition that
+/// that we must store the [`GraphNodeId`] in this structure.
+///
+/// Rather than store [`SmolStr`] names directly, we intern them first
+/// through the [`ImplicitBindings`] to keep the representation light
+/// enough for use in the type checker.
+///
 /// [`AstId`]: stabilizing::AstId
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImplicitTypeVariable {
@@ -97,7 +113,7 @@ impl ImplicitBindings {
 pub enum GraphNode {
     /// Names bound by patterns.
     Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
-    /// Explicitly quantified type variabbles.
+    /// Explicitly quantified type variables.
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
     /// Names bound by `let`.
     Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBound> },
