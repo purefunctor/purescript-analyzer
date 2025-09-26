@@ -49,6 +49,7 @@ pub enum Type {
     Implicit(debruijn::Level),
     Unification(Unification),
     Variable(debruijn::Index),
+    Free(Option<SmolStr>),
     Unknown,
 }
 

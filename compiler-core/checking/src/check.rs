@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use indexing::{IndexedModule, TermItemKind};
 use itertools::Itertools;
 use lowering::{ImplicitTypeVariable, LoweredModule};
+use smol_str::SmolStr;
 
 use crate::{
     core::{CoreStorage, ForallBinder, Type, TypeId},
@@ -92,9 +93,10 @@ fn core_of_cst<S: CoreStorage>(
         lowering::TypeKind::Operator { .. } => c.storage.unknown(),
         lowering::TypeKind::OperatorChain { .. } => c.storage.unknown(),
         lowering::TypeKind::String => c.storage.unknown(),
-        lowering::TypeKind::Variable { resolution, .. } => {
+        lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
-                return c.storage.unknown();
+                let name = name.as_ref().map(SmolStr::clone);
+                return c.storage.allocate(Type::Free(name));
             };
             match resolution {
                 lowering::TypeVariableResolution::Forall(id) => {
