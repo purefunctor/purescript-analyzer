@@ -7,9 +7,11 @@ build = "build.rs"
 [dependencies]
 analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
+checking = { version = "0.1.0", path = "../compiler-core/checking" }
 files = { version = "0.1.0", path = "../compiler-core/files" }
 glob = "0.3.3"
 indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
+interner = { version = "0.1.0", path = "../compiler-core/interner" }
 itertools = "0.14.0"
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }

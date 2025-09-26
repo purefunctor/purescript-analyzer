@@ -1693,11 +1693,13 @@ version = "0.1.0"
 dependencies = [
  "analyzer",
  "async-lsp",
+ "checking",
  "convert_case",
  "files",
  "glob",
  "indexing",
  "insta",
+ "interner",
  "itertools 0.14.0",
  "line-index",
  "lowering",

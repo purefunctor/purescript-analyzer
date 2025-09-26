@@ -48,7 +48,9 @@ pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
 
 #[cfg(test)]
 mod manual_tests {
+    use checking::{check::check_module, core::CoreStorage};
     use files::Files;
+    use interner::Interner;
 
     use crate::{QueryEngine, prim};
 
@@ -86,5 +88,60 @@ test = 1 + 2 * 3 + 4
         let result = sugar::bracketing::bracketed(&engine, &lowered);
 
         println!("{result:#?}");
+    }
+
+    #[test]
+    fn test_checking() {
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
+
+        let id = files.insert(
+            "Main.purs",
+            r#"
+module Main where
+
+foreign import data Effect :: Type -> Type
+
+foreign import test :: (forall a. b) -> (forall a. b)
+"#,
+        );
+
+        let content = files.content(id);
+        engine.set_content(id, content);
+
+        #[derive(Debug)]
+        struct InlineStorage {
+            inner: Interner<checking::core::Type>,
+            unknown: checking::core::TypeId,
+        }
+
+        impl Default for InlineStorage {
+            fn default() -> Self {
+                let mut inner = Interner::default();
+                let unknown = inner.intern(checking::core::Type::Unknown);
+                Self { inner, unknown }
+            }
+        }
+
+        impl CoreStorage for InlineStorage {
+            fn unknown(&self) -> checking::core::TypeId {
+                self.unknown
+            }
+
+            fn allocate(&mut self, t: checking::core::Type) -> checking::core::TypeId {
+                self.inner.intern(t)
+            }
+
+            fn index(&self, id: checking::core::TypeId) -> &checking::core::Type {
+                &self.inner[id]
+            }
+        }
+
+        let mut storage = InlineStorage::default();
+        let indexed = engine.indexed(id).unwrap();
+        let lowered = engine.lowered(id).unwrap();
+
+        checking::check::check_module(&mut storage, &indexed, &lowered);
     }
 }
