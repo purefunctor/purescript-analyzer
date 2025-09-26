@@ -41,15 +41,21 @@ pub struct Unification {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
+pub enum Variable {
+    Implicit(debruijn::Level),
+    Skolem(debruijn::Level),
+    Bound(debruijn::Index),
+    Free(Option<SmolStr>),
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
     Constructor(Constructor),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
-    Implicit(debruijn::Level),
     Unification(Unification),
-    Variable(debruijn::Index),
-    Free(Option<SmolStr>),
+    Variable(Variable),
     Unknown,
 }
 

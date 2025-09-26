@@ -3,10 +3,9 @@ use std::fmt::Debug;
 use indexing::{IndexedModule, TermItemKind};
 use itertools::Itertools;
 use lowering::{ImplicitTypeVariable, LoweredModule};
-use smol_str::SmolStr;
 
 use crate::{
-    core::{CoreStorage, ForallBinder, Type, TypeId},
+    core::{CoreStorage, ForallBinder, Type, TypeId, Variable},
     debruijn,
 };
 
@@ -109,8 +108,9 @@ fn core_of_cst<S: CoreStorage>(
         lowering::TypeKind::String => c.storage.unknown(),
         lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
-                let name = name.as_ref().map(SmolStr::clone);
-                return c.storage.allocate(Type::Free(name));
+                let name = name.clone();
+                let kind = Variable::Free(name);
+                return c.storage.allocate(Type::Variable(kind));
             };
             // TODO: Implement a "context" mechanism here, where if we
             // encounter an implicit type variable, we must be inside
@@ -121,7 +121,8 @@ fn core_of_cst<S: CoreStorage>(
                 lowering::TypeVariableResolution::Forall(id) => {
                     let id = debruijn::Variable::Forall(*id);
                     let index = c.bound.index_of(id);
-                    c.storage.allocate(Type::Variable(index))
+                    let kind = Variable::Bound(index);
+                    c.storage.allocate(Type::Variable(kind))
                 }
                 lowering::TypeVariableResolution::Implicit(ImplicitTypeVariable {
                     binding,
@@ -131,10 +132,12 @@ fn core_of_cst<S: CoreStorage>(
                     let id = debruijn::Variable::Implicit { node: *node, id: *id };
                     if *binding {
                         let level = c.bound.bind(id);
-                        c.storage.allocate(Type::Implicit(level))
+                        let kind = Variable::Implicit(level);
+                        c.storage.allocate(Type::Variable(kind))
                     } else {
                         let index = c.bound.index_of(id);
-                        c.storage.allocate(Type::Variable(index))
+                        let kind = Variable::Bound(index);
+                        c.storage.allocate(Type::Variable(kind))
                     }
                 }
             }

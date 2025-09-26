@@ -44,12 +44,12 @@ pub enum TypeVariableResolution {
 }
 
 /// A locator for implicit type variables.
-/// 
+///
 /// Unlike explicitly-quantified type variables, implicitly quantified
 /// type variables do not have an [`AstId`] to anchor to. Instead, the
 /// type variables themselves introduce the name into the scope.
 ///
-/// Implicit type variables have multiple definition positions, much 
+/// Implicit type variables have multiple definition positions, much
 /// like value signatures and equations. For example, both occurrences
 /// of `f` here are equally valid definition positions:
 ///
@@ -57,7 +57,7 @@ pub enum TypeVariableResolution {
 /// instance Coerce (f a) (f b)
 /// ```
 ///
-/// We use the [`GraphNode::Implicit`] node to group these positions 
+/// We use the [`GraphNode::Implicit`] node to group these positions
 /// together using the [`ImplicitBindings`], with the condition that
 /// that we must store the [`GraphNodeId`] in this structure.
 ///

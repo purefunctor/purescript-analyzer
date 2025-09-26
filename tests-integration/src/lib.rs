@@ -48,7 +48,7 @@ pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
 
 #[cfg(test)]
 mod manual_tests {
-    use checking::{check::check_module, core::CoreStorage};
+    use checking::core::CoreStorage;
     use files::Files;
     use interner::Interner;
 
