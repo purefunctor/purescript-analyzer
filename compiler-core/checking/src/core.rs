@@ -1,17 +1,12 @@
+pub mod storage;
+pub use storage::TypeStorage;
+
 use files::FileId;
 use indexing::TypeItemId;
 use la_arena::Idx;
 use smol_str::SmolStr;
 
 use crate::debruijn;
-
-pub trait CoreStorage {
-    fn unknown(&self) -> TypeId;
-
-    fn allocate(&mut self, ty: Type) -> TypeId;
-
-    fn index(&self, id: TypeId) -> &Type;
-}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum BuiltinConstructor {

@@ -5,14 +5,14 @@ use itertools::Itertools;
 use lowering::{ImplicitTypeVariable, LoweredModule};
 
 use crate::{
-    core::{CoreStorage, ForallBinder, Type, TypeId, Variable},
+    core::{TypeStorage, ForallBinder, Type, TypeId, Variable},
     debruijn,
 };
 
 #[derive(Debug)]
 pub struct Context<'s, S>
 where
-    S: CoreStorage,
+    S: TypeStorage,
 {
     storage: &'s mut S,
     #[allow(unused)]
@@ -22,7 +22,7 @@ where
 
 impl<'s, S> Context<'s, S>
 where
-    S: CoreStorage,
+    S: TypeStorage,
 {
     pub fn new(storage: &'s mut S) -> Context<'s, S> {
         let unique = 0;
@@ -43,7 +43,7 @@ impl<'e> Environment<'e> {
     }
 }
 
-fn core_of_cst<S: CoreStorage>(
+fn core_of_cst<S: TypeStorage>(
     c: &mut Context<S>,
     e: &Environment,
     id: lowering::TypeId,
@@ -57,7 +57,7 @@ fn core_of_cst<S: CoreStorage>(
                 function.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
             arguments.iter().fold(function, |function, argument| {
                 let argument = core_of_cst(c, e, *argument);
-                c.storage.allocate(Type::Application(function, argument))
+                c.storage.intern(Type::Application(function, argument))
             })
         }
         lowering::TypeKind::Arrow { argument, result } => {
@@ -65,7 +65,7 @@ fn core_of_cst<S: CoreStorage>(
                 argument.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
             let result =
                 result.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
-            c.storage.allocate(Type::Function(argument, result))
+            c.storage.intern(Type::Function(argument, result))
         }
         lowering::TypeKind::Constrained { .. } => c.storage.unknown(),
         lowering::TypeKind::Constructor { .. } => c.storage.unknown(),
@@ -92,7 +92,7 @@ fn core_of_cst<S: CoreStorage>(
                 type_.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
 
             let id = binders
-                .rfold(inner, |inner, binder| c.storage.allocate(Type::Forall(binder, inner)));
+                .rfold(inner, |inner, binder| c.storage.intern(Type::Forall(binder, inner)));
 
             if let Type::Forall(ForallBinder { level, .. }, _) = c.storage.index(id) {
                 c.bound.unbind(*level);
@@ -110,7 +110,7 @@ fn core_of_cst<S: CoreStorage>(
             let Some(resolution) = resolution else {
                 let name = name.clone();
                 let kind = Variable::Free(name);
-                return c.storage.allocate(Type::Variable(kind));
+                return c.storage.intern(Type::Variable(kind));
             };
             // TODO: Implement a "context" mechanism here, where if we
             // encounter an implicit type variable, we must be inside
@@ -122,7 +122,7 @@ fn core_of_cst<S: CoreStorage>(
                     let id = debruijn::Variable::Forall(*id);
                     let index = c.bound.index_of(id);
                     let kind = Variable::Bound(index);
-                    c.storage.allocate(Type::Variable(kind))
+                    c.storage.intern(Type::Variable(kind))
                 }
                 lowering::TypeVariableResolution::Implicit(ImplicitTypeVariable {
                     binding,
@@ -133,11 +133,11 @@ fn core_of_cst<S: CoreStorage>(
                     if *binding {
                         let level = c.bound.bind(id);
                         let kind = Variable::Implicit(level);
-                        c.storage.allocate(Type::Variable(kind))
+                        c.storage.intern(Type::Variable(kind))
                     } else {
                         let index = c.bound.index_of(id);
                         let kind = Variable::Bound(index);
-                        c.storage.allocate(Type::Variable(kind))
+                        c.storage.intern(Type::Variable(kind))
                     }
                 }
             }
@@ -152,7 +152,7 @@ fn core_of_cst<S: CoreStorage>(
 }
 
 pub fn check_module(
-    storage: &mut (impl CoreStorage + Debug),
+    storage: &mut (impl TypeStorage + Debug),
     indexed: &IndexedModule,
     lowered: &LoweredModule,
 ) {
