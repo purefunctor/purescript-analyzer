@@ -58,6 +58,18 @@ impl Bound {
             .expect("invariant violated: unbound variable");
         Index(index as u32)
     }
+
+    /// Returns a [`Binding`] given a valid [`Index`].
+    pub fn get_index(&self, Index(index): Index) -> Option<Binding> {
+        let length = self.inner.len();
+        let index = length - index as usize - 1;
+        self.inner.get(index).copied()
+    }
+
+    /// Returns a [`Binding`] given a valid [`Level`].
+    pub fn get_level(&self, Level(index): Level) -> Option<Binding> {
+        self.inner.get(index as usize).copied()
+    }
 }
 
 impl ops::Index<Level> for Bound {
@@ -116,6 +128,12 @@ mod tests {
 
         assert_eq!(bound[Index(0)], BINDING_ONE);
         assert_eq!(bound[Index(1)], BINDING_ZERO);
+
+        assert_eq!(bound.get_level(Level(0)), Some(BINDING_ZERO));
+        assert_eq!(bound.get_level(Level(1)), Some(BINDING_ONE));
+
+        assert_eq!(bound.get_index(Index(0)), Some(BINDING_ONE));
+        assert_eq!(bound.get_index(Index(1)), Some(BINDING_ZERO));
     }
 
     #[test]
@@ -138,5 +156,18 @@ mod tests {
         assert_eq!(bound[Index(0)], BINDING_ONE);
         assert_eq!(bound[Index(1)], BINDING_ONE);
         assert_eq!(bound[Index(2)], BINDING_ZERO);
+    }
+
+    #[test]
+    fn test_unbind() {
+        let mut bound = Bound::default();
+
+        let zero = bound.bind(BINDING_ZERO);
+        let one = bound.bind(BINDING_ONE);
+
+        bound.unbind(zero);
+
+        assert_eq!(bound.get_level(zero), None);
+        assert_eq!(bound.get_level(one), None);
     }
 }
