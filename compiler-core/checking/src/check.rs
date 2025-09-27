@@ -5,70 +5,40 @@ use itertools::Itertools;
 use lowering::{ImplicitTypeVariable, LoweredModule};
 
 use crate::{
-    core::{TypeStorage, ForallBinder, Type, TypeId, Variable},
+    core::{ForallBinder, Type, TypeId, TypeStorage, Variable},
     debruijn,
+    state::{CheckContext, CheckState},
 };
 
-#[derive(Debug)]
-pub struct Context<'s, S>
-where
-    S: TypeStorage,
-{
-    storage: &'s mut S,
-    #[allow(unused)]
-    unique: u32,
-    bound: debruijn::Bound,
-}
-
-impl<'s, S> Context<'s, S>
-where
-    S: TypeStorage,
-{
-    pub fn new(storage: &'s mut S) -> Context<'s, S> {
-        let unique = 0;
-        let bound = debruijn::Bound::default();
-        Context { storage, unique, bound }
-    }
-}
-
-pub struct Environment<'e> {
-    #[allow(unused)]
-    index: &'e IndexedModule,
-    lower: &'e LoweredModule,
-}
-
-impl<'e> Environment<'e> {
-    pub fn new(index: &'e IndexedModule, lower: &'e LoweredModule) -> Environment<'e> {
-        Environment { index, lower }
-    }
-}
-
 fn core_of_cst<S: TypeStorage>(
-    c: &mut Context<S>,
-    e: &Environment,
+    state: &mut CheckState<S>,
+    context: &CheckContext,
     id: lowering::TypeId,
 ) -> TypeId {
-    let Some(kind) = e.lower.info.get_type_kind(id) else {
-        return c.storage.unknown();
+    let Some(kind) = context.lowered.info.get_type_kind(id) else {
+        return state.storage.unknown();
     };
     match kind {
         lowering::TypeKind::ApplicationChain { function, arguments } => {
-            let function =
-                function.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
+            let function = function
+                .map(|id| core_of_cst(state, context, id))
+                .unwrap_or_else(|| state.storage.unknown());
             arguments.iter().fold(function, |function, argument| {
-                let argument = core_of_cst(c, e, *argument);
-                c.storage.intern(Type::Application(function, argument))
+                let argument = core_of_cst(state, context, *argument);
+                state.storage.intern(Type::Application(function, argument))
             })
         }
         lowering::TypeKind::Arrow { argument, result } => {
-            let argument =
-                argument.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
-            let result =
-                result.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
-            c.storage.intern(Type::Function(argument, result))
+            let argument = argument
+                .map(|id| core_of_cst(state, context, id))
+                .unwrap_or_else(|| state.storage.unknown());
+            let result = result
+                .map(|id| core_of_cst(state, context, id))
+                .unwrap_or_else(|| state.storage.unknown());
+            state.storage.intern(Type::Function(argument, result))
         }
-        lowering::TypeKind::Constrained { .. } => c.storage.unknown(),
-        lowering::TypeKind::Constructor { .. } => c.storage.unknown(),
+        lowering::TypeKind::Constrained { .. } => state.storage.unknown(),
+        lowering::TypeKind::Constructor { .. } => state.storage.unknown(),
         lowering::TypeKind::Forall { bindings, type_ } => {
             // TODO: after creating the type, get the level of the
             // outermost type so we can unbind it right after. This
@@ -80,37 +50,38 @@ fn core_of_cst<S: TypeStorage>(
                 let name = binding.name.clone()?;
                 let kind = binding
                     .kind
-                    .map(|id| core_of_cst(c, e, id))
-                    .unwrap_or_else(|| c.storage.unknown());
+                    .map(|id| core_of_cst(state, context, id))
+                    .unwrap_or_else(|| state.storage.unknown());
                 let id = debruijn::Variable::Forall(binding.id);
-                let level = c.bound.bind(id);
+                let level = state.bound.bind(id);
                 Some(ForallBinder { visible, name, level, kind })
             });
 
             let binders = binders.collect_vec().into_iter();
-            let inner =
-                type_.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown());
+            let inner = type_
+                .map(|id| core_of_cst(state, context, id))
+                .unwrap_or_else(|| state.storage.unknown());
 
             let id = binders
-                .rfold(inner, |inner, binder| c.storage.intern(Type::Forall(binder, inner)));
+                .rfold(inner, |inner, binder| state.storage.intern(Type::Forall(binder, inner)));
 
-            if let Type::Forall(ForallBinder { level, .. }, _) = c.storage.index(id) {
-                c.bound.unbind(*level);
+            if let Type::Forall(ForallBinder { level, .. }, _) = state.storage.index(id) {
+                state.bound.unbind(*level);
             }
 
             id
         }
-        lowering::TypeKind::Hole => c.storage.unknown(),
-        lowering::TypeKind::Integer => c.storage.unknown(),
-        lowering::TypeKind::Kinded { .. } => c.storage.unknown(),
-        lowering::TypeKind::Operator { .. } => c.storage.unknown(),
-        lowering::TypeKind::OperatorChain { .. } => c.storage.unknown(),
-        lowering::TypeKind::String => c.storage.unknown(),
+        lowering::TypeKind::Hole => state.storage.unknown(),
+        lowering::TypeKind::Integer => state.storage.unknown(),
+        lowering::TypeKind::Kinded { .. } => state.storage.unknown(),
+        lowering::TypeKind::Operator { .. } => state.storage.unknown(),
+        lowering::TypeKind::OperatorChain { .. } => state.storage.unknown(),
+        lowering::TypeKind::String => state.storage.unknown(),
         lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
                 let name = name.clone();
                 let kind = Variable::Free(name);
-                return c.storage.intern(Type::Variable(kind));
+                return state.storage.intern(Type::Variable(kind));
             };
             // TODO: Implement a "context" mechanism here, where if we
             // encounter an implicit type variable, we must be inside
@@ -120,9 +91,9 @@ fn core_of_cst<S: TypeStorage>(
             match resolution {
                 lowering::TypeVariableResolution::Forall(id) => {
                     let id = debruijn::Variable::Forall(*id);
-                    let index = c.bound.index_of(id);
+                    let index = state.bound.index_of(id);
                     let kind = Variable::Bound(index);
-                    c.storage.intern(Type::Variable(kind))
+                    state.storage.intern(Type::Variable(kind))
                 }
                 lowering::TypeVariableResolution::Implicit(ImplicitTypeVariable {
                     binding,
@@ -131,23 +102,23 @@ fn core_of_cst<S: TypeStorage>(
                 }) => {
                     let id = debruijn::Variable::Implicit { node: *node, id: *id };
                     if *binding {
-                        let level = c.bound.bind(id);
+                        let level = state.bound.bind(id);
                         let kind = Variable::Implicit(level);
-                        c.storage.intern(Type::Variable(kind))
+                        state.storage.intern(Type::Variable(kind))
                     } else {
-                        let index = c.bound.index_of(id);
+                        let index = state.bound.index_of(id);
                         let kind = Variable::Bound(index);
-                        c.storage.intern(Type::Variable(kind))
+                        state.storage.intern(Type::Variable(kind))
                     }
                 }
             }
         }
-        lowering::TypeKind::Wildcard => c.storage.unknown(),
-        lowering::TypeKind::Record { .. } => c.storage.unknown(),
-        lowering::TypeKind::Row { .. } => c.storage.unknown(),
-        lowering::TypeKind::Parenthesized { parenthesized } => {
-            parenthesized.map(|id| core_of_cst(c, e, id)).unwrap_or_else(|| c.storage.unknown())
-        }
+        lowering::TypeKind::Wildcard => state.storage.unknown(),
+        lowering::TypeKind::Record { .. } => state.storage.unknown(),
+        lowering::TypeKind::Row { .. } => state.storage.unknown(),
+        lowering::TypeKind::Parenthesized { parenthesized } => parenthesized
+            .map(|id| core_of_cst(state, context, id))
+            .unwrap_or_else(|| state.storage.unknown()),
     }
 }
 
@@ -164,12 +135,12 @@ pub fn check_module(
         if let TermItemKind::Instance { .. } = item.kind { Some(id) } else { None }
     });
 
-    let mut context = Context::new(storage);
-    let environment = Environment::new(indexed, lowered);
+    let mut state = CheckState::new(storage);
+    let env = CheckContext::new(indexed, lowered);
 
     for id in foreign {
         if let Some(lowering::TermItemIr::Foreign { signature }) = lowered.info.get_term_item(id) {
-            let _ = signature.map(|id| core_of_cst(&mut context, &environment, id));
+            let _ = signature.map(|id| core_of_cst(&mut state, &env, id));
         }
     }
 
@@ -178,14 +149,14 @@ pub fn check_module(
             lowered.info.get_term_item(id)
         {
             arguments.iter().for_each(|id| {
-                core_of_cst(&mut context, &environment, *id);
+                core_of_cst(&mut state, &env, *id);
             });
             constraints.iter().for_each(|id| {
-                core_of_cst(&mut context, &environment, *id);
+                core_of_cst(&mut state, &env, *id);
             });
             members.iter().for_each(|group| {
                 if let Some(id) = group.signature {
-                    core_of_cst(&mut context, &environment, id);
+                    core_of_cst(&mut state, &env, id);
                 }
             });
         }
