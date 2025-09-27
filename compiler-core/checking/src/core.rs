@@ -1,4 +1,6 @@
+pub mod debruijn;
 pub mod storage;
+
 pub use storage::TypeStorage;
 
 use files::FileId;
@@ -6,19 +8,11 @@ use indexing::TypeItemId;
 use la_arena::Idx;
 use smol_str::SmolStr;
 
-use crate::debruijn;
-
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum BuiltinConstructor {
     Boolean,
     Int,
     Number,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub enum Constructor {
-    Builtin(BuiltinConstructor),
-    Module(FileId, TypeItemId),
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -46,7 +40,7 @@ pub enum Variable {
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
-    Constructor(Constructor),
+    Constructor(FileId, TypeItemId),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
     Unification(Unification),

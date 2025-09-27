@@ -193,6 +193,7 @@ name = "building"
 version = "0.1.0"
 dependencies = [
  "building-types",
+ "checking",
  "files",
  "indexing",
  "la-arena",
@@ -269,6 +270,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "checking"
 version = "0.1.0"
 dependencies = [
+ "building-types",
  "files",
  "indexing",
  "itertools 0.14.0",

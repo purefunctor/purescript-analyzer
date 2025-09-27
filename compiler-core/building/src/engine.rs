@@ -705,6 +705,16 @@ impl QueryEngine {
     }
 }
 
+impl checking::External for QueryEngine {
+    fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
+        QueryEngine::lowered(self, id)
+    }
+
+    fn prim_id(&self) -> FileId {
+        QueryEngine::prim_id(self)
+    }
+}
+
 impl resolving::External for QueryEngine {
     fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
         QueryEngine::indexed(self, id)

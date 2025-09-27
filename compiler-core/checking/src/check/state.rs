@@ -1,7 +1,7 @@
 use indexing::IndexedModule;
 use lowering::LoweredModule;
 
-use crate::{core::TypeStorage, debruijn};
+use crate::core::{debruijn, storage::TypeStorage};
 
 pub struct CheckState<'s, S>
 where

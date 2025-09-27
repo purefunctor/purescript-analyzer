@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 building-types = { version = "0.1.0", path = "../building-types" }
+checking = { version = "0.1.0", path = "../checking" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
 lexing = { version = "0.1.0", path = "../lexing" }

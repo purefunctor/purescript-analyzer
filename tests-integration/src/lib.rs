@@ -142,6 +142,6 @@ foreign import test :: (forall a. b) -> (forall a. b)
         let indexed = engine.indexed(id).unwrap();
         let lowered = engine.lowered(id).unwrap();
 
-        checking::check::check_module(&mut storage, &indexed, &lowered);
+        checking::check_module(&mut storage, &indexed, &lowered);
     }
 }
