@@ -120,8 +120,7 @@ fn convert_forall_resolution<S>(
 where
     S: TypeStorage,
 {
-    let index =
-        state.lookup_forall(id).expect("invariant violated: expected CheckState::bind_forall");
+    let index = state.lookup_forall(id).expect("invariant violated: CheckState::bind_forall");
     let variable = Variable::Bound(index);
     state.storage.intern(Type::Variable(variable))
 }
@@ -137,7 +136,7 @@ fn convert_implicit_resolution<S: TypeStorage>(
     } else {
         let index = state
             .lookup_implicit(implicit.node, implicit.id)
-            .expect("invariant violated: expected CheckState::bind_implicit");
+            .expect("invariant violated: CheckState::bind_implicit");
         let variable = Variable::Bound(index);
         state.storage.intern(Type::Variable(variable))
     }

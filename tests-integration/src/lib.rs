@@ -101,9 +101,9 @@ test = 1 + 2 * 3 + 4
             r#"
 module Main where
 
-foreign import data Effect :: Type -> Type
+class TypeEq a b
 
-foreign import test :: (forall a. b) -> (forall a. b)
+instance (TypeEq a b, TypeEq f f) => TypeEq (f a) (f b)
 "#,
         );
 

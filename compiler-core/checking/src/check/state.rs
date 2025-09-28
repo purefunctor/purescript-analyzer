@@ -53,7 +53,11 @@ where
 
     pub fn bind_implicit(&mut self, node: GraphNodeId, id: ImplicitBindingId) -> debruijn::Level {
         let variable = debruijn::Variable::Implicit { node, id };
-        self.bound.bind(variable)
+        if let Some(level) = self.bound.level_of(variable) {
+            level
+        } else {
+            self.bound.bind(variable)
+        }
     }
 
     pub fn lookup_implicit(
