@@ -7,6 +7,7 @@
 use std::ops;
 
 use lowering::{GraphNodeId, ImplicitBindingId, TypeVariableBindingId};
+use rustc_hash::FxHashMap;
 
 /// A well-scoped type variable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,7 +36,7 @@ pub struct Bound {
 ///
 /// ∀. ∀. &0 -> &1
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Level(u32);
 
 /// A De Bruijn index.
@@ -48,7 +49,7 @@ pub struct Level(u32);
 ///
 /// ∀. ∀. *1 -> *0
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index(u32);
 
 impl Bound {
@@ -72,29 +73,24 @@ impl Bound {
     }
 
     /// Finds the De Bruijn [`Level`] of a [`Variable`].
-    pub fn level_of(&self, value: Variable) -> Level {
+    pub fn level_of(&self, value: Variable) -> Option<Level> {
         let length = self.inner.len() as u32;
-        let Index(index) = self.index_of(value);
+        let Index(index) = self.index_of(value)?;
         let level = length - index - 1;
-        Level(level)
+        Some(Level(level))
     }
 
     /// Finds the De Bruijn [`Index`] of a [`Variable`].
-    pub fn index_of(&self, value: Variable) -> Index {
-        let index = self
-            .inner
-            .iter()
-            .rev()
-            .position(|&other| value == other)
-            .expect("invariant violated: unbound variable");
-        Index(index as u32)
+    pub fn index_of(&self, value: Variable) -> Option<Index> {
+        let index = self.inner.iter().rev().position(|&other| value == other)?;
+        Some(Index(index as u32))
     }
 
     /// Returns a [`Variable`] given a valid [`Index`].
     pub fn get_index(&self, Index(index): Index) -> Option<Variable> {
-        let length = self.inner.len();
-        let index = length - index as usize - 1;
-        self.inner.get(index).copied()
+        let length = self.inner.len() as u32;
+        let index = length - index - 1;
+        self.inner.get(index as usize).copied()
     }
 
     /// Returns a [`Variable`] given a valid [`Level`].
@@ -115,9 +111,35 @@ impl ops::Index<Index> for Bound {
     type Output = Variable;
 
     fn index(&self, Index(index): Index) -> &Self::Output {
-        let length = self.inner.len();
-        let index = length - index as usize - 1;
-        &self.inner[index]
+        let length = self.inner.len() as u32;
+        let index = length - index - 1;
+        &self.inner[index as usize]
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct BoundMap<T> {
+    inner: FxHashMap<Level, T>,
+}
+
+impl<T> Default for BoundMap<T> {
+    fn default() -> Self {
+        let inner = FxHashMap::default();
+        BoundMap { inner }
+    }
+}
+
+impl<T> BoundMap<T> {
+    pub fn insert(&mut self, level: Level, value: T) {
+        self.inner.insert(level, value);
+    }
+
+    pub fn get(&self, level: Level) -> Option<&T> {
+        self.inner.get(&level)
+    }
+
+    pub fn unbind(&mut self, level: Level) {
+        self.inner.retain(|&bound, _| bound < level);
     }
 }
 
@@ -141,11 +163,11 @@ mod tests {
         bound.bind(VARIABLE_ZERO);
         bound.bind(VARIABLE_ONE);
 
-        assert_eq!(bound.level_of(VARIABLE_ZERO), Level(0));
-        assert_eq!(bound.level_of(VARIABLE_ONE), Level(1));
+        assert_eq!(bound.level_of(VARIABLE_ZERO), Some(Level(0)));
+        assert_eq!(bound.level_of(VARIABLE_ONE), Some(Level(1)));
 
-        assert_eq!(bound.index_of(VARIABLE_ZERO), Index(1));
-        assert_eq!(bound.index_of(VARIABLE_ONE), Index(0));
+        assert_eq!(bound.index_of(VARIABLE_ZERO), Some(Index(1)));
+        assert_eq!(bound.index_of(VARIABLE_ONE), Some(Index(0)));
     }
 
     #[test]
@@ -174,11 +196,11 @@ mod tests {
         bound.bind(VARIABLE_ONE);
         bound.bind(VARIABLE_ONE);
 
-        assert_eq!(bound.level_of(VARIABLE_ZERO), Level(0));
-        assert_eq!(bound.level_of(VARIABLE_ONE), Level(2));
+        assert_eq!(bound.level_of(VARIABLE_ZERO), Some(Level(0)));
+        assert_eq!(bound.level_of(VARIABLE_ONE), Some(Level(2)));
 
-        assert_eq!(bound.index_of(VARIABLE_ZERO), Index(2));
-        assert_eq!(bound.index_of(VARIABLE_ONE), Index(0));
+        assert_eq!(bound.index_of(VARIABLE_ZERO), Some(Index(2)));
+        assert_eq!(bound.index_of(VARIABLE_ONE), Some(Index(0)));
 
         assert_eq!(bound[Level(0)], VARIABLE_ZERO);
         assert_eq!(bound[Level(1)], VARIABLE_ONE);

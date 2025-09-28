@@ -48,7 +48,7 @@ pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
 
 #[cfg(test)]
 mod manual_tests {
-    use checking::core::{storage, TypeStorage};
+    use checking::core::TypeStorage;
     use files::Files;
     use interner::Interner;
 
@@ -113,22 +113,16 @@ foreign import test :: (forall a. b) -> (forall a. b)
         #[derive(Debug)]
         struct InlineStorage {
             inner: Interner<checking::core::Type>,
-            unknown: checking::core::TypeId,
         }
 
         impl Default for InlineStorage {
             fn default() -> Self {
-                let mut inner = Interner::default();
-                let unknown = inner.intern(checking::core::Type::Unknown);
-                Self { inner, unknown }
+                let inner = Interner::default();
+                InlineStorage { inner }
             }
         }
 
         impl TypeStorage for InlineStorage {
-            fn unknown(&self) -> checking::core::TypeId {
-                self.unknown
-            }
-
             fn intern(&mut self, t: checking::core::Type) -> checking::core::TypeId {
                 self.inner.intern(t)
             }

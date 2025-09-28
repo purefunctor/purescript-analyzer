@@ -2,7 +2,7 @@ use itertools::Itertools;
 
 use crate::{
     check::{CheckContext, CheckState},
-    core::{ForallBinder, Type, TypeId, TypeStorage, Variable, debruijn},
+    core::{ForallBinder, Type, TypeId, TypeStorage, Variable},
 };
 
 pub fn type_to_core<S>(
@@ -14,87 +14,73 @@ where
     S: TypeStorage,
 {
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        return state.storage.unknown();
+        return context.prim.unknown;
     };
+
     match kind {
         lowering::TypeKind::ApplicationChain { function, arguments } => {
-            let function = function
-                .map(|id| type_to_core(state, context, id))
-                .unwrap_or_else(|| state.storage.unknown());
+            let function =
+                function.map(|id| type_to_core(state, context, id)).unwrap_or(context.prim.unknown);
             arguments.iter().fold(function, |function, argument| {
                 let argument = type_to_core(state, context, *argument);
                 state.storage.intern(Type::Application(function, argument))
             })
         }
         lowering::TypeKind::Arrow { argument, result } => {
-            let argument = argument
-                .map(|id| type_to_core(state, context, id))
-                .unwrap_or_else(|| state.storage.unknown());
-            let result = result
-                .map(|id| type_to_core(state, context, id))
-                .unwrap_or_else(|| state.storage.unknown());
+            let argument =
+                argument.map(|id| type_to_core(state, context, id)).unwrap_or(context.prim.unknown);
+            let result =
+                result.map(|id| type_to_core(state, context, id)).unwrap_or(context.prim.unknown);
             state.storage.intern(Type::Function(argument, result))
         }
-        lowering::TypeKind::Constrained { .. } => state.storage.unknown(),
+        lowering::TypeKind::Constrained { .. } => context.prim.unknown,
         lowering::TypeKind::Constructor { resolution } => {
-            let Some((file_id, type_id)) = *resolution else {
-                return state.storage.unknown();
-            };
+            let Some((file_id, type_id)) = *resolution else { return context.prim.unknown };
             state.storage.intern(Type::Constructor(file_id, type_id))
         }
         lowering::TypeKind::Forall { bindings, type_ } => {
-            // TODO: after creating the type, get the level of the
-            // outermost type so we can unbind it right after. This
-            // would allow us to properly lower the following code:
-            //
-            // (forall a. a -> a) -> (forall a. a -> a)
             let binders = bindings.iter().filter_map(|binding| {
                 let visible = binding.visible;
                 let name = binding.name.clone()?;
                 let kind = binding
                     .kind
                     .map(|id| type_to_core(state, context, id))
-                    .unwrap_or_else(|| state.storage.unknown());
-                let id = debruijn::Variable::Forall(binding.id);
-                let level = state.bound.bind(id);
+                    .unwrap_or(context.prim.unknown);
+
+                let level = state.bind_forall(binding.id, kind);
                 Some(ForallBinder { visible, name, level, kind })
             });
 
             let binders = binders.collect_vec().into_iter();
-            let inner = type_
-                .map(|id| type_to_core(state, context, id))
-                .unwrap_or_else(|| state.storage.unknown());
+            let inner =
+                type_.map(|id| type_to_core(state, context, id)).unwrap_or(context.prim.unknown);
 
             let id = binders
                 .rfold(inner, |inner, binder| state.storage.intern(Type::Forall(binder, inner)));
 
             if let Type::Forall(ForallBinder { level, .. }, _) = state.storage.index(id) {
-                state.bound.unbind(*level);
+                state.unbind(*level);
             }
 
             id
         }
-        lowering::TypeKind::Hole => state.storage.unknown(),
-        lowering::TypeKind::Integer => state.storage.unknown(),
-        lowering::TypeKind::Kinded { .. } => state.storage.unknown(),
-        lowering::TypeKind::Operator { .. } => state.storage.unknown(),
-        lowering::TypeKind::OperatorChain { .. } => state.storage.unknown(),
-        lowering::TypeKind::String => state.storage.unknown(),
+        lowering::TypeKind::Hole => context.prim.unknown,
+        lowering::TypeKind::Integer => context.prim.unknown,
+        lowering::TypeKind::Kinded { .. } => context.prim.unknown,
+        lowering::TypeKind::Operator { .. } => context.prim.unknown,
+        lowering::TypeKind::OperatorChain { .. } => context.prim.unknown,
+        lowering::TypeKind::String => context.prim.unknown,
         lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
                 let name = name.clone();
                 let kind = Variable::Free(name);
                 return state.storage.intern(Type::Variable(kind));
             };
-            // TODO: Implement a "context" mechanism here, where if we
-            // encounter an implicit type variable, we must be inside
-            // a blessed context for these rules to kick in. The blessed
-            // context also maintains a hash map of already-bound implicit
-            // variables such that we don't allocate multiple
             match resolution {
                 lowering::TypeVariableResolution::Forall(id) => {
-                    let id = debruijn::Variable::Forall(*id);
-                    let index = state.bound.index_of(id);
+                    let index = state
+                        .lookup_forall(*id)
+                        .expect("invariant violated: unbound type variable");
                     let kind = Variable::Bound(index);
                     state.storage.intern(Type::Variable(kind))
                 }
@@ -103,24 +89,25 @@ where
                     node,
                     id,
                 }) => {
-                    let id = debruijn::Variable::Implicit { node: *node, id: *id };
                     if *binding {
-                        let level = state.bound.bind(id);
+                        let level = state.bind_implicit(*node, *id);
                         let kind = Variable::Implicit(level);
                         state.storage.intern(Type::Variable(kind))
                     } else {
-                        let index = state.bound.index_of(id);
+                        let index = state
+                            .lookup_implicit(*node, *id)
+                            .expect("invariant violated: unbound type variable");
                         let kind = Variable::Bound(index);
                         state.storage.intern(Type::Variable(kind))
                     }
                 }
             }
         }
-        lowering::TypeKind::Wildcard => state.storage.unknown(),
-        lowering::TypeKind::Record { .. } => state.storage.unknown(),
-        lowering::TypeKind::Row { .. } => state.storage.unknown(),
-        lowering::TypeKind::Parenthesized { parenthesized } => parenthesized
-            .map(|id| type_to_core(state, context, id))
-            .unwrap_or_else(|| state.storage.unknown()),
+        lowering::TypeKind::Wildcard => context.prim.unknown,
+        lowering::TypeKind::Record { .. } => context.prim.unknown,
+        lowering::TypeKind::Row { .. } => context.prim.unknown,
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            parenthesized.map(|id| type_to_core(state, context, id)).unwrap_or(context.prim.unknown)
+        }
     }
 }

@@ -1,17 +1,19 @@
 use crate::{
-    check::state::{CheckContext, CheckState},
+    check::{CheckContext, CheckState},
     core::{TypeId, storage::TypeStorage},
 };
 
 pub fn infer_surface_kind<S: TypeStorage>(
     state: &mut CheckState<S>,
-    context: CheckContext,
+    context: &CheckContext,
     id: lowering::TypeId,
 ) -> (TypeId, TypeId) {
+    let default = (context.prim.unknown, context.prim.unknown);
+
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        let unknown = state.storage.unknown();
-        return (unknown, unknown);
+        return default;
     };
+
     match kind {
         lowering::TypeKind::ApplicationChain { .. } => todo!(),
         lowering::TypeKind::Arrow { .. } => todo!(),
@@ -28,6 +30,9 @@ pub fn infer_surface_kind<S: TypeStorage>(
         lowering::TypeKind::Wildcard => todo!(),
         lowering::TypeKind::Record { .. } => todo!(),
         lowering::TypeKind::Row { .. } => todo!(),
-        lowering::TypeKind::Parenthesized { .. } => todo!(),
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            let Some(id) = parenthesized else { return default };
+            infer_surface_kind(state, context, *id)
+        }
     }
 }
