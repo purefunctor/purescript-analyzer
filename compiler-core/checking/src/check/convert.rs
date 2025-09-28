@@ -14,29 +14,29 @@ pub fn type_to_core<S>(
 where
     S: TypeStorage,
 {
+    let default = context.prim.unknown;
+
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        return context.prim.unknown;
+        return default;
     };
 
     match kind {
         lowering::TypeKind::ApplicationChain { function, arguments } => {
-            let function =
-                function.map_or(context.prim.unknown, |id| type_to_core(state, context, id));
+            let function = function.map_or(default, |id| type_to_core(state, context, id));
             arguments.iter().fold(function, |function, argument| {
                 let argument = type_to_core(state, context, *argument);
                 state.storage.intern(Type::Application(function, argument))
             })
         }
         lowering::TypeKind::Arrow { argument, result } => {
-            let argument =
-                argument.map_or(context.prim.unknown, |id| type_to_core(state, context, id));
-            let result = result.map_or(context.prim.unknown, |id| type_to_core(state, context, id));
+            let argument = argument.map_or(default, |id| type_to_core(state, context, id));
+            let result = result.map_or(default, |id| type_to_core(state, context, id));
             state.storage.intern(Type::Function(argument, result))
         }
-        lowering::TypeKind::Constrained { .. } => context.prim.unknown,
+        lowering::TypeKind::Constrained { .. } => default,
         lowering::TypeKind::Constructor { resolution } => {
             let Some((file_id, type_id)) = *resolution else {
-                return context.prim.unknown;
+                return default;
             };
             state.storage.intern(Type::Constructor(file_id, type_id))
         }
@@ -46,7 +46,7 @@ where
                 .map(|binding| convert_forall_binding(state, context, binding))
                 .collect_vec();
 
-            let inner = type_.map_or(context.prim.unknown, |id| type_to_core(state, context, id));
+            let inner = type_.map_or(default, |id| type_to_core(state, context, id));
 
             let forall = binders
                 .into_iter()
@@ -58,12 +58,12 @@ where
 
             forall
         }
-        lowering::TypeKind::Hole => context.prim.unknown,
-        lowering::TypeKind::Integer => context.prim.unknown,
-        lowering::TypeKind::Kinded { .. } => context.prim.unknown,
-        lowering::TypeKind::Operator { .. } => context.prim.unknown,
-        lowering::TypeKind::OperatorChain { .. } => context.prim.unknown,
-        lowering::TypeKind::String => context.prim.unknown,
+        lowering::TypeKind::Hole => default,
+        lowering::TypeKind::Integer => default,
+        lowering::TypeKind::Kinded { .. } => default,
+        lowering::TypeKind::Operator { .. } => default,
+        lowering::TypeKind::OperatorChain { .. } => default,
+        lowering::TypeKind::String => default,
         lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
                 let name = name.clone().unwrap_or(INVALID_NAME);
@@ -79,12 +79,12 @@ where
                 }
             }
         }
-        lowering::TypeKind::Wildcard => context.prim.unknown,
-        lowering::TypeKind::Record { .. } => context.prim.unknown,
-        lowering::TypeKind::Row { .. } => context.prim.unknown,
+        lowering::TypeKind::Wildcard => default,
+        lowering::TypeKind::Record { .. } => default,
+        lowering::TypeKind::Row { .. } => default,
         lowering::TypeKind::Parenthesized { parenthesized } => {
             let Some(parenthesized) = parenthesized else {
-                return context.prim.unknown;
+                return default;
             };
             type_to_core(state, context, *parenthesized)
         }
