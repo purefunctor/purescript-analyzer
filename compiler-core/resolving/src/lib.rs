@@ -29,6 +29,40 @@ pub struct ResolvedModule {
 }
 
 impl ResolvedModule {
+    fn lookup_unqualified<ItemId, LookupFn>(&self, lookup: LookupFn) -> Option<(FileId, ItemId)>
+    where
+        LookupFn: Fn(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
+    {
+        // Collect candidates first then match the first non-Hidden.
+        let (file_id, item_id, _) = self
+            .unqualified
+            .values()
+            .flatten()
+            .filter_map(lookup)
+            .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+        Some((file_id, item_id))
+    }
+
+    fn lookup_prim_import<ItemId, LookupFn, DefaultFn>(
+        &self,
+        lookup: LookupFn,
+        default: DefaultFn,
+    ) -> Option<(FileId, ItemId)>
+    where
+        LookupFn: Fn(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
+        DefaultFn: FnOnce() -> Option<(FileId, ItemId)>,
+    {
+        if let Some(prim) = self.unqualified.get("Prim") {
+            let (file_id, item_id, _) = prim
+                .iter()
+                .filter_map(lookup)
+                .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+            Some((file_id, item_id))
+        } else {
+            default()
+        }
+    }
+
     pub fn lookup_term(
         &self,
         prim: &ResolvedModule,
@@ -40,29 +74,11 @@ impl ResolvedModule {
             let (file, id, kind) = import.lookup_term(name)?;
             if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
         } else {
-            let local = self.locals.lookup_term(name);
-            let unqualified = || {
-                // Collect candidates first then match the first non-Hidden.
-                let (file, id, _) = self
-                    .unqualified
-                    .values()
-                    .flatten()
-                    .filter_map(|import| import.lookup_term(name))
-                    .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
-                Some((file, id))
-            };
-            let prim = || {
-                if let Some(imports) = self.unqualified.get("Prim") {
-                    let (file, id, _) = imports
-                        .iter()
-                        .filter_map(|import| import.lookup_term(name))
-                        .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
-                    Some((file, id))
-                } else {
-                    prim.exports.lookup_term(name)
-                }
-            };
-            local.or_else(unqualified).or_else(prim)
+            let lookup_item = |import: &ResolvedImport| import.lookup_term(name);
+            let lookup_prim = || prim.exports.lookup_term(name);
+            None.or_else(|| self.locals.lookup_term(name))
+                .or_else(|| self.lookup_unqualified(lookup_item))
+                .or_else(|| self.lookup_prim_import(lookup_item, lookup_prim))
         }
     }
 
@@ -77,29 +93,11 @@ impl ResolvedModule {
             let (file, id, kind) = import.lookup_type(name)?;
             if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
         } else {
-            let local = self.locals.lookup_type(name);
-            let unqualified = || {
-                // Collect candidates first then match the first non-Hidden.
-                let (file, id, _) = self
-                    .unqualified
-                    .values()
-                    .flatten()
-                    .filter_map(|import| import.lookup_type(name))
-                    .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
-                Some((file, id))
-            };
-            let prim = || {
-                if let Some(imports) = self.unqualified.get("Prim") {
-                    let (file, id, _) = imports
-                        .iter()
-                        .filter_map(|import| import.lookup_type(name))
-                        .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
-                    Some((file, id))
-                } else {
-                    prim.exports.lookup_type(name)
-                }
-            };
-            local.or_else(unqualified).or_else(prim)
+            let lookup_item = |import: &ResolvedImport| import.lookup_type(name);
+            let lookup_prim = || prim.exports.lookup_type(name);
+            None.or_else(|| self.locals.lookup_type(name))
+                .or_else(|| self.lookup_unqualified(lookup_item))
+                .or_else(|| self.lookup_prim_import(lookup_item, lookup_prim))
         }
     }
 }
