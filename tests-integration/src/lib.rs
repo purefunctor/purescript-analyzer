@@ -48,7 +48,7 @@ pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
 
 #[cfg(test)]
 mod manual_tests {
-    use checking::core::TypeStorage;
+    use checking::core::{storage, TypeStorage};
     use files::Files;
     use interner::Interner;
 
@@ -139,9 +139,7 @@ foreign import test :: (forall a. b) -> (forall a. b)
         }
 
         let mut storage = InlineStorage::default();
-        let indexed = engine.indexed(id).unwrap();
-        let lowered = engine.lowered(id).unwrap();
-
-        checking::check_module(&mut storage, &indexed, &lowered);
+        checking::check_module(&mut engine, &mut storage, id).unwrap();
+        dbg!(storage);
     }
 }

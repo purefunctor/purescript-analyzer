@@ -276,6 +276,7 @@ dependencies = [
  "itertools 0.14.0",
  "la-arena",
  "lowering",
+ "resolving",
  "smol_str",
 ]
 
