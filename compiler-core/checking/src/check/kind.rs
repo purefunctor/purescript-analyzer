@@ -15,24 +15,26 @@ pub fn infer_surface_kind<S: TypeStorage>(
     };
 
     match kind {
-        lowering::TypeKind::ApplicationChain { .. } => todo!(),
-        lowering::TypeKind::Arrow { .. } => todo!(),
-        lowering::TypeKind::Constrained { .. } => todo!(),
-        lowering::TypeKind::Constructor { .. } => todo!(),
-        lowering::TypeKind::Forall { .. } => todo!(),
-        lowering::TypeKind::Hole => todo!(),
-        lowering::TypeKind::Integer => todo!(),
-        lowering::TypeKind::Kinded { .. } => todo!(),
-        lowering::TypeKind::Operator { .. } => todo!(),
-        lowering::TypeKind::OperatorChain { .. } => todo!(),
-        lowering::TypeKind::String => todo!(),
-        lowering::TypeKind::Variable { .. } => todo!(),
-        lowering::TypeKind::Wildcard => todo!(),
-        lowering::TypeKind::Record { .. } => todo!(),
-        lowering::TypeKind::Row { .. } => todo!(),
+        lowering::TypeKind::ApplicationChain { .. } => default,
+        lowering::TypeKind::Arrow { .. } => default,
+        lowering::TypeKind::Constrained { .. } => default,
+        lowering::TypeKind::Constructor { .. } => default,
+        lowering::TypeKind::Forall { .. } => default,
+        lowering::TypeKind::Hole => default,
+        lowering::TypeKind::Integer => default,
+        lowering::TypeKind::Kinded { .. } => default,
+        lowering::TypeKind::Operator { .. } => default,
+        lowering::TypeKind::OperatorChain { .. } => default,
+        lowering::TypeKind::String => default,
+        lowering::TypeKind::Variable { .. } => default,
+        lowering::TypeKind::Wildcard => default,
+        lowering::TypeKind::Record { .. } => default,
+        lowering::TypeKind::Row { .. } => default,
         lowering::TypeKind::Parenthesized { parenthesized } => {
-            let Some(id) = parenthesized else { return default };
-            infer_surface_kind(state, context, *id)
+            let Some(parenthesized) = parenthesized else {
+                return default;
+            };
+            infer_surface_kind(state, context, *parenthesized)
         }
     }
 }

@@ -24,17 +24,11 @@ pub struct ForallBinder {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct Unification {
-    pub unique: u32,
-    pub level: u32,
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Variable {
     Implicit(debruijn::Level),
     Skolem(debruijn::Level),
     Bound(debruijn::Index),
-    Free(Option<SmolStr>),
+    Free(SmolStr),
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -43,7 +37,7 @@ pub enum Type {
     Constructor(FileId, TypeItemId),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
-    Unification(Unification),
+    Unification(u32),
     Variable(Variable),
     Unknown,
 }
