@@ -79,6 +79,7 @@ pub struct CheckContext<'e> {
     pub prim: PrimCore,
     pub indexed: &'e IndexedModule,
     pub lowered: &'e LoweredModule,
+    pub prim_indexed: &'e IndexedModule,
 }
 
 impl<'e> CheckContext<'e> {
@@ -86,8 +87,9 @@ impl<'e> CheckContext<'e> {
         prim: PrimCore,
         indexed: &'e IndexedModule,
         lowered: &'e LoweredModule,
+        prim_indexed: &'e IndexedModule,
     ) -> CheckContext<'e> {
-        CheckContext { prim, indexed, lowered }
+        CheckContext { prim, indexed, lowered, prim_indexed }
     }
 }
 

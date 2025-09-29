@@ -101,9 +101,7 @@ test = 1 + 2 * 3 + 4
             r#"
 module Main where
 
-class TypeEq a b
-
-instance (TypeEq a b, TypeEq f f) => TypeEq (f a) (f b)
+foreign import data Proxy :: Constraint
 "#,
         );
 
