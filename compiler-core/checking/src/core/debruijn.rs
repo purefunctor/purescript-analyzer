@@ -4,7 +4,7 @@
 //! and levels. The type checker uses a locally nameless representation
 //! for type variables, with additional abstractions for implicitly
 //! quantified type variables in permitted contexts like instance heads.
-use std::ops;
+use std::{fmt, ops};
 
 use lowering::{GraphNodeId, ImplicitBindingId, TypeVariableBindingId};
 use rustc_hash::FxHashMap;
@@ -39,6 +39,12 @@ pub struct Bound {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Level(u32);
 
+impl fmt::Display for Level {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "&{}", self.0)
+    }
+}
+
 /// A De Bruijn index.
 ///
 /// De Bruijn indices are used to identify variables from the
@@ -51,6 +57,12 @@ pub struct Level(u32);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index(u32);
+
+impl fmt::Display for Index {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "*{}", self.0)
+    }
+}
 
 impl Bound {
     /// Returns the current De Bruijn [`Level`].

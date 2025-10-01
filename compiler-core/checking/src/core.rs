@@ -1,4 +1,5 @@
 pub mod debruijn;
+pub mod pretty;
 pub mod storage;
 
 pub use storage::TypeStorage;

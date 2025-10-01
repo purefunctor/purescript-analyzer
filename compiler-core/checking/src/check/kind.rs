@@ -32,7 +32,11 @@ pub fn infer_surface_kind<S: TypeStorage>(
             (t, k)
         }
 
-        lowering::TypeKind::Forall { .. } => default,
+        lowering::TypeKind::Forall { .. } => {
+            let t = convert::type_to_core(state, context, id);
+            let k = context.prim.t;
+            (t, k)
+        },
 
         lowering::TypeKind::Hole => default,
 

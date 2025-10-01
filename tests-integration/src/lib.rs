@@ -101,7 +101,7 @@ test = 1 + 2 * 3 + 4
             r#"
 module Main where
 
-foreign import data Proxy :: Constraint
+foreign import data Proxy :: forall a b. a -> b -> a
 "#,
         );
 
@@ -132,6 +132,5 @@ foreign import data Proxy :: Constraint
 
         let mut storage = InlineStorage::default();
         checking::check_module(&mut engine, &mut storage, id).unwrap();
-        dbg!(storage);
     }
 }

@@ -5,13 +5,13 @@ use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
-use indexing::{IndexedModule, TermItemKind, TypeItemKind};
+use indexing::{IndexedModule, TypeItemKind};
 use lowering::LoweredModule;
 use resolving::ResolvedModule;
 
 use crate::{
-    check::{CheckContext, CheckState, PrimCore, convert, kind},
-    core::TypeStorage,
+    check::{CheckContext, CheckState, PrimCore, kind},
+    core::{TypeStorage, pretty::pretty_print},
 };
 
 pub trait External {
@@ -49,7 +49,13 @@ pub fn check_module(
             lowered.info.get_type_item(id)
         {
             let result = signature.map(|id| kind::infer_surface_kind(&mut state, &context, id));
-            dbg!(result);
+            if let Some((t, k)) = result {
+                println!(
+                    "{} :: {}",
+                    pretty_print(external, &state, &context, t),
+                    pretty_print(external, &state, &context, k)
+                )
+            }
         }
     }
 
