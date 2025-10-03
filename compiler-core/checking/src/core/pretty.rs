@@ -36,6 +36,11 @@ where
             let result = pretty_print(external, state, context, *result);
             format!("({argument} -> {result})")
         }
+        Type::KindApplication(function, argument) => {
+            let function = pretty_print(external, state, context, *function);
+            let argument = pretty_print(external, state, context, *argument);
+            format!("({function} @{argument})")
+        }
         Type::Unification(unique) => {
             format!("?{unique}")
         }

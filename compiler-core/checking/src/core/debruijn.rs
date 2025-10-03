@@ -37,7 +37,7 @@ pub struct Bound {
 /// ∀. ∀. &0 -> &1
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Level(u32);
+pub struct Level(pub u32);
 
 impl fmt::Display for Level {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -56,7 +56,13 @@ impl fmt::Display for Level {
 /// ∀. ∀. *1 -> *0
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Index(u32);
+pub struct Index(pub u32);
+
+impl Index {
+    pub fn increment(self) -> Index {
+        Index(self.0 + 1)
+    }
+}
 
 impl fmt::Display for Index {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

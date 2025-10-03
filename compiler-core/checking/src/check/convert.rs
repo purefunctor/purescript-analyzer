@@ -130,8 +130,11 @@ fn convert_implicit_resolution<S: TypeStorage>(
     implicit: &lowering::ImplicitTypeVariable,
 ) -> TypeId {
     if implicit.binding {
-        let level = state.bind_implicit(implicit.node, implicit.id);
+        let kind = state.fresh_unification();
+
+        let level = state.bind_implicit(implicit.node, implicit.id, kind);
         let variable = Variable::Implicit(level);
+
         state.storage.intern(Type::Variable(variable))
     } else {
         let index = state

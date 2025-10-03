@@ -1,3 +1,5 @@
+use std::env::var;
+
 use building_types::QueryResult;
 use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
@@ -51,13 +53,22 @@ where
         self.bound.index_of(variable)
     }
 
-    pub fn bind_implicit(&mut self, node: GraphNodeId, id: ImplicitBindingId) -> debruijn::Level {
+    pub fn forall_binding_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
+        let variable = debruijn::Variable::Forall(id);
+        let level = self.bound.level_of(variable)?;
+        self.kinds.get(level).copied()
+    }
+
+    pub fn bind_implicit(
+        &mut self,
+        node: GraphNodeId,
+        id: ImplicitBindingId,
+        kind: TypeId,
+    ) -> debruijn::Level {
         let variable = debruijn::Variable::Implicit { node, id };
-        if let Some(level) = self.bound.level_of(variable) {
-            level
-        } else {
-            self.bound.bind(variable)
-        }
+        let level = self.bound.level_of(variable).unwrap_or_else(|| self.bound.bind(variable));
+        self.kinds.insert(level, kind);
+        level
     }
 
     pub fn lookup_implicit(
@@ -67,6 +78,16 @@ where
     ) -> Option<debruijn::Index> {
         let variable = debruijn::Variable::Implicit { node, id };
         self.bound.index_of(variable)
+    }
+
+    pub fn implicit_binding_kind(
+        &self,
+        node: GraphNodeId,
+        id: ImplicitBindingId,
+    ) -> Option<TypeId> {
+        let variable = debruijn::Variable::Implicit { node, id };
+        let level = self.bound.level_of(variable)?;
+        self.kinds.get(level).copied()
     }
 
     pub fn unbind(&mut self, level: debruijn::Level) {

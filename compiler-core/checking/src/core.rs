@@ -16,7 +16,7 @@ pub enum BuiltinConstructor {
     Number,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForallBinder {
     pub visible: bool,
     pub name: SmolStr,
@@ -38,6 +38,7 @@ pub enum Type {
     Constructor(FileId, TypeItemId),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
+    KindApplication(TypeId, TypeId),
     Unification(u32),
     Variable(Variable),
     Unknown,
