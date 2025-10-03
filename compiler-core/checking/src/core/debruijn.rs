@@ -115,6 +115,10 @@ impl Bound {
     pub fn get_level(&self, Level(index): Level) -> Option<Variable> {
         self.inner.get(index as usize).copied()
     }
+
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (Level, Variable)> {
+        self.inner.iter().enumerate().map(|(index, variable)| (Level(index as u32), *variable))
+    }
 }
 
 impl ops::Index<Level> for Bound {

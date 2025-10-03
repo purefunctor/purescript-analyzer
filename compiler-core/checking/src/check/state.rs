@@ -35,11 +35,31 @@ where
     S: TypeStorage,
 {
     pub fn fresh_unification(&mut self, context: &CheckContext) -> TypeId {
-        let k = self.unification.fresh(context.prim.t);
-        let k = self.storage.intern(Type::Unification(k));
+        // Create a new unification variable for the kind `?k :: <bound> -> Type`
+        let kind_pi = self.unification_function_kind(context, context.prim.t);
+        let kind_id = self.unification.fresh(kind_pi);
+        let kind_ty = self.storage.intern(Type::Unification(kind_id));
 
-        let t = self.unification.fresh(k);
-        self.storage.intern(Type::Unification(t))
+        // Create a new unification variable for the type: `?t :: <bound> -> ?k`
+        let type_pi = self.unification_function_kind(context, kind_ty);
+        let type_id = self.unification.fresh(type_pi);
+        self.storage.intern(Type::Unification(type_id))
+    }
+
+    /// Create the [`Type::Function`]-based kind representation
+    /// using the current environment and a given kind:
+    ///
+    /// ```text
+    /// [ a :: Type, b :: Type ], Type
+    ///
+    /// (a :: Type) -> (b :: Type) -> Type
+    /// ```
+    fn unification_function_kind(&mut self, context: &CheckContext, kind: TypeId) -> TypeId {
+        self.bound.iter().rev().fold(kind, |kind, (level, _)| {
+            let variable_kind = self.kinds.get(level).copied();
+            let variable_kind = variable_kind.unwrap_or(context.prim.unknown);
+            self.storage.intern(Type::Function(variable_kind, kind))
+        })
     }
 
     pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
