@@ -42,16 +42,6 @@ where
             state.storage.intern(Type::Function(argument, result))
         }
 
-        Type::KindApplication(function, argument) => {
-            let function = *function;
-            let argument = *argument;
-
-            let function = substitute_index(state, index, with_t, function);
-            let argument = substitute_index(state, index, with_t, argument);
-
-            state.storage.intern(Type::KindApplication(function, argument))
-        }
-
         Type::Forall(binder, inner) => {
             let mut binder = binder.clone();
             let inner = *inner;
@@ -62,6 +52,28 @@ where
             state.storage.intern(Type::Forall(binder, inner))
         }
 
-        Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => t,
+        Type::KindApplication(function, argument) => {
+            let function = *function;
+            let argument = *argument;
+
+            let function = substitute_index(state, index, with_t, function);
+            let argument = substitute_index(state, index, with_t, argument);
+
+            state.storage.intern(Type::KindApplication(function, argument))
+        }
+
+        Type::Lambda(body) => {
+            let body = *body;
+
+            let body = substitute_index(state, index, with_t, body);
+
+            state.storage.intern(Type::Lambda(body))
+        }
+
+        Type::Constructor(_, _)
+        | Type::Pruning(_, _)
+        | Type::Unification(_)
+        | Type::Variable(_)
+        | Type::Unknown => t,
     }
 }

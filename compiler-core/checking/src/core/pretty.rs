@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{
     External,
     check::{CheckContext, CheckState},
@@ -40,6 +42,15 @@ where
             let function = pretty_print(external, state, context, *function);
             let argument = pretty_print(external, state, context, *argument);
             format!("({function} @{argument})")
+        }
+        Type::Lambda(body) => {
+            let body = pretty_print(external, state, context, *body);
+            format!("(Λ. {body})")
+        }
+        Type::Pruning(unification, variables) => {
+            let unification = pretty_print(external, state, context, *unification);
+            let variables = variables.iter().join(", ");
+            format!("{unification} [{variables}]")
         }
         Type::Unification(unique) => {
             format!("?{unique}")

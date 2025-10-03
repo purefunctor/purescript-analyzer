@@ -2,6 +2,8 @@ pub mod debruijn;
 pub mod pretty;
 pub mod storage;
 
+use std::sync::Arc;
+
 pub use storage::TypeStorage;
 
 use files::FileId;
@@ -32,6 +34,8 @@ pub enum Variable {
     Free(SmolStr),
 }
 
+pub type Pruning = Arc<[bool]>;
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
@@ -39,6 +43,8 @@ pub enum Type {
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
     KindApplication(TypeId, TypeId),
+    Lambda(TypeId),
+    Pruning(TypeId, Pruning),
     Unification(u32),
     Variable(Variable),
     Unknown,
