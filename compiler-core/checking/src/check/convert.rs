@@ -75,7 +75,7 @@ where
                     convert_forall_resolution(state, *forall)
                 }
                 lowering::TypeVariableResolution::Implicit(implicit) => {
-                    convert_implicit_resolution(state, implicit)
+                    convert_implicit_resolution(state, context, implicit)
                 }
             }
         }
@@ -106,7 +106,7 @@ where
 
     let kind = match binding.kind {
         Some(id) => type_to_core(state, context, id),
-        None => state.fresh_unification(),
+        None => state.fresh_unification(context),
     };
 
     let level = state.bind_forall(binding.id, kind);
@@ -127,10 +127,11 @@ where
 
 fn convert_implicit_resolution<S: TypeStorage>(
     state: &mut CheckState<S>,
+    context: &CheckContext,
     implicit: &lowering::ImplicitTypeVariable,
 ) -> TypeId {
     if implicit.binding {
-        let kind = state.fresh_unification();
+        let kind = state.fresh_unification(context);
 
         let level = state.bind_implicit(implicit.node, implicit.id, kind);
         let variable = Variable::Implicit(level);

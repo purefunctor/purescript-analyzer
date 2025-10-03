@@ -1,11 +1,10 @@
-use std::env::var;
-
 use building_types::QueryResult;
 use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 
 use crate::{
     External,
+    check::unification::UnificationContext,
     core::{Type, TypeId, debruijn, storage::TypeStorage},
 };
 
@@ -14,9 +13,9 @@ where
     S: TypeStorage,
 {
     pub storage: &'s mut S,
-    unique: u32,
     bound: debruijn::Bound,
     kinds: debruijn::BoundMap<TypeId>,
+    unification: UnificationContext,
 }
 
 impl<'s, S> CheckState<'s, S>
@@ -24,10 +23,10 @@ where
     S: TypeStorage,
 {
     pub fn new(storage: &'s mut S) -> CheckState<'s, S> {
-        let unique = 0;
         let bound = debruijn::Bound::default();
         let kinds = debruijn::BoundMap::default();
-        CheckState { storage, unique, bound, kinds }
+        let unification = UnificationContext::default();
+        CheckState { storage, bound, kinds, unification }
     }
 }
 
@@ -35,10 +34,12 @@ impl<'s, S> CheckState<'s, S>
 where
     S: TypeStorage,
 {
-    pub fn fresh_unification(&mut self) -> TypeId {
-        let unique = self.unique;
-        self.unique += 1;
-        self.storage.intern(Type::Unification(unique))
+    pub fn fresh_unification(&mut self, context: &CheckContext) -> TypeId {
+        let k = self.unification.fresh(context.prim.t);
+        let k = self.storage.intern(Type::Unification(k));
+
+        let t = self.unification.fresh(k);
+        self.storage.intern(Type::Unification(t))
     }
 
     pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {

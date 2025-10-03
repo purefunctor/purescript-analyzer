@@ -1,5 +1,5 @@
 use crate::{
-    check::{CheckContext, CheckState, convert, substitute, unify},
+    check::{CheckContext, CheckState, convert, substitute, unification},
     core::{ForallBinder, Type, TypeId, storage::TypeStorage},
 };
 
@@ -50,7 +50,7 @@ pub fn infer_surface_kind<S: TypeStorage>(
 
         lowering::TypeKind::Hole => {
             let t = convert::type_to_core(state, context, id);
-            let k = state.fresh_unification();
+            let k = state.fresh_unification(context);
             (t, k)
         }
 
@@ -90,7 +90,7 @@ pub fn infer_surface_kind<S: TypeStorage>(
                 Some(lowering::TypeVariableResolution::Implicit(implicit)) => state
                     .implicit_binding_kind(implicit.node, implicit.id)
                     .expect("invariant violated: CheckState::bind_implicit"),
-                None => state.fresh_unification(),
+                None => state.fresh_unification(context),
             };
 
             (t, k)
@@ -133,8 +133,8 @@ where
             (t, k)
         }
         Type::Unification(_) => {
-            let argument_u = state.fresh_unification();
-            let result_u = state.fresh_unification();
+            let argument_u = state.fresh_unification(context);
+            let result_u = state.fresh_unification(context);
 
             // in the environment, bind these to context.prim.t
             // then solve the original unification variable to Function(argument_u, result_u)
@@ -149,7 +149,7 @@ where
         Type::Forall(ForallBinder { .. }, function_k) => {
             let function_k = *function_k;
 
-            let kind_u = state.fresh_unification();
+            let kind_u = state.fresh_unification(context);
             // bind kind_u to kind
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, kind_u));
@@ -171,7 +171,7 @@ where
     S: TypeStorage,
 {
     let (t, k) = infer_surface_kind(state, context, id);
-    unify::unify(state, k, kind);
+    unification::unify(state, k, kind);
     (t, k)
 }
 
