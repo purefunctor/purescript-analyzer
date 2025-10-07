@@ -39,6 +39,12 @@ pub struct Bound {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Level(pub u32);
 
+impl Level {
+    pub fn increment(self) -> Level {
+        Level(self.0 + 1)
+    }
+}
+
 impl fmt::Display for Level {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "&{}", self.0)

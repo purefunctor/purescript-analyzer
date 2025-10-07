@@ -1,11 +1,17 @@
+use std::sync::Arc;
+
 use building_types::QueryResult;
 use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     External,
-    check::unification::UnificationContext,
-    core::{Type, TypeId, debruijn, storage::TypeStorage},
+    check::{
+        substitute,
+        unification::{UnificationContext, UnificationState},
+    },
+    core::{Pruning, Spine, Type, TypeId, Variable, debruijn, storage::TypeStorage},
 };
 
 pub struct CheckState<'s, S>
@@ -38,12 +44,16 @@ where
         // Create a new unification variable for the kind `?k :: <bound> -> Type`
         let kind_pi = self.unification_function_kind(context, context.prim.t);
         let kind_id = self.unification.fresh(kind_pi);
-        let kind_ty = self.storage.intern(Type::Unification(kind_id));
+
+        let kind_pr = self.bound.iter().map(|_| true).collect();
+        let kind_ty = self.storage.intern(Type::Pruning(kind_id, kind_pr));
 
         // Create a new unification variable for the type: `?t :: <bound> -> ?k`
         let type_pi = self.unification_function_kind(context, kind_ty);
         let type_id = self.unification.fresh(type_pi);
-        self.storage.intern(Type::Unification(type_id))
+
+        let type_pr = self.bound.iter().map(|_| true).collect();
+        self.storage.intern(Type::Pruning(type_id, type_pr))
     }
 
     /// Create the [`Type::Function`]-based kind representation
@@ -62,6 +72,97 @@ where
         })
     }
 
+    /// Finds the terminal solution of a unification variable.
+    pub fn force_unification(&self, mut t: TypeId) -> TypeId {
+        while let Type::Unification(unification, _) = self.storage.index(t)
+            && let UnificationState::Solved(solution) = self.unification.get(*unification).state
+        {
+            t = solution
+        }
+        t
+    }
+
+    pub fn normalize(&mut self, t: TypeId) -> TypeId {
+        let t = self.force_unification(t);
+        match *self.storage.index(t) {
+            Type::Application(function, argument) => {
+                let function = self.normalize(function);
+                if let Type::Lambda(lambda) = *self.storage.index(function) {
+                    let result = substitute::substitute_bound(self, argument, lambda);
+                    self.normalize(result)
+                } else {
+                    t
+                }
+            }
+
+            Type::Pruning(unification, ref pruning) => {
+                let pruning = Arc::clone(pruning);
+                self.apply_pruning(unification, pruning)
+            }
+
+            _ => t,
+        }
+    }
+
+    fn apply_pruning(&mut self, unification: u32, pruning: Pruning) -> TypeId {
+        let debruijn::Level(level) = self.bound.level();
+
+        let spine = pruning.iter().enumerate().filter(|(_, keep)| **keep).map(|(index, _)| {
+            let index = level - index as u32 - 1;
+            let index = debruijn::Index(index);
+
+            let variable = Variable::Bound(index);
+            self.storage.intern(Type::Variable(variable))
+        });
+
+        let spine = spine.collect();
+        let core = self.storage.intern(Type::Unification(unification, spine));
+
+        self.normalize(core)
+    }
+
+    pub fn invert_spine(
+        &self,
+        codomain: debruijn::Level,
+        spine: Spine,
+    ) -> Option<(PartialRenaming, Option<Pruning>)> {
+        let mut domain = debruijn::Level(0);
+        let mut renaming = FxHashMap::default();
+
+        let mut nonlinear = FxHashSet::default();
+        let mut positions = vec![];
+
+        for argument in spine.iter() {
+            let argument = self.force_unification(*argument);
+            if let Type::Variable(Variable::Bound(debruijn::Index(index))) =
+                self.storage.index(argument)
+            {
+                let level = codomain.0 - index - 1;
+                if renaming.contains_key(&level) || nonlinear.contains(&level) {
+                    renaming.remove(&level);
+                    nonlinear.insert(level);
+                    positions.push(false);
+                } else {
+                    renaming.insert(level, domain);
+                    positions.push(true);
+                }
+                domain = domain.increment();
+            } else {
+                return None;
+            }
+        }
+
+        let partial_renaming = PartialRenaming { occurs: None, domain, codomain, renaming };
+        let pruning = if nonlinear.is_empty() { None } else { Some(Arc::from(positions)) };
+
+        Some((partial_renaming, pruning))
+    }
+}
+
+impl<'s, S> CheckState<'s, S>
+where
+    S: TypeStorage,
+{
     pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
         let variable = debruijn::Variable::Forall(id);
         let level = self.bound.bind(variable);
@@ -183,4 +284,15 @@ impl PrimCore {
             unknown: state.storage.intern(Type::Unknown),
         })
     }
+}
+
+pub struct PartialRenaming {
+    /// Unification variable for the occurs check.
+    pub occurs: Option<u32>,
+    /// The size of the source context.
+    pub domain: debruijn::Level,
+    /// The size of the target context.
+    pub codomain: debruijn::Level,
+    /// The actual variable mapping.
+    pub renaming: FxHashMap<u32, debruijn::Level>,
 }

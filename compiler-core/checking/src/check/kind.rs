@@ -132,7 +132,7 @@ where
 
             (t, k)
         }
-        Type::Unification(_) => {
+        Type::Unification(_, _) => {
             let argument_u = state.fresh_unification(context);
             let result_u = state.fresh_unification(context);
 

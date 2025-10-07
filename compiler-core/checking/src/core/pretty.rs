@@ -48,12 +48,17 @@ where
             format!("(Λ. {body})")
         }
         Type::Pruning(unification, variables) => {
-            let unification = pretty_print(external, state, context, *unification);
             let variables = variables.iter().join(", ");
-            format!("{unification} [{variables}]")
+            format!("?{unification}[{variables}]")
         }
-        Type::Unification(unique) => {
-            format!("?{unique}")
+        Type::Unification(unique, spine) => {
+            if spine.is_empty() {
+                format!("?{unique}")
+            } else {
+                let spine =
+                    spine.iter().map(|id| pretty_print(external, state, context, *id)).join(", ");
+                format!("?{unique}[{spine}]")
+            }
         }
         Type::Variable(variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),

@@ -35,6 +35,7 @@ pub enum Variable {
 }
 
 pub type Pruning = Arc<[bool]>;
+pub type Spine = Arc<[TypeId]>;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
@@ -44,8 +45,8 @@ pub enum Type {
     Function(TypeId, TypeId),
     KindApplication(TypeId, TypeId),
     Lambda(TypeId),
-    Pruning(TypeId, Pruning),
-    Unification(u32),
+    Pruning(u32, Pruning),
+    Unification(u32, Spine),
     Variable(Variable),
     Unknown,
 }

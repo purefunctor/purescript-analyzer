@@ -1,3 +1,5 @@
+use rustc_hash::FxHashMap;
+
 use crate::{
     check::CheckState,
     core::{Type, TypeId, TypeStorage, Variable, debruijn},
@@ -72,7 +74,7 @@ where
 
         Type::Constructor(_, _)
         | Type::Pruning(_, _)
-        | Type::Unification(_)
+        | Type::Unification(_, _)
         | Type::Variable(_)
         | Type::Unknown => t,
     }
