@@ -52,8 +52,8 @@ pub fn check_module(
             if let Some((t, k)) = result {
                 println!(
                     "{} :: {}",
-                    pretty_print(external, &state, &context, t),
-                    pretty_print(external, &state, &context, k)
+                    pretty_print(external, &state, t),
+                    pretty_print(external, &state, k)
                 )
             }
         }

@@ -1,47 +1,12 @@
+pub mod context;
+pub mod pattern;
+
+pub use context::*;
+pub use pattern::*;
+
 use crate::{
     check::CheckState,
     core::{TypeId, TypeStorage},
 };
 
 pub fn unify<S: TypeStorage>(_state: &mut CheckState<S>, _t1: TypeId, _t2: TypeId) {}
-
-#[derive(Debug)]
-pub enum UnificationState {
-    Unsolved,
-    Solved(TypeId),
-}
-
-#[derive(Debug)]
-pub struct UnificationEntry {
-    pub kind: TypeId,
-    pub state: UnificationState,
-}
-
-#[derive(Debug, Default)]
-pub struct UnificationContext {
-    entries: Vec<UnificationEntry>,
-    unique: u32,
-}
-
-impl UnificationContext {
-    pub fn fresh(&mut self, kind: TypeId) -> u32 {
-        let unique = self.unique;
-
-        self.unique += 1;
-        self.entries.push(UnificationEntry { kind, state: UnificationState::Unsolved });
-
-        unique
-    }
-
-    pub fn get(&self, index: u32) -> &UnificationEntry {
-        &self.entries[index as usize]
-    }
-
-    pub fn get_mut(&mut self, index: u32) -> &mut UnificationEntry {
-        &mut self.entries[index as usize]
-    }
-
-    pub fn solve(&mut self, index: u32, solution: TypeId) {
-        self.entries[index as usize].state = UnificationState::Solved(solution);
-    }
-}

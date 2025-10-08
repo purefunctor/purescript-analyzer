@@ -1,5 +1,3 @@
-use rustc_hash::FxHashMap;
-
 use crate::{
     check::CheckState,
     core::{Type, TypeId, TypeStorage, Variable, debruijn},

@@ -26,7 +26,7 @@ pub struct ForallBinder {
     pub kind: TypeId,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Variable {
     Implicit(debruijn::Level),
     Skolem(debruijn::Level),
