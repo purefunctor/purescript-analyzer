@@ -121,7 +121,7 @@ where
     pub fn invert_spine(
         &self,
         codomain: debruijn::Level,
-        spine: Spine,
+        spine: &[TypeId],
     ) -> Option<(PartialRenaming, Option<Pruning>)> {
         let mut domain = debruijn::Level(0);
         let mut renaming = FxHashMap::default();
@@ -173,7 +173,7 @@ where
     /// unification variable along with its [`Spine`]. For example, when
     /// pruning `?0 a b` to `?0 a`, we want to make sure that its kind
     /// is also updated accordingly.
-    pub fn prune_type(&mut self, pruning: &Pruning, t: TypeId) -> Option<TypeId> {
+    pub fn prune_type(&mut self, pruning: &[bool], t: TypeId) -> Option<TypeId> {
         let mut partial_renaming = PartialRenaming {
             occurs: None,
             domain: debruijn::Level(0),
@@ -227,7 +227,7 @@ where
     /// -- and creates the solution:
     /// ?0 := Λa. Λb. ?1 a
     /// ```
-    pub fn prune_unification(&mut self, pruning: &Pruning, unification: u32) -> Option<u32> {
+    pub fn prune_unification(&mut self, pruning: &[bool], unification: u32) -> Option<u32> {
         let unification_kind = self.unification.get(unification).kind;
         let unification_kind = self.prune_type(pruning, unification_kind)?;
 
@@ -251,7 +251,7 @@ where
     /// -- this function returns:
     /// Λa. Λb. ?1 a
     /// ```
-    fn build_pruned_lambda(&mut self, pruning: &Pruning, fresh: u32) -> TypeId {
+    fn build_pruned_lambda(&mut self, pruning: &[bool], fresh: u32) -> TypeId {
         let level = pruning.len();
         let kept = pruning.iter().enumerate().filter(|(_, keep)| **keep);
 
@@ -341,6 +341,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct PartialRenaming {
     /// Unification variable for the occurs check.
     pub occurs: Option<u32>,

@@ -1,0 +1,6 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Some((PartialRenaming { occurs: None, domain: Level(2), codomain: Level(2), renaming: {0: Level(0), 1: Level(1)} }, None))
+Some((PartialRenaming { occurs: None, domain: Level(4), codomain: Level(2), renaming: {} }, Some([true, true, false, false])))

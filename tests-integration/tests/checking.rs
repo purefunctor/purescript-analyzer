@@ -7,6 +7,7 @@ use checking::{
 };
 use files::{FileId, Files};
 use interner::Interner;
+use itertools::Itertools;
 use lowering::TypeVariableBindingId;
 
 #[derive(Debug)]
@@ -234,5 +235,35 @@ fn test_fresh_unification_normalized() {
         env.pretty(kind)
     );
 
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_fresh_unification_inversion() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (proper, nonlinear) = env.with_state(|state, context| {
+        // [a :: Int, b :: Int]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
+        let codomain = state.bound.level();
+
+        let unification = state.fresh_unification(context);
+        let normalized = state.normalize(unification);
+
+        let Type::Unification(_, spine) = state.storage.index(normalized) else {
+            unreachable!("invariant violated");
+        };
+
+        let nonlinear_spine = spine.iter().chain(spine.iter()).copied().collect_vec();
+
+        let proper_inversion = state.invert_spine(codomain, spine);
+        let nonlinear_inversion = state.invert_spine(codomain, &nonlinear_spine);
+
+        (proper_inversion, nonlinear_inversion)
+    });
+
+    let snapshot = format!("{proper:?}\n{nonlinear:?}");
     insta::assert_snapshot!(snapshot);
 }
