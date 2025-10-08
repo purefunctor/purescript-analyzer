@@ -26,3 +26,25 @@ pub enum QueryError {
 }
 
 pub type QueryResult<T> = Result<T, QueryError>;
+
+pub trait QueryProxy {
+    type Parsed;
+    type Stabilized;
+    type Indexed;
+    type Lowered;
+    type Resolved;
+
+    fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed>;
+
+    fn stabilized(&self, id: FileId) -> QueryResult<Self::Stabilized>;
+
+    fn indexed(&self, id: FileId) -> QueryResult<Self::Indexed>;
+
+    fn lowered(&self, id: FileId) -> QueryResult<Self::Lowered>;
+
+    fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved>;
+
+    fn prim_id(&self) -> FileId;
+
+    fn module_file(&self, name: &str) -> Option<FileId>;
+}

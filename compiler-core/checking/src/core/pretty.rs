@@ -1,45 +1,45 @@
 use itertools::Itertools;
 
 use crate::{
-    External,
+    ExternalQueries,
     check::CheckState,
     core::{Type, TypeId, TypeStorage, Variable},
 };
 
-pub fn pretty_print<S>(external: &impl External, state: &CheckState<S>, id: TypeId) -> String
+pub fn pretty_print<S>(queries: &impl ExternalQueries, state: &CheckState<S>, id: TypeId) -> String
 where
     S: TypeStorage,
 {
     let kind = state.storage.index(id);
     match kind {
         Type::Application(function, argument) => {
-            let function = pretty_print(external, state, *function);
-            let argument = pretty_print(external, state, *argument);
+            let function = pretty_print(queries, state, *function);
+            let argument = pretty_print(queries, state, *argument);
             format!("({function} {argument})")
         }
         Type::Constructor(file_id, type_id) => {
-            let indexed = external.indexed(*file_id).unwrap();
+            let indexed = queries.indexed(*file_id).unwrap();
             let name = indexed.items[*type_id].name.as_ref();
             name.map(|name| name.to_string()).unwrap_or_else(|| "<InvalidName>".to_string())
         }
         Type::Forall(binder, inner) => {
             let level = binder.level;
-            let kind = pretty_print(external, state, binder.kind);
-            let inner = pretty_print(external, state, *inner);
+            let kind = pretty_print(queries, state, binder.kind);
+            let inner = pretty_print(queries, state, *inner);
             format!("(forall ({level} :: {kind}) {inner})")
         }
         Type::Function(argument, result) => {
-            let argument = pretty_print(external, state, *argument);
-            let result = pretty_print(external, state, *result);
+            let argument = pretty_print(queries, state, *argument);
+            let result = pretty_print(queries, state, *result);
             format!("({argument} -> {result})")
         }
         Type::KindApplication(function, argument) => {
-            let function = pretty_print(external, state, *function);
-            let argument = pretty_print(external, state, *argument);
+            let function = pretty_print(queries, state, *function);
+            let argument = pretty_print(queries, state, *argument);
             format!("({function} @{argument})")
         }
         Type::Lambda(body) => {
-            let body = pretty_print(external, state, *body);
+            let body = pretty_print(queries, state, *body);
             format!("(Λ. {body})")
         }
         Type::Pruning(unification, variables) => {
@@ -50,7 +50,7 @@ where
             if spine.is_empty() {
                 format!("?{unique}")
             } else {
-                let spine = spine.iter().map(|id| pretty_print(external, state, *id)).join(", ");
+                let spine = spine.iter().map(|id| pretty_print(queries, state, *id)).join(", ");
                 format!("?{unique}[{spine}]")
             }
         }

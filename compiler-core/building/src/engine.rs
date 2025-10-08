@@ -34,7 +34,9 @@ use std::{
     },
 };
 
-use building_types::{ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryResult};
+use building_types::{
+    ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
+};
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
@@ -705,31 +707,39 @@ impl QueryEngine {
     }
 }
 
-impl checking::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
+impl QueryProxy for QueryEngine {
+    type Parsed = FullParsedModule;
+
+    type Stabilized = Arc<StabilizedModule>;
+
+    type Indexed = Arc<IndexedModule>;
+
+    type Lowered = Arc<LoweredModule>;
+
+    type Resolved = Arc<ResolvedModule>;
+
+    fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
+        QueryEngine::parsed(self, id)
+    }
+
+    fn stabilized(&self, id: FileId) -> QueryResult<Self::Stabilized> {
+        QueryEngine::stabilized(self, id)
+    }
+
+    fn indexed(&self, id: FileId) -> QueryResult<Self::Indexed> {
         QueryEngine::indexed(self, id)
     }
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
-        QueryEngine::resolved(self, id)
+    fn lowered(&self, id: FileId) -> QueryResult<Self::Lowered> {
+        QueryEngine::lowered(self, id)
     }
 
-    fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
-        QueryEngine::lowered(self, id)
+    fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved> {
+        QueryEngine::resolved(self, id)
     }
 
     fn prim_id(&self) -> FileId {
         QueryEngine::prim_id(self)
-    }
-}
-
-impl resolving::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
-        QueryEngine::indexed(self, id)
-    }
-
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
-        QueryEngine::resolved(self, id)
     }
 
     fn module_file(&self, name: &str) -> Option<FileId> {
@@ -737,23 +747,11 @@ impl resolving::External for QueryEngine {
     }
 }
 
-impl sugar::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
-        QueryEngine::indexed(self, id)
-    }
+impl checking::ExternalQueries for QueryEngine {}
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
-        QueryEngine::resolved(self, id)
-    }
+impl resolving::ExternalQueries for QueryEngine {}
 
-    fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
-        QueryEngine::lowered(self, id)
-    }
-
-    fn prim_id(&self) -> FileId {
-        QueryEngine::prim_id(self)
-    }
-}
+impl sugar::ExternalQueries for QueryEngine {}
 
 #[cfg(test)]
 mod tests {

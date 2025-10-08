@@ -77,7 +77,7 @@ impl ForOperatorId for TypeOperatorId {
 
 /// Resolves an operator and its associativity and precedence.
 fn operator_info<OperatorId>(
-    external: &impl crate::External,
+    queries: &impl crate::ExternalQueries,
     lowered: &LoweredModule,
     id: OperatorId,
 ) -> Option<(Associativity, u8)>
@@ -85,7 +85,7 @@ where
     OperatorId: ForOperatorId,
 {
     let (file_id, term_id) = OperatorId::resolve_operator(lowered, id)?;
-    let lowered = external.lowered(file_id).ok()?;
+    let lowered = queries.lowered(file_id).ok()?;
     OperatorId::operator_info(&lowered, term_id)
 }
 
@@ -104,7 +104,7 @@ fn binding_power(associativity: Associativity, precedence: u8) -> (u8, u8) {
 
 /// Common entry point for bracketing.
 fn bracket<Id>(
-    external: &impl crate::External,
+    queries: &impl crate::ExternalQueries,
     lowered: &LoweredModule,
     item: Option<Id>,
     items: &[OperatorPair<Id>],
@@ -123,14 +123,14 @@ where
         }
         _ => {
             let mut items = items.iter().copied().peekable();
-            bracket_loop(external, lowered, item, &mut items, 0, None)
+            bracket_loop(queries, lowered, item, &mut items, 0, None)
         }
     }
 }
 
 /// Core pratt parsing loop for bracketing.
 fn bracket_loop<Id>(
-    external: &impl crate::External,
+    queries: &impl crate::ExternalQueries,
     lowered: &LoweredModule,
     item: Option<Id>,
     items: &mut Peekable<impl Iterator<Item = OperatorPair<Id>>>,
@@ -151,7 +151,7 @@ where
         let id = id.ok_or(BracketingError::InvalidOperator)?;
 
         let (associativity, precedence) =
-            operator_info(external, lowered, id).ok_or(BracketingError::FailedToResolve(id))?;
+            operator_info(queries, lowered, id).ok_or(BracketingError::FailedToResolve(id))?;
 
         let operator = OperatorInfo { id, associativity, precedence };
 
@@ -175,7 +175,7 @@ where
         items.next();
 
         let right =
-            bracket_loop(external, lowered, element, items, right_binding_power, Some(operator))?;
+            bracket_loop(queries, lowered, element, items, right_binding_power, Some(operator))?;
 
         left = OperatorTree::Branch(id, [left, right].into());
     }
@@ -230,27 +230,27 @@ pub struct Bracketed {
 
 /// Performs bracketing across all operator chains in a module.
 pub fn bracketed(
-    external: &impl crate::External,
+    queries: &impl crate::ExternalQueries,
     lowered: &LoweredModule,
 ) -> QueryResult<Bracketed> {
     let mut binders = FxHashMap::default();
     for (id, kind) in lowered.info.iter_binder() {
         if let BinderKind::OperatorChain { head, tail } = kind {
-            binders.insert(id, bracket(external, lowered, *head, tail));
+            binders.insert(id, bracket(queries, lowered, *head, tail));
         }
     }
 
     let mut expressions = FxHashMap::default();
     for (id, kind) in lowered.info.iter_expression() {
         if let ExpressionKind::OperatorChain { head, tail } = kind {
-            expressions.insert(id, bracket(external, lowered, *head, tail));
+            expressions.insert(id, bracket(queries, lowered, *head, tail));
         }
     }
 
     let mut types = FxHashMap::default();
     for (id, kind) in lowered.info.iter_type() {
         if let TypeKind::OperatorChain { head, tail } = kind {
-            types.insert(id, bracket(external, lowered, *head, tail));
+            types.insert(id, bracket(queries, lowered, *head, tail));
         }
     }
 

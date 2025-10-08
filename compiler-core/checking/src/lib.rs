@@ -3,7 +3,7 @@ pub mod core;
 
 use std::sync::Arc;
 
-use building_types::QueryResult;
+use building_types::{QueryProxy, QueryResult};
 use files::FileId;
 use indexing::{IndexedModule, TypeItemKind};
 use lowering::LoweredModule;
@@ -14,30 +14,29 @@ use crate::{
     core::{TypeStorage, pretty::pretty_print},
 };
 
-pub trait External {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>>;
-
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>>;
-
-    fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>>;
-
-    fn prim_id(&self) -> FileId;
+pub trait ExternalQueries:
+    QueryProxy<
+        Indexed = Arc<IndexedModule>,
+        Lowered = Arc<LoweredModule>,
+        Resolved = Arc<ResolvedModule>,
+    >
+{
 }
 
 pub fn check_module(
-    external: &impl External,
+    queries: &impl ExternalQueries,
     storage: &mut impl TypeStorage,
     id: FileId,
 ) -> QueryResult<()> {
-    let indexed = external.indexed(id)?;
-    let lowered = external.lowered(id)?;
+    let indexed = queries.indexed(id)?;
+    let lowered = queries.lowered(id)?;
 
-    let prim_id = external.prim_id();
-    let prim_indexed = external.indexed(prim_id)?;
+    let prim_id = queries.prim_id();
+    let prim_indexed = queries.indexed(prim_id)?;
 
     let mut state = CheckState::new(storage);
 
-    let prim = PrimCore::collect(external, &mut state)?;
+    let prim = PrimCore::collect(queries, &mut state)?;
     let context = CheckContext::new(prim, &indexed, &lowered, &prim_indexed);
 
     let foreign = indexed.items.iter_types().filter_map(|(id, item)| {
@@ -52,8 +51,8 @@ pub fn check_module(
             if let Some((t, k)) = result {
                 println!(
                     "{} :: {}",
-                    pretty_print(external, &state, t),
-                    pretty_print(external, &state, k)
+                    pretty_print(queries, &state, t),
+                    pretty_print(queries, &state, k)
                 )
             }
         }

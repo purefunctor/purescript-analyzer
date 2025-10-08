@@ -3,7 +3,7 @@ use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 
 use crate::{
-    External,
+    ExternalQueries,
     check::unification::UnificationContext,
     core::{Type, TypeId, debruijn, storage::TypeStorage},
 };
@@ -125,12 +125,15 @@ pub struct PrimCore {
 }
 
 impl PrimCore {
-    pub fn collect<S>(external: &impl External, state: &mut CheckState<S>) -> QueryResult<PrimCore>
+    pub fn collect<S>(
+        queries: &impl ExternalQueries,
+        state: &mut CheckState<S>,
+    ) -> QueryResult<PrimCore>
     where
         S: TypeStorage,
     {
-        let prim_id = external.prim_id();
-        let prim_resolved = external.resolved(prim_id)?;
+        let prim_id = queries.prim_id();
+        let prim_resolved = queries.resolved(prim_id)?;
 
         let mut lookup_prim_type = |name| {
             let prim_type = prim_resolved.lookup_type(&prim_resolved, None, name);
