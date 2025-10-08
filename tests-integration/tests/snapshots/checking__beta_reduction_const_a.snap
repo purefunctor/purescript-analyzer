@@ -1,0 +1,5 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+(((Λ. (Λ. *1)) rigid-a) rigid-b) ~> rigid-a

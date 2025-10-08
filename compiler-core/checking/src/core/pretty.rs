@@ -6,15 +6,15 @@ use crate::{
     core::{Type, TypeId, TypeStorage, Variable},
 };
 
-pub fn pretty_print<S>(queries: &impl ExternalQueries, state: &CheckState<S>, id: TypeId) -> String
+pub fn print<S>(queries: &impl ExternalQueries, state: &CheckState<S>, id: TypeId) -> String
 where
     S: TypeStorage,
 {
     let kind = state.storage.index(id);
     match kind {
         Type::Application(function, argument) => {
-            let function = pretty_print(queries, state, *function);
-            let argument = pretty_print(queries, state, *argument);
+            let function = print(queries, state, *function);
+            let argument = print(queries, state, *argument);
             format!("({function} {argument})")
         }
         Type::Constructor(file_id, type_id) => {
@@ -24,22 +24,22 @@ where
         }
         Type::Forall(binder, inner) => {
             let level = binder.level;
-            let kind = pretty_print(queries, state, binder.kind);
-            let inner = pretty_print(queries, state, *inner);
+            let kind = print(queries, state, binder.kind);
+            let inner = print(queries, state, *inner);
             format!("(forall ({level} :: {kind}) {inner})")
         }
         Type::Function(argument, result) => {
-            let argument = pretty_print(queries, state, *argument);
-            let result = pretty_print(queries, state, *result);
+            let argument = print(queries, state, *argument);
+            let result = print(queries, state, *result);
             format!("({argument} -> {result})")
         }
         Type::KindApplication(function, argument) => {
-            let function = pretty_print(queries, state, *function);
-            let argument = pretty_print(queries, state, *argument);
+            let function = print(queries, state, *function);
+            let argument = print(queries, state, *argument);
             format!("({function} @{argument})")
         }
         Type::Lambda(body) => {
-            let body = pretty_print(queries, state, *body);
+            let body = print(queries, state, *body);
             format!("(Λ. {body})")
         }
         Type::Pruning(unification, variables) => {
@@ -50,7 +50,7 @@ where
             if spine.is_empty() {
                 format!("?{unique}")
             } else {
-                let spine = spine.iter().map(|id| pretty_print(queries, state, *id)).join(", ");
+                let spine = spine.iter().map(|id| print(queries, state, *id)).join(", ");
                 format!("?{unique}[{spine}]")
             }
         }

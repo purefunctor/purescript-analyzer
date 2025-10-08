@@ -11,7 +11,7 @@ use resolving::ResolvedModule;
 
 use crate::{
     check::{CheckContext, CheckState, PrimCore, kind},
-    core::{TypeStorage, pretty::pretty_print},
+    core::{TypeStorage, pretty::print},
 };
 
 pub trait ExternalQueries:
@@ -51,8 +51,8 @@ pub fn check_module(
             if let Some((t, k)) = result {
                 println!(
                     "{} :: {}",
-                    pretty_print(queries, &state, t),
-                    pretty_print(queries, &state, k)
+                    print(queries, &state, t),
+                    print(queries, &state, k)
                 )
             }
         }
