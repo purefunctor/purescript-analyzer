@@ -1,0 +1,5 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+(Λ. (Λ. Symbol)) :: (Int -> (String -> ?0[true, true]))

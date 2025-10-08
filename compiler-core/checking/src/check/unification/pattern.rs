@@ -127,7 +127,7 @@ where
         let mut renaming = FxHashMap::default();
 
         let mut nonlinear = FxHashSet::default();
-        let mut positions = vec![];
+        let mut spine_variables = vec![];
 
         for argument in spine.iter() {
             let argument = self.force_unification(*argument);
@@ -135,22 +135,25 @@ where
                 self.storage.index(argument)
             {
                 let level = codomain.0 - index - 1;
+
                 if renaming.contains_key(&level) || nonlinear.contains(&level) {
                     renaming.remove(&level);
                     nonlinear.insert(level);
-                    positions.push(false);
                 } else {
                     renaming.insert(level, domain);
-                    positions.push(true);
                 }
+
                 domain = domain.increment();
+                spine_variables.push(level);
             } else {
                 return None;
             }
         }
 
+        let positions = spine_variables.iter().map(|level| !nonlinear.contains(level)).collect();
+
         let partial_renaming = PartialRenaming { occurs: None, domain, codomain, renaming };
-        let pruning = if nonlinear.is_empty() { None } else { Some(Arc::from(positions)) };
+        let pruning = if nonlinear.is_empty() { None } else { Some(positions) };
 
         Some((partial_renaming, pruning))
     }
@@ -338,6 +341,53 @@ where
 
             Type::Unknown => Some(t),
         }
+    }
+}
+
+/// Functions for solving unification variables.
+impl<'s, S> CheckState<'s, S>
+where
+    S: TypeStorage,
+{
+    /// Solves a unification variable to a [`TypeId`],
+    /// performing renaming and pruning when appropriate.
+    pub fn solve(
+        &mut self,
+        codomain: debruijn::Level,
+        unification: u32,
+        spine: &[TypeId],
+        solution: TypeId,
+    ) -> Option<u32> {
+        let (mut partial_renaming, pruning) = self.invert_spine(codomain, spine)?;
+
+        let unification = if let Some(pruning) = pruning {
+            self.prune_unification(&pruning, unification)?
+        } else {
+            unification
+        };
+
+        partial_renaming.occurs = Some(unification);
+        let renamed = self.rename(&partial_renaming, solution)?;
+
+        let kind = self.unification.get(unification).kind;
+        let lambda = self.build_solution_lambda(kind, renamed);
+
+        let normalized = self.normalize(lambda);
+        self.unification.solve(unification, normalized);
+
+        Some(unification)
+    }
+
+    fn build_solution_lambda(&mut self, kind: TypeId, body: TypeId) -> TypeId {
+        let mut bindings = 0;
+        let mut current = kind;
+
+        while let Type::Function(_, result) = *self.storage.index(current) {
+            bindings += 1;
+            current = result;
+        }
+
+        (0..bindings).fold(body, |body, _| self.storage.intern(Type::Lambda(body)))
     }
 }
 

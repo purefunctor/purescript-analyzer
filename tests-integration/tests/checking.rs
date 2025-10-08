@@ -7,7 +7,6 @@ use checking::{
 };
 use files::{FileId, Files};
 use interner::Interner;
-use itertools::Itertools;
 use lowering::TypeVariableBindingId;
 
 #[derive(Debug)]
@@ -81,12 +80,6 @@ trait CheckStateExt {
     fn application(&mut self, function: TypeId, argument: TypeId) -> TypeId;
 
     fn function(&mut self, arg: TypeId, result: TypeId) -> TypeId;
-
-    fn unification(&mut self, id: u32, spine: &[TypeId]) -> TypeId;
-
-    fn pruning(&mut self, id: u32, pruning: &[bool]) -> TypeId;
-
-    fn unknown(&mut self) -> TypeId;
 }
 
 impl<S: TypeStorage> CheckStateExt for CheckState<'_, S> {
@@ -110,18 +103,6 @@ impl<S: TypeStorage> CheckStateExt for CheckState<'_, S> {
 
     fn function(&mut self, arg: TypeId, result: TypeId) -> TypeId {
         self.storage.intern(Type::Function(arg, result))
-    }
-
-    fn unification(&mut self, id: u32, spine: &[TypeId]) -> TypeId {
-        self.storage.intern(Type::Unification(id, Arc::from(spine)))
-    }
-
-    fn pruning(&mut self, id: u32, pruning: &[bool]) -> TypeId {
-        self.storage.intern(Type::Pruning(id, Arc::from(pruning)))
-    }
-
-    fn unknown(&mut self) -> TypeId {
-        self.storage.intern(Type::Unknown)
     }
 }
 
@@ -252,13 +233,15 @@ fn test_fresh_unification_inversion() {
         let unification = state.fresh_unification(context);
         let normalized = state.normalize(unification);
 
-        let Type::Unification(_, spine) = state.storage.index(normalized) else {
+        let Type::Unification(_, s) = state.storage.index(normalized) else {
             unreachable!("invariant violated");
         };
 
-        let nonlinear_spine = spine.iter().chain(spine.iter()).copied().collect_vec();
+        // Non-linear spines are currently impossible to construct in the type
+        // system, so we emulate it here to test the pruning code path.
+        let nonlinear_spine = vec![s[0], s[0]];
 
-        let proper_inversion = state.invert_spine(codomain, spine);
+        let proper_inversion = state.invert_spine(codomain, s);
         let nonlinear_inversion = state.invert_spine(codomain, &nonlinear_spine);
 
         (proper_inversion, nonlinear_inversion)
@@ -344,6 +327,130 @@ fn test_unification_pruning() {
         env.pretty(pruned_2),
         env.pretty(pruned_3),
         env.pretty(pruned_4),
+    );
+
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_solve_simple() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (kind, solution) = env.with_state(|state, context| {
+        // [a :: Int, b :: String]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+        let codomain = state.bound.level();
+
+        let unification = state.fresh_unification(context);
+        let normalized = state.normalize(unification);
+
+        let Type::Unification(u, ref s) = *state.storage.index(normalized) else {
+            unreachable!("invariant violated");
+        };
+
+        let s = Arc::clone(s);
+
+        state.solve(codomain, u, &s, context.prim.symbol).unwrap();
+
+        let entry = state.unification.get(u);
+        let UnificationState::Solved(solution) = entry.state else {
+            unreachable!("invariant violated");
+        };
+
+        (entry.kind, solution)
+    });
+
+    let snapshot = format!("{} :: {}", env.pretty(solution), env.pretty(kind));
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_solve_with_variables() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (kind, solution) = env.with_state(|state, context| {
+        // [a :: Int, b :: String]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+        let codomain = state.bound.level();
+
+        let unification = state.fresh_unification(context);
+        let normalized = state.normalize(unification);
+
+        let Type::Unification(u, ref s) = *state.storage.index(normalized) else {
+            unreachable!("invariant violated");
+        };
+
+        let s = Arc::clone(s);
+
+        let bound_b = state.bound_variable(0);
+        let bound_a = state.bound_variable(1);
+        let b_to_a = state.function(bound_b, bound_a);
+
+        state.solve(codomain, u, &s, b_to_a).unwrap();
+
+        let entry = state.unification.get(u);
+        let UnificationState::Solved(solution) = entry.state else {
+            unreachable!("invariant violated");
+        };
+
+        (entry.kind, solution)
+    });
+
+    let snapshot = format!("{} :: {}", env.pretty(solution), env.pretty(kind));
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_solve_nonlinear() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (original, solution) = env.with_state(|state, context| {
+        // [a :: Int, b :: String, c :: Type]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
+        let codomain = state.bound.level();
+
+        let unification = state.fresh_unification(context);
+        let normalized = state.normalize(unification);
+
+        let Type::Unification(u, ref s) = *state.storage.index(normalized) else {
+            unreachable!("invariant violated");
+        };
+
+        // Non-linear spines are currently impossible to construct in the type
+        // system, so we emulate it here to test the pruning code path.
+        let nonlinear_spine = vec![s[0], s[0]];
+
+        let solution_u = state
+            .solve(codomain, u, &nonlinear_spine, context.prim.symbol)
+            .expect("invariant violated: expected solving to succeed");
+
+        let original = state.unification.get(u);
+        let UnificationState::Solved(original_s) = original.state else {
+            unreachable!("invariant violated");
+        };
+
+        let solution = state.unification.get(solution_u);
+        let UnificationState::Solved(solution_s) = solution.state else {
+            unreachable!("invariant violated");
+        };
+
+        ((u, original_s, original.kind), (solution_u, solution_s, solution.kind))
+    });
+
+    let snapshot = format!(
+        "?{} := {} :: {}\n?{} := {} :: {}",
+        original.0,
+        env.pretty(original.1),
+        env.pretty(original.2),
+        solution.0,
+        env.pretty(solution.1),
+        env.pretty(solution.2)
     );
 
     insta::assert_snapshot!(snapshot);
