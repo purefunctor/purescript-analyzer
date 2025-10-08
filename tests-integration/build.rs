@@ -47,7 +47,7 @@ fn test_{folder_name}_main() {{
     let Some(id) = engine.module_file("Main") else {{
         return;
     }};
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }}"#
         )
@@ -93,7 +93,7 @@ fn test_{folder_name}_{test_name}() {{
     let Some(id) = engine.module_file("{file_name}") else {{
         return;
     }};
-    let report = tests_integration::core::report_lowered(&engine, id, "{file_name}");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "{file_name}");
     insta::assert_snapshot!(report);
 }}"#
             )
@@ -140,7 +140,7 @@ fn test_{folder_name}_{test_name}() {{
     let Some(id) = engine.module_file("{file_name}") else {{
         return;
     }};
-    let report = tests_integration::core::report_resolved(&engine, id, "{file_name}");
+    let report = tests_integration::generated::basic::report_resolved(&engine, id, "{file_name}");
     insta::assert_snapshot!(report);
 }}"#
             )

@@ -1,4 +1,4 @@
-mod render;
+pub mod render;
 
 use std::fmt::Write;
 

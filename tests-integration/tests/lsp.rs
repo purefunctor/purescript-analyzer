@@ -7,7 +7,7 @@ fn test_001_definition_local_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -18,7 +18,7 @@ fn test_002_definition_import_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -29,7 +29,7 @@ fn test_003_hover_local_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -40,7 +40,7 @@ fn test_004_hover_import_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -51,7 +51,7 @@ fn test_005_completion_local_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -62,7 +62,7 @@ fn test_006_completion_partial_empty_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -73,7 +73,7 @@ fn test_007_completion_partial_token_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -84,7 +84,7 @@ fn test_008_completion_import_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -95,7 +95,7 @@ fn test_009_completion_suggestion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -106,7 +106,7 @@ fn test_010_completion_qualified_suggestion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -117,7 +117,7 @@ fn test_011_completion_module_name_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -128,7 +128,7 @@ fn test_012_completion_edit_import_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -139,7 +139,7 @@ fn test_013_completion_bad_cst_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -150,7 +150,7 @@ fn test_014_prim_implicit_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -161,7 +161,7 @@ fn test_015_prim_explicit_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -172,7 +172,7 @@ fn test_016_prim_suggestion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -183,7 +183,7 @@ fn test_017_unicode_operators_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -194,7 +194,7 @@ fn test_018_export_suggestion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -205,7 +205,7 @@ fn test_019_documentation_string_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -216,7 +216,7 @@ fn test_020_references_baseline_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -227,7 +227,7 @@ fn test_021_references_qualified_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -238,7 +238,7 @@ fn test_022_references_import_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -249,7 +249,7 @@ fn test_023_references_duplicate_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -260,7 +260,7 @@ fn test_024_locate_annotation_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -271,7 +271,7 @@ fn test_025_completion_operators_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -282,7 +282,7 @@ fn test_026_completion_operator_suggestion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -293,7 +293,7 @@ fn test_027_completion_type_operators_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -304,7 +304,7 @@ fn test_028_completion_type_operator_suggestion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -315,7 +315,7 @@ fn test_029_locate_declaration_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -326,7 +326,7 @@ fn test_030_locate_constructor_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
 
@@ -337,6 +337,6 @@ fn test_031_locate_class_member_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::lsp::report(&engine, &files, id);
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
