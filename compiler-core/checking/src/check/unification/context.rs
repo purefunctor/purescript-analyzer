@@ -1,12 +1,12 @@
 use crate::core::TypeId;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnificationState {
     Unsolved,
     Solved(TypeId),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnificationEntry {
     pub kind: TypeId,
     pub state: UnificationState,

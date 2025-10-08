@@ -1,0 +1,8 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+ ~> (Λ. (Λ. ?2[*1, *0]))
+ ~> (Λ. (Λ. ?3[*1]))
+ ~> (Λ. (Λ. ?4[*0]))
+ ~> (Λ. (Λ. ?5))

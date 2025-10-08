@@ -2,7 +2,7 @@ use std::{num::NonZeroU32, sync::Arc};
 
 use analyzer::{QueryEngine, prim};
 use checking::{
-    check::{CheckContext, CheckState, PrimCore, unification::UnificationEntry},
+    check::{CheckContext, CheckState, PrimCore, unification::UnificationState},
     core::{Type, TypeId, TypeStorage, Variable, debruijn, pretty},
 };
 use files::{FileId, Files};
@@ -265,5 +265,86 @@ fn test_fresh_unification_inversion() {
     });
 
     let snapshot = format!("{proper:?}\n{nonlinear:?}");
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_unification_kind_pruning() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (kind, pruned_1, pruned_2, pruned_3) = env.with_state(|state, context| {
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+
+        let unification = state.fresh_unification(context);
+        let Type::Pruning(u, _) = *state.storage.index(unification) else {
+            unreachable!("invariant violated");
+        };
+
+        let kind = state.unification.get(u).kind;
+        let pruned_1 = state.prune_type(&[true, false], kind).unwrap();
+        let pruned_2 = state.prune_type(&[false, true], kind).unwrap();
+        let pruned_3 = state.prune_type(&[false, false], kind).unwrap();
+
+        (kind, pruned_1, pruned_2, pruned_3)
+    });
+
+    let snapshot = format!(
+        "{}\n ~> {}\n ~> {}\n ~> {}",
+        env.pretty(kind),
+        env.pretty(pruned_1),
+        env.pretty(pruned_2),
+        env.pretty(pruned_3)
+    );
+
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_unification_pruning() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (pruned_1, pruned_2, pruned_3, pruned_4) = env.with_state(|state, context| {
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+
+        let unification = state.fresh_unification(context);
+        let Type::Pruning(u, _) = *state.storage.index(unification) else {
+            unreachable!("invariant violated");
+        };
+
+        let _ = state.prune_unification(&[true, true], u).unwrap();
+        let UnificationState::Solved(pruned_1) = state.unification.get(u).state else {
+            unreachable!("invariant violated");
+        };
+
+        let _ = state.prune_unification(&[true, false], u).unwrap();
+        let UnificationState::Solved(pruned_2) = state.unification.get(u).state else {
+            unreachable!("invariant violated");
+        };
+
+        let _ = state.prune_unification(&[false, true], u).unwrap();
+        let UnificationState::Solved(pruned_3) = state.unification.get(u).state else {
+            unreachable!("invariant violated");
+        };
+
+        let _ = state.prune_unification(&[false, false], u).unwrap();
+        let UnificationState::Solved(pruned_4) = state.unification.get(u).state else {
+            unreachable!("invariant violated");
+        };
+
+        (pruned_1, pruned_2, pruned_3, pruned_4)
+    });
+
+    let snapshot = format!(
+        " ~> {}\n ~> {}\n ~> {}\n ~> {}",
+        env.pretty(pruned_1),
+        env.pretty(pruned_2),
+        env.pretty(pruned_3),
+        env.pretty(pruned_4),
+    );
+
     insta::assert_snapshot!(snapshot);
 }

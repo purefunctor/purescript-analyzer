@@ -49,11 +49,7 @@ pub fn check_module(
         {
             let result = signature.map(|id| kind::infer_surface_kind(&mut state, &context, id));
             if let Some((t, k)) = result {
-                println!(
-                    "{} :: {}",
-                    print(queries, &state, t),
-                    print(queries, &state, k)
-                )
+                println!("{} :: {}", print(queries, &state, t), print(queries, &state, k))
             }
         }
     }

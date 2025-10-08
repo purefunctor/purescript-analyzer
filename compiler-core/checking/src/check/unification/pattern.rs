@@ -234,7 +234,7 @@ where
         let fresh = self.unification.fresh(unification_kind);
         let solution = self.build_pruned_lambda(pruning, fresh);
 
-        self.unification.solve(fresh, solution);
+        self.unification.solve(unification, solution);
         Some(fresh)
     }
 
