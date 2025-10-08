@@ -202,6 +202,7 @@ dependencies = [
  "lowering",
  "parking_lot",
  "parsing",
+ "prim-constants",
  "resolving",
  "rustc-hash 2.1.1",
  "stabilizing",
@@ -1222,6 +1223,10 @@ checksum = "e5a7c30837279ca13e7c867e9e40053bc68740f988cb07f7ca6df43cc734b585"
 dependencies = [
  "zerovec",
 ]
+
+[[package]]
+name = "prim-constants"
+version = "0.1.0"
 
 [[package]]
 name = "proc-macro-error-attr2"
