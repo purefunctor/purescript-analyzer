@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::{num::NonZeroU32, sync::Arc};
 
 use analyzer::{QueryEngine, prim};
 use checking::{
-    check::{CheckContext, CheckState, PrimCore},
+    check::{CheckContext, CheckState, PrimCore, unification::UnificationEntry},
     core::{Type, TypeId, TypeStorage, Variable, debruijn, pretty},
 };
 use files::{FileId, Files};
 use interner::Interner;
+use lowering::TypeVariableBindingId;
 
 #[derive(Debug)]
 struct InlineStorage {
@@ -64,7 +65,30 @@ impl<'r> TestEnv<'r> {
         f(&mut state, &context)
     }
 
-    // Type construction helpers
+    fn pretty(&mut self, id: TypeId) -> String {
+        self.with_state(|state, _| pretty::print(self.engine, state, id))
+    }
+}
+
+trait CheckStateExt {
+    fn bound_variable(&mut self, index: u32) -> TypeId;
+
+    fn free_variable(&mut self, name: &str) -> TypeId;
+
+    fn lambda(&mut self, body: TypeId) -> TypeId;
+
+    fn application(&mut self, function: TypeId, argument: TypeId) -> TypeId;
+
+    fn function(&mut self, arg: TypeId, result: TypeId) -> TypeId;
+
+    fn unification(&mut self, id: u32, spine: &[TypeId]) -> TypeId;
+
+    fn pruning(&mut self, id: u32, pruning: &[bool]) -> TypeId;
+
+    fn unknown(&mut self) -> TypeId;
+}
+
+impl<S: TypeStorage> CheckStateExt for CheckState<'_, S> {
     fn bound_variable(&mut self, index: u32) -> TypeId {
         let var = Variable::Bound(debruijn::Index(index));
         self.storage.intern(Type::Variable(var))
@@ -98,10 +122,6 @@ impl<'r> TestEnv<'r> {
     fn unknown(&mut self) -> TypeId {
         self.storage.intern(Type::Unknown)
     }
-
-    fn pretty(&mut self, id: TypeId) -> String {
-        self.with_state(|state, _| pretty::print(self.engine, state, id))
-    }
 }
 
 fn empty_engine() -> (QueryEngine, FileId) {
@@ -121,14 +141,17 @@ fn test_beta_reduction_id() {
     let (engine, id) = empty_engine();
     let mut env = TestEnv::new(&engine, id);
 
-    let rigid = env.free_variable("rigid");
-    let body = env.bound_variable(0);
-    let lambda = env.lambda(body);
-    let application = env.application(lambda, rigid);
+    let (application, normalized) = env.with_state(|state, _| {
+        let rigid = state.free_variable("rigid");
+        let body = state.bound_variable(0);
+        let lambda = state.lambda(body);
+        let application = state.application(lambda, rigid);
 
-    let normalized = env.with_state(|state, _| state.normalize(application));
+        let normalized = state.normalize(application);
+        (application, normalized)
+    });
+
     let snapshot = format!("{} ~> {}", env.pretty(application), env.pretty(normalized));
-
     insta::assert_snapshot!(snapshot);
 }
 
@@ -137,19 +160,22 @@ fn test_beta_reduction_const_a() {
     let (engine, id) = empty_engine();
     let mut env = TestEnv::new(&engine, id);
 
-    let rigid_a = env.free_variable("rigid-a");
-    let rigid_b = env.free_variable("rigid-b");
+    let (application, normalized) = env.with_state(|state, _| {
+        let rigid_a = state.free_variable("rigid-a");
+        let rigid_b = state.free_variable("rigid-b");
 
-    let body = env.bound_variable(1);
-    let lambda_b = env.lambda(body);
-    let lambda_a = env.lambda(lambda_b);
+        let body = state.bound_variable(1);
+        let lambda_b = state.lambda(body);
+        let lambda_a = state.lambda(lambda_b);
 
-    let application = env.application(lambda_a, rigid_a);
-    let application = env.application(application, rigid_b);
+        let application = state.application(lambda_a, rigid_a);
+        let application = state.application(application, rigid_b);
 
-    let normalized = env.with_state(|state, _| state.normalize(application));
+        let normalized = state.normalize(application);
+        (application, normalized)
+    });
+
     let snapshot = format!("{} ~> {}", env.pretty(application), env.pretty(normalized));
-
     insta::assert_snapshot!(snapshot);
 }
 
@@ -158,18 +184,55 @@ fn test_beta_reduction_const_b() {
     let (engine, id) = empty_engine();
     let mut env = TestEnv::new(&engine, id);
 
-    let rigid_a = env.free_variable("rigid-a");
-    let rigid_b = env.free_variable("rigid-b");
+    let (application, normalized) = env.with_state(|state, _| {
+        let rigid_a = state.free_variable("rigid-a");
+        let rigid_b = state.free_variable("rigid-b");
 
-    let body = env.bound_variable(1);
-    let lambda_b = env.lambda(body);
-    let lambda_a = env.lambda(lambda_b);
+        let body = state.bound_variable(0);
+        let lambda_b = state.lambda(body);
+        let lambda_a = state.lambda(lambda_b);
 
-    let application = env.application(lambda_a, rigid_a);
-    let application = env.application(application, rigid_b);
+        let application = state.application(lambda_a, rigid_a);
+        let application = state.application(application, rigid_b);
 
-    let normalized = env.with_state(|state, _| state.normalize(application));
+        let normalized = state.normalize(application);
+        (application, normalized)
+    });
+
     let snapshot = format!("{} ~> {}", env.pretty(application), env.pretty(normalized));
+    insta::assert_snapshot!(snapshot);
+}
+
+const FAKE_NONZERO_1: NonZeroU32 = NonZeroU32::new(1).unwrap();
+const FAKE_NONZERO_2: NonZeroU32 = NonZeroU32::new(2).unwrap();
+
+#[test]
+fn test_fresh_unification_normalized() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    let (unification, normalized, kind) = env.with_state(|state, context| {
+        // [a :: Int, b :: Int]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
+
+        let unification = state.fresh_unification(context);
+        let normalized = state.normalize(unification);
+
+        let Type::Pruning(u, _) = state.storage.index(unification) else {
+            unreachable!("invariant violated");
+        };
+
+        let entry = state.unification.get(*u);
+        (unification, normalized, entry.kind)
+    });
+
+    let snapshot = format!(
+        "{} ~> {} :: {}",
+        env.pretty(unification),
+        env.pretty(normalized),
+        env.pretty(kind)
+    );
 
     insta::assert_snapshot!(snapshot);
 }
