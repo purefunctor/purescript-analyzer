@@ -233,13 +233,11 @@ fn test_solve_simple() {
         let unification = state.fresh_unification(context);
         let normalized = state.normalize(unification);
 
-        let Type::Unification(u, ref s) = *state.storage.index(normalized) else {
+        let Type::Unification(u, d) = *state.storage.index(normalized) else {
             unreachable!("invariant violated");
         };
 
-        let s = Arc::clone(s);
-
-        state.solve(codomain, u, &s, context.prim.symbol).unwrap();
+        state.solve(codomain, u, d, context.prim.symbol).unwrap();
 
         let entry = state.unification.get(u);
         let UnificationState::Solved(solution) = entry.state else {
@@ -267,17 +265,15 @@ fn test_solve_with_variables() {
         let unification = state.fresh_unification(context);
         let normalized = state.normalize(unification);
 
-        let Type::Unification(u, ref s) = *state.storage.index(normalized) else {
+        let Type::Unification(u, d) = *state.storage.index(normalized) else {
             unreachable!("invariant violated");
         };
-
-        let s = Arc::clone(s);
 
         let bound_b = state.bound_variable(0);
         let bound_a = state.bound_variable(1);
         let b_to_a = state.function(bound_b, bound_a);
 
-        state.solve(codomain, u, &s, b_to_a).unwrap();
+        state.solve(codomain, u, d, b_to_a).unwrap();
 
         let entry = state.unification.get(u);
         let UnificationState::Solved(solution) = entry.state else {
@@ -303,18 +299,16 @@ fn test_solve_extended_context() {
         let unification = state.fresh_unification(context);
         let normalized = state.normalize(unification);
 
-        let Type::Unification(u, ref spine) = *state.storage.index(normalized) else {
+        let Type::Unification(u, d) = *state.storage.index(normalized) else {
             unreachable!("invariant violated");
         };
-
-        let spine = Arc::clone(spine);
 
         // [a :: Int, b :: Int]
         state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
         let codomain = state.bound.level();
 
         let variable_b = state.bound_variable(0);
-        let solution_result = state.solve(codomain, u, &spine, variable_b);
+        let solution_result = state.solve(codomain, u, d, variable_b);
 
         assert!(solution_result.is_none())
     });

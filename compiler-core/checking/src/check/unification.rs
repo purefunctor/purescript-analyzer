@@ -1,8 +1,6 @@
 pub mod context;
 pub mod pattern;
 
-use std::sync::Arc;
-
 pub use context::*;
 pub use pattern::*;
 
@@ -29,16 +27,14 @@ where
             &Type::Constructor(t2_file_id, t2_item_id),
         ) => (t1_file_id, t1_item_id) == (t2_file_id, t2_item_id),
 
-        (&Type::Unification(unification, ref spine), _) => {
-            let spine = Arc::clone(spine);
+        (&Type::Unification(unification, domain), _) => {
             let codomain = state.bound.level();
-            state.solve(codomain, unification, &spine, t2).is_some()
+            state.solve(codomain, unification, domain, t2).is_some()
         }
 
-        (_, &Type::Unification(unification, ref spine)) => {
-            let spine = Arc::clone(spine);
+        (_, &Type::Unification(unification, domain)) => {
             let codomain = state.bound.level();
-            state.solve(codomain, unification, &spine, t1).is_some()
+            state.solve(codomain, unification, domain, t1).is_some()
         }
 
         (_, _) => false,

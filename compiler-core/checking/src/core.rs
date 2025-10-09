@@ -2,8 +2,6 @@ pub mod debruijn;
 pub mod pretty;
 pub mod storage;
 
-use std::sync::Arc;
-
 pub use storage::TypeStorage;
 
 use files::FileId;
@@ -34,8 +32,6 @@ pub enum Variable {
     Free(SmolStr),
 }
 
-pub type Spine = Arc<[debruijn::Level]>;
-
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
@@ -44,7 +40,7 @@ pub enum Type {
     Function(TypeId, TypeId),
     KindApplication(TypeId, TypeId),
     Lambda(TypeId),
-    Unification(u32, Spine),
+    Unification(u32, debruijn::Level),
     Variable(Variable),
     Unknown,
 }

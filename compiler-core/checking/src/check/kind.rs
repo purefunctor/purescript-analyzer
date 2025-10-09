@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     check::{CheckContext, CheckState, convert, substitute, unification},
     core::{ForallBinder, Type, TypeId, storage::TypeStorage},
@@ -130,15 +128,14 @@ where
             (t, k)
         }
 
-        Type::Unification(unification, ref spine) => {
-            let spine = Arc::clone(spine);
+        Type::Unification(unification, domain) => {
             let codomain = state.bound.level();
 
             let argument_u = state.fresh_unification_type(context);
             let result_u = state.fresh_unification_type(context);
 
             let function_u = state.storage.intern(Type::Function(argument_u, result_u));
-            state.solve(codomain, unification, &spine, function_u);
+            state.solve(codomain, unification, domain, function_u);
 
             let (argument_t, _) = check_surface_kind(state, context, argument, argument_u);
 

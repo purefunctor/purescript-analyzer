@@ -2,4 +2,4 @@
 source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
-(Λ. (Λ. (*0 -> *1))) :: (Int -> (String -> ?0[&0, &1]))
+(Λ. (Λ. (*0 -> *1))) :: (Int -> (String -> ?0[&2]))

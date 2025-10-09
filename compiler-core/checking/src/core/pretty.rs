@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use crate::{
     ExternalQueries,
     check::CheckState,
@@ -41,13 +39,8 @@ where
             let body = print(queries, state, body);
             format!("(Λ. {body})")
         }
-        Type::Unification(unique, ref spine) => {
-            if spine.is_empty() {
-                format!("?{unique}")
-            } else {
-                let spine = spine.iter().join(", ");
-                format!("?{unique}[{spine}]")
-            }
+        Type::Unification(unique, domain) => {
+            format!("?{unique}[{domain}]")
         }
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),

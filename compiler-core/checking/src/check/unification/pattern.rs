@@ -22,9 +22,8 @@ where
     pub fn fresh_unification_kinded(&mut self, context: &CheckContext, kind: TypeId) -> TypeId {
         let function = self.unification_function_kind(context, kind);
         let unification = self.unification.fresh(function);
-
-        let spine = self.bound.iter().map(|(level, _)| level).collect();
-        self.storage.intern(Type::Unification(unification, spine))
+        let domain = self.bound.level();
+        self.storage.intern(Type::Unification(unification, domain))
     }
 
     /// Creates a fresh polykinded pattern unification variable
@@ -111,11 +110,10 @@ where
         &mut self,
         codomain: debruijn::Level,
         unification: u32,
-        spine: &[debruijn::Level],
+        domain: debruijn::Level,
         solution: TypeId,
     ) -> Option<u32> {
         let occurs = Some(unification);
-        let domain = debruijn::Level(spine.len() as u32);
 
         if !self.is_well_scoped(occurs, codomain, domain, solution) {
             return None;
