@@ -1,12 +1,10 @@
 //! Higher-order pattern unification.
 
-use std::sync::Arc;
-
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 
 use crate::{
     check::{CheckContext, CheckState, substitute, unification::UnificationState},
-    core::{Pruning, Type, TypeId, TypeStorage, Variable, debruijn},
+    core::{Type, TypeId, TypeStorage, Variable, debruijn},
 };
 
 /// Functions for unification variables.
@@ -17,21 +15,22 @@ where
     /// Creates a fresh pattern unification variable with the provided
     /// kind and instantiated with the current context:
     ///
-    /// Returns [`Pruning(?t, Γ)`](Type::Pruning)
+    /// Returns [`Unification(?t, Γ)`](Type::Unification)
     /// ```purescript
     /// ?t :: Γ -> <kind>
     /// ```
     pub fn fresh_unification_kinded(&mut self, context: &CheckContext, kind: TypeId) -> TypeId {
         let function = self.unification_function_kind(context, kind);
         let unification = self.unification.fresh(function);
-        let pruning = self.bound.iter().map(|_| true).collect();
-        self.storage.intern(Type::Pruning(unification, pruning))
+
+        let spine = self.bound.iter().map(|(level, _)| level).collect();
+        self.storage.intern(Type::Unification(unification, spine))
     }
 
     /// Creates a fresh polykinded pattern unification variable
     /// instantiated with the current context:
     ///
-    /// Returns [`Pruning(?t, Γ)`](Type::Pruning)
+    /// Returns [Unification(?t, Γ)`](Type::Unification)
     /// ```purescript
     /// ?k :: Γ -> Type
     /// ?t :: Γ -> ?k
@@ -44,7 +43,7 @@ where
     /// Creates a fresh [`Type`]-kinded pattern unification variable
     /// instantiated with the current context:
     ///
-    /// Returns [`Pruning(?t, Γ)`](Type::Pruning)
+    /// Returns [`Unification(?t, Γ)`](Type::Unification)
     /// ```purescript
     /// ?t :: Γ -> Type
     /// ```
@@ -84,7 +83,6 @@ impl<'s, S> CheckState<'s, S>
 where
     S: TypeStorage,
 {
-    /// Evaluates [`Type::Application`] and [`Type::Pruning`].
     pub fn normalize(&mut self, t: TypeId) -> TypeId {
         let t = self.force_unification(t);
         match *self.storage.index(t) {
@@ -98,250 +96,8 @@ where
                 }
             }
 
-            Type::Pruning(unification, ref pruning) => {
-                let pruning = Arc::clone(pruning);
-                self.apply_pruning(unification, &pruning)
-            }
-
             _ => t,
         }
-    }
-
-    /// Converts [`Type::Pruning`] into [`Type::Unification`].
-    fn apply_pruning(&mut self, unification: u32, pruning: &[bool]) -> TypeId {
-        let levels = self.bound.iter().map(|(level, _)| level);
-
-        let spine = levels
-            .zip(pruning)
-            .filter_map(|(level, keep)| if *keep { Some(level) } else { None })
-            .collect();
-
-        let unification = self.storage.intern(Type::Unification(unification, spine));
-        self.normalize(unification)
-    }
-}
-
-/// Functions for inversion and pruning.
-impl<'s, S> CheckState<'s, S>
-where
-    S: TypeStorage,
-{
-    /// Inverts a [`Spine`] into [`PartialRenaming`] and [`Pruning`].
-    pub fn invert_spine(
-        &self,
-        codomain: debruijn::Level,
-        spine: &[debruijn::Level],
-    ) -> Option<(PartialRenaming, Option<Pruning>)> {
-        let mut domain = debruijn::Level(0);
-        let mut renaming = FxHashMap::default();
-
-        let mut nonlinear = FxHashSet::default();
-        let mut spine_variables = vec![];
-
-        for debruijn::Level(level) in spine.iter() {
-            if renaming.contains_key(level) || nonlinear.contains(level) {
-                renaming.remove(level);
-                nonlinear.insert(*level);
-            } else {
-                renaming.insert(*level, domain);
-            }
-
-            domain = domain.increment();
-            spine_variables.push(*level);
-        }
-
-        let positions = spine_variables.iter().map(|level| !nonlinear.contains(level)).collect();
-
-        let partial_renaming = PartialRenaming { occurs: None, domain, codomain, renaming };
-        let pruning = if nonlinear.is_empty() { None } else { Some(positions) };
-
-        Some((partial_renaming, pruning))
-    }
-
-    /// Prunes arguments from a [`Type::Function`].
-    ///
-    /// For example:
-    /// ```purescript
-    /// -- Given the input type;
-    /// (a : Type) -> (b : Type) -> Type
-    ///
-    /// -- and a Pruning mask;
-    /// [true, false]
-    ///
-    /// -- this function returns:
-    /// (a : Type) -> Type
-    /// ```
-    ///
-    /// This function is typically used to prune the kind of a pattern
-    /// unification variable along with its [`Spine`]. For example, when
-    /// pruning `?0 a b` to `?0 a`, we want to make sure that its kind
-    /// is also updated accordingly.
-    pub fn prune_type(&mut self, pruning: &[bool], t: TypeId) -> Option<TypeId> {
-        let mut partial_renaming = PartialRenaming {
-            occurs: None,
-            domain: debruijn::Level(0),
-            codomain: debruijn::Level(0),
-            renaming: FxHashMap::default(),
-        };
-
-        let mut arguments = vec![];
-        let mut current = t;
-
-        for keep in pruning.iter() {
-            let Type::Function(argument, result) = *self.storage.index(current) else {
-                return None;
-            };
-
-            partial_renaming = if *keep {
-                let renamed_argument = self.rename(&partial_renaming, argument)?;
-                arguments.push(renamed_argument);
-                partial_renaming.lift()
-            } else {
-                partial_renaming.skip()
-            };
-
-            current = result;
-        }
-
-        let mut result = self.rename(&partial_renaming, current)?;
-        for argument in arguments.into_iter().rev() {
-            result = self.storage.intern(Type::Function(argument, result));
-        }
-
-        Some(result)
-    }
-
-    /// Prunes a pattern unification variable.
-    ///
-    /// Creates a new pattern unification variable with a pruned kind,
-    /// then solves the original unification variable to the new one.
-    ///
-    /// For example:
-    /// ```purescript
-    /// -- Given the input variable;
-    /// ?0 :: (a : Type) -> (b : Type) -> Type
-    ///
-    /// -- and a Pruning mask;
-    /// [true, false]
-    ///
-    /// -- this function returns;
-    /// ?1 :: (a : Type) -> Type
-    ///
-    /// -- and creates the solution:
-    /// ?0 := Λa. Λb. ?1 a
-    /// ```
-    pub fn prune_unification(&mut self, pruning: &[bool], unification: u32) -> Option<u32> {
-        let unification_kind = self.unification.get(unification).kind;
-        let unification_kind = self.prune_type(pruning, unification_kind)?;
-
-        let fresh = self.unification.fresh(unification_kind);
-        let solution = self.build_pruned_lambda(pruning, fresh);
-
-        self.unification.solve(unification, solution);
-        Some(fresh)
-    }
-
-    /// Creates a pattern unification lambda for a pruned unification variable.
-    ///
-    /// For example:
-    /// ```purescript
-    /// -- Given the input variable;
-    /// ?1
-    ///
-    /// -- and a Pruning mask;
-    /// [true, false]
-    ///
-    /// -- this function returns:
-    /// Λa. Λb. ?1 a
-    /// ```
-    fn build_pruned_lambda(&mut self, pruning: &[bool], fresh: u32) -> TypeId {
-        let levels = self.bound.iter().map(|(level, _)| level);
-
-        let spine = levels
-            .zip(pruning)
-            .filter_map(|(level, keep)| if *keep { Some(level) } else { None })
-            .collect();
-
-        let unification = self.storage.intern(Type::Unification(fresh, spine));
-        pruning.iter().fold(unification, |body, _| self.storage.intern(Type::Lambda(body)))
-    }
-
-    pub fn rename(&mut self, partial_renaming: &PartialRenaming, t: TypeId) -> Option<TypeId> {
-        let t = self.force_unification(t);
-        match *self.storage.index(t) {
-            Type::Application(function, argument) => {
-                let function = self.rename(partial_renaming, function)?;
-                let argument = self.rename(partial_renaming, argument)?;
-                Some(self.storage.intern(Type::Application(function, argument)))
-            }
-
-            Type::Constructor(_, _) => Some(t),
-
-            Type::Forall(ref binder, body) => {
-                let mut binder = binder.clone();
-
-                binder.kind = self.rename(partial_renaming, binder.kind)?;
-                let body = self.rename(partial_renaming, body)?;
-
-                Some(self.storage.intern(Type::Forall(binder, body)))
-            }
-
-            Type::Function(argument, result) => {
-                let argument = self.rename(partial_renaming, argument)?;
-                let result = self.rename(partial_renaming, result)?;
-                Some(self.storage.intern(Type::Function(argument, result)))
-            }
-
-            Type::KindApplication(function, argument) => {
-                let function = self.rename(partial_renaming, function)?;
-                let argument = self.rename(partial_renaming, argument)?;
-                Some(self.storage.intern(Type::KindApplication(function, argument)))
-            }
-
-            Type::Lambda(body) => {
-                let body = self.rename(partial_renaming, body)?;
-                Some(self.storage.intern(Type::Lambda(body)))
-            }
-
-            Type::Pruning(unification, _) => {
-                if Some(unification) == partial_renaming.occurs {
-                    None
-                } else {
-                    Some(t)
-                }
-            }
-
-            Type::Unification(unification, _) => {
-                if Some(unification) == partial_renaming.occurs {
-                    None
-                } else {
-                    Some(t)
-                }
-            }
-
-            Type::Variable(ref variable) => {
-                let Variable::Bound(index) = variable else {
-                    return Some(t);
-                };
-
-                let index = self.rename_index(partial_renaming, *index)?;
-                let variable = Variable::Bound(index);
-
-                Some(self.storage.intern(Type::Variable(variable)))
-            }
-
-            Type::Unknown => Some(t),
-        }
-    }
-
-    fn rename_index(
-        &self,
-        partial_renaming: &PartialRenaming,
-        index: debruijn::Index,
-    ) -> Option<debruijn::Index> {
-        let level = partial_renaming.codomain.0 - index.0 - 1;
-        let renamed = partial_renaming.renaming.get(&level)?;
-        Some(debruijn::Index(partial_renaming.domain.0 - renamed.0 - 1))
     }
 }
 
@@ -350,8 +106,7 @@ impl<'s, S> CheckState<'s, S>
 where
     S: TypeStorage,
 {
-    /// Solves a unification variable to a [`TypeId`],
-    /// performing renaming and pruning when appropriate.
+    /// Solves a unification variable to a [`TypeId`].
     pub fn solve(
         &mut self,
         codomain: debruijn::Level,
@@ -359,24 +114,72 @@ where
         spine: &[debruijn::Level],
         solution: TypeId,
     ) -> Option<u32> {
-        let (mut partial_renaming, pruning) = self.invert_spine(codomain, spine)?;
+        let occurs = Some(unification);
+        let domain = debruijn::Level(spine.len() as u32);
 
-        let unification = if let Some(pruning) = pruning {
-            self.prune_unification(&pruning, unification)?
-        } else {
-            unification
-        };
-
-        partial_renaming.occurs = Some(unification);
-        let renamed = self.rename(&partial_renaming, solution)?;
+        if !self.is_well_scoped(occurs, codomain, domain, solution) {
+            return None;
+        }
 
         let kind = self.unification.get(unification).kind;
-        let lambda = self.build_solution_lambda(kind, renamed);
+        let lambda = self.build_solution_lambda(kind, solution);
 
         let normalized = self.normalize(lambda);
         self.unification.solve(unification, normalized);
 
         Some(unification)
+    }
+
+    fn is_well_scoped(
+        &self,
+        occurs: Option<u32>,
+        codomain: debruijn::Level,
+        domain: debruijn::Level,
+        solution: TypeId,
+    ) -> bool {
+        match *self.storage.index(solution) {
+            Type::Application(function, argument) => {
+                self.is_well_scoped(occurs, codomain, domain, function)
+                    && self.is_well_scoped(occurs, codomain, domain, argument)
+            }
+
+            Type::Constructor(_, _) => true,
+
+            Type::Forall(ref binder, inner) => {
+                let inner_codomain = domain.increment();
+                self.is_well_scoped(occurs, codomain, domain, binder.kind)
+                    && self.is_well_scoped(occurs, codomain, inner_codomain, inner)
+            }
+
+            Type::Function(argument, result) => {
+                self.is_well_scoped(occurs, codomain, domain, argument)
+                    && self.is_well_scoped(occurs, codomain, domain, result)
+            }
+
+            Type::KindApplication(function, argument) => {
+                self.is_well_scoped(occurs, codomain, domain, function)
+                    && self.is_well_scoped(occurs, codomain, domain, argument)
+            }
+
+            Type::Lambda(body) => {
+                let body_codomain = domain.increment();
+                self.is_well_scoped(occurs, codomain, body_codomain, body)
+            }
+
+            Type::Unification(unification, _) => Some(unification) != occurs,
+
+            Type::Variable(ref variable) => match variable {
+                Variable::Implicit(_) => true,
+                Variable::Skolem(_) => true,
+                Variable::Bound(index) => {
+                    let level = codomain.0 - index.0 - 1;
+                    level < domain.0
+                }
+                Variable::Free(_) => true,
+            },
+
+            Type::Unknown => true,
+        }
     }
 
     fn build_solution_lambda(&mut self, kind: TypeId, body: TypeId) -> TypeId {

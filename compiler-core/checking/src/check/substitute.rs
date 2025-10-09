@@ -54,10 +54,8 @@ where
             state.storage.intern(Type::Lambda(body))
         }
 
-        Type::Constructor(_, _)
-        | Type::Pruning(_, _)
-        | Type::Unification(_, _)
-        | Type::Variable(_)
-        | Type::Unknown => in_type,
+        Type::Constructor(_, _) | Type::Unification(_, _) | Type::Variable(_) | Type::Unknown => {
+            in_type
+        }
     }
 }

@@ -1,8 +1,0 @@
----
-source: tests-integration/tests/checking.rs
-expression: snapshot
----
-(Int -> (String -> ?0[true, true]))
- ~> (Int -> ?0[true, true])
- ~> (String -> ?0[true, true])
- ~> ?0[true, true]

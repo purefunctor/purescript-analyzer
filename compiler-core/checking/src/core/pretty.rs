@@ -41,14 +41,6 @@ where
             let body = print(queries, state, body);
             format!("(Λ. {body})")
         }
-        Type::Pruning(unique, ref pruning) => {
-            if pruning.is_empty() {
-                format!("?{unique}")
-            } else {
-                let pruning = pruning.iter().join(", ");
-                format!("?{unique}[{pruning}]")
-            }
-        }
         Type::Unification(unique, ref spine) => {
             if spine.is_empty() {
                 format!("?{unique}")

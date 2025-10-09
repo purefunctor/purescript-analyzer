@@ -34,7 +34,6 @@ pub enum Variable {
     Free(SmolStr),
 }
 
-pub type Pruning = Arc<[bool]>;
 pub type Spine = Arc<[debruijn::Level]>;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -45,7 +44,6 @@ pub enum Type {
     Function(TypeId, TypeId),
     KindApplication(TypeId, TypeId),
     Lambda(TypeId),
-    Pruning(u32, Pruning),
     Unification(u32, Spine),
     Variable(Variable),
     Unknown,

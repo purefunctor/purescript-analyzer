@@ -201,7 +201,7 @@ fn test_fresh_unification_normalized() {
         let unification = state.fresh_unification(context);
         let normalized = state.normalize(unification);
 
-        let Type::Pruning(u, _) = state.storage.index(unification) else {
+        let Type::Unification(u, _) = state.storage.index(unification) else {
             unreachable!("invariant violated");
         };
 
@@ -214,119 +214,6 @@ fn test_fresh_unification_normalized() {
         env.pretty(unification),
         env.pretty(normalized),
         env.pretty(kind)
-    );
-
-    insta::assert_snapshot!(snapshot);
-}
-
-#[test]
-fn test_fresh_unification_inversion() {
-    let (engine, id) = empty_engine();
-    let mut env = TestEnv::new(&engine, id);
-
-    let (proper, nonlinear) = env.with_state(|state, context| {
-        // [a :: Int, b :: Int]
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
-        let codomain = state.bound.level();
-
-        let unification = state.fresh_unification(context);
-        let normalized = state.normalize(unification);
-
-        let Type::Unification(_, s) = state.storage.index(normalized) else {
-            unreachable!("invariant violated");
-        };
-
-        // Non-linear spines are currently impossible to construct in the type
-        // system, so we emulate it here to test the pruning code path.
-        let nonlinear_spine = vec![s[0], s[0]];
-
-        let proper_inversion = state.invert_spine(codomain, s);
-        let nonlinear_inversion = state.invert_spine(codomain, &nonlinear_spine);
-
-        (proper_inversion, nonlinear_inversion)
-    });
-
-    let snapshot = format!("{proper:?}\n{nonlinear:?}");
-    insta::assert_snapshot!(snapshot);
-}
-
-#[test]
-fn test_unification_kind_pruning() {
-    let (engine, id) = empty_engine();
-    let mut env = TestEnv::new(&engine, id);
-
-    let (kind, pruned_1, pruned_2, pruned_3) = env.with_state(|state, context| {
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
-
-        let unification = state.fresh_unification(context);
-        let Type::Pruning(u, _) = *state.storage.index(unification) else {
-            unreachable!("invariant violated");
-        };
-
-        let kind = state.unification.get(u).kind;
-        let pruned_1 = state.prune_type(&[true, false], kind).unwrap();
-        let pruned_2 = state.prune_type(&[false, true], kind).unwrap();
-        let pruned_3 = state.prune_type(&[false, false], kind).unwrap();
-
-        (kind, pruned_1, pruned_2, pruned_3)
-    });
-
-    let snapshot = format!(
-        "{}\n ~> {}\n ~> {}\n ~> {}",
-        env.pretty(kind),
-        env.pretty(pruned_1),
-        env.pretty(pruned_2),
-        env.pretty(pruned_3)
-    );
-
-    insta::assert_snapshot!(snapshot);
-}
-
-#[test]
-fn test_unification_pruning() {
-    let (engine, id) = empty_engine();
-    let mut env = TestEnv::new(&engine, id);
-
-    let (pruned_1, pruned_2, pruned_3, pruned_4) = env.with_state(|state, context| {
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
-
-        let unification = state.fresh_unification(context);
-        let Type::Pruning(u, _) = *state.storage.index(unification) else {
-            unreachable!("invariant violated");
-        };
-
-        let _ = state.prune_unification(&[true, true], u).unwrap();
-        let UnificationState::Solved(pruned_1) = state.unification.get(u).state else {
-            unreachable!("invariant violated");
-        };
-
-        let _ = state.prune_unification(&[true, false], u).unwrap();
-        let UnificationState::Solved(pruned_2) = state.unification.get(u).state else {
-            unreachable!("invariant violated");
-        };
-
-        let _ = state.prune_unification(&[false, true], u).unwrap();
-        let UnificationState::Solved(pruned_3) = state.unification.get(u).state else {
-            unreachable!("invariant violated");
-        };
-
-        let _ = state.prune_unification(&[false, false], u).unwrap();
-        let UnificationState::Solved(pruned_4) = state.unification.get(u).state else {
-            unreachable!("invariant violated");
-        };
-
-        (pruned_1, pruned_2, pruned_3, pruned_4)
-    });
-
-    let snapshot = format!(
-        " ~> {}\n ~> {}\n ~> {}\n ~> {}",
-        env.pretty(pruned_1),
-        env.pretty(pruned_2),
-        env.pretty(pruned_3),
-        env.pretty(pruned_4),
     );
 
     insta::assert_snapshot!(snapshot);
@@ -401,58 +288,6 @@ fn test_solve_with_variables() {
     });
 
     let snapshot = format!("{} :: {}", env.pretty(solution), env.pretty(kind));
-    insta::assert_snapshot!(snapshot);
-}
-
-#[test]
-fn test_solve_nonlinear() {
-    let (engine, id) = empty_engine();
-    let mut env = TestEnv::new(&engine, id);
-
-    let (original, solution) = env.with_state(|state, context| {
-        // [a :: Int, b :: String, c :: Type]
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
-        let codomain = state.bound.level();
-
-        let unification = state.fresh_unification(context);
-        let normalized = state.normalize(unification);
-
-        let Type::Unification(u, ref s) = *state.storage.index(normalized) else {
-            unreachable!("invariant violated");
-        };
-
-        // Non-linear spines are currently impossible to construct in the type
-        // system, so we emulate it here to test the pruning code path.
-        let nonlinear_spine = vec![s[0], s[0]];
-
-        let solution_u = state
-            .solve(codomain, u, &nonlinear_spine, context.prim.symbol)
-            .expect("invariant violated: expected solving to succeed");
-
-        let original = state.unification.get(u);
-        let UnificationState::Solved(original_s) = original.state else {
-            unreachable!("invariant violated");
-        };
-
-        let solution = state.unification.get(solution_u);
-        let UnificationState::Solved(solution_s) = solution.state else {
-            unreachable!("invariant violated");
-        };
-
-        ((u, original_s, original.kind), (solution_u, solution_s, solution.kind))
-    });
-
-    let snapshot = format!(
-        "?{} := {} :: {}\n?{} := {} :: {}",
-        original.0,
-        env.pretty(original.1),
-        env.pretty(original.2),
-        solution.0,
-        env.pretty(solution.1),
-        env.pretty(solution.2)
-    );
-
     insta::assert_snapshot!(snapshot);
 }
 

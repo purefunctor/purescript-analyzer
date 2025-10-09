@@ -1,6 +1,0 @@
----
-source: tests-integration/tests/checking.rs
-expression: snapshot
----
-?1 := (Λ. (Λ. ?2)) :: (Int -> (Int -> ?0[true, true]))
-?2 := Symbol :: ?0[true, true]
