@@ -455,3 +455,32 @@ fn test_solve_nonlinear() {
 
     insta::assert_snapshot!(snapshot);
 }
+
+#[test]
+fn test_solve_extended_context() {
+    let (engine, id) = empty_engine();
+    let mut env = TestEnv::new(&engine, id);
+
+    env.with_state(|state, context| {
+        // [a :: Int]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+
+        let unification = state.fresh_unification(context);
+        let normalized = state.normalize(unification);
+
+        let Type::Unification(u, ref spine) = *state.storage.index(normalized) else {
+            unreachable!("invariant violated");
+        };
+
+        let spine = Arc::clone(spine);
+
+        // [a :: Int, b :: Int]
+        state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.int);
+        let codomain = state.bound.level();
+
+        let variable_b = state.bound_variable(0);
+        let solution_result = state.solve(codomain, u, &spine, variable_b);
+
+        assert!(solution_result.is_none())
+    });
+}

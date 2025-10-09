@@ -6,7 +6,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     check::{CheckContext, CheckState, substitute, unification::UnificationState},
-    core::{Pruning, Spine, Type, TypeId, TypeStorage, Variable, debruijn},
+    core::{Pruning, Type, TypeId, TypeStorage, Variable, debruijn},
 };
 
 /// Functions for unification variables.
@@ -100,7 +100,7 @@ where
 
             Type::Pruning(unification, ref pruning) => {
                 let pruning = Arc::clone(pruning);
-                self.apply_pruning(unification, pruning)
+                self.apply_pruning(unification, &pruning)
             }
 
             _ => t,
@@ -108,18 +108,16 @@ where
     }
 
     /// Converts [`Type::Pruning`] into [`Type::Unification`].
-    fn apply_pruning(&mut self, unification: u32, pruning: Pruning) -> TypeId {
-        let debruijn::Level(level) = self.bound.level();
+    fn apply_pruning(&mut self, unification: u32, pruning: &[bool]) -> TypeId {
+        let levels = self.bound.iter().map(|(level, _)| level);
 
-        let spine = pruning.iter().enumerate().filter(|(_, keep)| **keep).map(|(index, _)| {
-            let index = level - index as u32 - 1;
-            debruijn::Index(index)
-        });
+        let spine = levels
+            .zip(pruning)
+            .filter_map(|(level, keep)| if *keep { Some(level) } else { None })
+            .collect();
 
-        let spine = spine.collect();
-        let core = self.storage.intern(Type::Unification(unification, spine));
-
-        self.normalize(core)
+        let unification = self.storage.intern(Type::Unification(unification, spine));
+        self.normalize(unification)
     }
 }
 
@@ -132,7 +130,7 @@ where
     pub fn invert_spine(
         &self,
         codomain: debruijn::Level,
-        spine: &[debruijn::Index],
+        spine: &[debruijn::Level],
     ) -> Option<(PartialRenaming, Option<Pruning>)> {
         let mut domain = debruijn::Level(0);
         let mut renaming = FxHashMap::default();
@@ -140,18 +138,16 @@ where
         let mut nonlinear = FxHashSet::default();
         let mut spine_variables = vec![];
 
-        for debruijn::Index(index) in spine.iter() {
-            let level = codomain.0 - index - 1;
-
-            if renaming.contains_key(&level) || nonlinear.contains(&level) {
-                renaming.remove(&level);
-                nonlinear.insert(level);
+        for debruijn::Level(level) in spine.iter() {
+            if renaming.contains_key(level) || nonlinear.contains(level) {
+                renaming.remove(level);
+                nonlinear.insert(*level);
             } else {
-                renaming.insert(level, domain);
+                renaming.insert(*level, domain);
             }
 
             domain = domain.increment();
-            spine_variables.push(level);
+            spine_variables.push(*level);
         }
 
         let positions = spine_variables.iter().map(|level| !nonlinear.contains(level)).collect();
@@ -259,17 +255,14 @@ where
     /// Λa. Λb. ?1 a
     /// ```
     fn build_pruned_lambda(&mut self, pruning: &[bool], fresh: u32) -> TypeId {
-        let level = pruning.len();
-        let kept = pruning.iter().enumerate().filter(|(_, keep)| **keep);
+        let levels = self.bound.iter().map(|(level, _)| level);
 
-        let spine = kept.map(|(index, _)| {
-            let index = level - index - 1;
-            debruijn::Index(index as u32)
-        });
+        let spine = levels
+            .zip(pruning)
+            .filter_map(|(level, keep)| if *keep { Some(level) } else { None })
+            .collect();
 
-        let spine = spine.collect();
         let unification = self.storage.intern(Type::Unification(fresh, spine));
-
         pruning.iter().fold(unification, |body, _| self.storage.intern(Type::Lambda(body)))
     }
 
@@ -318,16 +311,12 @@ where
                 }
             }
 
-            Type::Unification(unification, ref spine) => {
+            Type::Unification(unification, _) => {
                 if Some(unification) == partial_renaming.occurs {
-                    return None;
+                    None
+                } else {
+                    Some(t)
                 }
-
-                let spine: Option<Spine> =
-                    spine.iter().map(|index| self.rename_index(partial_renaming, *index)).collect();
-
-                let spine = spine?;
-                Some(self.storage.intern(Type::Unification(unification, spine)))
             }
 
             Type::Variable(ref variable) => {
@@ -367,7 +356,7 @@ where
         &mut self,
         codomain: debruijn::Level,
         unification: u32,
-        spine: &[debruijn::Index],
+        spine: &[debruijn::Level],
         solution: TypeId,
     ) -> Option<u32> {
         let (mut partial_renaming, pruning) = self.invert_spine(codomain, spine)?;

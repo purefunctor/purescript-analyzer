@@ -35,7 +35,7 @@ pub enum Variable {
 }
 
 pub type Pruning = Arc<[bool]>;
-pub type Spine = Arc<[debruijn::Index]>;
+pub type Spine = Arc<[debruijn::Level]>;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Type {
