@@ -10,51 +10,54 @@ pub fn print<S>(queries: &impl ExternalQueries, state: &CheckState<S>, id: TypeI
 where
     S: TypeStorage,
 {
-    let kind = state.storage.index(id);
-    match kind {
+    match *state.storage.index(id) {
         Type::Application(function, argument) => {
-            let function = print(queries, state, *function);
-            let argument = print(queries, state, *argument);
+            let function = print(queries, state, function);
+            let argument = print(queries, state, argument);
             format!("({function} {argument})")
         }
         Type::Constructor(file_id, type_id) => {
-            let indexed = queries.indexed(*file_id).unwrap();
-            let name = indexed.items[*type_id].name.as_ref();
+            let indexed = queries.indexed(file_id).unwrap();
+            let name = indexed.items[type_id].name.as_ref();
             name.map(|name| name.to_string()).unwrap_or_else(|| "<InvalidName>".to_string())
         }
-        Type::Forall(binder, inner) => {
+        Type::Forall(ref binder, inner) => {
             let level = binder.level;
             let kind = print(queries, state, binder.kind);
-            let inner = print(queries, state, *inner);
+            let inner = print(queries, state, inner);
             format!("(forall ({level} :: {kind}) {inner})")
         }
         Type::Function(argument, result) => {
-            let argument = print(queries, state, *argument);
-            let result = print(queries, state, *result);
+            let argument = print(queries, state, argument);
+            let result = print(queries, state, result);
             format!("({argument} -> {result})")
         }
         Type::KindApplication(function, argument) => {
-            let function = print(queries, state, *function);
-            let argument = print(queries, state, *argument);
+            let function = print(queries, state, function);
+            let argument = print(queries, state, argument);
             format!("({function} @{argument})")
         }
         Type::Lambda(body) => {
-            let body = print(queries, state, *body);
+            let body = print(queries, state, body);
             format!("(Λ. {body})")
         }
-        Type::Pruning(unification, variables) => {
-            let variables = variables.iter().join(", ");
-            format!("?{unification}[{variables}]")
+        Type::Pruning(unique, ref pruning) => {
+            if pruning.is_empty() {
+                format!("?{unique}")
+            } else {
+                let pruning = pruning.iter().join(", ");
+                format!("?{unique}[{pruning}]")
+            }
         }
-        Type::Unification(unique, spine) => {
+        Type::Unification(unique, ref spine) => {
             if spine.is_empty() {
                 format!("?{unique}")
             } else {
-                let spine = spine.iter().map(|id| print(queries, state, *id)).join(", ");
+                let spine = spine.iter().join(", ");
                 format!("?{unique}[{spine}]")
             }
         }
-        Type::Variable(variable) => match variable {
+        Type::Variable(ref variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),
             Variable::Skolem(level) => format!("~{level}"),
             Variable::Bound(index) => format!("{index}"),

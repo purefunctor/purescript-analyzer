@@ -13,45 +13,44 @@ where
 fn substitute_index<S>(
     state: &mut CheckState<S>,
     index: debruijn::Index,
-    with_t: TypeId,
-    t: TypeId,
+    with_type: TypeId,
+    in_type: TypeId,
 ) -> TypeId
 where
     S: TypeStorage,
 {
-    match *state.storage.index(t) {
-        Type::Variable(Variable::Bound(bound)) if bound == index => with_t,
+    match *state.storage.index(in_type) {
+        Type::Variable(Variable::Bound(bound)) if bound == index => with_type,
 
         Type::Application(function, argument) => {
-            let function = substitute_index(state, index, with_t, function);
-            let argument = substitute_index(state, index, with_t, argument);
+            let function = substitute_index(state, index, with_type, function);
+            let argument = substitute_index(state, index, with_type, argument);
             state.storage.intern(Type::Application(function, argument))
         }
 
         Type::Function(argument, result) => {
-            let argument = substitute_index(state, index, with_t, argument);
-            let result = substitute_index(state, index, with_t, result);
+            let argument = substitute_index(state, index, with_type, argument);
+            let result = substitute_index(state, index, with_type, result);
             state.storage.intern(Type::Function(argument, result))
         }
 
         Type::Forall(ref binder, inner) => {
             let mut binder = binder.clone();
 
-            binder.kind = substitute_index(state, index, with_t, binder.kind);
-            let inner = substitute_index(state, index.increment(), with_t, inner);
+            binder.kind = substitute_index(state, index, with_type, binder.kind);
+            let inner = substitute_index(state, index.increment(), with_type, inner);
 
             state.storage.intern(Type::Forall(binder, inner))
         }
 
         Type::KindApplication(function, argument) => {
-            let function = substitute_index(state, index, with_t, function);
-            let argument = substitute_index(state, index, with_t, argument);
-
+            let function = substitute_index(state, index, with_type, function);
+            let argument = substitute_index(state, index, with_type, argument);
             state.storage.intern(Type::KindApplication(function, argument))
         }
 
         Type::Lambda(body) => {
-            let body = substitute_index(state, index.increment(), with_t, body);
+            let body = substitute_index(state, index.increment(), with_type, body);
             state.storage.intern(Type::Lambda(body))
         }
 
@@ -59,6 +58,6 @@ where
         | Type::Pruning(_, _)
         | Type::Unification(_, _)
         | Type::Variable(_)
-        | Type::Unknown => t,
+        | Type::Unknown => in_type,
     }
 }

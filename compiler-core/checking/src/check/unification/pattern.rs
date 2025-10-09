@@ -14,6 +14,20 @@ impl<'s, S> CheckState<'s, S>
 where
     S: TypeStorage,
 {
+    /// Creates a fresh pattern unification variable with the provided
+    /// kind and instantiated with the current context:
+    ///
+    /// Returns [`Pruning(?t, Γ)`](Type::Pruning)
+    /// ```purescript
+    /// ?t :: Γ -> <kind>
+    /// ```
+    pub fn fresh_unification_kinded(&mut self, context: &CheckContext, kind: TypeId) -> TypeId {
+        let function = self.unification_function_kind(context, kind);
+        let unification = self.unification.fresh(function);
+        let pruning = self.bound.iter().map(|_| true).collect();
+        self.storage.intern(Type::Pruning(unification, pruning))
+    }
+
     /// Creates a fresh polykinded pattern unification variable
     /// instantiated with the current context:
     ///
@@ -23,19 +37,19 @@ where
     /// ?t :: Γ -> ?k
     /// ```
     pub fn fresh_unification(&mut self, context: &CheckContext) -> TypeId {
-        // Create a new unification variable for the kind `?k :: <bound> -> Type`
-        let kind_pi = self.unification_function_kind(context, context.prim.t);
-        let kind_id = self.unification.fresh(kind_pi);
+        let kind_ty = self.fresh_unification_type(context);
+        self.fresh_unification_kinded(context, kind_ty)
+    }
 
-        let kind_pr = self.bound.iter().map(|_| true).collect();
-        let kind_ty = self.storage.intern(Type::Pruning(kind_id, kind_pr));
-
-        // Create a new unification variable for the type: `?t :: <bound> -> ?k`
-        let type_pi = self.unification_function_kind(context, kind_ty);
-        let type_id = self.unification.fresh(type_pi);
-
-        let type_pr = self.bound.iter().map(|_| true).collect();
-        self.storage.intern(Type::Pruning(type_id, type_pr))
+    /// Creates a fresh [`Type`]-kinded pattern unification variable
+    /// instantiated with the current context:
+    ///
+    /// Returns [`Pruning(?t, Γ)`](Type::Pruning)
+    /// ```purescript
+    /// ?t :: Γ -> Type
+    /// ```
+    pub fn fresh_unification_type(&mut self, context: &CheckContext) -> TypeId {
+        self.fresh_unification_kinded(context, context.prim.t)
     }
 
     /// Create the [`Type::Function`]-based kind representation
@@ -99,10 +113,7 @@ where
 
         let spine = pruning.iter().enumerate().filter(|(_, keep)| **keep).map(|(index, _)| {
             let index = level - index as u32 - 1;
-            let index = debruijn::Index(index);
-
-            let variable = Variable::Bound(index);
-            self.storage.intern(Type::Variable(variable))
+            debruijn::Index(index)
         });
 
         let spine = spine.collect();
@@ -121,7 +132,7 @@ where
     pub fn invert_spine(
         &self,
         codomain: debruijn::Level,
-        spine: &[TypeId],
+        spine: &[debruijn::Index],
     ) -> Option<(PartialRenaming, Option<Pruning>)> {
         let mut domain = debruijn::Level(0);
         let mut renaming = FxHashMap::default();
@@ -129,25 +140,18 @@ where
         let mut nonlinear = FxHashSet::default();
         let mut spine_variables = vec![];
 
-        for argument in spine.iter() {
-            let argument = self.force_unification(*argument);
-            if let Type::Variable(Variable::Bound(debruijn::Index(index))) =
-                self.storage.index(argument)
-            {
-                let level = codomain.0 - index - 1;
+        for debruijn::Index(index) in spine.iter() {
+            let level = codomain.0 - index - 1;
 
-                if renaming.contains_key(&level) || nonlinear.contains(&level) {
-                    renaming.remove(&level);
-                    nonlinear.insert(level);
-                } else {
-                    renaming.insert(level, domain);
-                }
-
-                domain = domain.increment();
-                spine_variables.push(level);
+            if renaming.contains_key(&level) || nonlinear.contains(&level) {
+                renaming.remove(&level);
+                nonlinear.insert(level);
             } else {
-                return None;
+                renaming.insert(level, domain);
             }
+
+            domain = domain.increment();
+            spine_variables.push(level);
         }
 
         let positions = spine_variables.iter().map(|level| !nonlinear.contains(level)).collect();
@@ -260,10 +264,7 @@ where
 
         let spine = kept.map(|(index, _)| {
             let index = level - index - 1;
-            let index = debruijn::Index(index as u32);
-
-            let variable = Variable::Bound(index);
-            self.storage.intern(Type::Variable(variable))
+            debruijn::Index(index as u32)
         });
 
         let spine = spine.collect();
@@ -309,31 +310,32 @@ where
                 Some(self.storage.intern(Type::Lambda(body)))
             }
 
-            Type::Pruning(_, _) => Some(t),
-
-            Type::Unification(unification, ref spine) => {
+            Type::Pruning(unification, _) => {
                 if Some(unification) == partial_renaming.occurs {
                     None
                 } else {
-                    let spine: Option<Spine> = Arc::clone(spine)
-                        .iter()
-                        .map(|argument| self.rename(partial_renaming, *argument))
-                        .collect();
-
-                    let spine = spine?;
-                    Some(self.storage.intern(Type::Unification(unification, spine)))
+                    Some(t)
                 }
             }
 
+            Type::Unification(unification, ref spine) => {
+                if Some(unification) == partial_renaming.occurs {
+                    return None;
+                }
+
+                let spine: Option<Spine> =
+                    spine.iter().map(|index| self.rename_index(partial_renaming, *index)).collect();
+
+                let spine = spine?;
+                Some(self.storage.intern(Type::Unification(unification, spine)))
+            }
+
             Type::Variable(ref variable) => {
-                let Variable::Bound(debruijn::Index(index)) = variable else {
+                let Variable::Bound(index) = variable else {
                     return Some(t);
                 };
 
-                let level = partial_renaming.codomain.0 - index - 1;
-                let renamed = partial_renaming.renaming.get(&level)?;
-
-                let index = debruijn::Index(partial_renaming.domain.0 - renamed.0 - 1);
+                let index = self.rename_index(partial_renaming, *index)?;
                 let variable = Variable::Bound(index);
 
                 Some(self.storage.intern(Type::Variable(variable)))
@@ -341,6 +343,16 @@ where
 
             Type::Unknown => Some(t),
         }
+    }
+
+    fn rename_index(
+        &self,
+        partial_renaming: &PartialRenaming,
+        index: debruijn::Index,
+    ) -> Option<debruijn::Index> {
+        let level = partial_renaming.codomain.0 - index.0 - 1;
+        let renamed = partial_renaming.renaming.get(&level)?;
+        Some(debruijn::Index(partial_renaming.domain.0 - renamed.0 - 1))
     }
 }
 
@@ -355,7 +367,7 @@ where
         &mut self,
         codomain: debruijn::Level,
         unification: u32,
-        spine: &[TypeId],
+        spine: &[debruijn::Index],
         solution: TypeId,
     ) -> Option<u32> {
         let (mut partial_renaming, pruning) = self.invert_spine(codomain, spine)?;

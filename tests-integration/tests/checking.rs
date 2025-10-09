@@ -79,7 +79,7 @@ trait CheckStateExt {
 
     fn application(&mut self, function: TypeId, argument: TypeId) -> TypeId;
 
-    fn function(&mut self, arg: TypeId, result: TypeId) -> TypeId;
+    fn function(&mut self, argument: TypeId, result: TypeId) -> TypeId;
 }
 
 impl<S: TypeStorage> CheckStateExt for CheckState<'_, S> {
@@ -101,8 +101,8 @@ impl<S: TypeStorage> CheckStateExt for CheckState<'_, S> {
         self.storage.intern(Type::Application(function, argument))
     }
 
-    fn function(&mut self, arg: TypeId, result: TypeId) -> TypeId {
-        self.storage.intern(Type::Function(arg, result))
+    fn function(&mut self, argument: TypeId, result: TypeId) -> TypeId {
+        self.storage.intern(Type::Function(argument, result))
     }
 }
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     check::{CheckContext, CheckState, convert, substitute, unification},
     core::{ForallBinder, Type, TypeId, storage::TypeStorage},
@@ -109,7 +111,7 @@ pub fn infer_surface_kind<S: TypeStorage>(
     }
 }
 
-fn infer_surface_app_kind<S>(
+pub fn infer_surface_app_kind<S>(
     state: &mut CheckState<S>,
     context: &CheckContext,
     (function_t, function_k): (TypeId, TypeId),
@@ -118,45 +120,43 @@ fn infer_surface_app_kind<S>(
 where
     S: TypeStorage,
 {
-    let function_kind = state.storage.index(function_k);
-
-    match function_kind {
+    match *state.storage.index(function_k) {
         Type::Function(argument_k, result_k) => {
-            let argument_k = *argument_k;
-            let result_k = *result_k;
-
             let (argument_t, _) = check_surface_kind(state, context, argument, argument_k);
 
             let t = state.storage.intern(Type::Application(function_t, argument_t));
-            let k = result_k;
+            let k = state.normalize(result_k);
 
             (t, k)
         }
-        Type::Unification(_, _) => {
-            let argument_u = state.fresh_unification(context);
-            let result_u = state.fresh_unification(context);
 
-            // in the environment, bind these to context.prim.t
-            // then solve the original unification variable to Function(argument_u, result_u)
+        Type::Unification(unification, ref spine) => {
+            let spine = Arc::clone(spine);
+            let codomain = state.bound.level();
+
+            let argument_u = state.fresh_unification_type(context);
+            let result_u = state.fresh_unification_type(context);
+
+            let function_u = state.storage.intern(Type::Function(argument_u, result_u));
+            state.solve(codomain, unification, &spine, function_u);
 
             let (argument_t, _) = check_surface_kind(state, context, argument, argument_u);
 
             let t = state.storage.intern(Type::Application(function_t, argument_t));
-            let k = result_u;
+            let k = state.normalize(result_u);
 
             (t, k)
         }
-        Type::Forall(ForallBinder { .. }, function_k) => {
-            let function_k = *function_k;
 
-            let kind_u = state.fresh_unification(context);
-            // bind kind_u to kind
+        Type::Forall(ForallBinder { kind, .. }, function_k) => {
+            let kind_u = state.fresh_unification_kinded(context, kind);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, kind_u));
             let function_k = substitute::substitute_bound(state, kind_u, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
+
         _ => (context.prim.unknown, context.prim.unknown),
     }
 }
