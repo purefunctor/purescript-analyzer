@@ -113,10 +113,10 @@ impl Bound {
         Level(level as u32)
     }
 
-    /// Unbinds names after a De Bruijn [`Level`].
+    /// Unbinds names starting from a De Bruijn [`Level`].
     pub fn unbind(&mut self, Level(index): Level) {
         let index = index as usize;
-        self.inner.drain(index..);
+        self.inner.truncate(index);
     }
 
     /// Finds the De Bruijn [`Level`] of a [`Variable`].
