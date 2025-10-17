@@ -83,6 +83,17 @@ where
         self.kinds.get(level).copied()
     }
 
+    pub fn bind_core(&mut self, level: debruijn::Level, kind: TypeId) {
+        debug_assert!(!self.kinds.contains(level), "invariant violated: {level} already bound");
+        self.kinds.insert(level, kind);
+    }
+
+    pub fn core_kind(&self, index: debruijn::Index) -> Option<TypeId> {
+        let size = self.bound.size();
+        let level = index.to_level(size)?;
+        self.kinds.get(level).copied()
+    }
+
     pub fn unbind(&mut self, level: debruijn::Level) {
         self.bound.unbind(level);
         self.kinds.unbind(level);

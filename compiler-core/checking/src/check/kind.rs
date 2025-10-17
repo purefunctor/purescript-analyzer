@@ -1,5 +1,5 @@
 use crate::{
-    check::{CheckContext, CheckState, convert, substitute, unification},
+    check::{CheckContext, CheckState, convert, unification},
     core::{ForallBinder, Type, TypeId, storage::TypeStorage},
 };
 
@@ -145,13 +145,18 @@ where
             (t, k)
         }
 
-        Type::Forall(ForallBinder { kind, .. }, function_k) => {
+        Type::Forall(ForallBinder { kind, level, .. }, function_k) => {
             let kind_u = state.fresh_unification_kinded(kind);
 
-            let function_t = state.storage.intern(Type::KindApplication(function_t, kind_u));
-            let function_k = substitute::substitute_bound(state, kind_u, function_k);
+            state.bind_core(level, kind_u);
 
-            infer_surface_app_kind(state, context, (function_t, function_k), argument)
+            let function_t = state.storage.intern(Type::KindApplication(function_t, kind_u));
+            let result_t =
+                infer_surface_app_kind(state, context, (function_t, function_k), argument);
+
+            state.unbind(level);
+
+            result_t
         }
 
         _ => (context.prim.unknown, context.prim.unknown),

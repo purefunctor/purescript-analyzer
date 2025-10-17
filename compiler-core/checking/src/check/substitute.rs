@@ -3,11 +3,11 @@ use crate::{
     core::{Type, TypeId, TypeStorage, Variable, debruijn},
 };
 
-pub fn substitute_bound<S>(state: &mut CheckState<S>, with_t: TypeId, t: TypeId) -> TypeId
+pub fn substitute_bound<S>(state: &mut CheckState<S>, with_type: TypeId, in_type: TypeId) -> TypeId
 where
     S: TypeStorage,
 {
-    substitute_index(state, debruijn::Index(0), with_t, t)
+    substitute_index(state, debruijn::Index(0), with_type, in_type)
 }
 
 fn substitute_index<S>(

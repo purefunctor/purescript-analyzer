@@ -72,6 +72,10 @@ impl Index {
     pub fn increment(self) -> Index {
         Index(self.0 + 1)
     }
+
+    pub fn to_level(&self, size: Size) -> Option<Level> {
+        if self.in_scope(size) { Some(Level(size.0 - self.0 - 1)) } else { None }
+    }
 }
 
 impl fmt::Display for Index {
@@ -177,6 +181,10 @@ impl<T> Default for BoundMap<T> {
 }
 
 impl<T> BoundMap<T> {
+    pub fn contains(&self, level: Level) -> bool {
+        self.inner.contains_key(&level)
+    }
+
     pub fn insert(&mut self, level: Level, value: T) {
         self.inner.insert(level, value);
     }
