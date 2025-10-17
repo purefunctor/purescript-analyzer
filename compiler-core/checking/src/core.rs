@@ -39,8 +39,7 @@ pub enum Type {
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
     KindApplication(TypeId, TypeId),
-    Lambda(TypeId),
-    Unification(u32, debruijn::Level),
+    Unification(u32),
     Variable(Variable),
     Unknown,
 }

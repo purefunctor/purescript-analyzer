@@ -65,6 +65,10 @@ impl fmt::Display for Level {
 pub struct Index(pub u32);
 
 impl Index {
+    pub fn in_scope(self, size: Size) -> bool {
+        self.0 < size.0
+    }
+
     pub fn increment(self) -> Index {
         Index(self.0 + 1)
     }
@@ -76,11 +80,26 @@ impl fmt::Display for Index {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Size(u32);
+
+impl Size {
+    pub fn increment(self) -> Size {
+        Size(self.0 + 1)
+    }
+}
+
+impl fmt::Display for Size {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, ":{}", self.0)
+    }
+}
+
 impl Bound {
     /// Returns the current De Bruijn [`Level`].
-    pub fn level(&self) -> Level {
-        let level = self.inner.len();
-        Level(level as u32)
+    pub fn size(&self) -> Size {
+        let size = self.inner.len();
+        Size(size as u32)
     }
 
     /// Binds a well-scoped [`Variable`], returning its [`Level`].

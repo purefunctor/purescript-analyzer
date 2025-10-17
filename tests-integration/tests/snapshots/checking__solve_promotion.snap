@@ -2,4 +2,5 @@
 source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
-?1[&2] ~> ?1[&2] :: (Int -> (Int -> ?0[&2]))
+?0[:1] := ?2[:1]
+?1[:2] := ?2[:1]

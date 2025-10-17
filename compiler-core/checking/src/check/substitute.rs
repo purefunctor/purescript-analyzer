@@ -49,12 +49,7 @@ where
             state.storage.intern(Type::KindApplication(function, argument))
         }
 
-        Type::Lambda(body) => {
-            let body = substitute_index(state, index.increment(), with_type, body);
-            state.storage.intern(Type::Lambda(body))
-        }
-
-        Type::Constructor(_, _) | Type::Unification(_, _) | Type::Variable(_) | Type::Unknown => {
+        Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => {
             in_type
         }
     }

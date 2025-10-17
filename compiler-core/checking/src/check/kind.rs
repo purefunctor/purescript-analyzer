@@ -123,30 +123,30 @@ where
             let (argument_t, _) = check_surface_kind(state, context, argument, argument_k);
 
             let t = state.storage.intern(Type::Application(function_t, argument_t));
-            let k = state.normalize(result_k);
+            let k = state.force_unification(result_k);
 
             (t, k)
         }
 
-        Type::Unification(unification, domain) => {
-            let codomain = state.bound.level();
+        Type::Unification(unification_id) => {
+            let codomain = state.bound.size();
 
             let argument_u = state.fresh_unification_type(context);
             let result_u = state.fresh_unification_type(context);
 
             let function_u = state.storage.intern(Type::Function(argument_u, result_u));
-            state.solve(codomain, unification, domain, function_u);
+            let _ = state.solve(codomain, unification_id, function_u);
 
             let (argument_t, _) = check_surface_kind(state, context, argument, argument_u);
 
             let t = state.storage.intern(Type::Application(function_t, argument_t));
-            let k = state.normalize(result_u);
+            let k = state.force_unification(result_u);
 
             (t, k)
         }
 
         Type::Forall(ForallBinder { kind, .. }, function_k) => {
-            let kind_u = state.fresh_unification_kinded(context, kind);
+            let kind_u = state.fresh_unification_kinded(kind);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, kind_u));
             let function_k = substitute::substitute_bound(state, kind_u, function_k);

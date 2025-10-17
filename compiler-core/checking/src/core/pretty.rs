@@ -8,6 +8,7 @@ pub fn print<S>(queries: &impl ExternalQueries, state: &CheckState<S>, id: TypeI
 where
     S: TypeStorage,
 {
+    let id = state.force_unification(id);
     match *state.storage.index(id) {
         Type::Application(function, argument) => {
             let function = print(queries, state, function);
@@ -35,12 +36,9 @@ where
             let argument = print(queries, state, argument);
             format!("({function} @{argument})")
         }
-        Type::Lambda(body) => {
-            let body = print(queries, state, body);
-            format!("(Λ. {body})")
-        }
-        Type::Unification(unique, domain) => {
-            format!("?{unique}[{domain}]")
+        Type::Unification(unification_id) => {
+            let unification = state.unification.get(unification_id);
+            format!("?{unification_id}[{}]", unification.domain)
         }
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),

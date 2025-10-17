@@ -2,4 +2,4 @@
 source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
-(Λ. (Λ. Symbol)) :: (Int -> (String -> ?0[&2]))
+Symbol :: Type

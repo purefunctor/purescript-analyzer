@@ -1,8 +1,7 @@
 pub mod context;
-pub mod pattern;
+pub mod level;
 
 pub use context::*;
-pub use pattern::*;
 
 use crate::{
     check::CheckState,
@@ -13,9 +12,8 @@ pub fn unify<S>(state: &mut CheckState<S>, t1: TypeId, t2: TypeId) -> bool
 where
     S: TypeStorage,
 {
-    let t1 = state.normalize(t1);
-    let t2 = state.normalize(t2);
-
+    let t1 = state.force_unification(t1);
+    let t2 = state.force_unification(t2);
     match (state.storage.index(t1), state.storage.index(t2)) {
         (
             &Type::Application(t1_function, t1_argument),
@@ -27,14 +25,14 @@ where
             &Type::Constructor(t2_file_id, t2_item_id),
         ) => (t1_file_id, t1_item_id) == (t2_file_id, t2_item_id),
 
-        (&Type::Unification(unification, domain), _) => {
-            let codomain = state.bound.level();
-            state.solve(codomain, unification, domain, t2).is_some()
+        (&Type::Unification(unification_id), _) => {
+            let codomain = state.bound.size();
+            state.solve(codomain, unification_id, t2).is_some()
         }
 
-        (_, &Type::Unification(unification, domain)) => {
-            let codomain = state.bound.level();
-            state.solve(codomain, unification, domain, t1).is_some()
+        (_, &Type::Unification(unification_id)) => {
+            let codomain = state.bound.size();
+            state.solve(codomain, unification_id, t1).is_some()
         }
 
         (_, _) => false,

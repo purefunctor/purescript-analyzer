@@ -1,4 +1,4 @@
-use crate::core::TypeId;
+use crate::core::{TypeId, debruijn};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UnificationState {
@@ -8,6 +8,7 @@ pub enum UnificationState {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnificationEntry {
+    pub domain: debruijn::Size,
     pub kind: TypeId,
     pub state: UnificationState,
 }
@@ -19,11 +20,11 @@ pub struct UnificationContext {
 }
 
 impl UnificationContext {
-    pub fn fresh(&mut self, kind: TypeId) -> u32 {
+    pub fn fresh(&mut self, domain: debruijn::Size, kind: TypeId) -> u32 {
         let unique = self.unique;
 
         self.unique += 1;
-        self.entries.push(UnificationEntry { kind, state: UnificationState::Unsolved });
+        self.entries.push(UnificationEntry { domain, kind, state: UnificationState::Unsolved });
 
         unique
     }
@@ -38,5 +39,9 @@ impl UnificationContext {
 
     pub fn solve(&mut self, index: u32, solution: TypeId) {
         self.entries[index as usize].state = UnificationState::Solved(solution);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &UnificationEntry> {
+        self.entries.iter()
     }
 }
