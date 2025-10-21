@@ -37,6 +37,7 @@ use std::{
 use building_types::{
     ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
 };
+use checking::TypeInterner;
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
@@ -103,6 +104,7 @@ struct DerivedStorage {
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
+    types: TypeInterner,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -747,7 +749,17 @@ impl QueryProxy for QueryEngine {
     }
 }
 
-impl checking::ExternalQueries for QueryEngine {}
+impl checking::ExternalQueries for QueryEngine {
+    fn intern_type(&self, t: checking::Type) -> checking::TypeId {
+        let mut storage = self.storage.write();
+        storage.interned.types.intern(t)
+    }
+
+    fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
+        let storage = self.storage.read();
+        storage.interned.types[id].clone()
+    }
+}
 
 impl resolving::ExternalQueries for QueryEngine {}
 

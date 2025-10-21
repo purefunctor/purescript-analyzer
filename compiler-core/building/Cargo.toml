@@ -8,6 +8,7 @@ building-types = { version = "0.1.0", path = "../building-types" }
 checking = { version = "0.1.0", path = "../checking" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
+interner = { version = "0.1.0", path = "../interner" }
 lexing = { version = "0.1.0", path = "../lexing" }
 lock_api = "0.4.13"
 lowering = { version = "0.1.0", path = "../lowering" }

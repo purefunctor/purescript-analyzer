@@ -1,39 +1,28 @@
+use std::sync::Arc;
+
 use building_types::QueryResult;
+use files::FileId;
 use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 
 use crate::{
     ExternalQueries,
     check::unification::UnificationContext,
-    core::{Type, TypeId, debruijn, storage::TypeStorage},
+    core::{Type, TypeId, TypeInterner, debruijn},
 };
 
-pub struct CheckState<'s, S>
-where
-    S: TypeStorage,
-{
-    pub storage: &'s mut S,
+#[derive(Default)]
+pub struct CheckState {
+    pub storage: TypeInterner,
+
     pub bound: debruijn::Bound,
     pub kinds: debruijn::BoundMap<TypeId>,
+    pub types: debruijn::BoundMap<TypeId>,
+
     pub unification: UnificationContext,
 }
 
-impl<'s, S> CheckState<'s, S>
-where
-    S: TypeStorage,
-{
-    pub fn new(storage: &'s mut S) -> CheckState<'s, S> {
-        let bound = debruijn::Bound::default();
-        let kinds = debruijn::BoundMap::default();
-        let unification = UnificationContext::default();
-        CheckState { storage, bound, kinds, unification }
-    }
-}
-
-impl<'s, S> CheckState<'s, S>
-where
-    S: TypeStorage,
-{
+impl CheckState {
     pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
         let variable = debruijn::Variable::Forall(id);
         let level = self.bound.bind(variable);
@@ -83,9 +72,11 @@ where
         self.kinds.get(level).copied()
     }
 
-    pub fn bind_core(&mut self, level: debruijn::Level, kind: TypeId) {
+    pub fn bind_with_type(&mut self, level: debruijn::Level, t: TypeId, k: TypeId) {
         debug_assert!(!self.kinds.contains(level), "invariant violated: {level} already bound");
-        self.kinds.insert(level, kind);
+        self.bound.bind(debruijn::Variable::Core);
+        self.types.insert(level, t);
+        self.kinds.insert(level, k);
     }
 
     pub fn core_kind(&self, index: debruijn::Index) -> Option<TypeId> {
@@ -96,25 +87,37 @@ where
 
     pub fn unbind(&mut self, level: debruijn::Level) {
         self.bound.unbind(level);
+        self.types.unbind(level);
         self.kinds.unbind(level);
     }
 }
 
-pub struct CheckContext<'e> {
+pub struct CheckContext<'a, Q>
+where
+    Q: ExternalQueries,
+{
+    pub queries: &'a Q,
     pub prim: PrimCore,
-    pub indexed: &'e IndexedModule,
-    pub lowered: &'e LoweredModule,
-    pub prim_indexed: &'e IndexedModule,
+    pub indexed: Arc<IndexedModule>,
+    pub lowered: Arc<LoweredModule>,
+    pub prim_indexed: Arc<IndexedModule>,
 }
 
-impl<'e> CheckContext<'e> {
+impl<'a, Q> CheckContext<'a, Q>
+where
+    Q: ExternalQueries,
+{
     pub fn new(
-        prim: PrimCore,
-        indexed: &'e IndexedModule,
-        lowered: &'e LoweredModule,
-        prim_indexed: &'e IndexedModule,
-    ) -> CheckContext<'e> {
-        CheckContext { prim, indexed, lowered, prim_indexed }
+        queries: &'a Q,
+        state: &mut CheckState,
+        id: FileId,
+    ) -> QueryResult<CheckContext<'a, Q>> {
+        let indexed = queries.indexed(id)?;
+        let lowered = queries.lowered(id)?;
+        let prim = PrimCore::collect(queries, state)?;
+        let prim_id = queries.prim_id();
+        let prim_indexed = queries.indexed(prim_id)?;
+        Ok(CheckContext { queries, prim, indexed, lowered, prim_indexed })
     }
 }
 
@@ -136,13 +139,7 @@ pub struct PrimCore {
 }
 
 impl PrimCore {
-    pub fn collect<S>(
-        queries: &impl ExternalQueries,
-        state: &mut CheckState<S>,
-    ) -> QueryResult<PrimCore>
-    where
-        S: TypeStorage,
-    {
+    fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimCore> {
         let prim_id = queries.prim_id();
         let prim_resolved = queries.resolved(prim_id)?;
 

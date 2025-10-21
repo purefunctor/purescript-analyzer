@@ -1,25 +1,19 @@
 use crate::{
     check::CheckState,
-    core::{Type, TypeId, TypeStorage, Variable, debruijn},
+    core::{Type, TypeId, Variable, debruijn},
 };
 
-pub fn substitute_bound<S>(state: &mut CheckState<S>, with_type: TypeId, in_type: TypeId) -> TypeId
-where
-    S: TypeStorage,
-{
+pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: TypeId) -> TypeId {
     substitute_index(state, debruijn::Index(0), with_type, in_type)
 }
 
-fn substitute_index<S>(
-    state: &mut CheckState<S>,
+fn substitute_index(
+    state: &mut CheckState,
     index: debruijn::Index,
     with_type: TypeId,
     in_type: TypeId,
-) -> TypeId
-where
-    S: TypeStorage,
-{
-    match *state.storage.index(in_type) {
+) -> TypeId {
+    match state.storage[in_type] {
         Type::Variable(Variable::Bound(bound)) if bound == index => with_type,
 
         Type::Application(function, argument) => {

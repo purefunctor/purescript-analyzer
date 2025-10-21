@@ -12,6 +12,8 @@ use rustc_hash::FxHashMap;
 /// A well-scoped type variable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Variable {
+    /// A type variable bound from the core.
+    Core,
     /// A type variable bound by an explicit `forall`.
     Forall(TypeVariableBindingId),
     /// A type variable implicitly bound in a permitted context.

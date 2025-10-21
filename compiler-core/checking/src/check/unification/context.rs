@@ -38,7 +38,7 @@ impl UnificationContext {
     }
 
     pub fn solve(&mut self, index: u32, solution: TypeId) {
-        self.entries[index as usize].state = UnificationState::Solved(solution);
+        self.get_mut(index).state = UnificationState::Solved(solution);
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &UnificationEntry> {

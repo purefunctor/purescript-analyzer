@@ -1,15 +1,13 @@
 //! Level-tracking unification.
 
 use crate::{
+    ExternalQueries,
     check::{CheckContext, CheckState, unification::UnificationState},
-    core::{Type, TypeId, TypeStorage, Variable, debruijn},
+    core::{Type, TypeId, Variable, debruijn},
 };
 
 /// Functions for creating unification variables.
-impl<'s, S> CheckState<'s, S>
-where
-    S: TypeStorage,
-{
+impl CheckState {
     /// Creates a fresh unification variable with the provided kind.
     pub fn fresh_unification_kinded(&mut self, kind: TypeId) -> TypeId {
         let domain = self.bound.size();
@@ -18,32 +16,25 @@ where
     }
 
     /// Creates a fresh polykinded unification variable.
-    pub fn fresh_unification(&mut self, context: &CheckContext) -> TypeId {
+    pub fn fresh_unification<Q>(&mut self, context: &CheckContext<Q>) -> TypeId
+    where
+        Q: ExternalQueries,
+    {
         let kind_ty = self.fresh_unification_type(context);
         self.fresh_unification_kinded(kind_ty)
     }
 
     /// Creates a fresh [`Type`]-kinded unification variable.
-    pub fn fresh_unification_type(&mut self, context: &CheckContext) -> TypeId {
+    pub fn fresh_unification_type<Q>(&mut self, context: &CheckContext<Q>) -> TypeId
+    where
+        Q: ExternalQueries,
+    {
         self.fresh_unification_kinded(context.prim.t)
     }
 }
 
 /// Functions for solving unification variables.
-impl<'s, S> CheckState<'s, S>
-where
-    S: TypeStorage,
-{
-    /// Finds the terminal solution of a unification variable.
-    pub fn force_unification(&self, mut t: TypeId) -> TypeId {
-        while let Type::Unification(unification_id) = self.storage.index(t)
-            && let UnificationState::Solved(solution) = self.unification.get(*unification_id).state
-        {
-            t = solution
-        }
-        t
-    }
-
+impl CheckState {
     /// Solves a unification variable to a [`TypeId`].
     pub fn solve(
         &mut self,
@@ -62,15 +53,15 @@ where
         Some(unification_id)
     }
 
-    fn promote_type(
+    pub fn promote_type(
         &mut self,
         occurs: Option<u32>,
         codomain: debruijn::Size,
         unification_id: u32,
         solution: TypeId,
     ) -> bool {
-        let solution = self.force_unification(solution);
-        match *self.storage.index(solution) {
+        let solution = self.normalize_type(solution);
+        match self.storage[solution] {
             Type::Application(function, argument) => {
                 self.promote_type(occurs, codomain, unification_id, function)
                     && self.promote_type(occurs, codomain, unification_id, argument)
@@ -125,6 +116,35 @@ where
             }
 
             Type::Unknown => true,
+        }
+    }
+}
+
+impl CheckState {
+    pub fn normalize_type(&self, mut id: TypeId) -> TypeId {
+        loop {
+            match self.storage[id] {
+                Type::Unification(unification_id) => {
+                    if let UnificationState::Solved(solution) =
+                        self.unification.get(unification_id).state
+                    {
+                        id = solution;
+                    } else {
+                        break id;
+                    }
+                }
+                Type::Variable(Variable::Bound(index)) => {
+                    let size = self.bound.size();
+                    if let Some(level) = index.to_level(size)
+                        && let Some(resolved) = self.types.get(level)
+                    {
+                        id = *resolved;
+                    } else {
+                        break id;
+                    }
+                }
+                _ => break id,
+            }
         }
     }
 }

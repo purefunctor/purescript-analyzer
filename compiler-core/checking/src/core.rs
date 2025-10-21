@@ -1,12 +1,8 @@
 pub mod debruijn;
 pub mod pretty;
-pub mod storage;
-
-pub use storage::TypeStorage;
 
 use files::FileId;
 use indexing::TypeItemId;
-use la_arena::Idx;
 use smol_str::SmolStr;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -32,7 +28,7 @@ pub enum Variable {
     Free(SmolStr),
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
     Constructor(FileId, TypeItemId),
@@ -44,4 +40,6 @@ pub enum Type {
     Unknown,
 }
 
-pub type TypeId = Idx<Type>;
+pub type TypeId = interner::Id<Type>;
+
+pub type TypeInterner = interner::Interner<Type>;

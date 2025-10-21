@@ -196,6 +196,7 @@ dependencies = [
  "checking",
  "files",
  "indexing",
+ "interner",
  "la-arena",
  "lexing",
  "lock_api",
@@ -274,8 +275,8 @@ dependencies = [
  "building-types",
  "files",
  "indexing",
+ "interner",
  "itertools 0.14.0",
- "la-arena",
  "lowering",
  "resolving",
  "rustc-hash 2.1.1",
@@ -864,7 +865,6 @@ name = "interner"
 version = "0.1.0"
 dependencies = [
  "hashbrown 0.15.5",
- "la-arena",
  "rustc-hash 2.1.1",
 ]
 

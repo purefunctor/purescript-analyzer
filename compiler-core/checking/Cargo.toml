@@ -7,8 +7,8 @@ edition = "2024"
 building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
+interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.14.0"
-la-arena = "0.3.1"
 lowering = { version = "0.1.0", path = "../lowering" }
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"

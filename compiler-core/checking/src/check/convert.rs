@@ -2,17 +2,18 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::{
+    ExternalQueries,
     check::{CheckContext, CheckState},
-    core::{ForallBinder, Type, TypeId, TypeStorage, Variable},
+    core::{ForallBinder, Type, TypeId, Variable},
 };
 
-pub fn type_to_core<S>(
-    state: &mut CheckState<S>,
-    context: &CheckContext,
+pub fn type_to_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
     id: lowering::TypeId,
 ) -> TypeId
 where
-    S: TypeStorage,
+    Q: ExternalQueries,
 {
     let default = context.prim.unknown;
 
@@ -52,8 +53,8 @@ where
                 .into_iter()
                 .rfold(inner, |inner, binder| state.storage.intern(Type::Forall(binder, inner)));
 
-            if let Type::Forall(ForallBinder { level, .. }, _) = state.storage.index(forall) {
-                state.unbind(*level);
+            if let Type::Forall(ForallBinder { level, .. }, _) = state.storage[forall] {
+                state.unbind(level);
             }
 
             forall
@@ -93,13 +94,13 @@ where
 
 const INVALID_NAME: SmolStr = SmolStr::new_inline("<invalid>");
 
-fn convert_forall_binding<S>(
-    state: &mut CheckState<S>,
-    context: &CheckContext,
+fn convert_forall_binding<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
     binding: &lowering::TypeVariableBinding,
 ) -> ForallBinder
 where
-    S: TypeStorage,
+    Q: ExternalQueries,
 {
     let visible = binding.visible;
     let name = binding.name.clone().unwrap_or(INVALID_NAME);
@@ -113,23 +114,23 @@ where
     ForallBinder { visible, name, level, kind }
 }
 
-fn convert_forall_resolution<S>(
-    state: &mut CheckState<S>,
+fn convert_forall_resolution(
+    state: &mut CheckState,
     id: lowering::TypeVariableBindingId,
-) -> TypeId
-where
-    S: TypeStorage,
-{
+) -> TypeId {
     let index = state.lookup_forall(id).expect("invariant violated: CheckState::bind_forall");
     let variable = Variable::Bound(index);
     state.storage.intern(Type::Variable(variable))
 }
 
-fn convert_implicit_resolution<S: TypeStorage>(
-    state: &mut CheckState<S>,
-    context: &CheckContext,
+fn convert_implicit_resolution<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
     implicit: &lowering::ImplicitTypeVariable,
-) -> TypeId {
+) -> TypeId
+where
+    Q: ExternalQueries,
+{
     if implicit.binding {
         let kind = state.fresh_unification(context);
 
