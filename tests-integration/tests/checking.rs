@@ -70,7 +70,7 @@ fn test_solve_simple() {
 
     state.solve(codomain, unification_id, context.prim.symbol).unwrap();
 
-    let entry = state.unification.get(unification_id);
+    let entry = *state.unification.get(unification_id);
     let UnificationState::Solved(solution) = entry.state else {
         unreachable!("invariant violated");
     };
@@ -103,7 +103,7 @@ fn test_solve_bound() {
 
     state.solve(codomain, unification_id, b_to_a).unwrap();
 
-    let entry = state.unification.get(unification_id);
+    let entry = *state.unification.get(unification_id);
     let UnificationState::Solved(solution) = entry.state else {
         unreachable!("invariant violated");
     };
@@ -162,7 +162,8 @@ fn test_solve_promotion() {
 
     let mut snapshot = String::default();
 
-    for (index, entry) in state.unification.iter().enumerate() {
+    let entries: Vec<_> = state.unification.iter().copied().collect();
+    for (index, entry) in entries.iter().enumerate() {
         let UnificationState::Solved(solution) = entry.state else { continue };
         let domain = entry.domain;
         let solution = pretty::print(context, state, solution);

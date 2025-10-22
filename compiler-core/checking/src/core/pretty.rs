@@ -6,7 +6,7 @@ use crate::{
     core::{Type, TypeId, Variable},
 };
 
-pub fn print<Q>(context: &CheckContext<Q>, state: &CheckState, id: TypeId) -> String
+pub fn print<Q>(context: &CheckContext<Q>, state: &mut CheckState, id: TypeId) -> String
 where
     Q: ExternalQueries,
 {

@@ -121,14 +121,22 @@ impl CheckState {
 }
 
 impl CheckState {
-    pub fn normalize_type(&self, mut id: TypeId) -> TypeId {
-        loop {
+    /// Normalizes unification and bound type variables.
+    ///
+    /// This function also applies path compression to unification variables,
+    /// where if a unification variable `?0` solves to `?1`, which solves to
+    /// `Type`, `?0` is solved to `Type` to prune the lookup.
+    pub fn normalize_type(&mut self, mut id: TypeId) -> TypeId {
+        let mut to_compress = vec![];
+
+        let id = loop {
             match self.storage[id] {
                 Type::Unification(unification_id) => {
                     if let UnificationState::Solved(solution) =
                         self.unification.get(unification_id).state
                     {
                         id = solution;
+                        to_compress.push(unification_id);
                     } else {
                         break id;
                     }
@@ -145,6 +153,12 @@ impl CheckState {
                 }
                 _ => break id,
             }
+        };
+
+        for unification_id in to_compress {
+            self.unification.solve(unification_id, id);
         }
+
+        id
     }
 }

@@ -42,19 +42,20 @@ pub fn check_module(queries: &impl ExternalQueries, id: FileId) -> QueryResult<(
         {
             let result = signature.map(|id| kind::infer_surface_kind(&mut state, &context, id));
             if let Some((t, k)) = result {
-                let t = pretty::print(&context, &state, t);
-                let k = pretty::print(&context, &state, k);
+                let t = pretty::print(&context, &mut state, t);
+                let k = pretty::print(&context, &mut state, k);
                 println!("{t} :: {k}",)
             }
         }
     }
 
-    for (index, entry) in state.unification.iter().enumerate() {
+    let entries: Vec<_> = state.unification.iter().copied().collect();
+    for (index, entry) in entries.iter().enumerate() {
         let domain = entry.domain;
         let kind = state.normalize_type(entry.kind);
-        let kind = pretty::print(&context, &state, kind);
+        let kind = pretty::print(&context, &mut state, kind);
         if let UnificationState::Solved(solution) = entry.state {
-            let solution = pretty::print(&context, &state, solution);
+            let solution = pretty::print(&context, &mut state, solution);
             eprintln!("?{index}[{domain}] :: {kind} := {solution}");
         } else {
             eprintln!("?{index}[{domain}] :: {kind} := ?");
