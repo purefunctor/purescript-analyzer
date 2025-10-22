@@ -37,7 +37,7 @@ use std::{
 use building_types::{
     ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
 };
-use checking::TypeInterner;
+use checking::{CheckedModule, TypeInterner};
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
@@ -99,6 +99,7 @@ struct DerivedStorage {
     indexed: FxHashMap<FileId, DerivedState<Arc<IndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<LoweredModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
+    checked: FxHashMap<FileId, DerivedState<Arc<CheckedModule>>>,
 }
 
 #[derive(Default)]
@@ -424,6 +425,7 @@ impl QueryEngine {
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
+                QueryKey::Checked(k) => derived_changed!(checked, k),
             }
         }
 
@@ -701,6 +703,18 @@ impl QueryEngine {
             },
         )
     }
+
+    pub fn checked(&self, id: FileId) -> QueryResult<Arc<CheckedModule>> {
+        self.query(
+            QueryKey::Checked(id),
+            |storage| storage.derived.checked.get(&id),
+            |storage| storage.derived.checked.entry(id),
+            |this| {
+                let checked = checking::check_module(this, id)?;
+                Ok(Arc::new(checked))
+            },
+        )
+    }
 }
 
 impl QueryEngine {
@@ -720,6 +734,8 @@ impl QueryProxy for QueryEngine {
 
     type Resolved = Arc<ResolvedModule>;
 
+    type Checked = Arc<CheckedModule>;
+
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
         QueryEngine::parsed(self, id)
     }
@@ -738,6 +754,10 @@ impl QueryProxy for QueryEngine {
 
     fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved> {
         QueryEngine::resolved(self, id)
+    }
+
+    fn checked(&self, id: FileId) -> QueryResult<Self::Checked> {
+        QueryEngine::checked(self, id)
     }
 
     fn prim_id(&self) -> FileId {

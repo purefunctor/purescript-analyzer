@@ -140,29 +140,32 @@ pub struct PrimCore {
 
 impl PrimCore {
     fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimCore> {
-        let prim_id = queries.prim_id();
-        let prim_resolved = queries.resolved(prim_id)?;
+        let file_id = queries.prim_id();
+        let resolved = queries.resolved(file_id)?;
 
-        let mut lookup_prim_type = |name| {
-            let prim_type = prim_resolved.lookup_type(&prim_resolved, None, name);
-            let (_, type_id) = prim_type.expect("invariant violated: missing Type");
-            state.storage.intern(Type::Constructor(prim_id, type_id))
+        let mut lookup_type = |name: &str| {
+            let prim_type = resolved.lookup_type(&resolved, None, name);
+
+            let (file_id, type_id) =
+                prim_type.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"));
+
+            state.storage.intern(Type::Constructor(file_id, type_id))
         };
 
         Ok(PrimCore {
-            t: lookup_prim_type("Type"),
-            function: lookup_prim_type("Function"),
-            array: lookup_prim_type("Array"),
-            record: lookup_prim_type("Record"),
-            number: lookup_prim_type("Number"),
-            int: lookup_prim_type("Int"),
-            string: lookup_prim_type("String"),
-            char: lookup_prim_type("Char"),
-            boolean: lookup_prim_type("Boolean"),
-            partial: lookup_prim_type("Partial"),
-            constraint: lookup_prim_type("Constraint"),
-            symbol: lookup_prim_type("Symbol"),
-            row: lookup_prim_type("Row"),
+            t: lookup_type("Type"),
+            function: lookup_type("Function"),
+            array: lookup_type("Array"),
+            record: lookup_type("Record"),
+            number: lookup_type("Number"),
+            int: lookup_type("Int"),
+            string: lookup_type("String"),
+            char: lookup_type("Char"),
+            boolean: lookup_type("Boolean"),
+            partial: lookup_type("Partial"),
+            constraint: lookup_type("Constraint"),
+            symbol: lookup_type("Symbol"),
+            row: lookup_type("Row"),
             unknown: state.storage.intern(Type::Unknown),
         })
     }

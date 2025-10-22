@@ -15,6 +15,7 @@ pub enum QueryKey {
     Indexed(FileId),
     Lowered(FileId),
     Resolved(FileId),
+    Checked(FileId),
 }
 
 #[derive(Error, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -33,6 +34,7 @@ pub trait QueryProxy {
     type Indexed;
     type Lowered;
     type Resolved;
+    type Checked;
 
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed>;
 
@@ -43,6 +45,8 @@ pub trait QueryProxy {
     fn lowered(&self, id: FileId) -> QueryResult<Self::Lowered>;
 
     fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved>;
+
+    fn checked(&self, id: FileId) -> QueryResult<Self::Checked>;
 
     fn prim_id(&self) -> FileId;
 

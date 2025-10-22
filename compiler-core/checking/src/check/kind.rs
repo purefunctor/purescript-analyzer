@@ -1,7 +1,7 @@
 use crate::{
     ExternalQueries,
-    check::{CheckContext, CheckState, convert, unification},
-    core::{ForallBinder, Type, TypeId, Variable, debruijn},
+    check::{CheckContext, CheckState, convert, localize, unification},
+    core::{ForallBinder, Type, TypeId, Variable},
 };
 
 pub fn infer_surface_kind<Q>(
@@ -40,9 +40,14 @@ where
         lowering::TypeKind::Constrained { .. } => default,
 
         lowering::TypeKind::Constructor { resolution } => {
-            let Some((_, type_id)) = *resolution else { return default };
+            let Some((file_id, type_id)) = *resolution else { return default };
+
+            let Ok(checked) = context.queries.checked(file_id) else { return default };
+            let Some(global_id) = checked.lookup_type(type_id) else { return default };
+
             let t = convert::type_to_core(state, context, id);
-            let k = lookup_prim_type(state, context, type_id);
+            let k = localize::localize(state, context, global_id);
+
             (t, k)
         }
 
@@ -175,7 +180,11 @@ where
     match state.storage[id] {
         Type::Application(_, _) => context.prim.unknown,
 
-        Type::Constructor(_, type_id) => lookup_prim_type(state, context, type_id),
+        Type::Constructor(file_id, type_id) => {
+            let Ok(checked) = context.queries.checked(file_id) else { return context.prim.unknown };
+            let Some(global_id) = checked.types.get(&type_id) else { return context.prim.unknown };
+            localize::localize(state, context, *global_id)
+        }
 
         Type::Forall(_, _) => context.prim.t,
 
@@ -245,64 +254,4 @@ where
     let (surface_t, surface_k) = infer_surface_kind(state, context, id);
     unification::unify(state, context, surface_k, kind);
     (surface_t, surface_k)
-}
-
-fn lookup_prim_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    type_id: indexing::TypeItemId,
-) -> TypeId
-where
-    Q: ExternalQueries,
-{
-    let item = &context.prim_indexed.items[type_id];
-
-    let Some(name) = &item.name else {
-        return context.prim.unknown;
-    };
-
-    let t_to_t = state.storage.intern(Type::Function(context.prim.t, context.prim.t));
-    let row_t = state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-    match name.as_str() {
-        "Type" => context.prim.t,
-        "Function" => state.storage.intern(Type::Function(context.prim.t, t_to_t)),
-        "Array" => t_to_t,
-        "Record" => state.storage.intern(Type::Function(row_t, context.prim.t)),
-        "Number" => context.prim.t,
-        "Int" => context.prim.t,
-        "String" => context.prim.t,
-        "Char" => context.prim.t,
-        "Boolean" => context.prim.t,
-        "Partial" => context.prim.constraint,
-        "Constraint" => context.prim.t,
-        "Symbol" => context.prim.t,
-        "Row" => t_to_t,
-        "Proxy" => {
-            let t = state.storage.intern(Type::Variable(Variable::Bound(debruijn::Index(0))));
-
-            let function = state.storage.intern(Type::Function(t, context.prim.t));
-
-            let forall = state.storage.intern(Type::Forall(
-                ForallBinder {
-                    visible: false,
-                    name: "t".into(),
-                    level: debruijn::Level(1),
-                    kind: t,
-                },
-                function,
-            ));
-
-            state.storage.intern(Type::Forall(
-                ForallBinder {
-                    visible: false,
-                    name: "k".into(),
-                    level: debruijn::Level(0),
-                    kind: context.prim.t,
-                },
-                forall,
-            ))
-        }
-        _ => context.prim.unknown,
-    }
 }
