@@ -29,13 +29,38 @@ where
         }
 
         (&Type::Unification(unification_id), _) => {
-            kind::solve(state, context, unification_id, t2).is_some()
+            solve(state, context, unification_id, t2).is_some()
         }
 
         (_, &Type::Unification(unification_id)) => {
-            kind::solve(state, context, unification_id, t1).is_some()
+            solve(state, context, unification_id, t1).is_some()
         }
 
         _ => false,
     }
+}
+
+pub fn solve<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    unification_id: u32,
+    solution: TypeId,
+) -> Option<u32>
+where
+    Q: ExternalQueries,
+{
+    let codomain = state.bound.size();
+    let occurs = Some(unification_id);
+
+    if !state.promote_type(occurs, codomain, unification_id, solution) {
+        return None;
+    }
+
+    let unification_kind = state.unification.get(unification_id).kind;
+    let solution_kind = kind::elaborate_kind(state, context, solution);
+    unify(state, context, unification_kind, solution_kind);
+
+    state.unification.solve(unification_id, solution);
+
+    Some(unification_id)
 }

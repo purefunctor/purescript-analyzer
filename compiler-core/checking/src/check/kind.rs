@@ -143,7 +143,7 @@ where
             let result_u = state.fresh_unification_type(context);
 
             let function_u = state.storage.intern(Type::Function(argument_u, result_u));
-            let _ = solve(state, context, unification_id, function_u);
+            let _ = unification::solve(state, context, unification_id, function_u);
 
             let (argument_t, _) = check_surface_kind(state, context, argument, argument_u);
 
@@ -215,31 +215,6 @@ where
 
         Type::Unknown => context.prim.unknown,
     }
-}
-
-pub fn solve<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    unification_id: u32,
-    solution: TypeId,
-) -> Option<u32>
-where
-    Q: ExternalQueries,
-{
-    let codomain = state.bound.size();
-    let occurs = Some(unification_id);
-
-    if !state.promote_type(occurs, codomain, unification_id, solution) {
-        return None;
-    }
-
-    let unification_kind = state.unification.get(unification_id).kind;
-    let solution_kind = elaborate_kind(state, context, solution);
-    unification::unify(state, context, unification_kind, solution_kind);
-
-    state.unification.solve(unification_id, solution);
-
-    Some(unification_id)
 }
 
 pub fn check_surface_kind<Q>(
