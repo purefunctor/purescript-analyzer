@@ -2,7 +2,10 @@ use std::{fmt::Write, num::NonZeroU32};
 
 use analyzer::{QueryEngine, prim};
 use checking::{
-    check::{CheckContext, CheckState, unification::UnificationState},
+    check::{
+        CheckContext, CheckState,
+        unification::{self, UnificationState},
+    },
     core::{Type, TypeId, Variable, debruijn, pretty},
 };
 use files::{FileId, Files};
@@ -61,14 +64,13 @@ fn test_solve_simple() {
     // [a :: Int, b :: String]
     state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
     state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
-    let codomain = state.bound.size();
 
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
         unreachable!("invariant violated");
     };
 
-    state.solve(codomain, unification_id, context.prim.symbol).unwrap();
+    unification::solve(state, context, unification_id, context.prim.symbol).unwrap();
 
     let entry = *state.unification.get(unification_id);
     let UnificationState::Solved(solution) = entry.state else {
@@ -90,7 +92,6 @@ fn test_solve_bound() {
     // [a :: Int, b :: String]
     state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
     state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
-    let codomain = state.bound.size();
 
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
@@ -101,7 +102,7 @@ fn test_solve_bound() {
     let bound_a = state.bound_variable(1);
     let b_to_a = state.function(bound_b, bound_a);
 
-    state.solve(codomain, unification_id, b_to_a).unwrap();
+    unification::solve(state, context, unification_id, b_to_a).unwrap();
 
     let entry = *state.unification.get(unification_id);
     let UnificationState::Solved(solution) = entry.state else {
@@ -122,7 +123,6 @@ fn test_solve_invalid() {
 
     // [a :: Int]
     state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-    let codomain = state.bound.size();
 
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
@@ -130,13 +130,15 @@ fn test_solve_invalid() {
     };
 
     // [a :: Int, b :: String]
-    state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    let level = state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
 
     let bound_b = state.bound_variable(0);
     let bound_a = state.bound_variable(1);
     let b_to_a = state.function(bound_b, bound_a);
 
-    let solve_result = state.solve(codomain, unification_id, b_to_a);
+    state.unbind(level);
+
+    let solve_result = unification::solve(state, context, unification_id, b_to_a);
     assert!(solve_result.is_none());
 }
 
@@ -155,10 +157,9 @@ fn test_solve_promotion() {
 
     // [a :: Int, b :: String]
     state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
-    let codomain = state.bound.size();
 
     let unification_a_b = state.fresh_unification_type(context);
-    state.solve(codomain, unification_id, unification_a_b).unwrap();
+    unification::solve(state, context, unification_id, unification_a_b).unwrap();
 
     let mut snapshot = String::default();
 

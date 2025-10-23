@@ -1,6 +1,6 @@
 use crate::{
     ExternalQueries,
-    check::{CheckContext, CheckState, convert, localize, unification},
+    check::{CheckContext, CheckState, convert, localize, substitute, unification},
     core::{ForallBinder, Type, TypeId, Variable},
 };
 
@@ -178,7 +178,26 @@ where
 {
     let id = state.normalize_type(id);
     match state.storage[id] {
-        Type::Application(_, _) => context.prim.unknown,
+        Type::Application(function, _) => {
+            let function_kind = elaborate_kind(state, context, function);
+            let function_kind = state.normalize_type(function_kind);
+            match state.storage[function_kind] {
+                Type::Function(_, result) => result,
+
+                Type::Unification(unification_id) => {
+                    let domain = state.unification.get(unification_id).domain;
+
+                    let argument_u = state.fresh_unification_kinded_at(domain, context.prim.t);
+                    let result_u = state.fresh_unification_kinded_at(domain, context.prim.t);
+                    let function = state.storage.intern(Type::Function(argument_u, result_u));
+
+                    let _ = unification::solve(state, context, unification_id, function);
+                    result_u
+                }
+
+                _ => context.prim.unknown,
+            }
+        }
 
         Type::Constructor(file_id, type_id) => {
             let Ok(checked) = context.queries.checked(file_id) else { return context.prim.unknown };
@@ -190,7 +209,17 @@ where
 
         Type::Function(_, _) => context.prim.t,
 
-        Type::KindApplication(_, _) => context.prim.unknown,
+        Type::KindApplication(function, argument) => {
+            let function_kind = elaborate_kind(state, context, function);
+            let function_kind = state.normalize_type(function_kind);
+            match state.storage[function_kind] {
+                Type::Forall(_, inner) => {
+                    let argument = state.normalize_type(argument);
+                    substitute::substitute_bound(state, argument, inner)
+                }
+                _ => context.prim.unknown,
+            }
+        }
 
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
