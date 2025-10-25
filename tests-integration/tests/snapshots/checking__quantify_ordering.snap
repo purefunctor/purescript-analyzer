@@ -2,4 +2,4 @@
 source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
-(forall (&0 :: Type) (forall (&1 :: Type) (*0 -> *1)))
+forall (t0 :: Type) (t1 :: Type) (*0 -> *1)

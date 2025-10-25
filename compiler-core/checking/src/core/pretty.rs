@@ -1,9 +1,11 @@
+use std::fmt::Write;
+
 use itertools::Itertools;
 
 use crate::{
     ExternalQueries,
     check::{CheckContext, CheckState},
-    core::{Type, TypeId, Variable},
+    core::{ForallBinder, Type, TypeId, Variable},
 };
 
 pub fn print<Q>(context: &CheckContext<Q>, state: &mut CheckState, id: TypeId) -> String
@@ -34,10 +36,26 @@ where
         }
 
         Type::Forall(ref binder, inner) => {
-            let level = binder.level;
-            let kind = print(context, state, binder.kind);
-            let inner = print(context, state, inner);
-            format!("(forall ({level} :: {kind}) {inner})")
+            let mut binders = vec![binder.clone()];
+            let mut current = inner;
+
+            while let Type::Forall(ref binder, inner) = state.storage[current] {
+                binders.push(binder.clone());
+                current = inner;
+            }
+
+            let mut buffer = String::default();
+
+            write!(&mut buffer, "forall").unwrap();
+            for ForallBinder { name, kind, .. } in binders {
+                let kind = print(context, state, kind);
+                write!(&mut buffer, " ({name} :: {kind})").unwrap();
+            }
+
+            let current = print(context, state, current);
+            write!(&mut buffer, " {current}").unwrap();
+
+            buffer
         }
 
         Type::Function(argument, mut result) => {
