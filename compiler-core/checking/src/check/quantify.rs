@@ -80,7 +80,7 @@ fn ordered_toposort(graph: &UniGraph, state: &CheckState) -> Option<IndexSet<u32
     for &node in unsolved.iter().rev() {
         dfs.move_to(node);
         let mut cycle = false;
-        while let Some(_) = dfs.next(Reversed(graph)) {
+        while dfs.next(Reversed(graph)).is_some() {
             if cycle {
                 return None;
             }
