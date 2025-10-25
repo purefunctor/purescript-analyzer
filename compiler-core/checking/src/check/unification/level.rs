@@ -38,11 +38,6 @@ impl CheckState {
     }
 }
 
-/// Functions for solving unification variables.
-impl CheckState {
-    
-}
-
 impl CheckState {
     /// Normalizes unification and bound type variables.
     ///
