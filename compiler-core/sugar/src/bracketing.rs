@@ -49,7 +49,7 @@ impl ForOperatorId for TermOperatorId {
     }
 
     fn operator_info(lowered: &LoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
-        let Some(TermItemIr::Operator { associativity, precedence }) =
+        let Some(TermItemIr::Operator { associativity, precedence, .. }) =
             lowered.info.get_term_item(id)
         else {
             return None;
@@ -66,7 +66,7 @@ impl ForOperatorId for TypeOperatorId {
     }
 
     fn operator_info(lowered: &LoweredModule, id: Self::ItemId) -> Option<(Associativity, u8)> {
-        let Some(TypeItemIr::Operator { associativity, precedence }) =
+        let Some(TypeItemIr::Operator { associativity, precedence, .. }) =
             lowered.info.get_type_item(id)
         else {
             return None;

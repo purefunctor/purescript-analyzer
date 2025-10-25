@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/lowering_scc.rs
+expression: "(terms, types)"
+---
+(
+    [
+        Mutual(
+            [
+                Idx::<TermItem>(1),
+                Idx::<TermItem>(0),
+            ],
+        ),
+    ],
+    [
+        Mutual(
+            [
+                Idx::<TypeItem>(1),
+                Idx::<TypeItem>(0),
+            ],
+        ),
+    ],
+)

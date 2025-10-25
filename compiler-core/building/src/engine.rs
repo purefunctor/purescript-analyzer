@@ -685,7 +685,7 @@ impl QueryEngine {
 
                 let module = parsed.cst();
                 let lowered =
-                    lowering::lower_module(&module, &prim, &stabilized, &indexed, &resolved);
+                    lowering::lower_module(id, &module, &prim, &stabilized, &indexed, &resolved);
 
                 Ok(Arc::new(lowered))
             },

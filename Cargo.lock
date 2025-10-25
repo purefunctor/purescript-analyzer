@@ -1015,6 +1015,7 @@ dependencies = [
  "lexing",
  "parsing",
  "paste",
+ "petgraph",
  "resolving",
  "rowan",
  "rustc-hash 2.1.1",

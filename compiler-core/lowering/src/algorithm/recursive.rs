@@ -48,7 +48,7 @@ fn lower_binder_kind(
         cst::Binder::BinderConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-                context.lookup_term(qualifier, name)
+                state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
             let arguments = cst.children().map(|cst| lower_binder(state, context, &cst)).collect();
             BinderKind::Constructor { resolution, arguments }
@@ -260,8 +260,8 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            let bind = s.resolve_term_reference(context, qualifier.as_deref(), "bind");
-            let discard = s.resolve_term_reference(context, qualifier.as_deref(), "discard");
+            let bind = s.resolve_term_full(context, qualifier.as_deref(), "bind");
+            let discard = s.resolve_term_full(context, qualifier.as_deref(), "discard");
 
             let statements = cst
                 .statements()
@@ -277,8 +277,8 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            let map = s.resolve_term_reference(context, qualifier.as_deref(), "map");
-            let apply = s.resolve_term_reference(context, qualifier.as_deref(), "apply");
+            let map = s.resolve_term_full(context, qualifier.as_deref(), "map");
+            let apply = s.resolve_term_full(context, qualifier.as_deref(), "apply");
 
             let statements = cst
                 .statements()
@@ -291,14 +291,14 @@ fn lower_expression_kind(
         cst::Expression::ExpressionConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-                context.lookup_term(qualifier, name)
+                state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
             ExpressionKind::Constructor { resolution }
         }
         cst::Expression::ExpressionVariable(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::lower)?;
-                state.resolve_term_reference(context, qualifier.as_deref(), name.as_str())
+                state.resolve_term_full(context, qualifier.as_deref(), name.as_str())
             });
             ExpressionKind::Variable { resolution }
         }
@@ -306,7 +306,7 @@ fn lower_expression_kind(
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) =
                     lower_qualified_name(&cst, cst::QualifiedName::operator_name)?;
-                context.lookup_term(qualifier, name)
+                state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
             ExpressionKind::OperatorName { resolution }
         }
@@ -341,7 +341,7 @@ fn lower_expression_kind(
                     });
                     let resolution = name.as_ref().and_then(|name| {
                         let qualifier: Option<&str> = None;
-                        state.resolve_term_reference(context, qualifier, name)
+                        state.resolve_term_full(context, qualifier, name)
                     });
                     ExpressionRecordItem::RecordPun { name, resolution }
                 }
@@ -560,11 +560,10 @@ fn lower_equation_bindings(
     let id = state.graph.inner.alloc(GraphNode::Let { parent, bindings: in_scope });
     state.graph_scope = Some(id);
 
-    let root = context.module.syntax();
     bindings.extend(to_traverse.into_iter().map(|resolution| {
         state.with_scope(|state| {
             let signature = resolution.signature.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id)?.try_to_node(root)?;
+                let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
                 let cst = cst.type_()?;
                 Some(lower_forall(state, context, &cst))
             });
@@ -572,7 +571,7 @@ fn lower_equation_bindings(
                 .equations
                 .iter()
                 .filter_map(|&id| {
-                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(root)?;
+                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
                     Some(lower_equation_like(
                         state,
                         context,
@@ -693,7 +692,7 @@ fn lower_type_kind(
         cst::Type::TypeConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-                context.lookup_type(qualifier, name)
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
             TypeKind::Constructor { resolution }
         }
@@ -717,7 +716,7 @@ fn lower_type_kind(
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) =
                     lower_qualified_name(&cst, cst::QualifiedName::operator_name)?;
-                context.lookup_type(qualifier, name)
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
             TypeKind::Operator { resolution }
         }
@@ -810,7 +809,7 @@ fn lower_term_operator(
         Some((qualifier, name))
     })?;
 
-    let (file_id, term_id) = context.lookup_term(qualifier, name)?;
+    let (file_id, term_id) = state.resolve_term_reference(context, qualifier.as_deref(), &name)?;
     state.info.term_operator.insert(id, (file_id, term_id));
 
     Some(id)
@@ -825,13 +824,13 @@ fn lower_type_operator(
     let (qualifier, name) =
         cst.qualified().and_then(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator))?;
 
-    let (file_id, type_id) = context.lookup_type(qualifier, name)?;
+    let (file_id, type_id) = state.resolve_type_reference(context, qualifier.as_deref(), &name)?;
     state.info.type_operator.insert(id, (file_id, type_id));
 
     Some(id)
 }
 
-fn lower_qualified_name(
+pub(crate) fn lower_qualified_name(
     cst: &cst::QualifiedName,
     token: impl Fn(&cst::QualifiedName) -> Option<SyntaxToken>,
 ) -> Option<(Option<SmolStr>, SmolStr)> {

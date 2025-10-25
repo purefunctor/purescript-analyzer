@@ -8,13 +8,15 @@ use indexing::{
     TypeRoleId,
 };
 use itertools::Itertools;
+use petgraph::prelude::DiGraphMap;
+use resolving::ResolvedModule;
 use rowan::ast::AstNode;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
-use stabilizing::ExpectId;
+use stabilizing::{ExpectId, StabilizedModule};
 use syntax::cst;
 
-use crate::{ImplicitTypeVariable, *};
+use crate::{intermediate::*, scope::*, source::*};
 
 #[derive(Default)]
 pub(crate) struct State {
@@ -22,10 +24,19 @@ pub(crate) struct State {
     pub(crate) graph: LoweringGraph,
     pub(crate) nodes: LoweringGraphNodes,
     pub(crate) graph_scope: Option<GraphNodeId>,
+
+    pub(crate) current_term: Option<TermItemId>,
+    pub(crate) current_type: Option<TypeItemId>,
+
+    pub(crate) term_graph: ItemGraph<TermItemId>,
+    pub(crate) type_graph: ItemGraph<TypeItemId>,
 }
 
+type ItemGraph<T> = DiGraphMap<T, (), FxBuildHasher>;
+
 struct Context<'c> {
-    module: &'c cst::Module,
+    file_id: FileId,
+    root: &'c syntax::SyntaxNode,
     prim: &'c ResolvedModule,
     stabilized: &'c StabilizedModule,
     indexed: &'c IndexedModule,
@@ -38,6 +49,16 @@ impl State {
         let result = f(self);
         self.graph_scope = graph_scope;
         result
+    }
+
+    fn begin_term(&mut self, id: TermItemId) {
+        self.current_term = Some(id);
+        self.current_type = None;
+    }
+
+    fn begin_type(&mut self, id: TypeItemId) {
+        self.current_term = None;
+        self.current_type = Some(id);
     }
 
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
@@ -102,22 +123,38 @@ impl State {
         *collecting = false;
     }
 
-    fn resolve_term_reference(
-        &self,
+    fn resolve_term_full(
+        &mut self,
         context: &Context,
         qualifier: Option<&str>,
         name: &str,
     ) -> Option<TermVariableResolution> {
-        let resolve_reference = || {
-            let (file_id, term_id) = context.lookup_term(qualifier, name)?;
-            Some(TermVariableResolution::Reference(file_id, term_id))
-        };
-
         if qualifier.is_some() {
-            resolve_reference()
+            self.resolve_term_reference(context, qualifier, name)
+                .map(|(file_id, item_id)| TermVariableResolution::Reference(file_id, item_id))
         } else {
-            self.resolve_term_local(name).or_else(resolve_reference)
+            self.resolve_term_local(name).or_else(|| {
+                self.resolve_term_reference(context, qualifier, name)
+                    .map(|(file_id, item_id)| TermVariableResolution::Reference(file_id, item_id))
+            })
         }
+    }
+
+    fn resolve_term_reference(
+        &mut self,
+        context: &Context,
+        qualifier: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TermItemId)> {
+        let (file_id, term_id) = context.lookup_term(qualifier, name)?;
+
+        if context.file_id == file_id
+            && let Some(current_id) = self.current_term
+        {
+            self.term_graph.add_edge(current_id, term_id, ());
+        }
+
+        Some((file_id, term_id))
     }
 
     fn resolve_term_local(&self, name: &str) -> Option<TermVariableResolution> {
@@ -133,6 +170,23 @@ impl State {
             }
             _ => None,
         })
+    }
+
+    fn resolve_type_reference(
+        &mut self,
+        context: &Context,
+        qualifier: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TypeItemId)> {
+        let (file_id, type_id) = context.lookup_type(qualifier, name)?;
+
+        if context.file_id == file_id
+            && let Some(current_id) = self.current_type
+        {
+            self.type_graph.add_edge(current_id, type_id, ());
+        }
+
+        Some((file_id, type_id))
     }
 
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
@@ -195,6 +249,7 @@ impl Context<'_> {
 }
 
 pub(super) fn lower_module(
+    file_id: FileId,
     module: &cst::Module,
     prim: &ResolvedModule,
     stabilized: &StabilizedModule,
@@ -202,16 +257,23 @@ pub(super) fn lower_module(
     resolved: &ResolvedModule,
 ) -> State {
     let mut state = State::default();
-    let context = Context { module, prim, stabilized, indexed, resolved };
+
+    let root = module.syntax();
+    let context = Context { file_id, root, prim, stabilized, indexed, resolved };
 
     for (id, item) in context.indexed.items.iter_terms() {
+        dbg!(item);
+        state.term_graph.add_node(id);
         state.with_scope(|state| {
+            state.begin_term(id);
             lower_term_item(state, &context, id, item);
         });
     }
 
     for (id, item) in context.indexed.items.iter_types() {
+        state.type_graph.add_node(id);
         state.with_scope(|state| {
+            state.begin_type(id);
             lower_type_item(state, &context, id, item);
         })
     }
@@ -220,12 +282,13 @@ pub(super) fn lower_module(
 }
 
 fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, item: &TermItem) {
-    let root = context.module.syntax();
     match &item.kind {
         TermItemKind::ClassMember { .. } => (), // See lower_type_item
+
         TermItemKind::Constructor { .. } => (), // See lower_type_item
+
         TermItemKind::Derive { id } => {
-            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root));
+            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let arguments = cst
                 .as_ref()
@@ -256,8 +319,9 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             let kind = TermItemIr::Derive { constraints, arguments };
             state.info.term_item.insert(item_id, kind);
         }
+
         TermItemKind::Foreign { id } => {
-            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root));
+            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let signature = cst.and_then(|cst| {
                 let cst = cst.type_()?;
@@ -267,8 +331,9 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             let kind = TermItemIr::Foreign { signature };
             state.info.term_item.insert(item_id, kind);
         }
+
         TermItemKind::Instance { id } => {
-            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root));
+            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let arguments = cst
                 .as_ref()
@@ -307,8 +372,9 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             let kind = TermItemIr::Instance { constraints, arguments, members };
             state.info.term_item.insert(item_id, kind);
         }
+
         TermItemKind::Operator { id } => {
-            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root));
+            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let associativity = cst.as_ref().and_then(|cst| {
                 cst.infix()
@@ -322,12 +388,23 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 cst.text().parse().ok()
             });
 
-            let kind = TermItemIr::Operator { associativity, precedence };
+            let resolution = cst.as_ref().and_then(|cst| {
+                let cst = cst.qualified()?;
+                let (qualifier, name) =
+                    recursive::lower_qualified_name(&cst, cst::QualifiedName::lower)?;
+                state.resolve_term_reference(context, qualifier.as_deref(), &name)
+            });
+
+            let kind = TermItemIr::Operator { associativity, precedence, resolution };
             state.info.term_item.insert(item_id, kind);
         }
+
         TermItemKind::Value { signature, equations } => {
+            state.term_graph.add_node(item_id);
+
             let signature = signature.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 let cst = cst.signature()?;
                 Some(recursive::lower_forall(state, context, &cst))
             });
@@ -335,8 +412,10 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             let equations = equations
                 .iter()
                 .filter_map(|id| {
-                    let cst =
-                        context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root))?;
+                    let cst = context
+                        .stabilized
+                        .ast_ptr(*id)
+                        .and_then(|cst| cst.try_to_node(context.root))?;
                     Some(recursive::lower_equation_like(
                         state,
                         context,
@@ -354,17 +433,18 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 }
 
 fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, item: &TypeItem) {
-    let root = context.module.syntax();
     match &item.kind {
         TypeItemKind::Data { signature, equation, role } => {
             let signature = signature.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let data = equation.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -382,15 +462,18 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
 
             lower_constructors(state, context, item_id);
         }
+
         TypeItemKind::Newtype { signature, equation, role } => {
             let signature = signature.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let newtype = equation.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -408,15 +491,18 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
 
             lower_constructors(state, context, item_id);
         }
+
         TypeItemKind::Synonym { signature, equation } => {
             let signature = signature.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let synonym = equation.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -432,15 +518,18 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             let kind = TypeItemIr::SynonymGroup { signature, synonym };
             state.info.type_item.insert(item_id, kind);
         }
+
         TypeItemKind::Class { signature, declaration } => {
             let signature = signature.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
             let class = declaration.and_then(|id| {
-                let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root))?;
+                let cst =
+                    context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
                 let variables = cst
@@ -469,8 +558,9 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
 
             lower_class_members(state, context, item_id);
         }
+
         TypeItemKind::Foreign { id, role } => {
-            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root));
+            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let signature = cst.as_ref().and_then(|cst| {
                 let cst = cst.type_()?;
@@ -482,8 +572,9 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
             let kind = TypeItemIr::Foreign { signature, roles };
             state.info.type_item.insert(item_id, kind);
         }
+
         TypeItemKind::Operator { id } => {
-            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(root));
+            let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let associativity = cst.as_ref().and_then(|cst| {
                 cst.infix()
@@ -497,20 +588,28 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 cst.text().parse().ok()
             });
 
-            let kind = TypeItemIr::Operator { associativity, precedence };
+            let resolution = cst.as_ref().and_then(|cst| {
+                let cst = cst.qualified()?;
+                let (qualifier, name) =
+                    recursive::lower_qualified_name(&cst, cst::QualifiedName::upper)?;
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+            });
+
+            let kind = TypeItemIr::Operator { associativity, precedence, resolution };
             state.info.type_item.insert(item_id, kind);
         }
     }
 }
 
 fn lower_constructors(state: &mut State, context: &Context, id: TypeItemId) {
-    let root = context.module.syntax();
     for item_id in context.indexed.pairs.data_constructors(id) {
         let TermItemKind::Constructor { id } = context.indexed.items[item_id].kind else {
             unreachable!("invariant violated: expected TermItemKind::Constructor");
         };
 
-        let Some(cst) = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root)) else {
+        let Some(cst) =
+            context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))
+        else {
             continue;
         };
 
@@ -522,13 +621,14 @@ fn lower_constructors(state: &mut State, context: &Context, id: TypeItemId) {
 }
 
 fn lower_class_members(state: &mut State, context: &Context, id: TypeItemId) {
-    let root = context.module.syntax();
     for item_id in context.indexed.pairs.class_members(id) {
         let TermItemKind::ClassMember { id } = context.indexed.items[item_id].kind else {
             unreachable!("invariant violated: expected TermItemKind::ClassMember");
         };
 
-        let Some(cst) = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root)) else {
+        let Some(cst) =
+            context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))
+        else {
             continue;
         };
 
@@ -585,20 +685,19 @@ fn lower_instance_statements(
         }
     }
 
-    let root = context.module.syntax();
     in_scope
         .into_iter()
         .map(|(_, (signature, equations))| {
             state.with_scope(|state| {
                 state.push_forall_scope();
                 let signature = signature.and_then(|id| {
-                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(root)?;
+                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
                     cst.type_().map(|t| recursive::lower_forall(state, context, &t))
                 });
                 let equations = equations
                     .iter()
                     .filter_map(|&id| {
-                        let cst = context.stabilized.ast_ptr(id)?.try_to_node(root)?;
+                        let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
                         Some(recursive::lower_equation_like(
                             state,
                             context,
@@ -615,8 +714,7 @@ fn lower_instance_statements(
 }
 
 fn lower_roles(context: &Context, id: TypeRoleId) -> Arc<[Role]> {
-    let root = context.module.syntax();
-    let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(root));
+    let cst = context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root));
     cst.map(|cst| {
         cst.children()
             .map(|cst| {
