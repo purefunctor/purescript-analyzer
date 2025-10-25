@@ -28,6 +28,11 @@ where
             (t1_file_id, t1_item_id) == (t2_file_id, t2_item_id)
         }
 
+        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+            unify(state, context, t1_argument, t2_argument)
+                && unify(state, context, t1_result, t2_result)
+        }
+
         (&Type::Unification(unification_id), _) => {
             solve(state, context, unification_id, t2).is_some()
         }
