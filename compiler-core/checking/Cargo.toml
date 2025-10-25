@@ -7,9 +7,11 @@ edition = "2024"
 building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
+indexmap = "2.12.0"
 interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.14.0"
 lowering = { version = "0.1.0", path = "../lowering" }
+petgraph = "0.8.3"
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"
 smol_str = "0.3.2"

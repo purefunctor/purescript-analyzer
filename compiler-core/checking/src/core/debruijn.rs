@@ -45,6 +45,10 @@ impl Level {
     pub fn increment(self) -> Level {
         Level(self.0 + 1)
     }
+
+    pub fn to_index(&self, size: Size) -> Option<Index> {
+        if self.0 < size.0 { Some(Index(size.0 - self.0 - 1)) } else { None }
+    }
 }
 
 impl fmt::Display for Level {
@@ -87,7 +91,7 @@ impl fmt::Display for Index {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Size(u32);
+pub struct Size(pub u32);
 
 impl Size {
     pub fn increment(self) -> Size {

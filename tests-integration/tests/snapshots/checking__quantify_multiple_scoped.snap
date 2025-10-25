@@ -1,0 +1,5 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+(forall (&0 :: Type) (forall (&1 :: *0) (forall (&2 :: *0) (forall (&3 :: Type) (forall (&4 :: *0) (forall (&5 :: *0) (*3 -> *0)))))))

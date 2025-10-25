@@ -3,7 +3,7 @@ use std::{fmt::Write, num::NonZeroU32};
 use analyzer::{QueryEngine, prim};
 use checking::{
     check::{
-        CheckContext, CheckState,
+        CheckContext, CheckState, quantify,
         unification::{self, UnificationState},
     },
     core::{Type, TypeId, Variable, debruijn, pretty},
@@ -172,6 +172,106 @@ fn test_solve_promotion() {
     }
 
     insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_quantify_simple() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let unification_a = state.fresh_unification_type(context);
+    let unification_b = state.fresh_unification_type(context);
+
+    let function = state.storage.intern(Type::Function(unification_a, unification_b));
+    let quantified = quantify::quantify(state, function).unwrap();
+
+    let mut snapshot = String::default();
+
+    let quantified = pretty::print(context, state, quantified);
+    writeln!(snapshot, "{quantified}").unwrap();
+
+    insta::assert_snapshot!(snapshot)
+}
+
+#[test]
+fn test_quantify_polykind() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let unification = state.fresh_unification(context);
+    let quantified = quantify::quantify(state, unification).unwrap();
+
+    let mut snapshot = String::default();
+
+    let quantified = pretty::print(context, state, quantified);
+    writeln!(snapshot, "{quantified}").unwrap();
+
+    insta::assert_snapshot!(snapshot)
+}
+
+#[test]
+fn test_quantify_ordering() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.t);
+    let unification_a = state.fresh_unification_type(context);
+
+    state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
+    let unification_b = state.fresh_unification_type(context);
+
+    let function = state.storage.intern(Type::Function(unification_b, unification_a));
+    let quantified = quantify::quantify(state, function).unwrap();
+
+    let mut snapshot = String::default();
+
+    let quantified = pretty::print(context, state, quantified);
+    writeln!(snapshot, "{quantified}").unwrap();
+
+    insta::assert_snapshot!(snapshot)
+}
+
+#[test]
+fn test_quantify_scoped() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let unification_0 = state.fresh_unification_type(context);
+    let unification_1 = state.fresh_unification_kinded(unification_0);
+    let unification_2 = state.fresh_unification_kinded(unification_1);
+
+    let quantified = quantify::quantify(state, unification_2).unwrap();
+
+    let mut snapshot = String::default();
+
+    let quantified = pretty::print(context, state, quantified);
+    writeln!(snapshot, "{quantified}").unwrap();
+
+    insta::assert_snapshot!(snapshot)
+}
+
+#[test]
+fn test_quantify_multiple_scoped() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let unification_0 = state.fresh_unification_type(context);
+    let unification_1 = state.fresh_unification_kinded(unification_0);
+    let unification_2 = state.fresh_unification_kinded(unification_1);
+
+    let unification_3 = state.fresh_unification_type(context);
+    let unification_4 = state.fresh_unification_kinded(unification_3);
+    let unification_5 = state.fresh_unification_kinded(unification_4);
+
+    let function = state.storage.intern(Type::Function(unification_2, unification_5));
+    let quantified = quantify::quantify(state, function).unwrap();
+
+    let mut snapshot = String::default();
+
+    let quantified = pretty::print(context, state, quantified);
+    writeln!(snapshot, "{quantified}").unwrap();
+
+    insta::assert_snapshot!(snapshot)
 }
 
 #[test]
