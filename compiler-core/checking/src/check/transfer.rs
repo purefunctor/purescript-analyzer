@@ -1,3 +1,5 @@
+use std::any;
+
 use crate::{
     ExternalQueries, Type, TypeId,
     check::{CheckContext, CheckState},
@@ -88,7 +90,8 @@ where
         }
 
         Type::Unification(_) => {
-            unreachable!("invariant violated: unification variable in global type")
+            let name = any::type_name::<E>();
+            unreachable!("invariant violated: forbidden unification variable transfer from {name}");
         }
 
         Type::Variable(variable) => Type::Variable(variable),
