@@ -8,8 +8,7 @@ use syntax::{PureScript, SyntaxToken, cst};
 
 use crate::{
     ExistingKind, ExportKind, ImplicitItems, ImportKind, IndexingError, IndexingImport,
-    IndexingImports, IndexingItems, IndexingPairs, ItemKind, TermItem, TermItemId, TermItemKind,
-    TypeItem, TypeItemId, TypeItemKind, source::*,
+    IndexingImports, IndexingItems, IndexingPairs, ItemKind, items::*, source::*,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

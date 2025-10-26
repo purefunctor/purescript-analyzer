@@ -7,7 +7,7 @@ fn test_001_ado_statement_recursion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -18,7 +18,7 @@ fn test_002_class_equation_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -29,7 +29,7 @@ fn test_003_data_equation_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -40,7 +40,7 @@ fn test_004_derive_declaration_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -51,7 +51,7 @@ fn test_005_do_statement_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -62,7 +62,7 @@ fn test_006_do_statement_recursion_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -73,7 +73,7 @@ fn test_007_instance_declaration_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -84,7 +84,7 @@ fn test_008_newtype_equation_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -95,7 +95,7 @@ fn test_009_signature_equation_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
 
@@ -106,6 +106,6 @@ fn test_010_value_equation_main() {
     let Some(id) = engine.module_file("Main") else {
         return;
     };
-    let report = tests_integration::core::report_lowered(&engine, id, "Main");
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }

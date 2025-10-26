@@ -1,17 +1,9 @@
+pub mod debruijn;
+pub mod pretty;
+
 use files::FileId;
 use indexing::TypeItemId;
-use la_arena::Idx;
 use smol_str::SmolStr;
-
-use crate::debruijn;
-
-pub trait CoreStorage {
-    fn unknown(&self) -> TypeId;
-
-    fn allocate(&mut self, ty: Type) -> TypeId;
-
-    fn index(&self, id: TypeId) -> &Type;
-}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum BuiltinConstructor {
@@ -20,13 +12,7 @@ pub enum BuiltinConstructor {
     Number,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub enum Constructor {
-    Builtin(BuiltinConstructor),
-    Module(FileId, TypeItemId),
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForallBinder {
     pub visible: bool,
     pub name: SmolStr,
@@ -34,22 +20,26 @@ pub struct ForallBinder {
     pub kind: TypeId,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct Unification {
-    pub unique: u32,
-    pub level: u32,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Variable {
+    Implicit(debruijn::Level),
+    Skolem(debruijn::Level),
+    Bound(debruijn::Index),
+    Free(SmolStr),
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
-    Constructor(Constructor),
+    Constructor(FileId, TypeItemId),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),
-    Implicit(debruijn::Level),
-    Unification(Unification),
-    Variable(debruijn::Index),
+    KindApplication(TypeId, TypeId),
+    Unification(u32),
+    Variable(Variable),
     Unknown,
 }
 
-pub type TypeId = Idx<Type>;
+pub type TypeId = interner::Id<Type>;
+
+pub type TypeInterner = interner::Interner<Type>;

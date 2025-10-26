@@ -34,7 +34,10 @@ use std::{
     },
 };
 
-use building_types::{ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryResult};
+use building_types::{
+    ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
+};
+use checking::{CheckedModule, TypeInterner};
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
@@ -96,11 +99,13 @@ struct DerivedStorage {
     indexed: FxHashMap<FileId, DerivedState<Arc<IndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<LoweredModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
+    checked: FxHashMap<FileId, DerivedState<Arc<CheckedModule>>>,
 }
 
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
+    types: TypeInterner,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -420,6 +425,7 @@ impl QueryEngine {
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
+                QueryKey::Checked(k) => derived_changed!(checked, k),
             }
         }
 
@@ -679,7 +685,7 @@ impl QueryEngine {
 
                 let module = parsed.cst();
                 let lowered =
-                    lowering::lower_module(&module, &prim, &stabilized, &indexed, &resolved);
+                    lowering::lower_module(id, &module, &prim, &stabilized, &indexed, &resolved);
 
                 Ok(Arc::new(lowered))
             },
@@ -697,6 +703,18 @@ impl QueryEngine {
             },
         )
     }
+
+    pub fn checked(&self, id: FileId) -> QueryResult<Arc<CheckedModule>> {
+        self.query(
+            QueryKey::Checked(id),
+            |storage| storage.derived.checked.get(&id),
+            |storage| storage.derived.checked.entry(id),
+            |this| {
+                let checked = checking::check_module(this, id)?;
+                Ok(Arc::new(checked))
+            },
+        )
+    }
 }
 
 impl QueryEngine {
@@ -705,13 +723,45 @@ impl QueryEngine {
     }
 }
 
-impl resolving::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
+impl QueryProxy for QueryEngine {
+    type Parsed = FullParsedModule;
+
+    type Stabilized = Arc<StabilizedModule>;
+
+    type Indexed = Arc<IndexedModule>;
+
+    type Lowered = Arc<LoweredModule>;
+
+    type Resolved = Arc<ResolvedModule>;
+
+    type Checked = Arc<CheckedModule>;
+
+    fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
+        QueryEngine::parsed(self, id)
+    }
+
+    fn stabilized(&self, id: FileId) -> QueryResult<Self::Stabilized> {
+        QueryEngine::stabilized(self, id)
+    }
+
+    fn indexed(&self, id: FileId) -> QueryResult<Self::Indexed> {
         QueryEngine::indexed(self, id)
     }
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
+    fn lowered(&self, id: FileId) -> QueryResult<Self::Lowered> {
+        QueryEngine::lowered(self, id)
+    }
+
+    fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved> {
         QueryEngine::resolved(self, id)
+    }
+
+    fn checked(&self, id: FileId) -> QueryResult<Self::Checked> {
+        QueryEngine::checked(self, id)
+    }
+
+    fn prim_id(&self) -> FileId {
+        QueryEngine::prim_id(self)
     }
 
     fn module_file(&self, name: &str) -> Option<FileId> {
@@ -719,23 +769,21 @@ impl resolving::External for QueryEngine {
     }
 }
 
-impl sugar::External for QueryEngine {
-    fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
-        QueryEngine::indexed(self, id)
+impl checking::ExternalQueries for QueryEngine {
+    fn intern_type(&self, t: checking::Type) -> checking::TypeId {
+        let mut storage = self.storage.write();
+        storage.interned.types.intern(t)
     }
 
-    fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
-        QueryEngine::resolved(self, id)
-    }
-
-    fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
-        QueryEngine::lowered(self, id)
-    }
-
-    fn prim_id(&self) -> FileId {
-        QueryEngine::prim_id(self)
+    fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
+        let storage = self.storage.read();
+        storage.interned.types[id].clone()
     }
 }
+
+impl resolving::ExternalQueries for QueryEngine {}
+
+impl sugar::ExternalQueries for QueryEngine {}
 
 #[cfg(test)]
 mod tests {

@@ -1,0 +1,5 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+forall (t0 :: Type) (t1 :: *0) *0

@@ -1,16 +1,69 @@
 use std::{
+    any, fmt,
     hash::{BuildHasher, Hash},
+    marker::PhantomData,
+    num::NonZeroU32,
     ops,
 };
 
 use hashbrown::{Equivalent, HashTable};
-use la_arena::{Idx, RawIdx};
 use rustc_hash::FxBuildHasher;
+
+pub struct Id<T> {
+    pub(crate) id: NonZeroU32,
+    phantom: PhantomData<fn() -> T>,
+}
+
+impl<T> Id<T> {
+    pub const fn new(id: NonZeroU32) -> Self {
+        Id { id, phantom: PhantomData }
+    }
+}
+
+impl<T> fmt::Debug for Id<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("Id<{}>({})", any::type_name::<T>(), self.id))
+    }
+}
+
+impl<T> Copy for Id<T> {}
+
+impl<T> Clone for Id<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> PartialEq for Id<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl<T> Eq for Id<T> {}
+
+impl<T> PartialOrd for Id<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T> Ord for Id<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl<T> Hash for Id<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
 
 #[derive(Debug)]
 pub struct Interner<T> {
     inner: Vec<T>,
-    table: HashTable<usize>,
+    table: HashTable<NonZeroU32>,
 }
 
 impl<T> Default for Interner<T> {
@@ -30,44 +83,74 @@ impl<T: PartialEq> PartialEq for Interner<T> {
 impl<T: Eq> Eq for Interner<T> {}
 
 impl<T: Eq + Hash> Interner<T> {
-    pub fn intern(&mut self, value: T) -> Idx<T> {
+    pub fn intern(&mut self, value: T) -> Id<T> {
         let hash = FxBuildHasher.hash_one(&value);
-        let existing = self.table.find(hash, |&index| {
-            let inner = &self.inner[index];
-            &value == inner
-        });
-        let index = existing.copied().unwrap_or_else(|| {
-            let index = self.inner.len();
+
+        let existing =
+            self.table.find(hash, |&id| arena_equivalent(&self.inner, id, &value)).copied();
+
+        let id = existing.unwrap_or_else(|| {
             self.inner.push(value);
-            self.table.insert_unique(hash, index, |&index| {
-                let value = &self.inner[index];
-                FxBuildHasher.hash_one(value)
-            });
-            index
+            let index = self.inner.len();
+            // SAFETY: Vec::push ensures that the subsequent Vec::len
+            // returns a non-zero value to be used as a 1-based index.
+            let id = unsafe { NonZeroU32::new_unchecked(index as u32) };
+            self.table.insert_unique(hash, id, |&id| arena_hasher(&self.inner, id));
+            id
         });
-        Idx::from_raw(RawIdx::from_u32(index as u32))
+
+        Id::new(id)
     }
 
-    pub fn get<Q>(&self, value: &Q) -> Option<Idx<T>>
+    pub fn get<Q>(&self, value: &Q) -> Option<Id<T>>
     where
         Q: ?Sized + Hash + Equivalent<T>,
     {
         let hash = FxBuildHasher.hash_one(value);
-        let index = *self.table.find(hash, |&index| {
-            let inner = &self.inner[index];
-            value.equivalent(inner)
-        })?;
-        Some(Idx::from_raw(RawIdx::from_u32(index as u32)))
+        let id = self.table.find(hash, |&id| arena_equivalent(&self.inner, id, value))?;
+        Some(Id::new(*id))
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.inner.shrink_to_fit();
+        self.table.shrink_to_fit(|&id| arena_hasher(&self.inner, id));
     }
 }
 
-impl<T> ops::Index<Idx<T>> for Interner<T> {
+impl<T> ops::Index<Id<T>> for Interner<T> {
     type Output = T;
 
-    fn index(&self, index: Idx<T>) -> &Self::Output {
-        let index = index.into_raw().into_u32() as usize;
-        &self.inner[index]
+    fn index(&self, Id { id, .. }: Id<T>) -> &Self::Output {
+        arena_index(&self.inner, id).unwrap_or_else(|| {
+            unreachable!("invariant violated: {id} is not a valid index");
+        })
     }
+}
+
+#[inline]
+fn arena_index<T>(arena: &[T], id: NonZeroU32) -> Option<&T> {
+    let index = id.get() as usize;
+    arena.get(index - 1)
+}
+
+#[inline]
+fn arena_hasher<T: Hash>(arena: &[T], id: NonZeroU32) -> u64 {
+    let inner = arena_index(arena, id).unwrap_or_else(|| {
+        unreachable!("invariant violated: {id} is not a valid index");
+    });
+    FxBuildHasher.hash_one(inner)
+}
+
+#[inline]
+fn arena_equivalent<T, Q>(arena: &[T], id: NonZeroU32, value: &Q) -> bool
+where
+    T: Hash,
+    Q: ?Sized + Hash + Equivalent<T>,
+{
+    let inner = arena_index(arena, id).unwrap_or_else(|| {
+        unreachable!("invariant violated: {id} is not a valid index");
+    });
+    value.equivalent(inner)
 }
 
 #[cfg(test)]

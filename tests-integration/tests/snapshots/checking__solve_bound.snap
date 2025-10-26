@@ -1,0 +1,5 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+(*0 -> *1) :: Type

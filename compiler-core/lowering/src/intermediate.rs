@@ -285,6 +285,7 @@ pub enum TermItemIr {
     Operator {
         associativity: Option<Associativity>,
         precedence: Option<u8>,
+        resolution: Option<(FileId, TermItemId)>,
     },
     ValueGroup {
         signature: Option<TypeId>,
@@ -324,12 +325,33 @@ pub struct ClassIr {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeItemIr {
-    DataGroup { signature: Option<TypeId>, data: Option<DataIr>, roles: Arc<[Role]> },
-    NewtypeGroup { signature: Option<TypeId>, newtype: Option<NewtypeIr>, roles: Arc<[Role]> },
-    SynonymGroup { signature: Option<TypeId>, synonym: Option<SynonymIr> },
-    ClassGroup { signature: Option<TypeId>, class: Option<ClassIr> },
-    Foreign { signature: Option<TypeId>, roles: Arc<[Role]> },
-    Operator { associativity: Option<Associativity>, precedence: Option<u8> },
+    DataGroup {
+        signature: Option<TypeId>,
+        data: Option<DataIr>,
+        roles: Arc<[Role]>,
+    },
+    NewtypeGroup {
+        signature: Option<TypeId>,
+        newtype: Option<NewtypeIr>,
+        roles: Arc<[Role]>,
+    },
+    SynonymGroup {
+        signature: Option<TypeId>,
+        synonym: Option<SynonymIr>,
+    },
+    ClassGroup {
+        signature: Option<TypeId>,
+        class: Option<ClassIr>,
+    },
+    Foreign {
+        signature: Option<TypeId>,
+        roles: Arc<[Role]>,
+    },
+    Operator {
+        associativity: Option<Associativity>,
+        precedence: Option<u8>,
+        resolution: Option<(FileId, TypeItemId)>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

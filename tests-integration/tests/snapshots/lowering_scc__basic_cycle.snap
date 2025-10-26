@@ -1,0 +1,63 @@
+---
+source: tests-integration/tests/lowering_scc.rs
+expression: "(terms, types)"
+---
+(
+    [
+        Base(
+            Idx::<TermItem>(0),
+        ),
+        Recursive(
+            Idx::<TermItem>(1),
+        ),
+        Mutual(
+            [
+                Idx::<TermItem>(3),
+                Idx::<TermItem>(2),
+            ],
+        ),
+        Mutual(
+            [
+                Idx::<TermItem>(6),
+                Idx::<TermItem>(5),
+                Idx::<TermItem>(4),
+            ],
+        ),
+        Base(
+            Idx::<TermItem>(7),
+        ),
+        Base(
+            Idx::<TermItem>(8),
+        ),
+        Base(
+            Idx::<TermItem>(9),
+        ),
+        Base(
+            Idx::<TermItem>(10),
+        ),
+        Base(
+            Idx::<TermItem>(11),
+        ),
+    ],
+    [
+        Base(
+            Idx::<TypeItem>(0),
+        ),
+        Recursive(
+            Idx::<TypeItem>(1),
+        ),
+        Mutual(
+            [
+                Idx::<TypeItem>(3),
+                Idx::<TypeItem>(2),
+            ],
+        ),
+        Mutual(
+            [
+                Idx::<TypeItem>(6),
+                Idx::<TypeItem>(5),
+                Idx::<TypeItem>(4),
+            ],
+        ),
+    ],
+)
