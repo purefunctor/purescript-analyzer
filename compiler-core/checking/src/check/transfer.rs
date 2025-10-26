@@ -1,5 +1,3 @@
-use std::any;
-
 use crate::{
     ExternalQueries, Type, TypeId,
     check::{CheckContext, CheckState},
@@ -9,60 +7,55 @@ pub fn localize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId
 where
     Q: ExternalQueries,
 {
-    traverse::<Q, Localize>(state, context, id)
+    let queries = context.queries;
+    let mut source = TraversalSource { state, queries, mode: TraversalMode::FromGlobal };
+    traverse(&mut source, id)
 }
 
 pub fn globalize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
 where
     Q: ExternalQueries,
 {
-    traverse::<Q, Globalize>(state, context, id)
+    let queries = context.queries;
+    let mut source = TraversalSource { state, queries, mode: TraversalMode::FromLocal };
+    traverse(&mut source, id)
 }
 
-struct Localize;
-struct Globalize;
-
-trait TraversalExt<Q: ExternalQueries> {
-    fn intern(state: &mut CheckState, context: &CheckContext<Q>, ty: Type) -> TypeId;
-    fn lookup(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> Type;
+struct TraversalSource<'a, Q: ExternalQueries> {
+    state: &'a mut CheckState,
+    queries: &'a Q,
+    mode: TraversalMode,
 }
 
-impl<Q> TraversalExt<Q> for Localize
-where
-    Q: ExternalQueries,
-{
-    fn intern(state: &mut CheckState, _context: &CheckContext<Q>, ty: Type) -> TypeId {
-        state.storage.intern(ty)
-    }
-
-    fn lookup(_state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> Type {
-        context.queries.lookup_type(id)
-    }
+enum TraversalMode {
+    FromGlobal,
+    FromLocal,
 }
 
-impl<Q> TraversalExt<Q> for Globalize
-where
-    Q: ExternalQueries,
-{
-    fn intern(_state: &mut CheckState, context: &CheckContext<Q>, ty: Type) -> TypeId {
-        context.queries.intern_type(ty)
+impl<'a, Q: ExternalQueries> TraversalSource<'a, Q> {
+    fn intern(&mut self, ty: Type) -> TypeId {
+        match self.mode {
+            TraversalMode::FromGlobal => self.state.storage.intern(ty),
+            TraversalMode::FromLocal => self.queries.intern_type(ty),
+        }
     }
 
-    fn lookup(state: &mut CheckState, _context: &CheckContext<Q>, id: TypeId) -> Type {
-        let id = state.normalize_type(id);
-        state.storage[id].clone()
+    fn lookup(&mut self, id: TypeId) -> Type {
+        match self.mode {
+            TraversalMode::FromGlobal => self.queries.lookup_type(id),
+            TraversalMode::FromLocal => {
+                let id = self.state.normalize_type(id);
+                self.state.storage[id].clone()
+            }
+        }
     }
 }
 
-fn traverse<Q, E>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
-where
-    Q: ExternalQueries,
-    E: TraversalExt<Q>,
-{
-    let ty = match E::lookup(state, context, id) {
+fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: TypeId) -> TypeId {
+    let ty = match source.lookup(id) {
         Type::Application(function, argument) => {
-            let function = traverse::<Q, E>(state, context, function);
-            let argument = traverse::<Q, E>(state, context, argument);
+            let function = traverse(source, function);
+            let argument = traverse(source, argument);
             Type::Application(function, argument)
         }
 
@@ -71,32 +64,40 @@ where
         Type::Forall(binder, inner) => {
             let mut binder = binder.clone();
 
-            binder.kind = traverse::<Q, E>(state, context, binder.kind);
-            let inner = traverse::<Q, E>(state, context, inner);
+            binder.kind = traverse(source, binder.kind);
+            let inner = traverse(source, inner);
 
             Type::Forall(binder, inner)
         }
 
         Type::Function(argument, result) => {
-            let argument = traverse::<Q, E>(state, context, argument);
-            let result = traverse::<Q, E>(state, context, result);
+            let argument = traverse(source, argument);
+            let result = traverse(source, result);
             Type::Function(argument, result)
         }
 
         Type::KindApplication(function, argument) => {
-            let function = traverse::<Q, E>(state, context, function);
-            let argument = traverse::<Q, E>(state, context, argument);
+            let function = traverse(source, function);
+            let argument = traverse(source, argument);
             Type::KindApplication(function, argument)
         }
 
-        Type::Unification(_) => {
-            let name = any::type_name::<E>();
-            unreachable!("invariant violated: forbidden unification variable transfer from {name}");
-        }
+        Type::Unification(_) => match source.mode {
+            TraversalMode::FromGlobal => {
+                unreachable!(
+                    "invariant violated: forbidden unification variable transfer from Localize"
+                );
+            }
+            TraversalMode::FromLocal => {
+                unreachable!(
+                    "invariant violated: forbidden unification variable transfer from Globalize"
+                );
+            }
+        },
 
         Type::Variable(variable) => Type::Variable(variable),
 
         Type::Unknown => Type::Unknown,
     };
-    E::intern(state, context, ty)
+    source.intern(ty)
 }

@@ -12,73 +12,62 @@ pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: Typ
 where
     Q: ExternalQueries,
 {
-    traverse::<Q, Local>(state, context, id)
+    let queries = context.queries;
+    let mut source = TraversalSource::Local { state, queries };
+    traverse(&mut source, id)
 }
 
-pub fn print_global<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
+pub fn print_global<Q>(queries: &Q, id: TypeId) -> String
 where
     Q: ExternalQueries,
 {
-    traverse::<Q, Global>(state, context, id)
+    let mut source = TraversalSource::Global { queries };
+    traverse(&mut source, id)
 }
 
-struct Local;
-struct Global;
-
-trait TraversalExt<Q>
-where
-    Q: ExternalQueries,
-{
-    fn lookup(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> Type;
+enum TraversalSource<'a, Q: ExternalQueries> {
+    Local { state: &'a mut CheckState, queries: &'a Q },
+    Global { queries: &'a Q },
 }
 
-impl<Q> TraversalExt<Q> for Local
-where
-    Q: ExternalQueries,
-{
-    fn lookup(state: &mut CheckState, _context: &CheckContext<Q>, id: TypeId) -> Type {
-        let id = state.normalize_type(id);
-        state.storage[id].clone()
+impl<'a, Q: ExternalQueries> TraversalSource<'a, Q> {
+    fn lookup(&mut self, id: TypeId) -> Type {
+        match self {
+            TraversalSource::Local { state, .. } => {
+                let id = state.normalize_type(id);
+                state.storage[id].clone()
+            }
+            TraversalSource::Global { queries } => queries.lookup_type(id),
+        }
+    }
+
+    fn queries(&self) -> &Q {
+        match self {
+            TraversalSource::Local { queries, .. } => queries,
+            TraversalSource::Global { queries } => queries,
+        }
     }
 }
 
-impl<Q> TraversalExt<Q> for Global
-where
-    Q: ExternalQueries,
-{
-    fn lookup(_state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> Type {
-        context.queries.lookup_type(id)
-    }
-}
-
-fn traverse<Q, E>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
-where
-    Q: ExternalQueries,
-    E: TraversalExt<Q>,
-{
-    match E::lookup(state, context, id) {
+fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: TypeId) -> String {
+    match source.lookup(id) {
         Type::Application(mut function, argument) => {
             let mut arguments = vec![argument];
 
-            while let Type::Application(inner_function, argument) =
-                E::lookup(state, context, function)
-            {
+            while let Type::Application(inner_function, argument) = source.lookup(function) {
                 function = inner_function;
                 arguments.push(argument);
             }
 
-            let function = traverse::<Q, E>(state, context, function);
-            let arguments = arguments
-                .iter()
-                .rev()
-                .map(|argument| traverse::<Q, E>(state, context, *argument))
-                .join(" ");
+            let function = traverse(source, function);
+            let arguments =
+                arguments.iter().rev().map(|argument| traverse(source, *argument)).join(" ");
 
             format!("({function} {arguments})")
         }
 
         Type::Constructor(file_id, type_id) => {
-            let indexed = context.queries.indexed(file_id).unwrap();
+            let indexed = source.queries().indexed(file_id).unwrap();
             let name = indexed.items[type_id].name.as_ref();
             name.map(|name| name.to_string()).unwrap_or_else(|| "<InvalidName>".to_string())
         }
@@ -87,7 +76,7 @@ where
             let binder = binder.clone();
             let mut binders = vec![binder];
 
-            while let Type::Forall(ref binder, inner_inner) = E::lookup(state, context, inner) {
+            while let Type::Forall(ref binder, inner_inner) = source.lookup(inner) {
                 let binder = binder.clone();
                 binders.push(binder);
                 inner = inner_inner;
@@ -97,11 +86,11 @@ where
 
             write!(&mut buffer, "forall").unwrap();
             for ForallBinder { name, kind, .. } in binders {
-                let kind = traverse::<Q, E>(state, context, kind);
+                let kind = traverse(source, kind);
                 write!(&mut buffer, " ({name} :: {kind})").unwrap();
             }
 
-            let inner = traverse::<Q, E>(state, context, inner);
+            let inner = traverse(source, inner);
             write!(&mut buffer, " {inner}").unwrap();
 
             buffer
@@ -110,17 +99,14 @@ where
         Type::Function(argument, mut result) => {
             let mut arguments = vec![argument];
 
-            while let Type::Function(argument, inner_result) = E::lookup(state, context, result) {
+            while let Type::Function(argument, inner_result) = source.lookup(result) {
                 result = inner_result;
                 arguments.push(argument);
             }
 
-            let result = traverse::<Q, E>(state, context, result);
-            let arguments = arguments
-                .iter()
-                .rev()
-                .map(|argument| traverse::<Q, E>(state, context, *argument))
-                .join(" -> ");
+            let result = traverse(source, result);
+            let arguments =
+                arguments.iter().rev().map(|argument| traverse(source, *argument)).join(" -> ");
 
             format!("({arguments} -> {result})")
         }
@@ -128,27 +114,30 @@ where
         Type::KindApplication(mut function, argument) => {
             let mut arguments = vec![argument];
 
-            while let Type::KindApplication(inner_function, argument) =
-                E::lookup(state, context, function)
-            {
+            while let Type::KindApplication(inner_function, argument) = source.lookup(function) {
                 function = inner_function;
                 arguments.push(argument);
             }
 
-            let function = traverse::<Q, E>(state, context, function);
+            let function = traverse(source, function);
             let arguments = arguments
                 .iter()
                 .rev()
-                .map(|argument| format!("@{}", traverse::<Q, E>(state, context, *argument)))
+                .map(|argument| format!("@{}", traverse(source, *argument)))
                 .join(" ");
 
             format!("({function} {arguments})")
         }
 
-        Type::Unification(unification_id) => {
-            let unification = state.unification.get(unification_id);
-            format!("?{unification_id}[{}]", unification.domain)
-        }
+        Type::Unification(unification_id) => match source {
+            TraversalSource::Local { state, .. } => {
+                let unification = state.unification.get(unification_id);
+                format!("?{unification_id}[{}]", unification.domain)
+            }
+            TraversalSource::Global { .. } => {
+                format!("?{unification_id}[<Global>]")
+            }
+        },
 
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),
