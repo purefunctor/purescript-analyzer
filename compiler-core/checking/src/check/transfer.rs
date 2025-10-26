@@ -47,6 +47,7 @@ where
     }
 
     fn lookup(state: &mut CheckState, _context: &CheckContext<Q>, id: TypeId) -> Type {
+        let id = state.normalize_type(id);
         state.storage[id].clone()
     }
 }
@@ -56,7 +57,6 @@ where
     Q: ExternalQueries,
     E: TraversalExt<Q>,
 {
-    let id = state.normalize_type(id);
     let ty = match E::lookup(state, context, id) {
         Type::Application(function, argument) => {
             let function = traverse::<Q, E>(state, context, function);
