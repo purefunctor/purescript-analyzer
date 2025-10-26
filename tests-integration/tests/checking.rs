@@ -77,8 +77,8 @@ fn test_solve_simple() {
         unreachable!("invariant violated");
     };
 
-    let solution = pretty::print(state, context, solution);
-    let kind = pretty::print(state, context, entry.kind);
+    let solution = pretty::print_local(state, context, solution);
+    let kind = pretty::print_local(state, context, entry.kind);
 
     let snapshot = format!("{solution} :: {kind}");
     insta::assert_snapshot!(snapshot);
@@ -109,8 +109,8 @@ fn test_solve_bound() {
         unreachable!("invariant violated");
     };
 
-    let solution = pretty::print(state, context, solution);
-    let kind = pretty::print(state, context, entry.kind);
+    let solution = pretty::print_local(state, context, solution);
+    let kind = pretty::print_local(state, context, entry.kind);
 
     let snapshot = format!("{solution} :: {kind}");
     insta::assert_snapshot!(snapshot);
@@ -167,7 +167,7 @@ fn test_solve_promotion() {
     for (index, entry) in entries.iter().enumerate() {
         let UnificationState::Solved(solution) = entry.state else { continue };
         let domain = entry.domain;
-        let solution = pretty::print(state, context, solution);
+        let solution = pretty::print_local(state, context, solution);
         writeln!(snapshot, "?{index}[{domain}] := {solution}").unwrap();
     }
 
@@ -187,7 +187,7 @@ fn test_quantify_simple() {
 
     let mut snapshot = String::default();
 
-    let quantified = pretty::print(state, context, quantified);
+    let quantified = pretty::print_local(state, context, quantified);
     writeln!(snapshot, "{quantified}").unwrap();
 
     insta::assert_snapshot!(snapshot)
@@ -203,7 +203,7 @@ fn test_quantify_polykind() {
 
     let mut snapshot = String::default();
 
-    let quantified = pretty::print(state, context, quantified);
+    let quantified = pretty::print_local(state, context, quantified);
     writeln!(snapshot, "{quantified}").unwrap();
 
     insta::assert_snapshot!(snapshot)
@@ -225,7 +225,7 @@ fn test_quantify_ordering() {
 
     let mut snapshot = String::default();
 
-    let quantified = pretty::print(state, context, quantified);
+    let quantified = pretty::print_local(state, context, quantified);
     writeln!(snapshot, "{quantified}").unwrap();
 
     insta::assert_snapshot!(snapshot)
@@ -244,7 +244,7 @@ fn test_quantify_scoped() {
 
     let mut snapshot = String::default();
 
-    let quantified = pretty::print(state, context, quantified);
+    let quantified = pretty::print_local(state, context, quantified);
     writeln!(snapshot, "{quantified}").unwrap();
 
     insta::assert_snapshot!(snapshot)
@@ -268,7 +268,7 @@ fn test_quantify_multiple_scoped() {
 
     let mut snapshot = String::default();
 
-    let quantified = pretty::print(state, context, quantified);
+    let quantified = pretty::print_local(state, context, quantified);
     writeln!(snapshot, "{quantified}").unwrap();
 
     insta::assert_snapshot!(snapshot)
