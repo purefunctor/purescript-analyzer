@@ -54,11 +54,13 @@ impl State {
     fn begin_term(&mut self, id: TermItemId) {
         self.current_term = Some(id);
         self.current_type = None;
+        self.term_graph.add_node(id);
     }
 
     fn begin_type(&mut self, id: TypeItemId) {
         self.current_term = None;
         self.current_type = Some(id);
+        self.type_graph.add_node(id);
     }
 
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
@@ -262,8 +264,6 @@ pub(super) fn lower_module(
     let context = Context { file_id, root, prim, stabilized, indexed, resolved };
 
     for (id, item) in context.indexed.items.iter_terms() {
-        dbg!(item);
-        state.term_graph.add_node(id);
         state.with_scope(|state| {
             state.begin_term(id);
             lower_term_item(state, &context, id, item);
@@ -271,7 +271,6 @@ pub(super) fn lower_module(
     }
 
     for (id, item) in context.indexed.items.iter_types() {
-        state.type_graph.add_node(id);
         state.with_scope(|state| {
             state.begin_type(id);
             lower_type_item(state, &context, id, item);
