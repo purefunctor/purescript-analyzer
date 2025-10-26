@@ -4,47 +4,47 @@ use crate::{
 };
 
 pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: TypeId) -> TypeId {
-    substitute_index(state, debruijn::Index(0), with_type, in_type)
-}
+    fn aux(
+        state: &mut CheckState,
+        index: debruijn::Index,
+        with_type: TypeId,
+        in_type: TypeId,
+    ) -> TypeId {
+        match state.storage[in_type] {
+            Type::Variable(Variable::Bound(bound)) if bound == index => with_type,
 
-fn substitute_index(
-    state: &mut CheckState,
-    index: debruijn::Index,
-    with_type: TypeId,
-    in_type: TypeId,
-) -> TypeId {
-    match state.storage[in_type] {
-        Type::Variable(Variable::Bound(bound)) if bound == index => with_type,
+            Type::Application(function, argument) => {
+                let function = aux(state, index, with_type, function);
+                let argument = aux(state, index, with_type, argument);
+                state.storage.intern(Type::Application(function, argument))
+            }
 
-        Type::Application(function, argument) => {
-            let function = substitute_index(state, index, with_type, function);
-            let argument = substitute_index(state, index, with_type, argument);
-            state.storage.intern(Type::Application(function, argument))
-        }
+            Type::Function(argument, result) => {
+                let argument = aux(state, index, with_type, argument);
+                let result = aux(state, index, with_type, result);
+                state.storage.intern(Type::Function(argument, result))
+            }
 
-        Type::Function(argument, result) => {
-            let argument = substitute_index(state, index, with_type, argument);
-            let result = substitute_index(state, index, with_type, result);
-            state.storage.intern(Type::Function(argument, result))
-        }
+            Type::Forall(ref binder, inner) => {
+                let mut binder = binder.clone();
 
-        Type::Forall(ref binder, inner) => {
-            let mut binder = binder.clone();
+                binder.kind = aux(state, index, with_type, binder.kind);
+                let inner = aux(state, index.increment(), with_type, inner);
 
-            binder.kind = substitute_index(state, index, with_type, binder.kind);
-            let inner = substitute_index(state, index.increment(), with_type, inner);
+                state.storage.intern(Type::Forall(binder, inner))
+            }
 
-            state.storage.intern(Type::Forall(binder, inner))
-        }
+            Type::KindApplication(function, argument) => {
+                let function = aux(state, index, with_type, function);
+                let argument = aux(state, index, with_type, argument);
+                state.storage.intern(Type::KindApplication(function, argument))
+            }
 
-        Type::KindApplication(function, argument) => {
-            let function = substitute_index(state, index, with_type, function);
-            let argument = substitute_index(state, index, with_type, argument);
-            state.storage.intern(Type::KindApplication(function, argument))
-        }
-
-        Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => {
-            in_type
+            Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => {
+                in_type
+            }
         }
     }
+
+    aux(state, debruijn::Index(0), with_type, in_type)
 }

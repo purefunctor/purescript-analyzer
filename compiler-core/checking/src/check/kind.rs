@@ -1,6 +1,6 @@
 use crate::{
     ExternalQueries,
-    check::{CheckContext, CheckState, convert, localize, substitute, unification},
+    check::{CheckContext, CheckState, convert, substitute, transfer, unification},
     core::{ForallBinder, Type, TypeId, Variable},
 };
 
@@ -46,7 +46,7 @@ where
             let Some(global_id) = checked.lookup_type(type_id) else { return default };
 
             let t = convert::type_to_core(state, context, id);
-            let k = localize::localize(state, context, global_id);
+            let k = transfer::localize(state, context, global_id);
 
             (t, k)
         }
@@ -202,7 +202,7 @@ where
         Type::Constructor(file_id, type_id) => {
             let Ok(checked) = context.queries.checked(file_id) else { return context.prim.unknown };
             let Some(global_id) = checked.types.get(&type_id) else { return context.prim.unknown };
-            localize::localize(state, context, *global_id)
+            transfer::localize(state, context, *global_id)
         }
 
         Type::Forall(_, _) => context.prim.t,
@@ -255,7 +255,7 @@ pub fn check_surface_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let (surface_t, surface_k) = infer_surface_kind(state, context, id);
-    unification::unify(state, context, surface_k, kind);
-    (surface_t, surface_k)
+    let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id);
+    unification::unify(state, context, inferred_kind, kind);
+    (inferred_type, inferred_kind)
 }

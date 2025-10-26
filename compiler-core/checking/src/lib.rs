@@ -7,14 +7,14 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::{IndexedModule, TermItemId, TypeItemId, TypeItemKind};
-use lowering::LoweredModule;
+use indexing::{IndexedModule, TermItemId, TypeItemId};
+use lowering::{LoweredModule, Scc};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    check::{CheckContext, CheckState, kind, unification::UnificationState},
-    core::{ForallBinder, Variable, debruijn, pretty},
+    check::{CheckContext, CheckState, kind, transfer},
+    core::{ForallBinder, Variable, debruijn},
 };
 
 pub trait ExternalQueries:
@@ -59,42 +59,52 @@ fn source_check_module(
     queries: &impl ExternalQueries,
     file_id: FileId,
 ) -> QueryResult<CheckedModule> {
-    let checked_module = CheckedModule::default();
-
     let mut state = CheckState::default();
     let context = CheckContext::new(queries, &mut state, file_id)?;
 
-    let foreign = context.indexed.items.iter_types().filter_map(|(id, item)| {
-        if let TypeItemKind::Foreign { .. } = item.kind { Some(id) } else { None }
-    });
-
-    for id in foreign {
-        if let Some(lowering::TypeItemIr::Foreign { signature, .. }) =
-            context.lowered.info.get_type_item(id)
-        {
-            let result = signature.map(|id| kind::infer_surface_kind(&mut state, &context, id));
-            if let Some((t, k)) = result {
-                let t = pretty::print(&context, &mut state, t);
-                let k = pretty::print(&context, &mut state, k);
-                println!("{t} :: {k}",)
+    for scc in &context.lowered.type_scc {
+        match scc {
+            Scc::Base(id) => {
+                check_type_item(&mut state, &context, *id);
+            }
+            Scc::Recursive(id) => {
+                check_type_item(&mut state, &context, *id);
+            }
+            Scc::Mutual(id) => {
+                for id in id {
+                    check_type_item(&mut state, &context, *id);
+                }
             }
         }
     }
 
-    let entries: Vec<_> = state.unification.iter().copied().collect();
-    for (index, entry) in entries.iter().enumerate() {
-        let domain = entry.domain;
-        let kind = state.normalize_type(entry.kind);
-        let kind = pretty::print(&context, &mut state, kind);
-        if let UnificationState::Solved(solution) = entry.state {
-            let solution = pretty::print(&context, &mut state, solution);
-            eprintln!("?{index}[{domain}] :: {kind} := {solution}");
-        } else {
-            eprintln!("?{index}[{domain}] :: {kind} := ?");
-        };
-    }
+    Ok(state.checked)
+}
 
-    Ok(checked_module)
+fn check_type_item<Q>(state: &mut CheckState, context: &CheckContext<Q>, item_id: TypeItemId)
+where
+    Q: ExternalQueries,
+{
+    let Some(item) = context.lowered.info.get_type_item(item_id) else { return };
+    match item {
+        lowering::TypeItemIr::DataGroup { .. } => (),
+
+        lowering::TypeItemIr::NewtypeGroup { .. } => (),
+
+        lowering::TypeItemIr::SynonymGroup { .. } => (),
+
+        lowering::TypeItemIr::ClassGroup { .. } => (),
+
+        lowering::TypeItemIr::Foreign { signature, .. } => {
+            let Some(signature_id) = signature else { return };
+            let (inferred_type, _) =
+                kind::check_surface_kind(state, context, *signature_id, context.prim.t);
+            let inferred_type = transfer::globalize(state, context, inferred_type);
+            state.checked.types.insert(item_id, inferred_type);
+        }
+
+        lowering::TypeItemIr::Operator { .. } => (),
+    }
 }
 
 fn prim_check_module(

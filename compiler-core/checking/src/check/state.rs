@@ -6,7 +6,7 @@ use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 
 use crate::{
-    ExternalQueries,
+    CheckedModule, ExternalQueries,
     check::unification::UnificationContext,
     core::{Type, TypeId, TypeInterner, debruijn},
 };
@@ -14,6 +14,7 @@ use crate::{
 #[derive(Default)]
 pub struct CheckState {
     pub storage: TypeInterner,
+    pub checked: CheckedModule,
 
     pub bound: debruijn::Bound,
     pub kinds: debruijn::BoundMap<TypeId>,

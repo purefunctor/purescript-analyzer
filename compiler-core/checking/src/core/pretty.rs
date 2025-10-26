@@ -8,7 +8,7 @@ use crate::{
     core::{ForallBinder, Type, TypeId, Variable},
 };
 
-pub fn print<Q>(context: &CheckContext<Q>, state: &mut CheckState, id: TypeId) -> String
+pub fn print<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
 where
     Q: ExternalQueries,
 {
@@ -22,9 +22,9 @@ where
                 arguments.push(argument);
             }
 
-            let function = print(context, state, function);
+            let function = print(state, context, function);
             let arguments =
-                arguments.iter().rev().map(|argument| print(context, state, *argument)).join(" ");
+                arguments.iter().rev().map(|argument| print(state, context, *argument)).join(" ");
 
             format!("({function} {arguments})")
         }
@@ -48,11 +48,11 @@ where
 
             write!(&mut buffer, "forall").unwrap();
             for ForallBinder { name, kind, .. } in binders {
-                let kind = print(context, state, kind);
+                let kind = print(state, context, kind);
                 write!(&mut buffer, " ({name} :: {kind})").unwrap();
             }
 
-            let current = print(context, state, current);
+            let current = print(state, context, current);
             write!(&mut buffer, " {current}").unwrap();
 
             buffer
@@ -66,11 +66,11 @@ where
                 arguments.push(argument);
             }
 
-            let result = print(context, state, result);
+            let result = print(state, context, result);
             let arguments = arguments
                 .iter()
                 .rev()
-                .map(|argument| print(context, state, *argument))
+                .map(|argument| print(state, context, *argument))
                 .join(" -> ");
 
             format!("({arguments} -> {result})")
@@ -84,11 +84,11 @@ where
                 arguments.push(argument);
             }
 
-            let function = print(context, state, function);
+            let function = print(state, context, function);
             let arguments = arguments
                 .iter()
                 .rev()
-                .map(|argument| format!("@{}", print(context, state, *argument)))
+                .map(|argument| format!("@{}", print(state, context, *argument)))
                 .join(" ");
 
             format!("({function} {arguments})")
