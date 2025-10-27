@@ -1,9 +1,7 @@
 pub mod lockfile;
 
-use std::{
-    fs, io,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 use thiserror::Error;
 

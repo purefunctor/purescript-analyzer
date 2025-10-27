@@ -1,4 +1,6 @@
-use std::{any, fmt, hash, marker::PhantomData, num::NonZeroU32};
+use std::marker::PhantomData;
+use std::num::NonZeroU32;
+use std::{any, fmt, hash};
 
 use rowan::ast::{AstNode, AstPtr};
 use syntax::PureScript;

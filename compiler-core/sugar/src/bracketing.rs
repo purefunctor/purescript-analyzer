@@ -19,7 +19,8 @@
 //!
 //! [pratt parser]: https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 
-use std::{iter::Peekable, sync::Arc};
+use std::iter::Peekable;
+use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;

@@ -1,8 +1,6 @@
-use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use convert_case::{Case, Converter};
 use itertools::Itertools;

@@ -1,4 +1,5 @@
-use std::{mem, sync::Arc};
+use std::mem;
+use std::sync::Arc;
 
 use parking_lot::{Condvar, Mutex};
 

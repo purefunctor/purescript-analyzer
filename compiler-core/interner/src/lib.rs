@@ -1,10 +1,7 @@
-use std::{
-    any, fmt,
-    hash::{BuildHasher, Hash},
-    marker::PhantomData,
-    num::NonZeroU32,
-    ops,
-};
+use std::hash::{BuildHasher, Hash};
+use std::marker::PhantomData;
+use std::num::NonZeroU32;
+use std::{any, fmt, ops};
 
 use hashbrown::{Equivalent, HashTable};
 use rustc_hash::FxBuildHasher;

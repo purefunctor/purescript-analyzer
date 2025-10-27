@@ -12,10 +12,8 @@ use lowering::{LoweredModule, Scc};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 
-use crate::{
-    check::{CheckContext, CheckState, kind, transfer},
-    core::{ForallBinder, Variable, debruijn},
-};
+use crate::check::{CheckContext, CheckState, kind, transfer};
+use crate::core::{ForallBinder, Variable, debruijn};
 
 pub trait ExternalQueries:
     QueryProxy<

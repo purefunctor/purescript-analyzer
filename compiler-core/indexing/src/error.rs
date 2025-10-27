@@ -1,4 +1,5 @@
-use crate::{TermItemId, TypeItemId, source::*};
+use crate::source::*;
+use crate::{TermItemId, TypeItemId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemKind {

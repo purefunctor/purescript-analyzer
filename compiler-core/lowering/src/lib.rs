@@ -10,7 +10,9 @@ pub use source::*;
 
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
-use petgraph::{algo::tarjan_scc, graphmap::NodeTrait, prelude::DiGraphMap};
+use petgraph::algo::tarjan_scc;
+use petgraph::graphmap::NodeTrait;
+use petgraph::prelude::DiGraphMap;
 use resolving::ResolvedModule;
 use rustc_hash::FxBuildHasher;
 use stabilizing::StabilizedModule;

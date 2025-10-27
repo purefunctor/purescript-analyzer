@@ -1,7 +1,8 @@
 use building::QueryEngine;
 use files::FileId;
 use indexing::{TermItemId, TermItemKind, TypeItemId, TypeItemKind};
-use rowan::{TextRange, ast::AstNode};
+use rowan::TextRange;
+use rowan::ast::AstNode;
 use stabilizing::{AstId, StabilizedModule};
 use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr};
 

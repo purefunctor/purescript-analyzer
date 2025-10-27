@@ -1,15 +1,13 @@
 use std::fmt::Write;
 
 use indexmap::IndexSet;
-use petgraph::{prelude::DiGraphMap, visit::DfsPostOrder, visit::Reversed};
+use petgraph::prelude::DiGraphMap;
+use petgraph::visit::{DfsPostOrder, Reversed};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStrBuilder;
 
-use crate::{
-    Type, TypeId,
-    check::CheckState,
-    core::{ForallBinder, Variable, debruijn},
-};
+use crate::check::CheckState;
+use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<TypeId> {
     let graph = collect_unification(state, id);

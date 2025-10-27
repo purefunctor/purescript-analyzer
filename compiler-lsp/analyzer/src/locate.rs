@@ -6,14 +6,13 @@ use files::FileId;
 use indexing::{ImportItemId, IndexedModule, TermItemId, TypeItemId};
 use line_index::{LineCol, LineIndex};
 use lowering::{BinderId, ExpressionId, TermOperatorId, TypeId, TypeOperatorId};
-use rowan::{
-    TextRange, TextSize, TokenAtOffset,
-    ast::{AstNode, AstPtr},
-};
+use rowan::ast::{AstNode, AstPtr};
+use rowan::{TextRange, TextSize, TokenAtOffset};
 use stabilizing::StabilizedModule;
 use syntax::{SyntaxNode, SyntaxNodePtr, SyntaxToken, cst};
 
-use crate::{AnalyzerError, extract::AnnotationSyntaxRange};
+use crate::AnalyzerError;
+use crate::extract::AnnotationSyntaxRange;
 
 pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize> {
     let line_index = LineIndex::new(content);

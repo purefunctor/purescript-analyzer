@@ -8,7 +8,8 @@ use resolving::ResolvedImport;
 use rowan::ast::AstNode;
 use smol_str::{SmolStrBuilder, ToSmolStr};
 
-use crate::{completion::Context, locate};
+use crate::completion::Context;
+use crate::locate;
 
 fn import_item<F, G>(
     context: &Context,

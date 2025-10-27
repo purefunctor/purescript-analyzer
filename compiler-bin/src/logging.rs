@@ -1,7 +1,11 @@
-use std::{env, fs, path::PathBuf, sync::Arc, time::Instant};
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Instant;
+use std::{env, fs};
 
 use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{Layer, Registry, filter, fmt, layer::SubscriberExt};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{Layer, Registry, filter, fmt};
 
 use crate::cli;
 

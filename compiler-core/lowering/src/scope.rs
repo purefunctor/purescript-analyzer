@@ -11,7 +11,9 @@
 //! can be as easy as obtaining the type of a [`BinderId`].
 //!
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
-use std::{collections::VecDeque, ops, sync::Arc};
+use std::collections::VecDeque;
+use std::ops;
+use std::sync::Arc;
 
 use files::FileId;
 use indexing::TermItemId;

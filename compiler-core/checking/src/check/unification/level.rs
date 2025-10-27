@@ -1,10 +1,9 @@
 //! Level-tracking unification.
 
-use crate::{
-    ExternalQueries,
-    check::{CheckContext, CheckState, unification::UnificationState},
-    core::{Type, TypeId, Variable, debruijn},
-};
+use crate::ExternalQueries;
+use crate::check::unification::UnificationState;
+use crate::check::{CheckContext, CheckState};
+use crate::core::{Type, TypeId, Variable, debruijn};
 
 /// Functions for creating unification variables.
 impl CheckState {

@@ -1,6 +1,7 @@
 use syntax::{SyntaxKind, TokenSet};
 
-use crate::{Position, lexed::Lexed};
+use crate::Position;
+use crate::lexed::Lexed;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Delimiter {

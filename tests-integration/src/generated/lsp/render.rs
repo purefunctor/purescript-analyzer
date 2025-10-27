@@ -1,6 +1,7 @@
 use async_lsp::lsp_types::{CompletionItem, CompletionTextEdit, TextEdit};
 use itertools::Itertools;
-use tabled::{Tabled, derive::display};
+use tabled::Tabled;
+use tabled::derive::display;
 
 #[derive(Tabled)]
 pub struct TabledCompletionItem {

@@ -1,13 +1,10 @@
-use std::{fmt::Write, num::NonZeroU32};
+use std::fmt::Write;
+use std::num::NonZeroU32;
 
 use analyzer::{QueryEngine, prim};
-use checking::{
-    check::{
-        CheckContext, CheckState, quantify,
-        unification::{self, UnificationState},
-    },
-    core::{Type, TypeId, Variable, debruijn, pretty},
-};
+use checking::check::unification::{self, UnificationState};
+use checking::check::{CheckContext, CheckState, quantify};
+use checking::core::{Type, TypeId, Variable, debruijn, pretty};
 use files::{FileId, Files};
 use lowering::TypeVariableBindingId;
 

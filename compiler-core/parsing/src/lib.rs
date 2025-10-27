@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use lexing::{Lexed, Position};
-use rowan::{GreenNode, ast::AstNode};
+use rowan::GreenNode;
+use rowan::ast::AstNode;
 use smol_str::{SmolStr, ToSmolStr};
 use syntax::{SyntaxKind, SyntaxNode, cst};
 

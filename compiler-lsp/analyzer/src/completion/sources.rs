@@ -6,10 +6,11 @@ use smol_str::SmolStr;
 
 use crate::AnalyzerError;
 
-use super::{
-    edit, filter::PerfectSegmentFuzzy, item::CompletionItemSpec, prelude::*,
-    resolve::CompletionResolveData,
-};
+use super::edit;
+use super::filter::PerfectSegmentFuzzy;
+use super::item::CompletionItemSpec;
+use super::prelude::*;
+use super::resolve::CompletionResolveData;
 
 /// Yields the qualified names of imports.
 ///

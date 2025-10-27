@@ -1,4 +1,6 @@
-use std::{any, hash::BuildHasher, num::NonZeroU32};
+use std::any;
+use std::hash::BuildHasher;
+use std::num::NonZeroU32;
 
 use hashbrown::HashTable;
 use rowan::ast::{AstNode, AstPtr};
@@ -139,7 +141,8 @@ fn arena_hasher(arena: &[SyntaxNodePtr], id: NonZeroU32) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use rowan::{GreenNode, GreenToken, NodeOrToken, ast::AstPtr};
+    use rowan::ast::AstPtr;
+    use rowan::{GreenNode, GreenToken, NodeOrToken};
     use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr, cst};
 
     use super::StabilizedModule;

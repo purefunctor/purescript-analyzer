@@ -6,9 +6,11 @@ use smol_str::{SmolStr, ToSmolStr};
 use stabilizing::{AstId, ExpectId, StabilizedModule};
 use syntax::{PureScript, SyntaxToken, cst};
 
+use crate::items::*;
+use crate::source::*;
 use crate::{
     ExistingKind, ExportKind, ImplicitItems, ImportKind, IndexingError, IndexingImport,
-    IndexingImports, IndexingItems, IndexingPairs, ItemKind, items::*, source::*,
+    IndexingImports, IndexingItems, IndexingPairs, ItemKind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

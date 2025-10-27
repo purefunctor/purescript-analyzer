@@ -25,14 +25,10 @@
 mod graph;
 mod promise;
 
-use std::{
-    cell::RefCell,
-    collections::hash_map::Entry,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
-    },
-};
+use std::cell::RefCell;
+use std::collections::hash_map::Entry;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 
 use building_types::{
     ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
@@ -787,10 +783,9 @@ impl sugar::ExternalQueries for QueryEngine {}
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        fmt::Debug,
-        sync::{Arc, atomic::Ordering},
-    };
+    use std::fmt::Debug;
+    use std::sync::Arc;
+    use std::sync::atomic::Ordering;
 
     use building_types::{QueryError, QueryResult};
     use files::{FileId, Files};

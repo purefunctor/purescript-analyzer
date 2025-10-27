@@ -3,11 +3,9 @@ pub mod level;
 
 pub use context::*;
 
-use crate::{
-    ExternalQueries,
-    check::{CheckContext, CheckState, kind},
-    core::{Type, TypeId, Variable, debruijn},
-};
+use crate::ExternalQueries;
+use crate::check::{CheckContext, CheckState, kind};
+use crate::core::{Type, TypeId, Variable, debruijn};
 
 pub fn unify<Q>(state: &mut CheckState, context: &CheckContext<Q>, t1: TypeId, t2: TypeId) -> bool
 where

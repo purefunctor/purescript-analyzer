@@ -7,19 +7,14 @@ use lowering::{
     BinderId, BinderKind, ExpressionId, ExpressionKind, LetBound, TermVariableResolution, TypeId,
     TypeKind,
 };
-use rowan::{
-    TextRange,
-    ast::{AstNode, AstPtr},
-};
+use rowan::TextRange;
+use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
 use stabilizing::StabilizedModule;
 use syntax::{SyntaxNode, cst};
 
-use crate::{
-    AnalyzerError,
-    extract::{self, AnnotationSyntaxRange},
-    locate,
-};
+use crate::extract::{self, AnnotationSyntaxRange};
+use crate::{AnalyzerError, locate};
 
 pub fn implementation(
     engine: &QueryEngine,

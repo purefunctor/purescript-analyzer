@@ -6,7 +6,8 @@ use indexing::{TermItemId, TypeItemId};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
-use crate::{TermVariableResolution, TypeVariableResolution, source::*};
+use crate::source::*;
+use crate::{TermVariableResolution, TypeVariableResolution};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {

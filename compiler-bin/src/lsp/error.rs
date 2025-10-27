@@ -1,4 +1,5 @@
-use std::{io, path::PathBuf, str};
+use std::path::PathBuf;
+use std::{io, str};
 
 use analyzer::{AnalyzerError, QueryError};
 use async_lsp::{ErrorCode, ResponseError};

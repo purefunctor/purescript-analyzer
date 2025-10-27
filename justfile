@@ -32,3 +32,7 @@ fix:
 [working-directory: 'compiler-bin']
 licenses:
   cargo bundle-licenses --prefer MIT -o ../THIRDPARTY.toml
+
+[doc("Format imports with module granularity")]
+format-imports:
+  cargo +nightly fmt -- --config imports_granularity=Module

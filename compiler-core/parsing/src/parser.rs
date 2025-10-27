@@ -5,7 +5,9 @@ mod generic;
 mod names;
 mod types;
 
-use std::{cell::Cell, mem, sync::Arc};
+use std::cell::Cell;
+use std::mem;
+use std::sync::Arc;
 
 use drop_bomb::DropBomb;
 use syntax::{SyntaxKind, TokenSet};

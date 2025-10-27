@@ -5,11 +5,9 @@ use files::FileId;
 use indexing::IndexedModule;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 
-use crate::{
-    CheckedModule, ExternalQueries,
-    check::unification::UnificationContext,
-    core::{Type, TypeId, TypeInterner, debruijn},
-};
+use crate::check::unification::UnificationContext;
+use crate::core::{Type, TypeId, TypeInterner, debruijn};
+use crate::{CheckedModule, ExternalQueries};
 
 #[derive(Default)]
 pub struct CheckState {

@@ -1,4 +1,6 @@
-use std::{fs, hint::black_box, sync::Arc};
+use std::fs;
+use std::hint::black_box;
+use std::sync::Arc;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use rayon::prelude::*;

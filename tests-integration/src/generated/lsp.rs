@@ -11,10 +11,8 @@ use files::{FileId, Files};
 use itertools::Itertools;
 use line_index::{LineIndex, TextSize};
 use render::TabledCompletionItem;
-use tabled::{
-    Table,
-    settings::{Padding, Style},
-};
+use tabled::Table;
+use tabled::settings::{Padding, Style};
 
 #[derive(Debug, Clone, Copy)]
 enum CursorKind {

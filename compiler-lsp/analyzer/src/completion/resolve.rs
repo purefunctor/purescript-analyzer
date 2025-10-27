@@ -7,10 +7,8 @@ use indexing::{TermItemId, TypeItemId};
 use serde::{Deserialize, Serialize};
 use syntax::SyntaxNode;
 
-use crate::{
-    AnalyzerError,
-    extract::{AnnotationSyntaxRange, extract_annotation, extract_syntax},
-};
+use crate::AnalyzerError;
+use crate::extract::{AnnotationSyntaxRange, extract_annotation, extract_syntax};
 
 #[allow(clippy::result_large_err)]
 pub fn implementation(

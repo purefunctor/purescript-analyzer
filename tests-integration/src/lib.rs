@@ -1,9 +1,7 @@
 pub mod generated;
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use analyzer::{QueryEngine, prim};
 use files::Files;

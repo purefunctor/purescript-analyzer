@@ -1,21 +1,20 @@
 pub mod error;
 pub mod extension;
 
-use std::{
-    borrow::BorrowMut,
-    env, fs,
-    ops::{ControlFlow, Deref},
-    path::PathBuf,
-    process,
-    sync::Arc,
-};
+use std::borrow::BorrowMut;
+use std::ops::{ControlFlow, Deref};
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::{env, fs, process};
 
 use analyzer::{Files, QueryEngine, prim};
-use async_lsp::{
-    ClientSocket, ErrorCode, ResponseError, client_monitor::ClientProcessMonitorLayer,
-    concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
-    server::LifecycleLayer,
-};
+use async_lsp::client_monitor::ClientProcessMonitorLayer;
+use async_lsp::concurrency::ConcurrencyLayer;
+use async_lsp::lsp_types::*;
+use async_lsp::panic::CatchUnwindLayer;
+use async_lsp::router::Router;
+use async_lsp::server::LifecycleLayer;
+use async_lsp::{ClientSocket, ErrorCode, ResponseError};
 use globset::{Glob, GlobSetBuilder};
 use parking_lot::RwLock;
 use path_absolutize::Absolutize;
@@ -23,10 +22,8 @@ use tokio::task;
 use tower::ServiceBuilder;
 use walkdir::WalkDir;
 
-use crate::{
-    cli,
-    lsp::error::{IntoResponseError, LspError, NonFatalResult},
-};
+use crate::cli;
+use crate::lsp::error::{IntoResponseError, LspError, NonFatalResult};
 
 pub struct State {
     pub config: Arc<cli::Config>,

@@ -1,11 +1,9 @@
 use itertools::Itertools;
 use smol_str::SmolStr;
 
-use crate::{
-    ExternalQueries,
-    check::{CheckContext, CheckState},
-    core::{ForallBinder, Type, TypeId, Variable},
-};
+use crate::ExternalQueries;
+use crate::check::{CheckContext, CheckState};
+use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn type_to_core<Q>(
     state: &mut CheckState,

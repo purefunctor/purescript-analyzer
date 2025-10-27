@@ -1,6 +1,7 @@
 mod recursive;
 
-use std::{mem, sync::Arc};
+use std::mem;
+use std::sync::Arc;
 
 use files::FileId;
 use indexing::{
@@ -16,7 +17,9 @@ use smol_str::SmolStr;
 use stabilizing::{ExpectId, StabilizedModule};
 use syntax::cst;
 
-use crate::{intermediate::*, scope::*, source::*};
+use crate::intermediate::*;
+use crate::scope::*;
+use crate::source::*;
 
 #[derive(Default)]
 pub(crate) struct State {

@@ -1,5 +1,7 @@
 use rustc_hash::FxBuildHasher;
-use string_interner::{StringInterner, Symbol, backend::BucketBackend, symbol::SymbolU32};
+use string_interner::backend::BucketBackend;
+use string_interner::symbol::SymbolU32;
+use string_interner::{StringInterner, Symbol};
 
 /// A stable ID for module names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
