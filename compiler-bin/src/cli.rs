@@ -24,4 +24,10 @@ pub struct Config {
         default_value("info")
     )]
     pub lsp_log: LevelFilter,
+    #[arg(
+        long,
+        help("Command to use to get source files"),
+        long_help("This argument also disables the spago.lock integration")
+    )]
+    pub source_command: Option<String>,
 }

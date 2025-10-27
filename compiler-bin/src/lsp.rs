@@ -1,3 +1,4 @@
+pub mod error;
 pub mod extension;
 
 use std::{
@@ -5,28 +6,40 @@ use std::{
     env, fs,
     ops::{ControlFlow, Deref},
     path::PathBuf,
+    process,
     sync::Arc,
 };
 
-use analyzer::{AnalyzerError, Files, QueryEngine, QueryError, prim};
+use analyzer::{Files, QueryEngine, prim};
 use async_lsp::{
     ClientSocket, ErrorCode, ResponseError, client_monitor::ClientProcessMonitorLayer,
     concurrency::ConcurrencyLayer, lsp_types::*, panic::CatchUnwindLayer, router::Router,
     server::LifecycleLayer,
 };
+use globset::{Glob, GlobSetBuilder};
 use parking_lot::RwLock;
+use path_absolutize::Absolutize;
 use tokio::task;
 use tower::ServiceBuilder;
+use walkdir::WalkDir;
+
+use crate::{
+    cli,
+    lsp::error::{IntoResponseError, LspError, NonFatalResult},
+};
 
 pub struct State {
+    pub config: Arc<cli::Config>,
     pub client: ClientSocket,
+
     pub engine: QueryEngine,
     pub files: Arc<RwLock<Files>>,
+
     pub root: Option<PathBuf>,
 }
 
 impl State {
-    fn new(client: ClientSocket) -> State {
+    fn new(config: Arc<cli::Config>, client: ClientSocket) -> State {
         let mut engine = QueryEngine::default();
         let mut files = Files::default();
         prim::configure(&mut engine, &mut files);
@@ -34,7 +47,7 @@ impl State {
         let files = Arc::new(RwLock::new(files));
         let root = None;
 
-        State { client, engine, files, root }
+        State { config, client, engine, files, root }
     }
 
     fn spawn<T>(&self, f: impl FnOnce(StateSnapshot) -> T + Send + 'static) -> task::JoinHandle<T>
@@ -97,22 +110,91 @@ fn initialize(
     }
 }
 
-fn initialized(state: &mut State, _: InitializedParams) -> ControlFlow<async_lsp::Result<()>> {
+fn initialized(state: &mut State, _: InitializedParams) -> Result<(), LspError> {
     let _span = tracing::info_span!("initialization").entered();
+    let config = Arc::clone(&state.config);
+    if let Some(command) = config.source_command.as_deref() {
+        initialized_manual(state, command)
+    } else {
+        initialized_spago(state)
+    }
+}
 
-    let files = state.root.as_ref().and_then(|root| spago::source_files(root).ok());
-    if let Some(files) = files {
-        tracing::info!("Loading {} files.", files.len());
-        for file in &files {
-            let url = url::Url::from_file_path(file).unwrap();
-            let uri = url.to_string();
-            let text = fs::read_to_string(file).unwrap();
-            on_change(state, &uri, &text);
+fn initialized_manual(state: &mut State, command: &str) -> Result<(), LspError> {
+    let root = state.root.as_ref().ok_or(LspError::MissingRoot)?;
+
+    tracing::info!("Using '{}'", command);
+
+    let mut parts = command.split(" ");
+    let program = parts.next().ok_or(LspError::InvalidSourceCommand)?;
+
+    let mut command = process::Command::new(program);
+    command.args(parts);
+
+    let output = command.output()?;
+    let output = str::from_utf8(&output.stdout)?;
+
+    let mut files = vec![];
+    let mut globs = GlobSetBuilder::new();
+
+    for line in output.lines() {
+        let path = root.join(line);
+        if let Ok(path) = path.absolutize()
+            && let Some(path) = path.to_str()
+            && let Ok(glob) = Glob::new(path)
+        {
+            globs.add(glob);
+        } else {
+            files.push(path);
         }
-        tracing::info!("Loaded {} files.", files.len());
     }
 
-    ControlFlow::Continue(())
+    let globs = globs.build()?;
+
+    tracing::info!("Found {} file literals", files.len());
+    tracing::info!("Found {} glob patterns", globs.len());
+
+    let files_from_glob = WalkDir::new(root).into_iter().filter_map(move |entry| {
+        let entry = entry.ok()?;
+        let path = entry.path();
+        if globs.matches(path).is_empty() { None } else { Some(path.to_path_buf()) }
+    });
+
+    files.extend(files_from_glob);
+    load_files(state, &files)?;
+
+    Ok(())
+}
+
+fn initialized_spago(state: &mut State) -> Result<(), LspError> {
+    let root = state.root.as_ref().ok_or(LspError::MissingRoot)?;
+
+    tracing::info!("Using 'spago.lock'");
+
+    let files = spago::source_files(root).map_err(LspError::SpagoLock)?;
+    load_files(state, &files)?;
+
+    Ok(())
+}
+
+fn load_files(state: &mut State, files: &[PathBuf]) -> Result<(), LspError> {
+    tracing::info!("Loading {} files.", files.len());
+
+    for file in files {
+        let url = url::Url::from_file_path(file).map_err(|_| {
+            let file = PathBuf::clone(file);
+            LspError::PathParseFail(file)
+        })?;
+
+        let uri = url.to_string();
+
+        let text = fs::read_to_string(file)?;
+        on_change(state, &uri, &text)?
+    }
+
+    tracing::info!("Loaded {} files.", files.len());
+
+    Ok(())
 }
 
 fn definition(
@@ -123,7 +205,7 @@ fn definition(
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
     analyzer::definition::implementation(&snapshot.engine, &snapshot.files(), uri, position)
-        .into_response_error(None)
+        .on_non_fatal(None)
 }
 
 fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, ResponseError> {
@@ -131,7 +213,7 @@ fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, Respo
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
     analyzer::hover::implementation(&snapshot.engine, &snapshot.files(), uri, position)
-        .into_response_error(None)
+        .on_non_fatal(None)
 }
 
 fn completion(
@@ -142,7 +224,7 @@ fn completion(
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
     analyzer::completion::implementation(&snapshot.engine, &snapshot.files(), uri, position)
-        .into_response_error(None)
+        .on_non_fatal(None)
 }
 
 fn resolve_completion_item(
@@ -151,7 +233,7 @@ fn resolve_completion_item(
 ) -> Result<CompletionItem, ResponseError> {
     let _span = tracing::info_span!("resolve_completion_item").entered();
     analyzer::completion::resolve::implementation(&snapshot.engine, item)
-        .or_else(|(error, item)| Err(error).into_response_error(item))
+        .or_else(|(error, item)| Err(error).on_non_fatal(item))
 }
 
 fn references(
@@ -162,22 +244,21 @@ fn references(
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
     analyzer::references::implementation(&snapshot.engine, &snapshot.files(), uri, position)
-        .into_response_error(None)
+        .on_non_fatal(None)
 }
 
-fn did_change(
-    state: &mut State,
-    p: DidChangeTextDocumentParams,
-) -> ControlFlow<async_lsp::Result<()>> {
+fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), LspError> {
     let uri = p.text_document.uri.as_str();
+
     for content_change in &p.content_changes {
         let text = content_change.text.as_str();
-        on_change(state, uri, text);
+        on_change(state, uri, text)?
     }
-    ControlFlow::Continue(())
+
+    Ok(())
 }
 
-fn on_change(state: &mut State, uri: &str, content: &str) {
+fn on_change(state: &mut State, uri: &str, content: &str) -> Result<(), LspError> {
     // Cancel in-flight queries so that threads holding a read lock
     // over `files` are terminated quickly, compared to having to
     // wait for expensive LSP requests to complete successfully.
@@ -188,13 +269,13 @@ fn on_change(state: &mut State, uri: &str, content: &str) {
 
     state.engine.set_content(id, content);
 
-    let Ok((parsed, _)) = state.engine.parsed(id) else {
-        return;
-    };
+    let (parsed, _) = state.engine.parsed(id)?;
 
     if let Some(name) = parsed.module_name() {
         state.engine.set_module_file(&name, id);
     }
+
+    Ok(())
 }
 
 trait RequestExtension: BorrowMut<Router<State>> {
@@ -219,39 +300,26 @@ trait RequestExtension: BorrowMut<Router<State>> {
 
 impl RequestExtension for Router<State> {}
 
-trait AnalyzerResultExtension<T> {
-    /// Convenience method for transforming an [`AnalyzerError`] into a
-    /// [`ResponseError`], while also handling [`tracing`] and providing
-    /// a default value to be used for [`AnalyzerError::NonFatal`] errors.
-    fn into_response_error(self, item: T) -> Result<T, ResponseError>;
-}
-
-impl<T> AnalyzerResultExtension<T> for Result<T, AnalyzerError> {
-    fn into_response_error(self, item: T) -> Result<T, ResponseError> {
-        self.or_else(|error| match error {
-            AnalyzerError::NonFatal => Ok(item),
-            error => Err(error),
-        })
-        .map_err(|error| match error {
-            AnalyzerError::QueryError(QueryError::Cancelled) => {
-                tracing::warn!("{error}");
-                ResponseError::new(ErrorCode::REQUEST_CANCELLED, "Request cancelled")
-            }
-            AnalyzerError::QueryError(QueryError::Cycle { .. }) => {
-                tracing::error!("{error}");
-                ResponseError::new(ErrorCode::REQUEST_FAILED, "Request failed")
-            }
-            _ => {
-                tracing::error!("{error}");
-                ResponseError::new(ErrorCode::REQUEST_FAILED, "Request failed")
-            }
-        })
+fn adapt_notification<T, E, P>(
+    f: impl Fn(&mut State, P) -> Result<T, E>,
+) -> impl Fn(&mut State, P) -> ControlFlow<async_lsp::Result<T>>
+where
+    E: IntoResponseError,
+{
+    move |s, p| match f(s, p) {
+        Ok(_) => ControlFlow::Continue(()),
+        Err(error) => {
+            let error = error.into_response_error();
+            let error = async_lsp::Error::from(error);
+            ControlFlow::Break(Err(error))
+        }
     }
 }
 
-pub async fn start() {
-    let (server, _) = async_lsp::MainLoop::new_server(|client| {
-        let mut router: Router<State, ResponseError> = Router::new(State::new(client.clone()));
+pub async fn start(config: Arc<cli::Config>) {
+    let (server, _) = async_lsp::MainLoop::new_server(move |client| {
+        let mut router: Router<State, ResponseError> =
+            Router::new(State::new(config, client.clone()));
 
         router
             .request::<extension::CustomInitialize, _>(initialize)
@@ -260,12 +328,12 @@ pub async fn start() {
             .request_snapshot::<request::Completion>(completion)
             .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
             .request_snapshot::<request::References>(references)
-            .notification::<notification::Initialized>(initialized)
+            .notification::<notification::Initialized>(adapt_notification(initialized))
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidCloseTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidChangeConfiguration>(|_, _| ControlFlow::Continue(()))
-            .notification::<notification::DidChangeTextDocument>(did_change);
+            .notification::<notification::DidChangeTextDocument>(adapt_notification(did_change));
 
         ServiceBuilder::new()
             .layer(LifecycleLayer::default())

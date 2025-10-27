@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use clap::Parser;
 use purescript_analyzer::{cli, logging, lsp};
 
@@ -13,6 +15,7 @@ fn main() {
 
 #[tokio::main(flavor = "current_thread")]
 async fn async_main(config: cli::Config) {
-    logging::start(config);
-    lsp::start().await
+    let config = Arc::new(config);
+    logging::start(Arc::clone(&config));
+    lsp::start(Arc::clone(&config)).await
 }

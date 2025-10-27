@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf, time::Instant};
+use std::{env, fs, path::PathBuf, sync::Arc, time::Instant};
 
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{Layer, Registry, filter, fmt, layer::SubscriberExt};
@@ -34,7 +34,7 @@ pub fn temporary_log_file() -> PathBuf {
     temporary_directory.join("purescript-analyzer.log")
 }
 
-pub fn start(config: cli::Config) {
+pub fn start(config: Arc<cli::Config>) {
     let path = temporary_log_file();
     let file = fs::OpenOptions::new()
         .create(true)
