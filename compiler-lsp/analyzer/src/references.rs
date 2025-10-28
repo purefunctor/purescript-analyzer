@@ -1,5 +1,5 @@
 use async_lsp::lsp_types::*;
-use building::{QueryEngine, prim};
+use building::QueryEngine;
 use files::{FileId, Files};
 use indexing::{ImportId, ImportItemId, ImportKind, TermItemId, TypeItemId};
 use lowering::{
@@ -13,7 +13,7 @@ use smol_str::ToSmolStr;
 use stabilizing::{AstId, StabilizedModule};
 use syntax::{PureScript, cst};
 
-use crate::{AnalyzerError, locate};
+use crate::{AnalyzerError, common, locate};
 
 pub fn implementation(
     engine: &QueryEngine,
@@ -82,12 +82,9 @@ fn references_module_name(
 
     let mut locations = vec![];
     for (candidate_id, import_id) in candidates {
-        let path = files.path(candidate_id);
-        let content = files.content(candidate_id);
+        let uri = common::file_uri(engine, files, candidate_id)?;
 
-        let uri = Url::parse(&path)?;
-        let uri = prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?;
-
+        let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;
         let root = parsed.syntax_node();
 
@@ -263,13 +260,7 @@ fn references_file_term(
 
     let mut locations = vec![];
     for candidate_id in candidates {
-        let uri = {
-            let path = files.path(candidate_id);
-            let content = files.content(candidate_id);
-
-            let uri = Url::parse(&path)?;
-            prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
-        };
+        let uri = common::file_uri(engine, files, candidate_id)?;
 
         let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;
@@ -334,13 +325,7 @@ fn references_file_type(
 
     let mut locations = vec![];
     for candidate_id in candidates {
-        let uri = {
-            let path = files.path(candidate_id);
-            let content = files.content(candidate_id);
-
-            let uri = Url::parse(&path)?;
-            prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
-        };
+        let uri = common::file_uri(engine, files, candidate_id)?;
 
         let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;

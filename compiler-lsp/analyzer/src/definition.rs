@@ -1,5 +1,5 @@
 use async_lsp::lsp_types::*;
-use building::{QueryEngine, prim};
+use building::QueryEngine;
 use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use lowering::{
@@ -10,7 +10,7 @@ use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
 use syntax::cst;
 
-use crate::{AnalyzerError, locate};
+use crate::{AnalyzerError, common, locate};
 
 pub fn implementation(
     engine: &QueryEngine,
@@ -77,7 +77,6 @@ fn definition_module_name(
     let module_name = module_name.syntax().text().to_smolstr();
     let module_id = engine.module_file(&module_name).ok_or(AnalyzerError::NonFatal)?;
 
-    let path = files.path(module_id);
     let content = engine.content(module_id);
 
     let (parsed, _) = engine.parsed(module_id)?;
@@ -87,8 +86,7 @@ fn definition_module_name(
     let start = locate::offset_to_position(&content, range.start());
     let end = locate::offset_to_position(&content, range.end());
 
-    let uri = Url::parse(&path)?;
-    let uri = prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?;
+    let uri = common::file_uri(engine, files, module_id)?;
 
     let range = Range { start, end };
 
@@ -294,31 +292,8 @@ fn definition_file_term(
     file_id: FileId,
     term_id: TermItemId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
-    let uri = {
-        let path = files.path(file_id);
-        let content = files.content(file_id);
-
-        let uri = Url::parse(&path)?;
-        prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
-    };
-
-    let content = engine.content(file_id);
-    let (parsed, _) = engine.parsed(file_id)?;
-
-    let stabilized = engine.stabilized(file_id)?;
-    let indexed = engine.indexed(file_id)?;
-
-    // TODO: Once we implement textDocument/typeDefinition, we
-    // should probably also add a term_item_type_ptr function.
-    let root = parsed.syntax_node();
-    let pointers = indexed.term_item_ptr(&stabilized, term_id);
-
-    let range = pointers
-        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
-        .reduce(|start, end| Range { start: start.start, end: end.end })
-        .ok_or(AnalyzerError::NonFatal)?;
-
-    Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
+    let location = common::file_term_location(engine, files, file_id, term_id)?;
+    Ok(Some(GotoDefinitionResponse::Scalar(location)))
 }
 
 fn definition_file_type(
@@ -327,27 +302,6 @@ fn definition_file_type(
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
-    let uri = {
-        let path = files.path(file_id);
-        let content = files.content(file_id);
-
-        let uri = Url::parse(&path)?;
-        prim::handle_generated(uri, &content).ok_or(AnalyzerError::NonFatal)?
-    };
-
-    let content = engine.content(file_id);
-    let (parsed, _) = engine.parsed(file_id)?;
-
-    let stabilized = engine.stabilized(file_id)?;
-    let indexed = engine.indexed(file_id)?;
-
-    let root = parsed.syntax_node();
-    let pointers = indexed.type_item_ptr(&stabilized, type_id);
-
-    let range = pointers
-        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
-        .reduce(|start, end| Range { start: start.start, end: end.end })
-        .ok_or(AnalyzerError::NonFatal)?;
-
-    Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
+    let location = common::file_type_location(engine, files, file_id, type_id)?;
+    Ok(Some(GotoDefinitionResponse::Scalar(location)))
 }

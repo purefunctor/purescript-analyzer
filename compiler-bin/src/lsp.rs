@@ -98,6 +98,7 @@ fn initialize(
                 definition_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 references_provider: Some(OneOf::Left(true)),
+                workspace_symbol_provider: Some(OneOf::Left(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
@@ -244,6 +245,13 @@ fn references(
         .on_non_fatal(None)
 }
 
+fn workspace_symbols(
+    snapshot: StateSnapshot,
+    p: WorkspaceSymbolParams,
+) -> Result<Option<WorkspaceSymbolResponse>, ResponseError> {
+    analyzer::symbols::workspace(&snapshot.engine, &snapshot.files(), &p.query).on_non_fatal(None)
+}
+
 fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), LspError> {
     let uri = p.text_document.uri.as_str();
 
@@ -325,6 +333,7 @@ pub async fn start(config: Arc<cli::Config>) {
             .request_snapshot::<request::Completion>(completion)
             .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
             .request_snapshot::<request::References>(references)
+            .request_snapshot::<request::WorkspaceSymbolRequest>(workspace_symbols)
             .notification::<notification::Initialized>(adapt_notification(initialized))
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
