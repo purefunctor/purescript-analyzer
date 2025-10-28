@@ -1300,7 +1300,7 @@ dependencies = [
 
 [[package]]
 name = "purescript-analyzer"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "analyzer",
  "async-lsp",
