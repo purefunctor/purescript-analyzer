@@ -292,7 +292,8 @@ fn definition_file_term(
     file_id: FileId,
     term_id: TermItemId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
-    let location = common::file_term_location(engine, files, file_id, term_id)?;
+    let uri = common::file_uri(engine, files, file_id)?;
+    let location = common::file_term_location(engine, uri, file_id, term_id)?;
     Ok(Some(GotoDefinitionResponse::Scalar(location)))
 }
 
@@ -302,6 +303,7 @@ fn definition_file_type(
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Result<Option<GotoDefinitionResponse>, AnalyzerError> {
-    let location = common::file_type_location(engine, files, file_id, type_id)?;
+    let uri = common::file_uri(engine, files, file_id)?;
+    let location = common::file_type_location(engine, uri, file_id, type_id)?;
     Ok(Some(GotoDefinitionResponse::Scalar(location)))
 }

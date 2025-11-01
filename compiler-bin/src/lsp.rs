@@ -5,8 +5,9 @@ use std::borrow::BorrowMut;
 use std::ops::{ControlFlow, Deref};
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::{env, fs, process};
+use std::{env, fs, mem, process};
 
+use analyzer::symbols::WorkspaceSymbolsCache;
 use analyzer::{Files, QueryEngine, prim};
 use async_lsp::client_monitor::ClientProcessMonitorLayer;
 use async_lsp::concurrency::ConcurrencyLayer;
@@ -32,6 +33,8 @@ pub struct State {
     pub engine: QueryEngine,
     pub files: Arc<RwLock<Files>>,
 
+    pub workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
+
     pub root: Option<PathBuf>,
 }
 
@@ -42,24 +45,37 @@ impl State {
         prim::configure(&mut engine, &mut files);
 
         let files = Arc::new(RwLock::new(files));
+
+        let workspace_symbols_cache = WorkspaceSymbolsCache::default();
+        let workspace_symbols_cache = Arc::new(RwLock::new(workspace_symbols_cache));
+
         let root = None;
 
-        State { config, client, engine, files, root }
+        State { config, client, engine, files, workspace_symbols_cache, root }
     }
 
     fn spawn<T>(&self, f: impl FnOnce(StateSnapshot) -> T + Send + 'static) -> task::JoinHandle<T>
     where
         T: Send + 'static,
     {
-        let snapshot =
-            StateSnapshot { engine: self.engine.snapshot(), files: Arc::clone(&self.files) };
+        let snapshot = StateSnapshot {
+            engine: self.engine.snapshot(),
+            files: Arc::clone(&self.files),
+            workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
+        };
         task::spawn_blocking(move || f(snapshot))
+    }
+
+    fn invalidate_workspace_symbols(&self) {
+        let mut cache = self.workspace_symbols_cache.write();
+        mem::take(&mut *cache);
     }
 }
 
 struct StateSnapshot {
     engine: QueryEngine,
     files: Arc<RwLock<Files>>,
+    workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
 }
 
 impl StateSnapshot {
@@ -249,7 +265,11 @@ fn workspace_symbols(
     snapshot: StateSnapshot,
     p: WorkspaceSymbolParams,
 ) -> Result<Option<WorkspaceSymbolResponse>, ResponseError> {
-    analyzer::symbols::workspace(&snapshot.engine, &snapshot.files(), &p.query).on_non_fatal(None)
+    let _span = tracing::info_span!("workspace_symbols").entered();
+
+    let mut cache = snapshot.workspace_symbols_cache.write();
+    analyzer::symbols::workspace(&snapshot.engine, &snapshot.files(), &mut cache, &p.query)
+        .on_non_fatal(None)
 }
 
 fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), LspError> {
@@ -259,6 +279,8 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
         let text = content_change.text.as_str();
         on_change(state, uri, text)?
     }
+
+    state.invalidate_workspace_symbols();
 
     Ok(())
 }

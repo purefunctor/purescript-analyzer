@@ -8,12 +8,10 @@ use crate::{AnalyzerError, locate};
 
 pub fn file_term_location(
     engine: &QueryEngine,
-    files: &Files,
+    uri: Url,
     file_id: FileId,
     term_id: TermItemId,
 ) -> Result<Location, AnalyzerError> {
-    let uri = file_uri(engine, files, file_id)?;
-
     let content = engine.content(file_id);
     let (parsed, _) = engine.parsed(file_id)?;
 
@@ -29,12 +27,10 @@ pub fn file_term_location(
 
 pub fn file_type_location(
     engine: &QueryEngine,
-    files: &Files,
+    uri: Url,
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Result<Location, AnalyzerError> {
-    let uri = file_uri(engine, files, file_id)?;
-
     let content = engine.content(file_id);
     let (parsed, _) = engine.parsed(file_id)?;
 

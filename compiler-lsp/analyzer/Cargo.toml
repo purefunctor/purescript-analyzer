@@ -14,6 +14,7 @@ lexing = { version = "0.1.0", path = "../../compiler-core/lexing" }
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../../compiler-core/lowering" }
 parsing = { version = "0.1.0", path = "../../compiler-core/parsing" }
+radix_trie = "0.3.0"
 resolving = { version = "0.1.0", path = "../../compiler-core/resolving" }
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
