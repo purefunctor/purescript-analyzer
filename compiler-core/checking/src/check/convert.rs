@@ -90,9 +90,51 @@ where
     }
 }
 
+/// A variant of [`type_to_core`] for use with signature declarations.
+///
+/// Unlike the regular [`type_to_core`], this function does not call
+/// [`CheckState::unbind`] after each [`lowering::TypeKind::Forall`]
+/// node. This allows type variables to be scoped for the entire
+/// declaration group rather than just the type signature.
+pub fn signature_type_to_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::TypeId,
+) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let default = context.prim.unknown;
+
+    let Some(kind) = context.lowered.info.get_type_kind(id) else {
+        return default;
+    };
+
+    match kind {
+        lowering::TypeKind::Forall { bindings, type_ } => {
+            let binders = bindings
+                .iter()
+                .map(|binding| convert_forall_binding(state, context, binding))
+                .collect_vec();
+
+            let inner = type_.map_or(default, |id| type_to_core(state, context, id));
+
+            binders
+                .into_iter()
+                .rfold(inner, |inner, binder| state.storage.intern(Type::Forall(binder, inner)))
+        }
+
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            parenthesized.map(|id| signature_type_to_core(state, context, id)).unwrap_or(default)
+        }
+
+        _ => type_to_core(state, context, id),
+    }
+}
+
 const INVALID_NAME: SmolStr = SmolStr::new_inline("<invalid>");
 
-fn convert_forall_binding<Q>(
+pub fn convert_forall_binding<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     binding: &lowering::TypeVariableBinding,

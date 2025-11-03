@@ -275,13 +275,13 @@ fn test_quantify_multiple_scoped() {
 fn test_manual() {
     let (engine, id) = empty_engine();
 
-    engine.set_content(id, "module Main where\n\nforeign import data T :: Proxy 123");
+    engine.set_content(id, "module Main where\n\ndata Either a b = Left a | Right b");
 
     let resolved = engine.resolved(id).unwrap();
     let checked = engine.checked(id).unwrap();
 
-    let (_, id) = resolved.locals.lookup_type("T").unwrap();
-    let id = checked.lookup_type(id).unwrap();
+    // let (_, id) = resolved.locals.lookup_type("T").unwrap();
+    // let id = checked.lookup_type(id).unwrap();
 
-    eprintln!("{}", pretty::print_global(&engine, id));
+    // eprintln!("{}", pretty::print_global(&engine, id));
 }

@@ -89,7 +89,7 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             }
 
             let inner = traverse(source, inner);
-            write!(&mut buffer, " {inner}").unwrap();
+            write!(&mut buffer, ". {inner}").unwrap();
 
             buffer
         }

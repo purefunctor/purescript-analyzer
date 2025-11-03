@@ -7,6 +7,26 @@ use crate::ExternalQueries;
 use crate::check::{CheckContext, CheckState, kind};
 use crate::core::{Type, TypeId, Variable, debruijn};
 
+pub fn subsumes<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    let t1 = state.normalize_type(t1);
+    let t2 = state.normalize_type(t2);
+    match (&state.storage[t1], &state.storage[t2]) {
+        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+            subsumes(state, context, t2_argument, t1_argument)
+                && subsumes(state, context, t1_result, t2_result)
+        }
+        _ => unify(state, context, t1, t2),
+    }
+}
+
 pub fn unify<Q>(state: &mut CheckState, context: &CheckContext<Q>, t1: TypeId, t2: TypeId) -> bool
 where
     Q: ExternalQueries,
