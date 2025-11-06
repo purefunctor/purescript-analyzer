@@ -41,7 +41,7 @@ impl Context<'_, '_> {
             |cst| Some(cst.syntax().text_range()),
         )?;
 
-        let mut position = locate::offset_to_position(self.content, range.end());
+        let mut position = locate::offset_to_position(self.content, range.end())?;
 
         position.line += 1;
         position.character = 0;
@@ -226,7 +226,7 @@ impl CursorText {
                 (None, None) => None,
             };
 
-            let range = range.map(|range| locate::text_range_to_range(content, range));
+            let range = range.and_then(|range| locate::text_range_to_range(content, range));
             let text = match (prefix, name) {
                 (None, None) => CursorText::None,
                 (Some(p), None) => CursorText::Prefix(p),
@@ -247,7 +247,7 @@ impl CursorText {
             let prefix = SmolStr::new(prefix);
 
             let range = token.text_range();
-            let range = locate::text_range_to_range(content, range);
+            let range = locate::text_range_to_range(content, range)?;
 
             let range = Some(range);
             let text = CursorText::Prefix(prefix);
@@ -275,7 +275,7 @@ impl CursorText {
                 (None, None) => None,
             };
 
-            let range = range.map(|range| locate::text_range_to_range(content, range));
+            let range = range.map(|range| locate::text_range_to_range(content, range))?;
             let text = match (prefix, name) {
                 (None, None) => CursorText::None,
                 (Some(p), None) => CursorText::Prefix(p),

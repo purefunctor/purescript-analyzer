@@ -83,12 +83,14 @@ fn definition_module_name(
     let root = parsed.syntax_node();
 
     let range = root.text_range();
-    let start = locate::offset_to_position(&content, range.start());
-    let end = locate::offset_to_position(&content, range.end());
+
+    let range_start =
+        locate::offset_to_position(&content, range.start()).ok_or(AnalyzerError::NonFatal)?;
+    let range_end =
+        locate::offset_to_position(&content, range.end()).ok_or(AnalyzerError::NonFatal)?;
 
     let uri = common::file_uri(engine, files, module_id)?;
-
-    let range = Range { start, end };
+    let range = Range { start: range_start, end: range_end };
 
     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
 }
