@@ -21,7 +21,7 @@ pub fn workspace(
 
     if let Some(exact_symbols) = cache.get(&query) {
         tracing::debug!("Found exact match for '{query}'");
-        let flat = Vec::clone(&*exact_symbols);
+        let flat = Vec::clone(exact_symbols);
         return Ok(Some(WorkspaceSymbolResponse::Flat(flat)));
     }
 

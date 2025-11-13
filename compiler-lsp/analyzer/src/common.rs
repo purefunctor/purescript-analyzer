@@ -63,7 +63,7 @@ fn pointers_range(
     pointers: impl Iterator<Item = SyntaxNodePtr>,
 ) -> Result<Range, AnalyzerError> {
     pointers
-        .filter_map(|ptr| locate::syntax_range(&content, &root, &ptr))
+        .filter_map(|ptr| locate::syntax_range(content, &root, &ptr))
         .reduce(|start, end| Range { start: start.start, end: end.end })
         .ok_or(AnalyzerError::NonFatal)
 }

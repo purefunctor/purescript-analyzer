@@ -92,7 +92,7 @@ where
                 .map(|signature| convert::signature_type_to_core(state, context, signature));
 
             if let Some(DataIr { variables }) = data {
-                let inferred_type = create_type_declaration_kind(state, context, &variables);
+                let inferred_type = create_type_declaration_kind(state, context, variables);
                 for constructor_id in context.indexed.pairs.data_constructors(item_id) {
                     let Some(TermItemIr::Constructor { arguments }) =
                         context.lowered.info.get_term_item(constructor_id)
