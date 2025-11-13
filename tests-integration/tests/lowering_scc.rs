@@ -79,7 +79,7 @@ infix 5 type Add as +
 }
 
 #[test]
-fn test_non_cycle_ordering() {{
+fn test_non_cycle_ordering() {
     let mut engine = QueryEngine::default();
     let mut files = Files::default();
     prim::configure(&mut engine, &mut files);
@@ -104,5 +104,4 @@ c _ = 0
     let types = &lowered.type_scc;
 
     insta::assert_debug_snapshot!((terms, types));
-}
 }

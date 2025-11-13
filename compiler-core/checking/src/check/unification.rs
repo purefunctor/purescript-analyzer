@@ -4,7 +4,7 @@ pub mod level;
 pub use context::*;
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState, kind};
+use crate::check::{CheckContext, CheckState, kind, substitute};
 use crate::core::{Type, TypeId, Variable, debruijn};
 
 pub fn subsumes<Q>(
@@ -18,11 +18,32 @@ where
 {
     let t1 = state.normalize_type(t1);
     let t2 = state.normalize_type(t2);
-    match (&state.storage[t1], &state.storage[t2]) {
-        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+
+    let t1_core = state.storage[t1].clone();
+    let t2_core = state.storage[t2].clone();
+
+    match (t1_core, t2_core) {
+        (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             subsumes(state, context, t2_argument, t1_argument)
                 && subsumes(state, context, t1_result, t2_result)
         }
+
+        (_, Type::Forall(ref binder, inner)) => {
+            let v = Variable::Skolem(binder.level, binder.kind);
+            let t = state.storage.intern(Type::Variable(v));
+
+            let inner = substitute::substitute_bound(state, t, inner);
+            subsumes(state, context, t1, inner)
+        }
+
+        (Type::Forall(ref binder, inner), _) => {
+            let k = state.normalize_type(binder.kind);
+            let t = state.fresh_unification_kinded(k);
+
+            let inner = substitute::substitute_bound(state, t, inner);
+            subsumes(state, context, inner, t2)
+        }
+
         _ => unify(state, context, t1, t2),
     }
 }

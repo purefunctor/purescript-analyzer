@@ -139,7 +139,10 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),
-            Variable::Skolem(level) => format!("~{level}"),
+            Variable::Skolem(level, kind) => {
+                let kind = traverse(source, *kind);
+                format!("~{level} :: {kind}")
+            }
             Variable::Bound(index) => format!("{index}"),
             Variable::Free(name) => format!("{name}"),
         },

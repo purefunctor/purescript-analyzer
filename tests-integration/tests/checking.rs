@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 use analyzer::{QueryEngine, prim};
 use checking::check::unification::{self, UnificationState};
 use checking::check::{CheckContext, CheckState, quantify};
-use checking::core::{Type, TypeId, Variable, debruijn, pretty};
+use checking::core::{ForallBinder, Type, TypeId, Variable, debruijn, pretty};
 use files::{FileId, Files};
 use lowering::TypeVariableBindingId;
 
@@ -271,17 +271,94 @@ fn test_quantify_multiple_scoped() {
     insta::assert_snapshot!(snapshot)
 }
 
+fn make_forall_a_to_a(context: &CheckContext<QueryEngine>, state: &mut CheckState) -> TypeId {
+    let fake_id = TypeVariableBindingId::new(FAKE_NONZERO_1);
+
+    let level = state.bind_forall(fake_id, context.prim.t);
+
+    let bound_a = state.bound_variable(0);
+    let a_to_a = state.function(bound_a, bound_a);
+
+    let binder = ForallBinder { visible: false, name: "a".into(), level, kind: context.prim.t };
+    let forall_a_to_a = state.storage.intern(Type::Forall(binder, a_to_a));
+
+    state.unbind(level);
+
+    forall_a_to_a
+}
+
 #[test]
-fn test_manual() {
+fn test_subsumes_forall_left_pass() {
     let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
-    engine.set_content(id, "module Main where\n\ndata Either a b = Left a | Right b");
+    // Given ∀a. (a -> a)
+    let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    let resolved = engine.resolved(id).unwrap();
-    let checked = engine.checked(id).unwrap();
+    // ∀a. (a -> a) should subsume (Int -> Int)
+    let int_to_int = state.function(context.prim.int, context.prim.int);
+    let result = unification::subsumes(state, context, forall_a_to_a, int_to_int);
+    assert!(result, "∀a. (a -> a) should subsume (Int -> Int)");
+}
 
-    // let (_, id) = resolved.locals.lookup_type("T").unwrap();
-    // let id = checked.lookup_type(id).unwrap();
+#[test]
+fn test_subsumes_forall_left_fail() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
-    // eprintln!("{}", pretty::print_global(&engine, id));
+    // Given ∀a. (a -> a)
+    let forall_a_to_a = make_forall_a_to_a(context, state);
+
+    // ∀a. (a -> a) should NOT subsume (Int -> String)
+    let int_to_string = state.function(context.prim.int, context.prim.string);
+    let result = unification::subsumes(state, context, forall_a_to_a, int_to_string);
+    assert!(!result, "∀a. (a -> a) should not subsume (Int -> String)");
+}
+
+#[test]
+fn test_subsumes_forall_right_fail() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    // Create ∀a. a
+    let forall_a_to_a = make_forall_a_to_a(context, state);
+
+    // Int should NOT subsume ∀a. a
+    let int_to_int = state.function(context.prim.int, context.prim.int);
+    let result = unification::subsumes(state, context, int_to_int, forall_a_to_a);
+    assert!(!result, "(Int -> Int) should not subsume ∀a. a -> a");
+}
+
+#[test]
+fn test_subsumes_nested_forall() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    // Create ∀a. ∀b. (a -> b -> a)
+    let level_a = state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.t);
+    let level_b = state.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
+
+    let bound_a = state.bound_variable(1);
+    let bound_b = state.bound_variable(0);
+    let b_to_a = state.function(bound_b, bound_a);
+    let a_to_b_to_a = state.function(bound_a, b_to_a);
+
+    let forall_b = state.storage.intern(Type::Forall(
+        ForallBinder { visible: false, name: "b".into(), level: level_b, kind: context.prim.t },
+        a_to_b_to_a,
+    ));
+    state.unbind(level_b);
+
+    let forall_a_b = state.storage.intern(Type::Forall(
+        ForallBinder { visible: false, name: "a".into(), level: level_a, kind: context.prim.t },
+        forall_b,
+    ));
+    state.unbind(level_a);
+
+    // ∀a. ∀b. (a -> b -> a) should subsume (Int -> String -> Int)
+    let string_to_int = state.function(context.prim.string, context.prim.int);
+    let int_to_string_to_int = state.function(context.prim.int, string_to_int);
+
+    let result = unification::subsumes(state, context, forall_a_b, int_to_string_to_int);
+    assert!(result, "∀a. ∀b. (a -> b -> a) should subsume (Int -> String -> Int)");
 }

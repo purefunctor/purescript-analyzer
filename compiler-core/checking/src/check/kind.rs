@@ -223,7 +223,7 @@ where
 
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(_) => context.prim.unknown,
-            Variable::Skolem(_) => context.prim.unknown,
+            Variable::Skolem(_, kind) => *kind,
             Variable::Bound(index) => {
                 let size = state.bound.size();
 
