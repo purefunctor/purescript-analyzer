@@ -320,13 +320,13 @@ fn test_subsumes_forall_right_fail() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
-    // Create ∀a. a
+    // Create ∀a. a -> a
     let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    // Int should NOT subsume ∀a. a
+    // (Int -> Int) should NOT subsume ∀a. (a -> a)
     let int_to_int = state.function(context.prim.int, context.prim.int);
     let result = unification::subsumes(state, context, int_to_int, forall_a_to_a);
-    assert!(!result, "(Int -> Int) should not subsume ∀a. a -> a");
+    assert!(!result, "(Int -> Int) should not subsume ∀a. (a -> a)");
 }
 
 #[test]
