@@ -104,7 +104,7 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
             let result = traverse(source, result);
             let arguments =
-                arguments.iter().rev().map(|argument| traverse(source, *argument)).join(" -> ");
+                arguments.iter().map(|argument| traverse(source, *argument)).join(" -> ");
 
             format!("({arguments} -> {result})")
         }
