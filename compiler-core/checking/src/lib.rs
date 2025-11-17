@@ -209,17 +209,17 @@ where
             }
 
             let type_kind = {
-                let data_kind = type_variables.iter().rfold(result_kind, |result, variable| {
+                let type_kind = type_variables.iter().rfold(result_kind, |result, variable| {
                     state.storage.intern(Type::Function(variable.kind, result))
                 });
-                kind_variables.iter().cloned().rfold(data_kind, |inner, binder| {
+                kind_variables.iter().cloned().rfold(type_kind, |inner, binder| {
                     state.storage.intern(Type::Forall(binder, inner))
                 })
             };
 
-            if let Some(data_kind) = quantify::quantify(state, type_kind) {
-                let data_kind = transfer::globalize(state, context, data_kind);
-                state.checked.types.insert(item_id, data_kind);
+            if let Some(type_kind) = quantify::quantify(state, type_kind) {
+                let type_kind = transfer::globalize(state, context, type_kind);
+                state.checked.types.insert(item_id, type_kind);
             };
         }
 
