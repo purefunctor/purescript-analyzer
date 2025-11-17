@@ -80,6 +80,16 @@ where
             solve(state, context, unification_id, t1).is_some()
         }
 
+        (
+            &Type::Variable(Variable::Bound(t1_index)),
+            &Type::Variable(Variable::Bound(t2_index)),
+        ) => t1_index == t2_index,
+
+        (
+            &Type::Variable(Variable::Skolem(t1_level, _)),
+            &Type::Variable(Variable::Skolem(t2_level, _)),
+        ) => t1_level == t2_level,
+
         _ => false,
     }
 }

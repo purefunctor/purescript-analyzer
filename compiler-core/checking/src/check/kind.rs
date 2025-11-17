@@ -254,6 +254,6 @@ where
     Q: ExternalQueries,
 {
     let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id);
-    unification::unify(state, context, inferred_kind, kind);
+    unification::subsumes(state, context, inferred_kind, kind);
     (inferred_type, inferred_kind)
 }

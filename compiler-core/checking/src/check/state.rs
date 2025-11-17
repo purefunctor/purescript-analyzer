@@ -97,8 +97,11 @@ where
 {
     pub queries: &'a Q,
     pub prim: PrimCore,
+
+    pub id: FileId,
     pub indexed: Arc<IndexedModule>,
     pub lowered: Arc<LoweredModule>,
+
     pub prim_indexed: Arc<IndexedModule>,
 }
 
@@ -116,7 +119,7 @@ where
         let prim = PrimCore::collect(queries, state)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
-        Ok(CheckContext { queries, prim, indexed, lowered, prim_indexed })
+        Ok(CheckContext { queries, prim, id, indexed, lowered, prim_indexed })
     }
 }
 

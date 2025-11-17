@@ -701,8 +701,8 @@ fn lower_type_kind(
             s.push_forall_scope();
             let bindings =
                 cst.children().map(|cst| lower_type_variable_binding(s, context, &cst)).collect();
-            let type_ = cst.type_().map(|cst| lower_type(s, context, &cst));
-            TypeKind::Forall { bindings, type_ }
+            let inner = cst.type_().map(|cst| lower_type(s, context, &cst));
+            TypeKind::Forall { bindings, inner }
         }),
         cst::Type::TypeHole(_) => TypeKind::Hole,
         cst::Type::TypeInteger(_) => TypeKind::Integer,
@@ -779,8 +779,8 @@ pub(crate) fn lower_forall(state: &mut State, context: &Context, cst: &cst::Type
         state.push_forall_scope();
         let bindings =
             f.children().map(|cst| lower_type_variable_binding(state, context, &cst)).collect();
-        let type_ = f.type_().map(|cst| lower_forall(state, context, &cst));
-        let kind = TypeKind::Forall { bindings, type_ };
+        let inner = f.type_().map(|cst| lower_forall(state, context, &cst));
+        let kind = TypeKind::Forall { bindings, inner };
         state.associate_type_info(id, kind);
         id
     } else {

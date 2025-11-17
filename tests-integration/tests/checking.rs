@@ -6,6 +6,7 @@ use checking::check::unification::{self, UnificationState};
 use checking::check::{CheckContext, CheckState, quantify};
 use checking::core::{ForallBinder, Type, TypeId, Variable, debruijn, pretty};
 use files::{FileId, Files};
+use indexing::{TermItem, TypeItem};
 use lowering::TypeVariableBindingId;
 
 struct ContextState<'r> {
@@ -361,4 +362,96 @@ fn test_subsumes_nested_forall() {
 
     let result = unification::subsumes(state, context, forall_a_b, int_to_string_to_int);
     assert!(result, "∀a. ∀b. (a -> b -> a) should subsume (Int -> String -> Int)");
+}
+
+#[test]
+fn test_manual() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+data Proxy :: forall k. k -> Type
+data Proxy a = Proxy
+"#,
+    );
+
+    let indexed = engine.indexed(id).unwrap();
+    let checked = engine.checked(id).unwrap();
+
+    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_term(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        eprintln!("{n} :: {t}")
+    }
+
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_type(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        eprintln!("{n} :: {t}")
+    }
+}
+
+#[test]
+fn test_manual_2() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+data Maybe :: Type -> Type
+data Maybe (a :: Type) = Just a | Nothing
+"#,
+    );
+
+    let indexed = engine.indexed(id).unwrap();
+    let checked = engine.checked(id).unwrap();
+
+    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_term(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        eprintln!("{n} :: {t}")
+    }
+
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_type(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        eprintln!("{n} :: {t}")
+    }
+}
+
+#[test]
+fn test_manual_3() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+data Proxy a = Proxy
+"#,
+    );
+
+    let indexed = engine.indexed(id).unwrap();
+    let checked = engine.checked(id).unwrap();
+
+    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_term(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        eprintln!("{n} :: {t}")
+    }
+
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_type(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        eprintln!("{n} :: {t}")
+    }
 }

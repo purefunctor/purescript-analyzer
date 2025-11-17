@@ -9,13 +9,13 @@ use building_types::{QueryProxy, QueryResult};
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use itertools::Itertools;
-use lowering::{DataIr, LoweredModule, Scc, TermItemIr, TypeItemIr, TypeVariableBinding};
+use lowering::{DataIr, LoweredModule, Scc, TermItemIr, TypeItemIr};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+use smol_str::SmolStr;
 
-use crate::check::kind::check_surface_kind;
-use crate::check::{CheckContext, CheckState, convert, kind, transfer};
-use crate::core::{ForallBinder, Variable, debruijn, pretty};
+use crate::check::{CheckContext, CheckState, convert, kind, quantify, transfer, unification};
+use crate::core::{ForallBinder, Variable, debruijn};
 
 pub trait ExternalQueries:
     QueryProxy<
@@ -81,6 +81,8 @@ fn source_check_module(
     Ok(state.checked)
 }
 
+const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
+
 fn check_type_item<Q>(state: &mut CheckState, context: &CheckContext<Q>, item_id: TypeItemId)
 where
     Q: ExternalQueries,
@@ -88,37 +90,137 @@ where
     let Some(item) = context.lowered.info.get_type_item(item_id) else { return };
     match item {
         TypeItemIr::DataGroup { signature, data, .. } => {
-            let signature_type = signature
-                .map(|signature| convert::signature_type_to_core(state, context, signature));
+            let Some(DataIr { variables }) = data else { return };
 
-            if let Some(DataIr { variables }) = data {
-                let inferred_type = create_type_declaration_kind(state, context, variables);
-                for constructor_id in context.indexed.pairs.data_constructors(item_id) {
-                    let Some(TermItemIr::Constructor { arguments }) =
-                        context.lowered.info.get_term_item(constructor_id)
-                    else {
-                        continue;
+            let signature = signature.map(|id| convert::inspect_signature(state, context, id));
+
+            let (kind_variables, type_variables, result_kind) = if let Some(signature) = signature {
+                if variables.len() != signature.arguments.len() {
+                    todo!("proper arity checking errors innit")
+                };
+
+                let variables = variables.iter();
+                let arguments = signature.arguments.iter();
+
+                let kinds = variables.zip(arguments).map(|(variable, &argument)| {
+                    // Use contravariant subtyping for type variables:
+                    //
+                    // data Example :: Argument -> Type
+                    // data Example (a :: Variable) = Example
+                    //
+                    // Signature: Argument -> Type
+                    // Inferred: Variable -> Type
+                    //
+                    // Given
+                    //   Variable -> Type <: Argument -> Type
+                    //
+                    // Therefore
+                    //   [Argument <: Variable, Type <: Type]
+                    let kind = variable.kind.map_or(argument, |kind| {
+                        let kind = convert::type_to_core(state, context, kind);
+                        let valid = unification::subsumes(state, context, argument, kind);
+                        if valid { kind } else { context.prim.unknown }
+                    });
+
+                    let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                    (variable.id, variable.visible, name, kind)
+                });
+
+                let kinds = kinds.collect_vec();
+
+                let kind_variables = signature.variables;
+                let result_kind = signature.result;
+                let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+                    let level = state.bind_forall(id, kind);
+                    ForallBinder { visible, name, level, kind }
+                });
+
+                (kind_variables, type_variables.collect_vec(), result_kind)
+            } else {
+                let kind_variables = vec![];
+                let result_kind = context.prim.t;
+                let type_variables = variables.iter().map(|variable| {
+                    let kind = match variable.kind {
+                        Some(id) => convert::type_to_core(state, context, id),
+                        None => state.fresh_unification_type(context),
                     };
-                    for argument in arguments.iter() {
-                        let (inferred_type, inferred_kind) =
-                            check_surface_kind(state, context, *argument, context.prim.t);
-                        {
-                            let inferred_type = pretty::print_local(state, context, inferred_type);
-                            let inferred_kind = pretty::print_local(state, context, inferred_kind);
-                            eprintln!("{inferred_type} :: {inferred_kind}")
-                        }
-                    }
-                }
 
-                {
-                    if let Some(signature_type) = signature_type {
-                        let signature_type = pretty::print_local(state, context, signature_type);
-                        eprintln!("{signature_type}");
-                    }
-                    let inferred_type = pretty::print_local(state, context, inferred_type);
-                    eprintln!("{inferred_type}");
-                }
+                    let visible = variable.visible;
+                    let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                    let level = state.bind_forall(variable.id, kind);
+                    ForallBinder { visible, name, level, kind }
+                });
+
+                (kind_variables, type_variables.collect_vec(), result_kind)
+            };
+
+            let data_reference = {
+                let size = state.bound.size();
+                let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
+                type_variables.iter().cloned().fold(reference_type, |reference_type, variable| {
+                    let Some(index) = variable.level.to_index(size) else {
+                        let level = variable.level;
+                        unreachable!("invariant violated: invalid {level} for {size}");
+                    };
+
+                    let variable = Variable::Bound(index);
+                    let variable = state.storage.intern(Type::Variable(variable));
+
+                    state.storage.intern(Type::Application(reference_type, variable))
+                })
+            };
+
+            for item_id in context.indexed.pairs.data_constructors(item_id) {
+                let Some(TermItemIr::Constructor { arguments }) =
+                    context.lowered.info.get_term_item(item_id)
+                else {
+                    continue;
+                };
+
+                let arguments = arguments.iter().map(|&argument| {
+                    let (inferred_type, _) =
+                        kind::check_surface_kind(state, context, argument, context.prim.t);
+                    inferred_type
+                });
+
+                let arguments = arguments.collect_vec();
+
+                let constructor_type =
+                    arguments.into_iter().rfold(data_reference, |result, argument| {
+                        state.storage.intern(Type::Function(argument, result))
+                    });
+
+                let all_variables = {
+                    let from_kind = kind_variables.iter();
+                    let from_type = type_variables.iter();
+                    from_kind.chain(from_type).cloned()
+                };
+
+                let constructor_type = all_variables.rfold(constructor_type, |inner, variable| {
+                    state.storage.intern(Type::Forall(variable, inner))
+                });
+
+                let Some(constructor_type) = quantify::quantify(state, constructor_type) else {
+                    continue;
+                };
+
+                let constructor_type = transfer::globalize(state, context, constructor_type);
+                state.checked.terms.insert(item_id, constructor_type);
             }
+
+            let type_kind = {
+                let data_kind = type_variables.iter().rfold(result_kind, |result, variable| {
+                    state.storage.intern(Type::Function(variable.kind, result))
+                });
+                kind_variables.iter().cloned().rfold(data_kind, |inner, binder| {
+                    state.storage.intern(Type::Forall(binder, inner))
+                })
+            };
+
+            if let Some(data_kind) = quantify::quantify(state, type_kind) {
+                let data_kind = transfer::globalize(state, context, data_kind);
+                state.checked.types.insert(item_id, data_kind);
+            };
         }
 
         TypeItemIr::NewtypeGroup { .. } => (),
@@ -137,43 +239,6 @@ where
 
         TypeItemIr::Operator { .. } => (),
     }
-}
-
-fn create_type_declaration_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    bindings: &[TypeVariableBinding],
-) -> TypeId
-where
-    Q: ExternalQueries,
-{
-    let binders = bindings
-        .iter()
-        .map(|binding| convert::convert_forall_binding(state, context, binding))
-        .collect_vec();
-
-    // Build the function type for the type declaration e.g.
-    //
-    // ```purescript
-    // data Maybe a = Just a | Nothing
-    // ```
-    //
-    // function_type := a -> Type
-    let size = state.bound.size();
-    let function_type = binders.iter().rfold(context.prim.t, |result, binder| {
-        let index = binder.level.to_index(size).unwrap_or_else(|| {
-            unreachable!("invariant violated: invalid {} for {size}", binder.level)
-        });
-        let variable = state.storage.intern(Type::Variable(Variable::Bound(index)));
-        state.storage.intern(Type::Function(variable, result))
-    });
-
-    // Qualify the type variables in the function type e.g.
-    //
-    // forall (a :: Type). a -> Type
-    binders
-        .into_iter()
-        .rfold(function_type, |inner, binder| state.storage.intern(Type::Forall(binder, inner)))
 }
 
 fn prim_check_module(

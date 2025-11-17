@@ -169,7 +169,7 @@ pub enum TypeKind {
     Arrow { argument: Option<TypeId>, result: Option<TypeId> },
     Constrained { constraint: Option<TypeId>, constrained: Option<TypeId> },
     Constructor { resolution: Option<(FileId, TypeItemId)> },
-    Forall { bindings: Arc<[TypeVariableBinding]>, type_: Option<TypeId> },
+    Forall { bindings: Arc<[TypeVariableBinding]>, inner: Option<TypeId> },
     Hole,
     Integer,
     Kinded { type_: Option<TypeId>, kind: Option<TypeId> },

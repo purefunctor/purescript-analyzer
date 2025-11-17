@@ -1,3 +1,5 @@
+use std::iter;
+
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -39,13 +41,13 @@ where
             };
             state.storage.intern(Type::Constructor(file_id, type_id))
         }
-        lowering::TypeKind::Forall { bindings, type_ } => {
+        lowering::TypeKind::Forall { bindings, inner } => {
             let binders = bindings
                 .iter()
                 .map(|binding| convert_forall_binding(state, context, binding))
                 .collect_vec();
 
-            let inner = type_.map_or(default, |id| type_to_core(state, context, id));
+            let inner = inner.map_or(default, |id| type_to_core(state, context, id));
 
             let forall = binders
                 .into_iter()
@@ -65,7 +67,7 @@ where
         lowering::TypeKind::String => default,
         lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
-                let name = name.clone().unwrap_or(INVALID_NAME);
+                let name = name.clone().unwrap_or(MISSING_NAME);
                 let kind = Variable::Free(name);
                 return state.storage.intern(Type::Variable(kind));
             };
@@ -111,13 +113,13 @@ where
     };
 
     match kind {
-        lowering::TypeKind::Forall { bindings, type_ } => {
+        lowering::TypeKind::Forall { bindings, inner } => {
             let binders = bindings
                 .iter()
                 .map(|binding| convert_forall_binding(state, context, binding))
                 .collect_vec();
 
-            let inner = type_.map_or(default, |id| type_to_core(state, context, id));
+            let inner = inner.map_or(default, |id| type_to_core(state, context, id));
 
             binders
                 .into_iter()
@@ -132,7 +134,78 @@ where
     }
 }
 
-const INVALID_NAME: SmolStr = SmolStr::new_inline("<invalid>");
+pub struct InspectSignature {
+    pub variables: Vec<ForallBinder>,
+    pub arguments: Vec<TypeId>,
+    pub result: TypeId,
+}
+
+pub fn inspect_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::TypeId,
+) -> InspectSignature
+where
+    Q: ExternalQueries,
+{
+    let unknown = || {
+        let variables = [].into();
+        let arguments = [].into();
+        let result = context.prim.unknown;
+        InspectSignature { variables, arguments, result }
+    };
+
+    let Some(kind) = context.lowered.info.get_type_kind(id) else {
+        return unknown();
+    };
+
+    match kind {
+        lowering::TypeKind::Forall { bindings, inner } => {
+            let variables = bindings
+                .iter()
+                .map(|binding| convert_forall_binding(state, context, binding))
+                .collect();
+
+            let inner = inner.map_or(context.prim.unknown, |id| type_to_core(state, context, id));
+            let (arguments, result) = signature_components(state, inner);
+
+            InspectSignature { variables, arguments, result }
+        }
+
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            parenthesized.map(|id| inspect_signature(state, context, id)).unwrap_or_else(unknown)
+        }
+
+        _ => {
+            let variables = [].into();
+
+            let id = type_to_core(state, context, id);
+            let (arguments, result) = signature_components(state, id);
+
+            InspectSignature { variables, arguments, result }
+        }
+    }
+}
+
+fn signature_components(state: &mut CheckState, id: TypeId) -> (Vec<TypeId>, TypeId) {
+    let mut components = iter::successors(Some(id), |&id| match state.storage[id] {
+        Type::Function(_, id) => Some(id),
+        _ => None,
+    })
+    .map(|id| match state.storage[id] {
+        Type::Function(id, _) => id,
+        _ => id,
+    })
+    .collect_vec();
+
+    let Some(id) = components.pop() else {
+        unreachable!("invariant violated: expected non-empty components");
+    };
+
+    (components, id)
+}
+
+const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
 
 pub fn convert_forall_binding<Q>(
     state: &mut CheckState,
@@ -143,11 +216,11 @@ where
     Q: ExternalQueries,
 {
     let visible = binding.visible;
-    let name = binding.name.clone().unwrap_or(INVALID_NAME);
+    let name = binding.name.clone().unwrap_or(MISSING_NAME);
 
     let kind = match binding.kind {
         Some(id) => type_to_core(state, context, id),
-        None => state.fresh_unification(context),
+        None => state.fresh_unification_type(context),
     };
 
     let level = state.bind_forall(binding.id, kind);
