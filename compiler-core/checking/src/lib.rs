@@ -14,7 +14,7 @@ use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
-use crate::check::{CheckContext, CheckState, convert, kind, quantify, transfer, unification};
+use crate::check::{CheckContext, CheckState, convert, kind, transfer, unification};
 use crate::core::{ForallBinder, Variable, debruijn};
 
 pub trait ExternalQueries:
@@ -68,12 +68,16 @@ fn source_check_module(
                 check_type_item(&mut state, &context, *id);
             }
             Scc::Recursive(id) => {
+                state.type_binding_group(&context, [*id]);
                 check_type_item(&mut state, &context, *id);
+                state.commit_binding_group(&context);
             }
-            Scc::Mutual(id) => {
-                for id in id {
+            Scc::Mutual(mutual) => {
+                state.type_binding_group(&context, mutual);
+                for id in mutual {
                     check_type_item(&mut state, &context, *id);
                 }
+                state.commit_binding_group(&context);
             }
         }
     }
@@ -200,12 +204,11 @@ where
                     state.storage.intern(Type::Forall(variable, inner))
                 });
 
-                let Some(constructor_type) = quantify::quantify(state, constructor_type) else {
-                    continue;
-                };
-
-                let constructor_type = transfer::globalize(state, context, constructor_type);
-                state.checked.terms.insert(item_id, constructor_type);
+                if let Some(pending_type) = state.binding_group.terms.get(&item_id) {
+                    unification::unify(state, context, *pending_type, constructor_type);
+                } else {
+                    state.binding_group.terms.insert(item_id, constructor_type);
+                }
             }
 
             let type_kind = {
@@ -217,9 +220,10 @@ where
                 })
             };
 
-            if let Some(type_kind) = quantify::quantify(state, type_kind) {
-                let type_kind = transfer::globalize(state, context, type_kind);
-                state.checked.types.insert(item_id, type_kind);
+            if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
+                unification::unify(state, context, *pending_kind, type_kind);
+            } else {
+                state.binding_group.types.insert(item_id, type_kind);
             };
         }
 

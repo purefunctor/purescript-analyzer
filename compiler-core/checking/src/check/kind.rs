@@ -40,13 +40,24 @@ where
         lowering::TypeKind::Constructor { resolution } => {
             let Some((file_id, type_id)) = *resolution else { return default };
 
-            let Ok(checked) = context.queries.checked(file_id) else { return default };
-            let Some(global_id) = checked.lookup_type(type_id) else { return default };
+            if file_id == context.id {
+                let t = convert::type_to_core(state, context, id);
+                if let Some(&k) = state.binding_group.types.get(&type_id) {
+                    (t, k)
+                } else if let Some(&k) = state.checked.types.get(&type_id) {
+                    (t, k)
+                } else {
+                    default
+                }
+            } else {
+                let Ok(checked) = context.queries.checked(file_id) else { return default };
+                let Some(global_id) = checked.lookup_type(type_id) else { return default };
 
-            let t = convert::type_to_core(state, context, id);
-            let k = transfer::localize(state, context, global_id);
+                let t = convert::type_to_core(state, context, id);
+                let k = transfer::localize(state, context, global_id);
 
-            (t, k)
+                (t, k)
+            }
         }
 
         lowering::TypeKind::Forall { .. } => {

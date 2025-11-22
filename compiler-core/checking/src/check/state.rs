@@ -2,10 +2,13 @@ use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
-use indexing::IndexedModule;
+use indexing::{IndexedModule, TermItemId, TypeItemId};
+use itertools::Itertools;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
+use rustc_hash::FxHashMap;
 
 use crate::check::unification::UnificationContext;
+use crate::check::{quantify, transfer};
 use crate::core::{Type, TypeId, TypeInterner, debruijn};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -19,6 +22,7 @@ pub struct CheckState {
     pub types: debruijn::BoundMap<TypeId>,
 
     pub unification: UnificationContext,
+    pub binding_group: BindingGroupContext,
 }
 
 impl CheckState {
@@ -88,6 +92,37 @@ impl CheckState {
         self.bound.unbind(level);
         self.types.unbind(level);
         self.kinds.unbind(level);
+    }
+
+    pub fn type_binding_group<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        group: impl AsRef<[TypeItemId]>,
+    ) where
+        Q: ExternalQueries,
+    {
+        for &item in group.as_ref() {
+            let t = self.fresh_unification_type(context);
+            self.binding_group.types.insert(item, t);
+        }
+    }
+
+    pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>)
+    where
+        Q: ExternalQueries,
+    {
+        for (item_id, type_id) in self.binding_group.terms.drain().collect_vec() {
+            if let Some(type_id) = quantify::quantify(self, type_id) {
+                let type_id = transfer::globalize(self, context, type_id);
+                self.checked.terms.insert(item_id, type_id);
+            }
+        }
+        for (item_id, type_id) in self.binding_group.types.drain().collect_vec() {
+            if let Some(type_id) = quantify::quantify(self, type_id) {
+                let type_id = transfer::globalize(self, context, type_id);
+                self.checked.types.insert(item_id, type_id);
+            }
+        }
     }
 }
 
@@ -171,4 +206,10 @@ impl PrimCore {
             unknown: state.storage.intern(Type::Unknown),
         })
     }
+}
+
+#[derive(Default)]
+pub struct BindingGroupContext {
+    pub terms: FxHashMap<TermItemId, TypeId>,
+    pub types: FxHashMap<TypeItemId, TypeId>,
 }
