@@ -225,6 +225,14 @@ where
             } else {
                 state.binding_group.types.insert(item_id, type_kind);
             };
+
+            if let Some(variable) = type_variables.first() {
+                state.unbind(variable.level);
+            }
+
+            if let Some(variable) = kind_variables.first() {
+                state.unbind(variable.level);
+            }
         }
 
         TypeItemIr::NewtypeGroup { .. } => (),
