@@ -51,6 +51,31 @@ fn empty_engine() -> (QueryEngine, FileId) {
     (engine, id)
 }
 
+fn print_terms_types(engine: QueryEngine, id: FileId) -> String {
+    let indexed = engine.indexed(id).unwrap();
+    let checked = engine.checked(id).unwrap();
+
+    let mut snapshot = String::default();
+
+    writeln!(snapshot, "Terms").unwrap();
+    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_term(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        writeln!(snapshot, "{n} :: {t}").unwrap();
+    }
+
+    writeln!(snapshot, "\nTypes").unwrap();
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_type(id) else { continue };
+        let t = pretty::print_global(&engine, t);
+        writeln!(snapshot, "{n} :: {t}").unwrap();
+    }
+
+    snapshot
+}
+
 const FAKE_NONZERO_1: NonZeroU32 = NonZeroU32::new(1).unwrap();
 const FAKE_NONZERO_2: NonZeroU32 = NonZeroU32::new(2).unwrap();
 
@@ -454,4 +479,37 @@ data Proxy a = Proxy
         let t = pretty::print_global(&engine, t);
         eprintln!("{n} :: {t}")
     }
+}
+
+#[test]
+fn test_data_recursive() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+data List a = Nil | Cons a (List a)
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_data_mutual() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+data Tree a = Tree a (Forest a)
+data Forest a = Nil | Cons (Tree a) (Forest a)
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
 }

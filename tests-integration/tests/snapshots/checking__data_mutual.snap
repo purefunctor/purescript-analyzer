@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+Tree :: forall (a :: Type). (*0 -> (Forest *0) -> (Tree *0))
+Nil :: forall (a :: Type). (Forest *0)
+Cons :: forall (a :: Type). ((Tree *0) -> (Forest *0) -> (Forest *0))
+
+Types
+Tree :: (Type -> Type)
+Forest :: (Type -> Type)
