@@ -513,3 +513,19 @@ data Forest a = Nil | Cons (Tree a) (Forest a)
     let snapshot = print_terms_types(engine, id);
     insta::assert_snapshot!(snapshot);
 }
+
+#[test]
+fn test_newtype_recursive() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+newtype Mu f = In (f (Mu f))
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}

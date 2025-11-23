@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+In :: forall (f :: (Type -> Type)). ((*0 (Mu *0)) -> (Mu *0))
+
+Types
+Mu :: ((Type -> Type) -> Type)
