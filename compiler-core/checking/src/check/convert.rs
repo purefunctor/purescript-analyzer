@@ -205,7 +205,7 @@ fn signature_components(state: &mut CheckState, id: TypeId) -> (Vec<TypeId>, Typ
     (components, id)
 }
 
-const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
+const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
 pub fn convert_forall_binding<Q>(
     state: &mut CheckState,
