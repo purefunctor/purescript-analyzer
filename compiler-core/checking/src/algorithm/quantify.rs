@@ -6,7 +6,7 @@ use petgraph::visit::{DfsPostOrder, Reversed};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStrBuilder;
 
-use crate::algorithm::CheckState;
+use crate::algorithm::state::CheckState;
 use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<TypeId> {

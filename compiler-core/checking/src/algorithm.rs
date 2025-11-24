@@ -7,8 +7,6 @@ pub mod substitute;
 pub mod transfer;
 pub mod unification;
 
-pub use state::{CheckContext, CheckState, PrimCore};
-
 use building_types::QueryResult;
 use files::FileId;
 use lowering::Scc;
@@ -20,8 +18,8 @@ pub(crate) fn check_source(
     queries: &impl ExternalQueries,
     file_id: FileId,
 ) -> QueryResult<CheckedModule> {
-    let mut state = CheckState::default();
-    let context = CheckContext::new(queries, &mut state, file_id)?;
+    let mut state = state::CheckState::default();
+    let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
     for scc in &context.lowered.type_scc {
         match scc {

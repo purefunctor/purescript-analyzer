@@ -1,5 +1,6 @@
 use crate::ExternalQueries;
-use crate::algorithm::{CheckContext, CheckState, convert, substitute, transfer, unification};
+use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::{convert, substitute, transfer, unification};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn infer_surface_kind<Q>(
