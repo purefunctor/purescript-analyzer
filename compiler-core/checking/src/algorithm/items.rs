@@ -4,7 +4,7 @@ use lowering::{DataIr, NewtypeIr, TermItemIr, TypeItemIr, TypeVariableBinding};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState, convert, kind, transfer, unification};
+use crate::algorithm::{CheckContext, CheckState, convert, kind, transfer, unification};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");

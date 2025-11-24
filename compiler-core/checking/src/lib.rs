@@ -1,4 +1,4 @@
-pub mod check;
+pub mod algorithm;
 pub mod core;
 
 pub use core::{Type, TypeId, TypeInterner};
@@ -44,8 +44,8 @@ impl CheckedModule {
 pub fn check_module(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
     let prim_id = queries.prim_id();
     if file_id == prim_id {
-        check::check_prim(queries, prim_id)
+        algorithm::check_prim(queries, prim_id)
     } else {
-        check::check_source(queries, file_id)
+        algorithm::check_source(queries, file_id)
     }
 }

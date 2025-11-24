@@ -1,4 +1,4 @@
-use crate::check::CheckState;
+use crate::algorithm::CheckState;
 use crate::core::{Type, TypeId, Variable, debruijn};
 
 pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: TypeId) -> TypeId {

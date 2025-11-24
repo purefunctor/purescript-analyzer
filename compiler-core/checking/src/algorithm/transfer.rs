@@ -1,4 +1,4 @@
-use crate::check::{CheckContext, CheckState};
+use crate::algorithm::{CheckContext, CheckState};
 use crate::{ExternalQueries, Type, TypeId};
 
 pub fn localize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId

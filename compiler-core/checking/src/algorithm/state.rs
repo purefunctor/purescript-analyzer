@@ -7,8 +7,8 @@ use itertools::Itertools;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 use rustc_hash::FxHashMap;
 
-use crate::check::unification::UnificationContext;
-use crate::check::{quantify, transfer};
+use crate::algorithm::unification::UnificationContext;
+use crate::algorithm::{quantify, transfer};
 use crate::core::{Type, TypeId, TypeInterner, debruijn};
 use crate::{CheckedModule, ExternalQueries};
 

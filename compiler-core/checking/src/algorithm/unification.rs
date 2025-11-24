@@ -4,7 +4,7 @@ pub mod level;
 pub use context::*;
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState, kind, substitute};
+use crate::algorithm::{CheckContext, CheckState, kind, substitute};
 use crate::core::{Type, TypeId, Variable, debruijn};
 
 pub fn subsumes<Q>(

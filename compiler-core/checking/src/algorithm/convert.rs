@@ -4,7 +4,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState};
+use crate::algorithm::{CheckContext, CheckState};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn type_to_core<Q>(

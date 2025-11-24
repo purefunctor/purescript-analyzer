@@ -3,7 +3,7 @@ use std::fmt::Write;
 use itertools::Itertools;
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState};
+use crate::algorithm::{CheckContext, CheckState};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
