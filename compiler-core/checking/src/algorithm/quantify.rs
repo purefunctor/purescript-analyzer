@@ -1,3 +1,5 @@
+//! Implements type quantification.
+
 use std::fmt::Write;
 
 use indexmap::IndexSet;

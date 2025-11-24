@@ -1,3 +1,5 @@
+//! Implements context transfer for types.
+
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::{ExternalQueries, Type, TypeId};
 

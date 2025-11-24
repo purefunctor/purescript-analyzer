@@ -1,3 +1,5 @@
+//! Implements subsumption and unification.
+
 pub mod context;
 pub mod level;
 

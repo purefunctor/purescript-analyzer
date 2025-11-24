@@ -1,3 +1,5 @@
+//! Implements the kind checker.
+
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{convert, substitute, transfer, unification};

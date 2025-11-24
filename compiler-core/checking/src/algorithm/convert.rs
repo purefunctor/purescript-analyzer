@@ -1,3 +1,6 @@
+//! Implements conversion from [`lowering`] to [`core`].
+//!
+//! [`core`]: crate::core
 use std::iter;
 
 use itertools::Itertools;

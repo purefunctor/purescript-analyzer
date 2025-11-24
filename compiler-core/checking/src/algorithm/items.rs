@@ -1,3 +1,5 @@
+//! Implements syntax-driven elaboration for declarations.
+
 use indexing::TypeItemId;
 use itertools::Itertools;
 use lowering::{DataIr, NewtypeIr, TermItemIr, TypeItemIr, TypeVariableBinding};

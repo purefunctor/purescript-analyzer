@@ -1,3 +1,5 @@
+//! Implements type variable substitution.
+
 use crate::algorithm::state::CheckState;
 use crate::core::{Type, TypeId, Variable, debruijn};
 

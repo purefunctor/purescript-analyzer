@@ -1,3 +1,5 @@
+//! Implements the algorithm's state.
+
 use std::sync::Arc;
 
 use building_types::QueryResult;
