@@ -3,7 +3,7 @@ use std::fmt::Write;
 use itertools::Itertools;
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState};
+use crate::algorithm::state::{CheckContext, CheckState};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
@@ -89,7 +89,7 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             }
 
             let inner = traverse(source, inner);
-            write!(&mut buffer, " {inner}").unwrap();
+            write!(&mut buffer, ". {inner}").unwrap();
 
             buffer
         }
@@ -104,7 +104,7 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
             let result = traverse(source, result);
             let arguments =
-                arguments.iter().rev().map(|argument| traverse(source, *argument)).join(" -> ");
+                arguments.iter().map(|argument| traverse(source, *argument)).join(" -> ");
 
             format!("({arguments} -> {result})")
         }
@@ -139,7 +139,10 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(level) => format!("{level}"),
-            Variable::Skolem(level) => format!("~{level}"),
+            Variable::Skolem(level, kind) => {
+                let kind = traverse(source, *kind);
+                format!("~{level} :: {kind}")
+            }
             Variable::Bound(index) => format!("{index}"),
             Variable::Free(name) => format!("{name}"),
         },

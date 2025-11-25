@@ -1,5 +1,8 @@
+//! Implements the kind checker.
+
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState, convert, substitute, transfer, unification};
+use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::{convert, substitute, transfer, unification};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn infer_surface_kind<Q>(
@@ -40,13 +43,24 @@ where
         lowering::TypeKind::Constructor { resolution } => {
             let Some((file_id, type_id)) = *resolution else { return default };
 
-            let Ok(checked) = context.queries.checked(file_id) else { return default };
-            let Some(global_id) = checked.lookup_type(type_id) else { return default };
+            if file_id == context.id {
+                let t = convert::type_to_core(state, context, id);
+                if let Some(&k) = state.binding_group.types.get(&type_id) {
+                    (t, k)
+                } else if let Some(&k) = state.checked.types.get(&type_id) {
+                    (t, k)
+                } else {
+                    default
+                }
+            } else {
+                let Ok(checked) = context.queries.checked(file_id) else { return default };
+                let Some(global_id) = checked.lookup_type(type_id) else { return default };
 
-            let t = convert::type_to_core(state, context, id);
-            let k = transfer::localize(state, context, global_id);
+                let t = convert::type_to_core(state, context, id);
+                let k = transfer::localize(state, context, global_id);
 
-            (t, k)
+                (t, k)
+            }
         }
 
         lowering::TypeKind::Forall { .. } => {
@@ -174,6 +188,7 @@ pub fn elaborate_kind<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: 
 where
     Q: ExternalQueries,
 {
+    let default = context.prim.unknown;
     let id = state.normalize_type(id);
     match state.storage[id] {
         Type::Application(function, _) => {
@@ -193,14 +208,24 @@ where
                     result_u
                 }
 
-                _ => context.prim.unknown,
+                _ => default,
             }
         }
 
         Type::Constructor(file_id, type_id) => {
-            let Ok(checked) = context.queries.checked(file_id) else { return context.prim.unknown };
-            let Some(global_id) = checked.types.get(&type_id) else { return context.prim.unknown };
-            transfer::localize(state, context, *global_id)
+            if file_id == context.id {
+                if let Some(&k) = state.binding_group.types.get(&type_id) {
+                    k
+                } else if let Some(&k) = state.checked.types.get(&type_id) {
+                    k
+                } else {
+                    default
+                }
+            } else {
+                let Ok(checked) = context.queries.checked(file_id) else { return default };
+                let Some(global_id) = checked.types.get(&type_id) else { return default };
+                transfer::localize(state, context, *global_id)
+            }
         }
 
         Type::Forall(_, _) => context.prim.t,
@@ -215,32 +240,20 @@ where
                     let argument = state.normalize_type(argument);
                     substitute::substitute_bound(state, argument, inner)
                 }
-                _ => context.prim.unknown,
+                _ => default,
             }
         }
 
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
         Type::Variable(ref variable) => match variable {
-            Variable::Implicit(_) => context.prim.unknown,
-            Variable::Skolem(_) => context.prim.unknown,
-            Variable::Bound(index) => {
-                let size = state.bound.size();
-
-                let Some(level) = index.to_level(size) else {
-                    return context.prim.unknown;
-                };
-
-                let Some(kind) = state.kinds.get(level) else {
-                    return context.prim.unknown;
-                };
-
-                *kind
-            }
-            Variable::Free(_) => context.prim.unknown,
+            Variable::Implicit(_) => default,
+            Variable::Skolem(_, kind) => *kind,
+            Variable::Bound(index) => state.core_kind(*index).unwrap_or(default),
+            Variable::Free(_) => default,
         },
 
-        Type::Unknown => context.prim.unknown,
+        Type::Unknown => default,
     }
 }
 
@@ -254,6 +267,6 @@ where
     Q: ExternalQueries,
 {
     let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id);
-    unification::unify(state, context, inferred_kind, kind);
+    unification::subsumes(state, context, inferred_kind, kind);
     (inferred_type, inferred_kind)
 }

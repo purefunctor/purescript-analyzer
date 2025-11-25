@@ -21,14 +21,8 @@ impl SnapshotGraph {
     }
 
     pub(crate) fn remove_edge(&mut self, to_id: SnapshotId) {
-        let keys: Vec<_> = self
-            .inner
-            .iter()
-            .filter_map(|(&from_id, &id)| if id == to_id { Some(from_id) } else { None })
-            .collect();
-        keys.iter().for_each(|key| {
-            self.inner.remove(key);
-        });
+        self.inner.retain(|_, &mut id| id != to_id);
+        self.inner.remove(&to_id);
     }
 }
 

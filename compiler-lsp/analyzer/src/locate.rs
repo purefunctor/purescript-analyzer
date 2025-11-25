@@ -24,7 +24,7 @@ pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize>
     let col = if line_content.is_empty() {
         0
     } else {
-        let last_column = || line_content.chars().count() as u32;
+        let last_column = || line_content.len() as u32;
         line_content
             .char_indices()
             .nth(position.character as usize)
@@ -36,27 +36,44 @@ pub fn position_to_offset(content: &str, position: Position) -> Option<TextSize>
     line_index.offset(line_col)
 }
 
-pub fn offset_to_position(content: &str, offset: TextSize) -> Position {
+pub fn offset_to_position(content: &str, offset: TextSize) -> Option<Position> {
     let line_index = LineIndex::new(content);
+
     let LineCol { line, col } = line_index.line_col(offset);
-    Position { line, character: col }
+
+    let line_text_range = line_index.line(line)?;
+    let line_content = &content[line_text_range];
+
+    let until_col = &line_content[..col as usize];
+    let character = until_col.chars().count() as u32;
+
+    Some(Position { line, character })
 }
 
-pub fn text_range_to_range(content: &str, range: TextRange) -> Range {
+pub fn text_range_to_range(content: &str, range: TextRange) -> Option<Range> {
     let line_index = LineIndex::new(content);
 
-    let start = line_index.line_col(range.start());
-    let start = Position { line: start.line, character: start.col };
+    let calculate = |offset: TextSize| {
+        let LineCol { line, col } = line_index.line_col(offset);
 
-    let end = line_index.line_col(range.end());
-    let end = Position { line: end.line, character: end.col };
+        let line_text_range = line_index.line(line)?;
+        let line_content = &content[line_text_range];
 
-    Range { start, end }
+        let until_col = &line_content[..col as usize];
+        let character = until_col.chars().count() as u32;
+
+        Some(Position { line, character })
+    };
+
+    let start = calculate(range.start())?;
+    let end = calculate(range.end())?;
+
+    Some(Range { start, end })
 }
 
 pub fn syntax_range(content: &str, root: &SyntaxNode, ptr: &SyntaxNodePtr) -> Option<Range> {
     let range = AnnotationSyntaxRange::from_ptr(root, ptr);
-    range.syntax.map(|range| text_range_to_range(content, range))
+    range.syntax.and_then(|range| text_range_to_range(content, range))
 }
 
 type ModuleNamePtr = AstPtr<cst::ModuleName>;
@@ -186,72 +203,4 @@ fn locate_between(
 }
 
 #[cfg(test)]
-mod tests {
-    use async_lsp::lsp_types::Position;
-    use rowan::TextSize;
-
-    use super::position_to_offset;
-
-    #[test]
-    fn zero_on_blank_line() {
-        let content = "";
-        let position = Position::new(0, 0);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(0)));
-    }
-
-    #[test]
-    fn zero_or_lf_line() {
-        let content = "\n";
-        let position = Position::new(0, 0);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(0)));
-    }
-
-    #[test]
-    fn zero_or_crlf_line() {
-        let content = "\r\n";
-        let position = Position::new(0, 0);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(0)));
-    }
-
-    #[test]
-    fn last_on_line() {
-        let content = "abcdef";
-        let position = Position::new(0, 6);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(6)));
-    }
-
-    #[test]
-    fn last_on_line_clamp() {
-        let content = "abcdef";
-        let position = Position::new(0, 600);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(6)));
-    }
-
-    #[test]
-    fn last_on_lf_line() {
-        let content = "abcdef\n";
-        let position = Position::new(0, 6);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(6)));
-    }
-
-    #[test]
-    fn last_on_crlf_line_clamp() {
-        let content = "abcdef\r\n";
-        let position = Position::new(0, 600);
-
-        let offset = position_to_offset(content, position);
-        assert_eq!(offset, Some(TextSize::new(6)));
-    }
-}
+mod tests;

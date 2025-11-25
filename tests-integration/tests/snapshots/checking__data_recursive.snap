@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+Nil :: forall (a :: Type). (List *0)
+Cons :: forall (a :: Type). (*0 -> (List *0) -> (List *0))
+
+Types
+List :: (Type -> Type)

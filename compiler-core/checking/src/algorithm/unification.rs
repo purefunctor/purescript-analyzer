@@ -1,11 +1,55 @@
-pub mod context;
-pub mod level;
-
-pub use context::*;
+//! Implements subsumption and unification.
 
 use crate::ExternalQueries;
-use crate::check::{CheckContext, CheckState, kind};
+use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::{kind, substitute, transfer};
 use crate::core::{Type, TypeId, Variable, debruijn};
+use crate::error::ErrorKind;
+
+pub fn subsumes<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    let t1 = state.normalize_type(t1);
+    let t2 = state.normalize_type(t2);
+
+    if t1 == t2 {
+        return true;
+    }
+
+    let t1_core = state.storage[t1].clone();
+    let t2_core = state.storage[t2].clone();
+
+    match (t1_core, t2_core) {
+        (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
+            subsumes(state, context, t2_argument, t1_argument)
+                && subsumes(state, context, t1_result, t2_result)
+        }
+
+        (_, Type::Forall(ref binder, inner)) => {
+            let v = Variable::Skolem(binder.level, binder.kind);
+            let t = state.storage.intern(Type::Variable(v));
+
+            let inner = substitute::substitute_bound(state, t, inner);
+            subsumes(state, context, t1, inner)
+        }
+
+        (Type::Forall(ref binder, inner), _) => {
+            let k = state.normalize_type(binder.kind);
+            let t = state.fresh_unification_kinded(k);
+
+            let inner = substitute::substitute_bound(state, t, inner);
+            subsumes(state, context, inner, t2)
+        }
+
+        _ => unify(state, context, t1, t2),
+    }
+}
 
 pub fn unify<Q>(state: &mut CheckState, context: &CheckContext<Q>, t1: TypeId, t2: TypeId) -> bool
 where
@@ -13,34 +57,48 @@ where
 {
     let t1 = state.normalize_type(t1);
     let t2 = state.normalize_type(t2);
-    match (&state.storage[t1], &state.storage[t2]) {
+
+    if t1 == t2 {
+        return true;
+    }
+
+    let t1_core = state.storage[t1].clone();
+    let t2_core = state.storage[t2].clone();
+
+    let unifies = match (t1_core, t2_core) {
         (
-            &Type::Application(t1_function, t1_argument),
-            &Type::Application(t2_function, t2_argument),
+            Type::Application(t1_function, t1_argument),
+            Type::Application(t2_function, t2_argument),
         ) => {
             unify(state, context, t1_function, t2_function)
                 && unify(state, context, t1_argument, t2_argument)
         }
 
-        (Type::Constructor(t1_file_id, t1_item_id), Type::Constructor(t2_file_id, t2_item_id)) => {
-            (t1_file_id, t1_item_id) == (t2_file_id, t2_item_id)
-        }
-
-        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+        (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)
                 && unify(state, context, t1_result, t2_result)
         }
 
-        (&Type::Unification(unification_id), _) => {
+        (Type::Unification(unification_id), _) => {
             solve(state, context, unification_id, t2).is_some()
         }
 
-        (_, &Type::Unification(unification_id)) => {
+        (_, Type::Unification(unification_id)) => {
             solve(state, context, unification_id, t1).is_some()
         }
 
         _ => false,
+    };
+
+    if !unifies {
+        // at this point, it should be impossible to have
+        // unsolved unification variables within t1 and t2
+        let t1 = transfer::globalize(state, context, t1);
+        let t2 = transfer::globalize(state, context, t2);
+        state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
+
+    unifies
 }
 
 pub fn solve<Q>(
@@ -53,7 +111,7 @@ where
     Q: ExternalQueries,
 {
     let codomain = state.bound.size();
-    let occurs = Some(unification_id);
+    let occurs = unification_id;
 
     if !promote_type(state, occurs, codomain, unification_id, solution) {
         return None;
@@ -70,7 +128,7 @@ where
 
 pub fn promote_type(
     state: &mut CheckState,
-    occurs: Option<u32>,
+    occurs: u32,
     codomain: debruijn::Size,
     unification_id: u32,
     solution: TypeId,
@@ -104,7 +162,7 @@ pub fn promote_type(
             let unification = state.unification.get(unification_id);
             let solution = state.unification.get(solution_id);
 
-            if occurs == Some(solution_id) {
+            if occurs == solution_id {
                 return false;
             }
 

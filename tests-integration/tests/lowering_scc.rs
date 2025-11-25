@@ -77,3 +77,31 @@ infix 5 type Add as +
 
     insta::assert_debug_snapshot!((terms, types));
 }
+
+#[test]
+fn test_non_cycle_ordering() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+a _ = b 0
+b _ = c 0
+c _ = 0
+"#,
+    );
+    let content = files.content(id);
+
+    engine.set_content(id, content);
+
+    let lowered = engine.lowered(id).unwrap();
+
+    let terms = &lowered.term_scc;
+    let types = &lowered.type_scc;
+
+    insta::assert_debug_snapshot!((terms, types));
+}

@@ -27,3 +27,6 @@ syntax = { version = "0.1.0", path = "../../compiler-core/syntax" }
 thiserror = "2.0.16"
 tracing = "0.1.41"
 url = "2.5.7"
+
+[dev-dependencies]
+insta = "1.41.1"

@@ -6,39 +6,39 @@ module Main
 
 Expressions:
 
-eqMaybeImpl@Position { line: 8, character: 6 }
+eqMaybeImpl@Some(Position { line: 8, character: 6 })
   resolves to top-level name
-eqIntImpl@Position { line: 4, character: 6 }
+eqIntImpl@Some(Position { line: 4, character: 6 })
   resolves to top-level name
-b@Position { line: 12, character: 11 }
-  resolves to binder Position { line: 12, character: 7 }
+b@Some(Position { line: 12, character: 11 })
+  resolves to binder Some(Position { line: 12, character: 7 })
 
 Types:
 
-a@Position { line: 6, character: 11 }
+a@Some(Position { line: 6, character: 11 })
   resolves to a constraint variable "a"
-    Position { line: 6, character: 26 }
-b@Position { line: 10, character: 21 }
+    Some(Position { line: 6, character: 26 })
+b@Some(Position { line: 10, character: 21 })
   introduces a constraint variable "b"
-a@Position { line: 7, character: 24 }
+a@Some(Position { line: 7, character: 24 })
   resolves to a constraint variable "a"
-    Position { line: 6, character: 26 }
-b@Position { line: 10, character: 19 }
+    Some(Position { line: 6, character: 26 })
+b@Some(Position { line: 10, character: 19 })
   introduces a constraint variable "b"
-a@Position { line: 6, character: 26 }
+a@Some(Position { line: 6, character: 26 })
   introduces a constraint variable "a"
-a@Position { line: 7, character: 13 }
+a@Some(Position { line: 7, character: 13 })
   resolves to a constraint variable "a"
-    Position { line: 6, character: 26 }
-b@Position { line: 11, character: 22 }
+    Some(Position { line: 6, character: 26 })
+b@Some(Position { line: 11, character: 22 })
   resolves to a constraint variable "b"
-    Position { line: 10, character: 19 }
-    Position { line: 10, character: 21 }
-b@Position { line: 11, character: 29 }
+    Some(Position { line: 10, character: 19 })
+    Some(Position { line: 10, character: 21 })
+b@Some(Position { line: 11, character: 29 })
   resolves to a constraint variable "b"
-    Position { line: 10, character: 19 }
-    Position { line: 10, character: 21 }
-p@Position { line: 11, character: 20 }
-  resolves to forall Position { line: 11, character: 17 }
-p@Position { line: 11, character: 27 }
-  resolves to forall Position { line: 11, character: 17 }
+    Some(Position { line: 10, character: 19 })
+    Some(Position { line: 10, character: 21 })
+p@Some(Position { line: 11, character: 20 })
+  resolves to forall Some(Position { line: 11, character: 17 })
+p@Some(Position { line: 11, character: 27 })
+  resolves to forall Some(Position { line: 11, character: 17 })

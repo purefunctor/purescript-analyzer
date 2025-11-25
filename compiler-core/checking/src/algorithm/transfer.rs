@@ -1,6 +1,34 @@
-use crate::check::{CheckContext, CheckState};
+//! Implements context transfer for types.
+//!
+//! # Context transfer?
+//!
+//! In the type checker, [core] types are interned and allocated in an
+//! arena. This is done mainly for locality, especially considering that
+//! traversal is a very hot code path within in a type checker.
+//!
+//! While arena allocation greatly simplifies cleanup for allocated type
+//! structures, the type checker creates many temporary types that would
+//! be kept for longer than they should be.
+//!
+//! The type checker makes use of two distinct regions of memory for
+//! the [core] types:
+//!
+//! * Global memory contains types that can be shared across modules;
+//! * Local memory contains types that do not cross the module boundary;
+//!
+//! The type checker operates most of the time in local memory during
+//! its execution. Types from other modules are [`localized`], while
+//! the types that it produces are [`globalized`]. Local memory is
+//! dropped at the end of type checking, improving memory efficiency.
+//!
+//! [core]: crate::core
+//! [`localized`]: localize
+//! [`globalized`]: globalize
+
+use crate::algorithm::state::{CheckContext, CheckState};
 use crate::{ExternalQueries, Type, TypeId};
 
+/// Moves a type from local memory to global memory.
 pub fn localize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
 where
     Q: ExternalQueries,
@@ -10,6 +38,7 @@ where
     traverse(&mut source, id)
 }
 
+/// Moves a type from global memory to local memory.
 pub fn globalize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
 where
     Q: ExternalQueries,

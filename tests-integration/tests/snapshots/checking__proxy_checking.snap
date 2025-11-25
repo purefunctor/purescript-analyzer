@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+Proxy :: forall (t0 :: Type) (k :: *0) (a :: *0). (Proxy *0)
+
+Types
+Proxy :: forall (t0 :: Type) (k :: *0). (*0 -> Type)
