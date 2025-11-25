@@ -25,6 +25,7 @@ pub(crate) fn check_source(
         match scc {
             Scc::Base(id) => {
                 items::check_type_item(&mut state, &context, *id);
+                state.commit_binding_group(&context);
             }
             Scc::Recursive(id) => {
                 state.type_binding_group(&context, [*id]);

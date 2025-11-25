@@ -54,7 +54,7 @@ fn empty_engine() -> (QueryEngine, FileId) {
 fn print_terms_types(engine: QueryEngine, id: FileId) -> String {
     let indexed = engine.indexed(id).unwrap();
     let checked = engine.checked(id).unwrap();
-
+    
     let mut snapshot = String::default();
 
     writeln!(snapshot, "Terms").unwrap();
@@ -390,7 +390,7 @@ fn test_subsumes_nested_forall() {
 }
 
 #[test]
-fn test_manual() {
+fn test_proxy_checking() {
     let (engine, id) = empty_engine();
     engine.set_content(
         id,
@@ -402,57 +402,12 @@ data Proxy a = Proxy
 "#,
     );
 
-    let indexed = engine.indexed(id).unwrap();
-    let checked = engine.checked(id).unwrap();
-
-    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_term(id) else { continue };
-        let t = pretty::print_global(&engine, t);
-        eprintln!("{n} :: {t}")
-    }
-
-    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_type(id) else { continue };
-        let t = pretty::print_global(&engine, t);
-        eprintln!("{n} :: {t}")
-    }
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
 }
 
 #[test]
-fn test_manual_2() {
-    let (engine, id) = empty_engine();
-    engine.set_content(
-        id,
-        r#"
-module Main where
-
-data Maybe :: Type -> Type
-data Maybe (a :: Type) = Just a | Nothing
-"#,
-    );
-
-    let indexed = engine.indexed(id).unwrap();
-    let checked = engine.checked(id).unwrap();
-
-    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_term(id) else { continue };
-        let t = pretty::print_global(&engine, t);
-        eprintln!("{n} :: {t}")
-    }
-
-    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_type(id) else { continue };
-        let t = pretty::print_global(&engine, t);
-        eprintln!("{n} :: {t}")
-    }
-}
-
-#[test]
-fn test_manual_3() {
+fn test_proxy_inference() {
     let (engine, id) = empty_engine();
     engine.set_content(
         id,
@@ -463,22 +418,8 @@ data Proxy a = Proxy
 "#,
     );
 
-    let indexed = engine.indexed(id).unwrap();
-    let checked = engine.checked(id).unwrap();
-
-    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_term(id) else { continue };
-        let t = pretty::print_global(&engine, t);
-        eprintln!("{n} :: {t}")
-    }
-
-    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_type(id) else { continue };
-        let t = pretty::print_global(&engine, t);
-        eprintln!("{n} :: {t}")
-    }
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
 }
 
 #[test]
