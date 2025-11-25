@@ -215,9 +215,9 @@ mod tests {
             let mut map_b = StabilizedModule::default();
             let mut map_c = StabilizedModule::default();
 
-            let _ = map_a.allocate(&zero);
-            let _ = map_b.allocate(&zero);
-            let _ = map_c.allocate(&zero);
+            map_a.allocate(&zero);
+            map_b.allocate(&zero);
+            map_c.allocate(&zero);
 
             // Symmetric
             assert!(map_a == map_b);
@@ -232,11 +232,11 @@ mod tests {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
 
-            let _ = map_a.allocate(&zero);
-            let _ = map_a.allocate(&two);
+            map_a.allocate(&zero);
+            map_a.allocate(&two);
 
-            let _ = map_b.allocate(&one);
-            let _ = map_b.allocate(&two);
+            map_b.allocate(&one);
+            map_b.allocate(&two);
 
             // Symmetric
             assert!(map_a != map_b);
@@ -247,9 +247,9 @@ mod tests {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
 
-            let _ = map_a.allocate(&zero);
-            let _ = map_b.allocate(&one);
-            let _ = map_b.allocate(&two);
+            map_a.allocate(&zero);
+            map_b.allocate(&one);
+            map_b.allocate(&two);
 
             // Length check
             assert!(map_a != map_b);
@@ -259,11 +259,11 @@ mod tests {
             let mut map_a = StabilizedModule::default();
             let mut map_b = StabilizedModule::default();
 
-            let _ = map_a.allocate(&zero);
-            let _ = map_a.allocate(&one);
+            map_a.allocate(&zero);
+            map_a.allocate(&one);
 
-            let _ = map_b.allocate(&one);
-            let _ = map_b.allocate(&zero);
+            map_b.allocate(&one);
+            map_b.allocate(&zero);
 
             // Index check
             assert!(map_a != map_b);
