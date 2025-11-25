@@ -14,6 +14,7 @@ use rustc_hash::FxHashMap;
 
 use crate::algorithm::{quantify, transfer};
 use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
+use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
 #[derive(Default)]
@@ -27,6 +28,7 @@ pub struct CheckState {
 
     pub unification: UnificationContext,
     pub binding_group: BindingGroupContext,
+    pub check_steps: Vec<ErrorStep>,
 }
 
 #[derive(Default)]
@@ -215,6 +217,22 @@ impl CheckState {
                 self.checked.types.insert(item_id, type_id);
             }
         }
+    }
+
+    pub fn with_checking_step<T, F>(&mut self, step: ErrorStep, f: F) -> T
+    where
+        F: Fn(&mut CheckState) -> T,
+    {
+        self.check_steps.push(step);
+        let r = f(self);
+        self.check_steps.pop();
+        r
+    }
+
+    pub fn insert_error(&mut self, kind: ErrorKind) {
+        let step = self.check_steps.iter().copied().collect();
+        let error = CheckError { kind, step };
+        self.checked.errors.push(error);
     }
 }
 

@@ -9,6 +9,7 @@ use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{convert, kind, transfer, unification};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
+use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
@@ -19,32 +20,37 @@ pub(crate) fn check_type_item<Q>(
 ) where
     Q: ExternalQueries,
 {
-    let Some(item) = context.lowered.info.get_type_item(item_id) else { return };
-    match item {
-        TypeItemIr::DataGroup { signature, data, .. } => {
-            let Some(DataIr { variables }) = data else { return };
-            check_data_like(state, context, item_id, *signature, variables);
+    state.with_checking_step(ErrorStep::TypeItem(item_id), |state| {
+        let Some(item) = context.lowered.info.get_type_item(item_id) else {
+            return;
+        };
+
+        match item {
+            TypeItemIr::DataGroup { signature, data, .. } => {
+                let Some(DataIr { variables }) = data else { return };
+                check_data_like(state, context, item_id, *signature, variables);
+            }
+
+            TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
+                let Some(NewtypeIr { variables }) = newtype else { return };
+                check_data_like(state, context, item_id, *signature, variables);
+            }
+
+            TypeItemIr::SynonymGroup { .. } => (),
+
+            TypeItemIr::ClassGroup { .. } => (),
+
+            TypeItemIr::Foreign { signature, .. } => {
+                let Some(signature_id) = signature else { return };
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature_id, context.prim.t);
+                let inferred_type = transfer::globalize(state, context, inferred_type);
+                state.checked.types.insert(item_id, inferred_type);
+            }
+
+            TypeItemIr::Operator { .. } => (),
         }
-
-        TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
-            let Some(NewtypeIr { variables }) = newtype else { return };
-            check_data_like(state, context, item_id, *signature, variables);
-        }
-
-        TypeItemIr::SynonymGroup { .. } => (),
-
-        TypeItemIr::ClassGroup { .. } => (),
-
-        TypeItemIr::Foreign { signature, .. } => {
-            let Some(signature_id) = signature else { return };
-            let (inferred_type, _) =
-                kind::check_surface_kind(state, context, *signature_id, context.prim.t);
-            let inferred_type = transfer::globalize(state, context, inferred_type);
-            state.checked.types.insert(item_id, inferred_type);
-        }
-
-        TypeItemIr::Operator { .. } => (),
-    }
+    })
 }
 
 fn check_data_like<Q>(
@@ -56,67 +62,78 @@ fn check_data_like<Q>(
 ) where
     Q: ExternalQueries,
 {
-    let signature = signature.map(|id| convert::inspect_signature(state, context, id));
+    let signature = signature.map(|id| (id, convert::inspect_signature(state, context, id)));
 
-    let (kind_variables, type_variables, result_kind) = if let Some(signature) = signature {
-        if variables.len() != signature.arguments.len() {
-            todo!("proper arity checking errors innit");
-        };
+    let (kind_variables, type_variables, result_kind) =
+        if let Some((signature_id, signature)) = signature {
+            if variables.len() != signature.arguments.len() {
+                state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+                    id: signature_id,
+                    expected: 0,
+                    actual: 0,
+                });
 
-        let variables = variables.iter();
-        let arguments = signature.arguments.iter();
+                if let Some(variable) = signature.variables.first() {
+                    state.unbind(variable.level);
+                }
 
-        let kinds = variables.zip(arguments).map(|(variable, &argument)| {
-            // Use contravariant subtyping for type variables:
-            //
-            // data Example :: Argument -> Type
-            // data Example (a :: Variable) = Example
-            //
-            // Signature: Argument -> Type
-            // Inferred: Variable -> Type
-            //
-            // Given
-            //   Variable -> Type <: Argument -> Type
-            //
-            // Therefore
-            //   [Argument <: Variable, Type <: Type]
-            let kind = variable.kind.map_or(argument, |kind| {
-                let kind = convert::type_to_core(state, context, kind);
-                let valid = unification::subsumes(state, context, argument, kind);
-                if valid { kind } else { context.prim.unknown }
-            });
-
-            let name = variable.name.clone().unwrap_or(MISSING_NAME);
-            (variable.id, variable.visible, name, kind)
-        });
-
-        let kinds = kinds.collect_vec();
-
-        let kind_variables = signature.variables;
-        let result_kind = signature.result;
-        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-            let level = state.bind_forall(id, kind);
-            ForallBinder { visible, name, level, kind }
-        });
-
-        (kind_variables, type_variables.collect_vec(), result_kind)
-    } else {
-        let kind_variables = vec![];
-        let result_kind = context.prim.t;
-        let type_variables = variables.iter().map(|variable| {
-            let kind = match variable.kind {
-                Some(id) => convert::type_to_core(state, context, id),
-                None => state.fresh_unification_type(context),
+                return;
             };
 
-            let visible = variable.visible;
-            let name = variable.name.clone().unwrap_or(MISSING_NAME);
-            let level = state.bind_forall(variable.id, kind);
-            ForallBinder { visible, name, level, kind }
-        });
+            let variables = variables.iter();
+            let arguments = signature.arguments.iter();
 
-        (kind_variables, type_variables.collect_vec(), result_kind)
-    };
+            let kinds = variables.zip(arguments).map(|(variable, &argument)| {
+                // Use contravariant subtyping for type variables:
+                //
+                // data Example :: Argument -> Type
+                // data Example (a :: Variable) = Example
+                //
+                // Signature: Argument -> Type
+                // Inferred: Variable -> Type
+                //
+                // Given
+                //   Variable -> Type <: Argument -> Type
+                //
+                // Therefore
+                //   [Argument <: Variable, Type <: Type]
+                let kind = variable.kind.map_or(argument, |kind| {
+                    let kind = convert::type_to_core(state, context, kind);
+                    let valid = unification::subsumes(state, context, argument, kind);
+                    if valid { kind } else { context.prim.unknown }
+                });
+
+                let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                (variable.id, variable.visible, name, kind)
+            });
+
+            let kinds = kinds.collect_vec();
+
+            let kind_variables = signature.variables;
+            let result_kind = signature.result;
+            let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+                let level = state.bind_forall(id, kind);
+                ForallBinder { visible, name, level, kind }
+            });
+
+            (kind_variables, type_variables.collect_vec(), result_kind)
+        } else {
+            let kind_variables = vec![];
+            let result_kind = context.prim.t;
+            let type_variables = variables.iter().map(|variable| {
+                let kind = match variable.kind {
+                    Some(id) => convert::type_to_core(state, context, id),
+                    None => state.fresh_unification_type(context),
+                };
+
+                let visible = variable.visible;
+                let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                let level = state.bind_forall(variable.id, kind);
+                ForallBinder { visible, name, level, kind }
+            });
+
+            (kind_variables, type_variables.collect_vec(), result_kind)
+        };
 
     let data_reference = {
         let size = state.bound.size();

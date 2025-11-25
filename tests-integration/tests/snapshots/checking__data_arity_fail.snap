@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking.rs
+expression: checked.errors
+---
+[
+    CheckError {
+        kind: TypeSignatureVariableMismatch {
+            id: AstId<syntax::cst::Type>(6),
+            expected: 0,
+            actual: 0,
+        },
+        step: [
+            TypeItem(
+                Idx::<TypeItem>(0),
+            ),
+        ],
+    },
+]

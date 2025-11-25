@@ -1,6 +1,7 @@
 pub mod algorithm;
-pub mod core;
+pub mod error;
 
+pub mod core;
 pub use core::{Type, TypeId, TypeInterner};
 
 use std::sync::Arc;
@@ -11,6 +12,8 @@ use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::LoweredModule;
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+
+use crate::error::CheckError;
 
 pub trait ExternalQueries:
     QueryProxy<
@@ -27,8 +30,9 @@ pub trait ExternalQueries:
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct CheckedModule {
-    terms: FxHashMap<TermItemId, TypeId>,
-    types: FxHashMap<TypeItemId, TypeId>,
+    pub terms: FxHashMap<TermItemId, TypeId>,
+    pub types: FxHashMap<TypeItemId, TypeId>,
+    pub errors: Vec<CheckError>,
 }
 
 impl CheckedModule {

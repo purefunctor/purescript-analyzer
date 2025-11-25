@@ -529,3 +529,22 @@ newtype Mu f = In (f (Mu f))
     let snapshot = print_terms_types(engine, id);
     insta::assert_snapshot!(snapshot);
 }
+
+#[test]
+fn test_data_arity_fail() {
+    {
+        let (engine, id) = empty_engine();
+        engine.set_content(
+            id,
+            r#"
+module Main where
+
+data Maybe :: Type
+data Maybe a = Just a | Nothing
+"#,
+        );
+
+        let checked = engine.checked(id).unwrap();
+        insta::assert_debug_snapshot!(checked.errors);
+    }
+}
