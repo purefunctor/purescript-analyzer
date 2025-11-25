@@ -2,8 +2,8 @@ use std::fmt::Write;
 use std::num::NonZeroU32;
 
 use analyzer::{QueryEngine, prim};
-use checking::algorithm::unification::{self, UnificationState};
-use checking::algorithm::{CheckContext, CheckState, quantify};
+use checking::algorithm::state::{CheckContext, CheckState, UnificationState};
+use checking::algorithm::{quantify, unification};
 use checking::core::{ForallBinder, Type, TypeId, Variable, debruijn, pretty};
 use files::{FileId, Files};
 use indexing::{TermItem, TypeItem};

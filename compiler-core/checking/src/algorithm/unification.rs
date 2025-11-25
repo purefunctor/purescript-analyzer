@@ -1,10 +1,5 @@
 //! Implements subsumption and unification.
 
-pub mod context;
-pub mod level;
-
-pub use context::*;
-
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute};
