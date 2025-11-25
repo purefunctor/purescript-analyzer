@@ -74,10 +74,6 @@ where
                 && unify(state, context, t1_argument, t2_argument)
         }
 
-        (Type::Constructor(t1_file_id, t1_item_id), Type::Constructor(t2_file_id, t2_item_id)) => {
-            (t1_file_id, t1_item_id) == (t2_file_id, t2_item_id)
-        }
-
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)
                 && unify(state, context, t1_result, t2_result)
@@ -90,15 +86,6 @@ where
         (_, Type::Unification(unification_id)) => {
             solve(state, context, unification_id, t1).is_some()
         }
-
-        (Type::Variable(Variable::Bound(t1_index)), Type::Variable(Variable::Bound(t2_index))) => {
-            t1_index == t2_index
-        }
-
-        (
-            Type::Variable(Variable::Skolem(t1_level, _)),
-            Type::Variable(Variable::Skolem(t2_level, _)),
-        ) => t1_level == t2_level,
 
         _ => false,
     };
