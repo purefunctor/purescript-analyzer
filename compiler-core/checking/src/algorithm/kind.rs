@@ -238,19 +238,7 @@ where
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(_) => context.prim.unknown,
             Variable::Skolem(_, kind) => *kind,
-            Variable::Bound(index) => {
-                let size = state.bound.size();
-
-                let Some(level) = index.to_level(size) else {
-                    return context.prim.unknown;
-                };
-
-                let Some(kind) = state.kinds.get(level) else {
-                    return context.prim.unknown;
-                };
-
-                *kind
-            }
+            Variable::Bound(index) => state.core_kind(*index).unwrap_or(context.prim.unknown),
             Variable::Free(_) => context.prim.unknown,
         },
 
