@@ -54,7 +54,7 @@ fn empty_engine() -> (QueryEngine, FileId) {
 fn print_terms_types(engine: QueryEngine, id: FileId) -> String {
     let indexed = engine.indexed(id).unwrap();
     let checked = engine.checked(id).unwrap();
-    
+
     let mut snapshot = String::default();
 
     writeln!(snapshot, "Terms").unwrap();
