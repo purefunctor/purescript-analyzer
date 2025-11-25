@@ -2,8 +2,9 @@
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute};
+use crate::algorithm::{kind, substitute, transfer};
 use crate::core::{Type, TypeId, Variable, debruijn};
+use crate::error::ErrorKind;
 
 pub fn subsumes<Q>(
     state: &mut CheckState,
@@ -52,7 +53,8 @@ where
 {
     let t1 = state.normalize_type(t1);
     let t2 = state.normalize_type(t2);
-    match (&state.storage[t1], &state.storage[t2]) {
+
+    let unifies = match (&state.storage[t1], &state.storage[t2]) {
         (
             &Type::Application(t1_function, t1_argument),
             &Type::Application(t2_function, t2_argument),
@@ -89,7 +91,17 @@ where
         ) => t1_level == t2_level,
 
         _ => false,
+    };
+
+    if !unifies {
+        // at this point, it should be impossible to have
+        // unsolved unification variables within t1 and t2
+        let t1 = transfer::globalize(state, context, t1);
+        let t2 = transfer::globalize(state, context, t2);
+        state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
+
+    unifies
 }
 
 pub fn solve<Q>(

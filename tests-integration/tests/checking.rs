@@ -548,3 +548,21 @@ data Maybe a = Just a | Nothing
         insta::assert_debug_snapshot!(checked.errors);
     }
 }
+
+#[test]
+fn test_unification_fail() {
+    {
+        let (engine, id) = empty_engine();
+        engine.set_content(
+            id,
+            r#"
+module Main where
+
+data Maybe (a :: Int) = Just a | Nothing
+"#,
+        );
+
+        let checked = engine.checked(id).unwrap();
+        insta::assert_debug_snapshot!(checked.errors);
+    }
+}

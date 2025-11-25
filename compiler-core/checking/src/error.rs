@@ -1,13 +1,17 @@
 use std::sync::Arc;
 
+use crate::TypeId;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorStep {
-    TypeItem(indexing::TypeItemId),
+    TypeDeclaration(indexing::TypeItemId),
+    ConstructorArgument(lowering::TypeId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
     TypeSignatureVariableMismatch { id: lowering::TypeId, expected: u32, actual: u32 },
+    CannotUnify { t1: TypeId, t2: TypeId },
 }
 
 #[derive(Debug, PartialEq, Eq)]

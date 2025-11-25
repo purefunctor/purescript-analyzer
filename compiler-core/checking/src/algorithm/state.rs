@@ -219,7 +219,7 @@ impl CheckState {
         }
     }
 
-    pub fn with_checking_step<T, F>(&mut self, step: ErrorStep, f: F) -> T
+    pub fn with_error_step<T, F>(&mut self, step: ErrorStep, f: F) -> T
     where
         F: Fn(&mut CheckState) -> T,
     {

@@ -20,7 +20,7 @@ pub(crate) fn check_type_item<Q>(
 ) where
     Q: ExternalQueries,
 {
-    state.with_checking_step(ErrorStep::TypeItem(item_id), |state| {
+    state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return;
         };
@@ -201,9 +201,11 @@ fn check_data_constructors<Q>(
         };
 
         let arguments = arguments.iter().map(|&argument| {
-            let (inferred_type, _) =
-                kind::check_surface_kind(state, context, argument, context.prim.t);
-            inferred_type
+            state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, argument, context.prim.t);
+                inferred_type
+            })
         });
 
         let arguments = arguments.collect_vec();

@@ -4,14 +4,16 @@ expression: checked.errors
 ---
 [
     CheckError {
-        kind: TypeSignatureVariableMismatch {
-            id: AstId<syntax::cst::Type>(6),
-            expected: 0,
-            actual: 0,
+        kind: CannotUnify {
+            t1: Id<checking::core::Type>(1),
+            t2: Id<checking::core::Type>(2),
         },
         step: [
             TypeDeclaration(
                 Idx::<TypeItem>(0),
+            ),
+            ConstructorArgument(
+                AstId<syntax::cst::Type>(9),
             ),
         ],
     },
