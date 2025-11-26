@@ -340,3 +340,25 @@ fn test_031_locate_class_member_main() {
     let report = tests_integration::generated::lsp::report(&engine, &files, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_032_completion_cache_exact_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/032_completion_cache_exact"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_033_completion_cache_prefix_main() {
+    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/033_completion_cache_prefix"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
+    insta::assert_snapshot!(report);
+}

@@ -20,17 +20,19 @@ enum CursorKind {
     GotoDefinition,
     Hover,
     Completion,
+    CompletionCached,
     References,
 }
 
 impl CursorKind {
-    const CHARACTERS: &[char] = &['@', '$', '^', '%'];
+    const CHARACTERS: &[char] = &['@', '$', '^', '~', '%'];
 
     fn parse(text: &str) -> Option<CursorKind> {
         match text {
             "@" => Some(CursorKind::GotoDefinition),
             "$" => Some(CursorKind::Hover),
             "^" => Some(CursorKind::Completion),
+            "~" => Some(CursorKind::CompletionCached),
             "%" => Some(CursorKind::References),
             _ => None,
         }
@@ -75,6 +77,7 @@ pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
     let line_index = LineIndex::new(&content);
     let cursors = extract_cursors(&content);
 
+    let mut cache = SuggestionsCache::default();
     let mut result = String::new();
     for (index, (position, cursor)) in cursors.iter().enumerate() {
         let uri = uri.clone();
@@ -97,7 +100,11 @@ pub fn report(engine: &QueryEngine, files: &Files, id: FileId) -> String {
         }
         writeln!(result).unwrap();
 
-        dispatch_cursor(&mut result, engine, files, *position, *cursor, uri);
+        if matches!(cursor, CursorKind::Completion) {
+            cache = SuggestionsCache::default();
+        }
+
+        dispatch_cursor(&mut result, engine, files, &mut cache, *position, *cursor, uri);
     }
 
     redact_paths(result)
@@ -107,12 +114,11 @@ fn dispatch_cursor(
     result: &mut String,
     engine: &QueryEngine,
     files: &Files,
+    cache: &mut SuggestionsCache,
     position: Position,
     cursor: CursorKind,
     uri: Url,
 ) {
-    let mut cache = SuggestionsCache::default();
-
     let render_location = |location: Location| -> String {
         format!(
             "{} @ {}:{}..{}:{}",
@@ -186,9 +192,9 @@ fn dispatch_cursor(
                 writeln!(result, "<empty>").unwrap();
             }
         }
-        CursorKind::Completion => {
+        CursorKind::Completion | CursorKind::CompletionCached => {
             if let Ok(Some(response)) =
-                analyzer::completion::implementation(engine, files, &mut cache, uri, position)
+                analyzer::completion::implementation(engine, files, cache, uri, position)
             {
                 match response {
                     CompletionResponse::Array(items)
