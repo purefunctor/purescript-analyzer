@@ -223,13 +223,13 @@ fn get_or_populate_suggestions<F: Filter>(
 
     if let Some(cached) = cache.get(&query) {
         tracing::debug!("Found exact match for '{query}'");
-        let filtered = filter_suggestions(cached, &filter, context.range);
+        let filtered = filter_suggestions(cached, prefix, &filter, context);
         return Ok(Arc::new(filtered));
     }
 
     if let Some(cached) = cache.get_ancestor_value(&query) {
         tracing::debug!("Found prefix match for '{query}'");
-        let filtered = filter_suggestions(cached, &filter, context.range);
+        let filtered = filter_suggestions(cached, prefix, &filter, context);
 
         let key = query.to_string();
         let value = Arc::new(filtered);
@@ -267,37 +267,56 @@ fn get_or_populate_suggestions<F: Filter>(
 
 fn filter_suggestions<F>(
     cached: &SuggestionsCacheEntry,
+    prefix: Option<&str>,
     filter: &F,
-    range: Option<Range>,
+    context: &Context,
 ) -> SuggestionsCacheEntry
 where
     F: Filter,
 {
     SuggestionsCacheEntry {
-        terms: collect_entries(&cached.terms, filter, range),
-        types: collect_entries(&cached.types, filter, range),
-        qualified_terms: collect_entries(&cached.qualified_terms, filter, range),
-        qualified_types: collect_entries(&cached.qualified_types, filter, range),
+        terms: collect_entries(&cached.terms, filter, prefix, context),
+        types: collect_entries(&cached.types, filter, prefix, context),
+        qualified_terms: collect_entries(&cached.qualified_terms, filter, prefix, context),
+        qualified_types: collect_entries(&cached.qualified_types, filter, prefix, context),
     }
 }
 
 fn collect_entries<F>(
     items: &[CompletionItem],
     filter: &F,
-    range: Option<Range>,
+    prefix: Option<&str>,
+    context: &Context,
 ) -> Vec<CompletionItem>
 where
     F: Filter,
 {
-    let entries =
-        items.iter().filter(|item| filter.matches(&item.label)).cloned().map(|mut item| {
-            let Some(range) = range else {
-                return item;
+    let entries = items.iter().filter(|item| {
+        if !filter.matches(&item.label) {
+            return false;
+        }
+        if item.additional_text_edits.is_some() {
+            let has_import = match item.kind {
+                Some(CompletionItemKind::VALUE) => context.has_term_import(prefix, &item.label),
+                Some(CompletionItemKind::STRUCT) => context.has_type_import(prefix, &item.label),
+                _ => false,
             };
-            if let Some(CompletionTextEdit::Edit(text_edit)) = &mut item.text_edit {
-                text_edit.range = range;
+            if has_import {
+                return false;
             }
-            item
-        });
+        }
+        true
+    });
+
+    let entries = entries.cloned().map(|mut item| {
+        let Some(range) = context.range else {
+            return item;
+        };
+        if let Some(CompletionTextEdit::Edit(text_edit)) = &mut item.text_edit {
+            text_edit.range = range;
+        }
+        item
+    });
+
     entries.collect()
 }
