@@ -2,6 +2,7 @@ pub mod render;
 
 use std::fmt::Write;
 
+use analyzer::completion::SuggestionsCache;
 use analyzer::{QueryEngine, prim};
 use async_lsp::lsp_types::{
     CompletionList, CompletionResponse, GotoDefinitionResponse, HoverContents, LanguageString,
@@ -110,6 +111,8 @@ fn dispatch_cursor(
     cursor: CursorKind,
     uri: Url,
 ) {
+    let mut cache = SuggestionsCache::default();
+
     let render_location = |location: Location| -> String {
         format!(
             "{} @ {}:{}..{}:{}",
@@ -185,7 +188,7 @@ fn dispatch_cursor(
         }
         CursorKind::Completion => {
             if let Ok(Some(response)) =
-                analyzer::completion::implementation(engine, files, uri, position)
+                analyzer::completion::implementation(engine, files, &mut cache, uri, position)
             {
                 match response {
                     CompletionResponse::Array(items)

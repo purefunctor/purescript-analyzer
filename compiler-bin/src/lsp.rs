@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::{env, fs, mem, process};
 
+use analyzer::completion::SuggestionsCache;
 use analyzer::symbols::WorkspaceSymbolsCache;
 use analyzer::{Files, QueryEngine, prim};
 use async_lsp::client_monitor::ClientProcessMonitorLayer;
@@ -34,6 +35,7 @@ pub struct State {
     pub files: Arc<RwLock<Files>>,
 
     pub workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
+    pub suggestions_cache: Arc<RwLock<SuggestionsCache>>,
 
     pub root: Option<PathBuf>,
 }
@@ -49,9 +51,12 @@ impl State {
         let workspace_symbols_cache = WorkspaceSymbolsCache::default();
         let workspace_symbols_cache = Arc::new(RwLock::new(workspace_symbols_cache));
 
+        let suggestions_cache = SuggestionsCache::default();
+        let suggestions_cache = Arc::new(RwLock::new(suggestions_cache));
+
         let root = None;
 
-        State { config, client, engine, files, workspace_symbols_cache, root }
+        State { config, client, engine, files, workspace_symbols_cache, suggestions_cache, root }
     }
 
     fn spawn<T>(&self, f: impl FnOnce(StateSnapshot) -> T + Send + 'static) -> task::JoinHandle<T>
@@ -62,6 +67,7 @@ impl State {
             engine: self.engine.snapshot(),
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&self.suggestions_cache),
         };
         task::spawn_blocking(move || f(snapshot))
     }
@@ -70,12 +76,18 @@ impl State {
         let mut cache = self.workspace_symbols_cache.write();
         mem::take(&mut *cache);
     }
+
+    fn invalidate_suggestions_cache(&self) {
+        let mut cache = self.suggestions_cache.write();
+        mem::take(&mut *cache);
+    }
 }
 
 struct StateSnapshot {
     engine: QueryEngine,
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
+    suggestions_cache: Arc<RwLock<SuggestionsCache>>,
 }
 
 impl StateSnapshot {
@@ -237,8 +249,17 @@ fn completion(
     let _span = tracing::info_span!("completion").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
-    analyzer::completion::implementation(&snapshot.engine, &snapshot.files(), uri, position)
-        .on_non_fatal(None)
+
+    let mut cache = snapshot.suggestions_cache.write();
+
+    analyzer::completion::implementation(
+        &snapshot.engine,
+        &snapshot.files(),
+        &mut cache,
+        uri,
+        position,
+    )
+    .on_non_fatal(None)
 }
 
 fn resolve_completion_item(
@@ -281,6 +302,12 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
     }
 
     state.invalidate_workspace_symbols();
+
+    Ok(())
+}
+
+fn did_save(state: &mut State, _p: DidSaveTextDocumentParams) -> Result<(), LspError> {
+    state.invalidate_suggestions_cache();
 
     Ok(())
 }
@@ -358,7 +385,7 @@ pub async fn start(config: Arc<cli::Config>) {
             .request_snapshot::<request::WorkspaceSymbolRequest>(workspace_symbols)
             .notification::<notification::Initialized>(adapt_notification(initialized))
             .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
-            .notification::<notification::DidSaveTextDocument>(|_, _| ControlFlow::Continue(()))
+            .notification::<notification::DidSaveTextDocument>(adapt_notification(did_save))
             .notification::<notification::DidCloseTextDocument>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidChangeConfiguration>(|_, _| ControlFlow::Continue(()))
             .notification::<notification::DidChangeTextDocument>(adapt_notification(did_change));
