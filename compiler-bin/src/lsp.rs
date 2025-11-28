@@ -16,7 +16,7 @@ use async_lsp::lsp_types::*;
 use async_lsp::panic::CatchUnwindLayer;
 use async_lsp::router::Router;
 use async_lsp::server::LifecycleLayer;
-use async_lsp::{ClientSocket, ErrorCode, ResponseError};
+use async_lsp::{ClientSocket, ResponseError};
 use globset::{Glob, GlobSetBuilder};
 use parking_lot::RwLock;
 use path_absolutize::Absolutize;
@@ -25,7 +25,7 @@ use tower::ServiceBuilder;
 use walkdir::WalkDir;
 
 use crate::cli;
-use crate::lsp::error::{IntoResponseError, LspError, NonFatalResult};
+use crate::lsp::error::{AnalyzerResultExt, LspError};
 
 pub struct State {
     pub config: Arc<cli::Config>,
@@ -226,7 +226,7 @@ fn load_files(state: &mut State, files: &[PathBuf]) -> Result<(), LspError> {
 fn definition(
     snapshot: StateSnapshot,
     p: GotoDefinitionParams,
-) -> Result<Option<GotoDefinitionResponse>, ResponseError> {
+) -> Result<Option<GotoDefinitionResponse>, LspError> {
     let _span = tracing::info_span!("definition").entered();
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
@@ -234,7 +234,7 @@ fn definition(
         .on_non_fatal(None)
 }
 
-fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, ResponseError> {
+fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, LspError> {
     let _span = tracing::info_span!("hover").entered();
     let uri = p.text_document_position_params.text_document.uri;
     let position = p.text_document_position_params.position;
@@ -245,7 +245,7 @@ fn hover(snapshot: StateSnapshot, p: HoverParams) -> Result<Option<Hover>, Respo
 fn completion(
     snapshot: StateSnapshot,
     p: CompletionParams,
-) -> Result<Option<CompletionResponse>, ResponseError> {
+) -> Result<Option<CompletionResponse>, LspError> {
     let _span = tracing::info_span!("completion").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
@@ -265,7 +265,7 @@ fn completion(
 fn resolve_completion_item(
     snapshot: StateSnapshot,
     item: CompletionItem,
-) -> Result<CompletionItem, ResponseError> {
+) -> Result<CompletionItem, LspError> {
     let _span = tracing::info_span!("resolve_completion_item").entered();
     analyzer::completion::resolve::implementation(&snapshot.engine, item)
         .or_else(|(error, item)| Err(error).on_non_fatal(item))
@@ -274,7 +274,7 @@ fn resolve_completion_item(
 fn references(
     snapshot: StateSnapshot,
     p: ReferenceParams,
-) -> Result<Option<Vec<Location>>, ResponseError> {
+) -> Result<Option<Vec<Location>>, LspError> {
     let _span = tracing::info_span!("references").entered();
     let uri = p.text_document_position.text_document.uri;
     let position = p.text_document_position.position;
@@ -285,7 +285,7 @@ fn references(
 fn workspace_symbols(
     snapshot: StateSnapshot,
     p: WorkspaceSymbolParams,
-) -> Result<Option<WorkspaceSymbolResponse>, ResponseError> {
+) -> Result<Option<WorkspaceSymbolResponse>, LspError> {
     let _span = tracing::info_span!("workspace_symbols").entered();
 
     let mut cache = snapshot.workspace_symbols_cache.write();
@@ -335,40 +335,36 @@ fn on_change(state: &mut State, uri: &str, content: &str) -> Result<(), LspError
 trait RequestExtension: BorrowMut<Router<State>> {
     fn request_snapshot<R: request::Request>(
         &mut self,
-        f: impl Fn(StateSnapshot, R::Params) -> Result<R::Result, ResponseError> + Send + Copy + 'static,
-    ) -> &mut Self
-    where
-        R::Params: Send + 'static,
-        R::Result: Send + 'static,
-    {
-        self.borrow_mut().request::<R, _>(move |this, p| {
-            let task = this.spawn(move |snapshot| f(snapshot, p));
+        action: impl Fn(StateSnapshot, R::Params) -> Result<R::Result, LspError> + Send + Copy + 'static,
+    ) -> &mut Self {
+        self.borrow_mut().request::<R, _>(move |state, parameters| {
+            let task = state.spawn(move |snapshot| action(snapshot, parameters));
             async move {
-                task.await
-                    .map_err(|_| ResponseError::new(ErrorCode::REQUEST_FAILED, "REQUEST_FAILED"))?
+                task.await.map_err(LspError::JoinError).flatten().map_err(|error| {
+                    error.emit_trace();
+                    let code = error.code();
+                    let message = error.message();
+                    ResponseError::new(code, message)
+                })
             }
+        });
+        self
+    }
+
+    fn notification_ext<N: notification::Notification>(
+        &mut self,
+        action: impl Fn(&mut State, N::Params) -> Result<(), LspError> + Send + Copy + 'static,
+    ) -> &mut Self {
+        let this: &mut Router<State> = self.borrow_mut();
+        this.notification::<N>(move |state, parameters| {
+            let _ = action(state, parameters).inspect_err(|error| error.emit_trace());
+            ControlFlow::Continue(())
         });
         self
     }
 }
 
 impl RequestExtension for Router<State> {}
-
-fn adapt_notification<T, E, P>(
-    f: impl Fn(&mut State, P) -> Result<T, E>,
-) -> impl Fn(&mut State, P) -> ControlFlow<async_lsp::Result<T>>
-where
-    E: IntoResponseError,
-{
-    move |s, p| match f(s, p) {
-        Ok(_) => ControlFlow::Continue(()),
-        Err(error) => {
-            let error = error.into_response_error();
-            let error = async_lsp::Error::from(error);
-            ControlFlow::Break(Err(error))
-        }
-    }
-}
 
 pub async fn start(config: Arc<cli::Config>) {
     let (server, _) = async_lsp::MainLoop::new_server(move |client| {
@@ -383,12 +379,12 @@ pub async fn start(config: Arc<cli::Config>) {
             .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
             .request_snapshot::<request::References>(references)
             .request_snapshot::<request::WorkspaceSymbolRequest>(workspace_symbols)
-            .notification::<notification::Initialized>(adapt_notification(initialized))
-            .notification::<notification::DidOpenTextDocument>(|_, _| ControlFlow::Continue(()))
-            .notification::<notification::DidSaveTextDocument>(adapt_notification(did_save))
-            .notification::<notification::DidCloseTextDocument>(|_, _| ControlFlow::Continue(()))
-            .notification::<notification::DidChangeConfiguration>(|_, _| ControlFlow::Continue(()))
-            .notification::<notification::DidChangeTextDocument>(adapt_notification(did_change));
+            .notification_ext::<notification::Initialized>(initialized)
+            .notification_ext::<notification::DidOpenTextDocument>(|_, _| Ok(()))
+            .notification_ext::<notification::DidSaveTextDocument>(did_save)
+            .notification_ext::<notification::DidCloseTextDocument>(|_, _| Ok(()))
+            .notification_ext::<notification::DidChangeConfiguration>(|_, _| Ok(()))
+            .notification_ext::<notification::DidChangeTextDocument>(did_change);
 
         ServiceBuilder::new()
             .layer(LifecycleLayer::default())
