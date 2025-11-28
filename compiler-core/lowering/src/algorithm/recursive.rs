@@ -269,6 +269,20 @@ fn lower_expression_kind(
             let bind = state.resolve_term_full(context, qualifier.as_deref(), "bind");
             let discard = state.resolve_term_full(context, qualifier.as_deref(), "discard");
 
+            if bind.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state
+                    .errors
+                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Bind, id }));
+            }
+
+            if discard.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state
+                    .errors
+                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Discard, id }));
+            }
+
             let statements = cst
                 .statements()
                 .map(|cst| {
@@ -288,6 +302,20 @@ fn lower_expression_kind(
             let map = state.resolve_term_full(context, qualifier.as_deref(), "map");
             let apply = state.resolve_term_full(context, qualifier.as_deref(), "apply");
 
+            if map.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state
+                    .errors
+                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Map, id }));
+            }
+
+            if apply.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state
+                    .errors
+                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
+            }
+
             let statements = cst
                 .statements()
                 .map(|cst| {
@@ -303,6 +331,10 @@ fn lower_expression_kind(
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
                 state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
+            if resolution.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::ExprConstructor { id }));
+            }
             ExpressionKind::Constructor { resolution }
         }
         cst::Expression::ExpressionVariable(cst) => {
@@ -310,6 +342,10 @@ fn lower_expression_kind(
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::lower)?;
                 state.resolve_term_full(context, qualifier.as_deref(), name.as_str())
             });
+            if resolution.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::ExprVariable { id }));
+            }
             ExpressionKind::Variable { resolution }
         }
         cst::Expression::ExpressionOperatorName(cst) => {
@@ -318,6 +354,10 @@ fn lower_expression_kind(
                     lower_qualified_name(&cst, cst::QualifiedName::operator_name)?;
                 state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
+            if resolution.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::ExprOperatorName { id }));
+            }
             ExpressionKind::OperatorName { resolution }
         }
         cst::Expression::ExpressionSection(_) => ExpressionKind::Section,
@@ -704,6 +744,10 @@ fn lower_type_kind(
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
+            if resolution.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::TypeConstructor { id }));
+            }
             TypeKind::Constructor { resolution }
         }
         // Rank-N Types must be scoped. See `lower_forall`.
@@ -728,6 +772,10 @@ fn lower_type_kind(
                     lower_qualified_name(&cst, cst::QualifiedName::operator_name)?;
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
+            if resolution.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+            }
             TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(cst) => {
@@ -753,6 +801,10 @@ fn lower_type_kind(
                 let text = cst.text();
                 state.resolve_type_variable(id, text)
             });
+            if resolution.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::TypeVariable { id }));
+            }
             TypeKind::Variable { name, resolution }
         }
         cst::Type::TypeWildcard(_) => TypeKind::Wildcard,
@@ -819,7 +871,14 @@ fn lower_term_operator(
         Some((qualifier, name))
     })?;
 
-    let (file_id, term_id) = state.resolve_term_reference(context, qualifier.as_deref(), &name)?;
+    let Some((file_id, term_id)) =
+        state.resolve_term_reference(context, qualifier.as_deref(), &name)
+    else {
+        let id = context.stabilized.lookup_cst(cst).expect_id();
+        state.errors.push(LoweringError::NotInScope(NotInScope::TermOperator { id }));
+        return None;
+    };
+
     state.info.term_operator.insert(id, (file_id, term_id));
 
     Some(id)
@@ -834,7 +893,14 @@ fn lower_type_operator(
     let (qualifier, name) =
         cst.qualified().and_then(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator))?;
 
-    let (file_id, type_id) = state.resolve_type_reference(context, qualifier.as_deref(), &name)?;
+    let Some((file_id, type_id)) =
+        state.resolve_type_reference(context, qualifier.as_deref(), &name)
+    else {
+        let id = context.stabilized.lookup_cst(cst).expect_id();
+        state.errors.push(LoweringError::NotInScope(NotInScope::TypeOperator { id }));
+        return None;
+    };
+
     state.info.type_operator.insert(id, (file_id, type_id));
 
     Some(id)

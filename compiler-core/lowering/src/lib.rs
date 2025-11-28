@@ -1,9 +1,11 @@
 mod algorithm;
 
+pub mod error;
 pub mod intermediate;
 pub mod scope;
 pub mod source;
 
+pub use error::*;
 pub use intermediate::*;
 pub use scope::*;
 pub use source::*;
@@ -25,6 +27,7 @@ pub struct LoweredModule {
     pub nodes: LoweringGraphNodes,
     pub term_scc: Vec<Scc<TermItemId>>,
     pub type_scc: Vec<Scc<TypeItemId>>,
+    pub errors: Vec<LoweringError>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -45,7 +48,7 @@ pub fn lower_module(
     indexed: &IndexedModule,
     resolved: &ResolvedModule,
 ) -> LoweredModule {
-    let algorithm::State { info, graph, nodes, term_graph, type_graph, .. } =
+    let algorithm::State { info, graph, nodes, term_graph, type_graph, errors, .. } =
         algorithm::lower_module(file_id, module, prim, stabilized, indexed, resolved);
 
     let term_scc = tarjan_scc(&term_graph);
@@ -54,7 +57,7 @@ pub fn lower_module(
     let type_scc = tarjan_scc(&type_graph);
     let type_scc = type_scc.into_iter().map(into_scc(&type_graph)).collect();
 
-    LoweredModule { info, graph, nodes, term_scc, type_scc }
+    LoweredModule { info, graph, nodes, term_scc, type_scc, errors }
 }
 
 fn into_scc<N, E>(graph: &DiGraphMap<N, E, FxBuildHasher>) -> impl FnMut(Vec<N>) -> Scc<N>

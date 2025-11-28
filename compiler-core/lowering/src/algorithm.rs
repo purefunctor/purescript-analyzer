@@ -17,6 +17,7 @@ use smol_str::SmolStr;
 use stabilizing::{ExpectId, StabilizedModule};
 use syntax::cst;
 
+use crate::error::*;
 use crate::intermediate::*;
 use crate::scope::*;
 use crate::source::*;
@@ -33,6 +34,8 @@ pub(crate) struct State {
 
     pub(crate) term_graph: ItemGraph<TermItemId>,
     pub(crate) type_graph: ItemGraph<TypeItemId>,
+
+    pub(crate) errors: Vec<LoweringError>,
 }
 
 type ItemGraph<T> = DiGraphMap<T, (), FxBuildHasher>;
