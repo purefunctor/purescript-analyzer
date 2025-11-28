@@ -212,21 +212,26 @@ fn lower_expression_kind(
             let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
             ExpressionKind::LetIn { bindings, expression }
         }),
-        cst::Expression::ExpressionLambda(cst) => state.with_scope(|s| {
-            s.push_binder_scope();
+        cst::Expression::ExpressionLambda(cst) => state.with_scope(|state| {
+            state.push_binder_scope();
             let binders = cst
                 .function_binders()
                 .map(|cst| {
                     let children = cst.children();
-                    children.map(|cst| lower_binder(s, context, &cst)).collect()
+                    children.map(|cst| lower_binder(state, context, &cst)).collect()
                 })
                 .unwrap_or_default();
-            let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
+            let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             ExpressionKind::Lambda { binders, expression }
         }),
         cst::Expression::ExpressionCaseOf(cst) => {
-            let lower_case_branch =
-                |state: &mut State, context: &Context, cst: &cst::CaseBranch| {
+            fn lower_case_branch(
+                state: &mut State,
+                context: &Context,
+                cst: &cst::CaseBranch,
+            ) -> CaseBranch {
+                state.with_scope(|state| {
+                    state.push_binder_scope();
                     let binders = cst
                         .binders()
                         .map(|cst| {
@@ -236,7 +241,8 @@ fn lower_expression_kind(
                     let guarded_expression =
                         cst.guarded_expression().map(|cst| lower_guarded(state, context, &cst));
                     CaseBranch { binders, guarded_expression }
-                };
+                })
+            }
 
             let trunk = cst
                 .trunk()
@@ -253,38 +259,42 @@ fn lower_expression_kind(
 
             ExpressionKind::CaseOf { trunk, branches }
         }
-        cst::Expression::ExpressionDo(cst) => state.with_scope(|s| {
+        cst::Expression::ExpressionDo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
                 let text = token.text();
                 Some(SmolStr::from(text))
             });
 
-            let bind = s.resolve_term_full(context, qualifier.as_deref(), "bind");
-            let discard = s.resolve_term_full(context, qualifier.as_deref(), "discard");
+            let bind = state.resolve_term_full(context, qualifier.as_deref(), "bind");
+            let discard = state.resolve_term_full(context, qualifier.as_deref(), "discard");
 
             let statements = cst
                 .statements()
-                .map(|cst| cst.children().map(|cst| lower_do_statement(s, context, &cst)).collect())
+                .map(|cst| {
+                    cst.children().map(|cst| lower_do_statement(state, context, &cst)).collect()
+                })
                 .unwrap_or_default();
 
             ExpressionKind::Do { bind, discard, statements }
         }),
-        cst::Expression::ExpressionAdo(cst) => state.with_scope(|s| {
+        cst::Expression::ExpressionAdo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
                 let text = token.text();
                 Some(SmolStr::from(text))
             });
 
-            let map = s.resolve_term_full(context, qualifier.as_deref(), "map");
-            let apply = s.resolve_term_full(context, qualifier.as_deref(), "apply");
+            let map = state.resolve_term_full(context, qualifier.as_deref(), "map");
+            let apply = state.resolve_term_full(context, qualifier.as_deref(), "apply");
 
             let statements = cst
                 .statements()
-                .map(|cst| cst.children().map(|cst| lower_do_statement(s, context, &cst)).collect())
+                .map(|cst| {
+                    cst.children().map(|cst| lower_do_statement(state, context, &cst)).collect()
+                })
                 .unwrap_or_default();
-            let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
+            let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
 
             ExpressionKind::Ado { map, apply, statements, expression }
         }),
