@@ -1,4 +1,5 @@
 pub mod error;
+pub mod event;
 pub mod extension;
 
 use std::borrow::BorrowMut;
@@ -12,6 +13,8 @@ use analyzer::symbols::WorkspaceSymbolsCache;
 use analyzer::{Files, QueryEngine, prim};
 use async_lsp::client_monitor::ClientProcessMonitorLayer;
 use async_lsp::concurrency::ConcurrencyLayer;
+use async_lsp::lsp_types::notification::Notification;
+use async_lsp::lsp_types::request::Request;
 use async_lsp::lsp_types::*;
 use async_lsp::panic::CatchUnwindLayer;
 use async_lsp::router::Router;
@@ -64,6 +67,7 @@ impl State {
         T: Send + 'static,
     {
         let snapshot = StateSnapshot {
+            client: self.client.clone(),
             engine: self.engine.snapshot(),
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
@@ -84,6 +88,7 @@ impl State {
 }
 
 struct StateSnapshot {
+    client: ClientSocket,
     engine: QueryEngine,
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
@@ -306,9 +311,9 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
     Ok(())
 }
 
-fn did_save(state: &mut State, _p: DidSaveTextDocumentParams) -> Result<(), LspError> {
+fn did_save(state: &mut State, p: DidSaveTextDocumentParams) -> Result<(), LspError> {
     state.invalidate_suggestions_cache();
-
+    event::emit_collect_diagnostics(state, p.text_document.uri)?;
     Ok(())
 }
 
@@ -333,7 +338,7 @@ fn on_change(state: &mut State, uri: &str, content: &str) -> Result<(), LspError
 }
 
 trait RequestExtension: BorrowMut<Router<State>> {
-    fn request_snapshot<R: request::Request>(
+    fn request_snapshot<R: Request>(
         &mut self,
         action: impl Fn(StateSnapshot, R::Params) -> Result<R::Result, LspError> + Send + Copy + 'static,
     ) -> &mut Self {
@@ -351,13 +356,27 @@ trait RequestExtension: BorrowMut<Router<State>> {
         self
     }
 
-    fn notification_ext<N: notification::Notification>(
+    fn notification_ext<N: Notification>(
         &mut self,
         action: impl Fn(&mut State, N::Params) -> Result<(), LspError> + Send + Copy + 'static,
     ) -> &mut Self {
         let this: &mut Router<State> = self.borrow_mut();
         this.notification::<N>(move |state, parameters| {
             let _ = action(state, parameters).inspect_err(|error| error.emit_trace());
+            ControlFlow::Continue(())
+        });
+        self
+    }
+    fn event_ext<E>(
+        &mut self,
+        action: impl Fn(&mut State, E) -> Result<(), LspError> + Send + Copy + 'static,
+    ) -> &mut Self
+    where
+        E: Send + 'static,
+    {
+        let this: &mut Router<State> = self.borrow_mut();
+        this.event::<E>(move |state, event| {
+            let _ = action(state, event).inspect_err(|error| error.emit_trace());
             ControlFlow::Continue(())
         });
         self
@@ -384,7 +403,8 @@ pub async fn start(config: Arc<cli::Config>) {
             .notification_ext::<notification::DidSaveTextDocument>(did_save)
             .notification_ext::<notification::DidCloseTextDocument>(|_, _| Ok(()))
             .notification_ext::<notification::DidChangeConfiguration>(|_, _| Ok(()))
-            .notification_ext::<notification::DidChangeTextDocument>(did_change);
+            .notification_ext::<notification::DidChangeTextDocument>(did_change)
+            .event_ext::<event::CollectDiagnostics>(event::collect_diagnostics);
 
         ServiceBuilder::new()
             .layer(LifecycleLayer::default())

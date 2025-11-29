@@ -29,6 +29,8 @@ pub enum LspError {
     Utf8Error(#[from] str::Utf8Error),
     #[error("GlobSetError: {0}")]
     GlobSetError(#[from] globset::Error),
+    #[error("async_lsp::Error: {0}")]
+    AsyncLspError(#[from] async_lsp::Error),
 }
 
 impl LspError {
