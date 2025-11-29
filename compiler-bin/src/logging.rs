@@ -17,7 +17,9 @@ where
 {
     fn on_enter(&self, id: &tracing::span::Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
         if let Some(span) = ctx.span(id) {
-            span.extensions_mut().insert(Instant::now());
+            if span.extensions().get::<Instant>().is_none() {
+                span.extensions_mut().insert(Instant::now());
+            }
         }
     }
 
