@@ -23,5 +23,5 @@ Local Types:
 Errors:
   - ExistingTerm { existing: (Idx::<File>(9), Idx::<TermItem>(0)), duplicate: (Idx::<File>(9), Idx::<TermItem>(1)) }
   - ExistingType { existing: (Idx::<File>(9), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(9), Idx::<TypeItem>(1)) }
-  - ExistingTerm { existing: (Idx::<File>(9), Idx::<TermItem>(0)), duplicate: (Idx::<File>(9), Idx::<TermItem>(1)) }
-  - ExistingType { existing: (Idx::<File>(9), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(9), Idx::<TypeItem>(1)) }
+  - TermExportConflict { existing: (Idx::<File>(9), Idx::<TermItem>(0), Local), duplicate: (Idx::<File>(9), Idx::<TermItem>(1), Local) }
+  - TypeExportConflict { existing: (Idx::<File>(9), Idx::<TypeItem>(0), Local), duplicate: (Idx::<File>(9), Idx::<TypeItem>(1), Local) }

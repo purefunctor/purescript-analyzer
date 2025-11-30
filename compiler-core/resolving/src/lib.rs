@@ -19,8 +19,8 @@ pub trait ExternalQueries:
 pub struct ResolvedModule {
     pub unqualified: ResolvedImportsUnqualified,
     pub qualified: ResolvedImportsQualified,
-    pub exports: ResolvedItems,
-    pub locals: ResolvedItems,
+    pub exports: ResolvedExports,
+    pub locals: ResolvedLocals,
     pub errors: Vec<ResolvingError>,
 }
 
@@ -101,16 +101,13 @@ impl ResolvedModule {
 type ResolvedImportsUnqualified = FxHashMap<SmolStr, Vec<ResolvedImport>>;
 type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
 
-type TermMap = FxHashMap<SmolStr, (FileId, TermItemId)>;
-type TypeMap = FxHashMap<SmolStr, (FileId, TypeItemId)>;
-
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct ResolvedItems {
-    terms: TermMap,
-    types: TypeMap,
+pub struct ResolvedLocals {
+    terms: FxHashMap<SmolStr, (FileId, TermItemId)>,
+    types: FxHashMap<SmolStr, (FileId, TypeItemId)>,
 }
 
-impl ResolvedItems {
+impl ResolvedLocals {
     pub fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId)> {
         self.terms.get(name).copied()
     }
@@ -125,6 +122,36 @@ impl ResolvedItems {
 
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
         self.types.iter().map(|(k, (f, i))| (k, *f, *i))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportSource {
+    Local,
+    Import(ImportId),
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ResolvedExports {
+    terms: FxHashMap<SmolStr, (FileId, TermItemId, ExportSource)>,
+    types: FxHashMap<SmolStr, (FileId, TypeItemId, ExportSource)>,
+}
+
+impl ResolvedExports {
+    pub fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId)> {
+        self.terms.get(name).copied().map(|(f, i, _)| (f, i))
+    }
+
+    pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.types.get(name).copied().map(|(f, i, _)| (f, i))
+    }
+
+    pub fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
+        self.terms.iter().map(|(k, (f, i, _))| (k, *f, *i))
+    }
+
+    pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.types.iter().map(|(k, (f, i, _))| (k, *f, *i))
     }
 }
 
