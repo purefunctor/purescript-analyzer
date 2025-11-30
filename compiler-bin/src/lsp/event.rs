@@ -2,6 +2,7 @@ use analyzer::{common, locate};
 use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
 use files::FileId;
+use rowan::ast::AstNode;
 use syntax::SyntaxNode;
 
 use crate::lsp::error::LspError;
@@ -160,15 +161,30 @@ fn resolved_error<'context>(
         resolving::ResolvingError::ExistingType { .. } => None,
 
         resolving::ResolvingError::InvalidImportStatement { id } => {
-            let ptr = stabilized.syntax_ptr(*id)?;
+            let ptr = stabilized.ast_ptr(*id)?;
+
+            let message = {
+                let cst = ptr.to_node(root);
+
+                let name = cst.module_name().map(|cst| {
+                    let range = cst.syntax().text_range();
+                    content[range].trim()
+                });
+
+                let name = name.unwrap_or("<ParseError>");
+                format!("Cannot import module '{name}'")
+            };
+
+            let ptr = ptr.syntax_node_ptr();
             let range = locate::syntax_range(content, root, &ptr)?;
+
             Some(Diagnostic {
                 range,
                 severity: Some(DiagnosticSeverity::ERROR),
                 code: Some(NumberOrString::String("InvalidImportStatement".to_string())),
                 code_description: None,
                 source,
-                message: "Invalid import statement".to_string(),
+                message,
                 related_information: None,
                 tags: None,
                 data: None,
@@ -177,14 +193,22 @@ fn resolved_error<'context>(
 
         resolving::ResolvingError::InvalidImportItem { id } => {
             let ptr = stabilized.syntax_ptr(*id)?;
+
+            let message = {
+                let range = ptr.to_node(root).text_range();
+                let name = content[range].trim();
+                format!("Cannot import item '{name}'")
+            };
+
             let range = locate::syntax_range(content, root, &ptr)?;
+
             Some(Diagnostic {
                 range,
                 severity: Some(DiagnosticSeverity::ERROR),
                 code: Some(NumberOrString::String("InvalidImportItem".to_string())),
                 code_description: None,
                 source,
-                message: "Invalid import item".to_string(),
+                message,
                 related_information: None,
                 tags: None,
                 data: None,

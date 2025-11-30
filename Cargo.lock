@@ -1266,6 +1266,7 @@ dependencies = [
  "path-absolutize",
  "radix_trie",
  "resolving",
+ "rowan",
  "serde",
  "spago",
  "stabilizing",
