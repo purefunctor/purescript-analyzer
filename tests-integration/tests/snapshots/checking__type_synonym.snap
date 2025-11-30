@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+
+Types
+AliasType :: Type
+AliasTypeType :: (Type -> Type)
+CheckApply :: forall (t2 :: Type) (t7 :: Type). ((*0 -> *1) -> *0 -> *1)

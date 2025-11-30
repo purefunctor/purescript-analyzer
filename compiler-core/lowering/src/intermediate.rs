@@ -315,7 +315,7 @@ pub struct NewtypeIr {
 #[derive(Debug, PartialEq, Eq)]
 pub struct SynonymIr {
     pub variables: Arc<[TypeVariableBinding]>,
-    pub type_: Option<TypeId>,
+    pub synonym: Option<TypeId>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

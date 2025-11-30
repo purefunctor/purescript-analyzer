@@ -515,9 +515,9 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                     .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
                     .collect();
 
-                let type_ = cst.type_().map(|cst| recursive::lower_type(state, context, &cst));
+                let synonym = cst.type_().map(|cst| recursive::lower_type(state, context, &cst));
 
-                Some(SynonymIr { variables, type_ })
+                Some(SynonymIr { variables, synonym })
             });
 
             let kind = TypeItemIr::SynonymGroup { signature, synonym };

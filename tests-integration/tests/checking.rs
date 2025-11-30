@@ -472,6 +472,26 @@ newtype Mu f = In (f (Mu f))
 }
 
 #[test]
+fn test_type_synonym() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+type AliasType = Int
+
+type AliasTypeType = Array
+
+type InferApply f a = f a
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
 fn test_data_arity_fail() {
     {
         let (engine, id) = empty_engine();

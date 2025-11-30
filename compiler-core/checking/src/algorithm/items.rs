@@ -2,7 +2,7 @@
 
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::{DataIr, NewtypeIr, TermItemIr, TypeItemIr, TypeVariableBinding};
+use lowering::{DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
@@ -36,7 +36,10 @@ pub(crate) fn check_type_item<Q>(
                 check_data_like(state, context, item_id, *signature, variables);
             }
 
-            TypeItemIr::SynonymGroup { .. } => (),
+            TypeItemIr::SynonymGroup { signature, synonym } => {
+                let Some(SynonymIr { variables, synonym: Some(synonym) }) = synonym else { return };
+                check_synonym(state, context, item_id, *signature, variables, *synonym);
+            }
 
             TypeItemIr::ClassGroup { .. } => (),
 
@@ -53,13 +56,14 @@ pub(crate) fn check_type_item<Q>(
     })
 }
 
-fn check_data_like<Q>(
+fn check_signature_like<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
-) where
+    infer_result: impl FnOnce(&mut CheckState) -> TypeId,
+) -> Option<(Vec<ForallBinder>, Vec<ForallBinder>, TypeId)>
+where
     Q: ExternalQueries,
 {
     let signature = signature.map(|id| (id, convert::inspect_signature(state, context, id)));
@@ -77,7 +81,7 @@ fn check_data_like<Q>(
                     state.unbind(variable.level);
                 }
 
-                return;
+                return None;
             };
 
             let variables = variables.iter();
@@ -119,7 +123,7 @@ fn check_data_like<Q>(
             (kind_variables, type_variables.collect_vec(), result_kind)
         } else {
             let kind_variables = vec![];
-            let result_kind = context.prim.t;
+            let result_kind = infer_result(state);
             let type_variables = variables.iter().map(|variable| {
                 let kind = match variable.kind {
                     Some(id) => convert::type_to_core(state, context, id),
@@ -134,6 +138,24 @@ fn check_data_like<Q>(
 
             (kind_variables, type_variables.collect_vec(), result_kind)
         };
+
+    Some((kind_variables, type_variables, result_kind))
+}
+
+fn check_data_like<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    variables: &[TypeVariableBinding],
+) where
+    Q: ExternalQueries,
+{
+    let Some((kind_variables, type_variables, result_kind)) =
+        check_signature_like(state, context, signature, variables, |_| context.prim.t)
+    else {
+        return;
+    };
 
     let data_reference = {
         let size = state.bound.size();
@@ -173,6 +195,47 @@ fn check_data_like<Q>(
         &type_variables,
         data_reference,
     );
+
+    if let Some(variable) = type_variables.first() {
+        state.unbind(variable.level);
+    }
+
+    if let Some(variable) = kind_variables.first() {
+        state.unbind(variable.level);
+    }
+}
+
+fn check_synonym<Q: ExternalQueries>(
+    state: &mut CheckState,
+    context: &CheckContext<'_, Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    variables: &[TypeVariableBinding],
+    synonym: lowering::TypeId,
+) {
+    let Some((kind_variables, type_variables, result_kind)) =
+        check_signature_like(state, context, signature, variables, |state| {
+            state.fresh_unification_type(context)
+        })
+    else {
+        return;
+    };
+
+    let _ = kind::check_surface_kind(state, context, synonym, result_kind);
+
+    let type_kind = type_variables.iter().rfold(result_kind, |result, variable| {
+        state.storage.intern(Type::Function(variable.kind, result))
+    });
+
+    if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
+        unification::unify(state, context, *pending_kind, type_kind);
+    } else {
+        let type_kind = kind_variables.iter().rfold(type_kind, |inner, binder| {
+            let binder = binder.clone();
+            state.storage.intern(Type::Forall(binder, inner))
+        });
+        state.binding_group.types.insert(item_id, type_kind);
+    };
 
     if let Some(variable) = type_variables.first() {
         state.unbind(variable.level);
