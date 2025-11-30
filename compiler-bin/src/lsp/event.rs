@@ -38,9 +38,11 @@ fn collect_diagnostics_core(
     let root = parsed.syntax_node();
 
     let stabilized = snapshot.engine.stabilized(id)?;
+    let resolved = snapshot.engine.resolved(id)?;
     let lowered = snapshot.engine.lowered(id)?;
 
     let mut diagnostics = vec![];
+    diagnostics.extend(resolved_diagnostics(&content, &root, &stabilized, &resolved));
     diagnostics.extend(lowered_diagnostics(&content, &root, &stabilized, &lowered));
 
     let uri = {
@@ -75,55 +77,43 @@ fn lowered_error<'context>(
     match error {
         lowering::LoweringError::NotInScope(not_in_scope) => {
             let (ptr, name) = match not_in_scope {
-                lowering::NotInScope::ExprConstructor { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
-                }
-                lowering::NotInScope::ExprVariable { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
-                }
+                lowering::NotInScope::ExprConstructor { id } => (stabilized.syntax_ptr(*id)?, None),
+                lowering::NotInScope::ExprVariable { id } => (stabilized.syntax_ptr(*id)?, None),
                 lowering::NotInScope::ExprOperatorName { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
+                    (stabilized.syntax_ptr(*id)?, None)
                 }
-                lowering::NotInScope::TypeConstructor { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
-                }
-                lowering::NotInScope::TypeVariable { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
-                }
+                lowering::NotInScope::TypeConstructor { id } => (stabilized.syntax_ptr(*id)?, None),
+                lowering::NotInScope::TypeVariable { id } => (stabilized.syntax_ptr(*id)?, None),
                 lowering::NotInScope::TypeOperatorName { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
+                    (stabilized.syntax_ptr(*id)?, None)
                 }
                 lowering::NotInScope::DoFn { kind, id } => (
-                    stabilized.ast_ptr(*id)?.syntax_node_ptr(),
+                    stabilized.syntax_ptr(*id)?,
                     match kind {
                         lowering::DoFn::Bind => Some("bind"),
                         lowering::DoFn::Discard => Some("discard"),
                     },
                 ),
                 lowering::NotInScope::AdoFn { kind, id } => (
-                    stabilized.ast_ptr(*id)?.syntax_node_ptr(),
+                    stabilized.syntax_ptr(*id)?,
                     match kind {
                         lowering::AdoFn::Map => Some("map"),
                         lowering::AdoFn::Apply => Some("apply"),
                     },
                 ),
-                lowering::NotInScope::TermOperator { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
-                }
-                lowering::NotInScope::TypeOperator { id } => {
-                    (stabilized.ast_ptr(*id)?.syntax_node_ptr(), None)
-                }
+                lowering::NotInScope::TermOperator { id } => (stabilized.syntax_ptr(*id)?, None),
+                lowering::NotInScope::TypeOperator { id } => (stabilized.syntax_ptr(*id)?, None),
             };
 
             let message = if let Some(name) = name {
                 format!("'{name}' is not in scope")
             } else {
-                let range = ptr.to_node(&root).text_range();
+                let range = ptr.to_node(root).text_range();
                 let name = content[range].trim();
                 format!("'{name}' is not in scope")
             };
 
-            let range = locate::syntax_range(&content, &root, &ptr)?;
+            let range = locate::syntax_range(content, root, &ptr)?;
 
             Some(Diagnostic {
                 range,
@@ -132,6 +122,69 @@ fn lowered_error<'context>(
                 code_description: None,
                 source: Some("analyzer/lowering".to_string()),
                 message: message.to_string(),
+                related_information: None,
+                tags: None,
+                data: None,
+            })
+        }
+    }
+}
+
+fn resolved_diagnostics<'context>(
+    content: &'context str,
+    root: &'context SyntaxNode,
+    stabilized: &'context stabilizing::StabilizedModule,
+    resolved: &'context resolving::ResolvedModule,
+) -> impl Iterator<Item = Diagnostic> + 'context {
+    resolved.errors.iter().filter_map(|error| resolved_error(content, root, stabilized, error))
+}
+
+fn resolved_error<'context>(
+    content: &'context str,
+    root: &'context SyntaxNode,
+    stabilized: &'context stabilizing::StabilizedModule,
+    error: &'context resolving::ResolvingError,
+) -> Option<Diagnostic> {
+    let source = Some("analyzer/resolving".to_string());
+    match error {
+        resolving::ResolvingError::TermImportConflict { .. } => None,
+
+        resolving::ResolvingError::TypeImportConflict { .. } => None,
+
+        resolving::ResolvingError::TermExportConflict { .. } => None,
+
+        resolving::ResolvingError::TypeExportConflict { .. } => None,
+
+        resolving::ResolvingError::ExistingTerm { .. } => None,
+
+        resolving::ResolvingError::ExistingType { .. } => None,
+
+        resolving::ResolvingError::InvalidImportStatement { id } => {
+            let ptr = stabilized.syntax_ptr(*id)?;
+            let range = locate::syntax_range(content, root, &ptr)?;
+            Some(Diagnostic {
+                range,
+                severity: Some(DiagnosticSeverity::ERROR),
+                code: Some(NumberOrString::String("InvalidImportStatement".to_string())),
+                code_description: None,
+                source,
+                message: "Invalid import statement".to_string(),
+                related_information: None,
+                tags: None,
+                data: None,
+            })
+        }
+
+        resolving::ResolvingError::InvalidImportItem { id } => {
+            let ptr = stabilized.syntax_ptr(*id)?;
+            let range = locate::syntax_range(content, root, &ptr)?;
+            Some(Diagnostic {
+                range,
+                severity: Some(DiagnosticSeverity::ERROR),
+                code: Some(NumberOrString::String("InvalidImportItem".to_string())),
+                code_description: None,
+                source,
+                message: "Invalid import item".to_string(),
                 related_information: None,
                 tags: None,
                 data: None,

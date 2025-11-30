@@ -36,10 +36,8 @@ pub enum ResolvingError {
     InvalidImportStatement {
         id: ImportId,
     },
+
     InvalidImportItem {
-        id: ImportItemId,
-    },
-    DuplicateImportItem {
         id: ImportItemId,
     },
 }

@@ -1265,6 +1265,7 @@ dependencies = [
  "parking_lot",
  "path-absolutize",
  "radix_trie",
+ "resolving",
  "serde",
  "spago",
  "stabilizing",
