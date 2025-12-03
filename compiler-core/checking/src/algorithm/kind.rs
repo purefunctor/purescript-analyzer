@@ -48,7 +48,7 @@ where
                 if let Some(&k) = state.binding_group.types.get(&type_id) {
                     (t, k)
                 } else if let Some(&k) = state.checked.types.get(&type_id) {
-                    (t, k)
+                    (t, transfer::localize(state, context, k))
                 } else {
                     default
                 }
