@@ -1,78 +1,8 @@
 root_name = "purescript-analyzer"
 
 [[third_party_libraries]]
-package_name = "addr2line"
-package_version = "0.24.2"
-repository = "https://github.com/gimli-rs/addr2line"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-Copyright (c) 2016-2018 The gimli Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"""
-
-[[third_party_libraries]]
-package_name = "adler2"
-package_version = "2.0.1"
-repository = "https://github.com/oyvindln/adler2"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"""
-
-[[third_party_libraries]]
 package_name = "aho-corasick"
-package_version = "1.1.3"
+package_version = "1.1.4"
 repository = "https://github.com/BurntSushi/aho-corasick"
 license = "MIT"
 
@@ -148,7 +78,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "anstream"
-package_version = "0.6.20"
+package_version = "0.6.21"
 repository = "https://github.com/rust-cli/anstyle.git"
 license = "MIT"
 
@@ -178,7 +108,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "anstyle"
-package_version = "1.0.11"
+package_version = "1.0.13"
 repository = "https://github.com/rust-cli/anstyle.git"
 license = "MIT"
 
@@ -238,7 +168,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "anstyle-query"
-package_version = "1.1.4"
+package_version = "1.1.5"
 repository = "https://github.com/rust-cli/anstyle.git"
 license = "MIT"
 
@@ -268,7 +198,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "anstyle-wincon"
-package_version = "3.0.10"
+package_version = "3.0.11"
 repository = "https://github.com/rust-cli/anstyle.git"
 license = "MIT"
 
@@ -313,42 +243,6 @@ THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMP
 """
 
 [[third_party_libraries]]
-package_name = "backtrace"
-package_version = "0.3.75"
-repository = "https://github.com/rust-lang/backtrace-rs"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-Copyright (c) 2014 Alex Crichton
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"""
-
-[[third_party_libraries]]
 package_name = "bitflags"
 package_version = "1.3.2"
 repository = "https://github.com/bitflags/bitflags"
@@ -386,7 +280,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "bitflags"
-package_version = "2.9.3"
+package_version = "2.10.0"
 repository = "https://github.com/bitflags/bitflags"
 license = "MIT"
 
@@ -422,17 +316,41 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "borsh"
-package_version = "1.5.7"
+package_version = "1.6.0"
 repository = "https://github.com/near/borsh-rs"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
-text = "NOT FOUND"
+text = """
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the \"Software\"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
 
 [[third_party_libraries]]
 package_name = "bstr"
-package_version = "1.12.0"
+package_version = "1.12.1"
 repository = "https://github.com/BurntSushi/bstr"
 license = "MIT"
 
@@ -484,7 +402,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "bytes"
-package_version = "1.10.1"
+package_version = "1.11.0"
 repository = "https://github.com/tokio-rs/bytes"
 license = "MIT"
 
@@ -520,7 +438,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "cfg-if"
-package_version = "1.0.3"
+package_version = "1.0.4"
 repository = "https://github.com/rust-lang/cfg-if"
 license = "MIT"
 
@@ -566,7 +484,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "clap"
-package_version = "4.5.47"
+package_version = "4.5.53"
 repository = "https://github.com/clap-rs/clap"
 license = "MIT"
 
@@ -596,7 +514,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "clap_builder"
-package_version = "4.5.47"
+package_version = "4.5.53"
 repository = "https://github.com/clap-rs/clap"
 license = "MIT"
 
@@ -626,7 +544,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "clap_derive"
-package_version = "4.5.47"
+package_version = "4.5.49"
 repository = "https://github.com/clap-rs/clap"
 license = "MIT"
 
@@ -656,7 +574,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "clap_lex"
-package_version = "0.7.5"
+package_version = "0.7.6"
 repository = "https://github.com/clap-rs/clap"
 license = "MIT"
 
@@ -853,6 +771,39 @@ DEALINGS IN THE SOFTWARE.
 """
 
 [[third_party_libraries]]
+package_name = "endian-type"
+package_version = "0.2.0"
+repository = "https://github.com/Lolirofle/endian-type.git"
+license = "MIT"
+
+[[third_party_libraries.licenses]]
+license = "MIT"
+text = """
+The MIT License (MIT)
+
+Copyright (c) 2015 
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+"""
+
+[[third_party_libraries]]
 package_name = "equivalent"
 package_version = "1.0.2"
 repository = "https://github.com/indexmap-rs/equivalent"
@@ -890,7 +841,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "errno"
-package_version = "0.3.13"
+package_version = "0.3.14"
 repository = "https://github.com/lambda-fairy/rust-errno"
 license = "MIT"
 
@@ -1396,7 +1347,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "getrandom"
-package_version = "0.3.3"
+package_version = "0.3.4"
 repository = "https://github.com/rust-random/getrandom"
 license = "MIT"
 
@@ -1405,42 +1356,6 @@ license = "MIT"
 text = """
 Copyright (c) 2018-2025 The rust-random Project Developers
 Copyright (c) 2014 The Rust Project Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"""
-
-[[third_party_libraries]]
-package_name = "gimli"
-package_version = "0.31.1"
-repository = "https://github.com/gimli-rs/gimli"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-Copyright (c) 2015 The Rust Project Developers
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -1573,7 +1488,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "hashbrown"
-package_version = "0.16.0"
+package_version = "0.16.1"
 repository = "https://github.com/rust-lang/hashbrown"
 license = "MIT"
 
@@ -1645,7 +1560,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "icu_collections"
-package_version = "2.0.0"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -1702,7 +1617,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "icu_locale_core"
-package_version = "2.0.0"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -1759,7 +1674,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "icu_normalizer"
-package_version = "2.0.0"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -1816,7 +1731,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "icu_normalizer_data"
-package_version = "2.0.0"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -1873,7 +1788,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "icu_properties"
-package_version = "2.0.1"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -1930,7 +1845,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "icu_properties_data"
-package_version = "2.0.1"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -1987,7 +1902,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "icu_provider"
-package_version = "2.0.0"
+package_version = "2.1.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -2126,7 +2041,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "indexmap"
-package_version = "2.12.0"
+package_version = "2.12.1"
 repository = "https://github.com/indexmap-rs/indexmap"
 license = "MIT"
 
@@ -2171,27 +2086,8 @@ license = "No license specified"
 text = "NOT FOUND"
 
 [[third_party_libraries]]
-package_name = "io-uring"
-package_version = "0.7.9"
-repository = "https://github.com/tokio-rs/io-uring"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-MIT License
-Copyright (c) 2019 quininer@live.com
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-"""
-
-[[third_party_libraries]]
 package_name = "is_terminal_polyfill"
-package_version = "1.70.1"
+package_version = "1.70.2"
 repository = "https://github.com/polyfill-rs/is_terminal_polyfill"
 license = "MIT"
 
@@ -2347,7 +2243,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "libc"
-package_version = "0.2.175"
+package_version = "0.2.178"
 repository = "https://github.com/rust-lang/libc"
 license = "MIT"
 
@@ -2393,7 +2289,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "linux-raw-sys"
-package_version = "0.9.4"
+package_version = "0.11.0"
 repository = "https://github.com/sunfishcode/linux-raw-sys"
 license = "MIT"
 
@@ -2427,7 +2323,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "litemap"
-package_version = "0.8.0"
+package_version = "0.8.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -2484,7 +2380,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "lock_api"
-package_version = "0.4.13"
+package_version = "0.4.14"
 repository = "https://github.com/Amanieu/parking_lot"
 license = "MIT"
 
@@ -2520,7 +2416,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "log"
-package_version = "0.4.27"
+package_version = "0.4.29"
 repository = "https://github.com/rust-lang/log"
 license = "MIT"
 
@@ -2599,7 +2495,7 @@ THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "memchr"
-package_version = "2.7.5"
+package_version = "2.7.6"
 repository = "https://github.com/BurntSushi/memchr"
 license = "MIT"
 
@@ -2630,20 +2526,15 @@ THE SOFTWARE.
 """
 
 [[third_party_libraries]]
-package_name = "miniz_oxide"
-package_version = "0.8.9"
-repository = "https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide"
+package_name = "mio"
+package_version = "1.1.0"
+repository = "https://github.com/tokio-rs/mio"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
 text = """
-MIT License
-
-Copyright 2013-2014 RAD Game Tools and Valve Software
-Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
-Copyright (c) 2017 Frommi
-Copyright (c) 2017-2024 oyvindln
+Copyright (c) 2014 Carl Lerche and other MIO contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the \"Software\"), to deal
@@ -2652,28 +2543,30 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 """
 
 [[third_party_libraries]]
-package_name = "mio"
-package_version = "1.0.4"
-repository = "https://github.com/tokio-rs/mio"
+package_name = "nibble_vec"
+package_version = "0.1.0"
+repository = "https://github.com/michaelsproul/rust_nibble_vec"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
 text = """
-Copyright (c) 2014 Carl Lerche and other MIO contributors
+The MIT License (MIT)
+
+Copyright (c) 2015 Michael Sproul
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the \"Software\"), to deal
@@ -2725,71 +2618,35 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "nu-ansi-term"
-package_version = "0.50.1"
+package_version = "0.50.3"
 repository = "https://github.com/nushell/nu-ansi-term"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
 text = """
-The MIT License (MIT)
-
-Copyright (c) 2014 Benjamin Sago
-Copyright (c) 2021-2022 The Nushell Project Developers
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the \"Software\"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
-[[third_party_libraries]]
-package_name = "object"
-package_version = "0.36.7"
-repository = "https://github.com/gimli-rs/object"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-Copyright (c) 2015 The Gimli Developers
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The MIT License (MIT)\r
+\r
+Copyright (c) 2014 Benjamin Sago\r
+Copyright (c) 2021-2022 The Nushell Project Developers\r
+\r
+Permission is hereby granted, free of charge, to any person obtaining a copy\r
+of this software and associated documentation files (the \"Software\"), to deal\r
+in the Software without restriction, including without limitation the rights\r
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\r
+copies of the Software, and to permit persons to whom the Software is\r
+furnished to do so, subject to the following conditions:\r
+\r
+The above copyright notice and this permission notice shall be included in all\r
+copies or substantial portions of the Software.\r
+\r
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\r
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\r
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\r
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\r
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\r
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\r
+SOFTWARE.\r
 """
 
 [[third_party_libraries]]
@@ -2828,7 +2685,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "once_cell_polyfill"
-package_version = "1.70.1"
+package_version = "1.70.2"
 repository = "https://github.com/polyfill-rs/once_cell_polyfill"
 license = "MIT"
 
@@ -2858,7 +2715,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "parking_lot"
-package_version = "0.12.4"
+package_version = "0.12.5"
 repository = "https://github.com/Amanieu/parking_lot"
 license = "MIT"
 
@@ -2894,7 +2751,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "parking_lot_core"
-package_version = "0.9.11"
+package_version = "0.9.12"
 repository = "https://github.com/Amanieu/parking_lot"
 license = "MIT"
 
@@ -3180,7 +3037,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "potential_utf"
-package_version = "0.1.2"
+package_version = "0.1.4"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -3247,7 +3104,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "proc-macro2"
-package_version = "1.0.101"
+package_version = "1.0.103"
 repository = "https://github.com/dtolnay/proc-macro2"
 license = "MIT"
 
@@ -3281,7 +3138,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "quote"
-package_version = "1.0.40"
+package_version = "1.0.42"
 repository = "https://github.com/dtolnay/quote"
 license = "MIT"
 
@@ -3324,8 +3181,40 @@ license = "MIT"
 text = "NOT FOUND"
 
 [[third_party_libraries]]
+package_name = "radix_trie"
+package_version = "0.3.0"
+repository = "https://github.com/michaelsproul/rust_radix_trie"
+license = "MIT"
+
+[[third_party_libraries.licenses]]
+license = "MIT"
+text = """
+The MIT License (MIT)
+
+Copyright (c) 2015 Michael Sproul
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+[[third_party_libraries]]
 package_name = "redox_syscall"
-package_version = "0.5.17"
+package_version = "0.5.18"
 repository = "https://gitlab.redox-os.org/redox-os/syscall"
 license = "MIT"
 
@@ -3358,8 +3247,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "regex-automata"
-package_version = "0.4.9"
-repository = "https://github.com/rust-lang/regex/tree/master/regex-automata"
+package_version = "0.4.13"
+repository = "https://github.com/rust-lang/regex"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
@@ -3394,8 +3283,8 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "regex-syntax"
-package_version = "0.8.5"
-repository = "https://github.com/rust-lang/regex/tree/master/regex-syntax"
+package_version = "0.8.8"
+repository = "https://github.com/rust-lang/regex"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
@@ -3447,42 +3336,6 @@ license = "MIT"
 [[third_party_libraries.licenses]]
 license = "MIT"
 text = """
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"""
-
-[[third_party_libraries]]
-package_name = "rustc-demangle"
-package_version = "0.1.26"
-repository = "https://github.com/rust-lang/rustc-demangle"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-Copyright (c) 2014 Alex Crichton
-
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
 documentation files (the \"Software\"), to deal in the
@@ -3577,7 +3430,7 @@ DEALINGS IN THE SOFTWARE."""
 
 [[third_party_libraries]]
 package_name = "rustix"
-package_version = "1.0.8"
+package_version = "1.1.2"
 repository = "https://github.com/bytecodealliance/rustix"
 license = "MIT"
 
@@ -3894,7 +3747,41 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "serde"
-package_version = "1.0.219"
+package_version = "1.0.228"
+repository = "https://github.com/serde-rs/serde"
+license = "MIT"
+
+[[third_party_libraries.licenses]]
+license = "MIT"
+text = """
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the \"Software\"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
+
+[[third_party_libraries]]
+package_name = "serde_core"
+package_version = "1.0.228"
 repository = "https://github.com/serde-rs/serde"
 license = "MIT"
 
@@ -3928,7 +3815,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "serde_derive"
-package_version = "1.0.219"
+package_version = "1.0.228"
 repository = "https://github.com/serde-rs/serde"
 license = "MIT"
 
@@ -3962,7 +3849,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "serde_json"
-package_version = "1.0.143"
+package_version = "1.0.145"
 repository = "https://github.com/serde-rs/json"
 license = "MIT"
 
@@ -4060,7 +3947,7 @@ THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "signal-hook-registry"
-package_version = "1.4.6"
+package_version = "1.4.7"
 repository = "https://github.com/vorner/signal-hook"
 license = "MIT"
 
@@ -4168,7 +4055,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "smol_str"
-package_version = "0.3.2"
+package_version = "0.3.4"
 repository = "https://github.com/rust-analyzer/smol_str"
 license = "MIT"
 
@@ -4202,7 +4089,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "socket2"
-package_version = "0.6.0"
+package_version = "0.6.1"
 repository = "https://github.com/rust-lang/socket2"
 license = "MIT"
 
@@ -4258,7 +4145,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "stable_deref_trait"
-package_version = "1.2.0"
+package_version = "1.2.1"
 repository = "https://github.com/storyyeller/stable_deref_trait"
 license = "MIT"
 
@@ -4369,7 +4256,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "syn"
-package_version = "2.0.106"
+package_version = "2.0.111"
 repository = "https://github.com/dtolnay/syn"
 license = "MIT"
 
@@ -4431,7 +4318,7 @@ text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "tempfile"
-package_version = "3.21.0"
+package_version = "3.23.0"
 repository = "https://github.com/Stebalien/tempfile"
 license = "MIT"
 
@@ -4605,7 +4492,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tinystr"
-package_version = "0.8.1"
+package_version = "0.8.2"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -4662,7 +4549,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "tokio"
-package_version = "1.47.1"
+package_version = "1.48.0"
 repository = "https://github.com/tokio-rs/tokio"
 license = "MIT"
 
@@ -4694,7 +4581,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tokio-macros"
-package_version = "2.5.0"
+package_version = "2.6.0"
 repository = "https://github.com/tokio-rs/tokio"
 license = "MIT"
 
@@ -4727,7 +4614,7 @@ SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tokio-util"
-package_version = "0.7.16"
+package_version = "0.7.17"
 repository = "https://github.com/tokio-rs/tokio"
 license = "MIT"
 
@@ -4867,7 +4754,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tracing"
-package_version = "0.1.41"
+package_version = "0.1.43"
 repository = "https://github.com/tokio-rs/tracing"
 license = "MIT"
 
@@ -4903,7 +4790,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tracing-attributes"
-package_version = "0.1.30"
+package_version = "0.1.31"
 repository = "https://github.com/tokio-rs/tracing"
 license = "MIT"
 
@@ -4939,7 +4826,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tracing-core"
-package_version = "0.1.34"
+package_version = "0.1.35"
 repository = "https://github.com/tokio-rs/tracing"
 license = "MIT"
 
@@ -5011,7 +4898,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "tracing-subscriber"
-package_version = "0.3.20"
+package_version = "0.3.22"
 repository = "https://github.com/tokio-rs/tracing"
 license = "MIT"
 
@@ -5047,7 +4934,7 @@ DEALINGS IN THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "unicode-ident"
-package_version = "1.0.18"
+package_version = "1.0.22"
 repository = "https://github.com/dtolnay/unicode-ident"
 license = "(MIT OR Apache-2.0) AND Unicode-3.0"
 
@@ -5535,42 +5422,18 @@ DEALINGS IN THE SOFTWARE.
 """
 
 [[third_party_libraries]]
-package_name = "wasi"
-package_version = "0.14.2+wasi-0.2.4"
+package_name = "wasip2"
+package_version = "1.0.1+wasi-0.2.4"
 repository = "https://github.com/bytecodealliance/wasi-rs"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
-text = """
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the \"Software\"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"""
+text = "NOT FOUND"
 
 [[third_party_libraries]]
 package_name = "winapi-util"
-package_version = "0.1.9"
+package_version = "0.1.11"
 repository = "https://github.com/BurntSushi/winapi-util"
 license = "MIT"
 
@@ -5602,39 +5465,7 @@ THE SOFTWARE.
 
 [[third_party_libraries]]
 package_name = "windows-link"
-package_version = "0.1.3"
-repository = "https://github.com/microsoft/windows-rs"
-license = "MIT"
-
-[[third_party_libraries.licenses]]
-license = "MIT"
-text = """
-    MIT License
-
-    Copyright (c) Microsoft Corporation.
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the \"Software\"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE
-"""
-
-[[third_party_libraries]]
-package_name = "windows-sys"
-package_version = "0.52.0"
+package_version = "0.2.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -5729,6 +5560,38 @@ text = """
 """
 
 [[third_party_libraries]]
+package_name = "windows-sys"
+package_version = "0.61.2"
+repository = "https://github.com/microsoft/windows-rs"
+license = "MIT"
+
+[[third_party_libraries.licenses]]
+license = "MIT"
+text = """
+    MIT License
+
+    Copyright (c) Microsoft Corporation.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the \"Software\"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE
+"""
+
+[[third_party_libraries]]
 package_name = "windows-targets"
 package_version = "0.52.6"
 repository = "https://github.com/microsoft/windows-rs"
@@ -5762,7 +5625,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows-targets"
-package_version = "0.53.3"
+package_version = "0.53.5"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -5826,7 +5689,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_aarch64_gnullvm"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -5890,7 +5753,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_aarch64_msvc"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -5954,7 +5817,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_i686_gnu"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -6018,7 +5881,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_i686_gnullvm"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -6082,7 +5945,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_i686_msvc"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -6146,7 +6009,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_x86_64_gnu"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -6210,7 +6073,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_x86_64_gnullvm"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -6274,7 +6137,7 @@ text = """
 
 [[third_party_libraries]]
 package_name = "windows_x86_64_msvc"
-package_version = "0.53.0"
+package_version = "0.53.1"
 repository = "https://github.com/microsoft/windows-rs"
 license = "MIT"
 
@@ -6305,18 +6168,42 @@ text = """
 """
 
 [[third_party_libraries]]
-package_name = "wit-bindgen-rt"
-package_version = "0.39.0"
+package_name = "wit-bindgen"
+package_version = "0.46.0"
 repository = "https://github.com/bytecodealliance/wit-bindgen"
 license = "MIT"
 
 [[third_party_libraries.licenses]]
 license = "MIT"
-text = "NOT FOUND"
+text = """
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the \"Software\"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+"""
 
 [[third_party_libraries]]
 package_name = "writeable"
-package_version = "0.6.1"
+package_version = "0.6.2"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -6373,7 +6260,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "yoke"
-package_version = "0.8.0"
+package_version = "0.8.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -6430,7 +6317,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "yoke-derive"
-package_version = "0.8.0"
+package_version = "0.8.1"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -6601,7 +6488,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "zerotrie"
-package_version = "0.2.2"
+package_version = "0.2.3"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -6658,7 +6545,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "zerovec"
-package_version = "0.11.4"
+package_version = "0.11.5"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
@@ -6715,7 +6602,7 @@ ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation a
 
 [[third_party_libraries]]
 package_name = "zerovec-derive"
-package_version = "0.11.1"
+package_version = "0.11.2"
 repository = "https://github.com/unicode-org/icu4x"
 license = "Unicode-3.0"
 
