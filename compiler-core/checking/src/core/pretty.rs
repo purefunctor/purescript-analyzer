@@ -138,10 +138,11 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
 
         Type::Forall(ref binder, mut inner) => {
             let binder = binder.clone();
-            let mut binders = vec![binder.clone()];
+            let mut binders = vec![binder];
 
             while let Type::Forall(ref binder, inner_inner) = source.lookup(inner) {
-                binders.push(binder.clone());
+                let binder = binder.clone();
+                binders.push(binder);
                 inner = inner_inner;
             }
 
