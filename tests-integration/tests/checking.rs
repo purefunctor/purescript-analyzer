@@ -553,6 +553,27 @@ type Test = Simple
 }
 
 #[test]
+fn test_expand_identity_synonym() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+type Identity a = a
+
+foreign import data Digit :: Int
+
+type Test1 = Identity Int
+type Test2 = Identity Digit
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
 fn test_data_arity_fail() {
     {
         let (engine, id) = empty_engine();
