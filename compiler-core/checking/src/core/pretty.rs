@@ -1,9 +1,11 @@
 use std::fmt::Write;
 
 use itertools::Itertools;
+use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::core::debruijn;
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
@@ -12,7 +14,8 @@ where
 {
     let queries = context.queries;
     let mut source = TraversalSource::Local { state, queries };
-    traverse(&mut source, id)
+    let config = TraversalConfig { use_names: true };
+    traverse(&mut source, &config, id)
 }
 
 pub fn print_global<Q>(queries: &Q, id: TypeId) -> String
@@ -20,7 +23,8 @@ where
     Q: ExternalQueries,
 {
     let mut source = TraversalSource::Global { queries };
-    traverse(&mut source, id)
+    let config = TraversalConfig { use_names: true };
+    traverse(&mut source, &config, id)
 }
 
 enum TraversalSource<'a, Q: ExternalQueries> {
@@ -47,7 +51,36 @@ impl<'a, Q: ExternalQueries> TraversalSource<'a, Q> {
     }
 }
 
-fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: TypeId) -> String {
+struct TraversalConfig {
+    use_names: bool,
+}
+
+struct TraversalContext<'a> {
+    config: &'a TraversalConfig,
+    names: FxHashMap<u32, String>,
+    depth: debruijn::Size,
+}
+
+impl<'a> TraversalContext<'a> {
+    fn new(config: &'a TraversalConfig) -> Self {
+        Self { config, names: FxHashMap::default(), depth: debruijn::Size(0) }
+    }
+}
+
+fn traverse<Q: ExternalQueries>(
+    source: &mut TraversalSource<'_, Q>,
+    config: &TraversalConfig,
+    id: TypeId,
+) -> String {
+    let mut context = TraversalContext::new(config);
+    traverse_inner(source, &mut context, id)
+}
+
+fn traverse_inner<'a, Q: ExternalQueries>(
+    source: &mut TraversalSource<'a, Q>,
+    context: &mut TraversalContext,
+    id: TypeId,
+) -> String {
     match source.lookup(id) {
         Type::Application(mut function, argument) => {
             let mut arguments = vec![argument];
@@ -57,9 +90,12 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
                 arguments.push(argument);
             }
 
-            let function = traverse(source, function);
-            let arguments =
-                arguments.iter().rev().map(|argument| traverse(source, *argument)).join(" ");
+            let function = traverse_inner(source, context, function);
+            let arguments = arguments
+                .iter()
+                .rev()
+                .map(|argument| traverse_inner(source, context, *argument))
+                .join(" ");
 
             format!("({function} {arguments})")
         }
@@ -72,23 +108,27 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::Forall(ref binder, mut inner) => {
             let binder = binder.clone();
-            let mut binders = vec![binder];
+            let mut binders = vec![binder.clone()];
 
             while let Type::Forall(ref binder, inner_inner) = source.lookup(inner) {
-                let binder = binder.clone();
-                binders.push(binder);
+                binders.push(binder.clone());
                 inner = inner_inner;
             }
 
+            let previous_depth = context.depth;
             let mut buffer = String::default();
 
             write!(&mut buffer, "forall").unwrap();
-            for ForallBinder { name, kind, .. } in binders {
-                let kind = traverse(source, kind);
+            for ForallBinder { name, kind, .. } in &binders {
+                let kind = traverse_inner(source, context, *kind);
                 write!(&mut buffer, " ({name} :: {kind})").unwrap();
+                context.names.insert(context.depth.0, name.to_string());
+                context.depth = debruijn::Size(context.depth.0 + 1);
             }
 
-            let inner = traverse(source, inner);
+            let inner = traverse_inner(source, context, inner);
+            context.depth = previous_depth;
+
             write!(&mut buffer, ". {inner}").unwrap();
 
             buffer
@@ -102,9 +142,11 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
                 arguments.push(argument);
             }
 
-            let result = traverse(source, result);
-            let arguments =
-                arguments.iter().map(|argument| traverse(source, *argument)).join(" -> ");
+            let result = traverse_inner(source, context, result);
+            let arguments = arguments
+                .iter()
+                .map(|argument| traverse_inner(source, context, *argument))
+                .join(" -> ");
 
             format!("({arguments} -> {result})")
         }
@@ -117,11 +159,11 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
                 arguments.push(argument);
             }
 
-            let function = traverse(source, function);
+            let function = traverse_inner(source, context, function);
             let arguments = arguments
                 .iter()
                 .rev()
-                .map(|argument| format!("@{}", traverse(source, *argument)))
+                .map(|argument| format!("@{}", traverse_inner(source, context, *argument)))
                 .join(" ");
 
             format!("({function} {arguments})")
@@ -137,16 +179,27 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             }
         },
 
-        Type::Variable(ref variable) => match variable {
-            Variable::Implicit(level) => format!("{level}"),
-            Variable::Skolem(level, kind) => {
-                let kind = traverse(source, *kind);
-                format!("~{level} :: {kind}")
-            }
-            Variable::Bound(index) => format!("{index}"),
-            Variable::Free(name) => format!("{name}"),
-        },
+        Type::Variable(ref variable) => render_variable(variable, context),
 
         Type::Unknown => "???".to_string(),
+    }
+}
+
+fn render_variable(variable: &Variable, context: &TraversalContext) -> String {
+    match variable {
+        Variable::Implicit(level) => format!("{level}"),
+        Variable::Skolem(level, _kind) => format!("~{level} :: <kind>"),
+        Variable::Bound(index) => {
+            if context.config.use_names {
+                let Some(level) = index.to_level(context.depth) else {
+                    return format!("{index}");
+                };
+                let name = context.names.get(&level.0).cloned();
+                name.unwrap_or_else(|| format!("{index}"))
+            } else {
+                format!("{index}")
+            }
+        }
+        Variable::Free(name) => format!("{name}"),
     }
 }

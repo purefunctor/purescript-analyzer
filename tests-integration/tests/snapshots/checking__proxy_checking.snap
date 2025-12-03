@@ -3,7 +3,7 @@ source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
 Terms
-Proxy :: forall (t0 :: Type) (k :: *0) (a :: *0). (Proxy *0)
+Proxy :: forall (t0 :: Type) (k :: t0) (a :: k). (Proxy a)
 
 Types
-Proxy :: forall (t0 :: Type) (k :: *0). (*0 -> Type)
+Proxy :: forall (t0 :: Type) (k :: t0). (k -> Type)
