@@ -5,11 +5,11 @@ expression: snapshot
 Terms
 
 Types
-TuplePoly :: forall (t0 :: Type) (t1 :: Type) (a :: t0) (b :: t1). (a -> b -> Type)
-InferTuplePoly :: forall (t9 :: Type) (t10 :: Type). (t9 -> t10 -> Type)
+TuplePoly :: forall (a :: Type) (b :: Type). (a -> b -> Type)
+InferTuplePoly :: forall (t7 :: Type) (t8 :: Type). (t7 -> t8 -> Type)
 
 Synonyms
-InferTuplePoly = forall (t9 :: Type) (t10 :: Type) (t5 :: Type) (t6 :: Type) (x :: t9) (y :: t10). ((TuplePoly @t5 @t6 @t9 @t10) x y)
-  Quantified = :4
+InferTuplePoly = forall (t7 :: Type) (t8 :: Type) (x :: t7) (y :: t8). ((TuplePoly @t7 @t8) x y)
+  Quantified = :2
   Kind = :0
   Type = :2
