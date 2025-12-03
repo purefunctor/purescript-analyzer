@@ -44,8 +44,8 @@ pub(crate) fn check_type_item<Q>(
             }
 
             TypeItemIr::ClassGroup { signature, class } => {
-                let Some(ClassIr { variables, .. }) = class else { return };
-                check_class(state, context, item_id, *signature, variables);
+                let Some(class) = class else { return };
+                check_class(state, context, item_id, *signature, class);
             }
 
             TypeItemIr::Foreign { signature, .. } => {
@@ -257,13 +257,21 @@ fn check_class<Q: ExternalQueries>(
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
-    variables: &[TypeVariableBinding],
+    ClassIr { constraints, variables }: &ClassIr,
 ) {
     let Some((kind_variables, type_variables, result_kind)) =
         check_signature_like(state, context, signature, variables, |_| context.prim.constraint)
     else {
         return;
     };
+
+    let constraints = constraints.iter().map(|&constraint| {
+        let (constraint_type, _) =
+            kind::check_surface_kind(state, context, constraint, context.prim.constraint);
+        constraint_type
+    });
+
+    let _constraints = constraints.collect_vec();
 
     let class_reference = {
         let size = state.bound.size();
@@ -328,7 +336,7 @@ fn check_class_members<Q>(
         let (member_type, _) =
             kind::check_surface_kind(state, context, *signature_id, context.prim.t);
 
-        let (member_foralls, member_inner) = member_collect_foralls(state, member_type);
+        let (member_foralls, member_inner) = collect_foralls(state, member_type);
 
         let shift_amount = member_foralls.len() as u32;
         let shifted_class_reference =
@@ -356,19 +364,13 @@ fn check_class_members<Q>(
     }
 }
 
-fn member_collect_foralls(
-    state: &CheckState,
-    mut current_id: TypeId,
-) -> (Vec<ForallBinder>, TypeId) {
-    let mut binders = Vec::new();
-
-    while let Type::Forall(ref binder, inner_id) = state.storage[current_id] {
-        let binder = binder.clone();
-        binders.push(binder);
-        current_id = inner_id;
+fn collect_foralls(state: &CheckState, mut id: TypeId) -> (Vec<ForallBinder>, TypeId) {
+    let mut foralls = Vec::new();
+    while let Type::Forall(ref binder, inner) = state.storage[id] {
+        foralls.push(binder.clone());
+        id = inner;
     }
-
-    (binders, current_id)
+    (foralls, id)
 }
 
 fn insert_type_synonym(

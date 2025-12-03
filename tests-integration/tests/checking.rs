@@ -663,3 +663,41 @@ class Functor f where
     let snapshot = print_terms_types(engine, id);
     insta::assert_snapshot!(snapshot);
 }
+
+#[test]
+fn test_class_with_signature() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Functor :: (Type -> Type) -> Constraint
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_superclass() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+
+class Functor f <= Applicative f where
+  pure :: forall a. a -> f a
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}

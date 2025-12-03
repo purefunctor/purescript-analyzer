@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+map :: forall (t0 :: Type) (t1 :: Type) (t2 :: Type) (f :: t0) (a :: t1) (b :: t2). ((Functor f) => ((a -> b) -> (f a) -> (f b)))
+pure :: forall (t5 :: Type) (t6 :: Type) (f :: t5) (a :: t6). ((Applicative f) => (a -> (f a)))
+
+Types
+Functor :: forall (t0 :: Type). (t0 -> Constraint)
+Applicative :: forall (t5 :: Type). (t5 -> Constraint)
