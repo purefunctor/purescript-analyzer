@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+
+Types
+TuplePoly :: forall (t0 :: Type) (t1 :: Type) (a :: *1) (b :: *1). (*1 -> *0 -> Type)
+InferTuplePoly :: forall (t9 :: Type) (t10 :: Type). (*1 -> *0 -> Type)
+
+Synonyms
+InferTuplePoly = forall (t9 :: Type) (t10 :: Type) (t5 :: Type) (t6 :: Type) (x :: *3) (y :: *3). ((TuplePoly @*3 @*2 @*5 @*4) *1 *0)
+  Quantified = :4
+  Kind = :0
+  Type = :2

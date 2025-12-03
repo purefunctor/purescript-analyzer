@@ -13,7 +13,7 @@ use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindin
 use rustc_hash::FxHashMap;
 
 use crate::algorithm::{quantify, transfer};
-use crate::core::{Synonym, Type, TypeId, TypeInterner, Variable, debruijn};
+use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -24,7 +24,6 @@ pub struct CheckState {
 
     pub bound: debruijn::Bound,
     pub kinds: debruijn::BoundMap<TypeId>,
-    pub types: debruijn::BoundMap<TypeId>,
 
     pub unification: UnificationContext,
     pub binding_group: BindingGroupContext,
@@ -170,13 +169,6 @@ impl CheckState {
         self.kinds.get(level).copied()
     }
 
-    pub fn bind_with_type(&mut self, level: debruijn::Level, t: TypeId, k: TypeId) {
-        debug_assert!(!self.kinds.contains(level), "invariant violated: {level} already bound");
-        self.bound.bind(debruijn::Variable::Core);
-        self.types.insert(level, t);
-        self.kinds.insert(level, k);
-    }
-
     pub fn core_kind(&self, index: debruijn::Index) -> Option<TypeId> {
         let size = self.bound.size();
         let level = index.to_level(size)?;
@@ -185,7 +177,6 @@ impl CheckState {
 
     pub fn unbind(&mut self, level: debruijn::Level) {
         self.bound.unbind(level);
-        self.types.unbind(level);
         self.kinds.unbind(level);
     }
 
@@ -297,16 +288,6 @@ impl CheckState {
                     {
                         id = solution;
                         to_compress.push(unification_id);
-                    } else {
-                        break id;
-                    }
-                }
-                Type::Variable(Variable::Bound(index)) => {
-                    let size = self.bound.size();
-                    if let Some(level) = index.to_level(size)
-                        && let Some(resolved) = self.types.get(level)
-                    {
-                        id = *resolved;
                     } else {
                         break id;
                     }

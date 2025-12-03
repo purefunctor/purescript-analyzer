@@ -2,6 +2,7 @@
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::substitute::substitute_bound;
 use crate::algorithm::{convert, substitute, transfer, unification};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
@@ -165,19 +166,16 @@ where
             (t, k)
         }
 
-        Type::Forall(ForallBinder { level, kind, .. }, function_k) => {
+        Type::Forall(ForallBinder { kind, .. }, function_k) => {
             let k = state.normalize_type(kind);
             let t = state.fresh_unification_kinded(k);
 
-            state.bind_with_type(level, t, k);
-
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let result_t =
-                infer_surface_app_kind(state, context, (function_t, function_k), argument);
+            let function_k = substitute_bound(state, t, function_k);
 
-            state.unbind(level);
+            
 
-            result_t
+            infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
 
         _ => (context.prim.unknown, context.prim.unknown),

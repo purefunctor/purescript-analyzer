@@ -517,6 +517,24 @@ type CheckApplyElab f a = f a
 }
 
 #[test]
+fn test_foreign_poly() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+foreign import data TuplePoly :: forall a b. a -> b -> Type
+
+type InferTuplePoly x y = TuplePoly x y
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
 fn test_data_arity_fail() {
     {
         let (engine, id) = empty_engine();
