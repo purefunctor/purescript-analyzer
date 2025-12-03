@@ -54,6 +54,15 @@ struct TraversalConfig {
     use_names: bool,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Precedence {
+    Top,
+    Constraint,
+    Function,
+    Application,
+    Atom,
+}
+
 struct TraversalContext<'a> {
     config: &'a TraversalConfig,
     names: FxHashMap<u32, String>,
@@ -72,12 +81,17 @@ fn traverse<Q: ExternalQueries>(
     id: TypeId,
 ) -> String {
     let mut context = TraversalContext::new(config);
-    traverse_inner(source, &mut context, id)
+    traverse_precedence(source, &mut context, Precedence::Top, id)
 }
 
-fn traverse_inner<'a, Q: ExternalQueries>(
+fn parens_if(condition: bool, s: String) -> String {
+    if condition { format!("({s})") } else { s }
+}
+
+fn traverse_precedence<'a, Q: ExternalQueries>(
     source: &mut TraversalSource<'a, Q>,
     context: &mut TraversalContext,
+    precedence: Precedence,
     id: TypeId,
 ) -> String {
     match source.lookup(id) {
@@ -89,20 +103,31 @@ fn traverse_inner<'a, Q: ExternalQueries>(
                 arguments.push(argument);
             }
 
-            let function = traverse_inner(source, context, function);
+            let function = traverse_precedence(source, context, Precedence::Application, function);
             let arguments = arguments
                 .iter()
                 .rev()
-                .map(|argument| traverse_inner(source, context, *argument))
+                .map(|argument| traverse_precedence(source, context, Precedence::Atom, *argument))
                 .join(" ");
 
-            format!("({function} {arguments})")
+            parens_if(precedence > Precedence::Application, format!("{function} {arguments}"))
         }
 
-        Type::Constrained(constraint, inner) => {
-            let constraint = traverse_inner(source, context, constraint);
-            let inner = traverse_inner(source, context, inner);
-            format!("({constraint} => {inner})")
+        Type::Constrained(constraint, mut inner) => {
+            let mut constraints = vec![constraint];
+
+            while let Type::Constrained(constraint, inner_inner) = source.lookup(inner) {
+                constraints.push(constraint);
+                inner = inner_inner;
+            }
+
+            let inner = traverse_precedence(source, context, Precedence::Constraint, inner);
+            let constraints = constraints
+                .iter()
+                .map(|c| traverse_precedence(source, context, Precedence::Application, *c))
+                .join(" => ");
+
+            parens_if(precedence > Precedence::Constraint, format!("{constraints} => {inner}"))
         }
 
         Type::Constructor(file_id, type_id) => {
@@ -125,18 +150,18 @@ fn traverse_inner<'a, Q: ExternalQueries>(
 
             write!(&mut buffer, "forall").unwrap();
             for ForallBinder { name, kind, .. } in &binders {
-                let kind = traverse_inner(source, context, *kind);
+                let kind = traverse_precedence(source, context, Precedence::Top, *kind);
                 write!(&mut buffer, " ({name} :: {kind})").unwrap();
                 context.names.insert(context.depth.0, name.to_string());
                 context.depth = debruijn::Size(context.depth.0 + 1);
             }
 
-            let inner = traverse_inner(source, context, inner);
+            let inner = traverse_precedence(source, context, Precedence::Top, inner);
             context.depth = previous_depth;
 
             write!(&mut buffer, ". {inner}").unwrap();
 
-            buffer
+            parens_if(precedence > Precedence::Top, buffer)
         }
 
         Type::Function(argument, mut result) => {
@@ -147,13 +172,15 @@ fn traverse_inner<'a, Q: ExternalQueries>(
                 arguments.push(argument);
             }
 
-            let result = traverse_inner(source, context, result);
+            let result = traverse_precedence(source, context, Precedence::Function, result);
             let arguments = arguments
                 .iter()
-                .map(|argument| traverse_inner(source, context, *argument))
+                .map(|argument| {
+                    traverse_precedence(source, context, Precedence::Application, *argument)
+                })
                 .join(" -> ");
 
-            format!("({arguments} -> {result})")
+            parens_if(precedence > Precedence::Function, format!("{arguments} -> {result}"))
         }
 
         Type::KindApplication(mut function, argument) => {
@@ -164,14 +191,18 @@ fn traverse_inner<'a, Q: ExternalQueries>(
                 arguments.push(argument);
             }
 
-            let function = traverse_inner(source, context, function);
+            let function = traverse_precedence(source, context, Precedence::Application, function);
             let arguments = arguments
                 .iter()
                 .rev()
-                .map(|argument| format!("@{}", traverse_inner(source, context, *argument)))
+                .map(|argument| {
+                    let argument =
+                        traverse_precedence(source, context, Precedence::Atom, *argument);
+                    format!("@{argument}")
+                })
                 .join(" ");
 
-            format!("({function} {arguments})")
+            parens_if(precedence > Precedence::Application, format!("{function} {arguments}"))
         }
 
         Type::Unification(unification_id) => match source {
