@@ -3,17 +3,17 @@
 pub mod unification;
 pub use unification::*;
 
+use std::mem;
 use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
-use itertools::Itertools;
 use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
 use rustc_hash::FxHashMap;
 
 use crate::algorithm::{quantify, transfer};
-use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
+use crate::core::{Synonym, Type, TypeId, TypeInterner, Variable, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -35,6 +35,7 @@ pub struct CheckState {
 pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, TypeId>,
+    pub synonyms: FxHashMap<TypeItemId, Synonym>,
 }
 
 pub struct CheckContext<'a, Q>
@@ -205,16 +206,27 @@ impl CheckState {
     where
         Q: ExternalQueries,
     {
-        for (item_id, type_id) in self.binding_group.terms.drain().collect_vec() {
-            if let Some(type_id) = quantify::quantify(self, type_id) {
+        for (item_id, type_id) in mem::take(&mut self.binding_group.terms) {
+            if let Some((type_id, _)) = quantify::quantify(self, type_id) {
                 let type_id = transfer::globalize(self, context, type_id);
                 self.checked.terms.insert(item_id, type_id);
             }
         }
-        for (item_id, type_id) in self.binding_group.types.drain().collect_vec() {
-            if let Some(type_id) = quantify::quantify(self, type_id) {
+
+        for (item_id, type_id) in mem::take(&mut self.binding_group.types) {
+            if let Some((type_id, _)) = quantify::quantify(self, type_id) {
                 let type_id = transfer::globalize(self, context, type_id);
                 self.checked.types.insert(item_id, type_id);
+            }
+        }
+
+        for (item_id, mut synonym) in mem::take(&mut self.binding_group.synonyms) {
+            if let Some((synonym_type, quantified_variables)) =
+                quantify::quantify(self, synonym.synonym_type)
+            {
+                synonym.quantified_variables = quantified_variables;
+                synonym.synonym_type = transfer::globalize(self, context, synonym_type);
+                self.checked.synonyms.insert(item_id, synonym);
             }
         }
     }

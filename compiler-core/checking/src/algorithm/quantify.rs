@@ -11,11 +11,11 @@ use smol_str::SmolStrBuilder;
 use crate::algorithm::state::CheckState;
 use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
 
-pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<TypeId> {
+pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
 
     if graph.node_count() == 0 {
-        return Some(id);
+        return Some((id, debruijn::Size(0)));
     }
 
     let unsolved = ordered_toposort(&graph, state)?;
@@ -43,7 +43,9 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<TypeId> {
         substitutions.insert(id, level);
     }
 
-    Some(substitute_unification(&substitutions, state, quantified))
+    let quantified = substitute_unification(&substitutions, state, quantified);
+
+    Some((quantified, size))
 }
 
 fn generate_type_name(id: u32) -> smol_str::SmolStr {

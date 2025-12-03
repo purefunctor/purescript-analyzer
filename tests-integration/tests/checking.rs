@@ -73,6 +73,21 @@ fn print_terms_types(engine: QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "{n} :: {t}").unwrap();
     }
 
+    if !checked.synonyms.is_empty() {
+        writeln!(snapshot, "\nSynonyms").unwrap();
+    }
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(name) = name else { continue };
+        let Some(group) = checked.lookup_synonym(id) else { continue };
+
+        let synonym = pretty::print_global(&engine, group.synonym_type);
+        writeln!(snapshot, "{name} = {synonym}").unwrap();
+        writeln!(snapshot, "  Quantified = {}", group.quantified_variables).unwrap();
+        writeln!(snapshot, "  Kind = {}", group.kind_variables).unwrap();
+        writeln!(snapshot, "  Type = {}", group.type_variables).unwrap();
+        writeln!(snapshot).unwrap();
+    }
+
     snapshot
 }
 
@@ -206,7 +221,7 @@ fn test_quantify_simple() {
     let unification_b = state.fresh_unification_type(context);
 
     let function = state.storage.intern(Type::Function(unification_a, unification_b));
-    let quantified = quantify::quantify(state, function).unwrap();
+    let (quantified, _) = quantify::quantify(state, function).unwrap();
 
     let mut snapshot = String::default();
 
@@ -222,7 +237,7 @@ fn test_quantify_polykind() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     let unification = state.fresh_unification(context);
-    let quantified = quantify::quantify(state, unification).unwrap();
+    let (quantified, _) = quantify::quantify(state, unification).unwrap();
 
     let mut snapshot = String::default();
 
@@ -244,7 +259,7 @@ fn test_quantify_ordering() {
     let unification_b = state.fresh_unification_type(context);
 
     let function = state.storage.intern(Type::Function(unification_b, unification_a));
-    let quantified = quantify::quantify(state, function).unwrap();
+    let (quantified, _) = quantify::quantify(state, function).unwrap();
 
     let mut snapshot = String::default();
 
@@ -263,7 +278,7 @@ fn test_quantify_scoped() {
     let unification_1 = state.fresh_unification_kinded(unification_0);
     let unification_2 = state.fresh_unification_kinded(unification_1);
 
-    let quantified = quantify::quantify(state, unification_2).unwrap();
+    let (quantified, _) = quantify::quantify(state, unification_2).unwrap();
 
     let mut snapshot = String::default();
 
@@ -287,7 +302,7 @@ fn test_quantify_multiple_scoped() {
     let unification_5 = state.fresh_unification_kinded(unification_4);
 
     let function = state.storage.intern(Type::Function(unification_2, unification_5));
-    let quantified = quantify::quantify(state, function).unwrap();
+    let (quantified, _) = quantify::quantify(state, function).unwrap();
 
     let mut snapshot = String::default();
 
@@ -479,11 +494,21 @@ fn test_type_synonym() {
         r#"
 module Main where
 
+foreign import data Tuple :: Type -> Type -> Type
+
 type AliasType = Int
 
 type AliasTypeType = Array
 
 type InferApply f a = f a
+
+type InferTuple x y = Tuple x y
+
+type CheckApply :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
+type CheckApply f a = f a
+
+type CheckApplyElab :: forall x y. (x -> y) -> x -> y
+type CheckApplyElab f a = f a
 "#,
     );
 

@@ -7,8 +7,8 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{convert, kind, transfer, unification};
-use crate::core::{ForallBinder, Type, TypeId, Variable};
+use crate::algorithm::{convert, kind, unification};
+use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
@@ -206,7 +206,7 @@ fn check_data_like<Q>(
 
 fn check_synonym<Q: ExternalQueries>(
     state: &mut CheckState,
-    context: &CheckContext<'_, Q>,
+    context: &CheckContext<Q>,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
@@ -220,10 +220,10 @@ fn check_synonym<Q: ExternalQueries>(
         return;
     };
 
-    let _ = kind::check_surface_kind(state, context, synonym, result_kind);
+    let (synonym_type, _) = kind::check_surface_kind(state, context, synonym, result_kind);
 
-    let type_kind = type_variables.iter().rfold(result_kind, |result, variable| {
-        state.storage.intern(Type::Function(variable.kind, result))
+    let type_kind = type_variables.iter().rfold(result_kind, |result, binder| {
+        state.storage.intern(Type::Function(binder.kind, result))
     });
 
     if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
@@ -243,6 +243,41 @@ fn check_synonym<Q: ExternalQueries>(
     if let Some(variable) = kind_variables.first() {
         state.unbind(variable.level);
     }
+
+    insert_type_synonym(state, item_id, kind_variables, type_variables, synonym_type);
+}
+
+fn insert_type_synonym(
+    state: &mut CheckState,
+    item_id: TypeItemId,
+    kind_variables: Vec<ForallBinder>,
+    type_variables: Vec<ForallBinder>,
+    synonym_type: TypeId,
+) {
+    let synonym_type = type_variables.iter().rfold(synonym_type, |inner, binder| {
+        let binder = binder.clone();
+        state.storage.intern(Type::Forall(binder, inner))
+    });
+
+    let synonym_type = kind_variables.iter().rfold(synonym_type, |inner, binder| {
+        let binder = binder.clone();
+        state.storage.intern(Type::Forall(binder, inner))
+    });
+
+    let quantified_variables = debruijn::Size(0);
+
+    let kind_variables = {
+        let length = kind_variables.len();
+        debruijn::Size(length as u32)
+    };
+
+    let type_variables = {
+        let length = type_variables.len();
+        debruijn::Size(length as u32)
+    };
+
+    let group = Synonym { quantified_variables, kind_variables, type_variables, synonym_type };
+    state.binding_group.synonyms.insert(item_id, group);
 }
 
 fn check_data_constructors<Q>(

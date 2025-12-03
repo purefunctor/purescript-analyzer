@@ -43,3 +43,11 @@ pub enum Type {
 pub type TypeId = interner::Id<Type>;
 
 pub type TypeInterner = interner::Interner<Type>;
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct Synonym {
+    pub quantified_variables: debruijn::Size,
+    pub kind_variables: debruijn::Size,
+    pub type_variables: debruijn::Size,
+    pub synonym_type: TypeId,
+}

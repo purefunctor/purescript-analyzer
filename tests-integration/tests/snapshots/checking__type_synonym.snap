@@ -5,6 +5,41 @@ expression: snapshot
 Terms
 
 Types
+Tuple :: (Type -> Type -> Type)
 AliasType :: Type
 AliasTypeType :: (Type -> Type)
-CheckApply :: forall (t2 :: Type) (t7 :: Type). ((*0 -> *1) -> *0 -> *1)
+InferApply :: forall (t2 :: Type) (t7 :: Type). ((*0 -> *1) -> *0 -> *1)
+InferTuple :: (Type -> Type -> Type)
+CheckApply :: forall (x :: Type) (y :: Type). ((*1 -> *0) -> *1 -> *0)
+CheckApplyElab :: forall (t12 :: Type) (t13 :: Type) (x :: *1) (y :: *1). ((*1 -> *0) -> *1 -> *0)
+
+Synonyms
+AliasType = Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+AliasTypeType = Array
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+InferApply = forall (t2 :: Type) (t7 :: Type) (f :: (*0 -> *1)) (a :: *1). (*1 *0)
+  Quantified = :2
+  Kind = :0
+  Type = :2
+
+InferTuple = forall (x :: Type) (y :: Type). (Tuple *1 *0)
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+CheckApply = forall (x :: Type) (y :: Type) (f :: (*1 -> *0)) (a :: *1). (*1 *0)
+  Quantified = :0
+  Kind = :2
+  Type = :2
+
+CheckApplyElab = forall (t12 :: Type) (t13 :: Type) (x :: *1) (y :: *1) (f :: (*1 -> *0)) (a :: *1). (*1 *0)
+  Quantified = :2
+  Kind = :2
+  Type = :2

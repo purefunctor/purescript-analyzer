@@ -32,6 +32,7 @@ pub trait ExternalQueries:
 pub struct CheckedModule {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, TypeId>,
+    pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
     pub errors: Vec<CheckError>,
 }
 
@@ -42,6 +43,10 @@ impl CheckedModule {
 
     pub fn lookup_type(&self, id: TypeItemId) -> Option<TypeId> {
         self.types.get(&id).copied()
+    }
+
+    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<&core::Synonym> {
+        self.synonyms.get(&id)
     }
 }
 
