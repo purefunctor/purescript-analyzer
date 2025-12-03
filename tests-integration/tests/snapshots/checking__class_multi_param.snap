@@ -3,7 +3,7 @@ source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
 Terms
-map :: forall (t0 :: Type) (t1 :: Type) (t2 :: Type) (f :: t0). ((Functor f) => forall (a :: t1) (b :: t2). ((a -> b) -> (f a) -> (f b)))
+map :: forall (t0 :: Type) (t1 :: Type) (t2 :: Type) (f :: t0) (a :: t1) (b :: t2). ((Functor f) => ((a -> b) -> (f a) -> (f b)))
 
 Types
 Functor :: forall (t0 :: Type). (t0 -> Constraint)

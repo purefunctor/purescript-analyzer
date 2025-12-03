@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{convert, kind, unification};
+use crate::algorithm::{convert, kind, substitute, unification};
 use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -328,13 +328,20 @@ fn check_class_members<Q>(
         let (member_type, _) =
             kind::check_surface_kind(state, context, *signature_id, context.prim.t);
 
+        let (member_foralls, member_inner) = member_collect_foralls(state, member_type);
+
+        let shift_amount = member_foralls.len() as u32;
+        let shifted_class_reference =
+            substitute::shift_indices(state, shift_amount, class_reference);
+
         let constrained_type =
-            state.storage.intern(Type::Constrained(class_reference, member_type));
+            state.storage.intern(Type::Constrained(shifted_class_reference, member_inner));
 
         let all_variables = {
-            let from_kind = kind_variables.iter();
-            let from_type = type_variables.iter();
-            from_kind.chain(from_type).cloned()
+            let from_kind = kind_variables.iter().cloned();
+            let from_type = type_variables.iter().cloned();
+            let from_member = member_foralls.into_iter();
+            from_kind.chain(from_type).chain(from_member)
         };
 
         let member_type = all_variables.rfold(constrained_type, |inner, variable| {
@@ -347,6 +354,21 @@ fn check_class_members<Q>(
             state.binding_group.terms.insert(member_id, member_type);
         }
     }
+}
+
+fn member_collect_foralls(
+    state: &CheckState,
+    mut current_id: TypeId,
+) -> (Vec<ForallBinder>, TypeId) {
+    let mut binders = Vec::new();
+
+    while let Type::Forall(ref binder, inner_id) = state.storage[current_id] {
+        let binder = binder.clone();
+        binders.push(binder);
+        current_id = inner_id;
+    }
+
+    (binders, current_id)
 }
 
 fn insert_type_synonym(
