@@ -47,8 +47,7 @@ pub(crate) fn check_type_item<Q>(
                 let Some(signature_id) = signature else { return };
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature_id, context.prim.t);
-                let inferred_type = transfer::globalize(state, context, inferred_type);
-                state.checked.types.insert(item_id, inferred_type);
+                state.binding_group.types.insert(item_id, inferred_type);
             }
 
             TypeItemIr::Operator { .. } => (),
