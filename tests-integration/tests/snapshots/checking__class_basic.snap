@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+show :: forall (t0 :: Type) (a :: t0). ((Show a) => (a -> String))
+
+Types
+Show :: forall (t0 :: Type). (t0 -> Constraint)

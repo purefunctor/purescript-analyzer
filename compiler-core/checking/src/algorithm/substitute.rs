@@ -40,6 +40,12 @@ pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: Type
                 state.storage.intern(Type::KindApplication(function, argument))
             }
 
+            Type::Constrained(constraint, inner) => {
+                let constraint = aux(state, index, with_type, constraint);
+                let inner = aux(state, index, with_type, inner);
+                state.storage.intern(Type::Constrained(constraint, inner))
+            }
+
             Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => {
                 in_type
             }

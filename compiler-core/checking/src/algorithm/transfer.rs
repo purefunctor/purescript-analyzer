@@ -86,6 +86,12 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             Type::Application(function, argument)
         }
 
+        Type::Constrained(constraint, inner) => {
+            let constraint = traverse(source, constraint);
+            let inner = traverse(source, inner);
+            Type::Constrained(constraint, inner)
+        }
+
         Type::Constructor(file_id, item_id) => Type::Constructor(file_id, item_id),
 
         Type::Forall(binder, inner) => {

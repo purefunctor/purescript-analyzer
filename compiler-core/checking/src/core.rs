@@ -31,6 +31,7 @@ pub enum Variable {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
+    Constrained(TypeId, TypeId),
     Constructor(FileId, TypeItemId),
     Forall(ForallBinder, TypeId),
     Function(TypeId, TypeId),

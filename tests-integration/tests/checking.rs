@@ -629,3 +629,37 @@ type Test = Identity
         insta::assert_debug_snapshot!(checked.errors);
     }
 }
+
+#[test]
+fn test_class_basic() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Show a where
+  show :: a -> String
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_multi_param() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}

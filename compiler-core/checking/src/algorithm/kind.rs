@@ -239,6 +239,8 @@ where
             }
         }
 
+        Type::Constrained(_, _) => context.prim.t,
+
         Type::Forall(_, _) => context.prim.t,
 
         Type::Function(_, _) => context.prim.t,

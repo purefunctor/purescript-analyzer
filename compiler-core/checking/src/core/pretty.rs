@@ -5,8 +5,7 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::core::debruijn;
-use crate::core::{ForallBinder, Type, TypeId, Variable};
+use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
 
 pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
 where
@@ -98,6 +97,12 @@ fn traverse_inner<'a, Q: ExternalQueries>(
                 .join(" ");
 
             format!("({function} {arguments})")
+        }
+
+        Type::Constrained(constraint, inner) => {
+            let constraint = traverse_inner(source, context, constraint);
+            let inner = traverse_inner(source, context, inner);
+            format!("({constraint} => {inner})")
         }
 
         Type::Constructor(file_id, type_id) => {

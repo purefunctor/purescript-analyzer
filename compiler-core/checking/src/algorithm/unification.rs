@@ -140,6 +140,11 @@ pub fn promote_type(
                 && promote_type(state, occurs, codomain, unification_id, argument)
         }
 
+        Type::Constrained(constraint, inner) => {
+            promote_type(state, occurs, codomain, unification_id, constraint)
+                && promote_type(state, occurs, codomain, unification_id, inner)
+        }
+
         Type::Constructor(_, _) => true,
 
         Type::Forall(ref binder, inner) => {

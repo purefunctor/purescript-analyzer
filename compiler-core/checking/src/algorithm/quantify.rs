@@ -108,6 +108,10 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
                 aux(graph, state, function, dependent);
                 aux(graph, state, argument, dependent);
             }
+            Type::Constrained(constraint, inner) => {
+                aux(graph, state, constraint, dependent);
+                aux(graph, state, inner, dependent);
+            }
             Type::Constructor(_, _) => (),
             Type::Forall(ref binder, inner) => {
                 aux(graph, state, binder.kind, dependent);
@@ -167,6 +171,11 @@ fn substitute_unification(
                 let function = aux(substitutions, state, function, size);
                 let argument = aux(substitutions, state, argument, size);
                 state.storage.intern(Type::Application(function, argument))
+            }
+            Type::Constrained(constraint, inner) => {
+                let constraint = aux(substitutions, state, constraint, size);
+                let inner = aux(substitutions, state, inner, size);
+                state.storage.intern(Type::Constrained(constraint, inner))
             }
             Type::Constructor(_, _) => id,
             Type::Forall(ref binder, inner) => {
