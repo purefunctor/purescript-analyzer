@@ -44,10 +44,21 @@ pub type TypeId = interner::Id<Type>;
 
 pub type TypeInterner = interner::Interner<Type>;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Synonym {
     pub quantified_variables: debruijn::Size,
     pub kind_variables: debruijn::Size,
     pub type_variables: debruijn::Size,
     pub synonym_type: TypeId,
+}
+
+impl Synonym {
+    pub fn has_arguments(&self) -> bool {
+        self.type_variables != debruijn::Size(0)
+    }
+
+    pub fn with_synonym_type(mut self, synonym_type: TypeId) -> Synonym {
+        self.synonym_type = synonym_type;
+        self
+    }
 }

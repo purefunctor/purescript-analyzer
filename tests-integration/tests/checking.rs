@@ -535,6 +535,24 @@ type InferTuplePoly x y = TuplePoly x y
 }
 
 #[test]
+fn test_expand_simple_synonym() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+type Simple = Int
+
+type Test = Simple
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
 fn test_data_arity_fail() {
     {
         let (engine, id) = empty_engine();
@@ -563,6 +581,26 @@ fn test_unification_fail() {
 module Main where
 
 data Maybe (a :: Int) = Just a | Nothing
+"#,
+        );
+
+        let checked = engine.checked(id).unwrap();
+        insta::assert_debug_snapshot!(checked.errors);
+    }
+}
+
+#[test]
+fn test_partial_synonym() {
+    {
+        let (engine, id) = empty_engine();
+        engine.set_content(
+            id,
+            r#"
+module Main where
+
+type Identity a = a
+
+type Test = Identity
 "#,
         );
 

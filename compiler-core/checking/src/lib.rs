@@ -45,8 +45,8 @@ impl CheckedModule {
         self.types.get(&id).copied()
     }
 
-    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<&core::Synonym> {
-        self.synonyms.get(&id)
+    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<core::Synonym> {
+        self.synonyms.get(&id).copied()
     }
 }
 

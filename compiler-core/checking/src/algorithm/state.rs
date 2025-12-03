@@ -37,6 +37,20 @@ pub struct BindingGroupContext {
     pub synonyms: FxHashMap<TypeItemId, Synonym>,
 }
 
+impl BindingGroupContext {
+    pub fn lookup_term(&self, id: TermItemId) -> Option<TypeId> {
+        self.terms.get(&id).copied()
+    }
+
+    pub fn lookup_type(&self, id: TypeItemId) -> Option<TypeId> {
+        self.types.get(&id).copied()
+    }
+
+    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<Synonym> {
+        self.synonyms.get(&id).copied()
+    }
+}
+
 pub struct CheckContext<'a, Q>
 where
     Q: ExternalQueries,
