@@ -648,7 +648,7 @@ class Show a where
 }
 
 #[test]
-fn test_class_multi_param() {
+fn test_class_functor() {
     let (engine, id) = empty_engine();
     engine.set_content(
         id,
@@ -657,6 +657,27 @@ module Main where
 
 class Functor f where
   map :: forall a b. (a -> b) -> f a -> f b
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_monad_state() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Monad m where
+  return :: forall a. a -> m a
+
+class Monad m <= MonadState s m where
+  get :: m s
+  modify :: (s -> s) -> m s
 "#,
     );
 
