@@ -686,6 +686,23 @@ class Monad m <= MonadState s m where
 }
 
 #[test]
+fn test_class_phantom() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Phantom a where
+  value :: Int
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
 fn test_class_with_signature() {
     let (engine, id) = empty_engine();
     engine.set_content(
