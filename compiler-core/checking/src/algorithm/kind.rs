@@ -2,6 +2,7 @@
 
 use files::FileId;
 use indexing::TypeItemId;
+use itertools::Itertools;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::substitute_bound;
@@ -43,9 +44,23 @@ where
             (t, k)
         }
 
-        lowering::TypeKind::Arrow { .. } => {
-            let t = convert::type_to_core(state, context, id);
+        lowering::TypeKind::Arrow { argument, result } => {
+            let argument = argument.map(|argument| {
+                let (argument, _) = check_surface_kind(state, context, argument, context.prim.t);
+                argument
+            });
+
+            let result = result.map(|result| {
+                let (result, _) = check_surface_kind(state, context, result, context.prim.t);
+                result
+            });
+
+            let argument = argument.unwrap_or(context.prim.unknown);
+            let result = result.unwrap_or(context.prim.unknown);
+
+            let t = state.storage.intern(Type::Function(argument, result));
             let k = context.prim.t;
+
             (t, k)
         }
 
@@ -79,9 +94,30 @@ where
             }
         }
 
-        lowering::TypeKind::Forall { .. } => {
-            let t = convert::type_to_core(state, context, id);
+        lowering::TypeKind::Forall { bindings, inner } => {
+            let binders = bindings
+                .iter()
+                .map(|binding| convert::convert_forall_binding(state, context, binding))
+                .collect_vec();
+
+            let inner = inner.map(|inner| {
+                let (inner, _) = check_surface_kind(state, context, inner, context.prim.t);
+                inner
+            });
+
+            let inner = inner.unwrap_or(context.prim.unknown);
+
+            let t = binders.iter().rfold(inner, |inner, binder| {
+                let binder = binder.clone();
+                state.storage.intern(Type::Forall(binder, inner))
+            });
+
             let k = context.prim.t;
+
+            if let Some(binder) = binders.first() {
+                state.unbind(binder.level);
+            }
+
             (t, k)
         }
 
@@ -238,6 +274,8 @@ where
                 transfer::localize(state, context, *global_id)
             }
         }
+
+        Type::Constrained(_, _) => context.prim.t,
 
         Type::Forall(_, _) => context.prim.t,
 

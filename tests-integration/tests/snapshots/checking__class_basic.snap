@@ -3,7 +3,7 @@ source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
 Terms
-In :: forall (f :: Type -> Type). f (Mu f) -> Mu f
+show :: forall (a :: Type). Show a => a -> String
 
 Types
-Mu :: (Type -> Type) -> Type
+Show :: Type -> Constraint

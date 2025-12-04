@@ -2,12 +2,14 @@
 
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::{DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding};
+use lowering::{
+    ClassIr, DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding,
+};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{convert, kind, unification};
+use crate::algorithm::{convert, kind, substitute, unification};
 use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -41,7 +43,10 @@ pub(crate) fn check_type_item<Q>(
                 check_synonym(state, context, item_id, *signature, variables, *synonym);
             }
 
-            TypeItemIr::ClassGroup { .. } => (),
+            TypeItemIr::ClassGroup { signature, class } => {
+                let Some(class) = class else { return };
+                check_class(state, context, item_id, *signature, class);
+            }
 
             TypeItemIr::Foreign { signature, .. } => {
                 let Some(signature_id) = signature else { return };
@@ -245,6 +250,127 @@ fn check_synonym<Q: ExternalQueries>(
     }
 
     insert_type_synonym(state, item_id, kind_variables, type_variables, synonym_type);
+}
+
+fn check_class<Q: ExternalQueries>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    ClassIr { constraints, variables }: &ClassIr,
+) {
+    let Some((kind_variables, type_variables, result_kind)) =
+        check_signature_like(state, context, signature, variables, |_| context.prim.constraint)
+    else {
+        return;
+    };
+
+    let constraints = constraints.iter().map(|&constraint| {
+        let (constraint_type, _) =
+            kind::check_surface_kind(state, context, constraint, context.prim.constraint);
+        constraint_type
+    });
+
+    let _constraints = constraints.collect_vec();
+
+    let class_reference = {
+        let size = state.bound.size();
+        let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
+        type_variables.iter().cloned().fold(reference_type, |reference_type, variable| {
+            let Some(index) = variable.level.to_index(size) else {
+                let level = variable.level;
+                unreachable!("invariant violated: invalid {level} for {size}");
+            };
+
+            let variable = Variable::Bound(index);
+            let variable = state.storage.intern(Type::Variable(variable));
+
+            state.storage.intern(Type::Application(reference_type, variable))
+        })
+    };
+
+    let class_kind = type_variables.iter().rfold(result_kind, |result, variable| {
+        state.storage.intern(Type::Function(variable.kind, result))
+    });
+
+    if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
+        unification::unify(state, context, *pending_kind, class_kind);
+    } else {
+        let class_kind = kind_variables.iter().rfold(class_kind, |inner, binder| {
+            let binder = binder.clone();
+            state.storage.intern(Type::Forall(binder, inner))
+        });
+        state.binding_group.types.insert(item_id, class_kind);
+    };
+
+    check_class_members(state, context, item_id, &kind_variables, &type_variables, class_reference);
+
+    if let Some(variable) = type_variables.first() {
+        state.unbind(variable.level);
+    }
+
+    if let Some(variable) = kind_variables.first() {
+        state.unbind(variable.level);
+    }
+}
+
+fn check_class_members<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    kind_variables: &[ForallBinder],
+    type_variables: &[ForallBinder],
+    class_reference: TypeId,
+) where
+    Q: ExternalQueries,
+{
+    for member_id in context.indexed.pairs.class_members(item_id) {
+        let Some(TermItemIr::ClassMember { signature }) =
+            context.lowered.info.get_term_item(member_id)
+        else {
+            continue;
+        };
+
+        let Some(signature_id) = signature else { continue };
+
+        let (member_type, _) =
+            kind::check_surface_kind(state, context, *signature_id, context.prim.t);
+
+        let (member_foralls, member_inner) = collect_foralls(state, member_type);
+
+        let shift_amount = member_foralls.len() as u32;
+        let shifted_class_reference =
+            substitute::shift_indices(state, shift_amount, class_reference);
+
+        let constrained_type =
+            state.storage.intern(Type::Constrained(shifted_class_reference, member_inner));
+
+        let all_variables = {
+            let from_kind = kind_variables.iter().cloned();
+            let from_type = type_variables.iter().cloned();
+            let from_member = member_foralls.into_iter();
+            from_kind.chain(from_type).chain(from_member)
+        };
+
+        let member_type = all_variables.rfold(constrained_type, |inner, variable| {
+            state.storage.intern(Type::Forall(variable, inner))
+        });
+
+        if let Some(pending_type) = state.binding_group.terms.get(&member_id) {
+            unification::unify(state, context, *pending_type, member_type);
+        } else {
+            state.binding_group.terms.insert(member_id, member_type);
+        }
+    }
+}
+
+fn collect_foralls(state: &CheckState, mut id: TypeId) -> (Vec<ForallBinder>, TypeId) {
+    let mut foralls = Vec::new();
+    while let Type::Forall(ref binder, inner) = state.storage[id] {
+        foralls.push(binder.clone());
+        id = inner;
+    }
+    (foralls, id)
 }
 
 fn insert_type_synonym(

@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+return :: forall (m :: Type -> Type) (a :: Type). Monad m => a -> m a
+get :: forall (s :: Type) (m :: Type -> Type). MonadState s m => m s
+modify :: forall (s :: Type) (m :: Type -> Type). MonadState s m => (s -> s) -> m s
+
+Types
+Monad :: (Type -> Type) -> Constraint
+MonadState :: Type -> (Type -> Type) -> Constraint

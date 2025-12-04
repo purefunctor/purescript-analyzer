@@ -629,3 +629,113 @@ type Test = Identity
         insta::assert_debug_snapshot!(checked.errors);
     }
 }
+
+#[test]
+fn test_class_basic() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Show a where
+  show :: a -> String
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_functor() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_monad_state() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Monad m where
+  return :: forall a. a -> m a
+
+class Monad m <= MonadState s m where
+  get :: m s
+  modify :: (s -> s) -> m s
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_phantom() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Phantom a where
+  value :: Int
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_with_signature() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Functor :: (Type -> Type) -> Constraint
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_class_superclass() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+
+class Functor f <= Applicative f where
+  pure :: forall a. a -> f a
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
