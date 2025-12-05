@@ -7,6 +7,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
+use crate::algorithm::kind;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
@@ -182,7 +183,10 @@ where
                 .map(|binding| convert_forall_binding(state, context, binding))
                 .collect();
 
-            let inner = inner.map_or(context.prim.unknown, |id| type_to_core(state, context, id));
+            let inner = inner.map_or(context.prim.unknown, |id| {
+                let (inner, _) = kind::check_surface_kind(state, context, id, context.prim.t);
+                inner
+            });
             let (arguments, result) = signature_components(state, inner);
 
             InspectSignature { variables, arguments, result }
@@ -195,7 +199,7 @@ where
         _ => {
             let variables = [].into();
 
-            let id = type_to_core(state, context, id);
+            let (id, _) = kind::check_surface_kind(state, context, id, context.prim.t);
             let (arguments, result) = signature_components(state, id);
 
             InspectSignature { variables, arguments, result }
