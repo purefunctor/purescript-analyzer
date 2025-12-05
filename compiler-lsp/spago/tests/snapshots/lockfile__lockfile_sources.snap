@@ -1,10 +1,11 @@
 ---
 source: compiler-lsp/spago/tests/lockfile.rs
 expression: sources
-snapshot_kind: text
 ---
 ./src
 ./test
+../fixture-local/src
+../fixture-local/test
 .spago/p/aff-8.0.0/src
 .spago/p/aff-8.0.0/test
 .spago/p/affjax-13.0.0/src

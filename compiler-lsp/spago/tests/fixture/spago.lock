@@ -7,6 +7,7 @@
           "dependencies": [
             "console",
             "effect",
+            "fixture-local",
             "graphql-client",
             "prelude"
           ],
@@ -37,6 +38,7 @@
             "exists",
             "exitcodes",
             "filterable",
+            "fixture-local",
             "foldable-traversable",
             "foreign",
             "foreign-object",
@@ -663,6 +665,9 @@
       }
     },
     "extra_packages": {
+      "fixture-local": {
+        "path": "../fixture-local"
+      },
       "graphql-client": {
         "git": "https://github.com/OxfordAbstracts/purescript-graphql-client.git",
         "ref": "fe24db5f0a79137edb1019b5757ce70d44efae10",
@@ -1056,6 +1061,15 @@
         "identity",
         "lists",
         "ordered-collections"
+      ]
+    },
+    "fixture-local": {
+      "type": "local",
+      "path": "../fixture-local",
+      "dependencies": [
+        "console",
+        "effect",
+        "prelude"
       ]
     },
     "foldable-traversable": {

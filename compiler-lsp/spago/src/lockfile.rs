@@ -28,6 +28,7 @@ pub type Packages = FxHashMap<SmolStr, PackageEntry>;
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum PackageEntry {
     Git { rev: SmolStr },
+    Local { path: SmolStr },
     Registry { version: SmolStr },
 }
 
@@ -44,6 +45,12 @@ impl Lockfile {
             PackageEntry::Git { rev } => {
                 let src = base.join(name).join(rev).join("src");
                 let test = base.join(name).join(rev).join("test");
+                [src, test]
+            }
+            PackageEntry::Local { path } => {
+                let base = Path::new(path);
+                let src = base.join("src");
+                let test = base.join("test");
                 [src, test]
             }
             PackageEntry::Registry { version } => {
