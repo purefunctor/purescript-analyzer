@@ -9,6 +9,12 @@ use smol_str::SmolStr;
 use crate::source::*;
 use crate::{TermVariableResolution, TypeVariableResolution};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum StringKind {
+    String,
+    RawString,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {
     RecordField { name: Option<SmolStr>, value: Option<BinderId> },
@@ -171,11 +177,11 @@ pub enum TypeKind {
     Constructor { resolution: Option<(FileId, TypeItemId)> },
     Forall { bindings: Arc<[TypeVariableBinding]>, inner: Option<TypeId> },
     Hole,
-    Integer,
+    Integer { value: Option<i32> },
     Kinded { type_: Option<TypeId>, kind: Option<TypeId> },
     Operator { resolution: Option<(FileId, TypeItemId)> },
     OperatorChain { head: Option<TypeId>, tail: Arc<[OperatorPair<TypeId>]> },
-    String,
+    String { kind: StringKind, value: Option<SmolStr> },
     Variable { name: Option<SmolStr>, resolution: Option<TypeVariableResolution> },
     Wildcard,
     Record { items: Arc<[TypeRowItem]>, tail: Option<TypeId> },

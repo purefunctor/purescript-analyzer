@@ -1118,3 +1118,15 @@ has_child!(
     TypeOperator
     | qualified() -> QualifiedName
 );
+
+has_token!(
+    TypeInteger
+    | minus_token() -> MINUS
+    | integer_token() -> INTEGER
+);
+
+has_token!(
+    TypeString
+    | string() -> STRING
+    | raw_string() -> RAW_STRING
+);

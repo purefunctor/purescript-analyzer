@@ -3,7 +3,7 @@ use std::sync::Arc;
 use itertools::Itertools;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
-use smol_str::SmolStr;
+use smol_str::{SmolStr, StrExt};
 use stabilizing::ExpectId;
 use syntax::{SyntaxToken, cst};
 
@@ -759,7 +759,20 @@ fn lower_type_kind(
             TypeKind::Forall { bindings, inner }
         }),
         cst::Type::TypeHole(_) => TypeKind::Hole,
-        cst::Type::TypeInteger(_) => TypeKind::Integer,
+        cst::Type::TypeInteger(cst) => {
+            let value = cst.integer_token().and_then(|token| {
+                let text = token.text();
+                let integer = if let Some(hex) = text.strip_prefix("0x") {
+                    let clean = hex.replace_smolstr("_", "");
+                    i32::from_str_radix(&clean, 16).ok()?
+                } else {
+                    let clean = text.replace_smolstr("_", "");
+                    clean.parse().ok()?
+                };
+                if cst.minus_token().is_some() { Some(-integer) } else { Some(integer) }
+            });
+            TypeKind::Integer { value }
+        }
         cst::Type::TypeKinded(cst) => {
             let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
             let type_ = children.next();
@@ -791,7 +804,26 @@ fn lower_type_kind(
                 .collect();
             TypeKind::OperatorChain { head, tail }
         }
-        cst::Type::TypeString(_) => TypeKind::String,
+        cst::Type::TypeString(cst) => {
+            let (kind, value) = if let Some(token) = cst.string() {
+                let text = token.text();
+                let value = text
+                    .strip_prefix('"')
+                    .and_then(|text| text.strip_suffix('"'))
+                    .map(SmolStr::from);
+                (StringKind::String, value)
+            } else if let Some(token) = cst.raw_string() {
+                let text = token.text();
+                let value = text
+                    .strip_prefix("\"\"\"")
+                    .and_then(|text| text.strip_suffix("\"\"\""))
+                    .map(SmolStr::from);
+                (StringKind::RawString, value)
+            } else {
+                (StringKind::String, None)
+            };
+            TypeKind::String { kind, value }
+        }
         cst::Type::TypeVariable(cst) => {
             let name = cst.name_token().map(|cst| {
                 let text = cst.text();
