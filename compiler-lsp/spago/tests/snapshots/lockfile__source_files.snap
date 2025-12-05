@@ -4,3 +4,5 @@ expression: snapshot
 ---
 ./spago/tests/fixture/src/Main.purs
 ./spago/tests/fixture/test/Test/Main.purs
+./spago/tests/fixture-local/src/Main.purs
+./spago/tests/fixture-local/test/Test/Main.purs

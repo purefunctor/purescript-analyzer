@@ -3,6 +3,7 @@ package:
   dependencies:
     - console
     - effect
+    - fixture-local
     - graphql-client
     - prelude
   test:
@@ -12,6 +13,8 @@ workspace:
   packageSet:
     registry: 64.10.0
   extraPackages:
+    fixture-local:
+      path: ../fixture-local
     graphql-client:
       dependencies:
         - aff
