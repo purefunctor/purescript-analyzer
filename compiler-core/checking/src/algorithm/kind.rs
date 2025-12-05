@@ -1,18 +1,22 @@
 //! Implements the kind checker.
+//!
+//! This module is organized into submodules:
+//! - [`operator`]: Kind checking for type operator chains
+//! - [`synonym`]: Kind checking for type synonym applications
+
+mod operator;
+mod synonym;
 
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
 use lowering::TypeVariableBindingId;
 use smol_str::SmolStr;
-use sugar::OperatorTree;
 
+use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute::substitute_bound;
 use crate::algorithm::{substitute, transfer, unification};
-use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable};
-use crate::error::ErrorKind;
-use crate::{CheckedModule, ExternalQueries};
+use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
@@ -36,8 +40,8 @@ where
                 return default;
             };
 
-            if let Some(synonym) = parse_synonym_application(state, context, *function) {
-                return infer_synonym_application(state, context, id, synonym, arguments);
+            if let Some(synonym) = synonym::parse_synonym_application(state, context, *function) {
+                return synonym::infer_synonym_application(state, context, id, synonym, arguments);
             }
 
             let (mut t, mut k) = infer_surface_kind(state, context, *function);
@@ -74,8 +78,8 @@ where
         lowering::TypeKind::Constructor { resolution } => {
             let Some((file_id, type_id)) = *resolution else { return default };
 
-            if let Some((s, k)) = lookup_synonym_by_file(state, context, file_id, type_id) {
-                return infer_synonym_constructor(state, context, s, k, id);
+            if let Some((s, k)) = synonym::lookup_file_synonym(state, context, file_id, type_id) {
+                return synonym::infer_synonym_constructor(state, context, s, k, id);
             }
 
             let t = state.storage.intern(Type::Constructor(file_id, type_id));
@@ -147,7 +151,9 @@ where
             (t, k)
         }
 
-        lowering::TypeKind::OperatorChain { .. } => infer_operator_chain_kind(state, context, id),
+        lowering::TypeKind::OperatorChain { .. } => {
+            operator::infer_operator_chain_kind(state, context, id)
+        }
 
         lowering::TypeKind::String { kind, value } => {
             let value = value.clone().unwrap_or(MISSING_NAME);
@@ -270,7 +276,7 @@ where
             let t = state.fresh_unification_kinded(k);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let function_k = substitute_bound(state, t, function_k);
+            let function_k = substitute::substitute_bound(state, t, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
@@ -338,22 +344,7 @@ where
         }
 
         Type::OperatorApplication(file_id, type_id, _, _) => {
-            let operator_kind =
-                lookup_file_type(state, context, file_id, type_id).unwrap_or(default);
-
-            let operator_kind = instantiate_kind_foralls(state, operator_kind);
-
-            let operator_kind = state.normalize_type(operator_kind);
-            let Type::Function(_, result_id) = state.storage[operator_kind] else {
-                return default;
-            };
-
-            let result_id = state.normalize_type(result_id);
-            let Type::Function(_, result) = state.storage[result_id] else {
-                return default;
-            };
-
-            result
+            operator::elaborate_operator_application_kind(state, context, file_id, type_id)
         }
 
         Type::String(_, _) => context.prim.symbol,
@@ -385,75 +376,27 @@ where
     (inferred_type, inferred_kind)
 }
 
-fn localize_synonym_and_kind<Q>(
+pub fn check_type_variable_binding<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    synonym: Synonym,
-    kind: TypeId,
-) -> (Synonym, TypeId)
+    binding: &lowering::TypeVariableBinding,
+) -> ForallBinder
 where
     Q: ExternalQueries,
 {
-    let synonym_type = transfer::localize(state, context, synonym.synonym_type);
-    let synonym = synonym.with_synonym_type(synonym_type);
-    let kind = transfer::localize(state, context, kind);
-    (synonym, kind)
-}
+    let visible = binding.visible;
+    let name = binding.name.clone().unwrap_or(MISSING_NAME);
 
-fn lookup_local_synonym<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    type_id: TypeItemId,
-) -> Option<(Synonym, TypeId)>
-where
-    Q: ExternalQueries,
-{
-    if let Some(synonym) = state.binding_group.lookup_synonym(type_id)
-        && let Some(kind) = state.binding_group.lookup_type(type_id)
-    {
-        Some((synonym, kind))
-    } else if let Some(synonym) = state.checked.lookup_synonym(type_id)
-        && let Some(kind) = state.checked.lookup_type(type_id)
-    {
-        Some(localize_synonym_and_kind(state, context, synonym, kind))
-    } else {
-        None
-    }
-}
+    let kind = match binding.kind {
+        Some(id) => {
+            let (kind, _) = check_surface_kind(state, context, id, context.prim.t);
+            kind
+        }
+        None => state.fresh_unification_type(context),
+    };
 
-fn lookup_global_synonym<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    checked: &CheckedModule,
-    type_id: TypeItemId,
-) -> Option<(Synonym, TypeId)>
-where
-    Q: ExternalQueries,
-{
-    if let Some(synonym) = checked.lookup_synonym(type_id)
-        && let Some(kind) = checked.lookup_type(type_id)
-    {
-        Some(localize_synonym_and_kind(state, context, synonym, kind))
-    } else {
-        None
-    }
-}
-
-fn lookup_synonym_by_file<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
-) -> Option<(Synonym, TypeId)>
-where
-    Q: ExternalQueries,
-{
-    if file_id == context.id {
-        lookup_local_synonym(state, context, type_id)
-    } else {
-        let checked = context.queries.checked(file_id).ok()?;
-        lookup_global_synonym(state, context, &checked, type_id)
-    }
+    let level = state.bind_forall(binding.id, kind);
+    ForallBinder { visible, name, level, kind }
 }
 
 pub(crate) fn lookup_file_type<Q>(
@@ -478,239 +421,4 @@ where
         let global_id = checked.types.get(&type_id)?;
         Some(transfer::localize(state, context, *global_id))
     }
-}
-
-fn infer_synonym_constructor<Q: ExternalQueries>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    synonym: Synonym,
-    kind: TypeId,
-    id: lowering::TypeId,
-) -> (TypeId, TypeId) {
-    if synonym.has_arguments() {
-        state.insert_error(ErrorKind::PartialSynonymApplication { id });
-        return (context.prim.unknown, context.prim.unknown);
-    }
-    (synonym.synonym_type, kind)
-}
-
-fn synonym_instantiate(state: &mut CheckState, mut type_id: TypeId, count: usize) -> TypeId {
-    for _ in 0..count {
-        if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[type_id] {
-            let unification = state.fresh_unification_kinded(kind);
-            type_id = substitute_bound(state, unification, inner);
-        } else {
-            break;
-        }
-    }
-    type_id
-}
-
-fn synonym_apply_forall<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    inner_ty: TypeId,
-    argument_id: lowering::TypeId,
-) -> Option<TypeId>
-where
-    Q: ExternalQueries,
-{
-    if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[inner_ty] {
-        let (argument_type, _) = check_surface_kind(state, context, argument_id, kind);
-        Some(substitute_bound(state, argument_type, inner))
-    } else {
-        None
-    }
-}
-
-fn parse_synonym_application<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    function: lowering::TypeId,
-) -> Option<Synonym>
-where
-    Q: ExternalQueries,
-{
-    let &lowering::TypeKind::Constructor { resolution } =
-        context.lowered.info.get_type_kind(function)?
-    else {
-        return None;
-    };
-
-    let (file_id, type_id) = resolution?;
-    let (synonym, _) = lookup_synonym_by_file(state, context, file_id, type_id)?;
-
-    Some(synonym)
-}
-
-fn infer_synonym_application<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: lowering::TypeId,
-    synonym: Synonym,
-    arguments: &[lowering::TypeId],
-) -> (TypeId, TypeId)
-where
-    Q: ExternalQueries,
-{
-    let default = (context.prim.unknown, context.prim.unknown);
-
-    let expected_arity = synonym.type_variables.0 as usize;
-    if expected_arity != arguments.len() {
-        state.insert_error(ErrorKind::PartialSynonymApplication { id });
-        return default;
-    }
-
-    let instantiated = state.normalize_type(synonym.synonym_type);
-
-    let to_instantiate =
-        synonym.quantified_variables.0 as usize + synonym.kind_variables.0 as usize;
-
-    let mut result_type = synonym_instantiate(state, instantiated, to_instantiate);
-
-    for &argument_id in arguments {
-        if let Some(applied_type) = synonym_apply_forall(state, context, result_type, argument_id) {
-            result_type = applied_type;
-        } else {
-            return default;
-        };
-    }
-
-    let result_kind = elaborate_kind(state, context, result_type);
-
-    (result_type, result_kind)
-}
-
-fn infer_operator_chain_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: lowering::TypeId,
-) -> (TypeId, TypeId)
-where
-    Q: ExternalQueries,
-{
-    let default = (context.prim.unknown, context.prim.unknown);
-
-    let Ok(bracketed) = context.queries.bracketed(context.id) else {
-        return default;
-    };
-
-    let Some(operator_tree) = bracketed.types.get(&id) else {
-        return default;
-    };
-
-    if let Ok(operator_tree) = operator_tree {
-        infer_operator_tree_kind(state, context, operator_tree)
-    } else {
-        default
-    }
-}
-
-fn infer_operator_tree_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    tree: &OperatorTree<lowering::TypeId>,
-) -> (TypeId, TypeId)
-where
-    Q: ExternalQueries,
-{
-    let default = (context.prim.unknown, context.prim.unknown);
-
-    match tree {
-        OperatorTree::Leaf(None) => default,
-
-        OperatorTree::Leaf(Some(type_id)) => infer_surface_kind(state, context, *type_id),
-
-        OperatorTree::Branch(operator_id, children) => {
-            let Some((file_id, type_item_id)) =
-                context.lowered.info.get_type_operator(*operator_id)
-            else {
-                return default;
-            };
-
-            let operator_k = lookup_file_type(state, context, file_id, type_item_id)
-                .unwrap_or(context.prim.unknown);
-
-            infer_operator_app_kind(state, context, file_id, type_item_id, operator_k, children)
-        }
-    }
-}
-
-fn infer_operator_app_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_item_id: TypeItemId,
-    operator_k: TypeId,
-    children: &[OperatorTree<lowering::TypeId>],
-) -> (TypeId, TypeId)
-where
-    Q: ExternalQueries,
-{
-    let default = (context.prim.unknown, context.prim.unknown);
-
-    let [left_tree, right_tree] = children else {
-        return default;
-    };
-
-    let (left_t, _) = infer_operator_tree_kind(state, context, left_tree);
-    let (right_t, _) = infer_operator_tree_kind(state, context, right_tree);
-
-    let operator_k = instantiate_kind_foralls(state, operator_k);
-    let operator_k = state.normalize_type(operator_k);
-
-    let Type::Function(left_k, rest_k) = state.storage[operator_k] else {
-        return default;
-    };
-
-    let left_k_elaborated = elaborate_kind(state, context, left_t);
-    unification::subsumes(state, context, left_k_elaborated, left_k);
-
-    let rest_k = state.normalize_type(rest_k);
-    let Type::Function(right_k, result_k) = state.storage[rest_k] else {
-        return default;
-    };
-
-    let right_k_elaborated = elaborate_kind(state, context, right_t);
-    unification::subsumes(state, context, right_k_elaborated, right_k);
-
-    let t = state.storage.intern(Type::OperatorApplication(file_id, type_item_id, left_t, right_t));
-    let k = state.normalize_type(result_k);
-
-    (t, k)
-}
-
-fn instantiate_kind_foralls(state: &mut CheckState, mut kind_id: TypeId) -> TypeId {
-    loop {
-        kind_id = state.normalize_type(kind_id);
-        if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[kind_id] {
-            let unification = state.fresh_unification_kinded(kind);
-            kind_id = substitute_bound(state, unification, inner);
-        } else {
-            break kind_id;
-        }
-    }
-}
-
-pub fn check_type_variable_binding<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    binding: &lowering::TypeVariableBinding,
-) -> ForallBinder
-where
-    Q: ExternalQueries,
-{
-    let visible = binding.visible;
-    let name = binding.name.clone().unwrap_or(MISSING_NAME);
-
-    let kind = match binding.kind {
-        Some(id) => {
-            let (kind, _) = check_surface_kind(state, context, id, context.prim.t);
-            kind
-        }
-        None => state.fresh_unification_type(context),
-    };
-
-    let level = state.bind_forall(binding.id, kind);
-    ForallBinder { visible, name, level, kind }
 }
