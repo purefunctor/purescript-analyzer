@@ -74,24 +74,10 @@ where
             }
 
             let t = convert::type_to_core(state, context, id);
-            if file_id == context.id {
-                if let Some(&k) = state.binding_group.types.get(&type_id) {
-                    (t, k)
-                } else if let Some(&k) = state.checked.types.get(&type_id) {
-                    (t, transfer::localize(state, context, k))
-                } else {
-                    default
-                }
-            } else {
-                let Ok(checked) = context.queries.checked(file_id) else {
-                    return default;
-                };
-                if let Some(global_id) = checked.lookup_type(type_id) {
-                    (t, transfer::localize(state, context, global_id))
-                } else {
-                    default
-                }
-            }
+            let k =
+                lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
+
+            (t, k)
         }
 
         lowering::TypeKind::Forall { bindings, inner } => {
@@ -147,24 +133,10 @@ where
             let Some((file_id, type_id)) = *resolution else { return default };
 
             let t = convert::type_to_core(state, context, id);
-            if file_id == context.id {
-                if let Some(&k) = state.binding_group.types.get(&type_id) {
-                    (t, k)
-                } else if let Some(&k) = state.checked.types.get(&type_id) {
-                    (t, transfer::localize(state, context, k))
-                } else {
-                    default
-                }
-            } else {
-                let Ok(checked) = context.queries.checked(file_id) else {
-                    return default;
-                };
-                if let Some(global_id) = checked.lookup_type(type_id) {
-                    (t, transfer::localize(state, context, global_id))
-                } else {
-                    default
-                }
-            }
+            let k =
+                lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
+
+            (t, k)
         }
 
         lowering::TypeKind::OperatorChain { .. } => default,
@@ -284,19 +256,7 @@ where
         Type::Constrained(_, _) => context.prim.t,
 
         Type::Constructor(file_id, type_id) => {
-            if file_id == context.id {
-                if let Some(&k) = state.binding_group.types.get(&type_id) {
-                    k
-                } else if let Some(&k) = state.checked.types.get(&type_id) {
-                    transfer::localize(state, context, k)
-                } else {
-                    default
-                }
-            } else {
-                let Ok(checked) = context.queries.checked(file_id) else { return default };
-                let Some(global_id) = checked.types.get(&type_id) else { return default };
-                transfer::localize(state, context, *global_id)
-            }
+            lookup_file_type(state, context, file_id, type_id).unwrap_or(default)
         }
 
         Type::Forall(_, _) => context.prim.t,
@@ -320,19 +280,7 @@ where
         Type::Kinded(_, kind) => kind,
 
         Type::Operator(file_id, type_id) => {
-            if file_id == context.id {
-                if let Some(&k) = state.binding_group.types.get(&type_id) {
-                    k
-                } else if let Some(&k) = state.checked.types.get(&type_id) {
-                    transfer::localize(state, context, k)
-                } else {
-                    default
-                }
-            } else {
-                let Ok(checked) = context.queries.checked(file_id) else { return default };
-                let Some(global_id) = checked.types.get(&type_id) else { return default };
-                transfer::localize(state, context, *global_id)
-            }
+            lookup_file_type(state, context, file_id, type_id).unwrap_or(default)
         }
 
         Type::String(_, _) => context.prim.symbol,
@@ -432,6 +380,30 @@ where
     } else {
         let checked = context.queries.checked(file_id).ok()?;
         lookup_global_synonym(state, context, &checked, type_id)
+    }
+}
+
+pub(crate) fn lookup_file_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> Option<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if file_id == context.id {
+        if let Some(&k) = state.binding_group.types.get(&type_id) {
+            Some(k)
+        } else if let Some(&k) = state.checked.types.get(&type_id) {
+            Some(transfer::localize(state, context, k))
+        } else {
+            None
+        }
+    } else {
+        let checked = context.queries.checked(file_id).ok()?;
+        let global_id = checked.types.get(&type_id)?;
+        Some(transfer::localize(state, context, *global_id))
     }
 }
 

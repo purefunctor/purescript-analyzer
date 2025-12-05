@@ -8,6 +8,7 @@ use lowering::{
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
+use crate::algorithm::kind::lookup_file_type;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{convert, kind, substitute, unification};
 use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
@@ -62,6 +63,13 @@ pub(crate) fn check_type_item<Q>(
 
                 let operator = Operator { associativity, precedence, file_id, type_id };
                 state.checked.operators.insert(item_id, operator);
+
+                if let Some(id) = lookup_file_type(state, context, file_id, type_id) {
+                    if !is_binary_operator_type(state, id) {
+                        state.insert_error(ErrorKind::InvalidTypeOperator { id });
+                    }
+                    state.binding_group.types.insert(item_id, id);
+                }
             }
         }
     })
@@ -378,6 +386,22 @@ fn collect_foralls(state: &CheckState, mut id: TypeId) -> (Vec<ForallBinder>, Ty
         id = inner;
     }
     (foralls, id)
+}
+
+fn is_binary_operator_type(state: &CheckState, mut id: TypeId) -> bool {
+    while let Type::Forall(_, inner_id) = state.storage[id] {
+        id = inner_id;
+    }
+
+    let Type::Function(_, result_id) = state.storage[id] else {
+        return false;
+    };
+
+    let Type::Function(_, result_id) = state.storage[result_id] else {
+        return false;
+    };
+
+    !matches!(state.storage[result_id], Type::Function(_, _))
 }
 
 fn insert_type_synonym(
