@@ -13,16 +13,18 @@ fn main() {
     println!("cargo::rerun-if-changed=fixtures/lsp");
     println!("cargo::rerun-if-changed=fixtures/lowering");
     println!("cargo::rerun-if-changed=fixtures/resolving");
+    println!("cargo::rerun-if-changed=fixtures/checking");
     generate_lsp();
     generate_lowering();
     generate_resolving();
+    generate_checking();
 }
 
 fn generate_lsp() {
     let lsp = Path::new("./fixtures/lsp");
     let lsp = read_dir(lsp);
 
-    let mut buffer = fs::File::create("./tests/lsp.rs").unwrap();
+    let mut buffer = fs::File::create("./tests/lsp/generated.rs").unwrap();
     writeln!(buffer, "// Do not edit! See build.rs").unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
@@ -60,7 +62,7 @@ fn generate_lowering() {
         (folder, files)
     });
 
-    let mut buffer = fs::File::create("./tests/lowering.rs").unwrap();
+    let mut buffer = fs::File::create("./tests/lowering/generated.rs").unwrap();
     writeln!(buffer, "// Do not edit! See build.rs").unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
@@ -107,7 +109,7 @@ fn generate_resolving() {
         (folder, files)
     });
 
-    let mut buffer = fs::File::create("./tests/resolving.rs").unwrap();
+    let mut buffer = fs::File::create("./tests/resolving/generated.rs").unwrap();
     writeln!(buffer, "// Do not edit! See build.rs").unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
@@ -144,5 +146,40 @@ fn test_{folder_name}_{test_name}() {{
             )
             .unwrap();
         }
+    }
+}
+
+fn generate_checking() {
+    let checking = Path::new("./fixtures/checking");
+    let checking = read_dir(checking);
+
+    let mut buffer = fs::File::create("./tests/checking/generated.rs").unwrap();
+    writeln!(buffer, "// Do not edit! See build.rs").unwrap();
+
+    let converter = Converter::new().to_case(Case::Snake);
+
+    for folder in checking {
+        let Some(folder) = folder.file_stem() else {
+            continue;
+        };
+
+        let folder_name = folder.to_os_string().into_string().unwrap();
+        let folder_name = converter.convert(folder_name);
+
+        writeln!(
+            buffer,
+            r#"
+#[rustfmt::skip]
+#[test]
+fn test_{folder_name}_main() {{
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/{folder_name}"));
+    let Some(id) = engine.module_file("Main") else {{
+        return;
+    }};
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}}"#
+        )
+        .unwrap();
     }
 }

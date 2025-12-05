@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Simple :: Type
+Test :: Type
+
+Synonyms
+Simple = Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Test = Int
+  Quantified = :0
+  Kind = :0
+  Type = :0

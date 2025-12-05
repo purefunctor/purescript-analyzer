@@ -1,122 +1,110 @@
-// Do not edit! See build.rs
+#[path = "lowering/generated.rs"]
+mod generated;
 
-#[rustfmt::skip]
+use analyzer::{QueryEngine, prim};
+use files::Files;
+
 #[test]
-fn test_001_ado_statement_recursion_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/001_ado_statement_recursion"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
+fn test_basic_cycle() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+type T = 123
+t = 123
+
+single a = single a
+
+double1 a = double2 a
+double2 a = double1 a
+
+triple1 a = triple2 a
+triple2 a = triple3 a
+triple3 a = triple1 a
+
+newtype Mu f a = Mu (f (Mu f a))
+
+data Double1 = Double1 Double2
+data Double2 = Double2 Double1
+
+newtype Triple1 a = Triple1 Triple2
+newtype Triple2 a = Triple2 Triple3
+type Triple3 a = Triple1 a
+"#,
+    );
+    let content = files.content(id);
+
+    engine.set_content(id, content);
+
+    let lowered = engine.lowered(id).unwrap();
+
+    let terms = &lowered.term_scc;
+    let types = &lowered.type_scc;
+
+    insta::assert_debug_snapshot!((terms, types));
 }
 
-#[rustfmt::skip]
 #[test]
-fn test_002_class_equation_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/002_class_equation"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
+fn test_operator_cycle() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+add a b = a + b
+
+infix 5 add as +
+
+type Add a b = a + b
+
+infix 5 type Add as +
+"#,
+    );
+    let content = files.content(id);
+
+    engine.set_content(id, content);
+
+    let lowered = engine.lowered(id).unwrap();
+
+    let terms = &lowered.term_scc;
+    let types = &lowered.type_scc;
+
+    insta::assert_debug_snapshot!((terms, types));
 }
 
-#[rustfmt::skip]
 #[test]
-fn test_003_data_equation_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/003_data_equation"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
+fn test_non_cycle_ordering() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
 
-#[rustfmt::skip]
-#[test]
-fn test_004_derive_declaration_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/004_derive_declaration"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
 
-#[rustfmt::skip]
-#[test]
-fn test_005_do_statement_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/005_do_statement"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
+a _ = b 0
+b _ = c 0
+c _ = 0
+"#,
+    );
+    let content = files.content(id);
 
-#[rustfmt::skip]
-#[test]
-fn test_006_do_statement_recursion_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/006_do_statement_recursion"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
+    engine.set_content(id, content);
 
-#[rustfmt::skip]
-#[test]
-fn test_007_instance_declaration_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/007_instance_declaration"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
+    let lowered = engine.lowered(id).unwrap();
 
-#[rustfmt::skip]
-#[test]
-fn test_008_newtype_equation_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/008_newtype_equation"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
+    let terms = &lowered.term_scc;
+    let types = &lowered.type_scc;
 
-#[rustfmt::skip]
-#[test]
-fn test_009_signature_equation_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/009_signature_equation"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
-
-#[rustfmt::skip]
-#[test]
-fn test_010_value_equation_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/010_value_equation"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
-}
-
-#[rustfmt::skip]
-#[test]
-fn test_011_case_after_let_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/011_case_after_let"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
-    insta::assert_snapshot!(report);
+    insta::assert_debug_snapshot!((terms, types));
 }

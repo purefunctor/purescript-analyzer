@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+
+Types:
+
+a@Some(Position { line: 2, character: 25 })
+  introduces a constraint variable "a"
+a@Some(Position { line: 3, character: 34 })
+  introduces a constraint variable "a"

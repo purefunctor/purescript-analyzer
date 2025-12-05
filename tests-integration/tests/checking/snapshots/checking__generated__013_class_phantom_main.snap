@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+value :: forall (t0 :: Type) (a :: t0). Phantom a => Int
+
+Types
+Phantom :: forall (t0 :: Type). t0 -> Constraint

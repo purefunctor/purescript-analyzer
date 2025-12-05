@@ -1,6 +1,0 @@
----
-source: tests-integration/tests/deferred_resolution.rs
-expression: report
-snapshot_kind: text
----
-<empty>

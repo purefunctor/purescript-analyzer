@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module LibraryB
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+  - html
+
+Exported Types:
+  - Html
+
+Local Terms:
+  - html
+
+Local Types:
+  - Html
+
+Errors:

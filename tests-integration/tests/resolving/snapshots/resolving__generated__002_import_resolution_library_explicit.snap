@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module LibraryExplicit
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+  - Id
+
+Exported Types:
+  - Hidden
+  - Id
+
+Local Terms:
+  - Hidden
+  - Id
+
+Local Types:
+  - Hidden
+  - Id
+
+Errors:

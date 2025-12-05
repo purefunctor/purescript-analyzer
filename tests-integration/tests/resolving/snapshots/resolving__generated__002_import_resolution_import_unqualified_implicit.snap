@@ -1,0 +1,45 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module ImportUnqualifiedImplicit
+
+Unqualified Imports:
+
+Terms:
+  - MkLibTy is Implicit
+  - Ctor2 is Implicit
+  - hideMe is Implicit
+  - MkHideTy is Implicit
+  - Ctor3 is Implicit
+  - libFn is Implicit
+  - Ctor1 is Implicit
+
+Types:
+  - LibTy is Implicit
+  - MultiTy is Implicit
+  - TypeOnly is Implicit
+  - HideTy is Implicit
+
+Qualified Imports:
+
+Exported Terms:
+  - MkHideTy
+  - Ctor3
+  - libFn
+  - Ctor2
+  - MkLibTy
+  - Ctor1
+  - hideMe
+
+Exported Types:
+  - LibTy
+  - MultiTy
+  - TypeOnly
+  - HideTy
+
+Local Terms:
+
+Local Types:
+
+Errors:

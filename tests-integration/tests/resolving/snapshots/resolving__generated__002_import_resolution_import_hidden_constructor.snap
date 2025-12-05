@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module ImportHiddenConstructor
+
+Unqualified Imports:
+
+Terms:
+
+Types:
+  - Hidden is Explicit
+
+Qualified Imports:
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Errors:

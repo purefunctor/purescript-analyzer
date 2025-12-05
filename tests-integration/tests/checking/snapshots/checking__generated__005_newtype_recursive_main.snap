@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+In :: forall (f :: Type -> Type). f (Mu f) -> Mu f
+
+Types
+Mu :: (Type -> Type) -> Type

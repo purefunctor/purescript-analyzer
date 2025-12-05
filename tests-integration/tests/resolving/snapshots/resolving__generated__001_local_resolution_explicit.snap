@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module Explicit
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+  - value
+  - Just
+  - Id
+  - Nothing
+  - eq
+
+Exported Types:
+  - HiddenConstructor
+  - Id
+  - Eq
+  - Synonym
+  - Maybe
+
+Local Terms:
+  - value
+  - eqMaybe
+  - eqId
+  - eq
+  - HiddenType
+  - Just
+  - Id
+  - Nothing
+  - HiddenConstructor
+
+Local Types:
+  - HiddenConstructor
+  - HiddenType
+  - Id
+  - Eq
+  - Synonym
+  - Maybe
+
+Errors:

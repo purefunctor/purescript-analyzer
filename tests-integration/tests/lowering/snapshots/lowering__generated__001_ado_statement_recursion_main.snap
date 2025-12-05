@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+x'notBinder@Some(Position { line: 4, character: 4 })
+  resolves to binder Some(Position { line: 2, character: 10 })
+x'notBinder@Some(Position { line: 3, character: 21 })
+  resolves to top-level name
+pure@Some(Position { line: 3, character: 16 })
+  resolves to top-level name
+
+Types:

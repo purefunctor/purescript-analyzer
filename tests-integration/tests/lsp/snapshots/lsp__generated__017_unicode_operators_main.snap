@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+expression: report
+---
+Hover at Position { line: 6, character: 19 }
+
+```
+bug ∷ ∀ a. Effect (Either a a) → Effect (Either a a)
+--                 $                     $
+```
+
+```purescript
+foreign import data Either ∷ Type → Type → Type
+```
+
+
+Hover at Position { line: 6, character: 41 }
+
+```
+bug ∷ ∀ a. Effect (Either a a) → Effect (Either a a)
+--                 $                     $
+```
+
+```purescript
+foreign import data Either ∷ Type → Type → Type
+```

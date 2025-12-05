@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+b@Some(Position { line: 12, character: 17 })
+  resolves to binder Some(Position { line: 12, character: 12 })
+a@Some(Position { line: 9, character: 17 })
+  resolves to binder Some(Position { line: 9, character: 12 })
+
+Types:
+
+a@Some(Position { line: 2, character: 19 })
+  resolves to forall Some(Position { line: 2, character: 10 })

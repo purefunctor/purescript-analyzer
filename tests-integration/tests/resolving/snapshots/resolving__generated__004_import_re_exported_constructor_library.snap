@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module Library
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Internal Terms:
+  - Internal is Implicit
+
+Internal Types:
+  - Internal is Implicit
+
+Exported Terms:
+  - Internal
+
+Exported Types:
+  - Internal
+
+Local Terms:
+
+Local Types:
+
+Errors:

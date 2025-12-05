@@ -1,9 +1,0 @@
----
-source: tests-integration/tests/checking.rs
-expression: snapshot
----
-Terms
-value :: forall (t0 :: Type) (a :: t0). Phantom a => Int
-
-Types
-Phantom :: forall (t0 :: Type). t0 -> Constraint

@@ -1,0 +1,35 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module InvalidImport
+
+Unqualified Imports:
+
+Terms:
+
+Types:
+  - Invalid is Explicit
+
+Terms:
+
+Types:
+  - Css is Explicit
+  - Html is Explicit
+
+Qualified Imports:
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Errors:
+  - InvalidImportStatement { id: AstId<syntax::cst::ImportStatement>(7) }
+  - InvalidImportStatement { id: AstId<syntax::cst::ImportStatement>(5) }
+  - InvalidImportItem { id: AstId<syntax::cst::ImportItem>(15) }
+  - InvalidImportItem { id: AstId<syntax::cst::ImportItem>(13) }
+  - InvalidImportItem { id: AstId<syntax::cst::ImportItem>(14) }

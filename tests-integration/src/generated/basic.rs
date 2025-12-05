@@ -1,8 +1,9 @@
 use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
+use checking::core::pretty;
 use files::FileId;
-use indexing::ImportKind;
+use indexing::{ImportKind, TermItem, TypeItem};
 use lowering::{
     ExpressionKind, GraphNode, ImplicitTypeVariable, LetBound, TermVariableResolution, TypeKind,
     TypeVariableResolution,
@@ -210,4 +211,43 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     }
 
     buffer
+}
+
+pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
+    let indexed = engine.indexed(id).unwrap();
+    let checked = engine.checked(id).unwrap();
+
+    let mut snapshot = String::default();
+
+    writeln!(snapshot, "Terms").unwrap();
+    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_term(id) else { continue };
+        let t = pretty::print_global(engine, t);
+        writeln!(snapshot, "{n} :: {t}").unwrap();
+    }
+
+    writeln!(snapshot, "\nTypes").unwrap();
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(n) = name else { continue };
+        let Some(t) = checked.lookup_type(id) else { continue };
+        let t = pretty::print_global(engine, t);
+        writeln!(snapshot, "{n} :: {t}").unwrap();
+    }
+
+    if !checked.synonyms.is_empty() {
+        writeln!(snapshot, "\nSynonyms").unwrap();
+    }
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(name) = name else { continue };
+        let Some(group) = checked.lookup_synonym(id) else { continue };
+        let synonym = pretty::print_global(engine, group.synonym_type);
+        writeln!(snapshot, "{name} = {synonym}").unwrap();
+        writeln!(snapshot, "  Quantified = {}", group.quantified_variables).unwrap();
+        writeln!(snapshot, "  Kind = {}", group.kind_variables).unwrap();
+        writeln!(snapshot, "  Type = {}", group.type_variables).unwrap();
+        writeln!(snapshot).unwrap();
+    }
+
+    snapshot
 }

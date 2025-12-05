@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module InvalidConstructor
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+
+Exported Types:
+  - Invalid
+
+Local Terms:
+
+Local Types:
+  - Invalid
+
+Errors:

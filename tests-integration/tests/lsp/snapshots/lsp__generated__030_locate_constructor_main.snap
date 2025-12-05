@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+expression: report
+---
+References at Position { line: 2, character: 15 }
+
+```
+data Maybe a = Just a | Nothing
+--             %        %
+```
+
+file:///tests-integration/fixtures/lsp/030_locate_constructor/Main.purs @ 5:7..5:11
+
+
+References at Position { line: 2, character: 24 }
+
+```
+data Maybe a = Just a | Nothing
+--             %        %
+```
+
+file:///tests-integration/fixtures/lsp/030_locate_constructor/Main.purs @ 6:10..6:17
+
+
+References at Position { line: 8, character: 15 }
+
+```
+newtype Id a = Id a
+--             %
+```
+
+file:///tests-integration/fixtures/lsp/030_locate_constructor/Main.purs @ 11:5..11:7

@@ -1,9 +1,0 @@
----
-source: tests-integration/tests/checking.rs
-expression: snapshot
----
-Terms
-show :: forall (a :: Type). Show a => a -> String
-
-Types
-Show :: Type -> Constraint

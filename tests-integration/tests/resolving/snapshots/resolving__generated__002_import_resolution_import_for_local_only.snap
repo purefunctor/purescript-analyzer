@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module ImportForLocalOnly
+
+Unqualified Imports:
+
+Terms:
+  - libFn is Explicit
+
+Types:
+
+Terms:
+  - Id is Explicit
+
+Types:
+  - Id is Explicit
+
+Qualified Imports:
+
+Exported Terms:
+  - Id
+
+Exported Types:
+  - Id
+
+Local Terms:
+
+Local Types:
+
+Errors:

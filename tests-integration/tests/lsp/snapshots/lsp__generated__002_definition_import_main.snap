@@ -1,0 +1,142 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+expression: report
+---
+GotoDefinition at Position { line: 2, character: 8 }
+
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      @    @     @          @          @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 0:0..15:0
+
+
+GotoDefinition at Position { line: 2, character: 13 }
+
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      @    @     @          @          @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 2:0..3:9
+
+
+GotoDefinition at Position { line: 2, character: 19 }
+
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      @    @     @          @          @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 5:0..5:31
+
+
+GotoDefinition at Position { line: 2, character: 30 }
+
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      @    @     @          @          @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 10:0..10:17
+
+
+GotoDefinition at Position { line: 2, character: 41 }
+
+```
+import Lib (life, Maybe(..), (+),  type (++))
+--      @    @     @          @          @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 14:0..14:23
+
+
+GotoDefinition at Position { line: 6, character: 7 }
+
+```
+ref = life
+--     @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 2:0..3:9
+
+
+GotoDefinition at Position { line: 9, character: 24 }
+
+```
+just :: forall a. a -> Maybe a
+--                      @    @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 5:0..5:31
+
+
+GotoDefinition at Position { line: 9, character: 29 }
+
+```
+just :: forall a. a -> Maybe a
+--                      @    @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Main.purs @ 9:15..9:16
+
+
+GotoDefinition at Position { line: 11, character: 8 }
+
+```
+just = Just
+--      @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 5:15..5:21
+
+
+GotoDefinition at Position { line: 14, character: 22 }
+
+```
+nothing :: forall a. Maybe a
+--                    @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 5:0..5:31
+
+
+GotoDefinition at Position { line: 16, character: 11 }
+
+```
+nothing = Nothing
+--         @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 5:24..5:31
+
+
+GotoDefinition at Position { line: 20, character: 10 }
+
+```
+opName = (+)
+--        @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 10:0..10:17
+
+
+GotoDefinition at Position { line: 24, character: 12 }
+
+```
+opChain = 9 + 10
+--          @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 10:0..10:17
+
+
+GotoDefinition at Position { line: 27, character: 23 }
+
+```
+type TypeOpChain = Int ++ Int
+--                     @
+```
+
+file:///tests-integration/fixtures/lsp/002_definition_import/Lib.purs @ 14:0..14:23

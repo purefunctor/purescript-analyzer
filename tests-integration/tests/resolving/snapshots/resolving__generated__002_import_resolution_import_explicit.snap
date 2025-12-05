@@ -1,0 +1,45 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module ImportExplicit
+
+Unqualified Imports:
+
+Terms:
+  - Id is Explicit
+
+Types:
+  - Id is Explicit
+
+Terms:
+  - Id is Implicit
+
+Types:
+  - Hidden is Implicit
+  - Id is Implicit
+
+Qualified Imports:
+
+QualifiedExplicit Terms:
+  - Id is Explicit
+
+QualifiedExplicit Types:
+  - Id is Explicit
+
+QualifiedImplicit Terms:
+  - Id is Implicit
+
+QualifiedImplicit Types:
+  - Hidden is Implicit
+  - Id is Implicit
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Errors:
