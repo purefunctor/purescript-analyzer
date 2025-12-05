@@ -3,6 +3,8 @@
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
+use lowering::TypeVariableBindingId;
+use smol_str::SmolStr;
 use sugar::OperatorTree;
 
 use crate::algorithm::state::{CheckContext, CheckState};
@@ -11,6 +13,8 @@ use crate::algorithm::{convert, substitute, transfer, unification};
 use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
+
+const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
 pub fn infer_surface_kind<Q>(
     state: &mut CheckState,
@@ -74,7 +78,7 @@ where
                 return infer_synonym_constructor(state, context, s, k, id);
             }
 
-            let t = convert::type_to_core(state, context, id);
+            let t = state.storage.intern(Type::Constructor(file_id, type_id));
             let k =
                 lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
 
@@ -109,14 +113,17 @@ where
         }
 
         lowering::TypeKind::Hole => {
-            let t = convert::type_to_core(state, context, id);
+            let t = context.prim.unknown;
             let k = state.fresh_unification(context);
             (t, k)
         }
 
-        lowering::TypeKind::Integer { .. } => {
-            let t = convert::type_to_core(state, context, id);
+        lowering::TypeKind::Integer { value } => {
+            let Some(value) = value else { return default };
+
+            let t = state.storage.intern(Type::Integer(*value));
             let k = context.prim.int;
+
             (t, k)
         }
 
@@ -124,7 +131,7 @@ where
             let Some(type_) = type_ else { return default };
             let Some(kind) = kind else { return default };
 
-            let k = convert::type_to_core(state, context, *kind);
+            let (k, _) = infer_surface_kind(state, context, *kind);
             let (t, _) = check_surface_kind(state, context, *type_, k);
 
             (t, k)
@@ -133,7 +140,7 @@ where
         lowering::TypeKind::Operator { resolution } => {
             let Some((file_id, type_id)) = *resolution else { return default };
 
-            let t = convert::type_to_core(state, context, id);
+            let t = state.storage.intern(Type::Operator(file_id, type_id));
             let k =
                 lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
 
@@ -142,27 +149,33 @@ where
 
         lowering::TypeKind::OperatorChain { .. } => infer_operator_chain_kind(state, context, id),
 
-        lowering::TypeKind::String { .. } => {
-            let t = convert::type_to_core(state, context, id);
+        lowering::TypeKind::String { kind, value } => {
+            let value = value.clone().unwrap_or(MISSING_NAME);
+
+            let t = state.storage.intern(Type::String(*kind, value));
             let k = context.prim.symbol;
-            (t, k)
-        }
-
-        lowering::TypeKind::Variable { resolution, .. } => {
-            let t = convert::type_to_core(state, context, id);
-
-            let k = match resolution {
-                Some(lowering::TypeVariableResolution::Forall(forall)) => state
-                    .forall_binding_kind(*forall)
-                    .expect("invariant violated: CheckState::bind_forall"),
-                Some(lowering::TypeVariableResolution::Implicit(implicit)) => state
-                    .implicit_binding_kind(implicit.node, implicit.id)
-                    .expect("invariant violated: CheckState::bind_implicit"),
-                None => state.fresh_unification(context),
-            };
 
             (t, k)
         }
+
+        lowering::TypeKind::Variable { name, resolution } => match resolution {
+            Some(lowering::TypeVariableResolution::Forall(forall)) => {
+                infer_forall_variable(state, *forall)
+            }
+
+            Some(lowering::TypeVariableResolution::Implicit(implicit)) => {
+                infer_implicit_variable(state, context, implicit)
+            }
+
+            None => {
+                let name = name.clone().unwrap_or(MISSING_NAME);
+
+                let t = state.storage.intern(Type::Variable(Variable::Free(name)));
+                let k = state.fresh_unification(context);
+
+                (t, k)
+            }
+        },
 
         lowering::TypeKind::Wildcard => default,
 
@@ -175,6 +188,46 @@ where
             infer_surface_kind(state, context, *parenthesized)
         }
     }
+}
+
+fn infer_forall_variable(
+    state: &mut CheckState,
+    forall: TypeVariableBindingId,
+) -> (TypeId, TypeId) {
+    let index = state.lookup_forall(forall).expect("invariant violated: CheckState::bind_forall");
+    let variable = Variable::Bound(index);
+
+    let t = state.storage.intern(Type::Variable(variable));
+    let k = state.forall_binding_kind(forall).expect("invariant violated: CheckState::bind_forall");
+
+    (t, k)
+}
+
+fn infer_implicit_variable<Q: ExternalQueries>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    implicit: &lowering::ImplicitTypeVariable,
+) -> (TypeId, TypeId) {
+    let t = if implicit.binding {
+        let kind = state.fresh_unification(context);
+
+        let level = state.bind_implicit(implicit.node, implicit.id, kind);
+        let variable = Variable::Implicit(level);
+
+        state.storage.intern(Type::Variable(variable))
+    } else {
+        let index = state
+            .lookup_implicit(implicit.node, implicit.id)
+            .expect("invariant violated: CheckState::bind_implicit");
+        let variable = Variable::Bound(index);
+        state.storage.intern(Type::Variable(variable))
+    };
+
+    let k = state
+        .implicit_binding_kind(implicit.node, implicit.id)
+        .expect("invariant violated: CheckState::bind_implicit");
+
+    (t, k)
 }
 
 pub fn infer_surface_app_kind<Q>(

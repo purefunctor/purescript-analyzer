@@ -87,76 +87,80 @@ where
 {
     let signature = signature.map(|id| (id, convert::inspect_signature(state, context, id)));
 
-    let (kind_variables, type_variables, result_kind) =
-        if let Some((signature_id, signature)) = signature {
-            if variables.len() != signature.arguments.len() {
-                state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
-                    id: signature_id,
-                    expected: 0,
-                    actual: 0,
-                });
+    let (kind_variables, type_variables, result_kind) = if let Some((signature_id, signature)) =
+        signature
+    {
+        if variables.len() != signature.arguments.len() {
+            state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+                id: signature_id,
+                expected: 0,
+                actual: 0,
+            });
 
-                if let Some(variable) = signature.variables.first() {
-                    state.unbind(variable.level);
+            if let Some(variable) = signature.variables.first() {
+                state.unbind(variable.level);
+            }
+
+            return None;
+        };
+
+        let variables = variables.iter();
+        let arguments = signature.arguments.iter();
+
+        let kinds = variables.zip(arguments).map(|(variable, &argument)| {
+            // Use contravariant subtyping for type variables:
+            //
+            // data Example :: Argument -> Type
+            // data Example (a :: Variable) = Example
+            //
+            // Signature: Argument -> Type
+            // Inferred: Variable -> Type
+            //
+            // Given
+            //   Variable -> Type <: Argument -> Type
+            //
+            // Therefore
+            //   [Argument <: Variable, Type <: Type]
+            let kind = variable.kind.map_or(argument, |kind| {
+                let (kind, _) = kind::infer_surface_kind(state, context, kind);
+                let valid = unification::subsumes(state, context, argument, kind);
+                if valid { kind } else { context.prim.unknown }
+            });
+
+            let name = variable.name.clone().unwrap_or(MISSING_NAME);
+            (variable.id, variable.visible, name, kind)
+        });
+
+        let kinds = kinds.collect_vec();
+
+        let kind_variables = signature.variables;
+        let result_kind = signature.result;
+        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+            let level = state.bind_forall(id, kind);
+            ForallBinder { visible, name, level, kind }
+        });
+
+        (kind_variables, type_variables.collect_vec(), result_kind)
+    } else {
+        let kind_variables = vec![];
+        let result_kind = infer_result(state);
+        let type_variables = variables.iter().map(|variable| {
+            let kind = match variable.kind {
+                Some(id) => {
+                    let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t);
+                    kind
                 }
-
-                return None;
+                None => state.fresh_unification_type(context),
             };
 
-            let variables = variables.iter();
-            let arguments = signature.arguments.iter();
+            let visible = variable.visible;
+            let name = variable.name.clone().unwrap_or(MISSING_NAME);
+            let level = state.bind_forall(variable.id, kind);
+            ForallBinder { visible, name, level, kind }
+        });
 
-            let kinds = variables.zip(arguments).map(|(variable, &argument)| {
-                // Use contravariant subtyping for type variables:
-                //
-                // data Example :: Argument -> Type
-                // data Example (a :: Variable) = Example
-                //
-                // Signature: Argument -> Type
-                // Inferred: Variable -> Type
-                //
-                // Given
-                //   Variable -> Type <: Argument -> Type
-                //
-                // Therefore
-                //   [Argument <: Variable, Type <: Type]
-                let kind = variable.kind.map_or(argument, |kind| {
-                    let kind = convert::type_to_core(state, context, kind);
-                    let valid = unification::subsumes(state, context, argument, kind);
-                    if valid { kind } else { context.prim.unknown }
-                });
-
-                let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                (variable.id, variable.visible, name, kind)
-            });
-
-            let kinds = kinds.collect_vec();
-
-            let kind_variables = signature.variables;
-            let result_kind = signature.result;
-            let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-                let level = state.bind_forall(id, kind);
-                ForallBinder { visible, name, level, kind }
-            });
-
-            (kind_variables, type_variables.collect_vec(), result_kind)
-        } else {
-            let kind_variables = vec![];
-            let result_kind = infer_result(state);
-            let type_variables = variables.iter().map(|variable| {
-                let kind = match variable.kind {
-                    Some(id) => convert::type_to_core(state, context, id),
-                    None => state.fresh_unification_type(context),
-                };
-
-                let visible = variable.visible;
-                let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                let level = state.bind_forall(variable.id, kind);
-                ForallBinder { visible, name, level, kind }
-            });
-
-            (kind_variables, type_variables.collect_vec(), result_kind)
-        };
+        (kind_variables, type_variables.collect_vec(), result_kind)
+    };
 
     Some((kind_variables, type_variables, result_kind))
 }
