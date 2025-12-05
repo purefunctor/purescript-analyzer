@@ -101,7 +101,7 @@ pub fn infer_synonym_constructor<Q: ExternalQueries>(
     (synonym.synonym_type, kind)
 }
 
-fn synonym_instantiate(state: &mut CheckState, mut type_id: TypeId, count: usize) -> TypeId {
+fn instantiate_count(state: &mut CheckState, mut type_id: TypeId, count: usize) -> TypeId {
     for _ in 0..count {
         if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[type_id] {
             let unification = state.fresh_unification_kinded(kind);
@@ -113,16 +113,16 @@ fn synonym_instantiate(state: &mut CheckState, mut type_id: TypeId, count: usize
     type_id
 }
 
-fn synonym_apply_forall<Q>(
+fn apply_synonym<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    inner_ty: TypeId,
+    inner_id: TypeId,
     argument_id: lowering::TypeId,
 ) -> Option<TypeId>
 where
     Q: ExternalQueries,
 {
-    if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[inner_ty] {
+    if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[inner_id] {
         let (argument_type, _) = check_surface_kind(state, context, argument_id, kind);
         Some(substitute_bound(state, argument_type, inner))
     } else {
@@ -168,15 +168,13 @@ where
         return default;
     }
 
-    let instantiated = state.normalize_type(synonym.synonym_type);
+    let to_instantiate = state.normalize_type(synonym.synonym_type);
+    let count = synonym.quantified_variables.0 as usize + synonym.kind_variables.0 as usize;
 
-    let to_instantiate =
-        synonym.quantified_variables.0 as usize + synonym.kind_variables.0 as usize;
-
-    let mut result_type = synonym_instantiate(state, instantiated, to_instantiate);
+    let mut result_type = instantiate_count(state, to_instantiate, count);
 
     for &argument_id in arguments {
-        if let Some(applied_type) = synonym_apply_forall(state, context, result_type, argument_id) {
+        if let Some(applied_type) = apply_synonym(state, context, result_type, argument_id) {
             result_type = applied_type;
         } else {
             return default;
