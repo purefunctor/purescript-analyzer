@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{convert, kind, substitute, unification};
-use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable, debruijn};
+use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
@@ -55,7 +55,14 @@ pub(crate) fn check_type_item<Q>(
                 state.binding_group.types.insert(item_id, inferred_type);
             }
 
-            TypeItemIr::Operator { .. } => (),
+            TypeItemIr::Operator { associativity, precedence, resolution } => {
+                let Some(associativity) = *associativity else { return };
+                let Some(precedence) = *precedence else { return };
+                let Some((file_id, type_id)) = *resolution else { return };
+
+                let operator = Operator { associativity, precedence, file_id, type_id };
+                state.checked.operators.insert(item_id, operator);
+            }
         }
     })
 }

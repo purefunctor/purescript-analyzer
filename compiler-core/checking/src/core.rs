@@ -50,6 +50,14 @@ pub type TypeId = interner::Id<Type>;
 pub type TypeInterner = interner::Interner<Type>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Operator {
+    pub associativity: lowering::Associativity,
+    pub precedence: u8,
+    pub file_id: FileId,
+    pub type_id: TypeItemId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Synonym {
     pub quantified_variables: debruijn::Size,
     pub kind_variables: debruijn::Size,

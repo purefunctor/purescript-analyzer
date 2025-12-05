@@ -259,7 +259,7 @@ pub struct InstanceMemberGroup {
     pub equations: Arc<[Equation]>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Associativity {
     /// infix
     None,
