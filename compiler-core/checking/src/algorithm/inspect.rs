@@ -1,10 +1,7 @@
-//! Implements conversion from [`lowering`] to [`core`].
-//!
-//! [`core`]: crate::core
+//! Implements type signature inspection.
 use std::iter;
 
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::kind;
@@ -40,7 +37,7 @@ where
         lowering::TypeKind::Forall { bindings, inner } => {
             let variables = bindings
                 .iter()
-                .map(|binding| convert_forall_binding(state, context, binding))
+                .map(|binding| kind::check_type_variable_binding(state, context, binding))
                 .collect();
 
             let inner = inner.map_or(context.prim.unknown, |id| {
@@ -83,29 +80,4 @@ fn signature_components(state: &mut CheckState, id: TypeId) -> (Vec<TypeId>, Typ
     };
 
     (components, id)
-}
-
-const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
-
-pub fn convert_forall_binding<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    binding: &lowering::TypeVariableBinding,
-) -> ForallBinder
-where
-    Q: ExternalQueries,
-{
-    let visible = binding.visible;
-    let name = binding.name.clone().unwrap_or(MISSING_NAME);
-
-    let kind = match binding.kind {
-        Some(id) => {
-            let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t);
-            kind
-        }
-        None => state.fresh_unification_type(context),
-    };
-
-    let level = state.bind_forall(binding.id, kind);
-    ForallBinder { visible, name, level, kind }
 }

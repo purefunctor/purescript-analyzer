@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::kind::lookup_file_type;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{convert, kind, substitute, unification};
+use crate::algorithm::{inspect, kind, substitute, unification};
 use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -85,7 +85,7 @@ fn check_signature_like<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature.map(|id| (id, convert::inspect_signature(state, context, id)));
+    let signature = signature.map(|id| (id, inspect::inspect_signature(state, context, id)));
 
     let (kind_variables, type_variables, result_kind) = if let Some((signature_id, signature)) =
         signature

@@ -9,7 +9,7 @@ use sugar::OperatorTree;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::substitute_bound;
-use crate::algorithm::{convert, substitute, transfer, unification};
+use crate::algorithm::{substitute, transfer, unification};
 use crate::core::{ForallBinder, Synonym, Type, TypeId, Variable};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
@@ -88,7 +88,7 @@ where
         lowering::TypeKind::Forall { bindings, inner } => {
             let binders = bindings
                 .iter()
-                .map(|binding| convert::convert_forall_binding(state, context, binding))
+                .map(|binding| check_type_variable_binding(state, context, binding))
                 .collect_vec();
 
             let inner = inner.map(|inner| {
@@ -690,4 +690,27 @@ fn instantiate_kind_foralls(state: &mut CheckState, mut kind_id: TypeId) -> Type
             break kind_id;
         }
     }
+}
+
+pub fn check_type_variable_binding<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binding: &lowering::TypeVariableBinding,
+) -> ForallBinder
+where
+    Q: ExternalQueries,
+{
+    let visible = binding.visible;
+    let name = binding.name.clone().unwrap_or(MISSING_NAME);
+
+    let kind = match binding.kind {
+        Some(id) => {
+            let (kind, _) = check_surface_kind(state, context, id, context.prim.t);
+            kind
+        }
+        None => state.fresh_unification_type(context),
+    };
+
+    let level = state.bind_forall(binding.id, kind);
+    ForallBinder { visible, name, level, kind }
 }
