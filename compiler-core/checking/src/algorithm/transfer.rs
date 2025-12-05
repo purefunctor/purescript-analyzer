@@ -125,6 +125,12 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::Operator(file_id, item_id) => Type::Operator(file_id, item_id),
 
+        Type::OperatorApplication(file_id, item_id, left, right) => {
+            let left = traverse(source, left);
+            let right = traverse(source, right);
+            Type::OperatorApplication(file_id, item_id, left, right)
+        }
+
         Type::String(k, s) => Type::String(k, s),
 
         Type::Unification(_) => match source.mode {

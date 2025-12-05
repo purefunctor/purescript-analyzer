@@ -39,6 +39,7 @@ pub enum Type {
     KindApplication(TypeId, TypeId),
     Kinded(TypeId, TypeId),
     Operator(FileId, TypeItemId),
+    OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
     String(lowering::StringKind, SmolStr),
     Unification(u32),
     Variable(Variable),

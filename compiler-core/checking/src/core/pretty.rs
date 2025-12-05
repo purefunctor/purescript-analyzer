@@ -221,6 +221,18 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             name.map(|name| format!("({name})")).unwrap_or_else(|| "<InvalidName>".to_string())
         }
 
+        Type::OperatorApplication(file_id, type_id, left, right) => {
+            let indexed = source.queries().indexed(file_id).unwrap();
+            let name = indexed.items[type_id].name.as_ref();
+            let operator =
+                name.map(|name| name.to_string()).unwrap_or_else(|| "<InvalidName>".to_string());
+
+            let left = traverse_precedence(source, context, Precedence::Application, left);
+            let right = traverse_precedence(source, context, Precedence::Application, right);
+
+            parens_if(precedence > Precedence::Application, format!("{left} {operator} {right}"))
+        }
+
         Type::String(kind, string) => match kind {
             StringKind::String => format!("\"{string}\""),
             StringKind::RawString => format!("\"\"\"{string}\"\"\""),

@@ -1,4 +1,5 @@
 pub mod bracketing;
+pub use bracketing::{Bracketed, OperatorTree, bracketed};
 
 use std::sync::Arc;
 

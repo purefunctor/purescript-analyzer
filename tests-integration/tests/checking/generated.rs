@@ -197,3 +197,36 @@ fn test_018_type_operator_valid_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_019_type_operator_chain_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/019_type_operator_chain"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_020_type_operator_chain_mixed_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/020_type_operator_chain_mixed"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_021_type_operator_chain_polykinded_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/021_type_operator_chain_polykinded"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

@@ -1,0 +1,47 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Add :: Type -> Type -> Type
++ :: Type -> Type -> Type
+Mul :: Type -> Type -> Type
+* :: Type -> Type -> Type
+Mixed :: Type -> Type -> Type -> Type
+AssocLeft :: Type -> Type -> Type -> Type
+AddR :: Type -> Type -> Type
+-+- :: Type -> Type -> Type
+AssocRight :: Type -> Type -> Type -> Type
+
+Synonyms
+Add = forall (a :: Type) (b :: Type). a
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+Mul = forall (a :: Type) (b :: Type). b
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+Mixed = forall (a :: Type) (b :: Type) (c :: Type). a + b * c
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+AssocLeft = forall (a :: Type) (b :: Type) (c :: Type). a + b + c
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+AddR = forall (a :: Type) (b :: Type). a
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+AssocRight = forall (a :: Type) (b :: Type) (c :: Type). a -+- b -+- c
+  Quantified = :0
+  Kind = :0
+  Type = :3

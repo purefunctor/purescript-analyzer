@@ -47,6 +47,12 @@ pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: Type
                 state.storage.intern(Type::Kinded(inner, kind))
             }
 
+            Type::OperatorApplication(file_id, type_id, left, right) => {
+                let left = aux(state, index, with_type, left);
+                let right = aux(state, index, with_type, right);
+                state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
+            }
+
             Type::Constructor(_, _)
             | Type::Integer(_)
             | Type::Operator(_, _)
@@ -105,6 +111,12 @@ pub fn shift_indices(state: &mut CheckState, amount: u32, in_type: TypeId) -> Ty
                 let inner = aux(state, cutoff, amount, inner);
                 let kind = aux(state, cutoff, amount, kind);
                 state.storage.intern(Type::Kinded(inner, kind))
+            }
+
+            Type::OperatorApplication(file_id, type_id, left, right) => {
+                let left = aux(state, cutoff, amount, left);
+                let right = aux(state, cutoff, amount, right);
+                state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
             }
 
             Type::Constructor(_, _)

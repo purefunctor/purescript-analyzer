@@ -3,6 +3,7 @@
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
+use sugar::OperatorTree;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::substitute_bound;
@@ -139,7 +140,7 @@ where
             (t, k)
         }
 
-        lowering::TypeKind::OperatorChain { .. } => default,
+        lowering::TypeKind::OperatorChain { .. } => infer_operator_chain_kind(state, context, id),
 
         lowering::TypeKind::String { .. } => {
             let t = convert::type_to_core(state, context, id);
@@ -281,6 +282,25 @@ where
 
         Type::Operator(file_id, type_id) => {
             lookup_file_type(state, context, file_id, type_id).unwrap_or(default)
+        }
+
+        Type::OperatorApplication(file_id, type_id, _, _) => {
+            let operator_kind =
+                lookup_file_type(state, context, file_id, type_id).unwrap_or(default);
+
+            let operator_kind = instantiate_kind_foralls(state, operator_kind);
+
+            let operator_kind = state.normalize_type(operator_kind);
+            let Type::Function(_, result_id) = state.storage[operator_kind] else {
+                return default;
+            };
+
+            let result_id = state.normalize_type(result_id);
+            let Type::Function(_, result) = state.storage[result_id] else {
+                return default;
+            };
+
+            result
         }
 
         Type::String(_, _) => context.prim.symbol,
@@ -506,4 +526,115 @@ where
     let result_kind = elaborate_kind(state, context, result_type);
 
     (result_type, result_kind)
+}
+
+fn infer_operator_chain_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::TypeId,
+) -> (TypeId, TypeId)
+where
+    Q: ExternalQueries,
+{
+    let default = (context.prim.unknown, context.prim.unknown);
+
+    let Ok(bracketed) = context.queries.bracketed(context.id) else {
+        return default;
+    };
+
+    let Some(operator_tree) = bracketed.types.get(&id) else {
+        return default;
+    };
+
+    if let Ok(operator_tree) = operator_tree {
+        infer_operator_tree_kind(state, context, operator_tree)
+    } else {
+        default
+    }
+}
+
+fn infer_operator_tree_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    tree: &OperatorTree<lowering::TypeId>,
+) -> (TypeId, TypeId)
+where
+    Q: ExternalQueries,
+{
+    let default = (context.prim.unknown, context.prim.unknown);
+
+    match tree {
+        OperatorTree::Leaf(None) => default,
+
+        OperatorTree::Leaf(Some(type_id)) => infer_surface_kind(state, context, *type_id),
+
+        OperatorTree::Branch(operator_id, children) => {
+            let Some((file_id, type_item_id)) =
+                context.lowered.info.get_type_operator(*operator_id)
+            else {
+                return default;
+            };
+
+            let operator_k = lookup_file_type(state, context, file_id, type_item_id)
+                .unwrap_or(context.prim.unknown);
+
+            infer_operator_app_kind(state, context, file_id, type_item_id, operator_k, children)
+        }
+    }
+}
+
+fn infer_operator_app_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_item_id: TypeItemId,
+    operator_k: TypeId,
+    children: &[OperatorTree<lowering::TypeId>],
+) -> (TypeId, TypeId)
+where
+    Q: ExternalQueries,
+{
+    let default = (context.prim.unknown, context.prim.unknown);
+
+    let [left_tree, right_tree] = children else {
+        return default;
+    };
+
+    let (left_t, _) = infer_operator_tree_kind(state, context, left_tree);
+    let (right_t, _) = infer_operator_tree_kind(state, context, right_tree);
+
+    let operator_k = instantiate_kind_foralls(state, operator_k);
+    let operator_k = state.normalize_type(operator_k);
+
+    let Type::Function(left_k, rest_k) = state.storage[operator_k] else {
+        return default;
+    };
+
+    let left_k_elaborated = elaborate_kind(state, context, left_t);
+    unification::subsumes(state, context, left_k_elaborated, left_k);
+
+    let rest_k = state.normalize_type(rest_k);
+    let Type::Function(right_k, result_k) = state.storage[rest_k] else {
+        return default;
+    };
+
+    let right_k_elaborated = elaborate_kind(state, context, right_t);
+    unification::subsumes(state, context, right_k_elaborated, right_k);
+
+    let t = state.storage.intern(Type::OperatorApplication(file_id, type_item_id, left_t, right_t));
+    let k = state.normalize_type(result_k);
+
+    (t, k)
+}
+
+fn instantiate_kind_foralls(state: &mut CheckState, mut kind_id: TypeId) -> TypeId {
+    loop {
+        kind_id = state.normalize_type(kind_id);
+        if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[kind_id] {
+            let unification = state.fresh_unification_kinded(kind);
+            kind_id = substitute_bound(state, unification, inner);
+        } else {
+            break kind_id;
+        }
+    }
 }
