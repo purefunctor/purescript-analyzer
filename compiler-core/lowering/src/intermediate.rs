@@ -419,11 +419,11 @@ impl LoweringInfo {
         self.type_item.get(&id)
     }
 
-    pub fn get_term_operator(&self, id: TermOperatorId) -> Option<&(FileId, TermItemId)> {
-        self.term_operator.get(&id)
+    pub fn get_term_operator(&self, id: TermOperatorId) -> Option<(FileId, TermItemId)> {
+        self.term_operator.get(&id).copied()
     }
 
-    pub fn get_type_operator(&self, id: TypeOperatorId) -> Option<&(FileId, TypeItemId)> {
-        self.type_operator.get(&id)
+    pub fn get_type_operator(&self, id: TypeOperatorId) -> Option<(FileId, TypeItemId)> {
+        self.type_operator.get(&id).copied()
     }
 }
