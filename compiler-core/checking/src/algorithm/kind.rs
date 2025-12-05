@@ -127,7 +127,7 @@ where
             (t, k)
         }
 
-        lowering::TypeKind::Integer => {
+        lowering::TypeKind::Integer { .. } => {
             let t = convert::type_to_core(state, context, id);
             let k = context.prim.int;
             (t, k)
@@ -137,19 +137,41 @@ where
             let Some(type_) = type_ else { return default };
             let Some(kind) = kind else { return default };
 
-            let t = convert::type_to_core(state, context, *type_);
             let k = convert::type_to_core(state, context, *kind);
+            let (t, _) = check_surface_kind(state, context, *type_, k);
 
             (t, k)
         }
 
-        lowering::TypeKind::Operator { .. } => default,
+        lowering::TypeKind::Operator { resolution } => {
+            let Some((file_id, type_id)) = *resolution else { return default };
+
+            let t = convert::type_to_core(state, context, id);
+            if file_id == context.id {
+                if let Some(&k) = state.binding_group.types.get(&type_id) {
+                    (t, k)
+                } else if let Some(&k) = state.checked.types.get(&type_id) {
+                    (t, transfer::localize(state, context, k))
+                } else {
+                    default
+                }
+            } else {
+                let Ok(checked) = context.queries.checked(file_id) else {
+                    return default;
+                };
+                if let Some(global_id) = checked.lookup_type(type_id) {
+                    (t, transfer::localize(state, context, global_id))
+                } else {
+                    default
+                }
+            }
+        }
 
         lowering::TypeKind::OperatorChain { .. } => default,
 
-        lowering::TypeKind::String => {
+        lowering::TypeKind::String { .. } => {
             let t = convert::type_to_core(state, context, id);
-            let k = context.prim.t;
+            let k = context.prim.symbol;
             (t, k)
         }
 
@@ -259,6 +281,8 @@ where
             }
         }
 
+        Type::Constrained(_, _) => context.prim.t,
+
         Type::Constructor(file_id, type_id) => {
             if file_id == context.id {
                 if let Some(&k) = state.binding_group.types.get(&type_id) {
@@ -275,11 +299,11 @@ where
             }
         }
 
-        Type::Constrained(_, _) => context.prim.t,
-
         Type::Forall(_, _) => context.prim.t,
 
         Type::Function(_, _) => context.prim.t,
+
+        Type::Integer(_) => context.prim.int,
 
         Type::KindApplication(function, argument) => {
             let function_kind = elaborate_kind(state, context, function);
@@ -292,6 +316,26 @@ where
                 _ => default,
             }
         }
+
+        Type::Kinded(_, kind) => kind,
+
+        Type::Operator(file_id, type_id) => {
+            if file_id == context.id {
+                if let Some(&k) = state.binding_group.types.get(&type_id) {
+                    k
+                } else if let Some(&k) = state.checked.types.get(&type_id) {
+                    transfer::localize(state, context, k)
+                } else {
+                    default
+                }
+            } else {
+                let Ok(checked) = context.queries.checked(file_id) else { return default };
+                let Some(global_id) = checked.types.get(&type_id) else { return default };
+                transfer::localize(state, context, *global_id)
+            }
+        }
+
+        Type::String(_, _) => context.prim.symbol,
 
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 

@@ -109,11 +109,23 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             Type::Function(argument, result)
         }
 
+        Type::Integer(v) => Type::Integer(v),
+
         Type::KindApplication(function, argument) => {
             let function = traverse(source, function);
             let argument = traverse(source, argument);
             Type::KindApplication(function, argument)
         }
+
+        Type::Kinded(inner, kind) => {
+            let inner = traverse(source, inner);
+            let kind = traverse(source, kind);
+            Type::Kinded(inner, kind)
+        }
+
+        Type::Operator(file_id, item_id) => Type::Operator(file_id, item_id),
+
+        Type::String(k, s) => Type::String(k, s),
 
         Type::Unification(_) => match source.mode {
             TraversalMode::FromGlobal => {

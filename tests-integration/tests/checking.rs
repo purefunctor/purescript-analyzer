@@ -739,3 +739,59 @@ class Functor f <= Applicative f where
     let snapshot = print_terms_types(engine, id);
     insta::assert_snapshot!(snapshot);
 }
+
+#[test]
+fn test_type_integer() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+foreign import data Proxy :: forall k. k -> Type
+
+type Positive = Proxy 123
+
+type Negative = Proxy (-1)
+
+type Underscore = Proxy 123_456
+
+type LeadingZero = Proxy 00_123
+
+type Hex = Proxy 0xFFFFFF
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_type_string() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+foreign import data Proxy :: forall k. k -> Type
+
+type Simple = Proxy "hello"
+
+type WithEscape = Proxy "hello \" world"
+
+type WithBackslash = Proxy "hello \\ world"
+
+type WithNewline = Proxy "hello \n world"
+
+type RawEmpty = Proxy """"""
+
+type RawSimple = Proxy """hello world"""
+
+type RawWithQuote = Proxy """"hello""""
+"#,
+    );
+
+    let snapshot = print_terms_types(engine, id);
+    insta::assert_snapshot!(snapshot);
+}

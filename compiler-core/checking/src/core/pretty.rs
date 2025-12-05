@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use itertools::Itertools;
+use lowering::StringKind;
 use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
@@ -184,6 +185,8 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             parens_if(precedence > Precedence::Function, format!("{arguments} -> {result}"))
         }
 
+        Type::Integer(integer) => parens_if(integer.is_negative(), integer.to_string()),
+
         Type::KindApplication(mut function, argument) => {
             let mut arguments = vec![argument];
 
@@ -205,6 +208,23 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
 
             parens_if(precedence > Precedence::Application, format!("{function} {arguments}"))
         }
+
+        Type::Kinded(inner, kind) => {
+            let inner = traverse_precedence(source, context, Precedence::Application, inner);
+            let kind = traverse_precedence(source, context, Precedence::Top, kind);
+            parens_if(precedence > Precedence::Atom, format!("{inner} :: {kind}"))
+        }
+
+        Type::Operator(file_id, type_id) => {
+            let indexed = source.queries().indexed(file_id).unwrap();
+            let name = indexed.items[type_id].name.as_ref();
+            name.map(|name| format!("({name})")).unwrap_or_else(|| "<InvalidName>".to_string())
+        }
+
+        Type::String(kind, string) => match kind {
+            StringKind::String => format!("\"{string}\""),
+            StringKind::RawString => format!("\"\"\"{string}\"\"\""),
+        },
 
         Type::Unification(unification_id) => match source {
             TraversalSource::Local { state, .. } => {

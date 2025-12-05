@@ -63,11 +63,24 @@ where
             forall
         }
         lowering::TypeKind::Hole => default,
-        lowering::TypeKind::Integer => default,
-        lowering::TypeKind::Kinded { .. } => default,
-        lowering::TypeKind::Operator { .. } => default,
+        lowering::TypeKind::Integer { value } => {
+            let Some(value) = value else { return default };
+            state.storage.intern(Type::Integer(*value))
+        }
+        lowering::TypeKind::Kinded { type_, kind } => {
+            let type_ = type_.map_or(default, |id| type_to_core(state, context, id));
+            let kind = kind.map_or(default, |id| type_to_core(state, context, id));
+            state.storage.intern(Type::Kinded(type_, kind))
+        }
+        lowering::TypeKind::Operator { resolution } => {
+            let Some((file_id, type_id)) = *resolution else { return default };
+            state.storage.intern(Type::Operator(file_id, type_id))
+        }
         lowering::TypeKind::OperatorChain { .. } => default,
-        lowering::TypeKind::String => default,
+        lowering::TypeKind::String { kind, value } => {
+            let value = value.clone().unwrap_or(MISSING_TYPE);
+            state.storage.intern(Type::String(*kind, value))
+        }
         lowering::TypeKind::Variable { name, resolution } => {
             let Some(resolution) = resolution else {
                 let name = name.clone().unwrap_or(MISSING_NAME);
@@ -209,6 +222,7 @@ fn signature_components(state: &mut CheckState, id: TypeId) -> (Vec<TypeId>, Typ
 }
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
+const MISSING_TYPE: SmolStr = SmolStr::new_static("<MissingType>");
 
 pub fn convert_forall_binding<Q>(
     state: &mut CheckState,

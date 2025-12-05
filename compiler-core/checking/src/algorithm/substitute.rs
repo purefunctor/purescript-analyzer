@@ -41,9 +41,19 @@ pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: Type
                 state.storage.intern(Type::Constrained(constraint, inner))
             }
 
-            Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => {
-                in_type
+            Type::Kinded(inner, kind) => {
+                let inner = aux(state, index, with_type, inner);
+                let kind = aux(state, index, with_type, kind);
+                state.storage.intern(Type::Kinded(inner, kind))
             }
+
+            Type::Constructor(_, _)
+            | Type::Integer(_)
+            | Type::Operator(_, _)
+            | Type::String(_, _)
+            | Type::Unification(_)
+            | Type::Variable(_)
+            | Type::Unknown => in_type,
         }
     }
 
@@ -91,9 +101,19 @@ pub fn shift_indices(state: &mut CheckState, amount: u32, in_type: TypeId) -> Ty
                 state.storage.intern(Type::Constrained(constraint, inner))
             }
 
-            Type::Constructor(_, _) | Type::Unification(_) | Type::Variable(_) | Type::Unknown => {
-                in_type
+            Type::Kinded(inner, kind) => {
+                let inner = aux(state, cutoff, amount, inner);
+                let kind = aux(state, cutoff, amount, kind);
+                state.storage.intern(Type::Kinded(inner, kind))
             }
+
+            Type::Constructor(_, _)
+            | Type::Integer(_)
+            | Type::Operator(_, _)
+            | Type::String(_, _)
+            | Type::Unification(_)
+            | Type::Variable(_)
+            | Type::Unknown => in_type,
         }
     }
 

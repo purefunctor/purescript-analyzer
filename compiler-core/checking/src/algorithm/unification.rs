@@ -158,10 +158,21 @@ pub fn promote_type(
                 && promote_type(state, occurs, codomain, unification_id, result)
         }
 
+        Type::Integer(_) => true,
+
         Type::KindApplication(function, argument) => {
             promote_type(state, occurs, codomain, unification_id, function)
                 && promote_type(state, occurs, codomain, unification_id, argument)
         }
+
+        Type::Kinded(inner, kind) => {
+            promote_type(state, occurs, codomain, unification_id, inner)
+                && promote_type(state, occurs, codomain, unification_id, kind)
+        }
+
+        Type::Operator(_, _) => true,
+
+        Type::String(_, _) => true,
 
         Type::Unification(solution_id) => {
             let unification = state.unification.get(unification_id);

@@ -121,10 +121,17 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
                 aux(graph, state, argument, dependent);
                 aux(graph, state, result, dependent);
             }
+            Type::Integer(_) => (),
             Type::KindApplication(function, argument) => {
                 aux(graph, state, function, dependent);
                 aux(graph, state, argument, dependent);
             }
+            Type::Kinded(inner, kind) => {
+                aux(graph, state, inner, dependent);
+                aux(graph, state, kind, dependent);
+            }
+            Type::Operator(_, _) => (),
+            Type::String(_, _) => (),
             Type::Unification(unification_id) => {
                 graph.add_node(unification_id);
 
@@ -191,11 +198,19 @@ fn substitute_unification(
                 let result = aux(substitutions, state, result, size);
                 state.storage.intern(Type::Function(argument, result))
             }
+            Type::Integer(_) => id,
             Type::KindApplication(function, argument) => {
                 let function = aux(substitutions, state, function, size);
                 let argument = aux(substitutions, state, argument, size);
                 state.storage.intern(Type::KindApplication(function, argument))
             }
+            Type::Kinded(inner, kind) => {
+                let inner = aux(substitutions, state, inner, size);
+                let kind = aux(substitutions, state, kind, size);
+                state.storage.intern(Type::Kinded(inner, kind))
+            }
+            Type::Operator(_, _) => id,
+            Type::String(_, _) => id,
             Type::Unification(unification_id) => {
                 let Some(level) = substitutions.get(&unification_id) else { return id };
                 let index = level.to_index(size).unwrap_or_else(|| {

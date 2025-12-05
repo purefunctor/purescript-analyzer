@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+Terms
+
+Types
+Proxy :: forall (k :: Type). k -> Type
+Simple :: Type
+WithEscape :: Type
+WithBackslash :: Type
+WithNewline :: Type
+RawEmpty :: Type
+RawSimple :: Type
+RawWithQuote :: Type
+
+Synonyms
+Simple = Proxy @Symbol "hello"
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+WithEscape = Proxy @Symbol "hello \" world"
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+WithBackslash = Proxy @Symbol "hello \\ world"
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+WithNewline = Proxy @Symbol "hello \n world"
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+RawEmpty = Proxy @Symbol """"""
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+RawSimple = Proxy @Symbol """hello world"""
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+RawWithQuote = Proxy @Symbol """"hello""""
+  Quantified = :0
+  Kind = :0
+  Type = :0
