@@ -28,16 +28,16 @@ pub fn infer_surface_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let default = (context.prim.unknown, context.prim.unknown);
+    let unknown = (context.prim.unknown, context.prim.unknown);
 
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        return default;
+        return unknown;
     };
 
     match kind {
         lowering::TypeKind::ApplicationChain { function, arguments } => {
             let Some(function) = function else {
-                return default;
+                return unknown;
             };
 
             if let Some(synonym) = synonym::parse_synonym_application(state, context, *function) {
@@ -73,10 +73,10 @@ where
             (t, k)
         }
 
-        lowering::TypeKind::Constrained { .. } => default,
+        lowering::TypeKind::Constrained { .. } => unknown,
 
         lowering::TypeKind::Constructor { resolution } => {
-            let Some((file_id, type_id)) = *resolution else { return default };
+            let Some((file_id, type_id)) = *resolution else { return unknown };
 
             if let Some((s, k)) = synonym::lookup_file_synonym(state, context, file_id, type_id) {
                 return synonym::infer_synonym_constructor(state, context, s, k, id);
@@ -123,7 +123,7 @@ where
         }
 
         lowering::TypeKind::Integer { value } => {
-            let Some(value) = value else { return default };
+            let Some(value) = value else { return unknown };
 
             let t = state.storage.intern(Type::Integer(*value));
             let k = context.prim.int;
@@ -132,8 +132,8 @@ where
         }
 
         lowering::TypeKind::Kinded { type_, kind } => {
-            let Some(type_) = type_ else { return default };
-            let Some(kind) = kind else { return default };
+            let Some(type_) = type_ else { return unknown };
+            let Some(kind) = kind else { return unknown };
 
             let (k, _) = infer_surface_kind(state, context, *kind);
             let (t, _) = check_surface_kind(state, context, *type_, k);
@@ -142,7 +142,7 @@ where
         }
 
         lowering::TypeKind::Operator { resolution } => {
-            let Some((file_id, type_id)) = *resolution else { return default };
+            let Some((file_id, type_id)) = *resolution else { return unknown };
 
             let t = state.storage.intern(Type::Operator(file_id, type_id));
             let k =
@@ -183,14 +183,14 @@ where
             }
         },
 
-        lowering::TypeKind::Wildcard => default,
+        lowering::TypeKind::Wildcard => unknown,
 
-        lowering::TypeKind::Record { .. } => default,
+        lowering::TypeKind::Record { .. } => unknown,
 
-        lowering::TypeKind::Row { .. } => default,
+        lowering::TypeKind::Row { .. } => unknown,
 
         lowering::TypeKind::Parenthesized { parenthesized } => {
-            let Some(parenthesized) = parenthesized else { return default };
+            let Some(parenthesized) = parenthesized else { return unknown };
             infer_surface_kind(state, context, *parenthesized)
         }
     }
@@ -289,7 +289,7 @@ pub fn elaborate_kind<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: 
 where
     Q: ExternalQueries,
 {
-    let default = context.prim.unknown;
+    let unknown = context.prim.unknown;
     let id = state.normalize_type(id);
     match state.storage[id] {
         Type::Application(function, _) => {
@@ -309,14 +309,14 @@ where
                     result_u
                 }
 
-                _ => default,
+                _ => unknown,
             }
         }
 
         Type::Constrained(_, _) => context.prim.t,
 
         Type::Constructor(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id).unwrap_or(default)
+            lookup_file_type(state, context, file_id, type_id).unwrap_or(unknown)
         }
 
         Type::Forall(_, _) => context.prim.t,
@@ -333,14 +333,14 @@ where
                     let argument = state.normalize_type(argument);
                     substitute::substitute_bound(state, argument, inner)
                 }
-                _ => default,
+                _ => unknown,
             }
         }
 
         Type::Kinded(_, kind) => kind,
 
         Type::Operator(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id).unwrap_or(default)
+            lookup_file_type(state, context, file_id, type_id).unwrap_or(unknown)
         }
 
         Type::OperatorApplication(file_id, type_id, _, _) => {
@@ -352,13 +352,13 @@ where
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
         Type::Variable(ref variable) => match variable {
-            Variable::Implicit(_) => default,
+            Variable::Implicit(_) => unknown,
             Variable::Skolem(_, kind) => *kind,
-            Variable::Bound(index) => state.core_kind(*index).unwrap_or(default),
-            Variable::Free(_) => default,
+            Variable::Bound(index) => state.core_kind(*index).unwrap_or(unknown),
+            Variable::Free(_) => unknown,
         },
 
-        Type::Unknown => default,
+        Type::Unknown => unknown,
     }
 }
 

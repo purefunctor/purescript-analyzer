@@ -160,12 +160,12 @@ pub fn infer_synonym_application<Q>(
 where
     Q: ExternalQueries,
 {
-    let default = (context.prim.unknown, context.prim.unknown);
+    let unknown = (context.prim.unknown, context.prim.unknown);
 
     let expected_arity = synonym.type_variables.0 as usize;
     if expected_arity != arguments.len() {
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
-        return default;
+        return unknown;
     }
 
     let to_instantiate = state.normalize_type(synonym.synonym_type);
@@ -177,7 +177,7 @@ where
         if let Some(applied_type) = apply_synonym(state, context, result_type, argument_id) {
             result_type = applied_type;
         } else {
-            return default;
+            return unknown;
         };
     }
 
