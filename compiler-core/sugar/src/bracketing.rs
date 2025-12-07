@@ -189,7 +189,7 @@ where
 /// An operator tree, the result of bracketing.
 #[derive(Debug, PartialEq, Eq)]
 pub enum OperatorTree<Id: IsElement> {
-    Branch(Id::OperatorId, Arc<[OperatorTree<Id>]>),
+    Branch(Id::OperatorId, Arc<[OperatorTree<Id>; 2]>),
     Leaf(Option<Id>),
 }
 
