@@ -74,6 +74,13 @@ where
                 && unify(state, context, t1_argument, t2_argument)
         }
 
+        (
+            Type::OperatorApplication(t1_file, t1_type, t1_left, t1_right),
+            Type::OperatorApplication(t2_file, t2_type, t2_left, t2_right),
+        ) if t1_file == t2_file && t1_type == t2_type => {
+            unify(state, context, t1_left, t2_left) && unify(state, context, t1_right, t2_right)
+        }
+
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)
                 && unify(state, context, t1_result, t2_result)
@@ -171,6 +178,11 @@ pub fn promote_type(
         }
 
         Type::Operator(_, _) => true,
+
+        Type::OperatorApplication(_, _, left, right) => {
+            promote_type(state, occurs, codomain, unification_id, left)
+                && promote_type(state, occurs, codomain, unification_id, right)
+        }
 
         Type::String(_, _) => true,
 

@@ -46,13 +46,13 @@ pub fn implementation(
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) =
                 lowered.info.get_term_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
-            references_file_term(engine, files, current_file, *f_id, *t_id)
+            references_file_term(engine, files, current_file, f_id, t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) =
                 lowered.info.get_type_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
-            references_file_type(engine, files, current_file, *f_id, *t_id)
+            references_file_type(engine, files, current_file, f_id, t_id)
         }
         locate::Located::TermItem(term_id) => {
             references_file_term(engine, files, current_file, current_file, term_id)

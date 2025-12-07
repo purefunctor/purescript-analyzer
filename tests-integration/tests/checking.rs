@@ -424,3 +424,63 @@ type Test = Identity
         insta::assert_debug_snapshot!(checked.errors);
     }
 }
+
+#[test]
+fn test_invalid_type_operator_unary() {
+    {
+        let (engine, id) = empty_engine();
+        engine.set_content(
+            id,
+            r#"
+module Main where
+
+type Unary a = a
+
+infix 5 type Unary as !
+"#,
+        );
+
+        let checked = engine.checked(id).unwrap();
+        insta::assert_debug_snapshot!(checked.errors);
+    }
+}
+
+#[test]
+fn test_invalid_type_operator_ternary() {
+    {
+        let (engine, id) = empty_engine();
+        engine.set_content(
+            id,
+            r#"
+module Main where
+
+type Ternary a b c = a
+
+infix 5 type Ternary as ?
+"#,
+        );
+
+        let checked = engine.checked(id).unwrap();
+        insta::assert_debug_snapshot!(checked.errors);
+    }
+}
+
+#[test]
+fn test_invalid_type_operator_nullary() {
+    {
+        let (engine, id) = empty_engine();
+        engine.set_content(
+            id,
+            r#"
+module Main where
+
+type Nullary = Int
+
+infix 5 type Nullary as @
+"#,
+        );
+
+        let checked = engine.checked(id).unwrap();
+        insta::assert_debug_snapshot!(checked.errors);
+    }
+}

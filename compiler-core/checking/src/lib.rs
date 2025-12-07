@@ -20,6 +20,7 @@ pub trait ExternalQueries:
         Indexed = Arc<IndexedModule>,
         Lowered = Arc<LoweredModule>,
         Resolved = Arc<ResolvedModule>,
+        Bracketed = Arc<sugar::Bracketed>,
         Checked = Arc<CheckedModule>,
     >
 {
@@ -32,7 +33,10 @@ pub trait ExternalQueries:
 pub struct CheckedModule {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, TypeId>,
+
+    pub operators: FxHashMap<TypeItemId, core::Operator>,
     pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
+
     pub errors: Vec<CheckError>,
 }
 

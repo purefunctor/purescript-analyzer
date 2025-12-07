@@ -39,6 +39,7 @@ pub enum Type {
     KindApplication(TypeId, TypeId),
     Kinded(TypeId, TypeId),
     Operator(FileId, TypeItemId),
+    OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
     String(lowering::StringKind, SmolStr),
     Unification(u32),
     Variable(Variable),
@@ -48,6 +49,14 @@ pub enum Type {
 pub type TypeId = interner::Id<Type>;
 
 pub type TypeInterner = interner::Interner<Type>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Operator {
+    pub associativity: lowering::Associativity,
+    pub precedence: u8,
+    pub file_id: FileId,
+    pub type_id: TypeItemId,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Synonym {

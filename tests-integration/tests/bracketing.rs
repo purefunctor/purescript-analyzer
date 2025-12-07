@@ -32,7 +32,7 @@ test = 1 + 2 * 3 + 4
     engine.set_content(id, content);
 
     let lowered = engine.lowered(id).unwrap();
-    let result = sugar::bracketing::bracketed(&engine, &lowered);
+    let result = sugar::bracketed(&engine, &lowered);
 
     println!("{result:#?}");
 }

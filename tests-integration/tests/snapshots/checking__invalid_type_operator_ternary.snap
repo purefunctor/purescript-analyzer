@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking.rs
+expression: checked.errors
+---
+[
+    CheckError {
+        kind: InvalidTypeOperator {
+            id: Id<checking::core::Type>(36),
+        },
+        step: [
+            TypeDeclaration(
+                Idx::<TypeItem>(1),
+            ),
+        ],
+    },
+]

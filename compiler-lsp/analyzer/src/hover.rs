@@ -43,13 +43,13 @@ pub fn implementation(
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) =
                 lowered.info.get_term_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
-            hover_file_term(engine, *f_id, *t_id)
+            hover_file_term(engine, f_id, t_id)
         }
         locate::Located::TypeOperator(operator_id) => {
             let lowered = engine.lowered(current_file)?;
             let (f_id, t_id) =
                 lowered.info.get_type_operator(operator_id).ok_or(AnalyzerError::NonFatal)?;
-            hover_file_type(engine, *f_id, *t_id)
+            hover_file_type(engine, f_id, t_id)
         }
         locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
         locate::Located::TypeItem(type_id) => hover_file_type(engine, current_file, type_id),
