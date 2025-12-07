@@ -10,10 +10,8 @@ use indexing::TypeItemId;
 use sugar::OperatorTree;
 
 use crate::ExternalQueries;
-use crate::algorithm::kind;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute::substitute_bound;
-use crate::algorithm::unification;
+use crate::algorithm::{kind, substitute, unification};
 use crate::core::{ForallBinder, Type, TypeId};
 
 #[derive(Copy, Clone, Debug)]
@@ -190,7 +188,7 @@ fn instantiate_kind_foralls(state: &mut CheckState, mut kind_id: TypeId) -> Type
         kind_id = state.normalize_type(kind_id);
         if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[kind_id] {
             let unification = state.fresh_unification_kinded(kind);
-            kind_id = substitute_bound(state, unification, inner);
+            kind_id = substitute::substitute_bound(state, unification, inner);
         } else {
             break kind_id;
         }
