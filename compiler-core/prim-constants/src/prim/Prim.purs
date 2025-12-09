@@ -38,6 +38,3 @@ data Symbol
 
 data Row :: Type -> Type
 data Row a
-
-data Proxy :: forall (t :: Type) (k :: t). k -> Type
-data Proxy a
