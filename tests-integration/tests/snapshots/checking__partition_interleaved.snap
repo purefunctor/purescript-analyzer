@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking.rs
+expression: snapshot
+---
+row1: (a: Int, c: Int, e: Int)
+row2: (b: String, d: String)
+ok: true
+left: [a :: Int, c :: Int, e :: Int]
+right: [b :: String, d :: String]

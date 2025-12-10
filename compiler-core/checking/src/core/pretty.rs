@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn};
 
 pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
 where
@@ -248,6 +248,25 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             }
         },
 
+        Type::Row(RowType { fields, tail }) => {
+            let fields = fields
+                .iter()
+                .map(|RowField { label, id }| {
+                    let label_type = traverse_precedence(source, context, Precedence::Top, *id);
+                    format!("{label} :: {label_type}")
+                })
+                .join(", ");
+
+            let tail = tail.map(|tail| traverse_precedence(source, context, Precedence::Top, tail));
+
+            match tail {
+                Some(tail) if fields.is_empty() => format!("( | {tail} )"),
+                Some(tail) => format!("( {fields} | {tail} )"),
+                None if fields.is_empty() => "()".to_string(),
+                None => format!("( {fields} )"),
+            }
+        }
+
         Type::Variable(ref variable) => render_variable(variable, context),
 
         Type::Unknown => "???".to_string(),
@@ -272,3 +291,4 @@ fn render_variable(variable: &Variable, context: &TraversalContext) -> String {
         Variable::Free(name) => format!("{name}"),
     }
 }
+

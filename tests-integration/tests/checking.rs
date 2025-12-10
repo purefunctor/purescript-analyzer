@@ -7,8 +7,9 @@ use std::num::NonZeroU32;
 use analyzer::{QueryEngine, prim};
 use checking::algorithm::state::{CheckContext, CheckState, UnificationState};
 use checking::algorithm::{quantify, unification};
-use checking::core::{ForallBinder, Type, TypeId, Variable, debruijn, pretty};
+use checking::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn, pretty};
 use files::{FileId, Files};
+use itertools::Itertools;
 use lowering::TypeVariableBindingId;
 
 struct ContextState<'r> {
@@ -483,4 +484,431 @@ infix 5 type Nullary as @
         let checked = engine.checked(id).unwrap();
         insta::assert_debug_snapshot!(checked.errors);
     }
+}
+
+// Row unification tests
+
+fn row_field(label: &str, id: TypeId) -> RowField {
+    RowField { label: label.into(), id }
+}
+
+fn format_row(
+    state: &mut CheckState,
+    context: &CheckContext<QueryEngine>,
+    row: &RowType,
+) -> String {
+    let fields = row.fields.iter().map(|f| {
+        let ty = pretty::print_local(state, context, f.id);
+        format!("{}: {ty}", f.label)
+    });
+
+    let fields = fields.collect_vec();
+    let tail = row.tail.map(|tail| pretty::print_local(state, context, tail));
+
+    match tail {
+        Some(t) if fields.is_empty() => format!("({t})"),
+        Some(t) => format!("({} | {t})", fields.join(", ")),
+        None => format!("({})", fields.join(", ")),
+    }
+}
+
+fn format_fields(
+    state: &mut CheckState,
+    context: &CheckContext<QueryEngine>,
+    fields: &[RowField],
+) -> String {
+    let inner = fields.iter().map(|RowField { label, id }| {
+        let t = pretty::print_local(state, context, *id);
+        format!("{label} :: {t}")
+    });
+    let inner = inner.collect_vec();
+    format!("[{}]", inner.join(", "))
+}
+
+fn format_partition_result(
+    state: &mut CheckState,
+    context: &CheckContext<QueryEngine>,
+    row1: &RowType,
+    row2: &RowType,
+    extras_left: &[RowField],
+    extras_right: &[RowField],
+    ok: bool,
+) -> String {
+    let mut buffer = String::new();
+
+    writeln!(buffer, "row1: {}", format_row(state, context, row1)).unwrap();
+    writeln!(buffer, "row2: {}", format_row(state, context, row2)).unwrap();
+    writeln!(buffer, "ok: {ok}").unwrap();
+    writeln!(buffer, "left: {}", format_fields(state, context, extras_left)).unwrap();
+    writeln!(buffer, "right: {}", format_fields(state, context, extras_right)).unwrap();
+
+    buffer
+}
+
+#[test]
+fn test_unify_rows_identical() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_different_types() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![row_field("a", context.prim.int)]);
+    let row2 = RowType::closed(vec![row_field("a", context.prim.string)]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(!unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_extras_left() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+    let row2 = RowType::closed(vec![row_field("a", context.prim.int)]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(!unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_extras_right() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![row_field("a", context.prim.int)]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(!unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_duplicate_labels() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_duplicate_labels_mismatch() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 =
+        RowType::closed(vec![row_field("a", context.prim.int), row_field("a", context.prim.int)]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(!unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_duplicate_labels_extra() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+        row_field("a", context.prim.number),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(!unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_open_closed() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let unification = state.fresh_unification(context);
+    let row1 = RowType::from_unsorted(vec![row_field("a", context.prim.int)], Some(unification));
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_open_open() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let u1 = state.fresh_unification(context);
+    let u2 = state.fresh_unification(context);
+
+    let row1 = RowType::from_unsorted(vec![row_field("a", context.prim.int)], Some(u1));
+    let row2 = RowType::from_unsorted(vec![row_field("b", context.prim.string)], Some(u2));
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(unification::unify(state, context, t1, t2));
+}
+
+#[test]
+fn test_unify_rows_interleaved_labels() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("c", context.prim.int),
+        row_field("e", context.prim.int),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("b", context.prim.string),
+        row_field("d", context.prim.string),
+    ]);
+
+    let t1 = state.storage.intern(Type::Row(row1));
+    let t2 = state.storage.intern(Type::Row(row2));
+
+    assert!(!unification::unify(state, context, t1, t2));
+}
+
+// Partition snapshot tests
+
+#[test]
+fn test_partition_identical() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_extras_left() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+        row_field("c", context.prim.number),
+    ]);
+    let row2 = RowType::closed(vec![row_field("a", context.prim.int)]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_extras_right() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![row_field("a", context.prim.int)]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("b", context.prim.string),
+        row_field("c", context.prim.number),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_interleaved() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("c", context.prim.int),
+        row_field("e", context.prim.int),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("b", context.prim.string),
+        row_field("d", context.prim.string),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_duplicate_labels_equal() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_duplicate_labels_extra_left() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+        row_field("a", context.prim.number),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_duplicate_labels_extra_right() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![row_field("a", context.prim.int)]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+        row_field("a", context.prim.number),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_unify_failure() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 =
+        RowType::closed(vec![row_field("a", context.prim.int), row_field("b", context.prim.int)]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.string),
+        row_field("b", context.prim.int),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
+}
+
+#[test]
+fn test_partition_duplicate_labels_positional_mismatch() {
+    let (engine, id) = empty_engine();
+    let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
+
+    let row1 = RowType::closed(vec![
+        row_field("a", context.prim.int),
+        row_field("a", context.prim.string),
+    ]);
+    let row2 = RowType::closed(vec![
+        row_field("a", context.prim.string),
+        row_field("a", context.prim.int),
+    ]);
+
+    let (extras_left, extras_right, ok) =
+        unification::partition_row_fields(state, context, &row1, &row2);
+    let snapshot =
+        format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
+    insta::assert_snapshot!(snapshot);
 }

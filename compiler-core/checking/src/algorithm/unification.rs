@@ -1,9 +1,13 @@
 //! Implements subsumption and unification.
 
+use std::sync::Arc;
+
+use itertools::{EitherOrBoth, Itertools};
+
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer};
-use crate::core::{Type, TypeId, Variable, debruijn};
+use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
 pub fn subsumes<Q>(
@@ -85,6 +89,8 @@ where
             unify(state, context, t1_argument, t2_argument)
                 && unify(state, context, t1_result, t2_result)
         }
+
+        (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row),
 
         (Type::Unification(unification_id), _) => {
             solve(state, context, unification_id, t2).is_some()
@@ -184,6 +190,24 @@ pub fn promote_type(
                 && promote_type(state, occurs, codomain, unification_id, right)
         }
 
+        Type::Row(RowType { ref fields, tail }) => {
+            let fields = Arc::clone(fields);
+
+            for field in fields.iter() {
+                if !promote_type(state, occurs, codomain, unification_id, field.id) {
+                    return false;
+                }
+            }
+
+            if let Some(tail) = tail
+                && !promote_type(state, occurs, codomain, unification_id, tail)
+            {
+                return false;
+            }
+
+            true
+        }
+
         Type::String(_, _) => true,
 
         Type::Unification(solution_id) => {
@@ -219,3 +243,93 @@ pub fn promote_type(
         Type::Unknown => true,
     }
 }
+
+fn unify_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: RowType,
+    t2_row: RowType,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row);
+    if !ok {
+        return false;
+    }
+
+    match (t1_row.tail, t2_row.tail) {
+        (None, None) => extras_left.is_empty() && extras_right.is_empty(),
+
+        (Some(t1_tail), None) => {
+            if !extras_left.is_empty() {
+                return false;
+            }
+            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t1_tail, row_id)
+        }
+
+        (None, Some(t2_tail)) => {
+            if !extras_right.is_empty() {
+                return false;
+            }
+            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t2_tail, row_id)
+        }
+
+        (Some(t1_tail), Some(t2_tail)) => {
+            let unification = state.fresh_unification(context);
+
+            let left_tail_row =
+                Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });
+            let left_tail_row_id = state.storage.intern(left_tail_row);
+
+            let right_tail_row =
+                Type::Row(RowType { fields: Arc::from(extras_left), tail: Some(unification) });
+            let right_tail_row_id = state.storage.intern(right_tail_row);
+
+            unify(state, context, t1_tail, left_tail_row_id)
+                && unify(state, context, t2_tail, right_tail_row_id)
+        }
+    }
+}
+
+pub fn partition_row_fields<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+) -> (Vec<RowField>, Vec<RowField>, bool)
+where
+    Q: ExternalQueries,
+{
+    let mut extras_left = Vec::new();
+    let mut extras_right = Vec::new();
+    let mut ok = true;
+
+    let t1_fields = t1_row.fields.iter();
+    let t2_fields = t2_row.fields.iter();
+
+    for field in t1_fields.merge_join_by(t2_fields, |left, right| left.label.cmp(&right.label)) {
+        match field {
+            EitherOrBoth::Both(left, right) => {
+                if !unify(state, context, left.id, right.id) {
+                    ok = false;
+                }
+            }
+            EitherOrBoth::Left(left) => {
+                let left = left.clone();
+                extras_left.push(left)
+            }
+            EitherOrBoth::Right(right) => {
+                let right = right.clone();
+                extras_right.push(right)
+            }
+        }
+    }
+
+    (extras_left, extras_right, ok)
+}
+

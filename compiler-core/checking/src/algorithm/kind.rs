@@ -4,8 +4,10 @@
 //! - [`operator`]: Kind checking for type operator chains
 //! - [`synonym`]: Kind checking for type synonym applications
 
-mod operator;
-mod synonym;
+pub mod operator;
+pub mod synonym;
+
+use std::sync::Arc;
 
 use files::FileId;
 use indexing::TypeItemId;
@@ -16,7 +18,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer, unification};
-use crate::core::{ForallBinder, Type, TypeId, Variable};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
@@ -185,9 +187,20 @@ where
 
         lowering::TypeKind::Wildcard => unknown,
 
-        lowering::TypeKind::Record { .. } => unknown,
+        lowering::TypeKind::Record { items, tail } => {
+            let expected_kind =
+                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
 
-        lowering::TypeKind::Row { .. } => unknown,
+            let (row_t, row_k) = infer_row_kind(state, context, items, tail);
+            unification::subsumes(state, context, row_k, expected_kind);
+
+            let t = state.storage.intern(Type::Application(context.prim.record, row_t));
+            let k = context.prim.t;
+
+            (t, k)
+        }
+
+        lowering::TypeKind::Row { items, tail } => infer_row_kind(state, context, items, tail),
 
         lowering::TypeKind::Parenthesized { parenthesized } => {
             let Some(parenthesized) = parenthesized else { return unknown };
@@ -232,6 +245,52 @@ fn infer_implicit_variable<Q: ExternalQueries>(
     let k = state
         .implicit_binding_kind(implicit.node, implicit.id)
         .expect("invariant violated: CheckState::bind_implicit");
+
+    (t, k)
+}
+
+fn infer_row_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    items: &Arc<[lowering::TypeRowItem]>,
+    tail: &Option<lowering::TypeId>,
+) -> (TypeId, TypeId)
+where
+    Q: ExternalQueries,
+{
+    let mut field_kind = state.fresh_unification(context);
+
+    let fields = items.iter().map(|item| {
+        let field_type = item.type_.map(|t| {
+            let (t, k) = infer_surface_kind(state, context, t);
+
+            unification::unify(state, context, field_kind, k);
+            field_kind = state.normalize_type(field_kind);
+
+            t
+        });
+
+        let label = item.name.clone().unwrap_or(MISSING_NAME);
+        let id = field_type.unwrap_or(context.prim.unknown);
+
+        RowField { label, id }
+    });
+
+    let fields = fields.collect();
+
+    let tail = tail.map(|tail| {
+        let (t, k) = infer_surface_kind(state, context, tail);
+
+        let expected_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
+        unification::subsumes(state, context, k, expected_kind);
+
+        t
+    });
+
+    let row = RowType::from_unsorted(fields, tail);
+
+    let t = state.storage.intern(Type::Row(row));
+    let k = state.storage.intern(Type::Application(context.prim.row, field_kind));
 
     (t, k)
 }
@@ -345,6 +404,25 @@ where
 
         Type::OperatorApplication(file_id, type_id, _, _) => {
             operator::elaborate_operator_application_kind(state, context, file_id, type_id)
+        }
+
+        Type::Row(RowType { ref fields, tail }) => {
+            let fields = Arc::clone(fields);
+
+            let field_kind = state.fresh_unification(context);
+            let tail_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
+
+            for field in fields.iter() {
+                let k = elaborate_kind(state, context, field.id);
+                unification::unify(state, context, field_kind, k);
+            }
+
+            if let Some(tail) = tail {
+                let k = elaborate_kind(state, context, tail);
+                unification::unify(state, context, tail_kind, k);
+            };
+
+            state.storage.intern(Type::Application(context.prim.row, field_kind))
         }
 
         Type::String(_, _) => context.prim.symbol,

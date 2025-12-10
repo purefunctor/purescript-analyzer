@@ -25,7 +25,10 @@
 //! [`localized`]: localize
 //! [`globalized`]: globalize
 
+use std::sync::Arc;
+
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::core::RowType;
 use crate::{ExternalQueries, Type, TypeId};
 
 /// Moves a type from local memory to global memory.
@@ -129,6 +132,13 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             let left = traverse(source, left);
             let right = traverse(source, right);
             Type::OperatorApplication(file_id, item_id, left, right)
+        }
+
+        Type::Row(RowType { fields, tail }) => {
+            let mut fields = fields.to_vec();
+            fields.iter_mut().for_each(|field| field.id = traverse(source, field.id));
+            let tail = tail.map(|tail| traverse(source, tail));
+            Type::Row(RowType { fields: Arc::from(fields), tail })
         }
 
         Type::String(k, s) => Type::String(k, s),

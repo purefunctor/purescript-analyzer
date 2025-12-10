@@ -230,3 +230,58 @@ fn test_021_type_operator_chain_polykinded_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_022_row_basic_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/022_row_basic"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_023_row_polymorphic_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/023_row_polymorphic"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_024_row_duplicates_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/024_row_duplicates"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_025_row_canon_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/025_row_canon"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_026_row_empty_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/026_row_empty"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
