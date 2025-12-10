@@ -75,7 +75,27 @@ where
             (t, k)
         }
 
-        lowering::TypeKind::Constrained { .. } => unknown,
+        lowering::TypeKind::Constrained { constraint, constrained } => {
+            let constraint = constraint.map(|constraint| {
+                let (constraint, _) =
+                    check_surface_kind(state, context, constraint, context.prim.constraint);
+                constraint
+            });
+
+            let constrained = constrained.map(|constrained| {
+                let (constrained, _) =
+                    check_surface_kind(state, context, constrained, context.prim.t);
+                constrained
+            });
+
+            let constraint = constraint.unwrap_or(context.prim.unknown);
+            let constrained = constrained.unwrap_or(context.prim.unknown);
+
+            let t = state.storage.intern(Type::Constrained(constraint, constrained));
+            let k = context.prim.t;
+
+            (t, k)
+        }
 
         lowering::TypeKind::Constructor { resolution } => {
             let Some((file_id, type_id)) = *resolution else { return unknown };

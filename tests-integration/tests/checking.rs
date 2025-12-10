@@ -486,6 +486,45 @@ infix 5 type Nullary as @
     }
 }
 
+// Constrained type tests
+
+#[test]
+fn test_constrained_invalid_constraint() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+data NotAClass
+
+type Bad = NotAClass => Int
+"#,
+    );
+
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
+}
+
+#[test]
+fn test_constrained_invalid_type() {
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
+module Main where
+
+class Show a where
+  show :: a -> String
+
+type Bad = Show Int => 123
+"#,
+    );
+
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
+}
+
 // Row unification tests
 
 fn row_field(label: &str, id: TypeId) -> RowField {

@@ -285,3 +285,14 @@ fn test_026_row_empty_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_027_type_constrained_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/027_type_constrained"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
