@@ -11,7 +11,7 @@ use indexing::TypeItemId;
 use crate::algorithm::kind::{check_surface_kind, elaborate_kind};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::substitute_bound;
-use crate::algorithm::transfer;
+use crate::algorithm::{kind, transfer};
 use crate::core::{ForallBinder, Synonym, Type, TypeId};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
@@ -90,11 +90,17 @@ where
 pub fn infer_synonym_constructor<Q: ExternalQueries>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
     synonym: Synonym,
     kind: TypeId,
     id: lowering::TypeId,
 ) -> (TypeId, TypeId) {
     if synonym.has_arguments() {
+        if state.allow_partial_synonym {
+            let t = state.storage.intern(Type::Constructor(file_id, type_id));
+            return (t, kind);
+        }
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
         return (context.prim.unknown, context.prim.unknown);
     }
@@ -123,7 +129,9 @@ where
     Q: ExternalQueries,
 {
     if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[inner_id] {
+        let previous = std::mem::replace(&mut state.allow_partial_synonym, true);
         let (argument_type, _) = check_surface_kind(state, context, argument_id, kind);
+        state.allow_partial_synonym = previous;
         Some(substitute_bound(state, argument_type, inner))
     } else {
         None
@@ -154,6 +162,7 @@ pub fn infer_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
+    function: lowering::TypeId,
     synonym: Synonym,
     arguments: &[lowering::TypeId],
 ) -> (TypeId, TypeId)
@@ -164,6 +173,9 @@ where
 
     let expected_arity = synonym.type_variables.0 as usize;
     if expected_arity != arguments.len() {
+        if state.allow_partial_synonym {
+            return infer_partial_synonym_application(state, context, function, arguments);
+        }
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
         return unknown;
     }
@@ -184,4 +196,22 @@ where
     let result_kind = elaborate_kind(state, context, result_type);
 
     (result_type, result_kind)
+}
+
+fn infer_partial_synonym_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    function: lowering::TypeId,
+    arguments: &[lowering::TypeId],
+) -> (TypeId, TypeId)
+where
+    Q: ExternalQueries,
+{
+    let (mut t, mut k) = kind::infer_surface_kind(state, context, function);
+
+    for &argument in arguments {
+        (t, k) = kind::infer_surface_app_kind(state, context, (t, k), argument);
+    }
+
+    (t, k)
 }

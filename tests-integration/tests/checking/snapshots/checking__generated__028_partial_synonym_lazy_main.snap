@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+RowApply :: forall (k :: Type). (Row k -> Row k) -> Row k -> Row k
+ExampleRow :: Row Type -> Row Type
+F :: Row Type
+
+Synonyms
+RowApply = forall (k :: Type) (f :: Row k -> Row k) (a :: Row f). f a
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+ExampleRow = forall (r :: Row Type). ( a :: Int | r )
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+F = ExampleRow ()
+  Quantified = :0
+  Kind = :0
+  Type = :0

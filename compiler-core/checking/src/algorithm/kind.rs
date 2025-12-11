@@ -43,7 +43,9 @@ where
             };
 
             if let Some(synonym) = synonym::parse_synonym_application(state, context, *function) {
-                return synonym::infer_synonym_application(state, context, id, synonym, arguments);
+                return synonym::infer_synonym_application(
+                    state, context, id, *function, synonym, arguments,
+                );
             }
 
             let (mut t, mut k) = infer_surface_kind(state, context, *function);
@@ -101,7 +103,9 @@ where
             let Some((file_id, type_id)) = *resolution else { return unknown };
 
             if let Some((s, k)) = synonym::lookup_file_synonym(state, context, file_id, type_id) {
-                return synonym::infer_synonym_constructor(state, context, s, k, id);
+                return synonym::infer_synonym_constructor(
+                    state, context, file_id, type_id, s, k, id,
+                );
             }
 
             let t = state.storage.intern(Type::Constructor(file_id, type_id));

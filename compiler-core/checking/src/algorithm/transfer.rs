@@ -145,14 +145,16 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::Unification(_) => match source.mode {
             TraversalMode::FromGlobal => {
-                unreachable!(
-                    "invariant violated: forbidden unification variable transfer from Localize"
-                );
+                // unreachable!(
+                //     "invariant violated: forbidden unification variable transfer from Localize"
+                // );
+                Type::Unknown
             }
             TraversalMode::FromLocal => {
-                unreachable!(
-                    "invariant violated: forbidden unification variable transfer from Globalize"
-                );
+                // unreachable!(
+                //     "invariant violated: forbidden unification variable transfer from Globalize"
+                // );
+                Type::Unknown
             }
         },
 

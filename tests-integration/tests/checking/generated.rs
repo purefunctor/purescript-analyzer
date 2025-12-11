@@ -296,3 +296,47 @@ fn test_027_type_constrained_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_028_partial_synonym_lazy_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/028_partial_synonym_lazy"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_029_partial_synonym_transformers_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/029_partial_synonym_transformers"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_030_partial_synonym_nested_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/030_partial_synonym_nested"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_031_partial_synonym_polykind_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/031_partial_synonym_polykind"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

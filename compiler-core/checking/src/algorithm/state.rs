@@ -28,6 +28,8 @@ pub struct CheckState {
     pub unification: UnificationContext,
     pub binding_group: BindingGroupContext,
     pub check_steps: Vec<ErrorStep>,
+
+    pub allow_partial_synonym: bool,
 }
 
 #[derive(Default)]
