@@ -76,6 +76,7 @@ pub enum Type {
     OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
     Row(RowType),
     String(lowering::StringKind, SmolStr),
+    SynonymApplication(FileId, TypeItemId, Arc<[TypeId]>),
     Unification(u32),
     Variable(Variable),
     Unknown,

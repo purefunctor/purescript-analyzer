@@ -36,17 +36,17 @@ Apply = forall (k :: Type) (f :: k -> Type) (a :: f). f a
   Kind = :1
   Type = :2
 
-ReaderInt = ReaderT Int Identity String
+ReaderInt = Apply (Reader Int) String
   Quantified = :0
   Kind = :0
   Type = :0
 
-StateString = StateT String Identity Int
+StateString = Apply (State String) Int
   Quantified = :0
   Kind = :0
   Type = :0
 
-NestedReader = ReaderT Int Identity Boolean
+NestedReader = Apply (Apply (ReaderT Int) Identity) Boolean
   Quantified = :0
   Kind = :0
   Type = :0

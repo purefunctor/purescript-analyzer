@@ -146,6 +146,12 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
                 }
             }
             Type::String(_, _) => (),
+            Type::SynonymApplication(_, _, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                for argument in arguments.iter() {
+                    aux(graph, state, *argument, dependent);
+                }
+            }
             Type::Unification(unification_id) => {
                 graph.add_node(unification_id);
 
@@ -241,6 +247,14 @@ fn substitute_unification(
                 state.storage.intern(Type::Row(row))
             }
             Type::String(_, _) => id,
+            Type::SynonymApplication(file_id, type_id, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                let arguments = arguments
+                    .iter()
+                    .map(|&argument| aux(substitutions, state, argument, size))
+                    .collect();
+                state.storage.intern(Type::SynonymApplication(file_id, type_id, arguments))
+            }
             Type::Unification(unification_id) => {
                 let Some(level) = substitutions.get(&unification_id) else { return id };
                 let index = level.to_index(size).unwrap_or_else(|| {

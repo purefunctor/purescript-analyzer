@@ -20,7 +20,7 @@ ExampleRow = forall (r :: Row Type). ( a :: Int | r )
   Kind = :0
   Type = :1
 
-F = ExampleRow ()
+F = RowApply ExampleRow ()
   Quantified = :0
   Kind = :0
   Type = :0

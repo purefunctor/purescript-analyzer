@@ -5,6 +5,7 @@ use std::sync::Arc;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::ExternalQueries;
+use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
@@ -19,8 +20,8 @@ pub fn subsumes<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = state.normalize_type(t1);
-    let t2 = state.normalize_type(t2);
+    let t1 = synonym::normalize_expand_type(state, context, t1);
+    let t2 = synonym::normalize_expand_type(state, context, t2);
 
     if t1 == t2 {
         return true;
@@ -59,8 +60,8 @@ pub fn unify<Q>(state: &mut CheckState, context: &CheckContext<Q>, t1: TypeId, t
 where
     Q: ExternalQueries,
 {
-    let t1 = state.normalize_type(t1);
-    let t2 = state.normalize_type(t2);
+    let t1 = synonym::normalize_expand_type(state, context, t1);
+    let t2 = synonym::normalize_expand_type(state, context, t2);
 
     if t1 == t2 {
         return true;
@@ -210,6 +211,16 @@ pub fn promote_type(
 
         Type::String(_, _) => true,
 
+        Type::SynonymApplication(_, _, ref arguments) => {
+            let arguments = Arc::clone(arguments);
+            for argument in arguments.iter() {
+                if !promote_type(state, occurs, codomain, unification_id, *argument) {
+                    return false;
+                }
+            }
+            true
+        }
+
         Type::Unification(solution_id) => {
             let unification = state.unification.get(unification_id);
             let solution = state.unification.get(solution_id);
@@ -332,4 +343,3 @@ where
 
     (extras_left, extras_right, ok)
 }
-

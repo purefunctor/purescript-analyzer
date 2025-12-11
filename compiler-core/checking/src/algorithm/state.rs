@@ -29,7 +29,7 @@ pub struct CheckState {
     pub binding_group: BindingGroupContext,
     pub check_steps: Vec<ErrorStep>,
 
-    pub allow_partial_synonym: bool,
+    pub defer_synonym_expansion: bool,
 }
 
 #[derive(Default)]

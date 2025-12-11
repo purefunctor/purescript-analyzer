@@ -50,17 +50,17 @@ Pair = forall (a :: Type) (b :: Type). a
   Kind = :0
   Type = :2
 
-Deep1 = Wrapper Int
+Deep1 = Apply1 Wrapper Int
   Quantified = :0
   Kind = :0
   Type = :0
 
-Deep2 = Pair Int String
+Deep2 = Apply2 Pair Int String
   Quantified = :0
   Kind = :0
   Type = :0
 
-Deep3 = Flip Pair Int String
+Deep3 = Apply2 (Flip Pair) Int String
   Quantified = :0
   Kind = :0
   Type = :0
@@ -70,7 +70,7 @@ Apply3 = forall (f :: (Type -> Type) -> Type -> Type) (g :: Type -> Type) (a :: 
   Kind = :0
   Type = :3
 
-Deep4 = Apply1 Wrapper Int
+Deep4 = Apply3 Apply1 Wrapper Int
   Quantified = :0
   Kind = :0
   Type = :0
@@ -80,7 +80,7 @@ Compose = forall (f :: Type -> Type) (g :: Type -> Type) (a :: Type). f (g a)
   Kind = :0
   Type = :3
 
-Composed = Compose Wrapper Wrapper Int
+Composed = Apply1 (Compose Wrapper Wrapper) Int
   Quantified = :0
   Kind = :0
   Type = :0

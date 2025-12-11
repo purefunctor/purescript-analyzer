@@ -43,9 +43,7 @@ where
             };
 
             if let Some(synonym) = synonym::parse_synonym_application(state, context, *function) {
-                return synonym::infer_synonym_application(
-                    state, context, id, *function, synonym, arguments,
-                );
+                return synonym::infer_synonym_application(state, context, id, synonym, arguments);
             }
 
             let (mut t, mut k) = infer_surface_kind(state, context, *function);
@@ -102,10 +100,11 @@ where
         lowering::TypeKind::Constructor { resolution } => {
             let Some((file_id, type_id)) = *resolution else { return unknown };
 
-            if let Some((s, k)) = synonym::lookup_file_synonym(state, context, file_id, type_id) {
-                return synonym::infer_synonym_constructor(
-                    state, context, file_id, type_id, s, k, id,
-                );
+            if let Some((synonym, kind)) =
+                synonym::lookup_file_synonym(state, context, file_id, type_id)
+            {
+                let synonym_info = (file_id, type_id, synonym, kind);
+                return synonym::infer_synonym_constructor(state, context, synonym_info, id);
             }
 
             let t = state.storage.intern(Type::Constructor(file_id, type_id));
@@ -450,6 +449,24 @@ where
         }
 
         Type::String(_, _) => context.prim.symbol,
+
+        Type::SynonymApplication(file_id, type_id, ref arguments) => {
+            let arguments = Arc::clone(arguments);
+
+            let mut synonym_kind =
+                lookup_file_type(state, context, file_id, type_id).unwrap_or(unknown);
+
+            for _ in arguments.iter() {
+                synonym_kind = state.normalize_type(synonym_kind);
+                if let Type::Function(_, result_kind) = state.storage[synonym_kind] {
+                    synonym_kind = result_kind
+                } else {
+                    return unknown;
+                }
+            }
+
+            synonym_kind
+        }
 
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
