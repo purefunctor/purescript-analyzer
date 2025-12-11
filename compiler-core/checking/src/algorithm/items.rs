@@ -384,11 +384,13 @@ fn check_class_members<Q>(
 }
 
 fn collect_foralls(state: &CheckState, mut id: TypeId) -> (Vec<ForallBinder>, TypeId) {
-    let mut foralls = Vec::new();
+    let mut foralls = vec![];
+
     while let Type::Forall(ref binder, inner) = state.storage[id] {
         foralls.push(binder.clone());
         id = inner;
     }
+
     (foralls, id)
 }
 

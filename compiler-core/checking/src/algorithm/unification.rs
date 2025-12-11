@@ -316,8 +316,8 @@ pub fn partition_row_fields<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut extras_left = Vec::new();
-    let mut extras_right = Vec::new();
+    let mut extras_left = vec![];
+    let mut extras_right = vec![];
     let mut ok = true;
 
     let t1_fields = t1_row.fields.iter();
