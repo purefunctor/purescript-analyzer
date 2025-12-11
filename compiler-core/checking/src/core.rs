@@ -62,6 +62,12 @@ impl RowType {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Saturation {
+    Full,
+    Partial,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
@@ -76,7 +82,7 @@ pub enum Type {
     OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
     Row(RowType),
     String(lowering::StringKind, SmolStr),
-    SynonymApplication(FileId, TypeItemId, Arc<[TypeId]>),
+    SynonymApplication(Saturation, FileId, TypeItemId, Arc<[TypeId]>),
     Unification(u32),
     Variable(Variable),
     Unknown,

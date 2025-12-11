@@ -5,15 +5,16 @@
 //! - Checking partial vs full synonym applications
 //! - Instantiating and applying synonym type arguments
 
-use std::mem;
 use std::sync::Arc;
+use std::{iter, mem};
 
 use files::FileId;
 use indexing::TypeItemId;
+use itertools::Itertools;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
-use crate::core::{ForallBinder, Synonym, Type, TypeId};
+use crate::core::{ForallBinder, Saturation, Synonym, Type, TypeId};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 
@@ -146,8 +147,13 @@ where
 
     if expected_arity != actual_arity {
         if state.defer_synonym_expansion {
-            let (synonym_type, synonym_kind) =
-                infer_partial_synonym_application(state, context, file_id, type_id, arguments);
+            let (synonym_type, synonym_kind) = infer_partial_synonym_application(
+                state,
+                context,
+                (file_id, type_id),
+                kind,
+                arguments,
+            );
             return (synonym_type, synonym_kind);
         } else {
             state.insert_error(ErrorKind::PartialSynonymApplication { id });
@@ -186,8 +192,12 @@ where
         synonym_kind = result_kind;
     }
 
-    let synonym_type =
-        state.storage.intern(Type::SynonymApplication(file_id, type_id, Arc::from(argument_types)));
+    let synonym_type = state.storage.intern(Type::SynonymApplication(
+        Saturation::Full,
+        file_id,
+        type_id,
+        Arc::from(argument_types),
+    ));
 
     (synonym_type, synonym_kind)
 }
@@ -246,46 +256,110 @@ where
 fn infer_partial_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
+    (file_id, type_id): (FileId, TypeItemId),
+    kind: TypeId,
     arguments: &[lowering::TypeId],
 ) -> (TypeId, TypeId)
 where
     Q: ExternalQueries,
 {
-    let mut t = state.storage.intern(Type::Constructor(file_id, type_id));
-    let mut k =
-        kind::lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
+    let mut argument_types = vec![];
+    let mut synonym_kind = kind;
 
-    for &argument in arguments {
-        (t, k) = kind::infer_surface_app_kind(state, context, (t, k), argument);
+    for &argument_id in arguments {
+        let (argument_type, result_kind) =
+            infer_synonym_application_argument(state, context, synonym_kind, argument_id);
+        argument_types.push(argument_type);
+        synonym_kind = result_kind;
     }
 
-    (t, k)
+    let synonym_type = state.storage.intern(Type::SynonymApplication(
+        Saturation::Partial,
+        file_id,
+        type_id,
+        Arc::from(argument_types),
+    ));
+
+    (synonym_type, synonym_kind)
 }
 
-pub fn expand_type_synonym<Q>(
+enum DiscoveredSynonym {
+    Saturated { synonym: Synonym, arguments: Vec<TypeId> },
+    Additional { synonym: Synonym, arguments: Arc<[TypeId]>, additional: Vec<TypeId> },
+}
+
+fn discover_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
-) -> TypeId
+) -> Option<DiscoveredSynonym>
 where
     Q: ExternalQueries,
 {
-    let Type::SynonymApplication(file_id, item_id, ref arguments) = state.storage[type_id] else {
-        return type_id;
-    };
+    let mut additional = vec![];
+    let mut current_id = type_id;
 
-    let arguments = Arc::clone(arguments);
+    while let Type::Application(function, argument) | Type::KindApplication(function, argument) =
+        state.storage[current_id]
+    {
+        additional.push(argument);
+        current_id = function;
+    }
 
-    let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id) else {
-        return type_id;
-    };
+    additional.reverse();
 
-    instantiate_synonym(state, synonym, &arguments)
+    match state.storage[current_id] {
+        Type::Constructor(file_id, item_id) => {
+            let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+
+            let actual_arity = additional.len();
+            let expected_arity = synonym.type_variables.0 as usize;
+
+            if actual_arity != expected_arity {
+                return None;
+            }
+
+            let arguments = additional;
+            Some(DiscoveredSynonym::Saturated { synonym, arguments })
+        }
+
+        Type::SynonymApplication(Saturation::Partial, file_id, item_id, ref partial_arguments) => {
+            let partial_arguments = Arc::clone(partial_arguments);
+            let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+
+            let arguments = {
+                let partial = partial_arguments.iter().copied();
+                let additional = additional.into_iter();
+                iter::chain(partial, additional).collect_vec()
+            };
+
+            let actual_arity = arguments.len();
+            let expected_arity = synonym.type_variables.0 as usize;
+
+            if actual_arity != expected_arity {
+                return None;
+            }
+
+            Some(DiscoveredSynonym::Saturated { synonym, arguments })
+        }
+
+        Type::SynonymApplication(Saturation::Full, file_id, item_id, ref full_arguments) => {
+            let arguments = Arc::clone(full_arguments);
+            let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+
+            if additional.is_empty() {
+                let arguments = arguments.to_vec();
+                Some(DiscoveredSynonym::Saturated { synonym, arguments })
+            } else {
+                Some(DiscoveredSynonym::Additional { synonym, arguments, additional })
+            }
+        }
+
+        _ => None,
+    }
 }
 
-fn instantiate_synonym(state: &mut CheckState, synonym: Synonym, arguments: &[TypeId]) -> TypeId {
+fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[TypeId]) -> TypeId {
     let count = synonym.quantified_variables.0 as usize + synonym.kind_variables.0 as usize;
     let mut instantiated = state.normalize_type(synonym.synonym_type);
 
@@ -309,6 +383,31 @@ fn instantiate_synonym(state: &mut CheckState, synonym: Synonym, arguments: &[Ty
     instantiated
 }
 
+pub fn expand_type_synonym<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    type_id: TypeId,
+) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let Some(discovered) = discover_synonym_application(state, context, type_id) else {
+        return type_id;
+    };
+
+    match discovered {
+        DiscoveredSynonym::Saturated { synonym, arguments } => {
+            instantiate_saturated(state, synonym, &arguments)
+        }
+        DiscoveredSynonym::Additional { synonym, arguments, additional } => {
+            let expanded = instantiate_saturated(state, synonym, &arguments);
+            additional.into_iter().fold(expanded, |result, argument| {
+                state.storage.intern(Type::Application(result, argument))
+            })
+        }
+    }
+}
+
 pub fn normalize_expand_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -320,14 +419,14 @@ where
     const EXPANSION_LIMIT: u32 = 1_000_000;
 
     for _ in 0..EXPANSION_LIMIT {
-        let normalized = state.normalize_type(type_id);
-        let expanded = expand_type_synonym(state, context, normalized);
+        let normalized_id = state.normalize_type(type_id);
+        let expanded_id = expand_type_synonym(state, context, normalized_id);
 
-        if expanded == type_id {
+        if expanded_id == type_id {
             return type_id;
         }
 
-        type_id = expanded;
+        type_id = expanded_id;
     }
 
     unreachable!("critical violation: limit reached in normalize_expand_type")

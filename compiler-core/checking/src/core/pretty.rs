@@ -239,7 +239,7 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             StringKind::RawString => format!("\"\"\"{string}\"\"\""),
         },
 
-        Type::SynonymApplication(file_id, type_id, ref arguments) => {
+        Type::SynonymApplication(_, file_id, type_id, ref arguments) => {
             let function = lookup_type_name(source, file_id, type_id)
                 .unwrap_or_else(|| "<InvalidName>".to_string());
 

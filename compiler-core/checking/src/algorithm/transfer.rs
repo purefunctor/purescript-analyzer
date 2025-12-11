@@ -143,9 +143,9 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::String(k, s) => Type::String(k, s),
 
-        Type::SynonymApplication(file_id, type_id, arguments) => {
+        Type::SynonymApplication(saturation, file_id, type_id, arguments) => {
             let arguments = arguments.iter().map(|&argument| traverse(source, argument)).collect();
-            Type::SynonymApplication(file_id, type_id, arguments)
+            Type::SynonymApplication(saturation, file_id, type_id, arguments)
         }
 
         Type::Unification(_) => match source.mode {

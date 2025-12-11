@@ -67,13 +67,15 @@ pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: Type
                 state.storage.intern(Type::Row(row))
             }
 
-            Type::SynonymApplication(file_id, type_id, ref arguments) => {
+            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
                 let arguments = Arc::clone(arguments);
                 let arguments = arguments
                     .iter()
                     .map(|&argument| aux(state, index, with_type, argument))
                     .collect();
-                state.storage.intern(Type::SynonymApplication(file_id, type_id, arguments))
+                state
+                    .storage
+                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
             }
 
             Type::Constructor(_, _)
@@ -152,13 +154,15 @@ pub fn shift_indices(state: &mut CheckState, amount: u32, in_type: TypeId) -> Ty
                 state.storage.intern(Type::Row(row))
             }
 
-            Type::SynonymApplication(file_id, type_id, ref arguments) => {
+            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
                 let arguments = Arc::clone(arguments);
                 let arguments = arguments
                     .iter()
                     .map(|&argument| aux(state, cutoff, amount, argument))
                     .collect();
-                state.storage.intern(Type::SynonymApplication(file_id, type_id, arguments))
+                state
+                    .storage
+                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
             }
 
             Type::Constructor(_, _)

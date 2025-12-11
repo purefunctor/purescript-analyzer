@@ -450,7 +450,7 @@ where
 
         Type::String(_, _) => context.prim.symbol,
 
-        Type::SynonymApplication(file_id, type_id, ref arguments) => {
+        Type::SynonymApplication(_, file_id, type_id, ref arguments) => {
             let arguments = Arc::clone(arguments);
 
             let mut synonym_kind =

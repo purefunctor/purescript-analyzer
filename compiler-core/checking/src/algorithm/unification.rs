@@ -211,7 +211,7 @@ pub fn promote_type(
 
         Type::String(_, _) => true,
 
-        Type::SynonymApplication(_, _, ref arguments) => {
+        Type::SynonymApplication(_, _, _, ref arguments) => {
             let arguments = Arc::clone(arguments);
             for argument in arguments.iter() {
                 if !promote_type(state, occurs, codomain, unification_id, *argument) {

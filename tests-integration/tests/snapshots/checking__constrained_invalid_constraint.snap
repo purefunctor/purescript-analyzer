@@ -6,7 +6,7 @@ expression: checked.errors
     CheckError {
         kind: CannotUnify {
             t1: Id<checking::core::Type>(1),
-            t2: Id<checking::core::Type>(2),
+            t2: Id<checking::core::Type>(3),
         },
         step: [
             TypeDeclaration(
