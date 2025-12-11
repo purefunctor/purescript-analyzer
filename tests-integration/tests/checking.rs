@@ -371,119 +371,107 @@ fn test_subsumes_nested_forall() {
 
 #[test]
 fn test_data_arity_fail() {
-    {
-        let (engine, id) = empty_engine();
-        engine.set_content(
-            id,
-            r#"
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
 module Main where
 
 data Maybe :: Type
 data Maybe a = Just a | Nothing
 "#,
-        );
+    );
 
-        let checked = engine.checked(id).unwrap();
-        insta::assert_debug_snapshot!(checked.errors);
-    }
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
 }
 
 #[test]
 fn test_unification_fail() {
-    {
-        let (engine, id) = empty_engine();
-        engine.set_content(
-            id,
-            r#"
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
 module Main where
 
 data Maybe (a :: Int) = Just a | Nothing
 "#,
-        );
+    );
 
-        let checked = engine.checked(id).unwrap();
-        insta::assert_debug_snapshot!(checked.errors);
-    }
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
 }
 
 #[test]
 fn test_partial_synonym() {
-    {
-        let (engine, id) = empty_engine();
-        engine.set_content(
-            id,
-            r#"
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
 module Main where
 
 type Identity a = a
 
 type Test = Identity
 "#,
-        );
+    );
 
-        let checked = engine.checked(id).unwrap();
-        insta::assert_debug_snapshot!(checked.errors);
-    }
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
 }
 
 #[test]
 fn test_invalid_type_operator_unary() {
-    {
-        let (engine, id) = empty_engine();
-        engine.set_content(
-            id,
-            r#"
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
 module Main where
 
 type Unary a = a
 
 infix 5 type Unary as !
 "#,
-        );
+    );
 
-        let checked = engine.checked(id).unwrap();
-        insta::assert_debug_snapshot!(checked.errors);
-    }
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
 }
 
 #[test]
 fn test_invalid_type_operator_ternary() {
-    {
-        let (engine, id) = empty_engine();
-        engine.set_content(
-            id,
-            r#"
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
 module Main where
 
 type Ternary a b c = a
 
 infix 5 type Ternary as ?
 "#,
-        );
+    );
 
-        let checked = engine.checked(id).unwrap();
-        insta::assert_debug_snapshot!(checked.errors);
-    }
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
 }
 
 #[test]
 fn test_invalid_type_operator_nullary() {
-    {
-        let (engine, id) = empty_engine();
-        engine.set_content(
-            id,
-            r#"
+    let (engine, id) = empty_engine();
+    engine.set_content(
+        id,
+        r#"
 module Main where
 
 type Nullary = Int
 
 infix 5 type Nullary as @
 "#,
-        );
+    );
 
-        let checked = engine.checked(id).unwrap();
-        insta::assert_debug_snapshot!(checked.errors);
-    }
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
 }
 
 // Constrained type tests
