@@ -14,6 +14,7 @@ pub enum ErrorKind {
     CannotUnify { t1: TypeId, t2: TypeId },
     PartialSynonymApplication { id: lowering::TypeId },
     InvalidTypeOperator { id: TypeId },
+    RecursiveSynonymExpansion { file_id: files::FileId, item_id: indexing::TypeItemId },
 }
 
 #[derive(Debug, PartialEq, Eq)]

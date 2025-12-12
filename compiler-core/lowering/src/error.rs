@@ -1,9 +1,13 @@
+use std::sync::Arc;
+
+use indexing::TypeItemId;
 use stabilizing::AstId;
 use syntax::cst;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum LoweringError {
     NotInScope(NotInScope),
+    RecursiveSynonym(RecursiveSynonym),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -30,4 +34,9 @@ pub enum DoFn {
 pub enum AdoFn {
     Map,
     Apply,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct RecursiveSynonym {
+    pub group: Arc<[TypeItemId]>,
 }

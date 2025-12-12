@@ -939,3 +939,33 @@ fn test_partition_duplicate_labels_positional_mismatch() {
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
 }
+
+#[test]
+fn test_recursive_synonym_expansion_errors() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+type F = G
+type G = F
+
+type H = H
+
+testF :: F -> F
+testF x = x
+
+testH :: H -> H
+testH x = x
+"#,
+    );
+    let content = files.content(id);
+    engine.set_content(id, content);
+
+    let checked = engine.checked(id).unwrap();
+    insta::assert_debug_snapshot!(checked.errors);
+}

@@ -31,9 +31,11 @@ pub(crate) struct State {
 
     pub(crate) current_term: Option<TermItemId>,
     pub(crate) current_type: Option<TypeItemId>,
+    pub(crate) current_synonym: Option<TypeItemId>,
 
     pub(crate) term_graph: ItemGraph<TermItemId>,
     pub(crate) type_graph: ItemGraph<TypeItemId>,
+    pub(crate) synonym_graph: ItemGraph<TypeItemId>,
 
     pub(crate) errors: Vec<LoweringError>,
 }
@@ -66,7 +68,13 @@ impl State {
     fn begin_type(&mut self, id: TypeItemId) {
         self.current_term = None;
         self.current_type = Some(id);
+        self.current_synonym = None;
         self.type_graph.add_node(id);
+    }
+
+    fn begin_synonym(&mut self, id: TypeItemId) {
+        self.current_synonym = Some(id);
+        self.synonym_graph.add_node(id);
     }
 
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
@@ -192,6 +200,12 @@ impl State {
             && let Some(current_id) = self.current_type
         {
             self.type_graph.add_edge(current_id, type_id, ());
+
+            if let Some(synonym_id) = self.current_synonym {
+                if let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind {
+                    self.synonym_graph.add_edge(synonym_id, type_id, ());
+                }
+            }
         }
 
         Some((file_id, type_id))
@@ -498,6 +512,8 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Synonym { signature, equation } => {
+            state.begin_synonym(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;

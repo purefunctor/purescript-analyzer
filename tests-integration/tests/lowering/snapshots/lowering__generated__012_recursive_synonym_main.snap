@@ -1,0 +1,31 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+
+Types:
+
+a@Some(Position { line: 28, character: 26 })
+  resolves to forall Some(Position { line: 28, character: 13 })
+a@Some(Position { line: 25, character: 37 })
+  resolves to forall Some(Position { line: 25, character: 10 })
+a@Some(Position { line: 20, character: 38 })
+  resolves to forall Some(Position { line: 20, character: 14 })
+a@Some(Position { line: 30, character: 22 })
+  resolves to nothing
+a@Some(Position { line: 19, character: 27 })
+  resolves to forall Some(Position { line: 19, character: 13 })
+a@Some(Position { line: 30, character: 33 })
+  resolves to nothing
+a@Some(Position { line: 27, character: 22 })
+  resolves to nothing
+a@Some(Position { line: 27, character: 33 })
+  resolves to nothing
+k@Some(Position { line: 23, character: 38 })
+  resolves to forall Some(Position { line: 23, character: 35 })
+a@Some(Position { line: 31, character: 26 })
+  resolves to forall Some(Position { line: 31, character: 13 })

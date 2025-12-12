@@ -18,6 +18,33 @@ use crate::core::{ForallBinder, Saturation, Synonym, Type, TypeId};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 
+fn is_recursive_synonym<Q>(context: &CheckContext<Q>, file_id: FileId, item_id: TypeItemId) -> bool
+where
+    Q: ExternalQueries,
+{
+    if file_id == context.id {
+        context.lowered.errors.iter().any(|error| {
+            if let lowering::LoweringError::RecursiveSynonym(recursive) = error {
+                recursive.group.contains(&item_id)
+            } else {
+                false
+            }
+        })
+    } else {
+        let Ok(lowered) = context.queries.lowered(file_id) else {
+            return true;
+        };
+
+        lowered.errors.iter().any(|error| {
+            if let lowering::LoweringError::RecursiveSynonym(recursive) = error {
+                recursive.group.contains(&item_id)
+            } else {
+                false
+            }
+        })
+    }
+}
+
 fn localize_synonym_and_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -319,6 +346,11 @@ where
                 return None;
             }
 
+            if is_recursive_synonym(context, file_id, item_id) {
+                state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+                return None;
+            }
+
             let arguments = additional;
             Some(DiscoveredSynonym::Saturated { synonym, arguments })
         }
@@ -340,12 +372,22 @@ where
                 return None;
             }
 
+            if is_recursive_synonym(context, file_id, item_id) {
+                state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+                return None;
+            }
+
             Some(DiscoveredSynonym::Saturated { synonym, arguments })
         }
 
         Type::SynonymApplication(Saturation::Full, file_id, item_id, ref full_arguments) => {
             let arguments = Arc::clone(full_arguments);
             let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+
+            if is_recursive_synonym(context, file_id, item_id) {
+                state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+                return None;
+            }
 
             if additional.is_empty() {
                 let arguments = arguments.to_vec();

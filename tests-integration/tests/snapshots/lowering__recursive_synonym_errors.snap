@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: lowered.errors
+---
+[
+    RecursiveSynonym(
+        RecursiveSynonym {
+            group: [
+                Idx::<TypeItem>(1),
+                Idx::<TypeItem>(0),
+            ],
+        },
+    ),
+    RecursiveSynonym(
+        RecursiveSynonym {
+            group: [
+                Idx::<TypeItem>(2),
+            ],
+        },
+    ),
+]

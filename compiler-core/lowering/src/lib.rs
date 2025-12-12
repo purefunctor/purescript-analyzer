@@ -5,6 +5,8 @@ pub mod intermediate;
 pub mod scope;
 pub mod source;
 
+use std::sync::Arc;
+
 pub use error::*;
 pub use intermediate::*;
 pub use scope::*;
@@ -48,14 +50,35 @@ pub fn lower_module(
     indexed: &IndexedModule,
     resolved: &ResolvedModule,
 ) -> LoweredModule {
-    let algorithm::State { info, graph, nodes, term_graph, type_graph, errors, .. } =
-        algorithm::lower_module(file_id, module, prim, stabilized, indexed, resolved);
+    let algorithm::State {
+        info,
+        graph,
+        nodes,
+        term_graph,
+        type_graph,
+        synonym_graph,
+        mut errors,
+        ..
+    } = algorithm::lower_module(file_id, module, prim, stabilized, indexed, resolved);
 
     let term_scc = tarjan_scc(&term_graph);
     let term_scc = term_scc.into_iter().map(into_scc(&term_graph)).collect();
 
     let type_scc = tarjan_scc(&type_graph);
     let type_scc = type_scc.into_iter().map(into_scc(&type_graph)).collect();
+
+    let synonym_scc = tarjan_scc(&synonym_graph);
+    for scc in synonym_scc {
+        match scc.as_slice() {
+            [single] if !synonym_graph.contains_edge(*single, *single) => {
+                continue;
+            }
+            group => {
+                let group = Arc::from(group);
+                errors.push(LoweringError::RecursiveSynonym(RecursiveSynonym { group }));
+            }
+        }
+    }
 
     LoweredModule { info, graph, nodes, term_scc, type_scc, errors }
 }
