@@ -1,7 +1,9 @@
 //! Implements type variable substitution.
 
+use std::sync::Arc;
+
 use crate::algorithm::state::CheckState;
-use crate::core::{Type, TypeId, Variable, debruijn};
+use crate::core::{RowType, Type, TypeId, Variable, debruijn};
 
 pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: TypeId) -> TypeId {
     fn aux(state: &mut CheckState, index: u32, with_type: TypeId, in_type: TypeId) -> TypeId {
@@ -51,6 +53,29 @@ pub fn substitute_bound(state: &mut CheckState, with_type: TypeId, in_type: Type
                 let left = aux(state, index, with_type, left);
                 let right = aux(state, index, with_type, right);
                 state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
+            }
+
+            Type::Row(RowType { ref fields, tail }) => {
+                let mut fields = fields.to_vec();
+                fields
+                    .iter_mut()
+                    .for_each(|field| field.id = aux(state, index, with_type, field.id));
+
+                let tail = tail.map(|tail| aux(state, index, with_type, tail));
+                let row = RowType { fields: Arc::from(fields), tail };
+
+                state.storage.intern(Type::Row(row))
+            }
+
+            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                let arguments = arguments
+                    .iter()
+                    .map(|&argument| aux(state, index, with_type, argument))
+                    .collect();
+                state
+                    .storage
+                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
             }
 
             Type::Constructor(_, _)
@@ -117,6 +142,27 @@ pub fn shift_indices(state: &mut CheckState, amount: u32, in_type: TypeId) -> Ty
                 let left = aux(state, cutoff, amount, left);
                 let right = aux(state, cutoff, amount, right);
                 state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
+            }
+
+            Type::Row(RowType { ref fields, tail }) => {
+                let mut fields = fields.to_vec();
+                fields.iter_mut().for_each(|field| field.id = aux(state, cutoff, amount, field.id));
+
+                let tail = tail.map(|tail| aux(state, cutoff, amount, tail));
+                let row = RowType { fields: Arc::from(fields), tail };
+
+                state.storage.intern(Type::Row(row))
+            }
+
+            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                let arguments = arguments
+                    .iter()
+                    .map(|&argument| aux(state, cutoff, amount, argument))
+                    .collect();
+                state
+                    .storage
+                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
             }
 
             Type::Constructor(_, _)

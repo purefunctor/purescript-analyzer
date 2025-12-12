@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+DuplicateRow :: Row Type
+
+Synonyms
+DuplicateRow = ( a :: Int, a :: String, b :: Boolean )
+  Quantified = :0
+  Kind = :0
+  Type = :0

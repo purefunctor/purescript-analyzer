@@ -1,0 +1,86 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Apply1 :: (Type -> Type) -> Type -> Type
+Apply2 :: (Type -> Type -> Type) -> Type -> Type -> Type
+Const :: Type -> Type -> Type
+Flip :: (Type -> Type -> Type) -> Type -> Type -> Type
+Wrapper :: Type -> Type
+Pair :: Type -> Type -> Type
+Deep1 :: Type
+Deep2 :: Type
+Deep3 :: Type
+Apply3 :: ((Type -> Type) -> Type -> Type) -> (Type -> Type) -> Type -> Type
+Deep4 :: Type
+Compose :: (Type -> Type) -> (Type -> Type) -> Type -> Type
+Composed :: Type
+
+Synonyms
+Apply1 = forall (f :: Type -> Type) (a :: Type). f a
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+Apply2 = forall (f :: Type -> Type -> Type) (a :: Type) (b :: Type). f a b
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+Const = forall (a :: Type) (b :: Type). a
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+Flip = forall (f :: Type -> Type -> Type) (a :: Type) (b :: Type). f b a
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+Wrapper = forall (a :: Type). a
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+Pair = forall (a :: Type) (b :: Type). a
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+Deep1 = Apply1 Wrapper Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Deep2 = Apply2 Pair Int String
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Deep3 = Apply2 (Flip Pair) Int String
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Apply3 = forall (f :: (Type -> Type) -> Type -> Type) (g :: Type -> Type) (a :: Type). f g a
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+Deep4 = Apply3 Apply1 Wrapper Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Compose = forall (f :: Type -> Type) (g :: Type -> Type) (a :: Type). f (g a)
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+Composed = Apply1 (Compose Wrapper Wrapper) Int
+  Quantified = :0
+  Kind = :0
+  Type = :0

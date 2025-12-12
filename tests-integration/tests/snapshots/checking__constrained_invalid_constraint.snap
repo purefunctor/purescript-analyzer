@@ -4,19 +4,9 @@ expression: checked.errors
 ---
 [
     CheckError {
-        kind: PartialSynonymApplication {
-            id: AstId<syntax::cst::Type>(9),
-        },
-        step: [
-            TypeDeclaration(
-                Idx::<TypeItem>(1),
-            ),
-        ],
-    },
-    CheckError {
         kind: CannotUnify {
             t1: Id<checking::core::Type>(1),
-            t2: Id<checking::core::Type>(13),
+            t2: Id<checking::core::Type>(3),
         },
         step: [
             TypeDeclaration(

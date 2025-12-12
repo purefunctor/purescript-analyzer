@@ -1,0 +1,52 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). a -> Identity a
+ReaderT :: forall (r :: Type) (m :: Type -> Type) (a :: Type). (r -> m a) -> ReaderT r m a
+StateT :: forall (s :: Type) (m :: Type -> Type) (a :: Type). (s -> m (Tuple a s)) -> StateT s m a
+Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+
+Types
+Identity :: Type -> Type
+ReaderT :: Type -> (Type -> Type) -> Type -> Type
+StateT :: Type -> (Type -> Type) -> Type -> Type
+Tuple :: Type -> Type -> Type
+Reader :: Type -> Type -> Type
+State :: Type -> Type -> Type
+Apply :: forall (k :: Type). (k -> Type) -> k -> Type
+ReaderInt :: Type
+StateString :: Type
+NestedReader :: Type
+
+Synonyms
+Reader = forall (r :: Type). ReaderT r Identity
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+State = forall (s :: Type). StateT s Identity
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+Apply = forall (k :: Type) (f :: k -> Type) (a :: f). f a
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+ReaderInt = Apply (Reader Int) String
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+StateString = Apply (State String) Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+NestedReader = Apply (Apply (ReaderT Int) Identity) Boolean
+  Quantified = :0
+  Kind = :0
+  Type = :0

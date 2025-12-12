@@ -1,6 +1,7 @@
 //! Implements type quantification.
 
 use std::fmt::Write;
+use std::sync::Arc;
 
 use indexmap::IndexSet;
 use petgraph::prelude::DiGraphMap;
@@ -9,7 +10,7 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStrBuilder;
 
 use crate::algorithm::state::CheckState;
-use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
+use crate::core::{ForallBinder, RowType, Type, TypeId, Variable, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -135,7 +136,22 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
                 aux(graph, state, left, dependent);
                 aux(graph, state, right, dependent);
             }
+            Type::Row(RowType { ref fields, tail }) => {
+                let fields = Arc::clone(fields);
+                for field in fields.iter() {
+                    aux(graph, state, field.id, dependent);
+                }
+                if let Some(tail) = tail {
+                    aux(graph, state, tail, dependent);
+                }
+            }
             Type::String(_, _) => (),
+            Type::SynonymApplication(_, _, _, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                for argument in arguments.iter() {
+                    aux(graph, state, *argument, dependent);
+                }
+            }
             Type::Unification(unification_id) => {
                 graph.add_node(unification_id);
 
@@ -219,7 +235,28 @@ fn substitute_unification(
                 let right = aux(substitutions, state, right, size);
                 state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
             }
+            Type::Row(RowType { ref fields, tail }) => {
+                let mut fields = fields.to_vec();
+                fields
+                    .iter_mut()
+                    .for_each(|field| field.id = aux(substitutions, state, field.id, size));
+
+                let tail = tail.map(|tail| aux(substitutions, state, tail, size));
+                let row = RowType { fields: Arc::from(fields), tail };
+
+                state.storage.intern(Type::Row(row))
+            }
             Type::String(_, _) => id,
+            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                let arguments = arguments
+                    .iter()
+                    .map(|&argument| aux(substitutions, state, argument, size))
+                    .collect();
+                state
+                    .storage
+                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
+            }
             Type::Unification(unification_id) => {
                 let Some(level) = substitutions.get(&unification_id) else { return id };
                 let index = level.to_index(size).unwrap_or_else(|| {

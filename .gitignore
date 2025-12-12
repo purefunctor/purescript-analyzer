@@ -2,3 +2,4 @@
 /Cargo.lock
 /node_modules
 codecov.json
+.psc-ide-port

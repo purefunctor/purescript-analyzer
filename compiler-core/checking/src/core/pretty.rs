@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn};
 
 pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
 where
@@ -89,6 +89,15 @@ fn parens_if(condition: bool, s: String) -> String {
     if condition { format!("({s})") } else { s }
 }
 
+fn lookup_type_name<Q: ExternalQueries>(
+    source: &TraversalSource<Q>,
+    file_id: files::FileId,
+    type_id: indexing::TypeItemId,
+) -> Option<String> {
+    let indexed = source.queries().indexed(file_id).ok()?;
+    indexed.items[type_id].name.as_ref().map(|name| name.to_string())
+}
+
 fn traverse_precedence<'a, Q: ExternalQueries>(
     source: &mut TraversalSource<'a, Q>,
     context: &mut TraversalContext,
@@ -131,11 +140,8 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             parens_if(precedence > Precedence::Constraint, format!("{constraints} => {inner}"))
         }
 
-        Type::Constructor(file_id, type_id) => {
-            let indexed = source.queries().indexed(file_id).unwrap();
-            let name = indexed.items[type_id].name.as_ref();
-            name.map(|name| name.to_string()).unwrap_or_else(|| "<InvalidName>".to_string())
-        }
+        Type::Constructor(file_id, type_id) => lookup_type_name(source, file_id, type_id)
+            .unwrap_or_else(|| "<InvalidName>".to_string()),
 
         Type::Forall(ref binder, mut inner) => {
             let binder = binder.clone();
@@ -215,17 +221,12 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             parens_if(precedence > Precedence::Atom, format!("{inner} :: {kind}"))
         }
 
-        Type::Operator(file_id, type_id) => {
-            let indexed = source.queries().indexed(file_id).unwrap();
-            let name = indexed.items[type_id].name.as_ref();
-            name.map(|name| format!("({name})")).unwrap_or_else(|| "<InvalidName>".to_string())
-        }
+        Type::Operator(file_id, type_id) => lookup_type_name(source, file_id, type_id)
+            .unwrap_or_else(|| "<InvalidName>".to_string()),
 
         Type::OperatorApplication(file_id, type_id, left, right) => {
-            let indexed = source.queries().indexed(file_id).unwrap();
-            let name = indexed.items[type_id].name.as_ref();
-            let operator =
-                name.map(|name| name.to_string()).unwrap_or_else(|| "<InvalidName>".to_string());
+            let operator = lookup_type_name(source, file_id, type_id)
+                .unwrap_or_else(|| "<InvalidName>".to_string());
 
             let left = traverse_precedence(source, context, Precedence::Application, left);
             let right = traverse_precedence(source, context, Precedence::Application, right);
@@ -238,6 +239,22 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
             StringKind::RawString => format!("\"\"\"{string}\"\"\""),
         },
 
+        Type::SynonymApplication(_, file_id, type_id, ref arguments) => {
+            let function = lookup_type_name(source, file_id, type_id)
+                .unwrap_or_else(|| "<InvalidName>".to_string());
+
+            let arguments = arguments
+                .iter()
+                .map(|&argument| traverse_precedence(source, context, Precedence::Atom, argument))
+                .join(" ");
+
+            if arguments.is_empty() {
+                function
+            } else {
+                parens_if(precedence > Precedence::Application, format!("{function} {arguments}"))
+            }
+        }
+
         Type::Unification(unification_id) => match source {
             TraversalSource::Local { state, .. } => {
                 let unification = state.unification.get(unification_id);
@@ -247,6 +264,25 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
                 format!("?{unification_id}[<Global>]")
             }
         },
+
+        Type::Row(RowType { fields, tail }) => {
+            let fields = fields
+                .iter()
+                .map(|RowField { label, id }| {
+                    let label_type = traverse_precedence(source, context, Precedence::Top, *id);
+                    format!("{label} :: {label_type}")
+                })
+                .join(", ");
+
+            let tail = tail.map(|tail| traverse_precedence(source, context, Precedence::Top, tail));
+
+            match tail {
+                Some(tail) if fields.is_empty() => format!("( | {tail} )"),
+                Some(tail) => format!("( {fields} | {tail} )"),
+                None if fields.is_empty() => "()".to_string(),
+                None => format!("( {fields} )"),
+            }
+        }
 
         Type::Variable(ref variable) => render_variable(variable, context),
 

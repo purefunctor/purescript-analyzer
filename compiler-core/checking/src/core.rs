@@ -1,6 +1,8 @@
 pub mod debruijn;
 pub mod pretty;
 
+use std::sync::Arc;
+
 use files::FileId;
 use indexing::TypeItemId;
 use smol_str::SmolStr;
@@ -29,6 +31,44 @@ pub enum Variable {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RowField {
+    pub label: SmolStr,
+    pub id: TypeId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RowType {
+    /// Invariant: fields are stable-sorted to maintain `Map<Label, NonEmptyList<Type>>`
+    /// semantics for duplicate labels.
+    pub fields: Arc<[RowField]>,
+    /// Closed row if [`None`]; Open row if [`Some`].
+    ///
+    /// The [`TypeId`] is typically a [`Type::Variable`].
+    pub tail: Option<TypeId>,
+}
+
+impl RowType {
+    pub fn from_unsorted(mut fields: Vec<RowField>, tail: Option<TypeId>) -> RowType {
+        fields.sort_by(|a, b| a.label.cmp(&b.label));
+        RowType { fields: Arc::from(fields), tail }
+    }
+
+    pub fn closed(fields: Vec<RowField>) -> RowType {
+        RowType::from_unsorted(fields, None)
+    }
+
+    pub fn empty() -> RowType {
+        RowType { fields: Arc::from([]), tail: None }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Saturation {
+    Full,
+    Partial,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Application(TypeId, TypeId),
     Constrained(TypeId, TypeId),
@@ -40,7 +80,9 @@ pub enum Type {
     Kinded(TypeId, TypeId),
     Operator(FileId, TypeItemId),
     OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
+    Row(RowType),
     String(lowering::StringKind, SmolStr),
+    SynonymApplication(Saturation, FileId, TypeItemId, Arc<[TypeId]>),
     Unification(u32),
     Variable(Variable),
     Unknown,

@@ -1,0 +1,75 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+PolyApply :: forall (k :: Type). (k -> Type) -> k -> Type
+RowApply :: forall (k :: Type). (Row k -> Row k) -> Row k -> Row k
+AddField :: Row Type -> Row Type
+AddAnother :: Row Type -> Row Type
+Applied1 :: Row Type
+Applied2 :: Row Type
+ComposeRow :: (Row Type -> Row Type) -> (Row Type -> Row Type) -> Row Type -> Row Type
+Combined :: Row Type
+NaturalTransformation :: forall (k :: Type). (k -> Type) -> (k -> Type) -> Type
+Endo :: forall (k :: Type). (k -> k -> Type) -> k -> Type
+EndoFn :: Type -> Type
+Function :: Type -> Type -> Type
+
+Synonyms
+PolyApply = forall (k :: Type) (f :: k -> Type) (a :: f). f a
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+RowApply = forall (k :: Type) (f :: Row k -> Row k) (r :: Row f). f r
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+AddField = forall (r :: Row Type). ( field :: String | r )
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+AddAnother = forall (r :: Row Type). ( another :: Int | r )
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+Applied1 = RowApply AddField ()
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Applied2 = RowApply AddAnother ()
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+ComposeRow = forall (f :: Row Type -> Row Type) (g :: Row Type -> Row Type) (r :: Row Type). f (g r)
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+Combined = ComposeRow AddField AddAnother ()
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+NaturalTransformation = forall (k :: Type) (f :: k -> Type) (g :: f -> Type) (a :: g). f a -> g a
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+Endo = forall (k :: Type) (c :: k -> k -> Type) (a :: c). c a a
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+EndoFn = forall (a :: Type). Endo Function a
+  Quantified = :0
+  Kind = :0
+  Type = :1

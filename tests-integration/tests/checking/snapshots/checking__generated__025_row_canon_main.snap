@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+UnorderedRow :: Row Type
+DuplicateUnordered :: Row Type
+
+Synonyms
+UnorderedRow = ( a :: Int, b :: String )
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+DuplicateUnordered = ( a :: Int, a :: String, b :: String )
+  Quantified = :0
+  Kind = :0
+  Type = :0
