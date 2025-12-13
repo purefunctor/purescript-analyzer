@@ -1,7 +1,9 @@
 //! Implements syntax-driven elaboration for declarations.
 
+use std::iter;
+
 use building_types::QueryResult;
-use indexing::TypeItemId;
+use indexing::{TermItemId, TypeItemId};
 use itertools::Itertools;
 use lowering::{
     ClassIr, DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding,
@@ -324,14 +326,13 @@ fn check_class<Q: ExternalQueries>(
         return Ok(());
     };
 
-    let _constraints = constraints
-        .iter()
-        .map(|&constraint| {
-            let (constraint_type, _) =
-                kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
-            Ok(constraint_type)
-        })
-        .collect::<QueryResult<Vec<_>>>()?;
+    let constraints = constraints.iter().map(|&constraint| {
+        let (constraint_type, _) =
+            kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
+        Ok(constraint_type)
+    });
+
+    let _constraints = constraints.collect::<QueryResult<Vec<_>>>()?;
 
     let class_reference = {
         let size = state.bound.size();
@@ -547,4 +548,340 @@ where
     }
 
     Ok(())
+}
+
+pub(crate) fn check_term_item<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let Some(item) = context.lowered.info.get_term_item(item_id) else {
+            return Ok(());
+        };
+        match item {
+            TermItemIr::ClassMember { .. } => Ok(()),
+
+            TermItemIr::Constructor { .. } => Ok(()),
+
+            TermItemIr::Derive { .. } => Ok(()),
+
+            TermItemIr::Foreign { .. } => Ok(()),
+
+            TermItemIr::Instance { .. } => Ok(()),
+
+            TermItemIr::Operator { .. } => Ok(()),
+
+            TermItemIr::ValueGroup { signature, equations } => {
+                check_value_group_item(context, item_id, state, *signature, equations)
+            }
+        }
+    })
+}
+
+fn check_value_group_item<Q>(
+    context: &CheckContext<'_, Q>,
+    item_id: TermItemId,
+    state: &mut CheckState,
+    signature: Option<lowering::TypeId>,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let signature = signature.map(|id| {
+        let signature = inspect::inspect_signature(state, context, id)?;
+        Ok((id, signature))
+    });
+
+    let signature = signature.transpose()?;
+
+    if let Some(signature) = signature {
+        check_value_group(state, context, item_id, signature, equations)
+    } else {
+        infer_value_group(state, context, item_id, equations)
+    }
+}
+
+fn check_binder<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binder_id: lowering::BinderId,
+    type_id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let unknown = context.prim.unknown;
+
+    let Some(kind) = context.lowered.info.get_binder_kind(binder_id) else {
+        return Ok(unknown);
+    };
+
+    match kind {
+        lowering::BinderKind::Typed { .. } => Ok(unknown),
+
+        lowering::BinderKind::OperatorChain { .. } => Ok(unknown),
+
+        lowering::BinderKind::Integer => {
+            let _ = unification::unify(state, context, context.prim.int, type_id)?;
+            Ok(context.prim.int)
+        }
+
+        lowering::BinderKind::Number => {
+            let _ = unification::unify(state, context, context.prim.number, type_id)?;
+            Ok(context.prim.number)
+        }
+
+        lowering::BinderKind::Constructor { .. } => Ok(unknown),
+
+        lowering::BinderKind::Variable { .. } => Ok(unknown),
+
+        lowering::BinderKind::Named { .. } => Ok(unknown),
+
+        lowering::BinderKind::Wildcard => Ok(unknown),
+
+        lowering::BinderKind::String => {
+            let _ = unification::unify(state, context, context.prim.string, type_id)?;
+            Ok(context.prim.string)
+        }
+
+        lowering::BinderKind::Char => {
+            let _ = unification::unify(state, context, context.prim.char, type_id)?;
+            Ok(context.prim.char)
+        }
+
+        lowering::BinderKind::Boolean { .. } => {
+            let _ = unification::unify(state, context, context.prim.boolean, type_id)?;
+            Ok(context.prim.boolean)
+        }
+
+        lowering::BinderKind::Array { .. } => Ok(unknown),
+
+        lowering::BinderKind::Record { .. } => Ok(unknown),
+
+        lowering::BinderKind::Parenthesized { parenthesized } => {
+            let Some(parenthesized) = parenthesized else { return Ok(unknown) };
+            check_binder(state, context, *parenthesized, type_id)
+        }
+    }
+}
+
+// ============================================================================
+// Term item inference/checking
+// ============================================================================
+
+fn check_value_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    (signature_id, signature): (lowering::TypeId, inspect::InspectSignature),
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let (signature_type, _) =
+        kind::check_surface_kind(state, context, signature_id, context.prim.t)?;
+
+    if let Some(pending_type) = state.binding_group.lookup_term(item_id) {
+        let _ = unification::unify(state, context, pending_type, signature_type)?;
+    } else {
+        state.binding_group.terms.insert(item_id, signature_type);
+    }
+
+    let signature_arity = signature.arguments.len();
+    let maximum_equation_arity =
+        equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
+
+    if maximum_equation_arity > signature_arity {
+        state.insert_error(ErrorKind::TooManyBinders {
+            signature: signature_id,
+            expected: signature_arity as u32,
+            actual: maximum_equation_arity as u32,
+        });
+        return infer_value_group(state, context, item_id, equations);
+    }
+
+    for equation in equations {
+        check_equation_against_signature(state, context, equation, &signature)?;
+    }
+
+    Ok(())
+}
+
+fn infer_value_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let maximum_equation_arity =
+        equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
+
+    let mut group_type: Option<TypeId> = state.binding_group.lookup_term(item_id);
+
+    for equation in equations {
+        let binder_count = equation.binders.len();
+
+        let argument_types = iter::repeat_with(|| state.fresh_unification_type(context))
+            .take(binder_count)
+            .collect_vec();
+
+        for (&binder_id, &argument_type) in equation.binders.iter().zip(&argument_types) {
+            let _ = check_binder(state, context, binder_id, argument_type)?;
+        }
+
+        let result_type = state.fresh_unification_type(context);
+
+        let expected_type = if binder_count < maximum_equation_arity {
+            let additional_arguments = maximum_equation_arity - binder_count;
+
+            let additional_arguments = iter::repeat_with(|| state.fresh_unification_type(context))
+                .take(additional_arguments)
+                .collect_vec();
+
+            build_function_type(state, &additional_arguments, result_type)
+        } else {
+            result_type
+        };
+
+        check_guarded_expression(state, context, &equation.guarded, expected_type)?;
+
+        let equation_function_type = build_function_type(state, &argument_types, result_type);
+
+        if let Some(current_type) = group_type {
+            let _ = unification::unify(state, context, current_type, equation_function_type)?;
+        } else {
+            group_type = Some(equation_function_type);
+        }
+    }
+
+    if let Some(group_type) = group_type {
+        if let Some(pending_type) = state.binding_group.lookup_term(item_id) {
+            let _ = unification::unify(state, context, pending_type, group_type)?;
+        } else {
+            state.binding_group.terms.insert(item_id, group_type);
+        }
+    }
+
+    Ok(())
+}
+
+fn check_equation_against_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    equation: &lowering::Equation,
+    signature: &inspect::InspectSignature,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let binder_count = equation.binders.len();
+
+    for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
+        let _ = check_binder(state, context, binder_id, argument_type)?;
+    }
+
+    let expected_type =
+        residual_result_type(state, &signature.arguments, signature.result, binder_count);
+
+    check_guarded_expression(state, context, &equation.guarded, expected_type)
+}
+
+fn check_guarded_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guarded: &Option<lowering::GuardedExpression>,
+    expected: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(guarded) = guarded else {
+        return Ok(());
+    };
+
+    match guarded {
+        lowering::GuardedExpression::Unconditional { where_expression } => {
+            check_where_expression(state, context, where_expression.as_ref(), expected)
+        }
+        lowering::GuardedExpression::Conditionals { pattern_guarded } => {
+            for pattern_guarded in pattern_guarded.iter() {
+                let where_expression = &pattern_guarded.where_expression;
+                check_where_expression(state, context, where_expression.as_ref(), expected)?;
+            }
+            Ok(())
+        }
+    }
+}
+
+fn check_where_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    where_expression: Option<&lowering::WhereExpression>,
+    expected_type: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(where_expr) = where_expression else {
+        return Ok(());
+    };
+
+    // TODO: check let bindings in where_expr.bindings
+
+    if let Some(expression_id) = where_expr.expression {
+        check_expression(state, context, expression_id, expected_type)?;
+    }
+
+    Ok(())
+}
+
+fn check_expression<Q>(
+    _state: &mut CheckState,
+    _context: &CheckContext<Q>,
+    _expr_id: lowering::ExpressionId,
+    _expected: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    todo!()
+}
+
+fn infer_expression<Q>(
+    _state: &mut CheckState,
+    _context: &CheckContext<Q>,
+    _expr_id: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    todo!()
+}
+
+fn build_function_type(state: &mut CheckState, arguments: &[TypeId], result: TypeId) -> TypeId {
+    arguments
+        .iter()
+        .copied()
+        .rfold(result, |result, argument| state.storage.intern(Type::Function(argument, result)))
+}
+
+fn residual_result_type(
+    state: &mut CheckState,
+    signature_arguments: &[TypeId],
+    signature_result: TypeId,
+    binder_count: usize,
+) -> TypeId {
+    let remaining = &signature_arguments[binder_count..];
+    remaining.iter().copied().rfold(signature_result, |result, argument| {
+        state.storage.intern(Type::Function(argument, result))
+    })
 }
