@@ -3,6 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
+testF :: F -> F
+testG :: G -> G
+testH :: H -> H
+testValid :: Int -> Int
 
 Types
 F :: forall (t3 :: Type). t3
@@ -11,7 +15,7 @@ H :: forall (t5 :: Type). t5
 Valid :: Type
 
 Synonyms
-F = F
+F = G
   Quantified = :0
   Kind = :0
   Type = :0

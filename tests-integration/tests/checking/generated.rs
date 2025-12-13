@@ -211,17 +211,6 @@ fn test_019_type_operator_chain_main() {
 
 #[rustfmt::skip]
 #[test]
-fn test_020_recursive_synonym_expansion_main() {
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/020_recursive_synonym_expansion"));
-    let Some(id) = engine.module_file("Main") else {
-        return;
-    };
-    let report = tests_integration::generated::basic::report_checked(&engine, id);
-    insta::assert_snapshot!(report);
-}
-
-#[rustfmt::skip]
-#[test]
 fn test_020_type_operator_chain_mixed_main() {
     let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/020_type_operator_chain_mixed"));
     let Some(id) = engine.module_file("Main") else {
@@ -345,6 +334,17 @@ fn test_030_partial_synonym_nested_main() {
 #[test]
 fn test_031_partial_synonym_polykind_main() {
     let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/031_partial_synonym_polykind"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_032_recursive_synonym_expansion_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/032_recursive_synonym_expansion"));
     let Some(id) = engine.module_file("Main") else {
         return;
     };
