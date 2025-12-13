@@ -196,6 +196,19 @@ impl CheckState {
         self.kinds.unbind(level);
     }
 
+    pub fn term_binding_group<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        group: impl IntoIterator<Item = TermItemId>,
+    ) where
+        Q: ExternalQueries,
+    {
+        for item in group {
+            let t = self.fresh_unification_type(context);
+            self.binding_group.terms.insert(item, t);
+        }
+    }
+
     pub fn type_binding_group<Q>(
         &mut self,
         context: &CheckContext<Q>,

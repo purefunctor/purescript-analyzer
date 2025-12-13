@@ -42,6 +42,40 @@ pub(crate) fn check_source(
         }
     }
 
+    let has_signature = |id: &indexing::TermItemId| {
+        let item = &context.indexed.items[*id];
+        matches!(item.kind, indexing::TermItemKind::Value { signature: Some(_), .. })
+    };
+
+    for scc in &context.lowered.term_scc {
+        match scc {
+            Scc::Base(id) => {
+                items::check_term_item(&mut state, &context, *id)?;
+                state.commit_binding_group(&context);
+            }
+            Scc::Recursive(id) => {
+                if !has_signature(id) {
+                    state.term_binding_group(&context, [*id]);
+                }
+                items::check_term_item(&mut state, &context, *id)?;
+                state.commit_binding_group(&context);
+            }
+            Scc::Mutual(mutual) => {
+                let binding_group = mutual.iter().copied().filter(|id| !has_signature(id));
+                state.term_binding_group(&context, binding_group);
+
+                for id in mutual.iter().filter(|id| has_signature(id)) {
+                    items::check_term_item(&mut state, &context, *id)?;
+                }
+                for id in mutual.iter().filter(|id| !has_signature(id)) {
+                    items::check_term_item(&mut state, &context, *id)?;
+                }
+
+                state.commit_binding_group(&context);
+            }
+        }
+    }
+
     Ok(state.checked)
 }
 

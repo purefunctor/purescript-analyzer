@@ -674,45 +674,6 @@ where
 // Term item inference/checking
 // ============================================================================
 
-fn check_value_group<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    item_id: TermItemId,
-    (signature_id, signature): (lowering::TypeId, inspect::InspectSignature),
-    equations: &[lowering::Equation],
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    let (signature_type, _) =
-        kind::check_surface_kind(state, context, signature_id, context.prim.t)?;
-
-    if let Some(pending_type) = state.binding_group.lookup_term(item_id) {
-        let _ = unification::unify(state, context, pending_type, signature_type)?;
-    } else {
-        state.binding_group.terms.insert(item_id, signature_type);
-    }
-
-    let signature_arity = signature.arguments.len();
-    let maximum_equation_arity =
-        equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
-
-    if maximum_equation_arity > signature_arity {
-        state.insert_error(ErrorKind::TooManyBinders {
-            signature: signature_id,
-            expected: signature_arity as u32,
-            actual: maximum_equation_arity as u32,
-        });
-        return infer_value_group(state, context, item_id, equations);
-    }
-
-    for equation in equations {
-        check_equation_against_signature(state, context, equation, &signature)?;
-    }
-
-    Ok(())
-}
-
 fn infer_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -771,25 +732,54 @@ where
     Ok(())
 }
 
-fn check_equation_against_signature<Q>(
+fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    equation: &lowering::Equation,
-    signature: &inspect::InspectSignature,
+    item_id: TermItemId,
+    (_, signature): (lowering::TypeId, inspect::InspectSignature),
+    equations: &[lowering::Equation],
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let binder_count = equation.binders.len();
+    let minimum_equation_arity = signature.arguments.len();
 
-    for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
-        let _ = check_binder(state, context, binder_id, argument_type)?;
+    for equation in equations {
+        let binder_count = equation.binders.len();
+
+        for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
+            let _ = check_binder(state, context, binder_id, argument_type)?;
+        }
+
+        if binder_count > minimum_equation_arity {
+            let additional = binder_count - minimum_equation_arity;
+            iter::repeat_with(|| state.fresh_unification_type(context))
+                .take(additional)
+                .for_each(drop);
+        }
+
+        check_guarded_expression(state, context, &equation.guarded, signature.result)?
     }
 
-    let expected_type =
-        residual_result_type(state, &signature.arguments, signature.result, binder_count);
+    debug_assert!(
+        state.binding_group.lookup_term(item_id).is_none(),
+        "invariant violated: signatured value group appears in binding_group"
+    );
 
-    check_guarded_expression(state, context, &equation.guarded, expected_type)
+    if let Some(variable) = signature.variables.first() {
+        state.unbind(variable.level);
+    }
+
+    let equation_type = build_function_type(state, &signature.arguments, signature.result);
+
+    let equation_type = signature.variables.iter().rfold(equation_type, |inner, binder| {
+        let binder = binder.clone();
+        state.storage.intern(Type::Forall(binder, inner))
+    });
+
+    state.binding_group.terms.insert(item_id, equation_type);
+
+    Ok(())
 }
 
 fn check_guarded_expression<Q>(
