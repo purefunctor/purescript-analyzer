@@ -1280,6 +1280,7 @@ dependencies = [
  "clap",
  "files",
  "globset",
+ "indexing",
  "lowering",
  "parking_lot",
  "path-absolutize",

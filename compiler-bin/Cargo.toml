@@ -17,6 +17,7 @@ async-lsp = "0.2.2"
 clap = { version = "4.5.47", features = ["derive"] }
 files = { version = "0.1.0", path = "../compiler-core/files" }
 globset = "0.4.18"
+indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
 parking_lot = "0.12.4"
 path-absolutize = "3.1.1"
