@@ -8,9 +8,11 @@
 use std::sync::Arc;
 use std::{iter, mem};
 
+use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
+use lowering::LoweredModule;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
@@ -18,23 +20,15 @@ use crate::core::{ForallBinder, Saturation, Synonym, Type, TypeId};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 
-fn is_recursive_synonym<Q>(context: &CheckContext<Q>, file_id: FileId, item_id: TypeItemId) -> bool
+fn is_recursive_synonym<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    if file_id == context.id {
-        context.lowered.errors.iter().any(|error| {
-            if let lowering::LoweringError::RecursiveSynonym(recursive) = error {
-                recursive.group.contains(&item_id)
-            } else {
-                false
-            }
-        })
-    } else {
-        let Ok(lowered) = context.queries.lowered(file_id) else {
-            return true;
-        };
-
+    let is_recursive = |lowered: &LoweredModule| {
         lowered.errors.iter().any(|error| {
             if let lowering::LoweringError::RecursiveSynonym(recursive) = error {
                 recursive.group.contains(&item_id)
@@ -42,7 +36,15 @@ where
                 false
             }
         })
-    }
+    };
+
+    let is_recursive = if file_id == context.id {
+        is_recursive(context.lowered.as_ref())
+    } else {
+        is_recursive(context.queries.lowered(file_id)?.as_ref())
+    };
+
+    Ok(is_recursive)
 }
 
 fn localize_synonym_and_kind<Q>(
@@ -104,16 +106,18 @@ pub fn lookup_file_synonym<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
-) -> Option<(Synonym, TypeId)>
+) -> QueryResult<Option<(Synonym, TypeId)>>
 where
     Q: ExternalQueries,
 {
-    if file_id == context.id {
+    let synonym = if file_id == context.id {
         lookup_local_synonym(state, context, type_id)
     } else {
-        let checked = context.queries.checked(file_id).ok()?;
+        let checked = context.queries.checked(file_id)?;
         lookup_global_synonym(state, context, &checked, type_id)
-    }
+    };
+
+    Ok(synonym)
 }
 
 pub fn infer_synonym_constructor<Q: ExternalQueries>(
@@ -121,40 +125,45 @@ pub fn infer_synonym_constructor<Q: ExternalQueries>(
     context: &CheckContext<Q>,
     (file_id, type_id, synonym, kind): (FileId, TypeItemId, Synonym, TypeId),
     id: lowering::TypeId,
-) -> (TypeId, TypeId) {
+) -> QueryResult<(TypeId, TypeId)> {
     let unknown = (context.prim.unknown, context.prim.unknown);
 
     if synonym.has_arguments() {
         if state.defer_synonym_expansion {
             let synonym_type = state.storage.intern(Type::Constructor(file_id, type_id));
-            return (synonym_type, kind);
+            return Ok((synonym_type, kind));
         } else {
             state.insert_error(ErrorKind::PartialSynonymApplication { id });
-            return unknown;
+            return Ok(unknown);
         }
     }
 
-    (synonym.synonym_type, kind)
+    Ok((synonym.synonym_type, kind))
 }
 
 pub fn parse_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function: lowering::TypeId,
-) -> Option<(FileId, TypeItemId, Synonym, TypeId)>
+) -> QueryResult<Option<(FileId, TypeItemId, Synonym, TypeId)>>
 where
     Q: ExternalQueries,
 {
-    let &lowering::TypeKind::Constructor { resolution } =
-        context.lowered.info.get_type_kind(function)?
+    let Some(&lowering::TypeKind::Constructor { resolution }) =
+        context.lowered.info.get_type_kind(function)
     else {
-        return None;
+        return Ok(None);
     };
 
-    let (file_id, type_id) = resolution?;
-    let (synonym, kind) = lookup_file_synonym(state, context, file_id, type_id)?;
+    let Some((file_id, type_id)) = resolution else {
+        return Ok(None);
+    };
 
-    Some((file_id, type_id, synonym, kind))
+    let Some((synonym, kind)) = lookup_file_synonym(state, context, file_id, type_id)? else {
+        return Ok(None);
+    };
+
+    Ok(Some((file_id, type_id, synonym, kind)))
 }
 
 pub fn infer_synonym_application<Q>(
@@ -163,7 +172,7 @@ pub fn infer_synonym_application<Q>(
     id: lowering::TypeId,
     (file_id, type_id, synonym, kind): (FileId, TypeItemId, Synonym, TypeId),
     arguments: &[lowering::TypeId],
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -180,22 +189,22 @@ where
                 (file_id, type_id),
                 kind,
                 arguments,
-            );
-            return (synonym_type, synonym_kind);
+            )?;
+            return Ok((synonym_type, synonym_kind));
         } else {
             state.insert_error(ErrorKind::PartialSynonymApplication { id });
-            return unknown;
+            return Ok(unknown);
         }
     }
 
     let defer_synonym_expansion = mem::replace(&mut state.defer_synonym_expansion, true);
 
     let (synonym_type, synonym_kind) =
-        infer_synonym_application_arguments(state, context, (file_id, type_id), kind, arguments);
+        infer_synonym_application_arguments(state, context, (file_id, type_id), kind, arguments)?;
 
     state.defer_synonym_expansion = defer_synonym_expansion;
 
-    (synonym_type, synonym_kind)
+    Ok((synonym_type, synonym_kind))
 }
 
 fn infer_synonym_application_arguments<Q>(
@@ -204,7 +213,7 @@ fn infer_synonym_application_arguments<Q>(
     (file_id, type_id): (FileId, TypeItemId),
     kind: TypeId,
     arguments: &[lowering::TypeId],
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -213,7 +222,7 @@ where
 
     for &argument_id in arguments {
         let (argument_type, result_kind) =
-            infer_synonym_application_argument(state, context, synonym_kind, argument_id);
+            infer_synonym_application_argument(state, context, synonym_kind, argument_id)?;
 
         argument_types.push(argument_type);
         synonym_kind = result_kind;
@@ -226,7 +235,7 @@ where
         Arc::from(argument_types),
     ));
 
-    (synonym_type, synonym_kind)
+    Ok((synonym_type, synonym_kind))
 }
 
 /// Checks a single argument in a synonym application against the synonym's kind.
@@ -242,17 +251,17 @@ fn infer_synonym_application_argument<Q>(
     context: &CheckContext<Q>,
     function_k: TypeId,
     argument: lowering::TypeId,
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
     let function_k = state.normalize_type(function_k);
     match state.storage[function_k] {
         Type::Function(argument_kind, result_kind) => {
-            let (t, _) = kind::check_surface_kind(state, context, argument, argument_kind);
+            let (t, _) = kind::check_surface_kind(state, context, argument, argument_kind)?;
             let k = state.normalize_type(result_kind);
 
-            (t, k)
+            Ok((t, k))
         }
 
         Type::Unification(unification_id) => {
@@ -262,10 +271,10 @@ where
             let function_u = state.storage.intern(Type::Function(argument_u, result_u));
             let _ = unification::solve(state, context, unification_id, function_u);
 
-            let (t, _) = kind::check_surface_kind(state, context, argument, argument_u);
+            let (t, _) = kind::check_surface_kind(state, context, argument, argument_u)?;
             let k = state.normalize_type(result_u);
 
-            (t, k)
+            Ok((t, k))
         }
 
         Type::Forall(ForallBinder { kind, .. }, function_k) => {
@@ -276,7 +285,7 @@ where
             infer_synonym_application_argument(state, context, function_k, argument)
         }
 
-        _ => (context.prim.unknown, context.prim.unknown),
+        _ => Ok((context.prim.unknown, context.prim.unknown)),
     }
 }
 
@@ -286,7 +295,7 @@ fn infer_partial_synonym_application<Q>(
     (file_id, type_id): (FileId, TypeItemId),
     kind: TypeId,
     arguments: &[lowering::TypeId],
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -295,7 +304,7 @@ where
 
     for &argument_id in arguments {
         let (argument_type, result_kind) =
-            infer_synonym_application_argument(state, context, synonym_kind, argument_id);
+            infer_synonym_application_argument(state, context, synonym_kind, argument_id)?;
         argument_types.push(argument_type);
         synonym_kind = result_kind;
     }
@@ -307,7 +316,7 @@ where
         Arc::from(argument_types),
     ));
 
-    (synonym_type, synonym_kind)
+    Ok((synonym_type, synonym_kind))
 }
 
 enum DiscoveredSynonym {
@@ -319,7 +328,7 @@ fn discover_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
-) -> Option<DiscoveredSynonym>
+) -> QueryResult<Option<DiscoveredSynonym>>
 where
     Q: ExternalQueries,
 {
@@ -337,27 +346,31 @@ where
 
     match state.storage[current_id] {
         Type::Constructor(file_id, item_id) => {
-            let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+            let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id)? else {
+                return Ok(None);
+            };
 
             let actual_arity = additional.len();
             let expected_arity = synonym.type_variables.0 as usize;
 
             if actual_arity != expected_arity {
-                return None;
+                return Ok(None);
             }
 
-            if is_recursive_synonym(context, file_id, item_id) {
+            if is_recursive_synonym(context, file_id, item_id)? {
                 state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
-                return None;
+                return Ok(None);
             }
 
             let arguments = additional;
-            Some(DiscoveredSynonym::Saturated { synonym, arguments })
+            Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
         }
 
         Type::SynonymApplication(Saturation::Partial, file_id, item_id, ref partial_arguments) => {
             let partial_arguments = Arc::clone(partial_arguments);
-            let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+            let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id)? else {
+                return Ok(None);
+            };
 
             let arguments = {
                 let partial = partial_arguments.iter().copied();
@@ -369,35 +382,37 @@ where
             let expected_arity = synonym.type_variables.0 as usize;
 
             if actual_arity != expected_arity {
-                return None;
+                return Ok(None);
             }
 
-            if is_recursive_synonym(context, file_id, item_id) {
+            if is_recursive_synonym(context, file_id, item_id)? {
                 state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
-                return None;
+                return Ok(None);
             }
 
-            Some(DiscoveredSynonym::Saturated { synonym, arguments })
+            Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
         }
 
         Type::SynonymApplication(Saturation::Full, file_id, item_id, ref full_arguments) => {
             let arguments = Arc::clone(full_arguments);
-            let (synonym, _) = lookup_file_synonym(state, context, file_id, item_id)?;
+            let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id)? else {
+                return Ok(None);
+            };
 
-            if is_recursive_synonym(context, file_id, item_id) {
+            if is_recursive_synonym(context, file_id, item_id)? {
                 state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
-                return None;
+                return Ok(None);
             }
 
             if additional.is_empty() {
                 let arguments = arguments.to_vec();
-                Some(DiscoveredSynonym::Saturated { synonym, arguments })
+                Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
             } else {
-                Some(DiscoveredSynonym::Additional { synonym, arguments, additional })
+                Ok(Some(DiscoveredSynonym::Additional { synonym, arguments, additional }))
             }
         }
 
-        _ => None,
+        _ => Ok(None),
     }
 }
 
@@ -429,15 +444,15 @@ pub fn expand_type_synonym<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
-) -> TypeId
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let Some(discovered) = discover_synonym_application(state, context, type_id) else {
-        return type_id;
+    let Some(discovered) = discover_synonym_application(state, context, type_id)? else {
+        return Ok(type_id);
     };
 
-    match discovered {
+    Ok(match discovered {
         DiscoveredSynonym::Saturated { synonym, arguments } => {
             instantiate_saturated(state, synonym, &arguments)
         }
@@ -447,14 +462,14 @@ where
                 state.storage.intern(Type::Application(result, argument))
             })
         }
-    }
+    })
 }
 
 pub fn normalize_expand_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     mut type_id: TypeId,
-) -> TypeId
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
@@ -462,10 +477,10 @@ where
 
     for _ in 0..EXPANSION_LIMIT {
         let normalized_id = state.normalize_type(type_id);
-        let expanded_id = expand_type_synonym(state, context, normalized_id);
+        let expanded_id = expand_type_synonym(state, context, normalized_id)?;
 
         if expanded_id == type_id {
-            return type_id;
+            return Ok(type_id);
         }
 
         type_id = expanded_id;

@@ -1,6 +1,7 @@
 //! Implements type signature inspection.
 use std::iter;
 
+use building_types::QueryResult;
 use itertools::Itertools;
 
 use crate::ExternalQueries;
@@ -18,7 +19,7 @@ pub fn inspect_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-) -> InspectSignature
+) -> QueryResult<InspectSignature>
 where
     Q: ExternalQueries,
 {
@@ -30,7 +31,7 @@ where
     };
 
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        return unknown();
+        return Ok(unknown());
     };
 
     match kind {
@@ -38,28 +39,32 @@ where
             let variables = bindings
                 .iter()
                 .map(|binding| kind::check_type_variable_binding(state, context, binding))
-                .collect();
+                .collect::<QueryResult<Vec<_>>>()?;
 
-            let inner = inner.map_or(context.prim.unknown, |id| {
-                let (inner, _) = kind::check_surface_kind(state, context, id, context.prim.t);
+            let inner = if let Some(inner) = inner {
+                let (inner, _) = kind::check_surface_kind(state, context, *inner, context.prim.t)?;
                 inner
-            });
+            } else {
+                context.prim.unknown
+            };
+
             let (arguments, result) = signature_components(state, inner);
 
-            InspectSignature { variables, arguments, result }
+            Ok(InspectSignature { variables, arguments, result })
         }
 
-        lowering::TypeKind::Parenthesized { parenthesized } => {
-            parenthesized.map(|id| inspect_signature(state, context, id)).unwrap_or_else(unknown)
-        }
+        lowering::TypeKind::Parenthesized { parenthesized } => match parenthesized {
+            Some(id) => inspect_signature(state, context, *id),
+            None => Ok(unknown()),
+        },
 
         _ => {
             let variables = [].into();
 
-            let (id, _) = kind::check_surface_kind(state, context, id, context.prim.t);
+            let (id, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
             let (arguments, result) = signature_components(state, id);
 
-            InspectSignature { variables, arguments, result }
+            Ok(InspectSignature { variables, arguments, result })
         }
     }
 }

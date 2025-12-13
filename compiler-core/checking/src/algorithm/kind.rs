@@ -9,9 +9,9 @@ pub mod synonym;
 
 use std::sync::Arc;
 
+use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
-use itertools::Itertools;
 use lowering::TypeVariableBindingId;
 use smol_str::SmolStr;
 
@@ -26,45 +26,49 @@ pub fn infer_surface_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
     let unknown = (context.prim.unknown, context.prim.unknown);
 
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        return unknown;
+        return Ok(unknown);
     };
 
     match kind {
         lowering::TypeKind::ApplicationChain { function, arguments } => {
             let Some(function) = function else {
-                return unknown;
+                return Ok(unknown);
             };
 
-            if let Some(synonym) = synonym::parse_synonym_application(state, context, *function) {
+            if let Some(synonym) = synonym::parse_synonym_application(state, context, *function)? {
                 return synonym::infer_synonym_application(state, context, id, synonym, arguments);
             }
 
-            let (mut t, mut k) = infer_surface_kind(state, context, *function);
+            let (mut t, mut k) = infer_surface_kind(state, context, *function)?;
 
             for argument in arguments.iter() {
-                (t, k) = infer_surface_app_kind(state, context, (t, k), *argument)
+                (t, k) = infer_surface_app_kind(state, context, (t, k), *argument)?
             }
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Arrow { argument, result } => {
-            let argument = argument.map(|argument| {
-                let (argument, _) = check_surface_kind(state, context, argument, context.prim.t);
-                argument
-            });
+            let argument = if let Some(argument) = argument {
+                let (argument, _) = check_surface_kind(state, context, *argument, context.prim.t)?;
+                Some(argument)
+            } else {
+                None
+            };
 
-            let result = result.map(|result| {
-                let (result, _) = check_surface_kind(state, context, result, context.prim.t);
-                result
-            });
+            let result = if let Some(result) = result {
+                let (result, _) = check_surface_kind(state, context, *result, context.prim.t)?;
+                Some(result)
+            } else {
+                None
+            };
 
             let argument = argument.unwrap_or(context.prim.unknown);
             let result = result.unwrap_or(context.prim.unknown);
@@ -72,21 +76,25 @@ where
             let t = state.storage.intern(Type::Function(argument, result));
             let k = context.prim.t;
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Constrained { constraint, constrained } => {
-            let constraint = constraint.map(|constraint| {
+            let constraint = if let Some(constraint) = constraint {
                 let (constraint, _) =
-                    check_surface_kind(state, context, constraint, context.prim.constraint);
-                constraint
-            });
+                    check_surface_kind(state, context, *constraint, context.prim.constraint)?;
+                Some(constraint)
+            } else {
+                None
+            };
 
-            let constrained = constrained.map(|constrained| {
+            let constrained = if let Some(constraint) = constrained {
                 let (constrained, _) =
-                    check_surface_kind(state, context, constrained, context.prim.t);
-                constrained
-            });
+                    check_surface_kind(state, context, *constraint, context.prim.t)?;
+                Some(constrained)
+            } else {
+                None
+            };
 
             let constraint = constraint.unwrap_or(context.prim.unknown);
             let constrained = constrained.unwrap_or(context.prim.unknown);
@@ -94,14 +102,14 @@ where
             let t = state.storage.intern(Type::Constrained(constraint, constrained));
             let k = context.prim.t;
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Constructor { resolution } => {
-            let Some((file_id, type_id)) = *resolution else { return unknown };
+            let Some((file_id, type_id)) = *resolution else { return Ok(unknown) };
 
             if let Some((synonym, kind)) =
-                synonym::lookup_file_synonym(state, context, file_id, type_id)
+                synonym::lookup_file_synonym(state, context, file_id, type_id)?
             {
                 let synonym_info = (file_id, type_id, synonym, kind);
                 return synonym::infer_synonym_constructor(state, context, synonym_info, id);
@@ -109,21 +117,23 @@ where
 
             let t = state.storage.intern(Type::Constructor(file_id, type_id));
             let k =
-                lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
+                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Forall { bindings, inner } => {
             let binders = bindings
                 .iter()
                 .map(|binding| check_type_variable_binding(state, context, binding))
-                .collect_vec();
+                .collect::<QueryResult<Vec<_>>>()?;
 
-            let inner = inner.map(|inner| {
-                let (inner, _) = check_surface_kind(state, context, inner, context.prim.t);
-                inner
-            });
+            let inner = if let Some(i) = inner {
+                let (inner, _) = check_surface_kind(state, context, *i, context.prim.t)?;
+                Some(inner)
+            } else {
+                None
+            };
 
             let inner = inner.unwrap_or(context.prim.unknown);
 
@@ -138,42 +148,42 @@ where
                 state.unbind(binder.level);
             }
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Hole => {
             let t = context.prim.unknown;
             let k = state.fresh_unification(context);
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Integer { value } => {
-            let Some(value) = value else { return unknown };
+            let Some(value) = value else { return Ok(unknown) };
 
             let t = state.storage.intern(Type::Integer(*value));
             let k = context.prim.int;
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Kinded { type_, kind } => {
-            let Some(type_) = type_ else { return unknown };
-            let Some(kind) = kind else { return unknown };
+            let Some(type_) = type_ else { return Ok(unknown) };
+            let Some(kind) = kind else { return Ok(unknown) };
 
-            let (k, _) = infer_surface_kind(state, context, *kind);
-            let (t, _) = check_surface_kind(state, context, *type_, k);
+            let (k, _) = infer_surface_kind(state, context, *kind)?;
+            let (t, _) = check_surface_kind(state, context, *type_, k)?;
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Operator { resolution } => {
-            let Some((file_id, type_id)) = *resolution else { return unknown };
+            let Some((file_id, type_id)) = *resolution else { return Ok(unknown) };
 
             let t = state.storage.intern(Type::Operator(file_id, type_id));
             let k =
-                lookup_file_type(state, context, file_id, type_id).unwrap_or(context.prim.unknown);
+                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::OperatorChain { .. } => {
@@ -186,16 +196,16 @@ where
             let t = state.storage.intern(Type::String(*kind, value));
             let k = context.prim.symbol;
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Variable { name, resolution } => match resolution {
             Some(lowering::TypeVariableResolution::Forall(forall)) => {
-                infer_forall_variable(state, *forall)
+                Ok(infer_forall_variable(state, *forall))
             }
 
             Some(lowering::TypeVariableResolution::Implicit(implicit)) => {
-                infer_implicit_variable(state, context, implicit)
+                Ok(infer_implicit_variable(state, context, implicit))
             }
 
             None => {
@@ -204,29 +214,29 @@ where
                 let t = state.storage.intern(Type::Variable(Variable::Free(name)));
                 let k = state.fresh_unification(context);
 
-                (t, k)
+                Ok((t, k))
             }
         },
 
-        lowering::TypeKind::Wildcard => unknown,
+        lowering::TypeKind::Wildcard => Ok(unknown),
 
         lowering::TypeKind::Record { items, tail } => {
             let expected_kind =
                 state.storage.intern(Type::Application(context.prim.row, context.prim.t));
 
-            let (row_t, row_k) = infer_row_kind(state, context, items, tail);
-            unification::subsumes(state, context, row_k, expected_kind);
+            let (row_t, row_k) = infer_row_kind(state, context, items, tail)?;
+            let _ = unification::subsumes(state, context, row_k, expected_kind)?;
 
             let t = state.storage.intern(Type::Application(context.prim.record, row_t));
             let k = context.prim.t;
 
-            (t, k)
+            Ok((t, k))
         }
 
         lowering::TypeKind::Row { items, tail } => infer_row_kind(state, context, items, tail),
 
         lowering::TypeKind::Parenthesized { parenthesized } => {
-            let Some(parenthesized) = parenthesized else { return unknown };
+            let Some(parenthesized) = parenthesized else { return Ok(unknown) };
             infer_surface_kind(state, context, *parenthesized)
         }
     }
@@ -277,45 +287,52 @@ fn infer_row_kind<Q>(
     context: &CheckContext<Q>,
     items: &Arc<[lowering::TypeRowItem]>,
     tail: &Option<lowering::TypeId>,
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
     let mut field_kind = state.fresh_unification(context);
 
-    let fields = items.iter().map(|item| {
-        let field_type = item.type_.map(|t| {
-            let (t, k) = infer_surface_kind(state, context, t);
+    let fields: QueryResult<Vec<_>> = items
+        .iter()
+        .map(|item| {
+            let field_type = if let Some(t) = item.type_ {
+                let (t, k) = infer_surface_kind(state, context, t)?;
 
-            unification::unify(state, context, field_kind, k);
-            field_kind = state.normalize_type(field_kind);
+                let _ = unification::unify(state, context, field_kind, k)?;
+                field_kind = state.normalize_type(field_kind);
 
-            t
-        });
+                Some(t)
+            } else {
+                None
+            };
 
-        let label = item.name.clone().unwrap_or(MISSING_NAME);
-        let id = field_type.unwrap_or(context.prim.unknown);
+            let label = item.name.clone().unwrap_or(MISSING_NAME);
+            let id = field_type.unwrap_or(context.prim.unknown);
 
-        RowField { label, id }
-    });
+            Ok(RowField { label, id })
+        })
+        .collect();
 
-    let fields = fields.collect();
+    let fields = fields?;
 
-    let tail = tail.map(|tail| {
-        let (t, k) = infer_surface_kind(state, context, tail);
+    let tail = if let Some(tail) = tail {
+        let (t, k) = infer_surface_kind(state, context, *tail)?;
 
         let expected_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
-        unification::subsumes(state, context, k, expected_kind);
+        let _ = unification::subsumes(state, context, k, expected_kind)?;
 
-        t
-    });
+        Some(t)
+    } else {
+        None
+    };
 
     let row = RowType::from_unsorted(fields, tail);
 
     let t = state.storage.intern(Type::Row(row));
     let k = state.storage.intern(Type::Application(context.prim.row, field_kind));
 
-    (t, k)
+    Ok((t, k))
 }
 
 pub fn infer_surface_app_kind<Q>(
@@ -323,19 +340,19 @@ pub fn infer_surface_app_kind<Q>(
     context: &CheckContext<Q>,
     (function_t, function_k): (TypeId, TypeId),
     argument: lowering::TypeId,
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
     let function_k = state.normalize_type(function_k);
     match state.storage[function_k] {
         Type::Function(argument_k, result_k) => {
-            let (argument_t, _) = check_surface_kind(state, context, argument, argument_k);
+            let (argument_t, _) = check_surface_kind(state, context, argument, argument_k)?;
 
             let t = state.storage.intern(Type::Application(function_t, argument_t));
             let k = state.normalize_type(result_k);
 
-            (t, k)
+            Ok((t, k))
         }
 
         Type::Unification(unification_id) => {
@@ -345,12 +362,12 @@ where
             let function_u = state.storage.intern(Type::Function(argument_u, result_u));
             let _ = unification::solve(state, context, unification_id, function_u);
 
-            let (argument_t, _) = check_surface_kind(state, context, argument, argument_u);
+            let (argument_t, _) = check_surface_kind(state, context, argument, argument_u)?;
 
             let t = state.storage.intern(Type::Application(function_t, argument_t));
             let k = state.normalize_type(result_u);
 
-            (t, k)
+            Ok((t, k))
         }
 
         Type::Forall(ForallBinder { kind, .. }, function_k) => {
@@ -363,19 +380,23 @@ where
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
 
-        _ => (context.prim.unknown, context.prim.unknown),
+        _ => Ok((context.prim.unknown, context.prim.unknown)),
     }
 }
 
-pub fn elaborate_kind<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
+pub fn elaborate_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
     let unknown = context.prim.unknown;
     let id = state.normalize_type(id);
-    match state.storage[id] {
+    Ok(match state.storage[id] {
         Type::Application(function, _) => {
-            let function_kind = elaborate_kind(state, context, function);
+            let function_kind = elaborate_kind(state, context, function)?;
             let function_kind = state.normalize_type(function_kind);
             match state.storage[function_kind] {
                 Type::Function(_, result) => result,
@@ -398,7 +419,7 @@ where
         Type::Constrained(_, _) => context.prim.t,
 
         Type::Constructor(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id).unwrap_or(unknown)
+            lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown)
         }
 
         Type::Forall(_, _) => context.prim.t,
@@ -408,7 +429,7 @@ where
         Type::Integer(_) => context.prim.int,
 
         Type::KindApplication(function, argument) => {
-            let function_kind = elaborate_kind(state, context, function);
+            let function_kind = elaborate_kind(state, context, function)?;
             let function_kind = state.normalize_type(function_kind);
             match state.storage[function_kind] {
                 Type::Forall(_, inner) => {
@@ -422,11 +443,11 @@ where
         Type::Kinded(_, kind) => kind,
 
         Type::Operator(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id).unwrap_or(unknown)
+            lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown)
         }
 
         Type::OperatorApplication(file_id, type_id, _, _) => {
-            operator::elaborate_operator_application_kind(state, context, file_id, type_id)
+            operator::elaborate_operator_application_kind(state, context, file_id, type_id)?
         }
 
         Type::Row(RowType { ref fields, tail }) => {
@@ -436,13 +457,13 @@ where
             let tail_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
 
             for field in fields.iter() {
-                let k = elaborate_kind(state, context, field.id);
-                unification::unify(state, context, field_kind, k);
+                let k = elaborate_kind(state, context, field.id)?;
+                let _ = unification::unify(state, context, field_kind, k)?;
             }
 
             if let Some(tail) = tail {
-                let k = elaborate_kind(state, context, tail);
-                unification::unify(state, context, tail_kind, k);
+                let k = elaborate_kind(state, context, tail)?;
+                let _ = unification::unify(state, context, tail_kind, k)?;
             };
 
             state.storage.intern(Type::Application(context.prim.row, field_kind))
@@ -454,14 +475,14 @@ where
             let arguments = Arc::clone(arguments);
 
             let mut synonym_kind =
-                lookup_file_type(state, context, file_id, type_id).unwrap_or(unknown);
+                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown);
 
             for _ in arguments.iter() {
                 synonym_kind = state.normalize_type(synonym_kind);
                 if let Type::Function(_, result_kind) = state.storage[synonym_kind] {
                     synonym_kind = result_kind
                 } else {
-                    return unknown;
+                    return Ok(unknown);
                 }
             }
 
@@ -478,7 +499,7 @@ where
         },
 
         Type::Unknown => unknown,
-    }
+    })
 }
 
 pub fn check_surface_kind<Q>(
@@ -486,36 +507,35 @@ pub fn check_surface_kind<Q>(
     context: &CheckContext<Q>,
     id: lowering::TypeId,
     kind: TypeId,
-) -> (TypeId, TypeId)
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
-    let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id);
-    unification::subsumes(state, context, inferred_kind, kind);
-    (inferred_type, inferred_kind)
+    let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id)?;
+    let _ = unification::subsumes(state, context, inferred_kind, kind)?;
+    Ok((inferred_type, inferred_kind))
 }
 
 pub fn check_type_variable_binding<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     binding: &lowering::TypeVariableBinding,
-) -> ForallBinder
+) -> QueryResult<ForallBinder>
 where
     Q: ExternalQueries,
 {
     let visible = binding.visible;
     let name = binding.name.clone().unwrap_or(MISSING_NAME);
 
-    let kind = match binding.kind {
-        Some(id) => {
-            let (kind, _) = check_surface_kind(state, context, id, context.prim.t);
-            kind
-        }
-        None => state.fresh_unification_type(context),
+    let kind = if let Some(id) = binding.kind {
+        let (kind, _) = check_surface_kind(state, context, id, context.prim.t)?;
+        kind
+    } else {
+        state.fresh_unification_type(context)
     };
 
     let level = state.bind_forall(binding.id, kind);
-    ForallBinder { visible, name, level, kind }
+    Ok(ForallBinder { visible, name, level, kind })
 }
 
 pub(crate) fn lookup_file_type<Q>(
@@ -523,21 +543,21 @@ pub(crate) fn lookup_file_type<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
-) -> Option<TypeId>
+) -> QueryResult<Option<TypeId>>
 where
     Q: ExternalQueries,
 {
     if file_id == context.id {
         if let Some(&k) = state.binding_group.types.get(&type_id) {
-            Some(k)
+            Ok(Some(k))
         } else if let Some(&k) = state.checked.types.get(&type_id) {
-            Some(transfer::localize(state, context, k))
+            Ok(Some(transfer::localize(state, context, k)))
         } else {
-            None
+            Ok(None)
         }
     } else {
-        let checked = context.queries.checked(file_id).ok()?;
-        let global_id = checked.types.get(&type_id)?;
-        Some(transfer::localize(state, context, *global_id))
+        let checked = context.queries.checked(file_id)?;
+        let global_id = checked.types.get(&type_id);
+        Ok(global_id.map(|id| transfer::localize(state, context, *id)))
     }
 }

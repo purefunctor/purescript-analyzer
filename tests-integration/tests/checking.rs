@@ -139,7 +139,7 @@ fn test_solve_invalid() {
 
     state.unbind(level);
 
-    let solve_result = unification::solve(state, context, unification_id, b_to_a);
+    let solve_result = unification::solve(state, context, unification_id, b_to_a).unwrap();
     assert!(solve_result.is_none());
 }
 
@@ -301,7 +301,7 @@ fn test_subsumes_forall_left_pass() {
 
     // ∀a. (a -> a) should subsume (Int -> Int)
     let int_to_int = state.function(context.prim.int, context.prim.int);
-    let result = unification::subsumes(state, context, forall_a_to_a, int_to_int);
+    let result = unification::subsumes(state, context, forall_a_to_a, int_to_int).unwrap();
     assert!(result, "∀a. (a -> a) should subsume (Int -> Int)");
 }
 
@@ -315,7 +315,7 @@ fn test_subsumes_forall_left_fail() {
 
     // ∀a. (a -> a) should NOT subsume (Int -> String)
     let int_to_string = state.function(context.prim.int, context.prim.string);
-    let result = unification::subsumes(state, context, forall_a_to_a, int_to_string);
+    let result = unification::subsumes(state, context, forall_a_to_a, int_to_string).unwrap();
     assert!(!result, "∀a. (a -> a) should not subsume (Int -> String)");
 }
 
@@ -329,7 +329,7 @@ fn test_subsumes_forall_right_fail() {
 
     // (Int -> Int) should NOT subsume ∀a. (a -> a)
     let int_to_int = state.function(context.prim.int, context.prim.int);
-    let result = unification::subsumes(state, context, int_to_int, forall_a_to_a);
+    let result = unification::subsumes(state, context, int_to_int, forall_a_to_a).unwrap();
     assert!(!result, "(Int -> Int) should not subsume ∀a. (a -> a)");
 }
 
@@ -363,7 +363,7 @@ fn test_subsumes_nested_forall() {
     let string_to_int = state.function(context.prim.string, context.prim.int);
     let int_to_string_to_int = state.function(context.prim.int, string_to_int);
 
-    let result = unification::subsumes(state, context, forall_a_b, int_to_string_to_int);
+    let result = unification::subsumes(state, context, forall_a_b, int_to_string_to_int).unwrap();
     assert!(result, "∀a. ∀b. (a -> b -> a) should subsume (Int -> String -> Int)");
 }
 
@@ -589,7 +589,7 @@ fn test_unify_rows_identical() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(unification::unify(state, context, t1, t2));
+    assert!(unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -603,7 +603,7 @@ fn test_unify_rows_different_types() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(!unification::unify(state, context, t1, t2));
+    assert!(!unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -620,7 +620,7 @@ fn test_unify_rows_extras_left() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(!unification::unify(state, context, t1, t2));
+    assert!(!unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -637,7 +637,7 @@ fn test_unify_rows_extras_right() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(!unification::unify(state, context, t1, t2));
+    assert!(!unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -657,7 +657,7 @@ fn test_unify_rows_duplicate_labels() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(unification::unify(state, context, t1, t2));
+    assert!(unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -675,7 +675,7 @@ fn test_unify_rows_duplicate_labels_mismatch() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(!unification::unify(state, context, t1, t2));
+    assert!(!unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -696,7 +696,7 @@ fn test_unify_rows_duplicate_labels_extra() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(!unification::unify(state, context, t1, t2));
+    assert!(!unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -714,7 +714,7 @@ fn test_unify_rows_open_closed() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(unification::unify(state, context, t1, t2));
+    assert!(unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -731,7 +731,7 @@ fn test_unify_rows_open_open() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(unification::unify(state, context, t1, t2));
+    assert!(unification::unify(state, context, t1, t2).unwrap());
 }
 
 #[test]
@@ -752,7 +752,7 @@ fn test_unify_rows_interleaved_labels() {
     let t1 = state.storage.intern(Type::Row(row1));
     let t2 = state.storage.intern(Type::Row(row2));
 
-    assert!(!unification::unify(state, context, t1, t2));
+    assert!(!unification::unify(state, context, t1, t2).unwrap());
 }
 
 // Partition snapshot tests
@@ -772,7 +772,7 @@ fn test_partition_identical() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -791,7 +791,7 @@ fn test_partition_extras_left() {
     let row2 = RowType::closed(vec![row_field("a", context.prim.int)]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -810,7 +810,7 @@ fn test_partition_extras_right() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -832,7 +832,7 @@ fn test_partition_interleaved() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -853,7 +853,7 @@ fn test_partition_duplicate_labels_equal() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -875,7 +875,7 @@ fn test_partition_duplicate_labels_extra_left() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -894,7 +894,7 @@ fn test_partition_duplicate_labels_extra_right() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -913,7 +913,7 @@ fn test_partition_unify_failure() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);
@@ -934,7 +934,7 @@ fn test_partition_duplicate_labels_positional_mismatch() {
     ]);
 
     let (extras_left, extras_right, ok) =
-        unification::partition_row_fields(state, context, &row1, &row2);
+        unification::partition_row_fields(state, context, &row1, &row2).unwrap();
     let snapshot =
         format_partition_result(state, context, &row1, &row2, &extras_left, &extras_right, ok);
     insta::assert_snapshot!(snapshot);

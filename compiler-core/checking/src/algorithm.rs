@@ -24,18 +24,18 @@ pub(crate) fn check_source(
     for scc in &context.lowered.type_scc {
         match scc {
             Scc::Base(id) => {
-                items::check_type_item(&mut state, &context, *id);
+                items::check_type_item(&mut state, &context, *id)?;
                 state.commit_binding_group(&context);
             }
             Scc::Recursive(id) => {
                 state.type_binding_group(&context, [*id]);
-                items::check_type_item(&mut state, &context, *id);
+                items::check_type_item(&mut state, &context, *id)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(mutual) => {
                 state.type_binding_group(&context, mutual);
                 for id in mutual {
-                    items::check_type_item(&mut state, &context, *id);
+                    items::check_type_item(&mut state, &context, *id)?;
                 }
                 state.commit_binding_group(&context);
             }

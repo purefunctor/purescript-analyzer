@@ -201,10 +201,10 @@ impl State {
         {
             self.type_graph.add_edge(current_id, type_id, ());
 
-            if let Some(synonym_id) = self.current_synonym {
-                if let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind {
-                    self.synonym_graph.add_edge(synonym_id, type_id, ());
-                }
+            if let Some(synonym_id) = self.current_synonym
+                && let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind
+            {
+                self.synonym_graph.add_edge(synonym_id, type_id, ());
             }
         }
 

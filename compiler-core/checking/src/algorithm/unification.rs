@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use building_types::QueryResult;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::ExternalQueries;
@@ -16,15 +17,15 @@ pub fn subsumes<Q>(
     context: &CheckContext<Q>,
     t1: TypeId,
     t2: TypeId,
-) -> bool
+) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    let t1 = synonym::normalize_expand_type(state, context, t1);
-    let t2 = synonym::normalize_expand_type(state, context, t2);
+    let t1 = synonym::normalize_expand_type(state, context, t1)?;
+    let t2 = synonym::normalize_expand_type(state, context, t2)?;
 
     if t1 == t2 {
-        return true;
+        return Ok(true);
     }
 
     let t1_core = state.storage[t1].clone();
@@ -32,8 +33,8 @@ where
 
     match (t1_core, t2_core) {
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            subsumes(state, context, t2_argument, t1_argument)
-                && subsumes(state, context, t1_result, t2_result)
+            Ok(subsumes(state, context, t2_argument, t1_argument)?
+                && subsumes(state, context, t1_result, t2_result)?)
         }
 
         (_, Type::Forall(ref binder, inner)) => {
@@ -56,15 +57,20 @@ where
     }
 }
 
-pub fn unify<Q>(state: &mut CheckState, context: &CheckContext<Q>, t1: TypeId, t2: TypeId) -> bool
+pub fn unify<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    let t1 = synonym::normalize_expand_type(state, context, t1);
-    let t2 = synonym::normalize_expand_type(state, context, t2);
+    let t1 = synonym::normalize_expand_type(state, context, t1)?;
+    let t2 = synonym::normalize_expand_type(state, context, t2)?;
 
     if t1 == t2 {
-        return true;
+        return Ok(true);
     }
 
     let t1_core = state.storage[t1].clone();
@@ -75,30 +81,30 @@ where
             Type::Application(t1_function, t1_argument),
             Type::Application(t2_function, t2_argument),
         ) => {
-            unify(state, context, t1_function, t2_function)
-                && unify(state, context, t1_argument, t2_argument)
+            unify(state, context, t1_function, t2_function)?
+                && unify(state, context, t1_argument, t2_argument)?
         }
 
         (
             Type::OperatorApplication(t1_file, t1_type, t1_left, t1_right),
             Type::OperatorApplication(t2_file, t2_type, t2_left, t2_right),
         ) if t1_file == t2_file && t1_type == t2_type => {
-            unify(state, context, t1_left, t2_left) && unify(state, context, t1_right, t2_right)
+            unify(state, context, t1_left, t2_left)? && unify(state, context, t1_right, t2_right)?
         }
 
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            unify(state, context, t1_argument, t2_argument)
-                && unify(state, context, t1_result, t2_result)
+            unify(state, context, t1_argument, t2_argument)?
+                && unify(state, context, t1_result, t2_result)?
         }
 
-        (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row),
+        (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,
 
         (Type::Unification(unification_id), _) => {
-            solve(state, context, unification_id, t2).is_some()
+            solve(state, context, unification_id, t2)?.is_some()
         }
 
         (_, Type::Unification(unification_id)) => {
-            solve(state, context, unification_id, t1).is_some()
+            solve(state, context, unification_id, t1)?.is_some()
         }
 
         _ => false,
@@ -112,7 +118,7 @@ where
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
 
-    unifies
+    Ok(unifies)
 }
 
 pub fn solve<Q>(
@@ -120,7 +126,7 @@ pub fn solve<Q>(
     context: &CheckContext<Q>,
     unification_id: u32,
     solution: TypeId,
-) -> Option<u32>
+) -> QueryResult<Option<u32>>
 where
     Q: ExternalQueries,
 {
@@ -128,16 +134,16 @@ where
     let occurs = unification_id;
 
     if !promote_type(state, occurs, codomain, unification_id, solution) {
-        return None;
+        return Ok(None);
     }
 
     let unification_kind = state.unification.get(unification_id).kind;
-    let solution_kind = kind::elaborate_kind(state, context, solution);
-    unify(state, context, unification_kind, solution_kind);
+    let solution_kind = kind::elaborate_kind(state, context, solution)?;
+    unify(state, context, unification_kind, solution_kind)?;
 
     state.unification.solve(unification_id, solution);
 
-    Some(unification_id)
+    Ok(Some(unification_id))
 }
 
 pub fn promote_type(
@@ -260,21 +266,21 @@ fn unify_rows<Q>(
     context: &CheckContext<Q>,
     t1_row: RowType,
     t2_row: RowType,
-) -> bool
+) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row);
+    let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
     if !ok {
-        return false;
+        return Ok(false);
     }
 
     match (t1_row.tail, t2_row.tail) {
-        (None, None) => extras_left.is_empty() && extras_right.is_empty(),
+        (None, None) => Ok(extras_left.is_empty() && extras_right.is_empty()),
 
         (Some(t1_tail), None) => {
             if !extras_left.is_empty() {
-                return false;
+                return Ok(false);
             }
             let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
             let row_id = state.storage.intern(row);
@@ -283,7 +289,7 @@ where
 
         (None, Some(t2_tail)) => {
             if !extras_right.is_empty() {
-                return false;
+                return Ok(false);
             }
             let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
             let row_id = state.storage.intern(row);
@@ -301,8 +307,8 @@ where
                 Type::Row(RowType { fields: Arc::from(extras_left), tail: Some(unification) });
             let right_tail_row_id = state.storage.intern(right_tail_row);
 
-            unify(state, context, t1_tail, left_tail_row_id)
-                && unify(state, context, t2_tail, right_tail_row_id)
+            Ok(unify(state, context, t1_tail, left_tail_row_id)?
+                && unify(state, context, t2_tail, right_tail_row_id)?)
         }
     }
 }
@@ -312,7 +318,7 @@ pub fn partition_row_fields<Q>(
     context: &CheckContext<Q>,
     t1_row: &RowType,
     t2_row: &RowType,
-) -> (Vec<RowField>, Vec<RowField>, bool)
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, bool)>
 where
     Q: ExternalQueries,
 {
@@ -326,7 +332,7 @@ where
     for field in t1_fields.merge_join_by(t2_fields, |left, right| left.label.cmp(&right.label)) {
         match field {
             EitherOrBoth::Both(left, right) => {
-                if !unify(state, context, left.id, right.id) {
+                if !unify(state, context, left.id, right.id)? {
                     ok = false;
                 }
             }
@@ -341,5 +347,5 @@ where
         }
     }
 
-    (extras_left, extras_right, ok)
+    Ok((extras_left, extras_right, ok))
 }
