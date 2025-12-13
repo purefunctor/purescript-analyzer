@@ -722,10 +722,18 @@ fn infer_value_group<Q>(
 where
     Q: ExternalQueries,
 {
-    let maximum_equation_arity =
-        equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
+    let minimum_equation_arity =
+        equations.iter().map(|equation| equation.binders.len()).min().unwrap_or(0);
 
-    let mut group_type: Option<TypeId> = state.binding_group.lookup_term(item_id);
+    // For `Scc::Recursive` and `Scc::Mutual`, this is likely to be a
+    // unification variable already, we create one for `Scc::Base` as
+    // an anchor type to be unified against on each equation.
+    let pending_type = state.binding_group.lookup_term(item_id);
+    let group_type = pending_type.unwrap_or_else(|| state.fresh_unification_type(context));
+
+    if pending_type.is_none() {
+        state.binding_group.terms.insert(item_id, group_type);
+    }
 
     for equation in equations {
         let binder_count = equation.binders.len();
@@ -738,37 +746,26 @@ where
             let _ = check_binder(state, context, binder_id, argument_type)?;
         }
 
+        // ✨ Create unification variables for additional binders.
+        // This is particularly useful for when the user is editing
+        // an equation and they haven't updated the other equations
+        // yet. TODO: per-binder errors, BinderId can be obtained
+        // by dropping binder_count on equation.binders.
+        if binder_count > minimum_equation_arity {
+            let additional = binder_count - minimum_equation_arity;
+            iter::repeat_with(|| state.fresh_unification_type(context))
+                .take(additional)
+                .for_each(drop);
+        }
+
         let result_type = state.fresh_unification_type(context);
 
-        let expected_type = if binder_count < maximum_equation_arity {
-            let additional_arguments = maximum_equation_arity - binder_count;
+        // Only use the minimum number of binders across equations.
+        let argument_types = &argument_types[..minimum_equation_arity];
+        let expected_type = build_function_type(state, argument_types, result_type);
 
-            let additional_arguments = iter::repeat_with(|| state.fresh_unification_type(context))
-                .take(additional_arguments)
-                .collect_vec();
-
-            build_function_type(state, &additional_arguments, result_type)
-        } else {
-            result_type
-        };
-
-        check_guarded_expression(state, context, &equation.guarded, expected_type)?;
-
-        let equation_function_type = build_function_type(state, &argument_types, result_type);
-
-        if let Some(current_type) = group_type {
-            let _ = unification::unify(state, context, current_type, equation_function_type)?;
-        } else {
-            group_type = Some(equation_function_type);
-        }
-    }
-
-    if let Some(group_type) = group_type {
-        if let Some(pending_type) = state.binding_group.lookup_term(item_id) {
-            let _ = unification::unify(state, context, pending_type, group_type)?;
-        } else {
-            state.binding_group.terms.insert(item_id, group_type);
-        }
+        check_guarded_expression(state, context, &equation.guarded, result_type)?;
+        let _ = unification::unify(state, context, group_type, expected_type)?;
     }
 
     Ok(())
