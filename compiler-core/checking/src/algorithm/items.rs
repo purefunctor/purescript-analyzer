@@ -117,87 +117,85 @@ where
 
     let signature = signature.transpose()?;
 
-    let (kind_variables, type_variables, result_kind) =
-        if let Some((signature_id, signature)) = signature {
-            if variables.len() != signature.arguments.len() {
-                state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
-                    id: signature_id,
-                    expected: 0,
-                    actual: 0,
-                });
-
-                if let Some(variable) = signature.variables.first() {
-                    state.unbind(variable.level);
-                }
-
-                return Ok(None);
-            };
-
-            let variables = variables.iter();
-            let arguments = signature.arguments.iter();
-
-            let kinds = variables
-                .zip(arguments)
-                .map(|(variable, &argument)| {
-                    // Use contravariant subtyping for type variables:
-                    //
-                    // data Example :: Argument -> Type
-                    // data Example (a :: Variable) = Example
-                    //
-                    // Signature: Argument -> Type
-                    // Inferred: Variable -> Type
-                    //
-                    // Given
-                    //   Variable -> Type <: Argument -> Type
-                    //
-                    // Therefore
-                    //   [Argument <: Variable, Type <: Type]
-                    let kind = match variable.kind {
-                        Some(kind_id) => {
-                            let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
-                            let valid = unification::subsumes(state, context, argument, kind)?;
-                            Ok(if valid { kind } else { context.prim.unknown })
-                        }
-                        None => Ok(argument),
-                    }?;
-
-                    let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                    Ok((variable.id, variable.visible, name, kind))
-                })
-                .collect::<QueryResult<Vec<_>>>()?;
-
-            let kind_variables = signature.variables;
-            let result_kind = signature.result;
-            let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-                let level = state.bind_forall(id, kind);
-                ForallBinder { visible, name, level, kind }
+    let (kind_variables, type_variables, result_kind) = if let Some((signature_id, signature)) =
+        signature
+    {
+        if variables.len() != signature.arguments.len() {
+            state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+                id: signature_id,
+                expected: 0,
+                actual: 0,
             });
 
-            (kind_variables, type_variables.collect_vec(), result_kind)
-        } else {
-            let kind_variables = vec![];
-            let result_kind = infer_result(state);
-            let type_variables = variables
-                .iter()
-                .map(|variable| {
-                    let kind = match variable.kind {
-                        Some(id) => {
-                            let (kind, _) =
-                                kind::check_surface_kind(state, context, id, context.prim.t)?;
-                            Ok(kind)
-                        }
-                        None => Ok(state.fresh_unification_type(context)),
-                    }?;
+            if let Some(variable) = signature.variables.first() {
+                state.unbind(variable.level);
+            }
 
-                    let visible = variable.visible;
-                    let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                    let level = state.bind_forall(variable.id, kind);
-                    Ok(ForallBinder { visible, name, level, kind })
-                })
-                .collect::<QueryResult<Vec<_>>>()?;
-
-            (kind_variables, type_variables, result_kind)
+            return Ok(None);
         };
+
+        let variables = variables.iter();
+        let arguments = signature.arguments.iter();
+
+        let kinds = variables
+            .zip(arguments)
+            .map(|(variable, &argument)| {
+                // Use contravariant subtyping for type variables:
+                //
+                // data Example :: Argument -> Type
+                // data Example (a :: Variable) = Example
+                //
+                // Signature: Argument -> Type
+                // Inferred: Variable -> Type
+                //
+                // Given
+                //   Variable -> Type <: Argument -> Type
+                //
+                // Therefore
+                //   [Argument <: Variable, Type <: Type]
+                let kind = if let Some(kind_id) = variable.kind {
+                    let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
+                    let valid = unification::subsumes(state, context, argument, kind)?;
+                    if valid { kind } else { context.prim.unknown }
+                } else {
+                    argument
+                };
+
+                let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                Ok((variable.id, variable.visible, name, kind))
+            })
+            .collect::<QueryResult<Vec<_>>>()?;
+
+        let kind_variables = signature.variables;
+        let result_kind = signature.result;
+        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+            let level = state.bind_forall(id, kind);
+            ForallBinder { visible, name, level, kind }
+        });
+
+        (kind_variables, type_variables.collect_vec(), result_kind)
+    } else {
+        let kind_variables = vec![];
+        let result_kind = infer_result(state);
+        let type_variables = variables
+            .iter()
+            .map(|variable| {
+                let kind = if let Some(id) = variable.kind {
+                    let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
+                    kind
+                } else {
+                    state.fresh_unification_type(context)
+                };
+
+                let visible = variable.visible;
+                let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                let level = state.bind_forall(variable.id, kind);
+                Ok(ForallBinder { visible, name, level, kind })
+            })
+            .collect::<QueryResult<Vec<_>>>()?;
+
+        (kind_variables, type_variables, result_kind)
+    };
 
     Ok(Some(SignatureLike { kind_variables, type_variables, result_kind }))
 }
