@@ -212,11 +212,11 @@ impl CheckState {
     pub fn type_binding_group<Q>(
         &mut self,
         context: &CheckContext<Q>,
-        group: impl AsRef<[TypeItemId]>,
+        group: impl IntoIterator<Item = TypeItemId>,
     ) where
         Q: ExternalQueries,
     {
-        for &item in group.as_ref() {
+        for item in group {
             let t = self.fresh_unification_type(context);
             self.binding_group.types.insert(item, t);
         }

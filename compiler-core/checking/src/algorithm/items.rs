@@ -119,69 +119,66 @@ where
 
     let signature = signature.transpose()?;
 
-    let (kind_variables, type_variables, result_kind) = if let Some((signature_id, signature)) =
-        signature
-    {
-        if variables.len() != signature.arguments.len() {
-            state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
-                id: signature_id,
-                expected: 0,
-                actual: 0,
+    let (kind_variables, type_variables, result_kind) =
+        if let Some((signature_id, signature)) = signature {
+            if variables.len() != signature.arguments.len() {
+                state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+                    id: signature_id,
+                    expected: 0,
+                    actual: 0,
+                });
+
+                if let Some(variable) = signature.variables.first() {
+                    state.unbind(variable.level);
+                }
+
+                return Ok(None);
+            };
+
+            let variables = variables.iter();
+            let arguments = signature.arguments.iter();
+
+            let kinds = variables
+                .zip(arguments)
+                .map(|(variable, &argument)| {
+                    // Use contravariant subtyping for type variables:
+                    //
+                    // data Example :: Argument -> Type
+                    // data Example (a :: Variable) = Example
+                    //
+                    // Signature: Argument -> Type
+                    // Inferred: Variable -> Type
+                    //
+                    // Given
+                    //   Variable -> Type <: Argument -> Type
+                    //
+                    // Therefore
+                    //   [Argument <: Variable, Type <: Type]
+                    let kind = if let Some(kind_id) = variable.kind {
+                        let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
+                        let valid = unification::subsumes(state, context, argument, kind)?;
+                        if valid { kind } else { context.prim.unknown }
+                    } else {
+                        argument
+                    };
+
+                    let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                    Ok((variable.id, variable.visible, name, kind))
+                })
+                .collect::<QueryResult<Vec<_>>>()?;
+
+            let kind_variables = signature.variables;
+            let result_kind = signature.result;
+            let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+                let level = state.bind_forall(id, kind);
+                ForallBinder { visible, name, level, kind }
             });
 
-            if let Some(variable) = signature.variables.first() {
-                state.unbind(variable.level);
-            }
-
-            return Ok(None);
-        };
-
-        let variables = variables.iter();
-        let arguments = signature.arguments.iter();
-
-        let kinds = variables
-            .zip(arguments)
-            .map(|(variable, &argument)| {
-                // Use contravariant subtyping for type variables:
-                //
-                // data Example :: Argument -> Type
-                // data Example (a :: Variable) = Example
-                //
-                // Signature: Argument -> Type
-                // Inferred: Variable -> Type
-                //
-                // Given
-                //   Variable -> Type <: Argument -> Type
-                //
-                // Therefore
-                //   [Argument <: Variable, Type <: Type]
-                let kind = if let Some(kind_id) = variable.kind {
-                    let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
-                    let valid = unification::subsumes(state, context, argument, kind)?;
-                    if valid { kind } else { context.prim.unknown }
-                } else {
-                    argument
-                };
-
-                let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                Ok((variable.id, variable.visible, name, kind))
-            })
-            .collect::<QueryResult<Vec<_>>>()?;
-
-        let kind_variables = signature.variables;
-        let result_kind = signature.result;
-        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-            let level = state.bind_forall(id, kind);
-            ForallBinder { visible, name, level, kind }
-        });
-
-        (kind_variables, type_variables.collect_vec(), result_kind)
-    } else {
-        let kind_variables = vec![];
-        let result_kind = infer_result(state);
-        let type_variables = variables
-            .iter()
-            .map(|variable| {
+            (kind_variables, type_variables.collect_vec(), result_kind)
+        } else {
+            let kind_variables = vec![];
+            let result_kind = infer_result(state);
+            let type_variables = variables.iter().map(|variable| {
                 let kind = if let Some(id) = variable.kind {
                     let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
                     kind
@@ -193,11 +190,12 @@ where
                 let name = variable.name.clone().unwrap_or(MISSING_NAME);
                 let level = state.bind_forall(variable.id, kind);
                 Ok(ForallBinder { visible, name, level, kind })
-            })
-            .collect::<QueryResult<Vec<_>>>()?;
+            });
 
-        (kind_variables, type_variables, result_kind)
-    };
+            let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
+
+            (kind_variables, type_variables, result_kind)
+        };
 
     Ok(Some(SignatureLike { kind_variables, type_variables, result_kind }))
 }
@@ -770,14 +768,8 @@ where
         state.unbind(variable.level);
     }
 
-    let equation_type = build_function_type(state, &signature.arguments, signature.result);
-
-    let equation_type = signature.variables.iter().rfold(equation_type, |inner, binder| {
-        let binder = binder.clone();
-        state.storage.intern(Type::Forall(binder, inner))
-    });
-
-    state.binding_group.terms.insert(item_id, equation_type);
+    let signature = signature.restore(state);
+    state.binding_group.terms.insert(item_id, signature);
 
     Ok(())
 }
@@ -840,35 +832,23 @@ fn check_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    todo!()
+    Ok(())
 }
 
-fn infer_expression<Q>(
-    _state: &mut CheckState,
-    _context: &CheckContext<Q>,
-    _expr_id: lowering::ExpressionId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    todo!()
-}
+// fn infer_expression<Q>(
+//     _state: &mut CheckState,
+//     _context: &CheckContext<Q>,
+//     _expr_id: lowering::ExpressionId,
+// ) -> QueryResult<TypeId>
+// where
+//     Q: ExternalQueries,
+// {
+//     Ok(context.prim.unknown)
+// }
 
 fn build_function_type(state: &mut CheckState, arguments: &[TypeId], result: TypeId) -> TypeId {
     arguments
         .iter()
         .copied()
         .rfold(result, |result, argument| state.storage.intern(Type::Function(argument, result)))
-}
-
-fn residual_result_type(
-    state: &mut CheckState,
-    signature_arguments: &[TypeId],
-    signature_result: TypeId,
-    binder_count: usize,
-) -> TypeId {
-    let remaining = &signature_arguments[binder_count..];
-    remaining.iter().copied().rfold(signature_result, |result, argument| {
-        state.storage.intern(Type::Function(argument, result))
-    })
 }

@@ -21,6 +21,17 @@ pub(crate) fn check_source(
     let mut state = state::CheckState::default();
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
+    let has_kind_signature = |id: indexing::TypeItemId| {
+        let item = &context.indexed.items[id];
+        matches!(
+            item.kind,
+            indexing::TypeItemKind::Data { signature: Some(_), .. }
+                | indexing::TypeItemKind::Newtype { signature: Some(_), .. }
+                | indexing::TypeItemKind::Synonym { signature: Some(_), .. }
+                | indexing::TypeItemKind::Class { signature: Some(_), .. }
+        )
+    };
+
     for scc in &context.lowered.type_scc {
         match scc {
             Scc::Base(id) => {
@@ -28,22 +39,30 @@ pub(crate) fn check_source(
                 state.commit_binding_group(&context);
             }
             Scc::Recursive(id) => {
-                state.type_binding_group(&context, [*id]);
+                if !has_kind_signature(*id) {
+                    state.type_binding_group(&context, [*id]);
+                }
                 items::check_type_item(&mut state, &context, *id)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(mutual) => {
-                state.type_binding_group(&context, mutual);
-                for id in mutual {
+                let binding_group = mutual.iter().copied().filter(|&id| !has_kind_signature(id));
+                state.type_binding_group(&context, binding_group);
+
+                for id in mutual.iter().filter(|&id| has_kind_signature(*id)) {
                     items::check_type_item(&mut state, &context, *id)?;
                 }
+                for id in mutual.iter().filter(|&id| !has_kind_signature(*id)) {
+                    items::check_type_item(&mut state, &context, *id)?;
+                }
+
                 state.commit_binding_group(&context);
             }
         }
     }
 
-    let has_signature = |id: &indexing::TermItemId| {
-        let item = &context.indexed.items[*id];
+    let has_signature = |id: indexing::TermItemId| {
+        let item = &context.indexed.items[id];
         matches!(item.kind, indexing::TermItemKind::Value { signature: Some(_), .. })
     };
 
@@ -54,20 +73,20 @@ pub(crate) fn check_source(
                 state.commit_binding_group(&context);
             }
             Scc::Recursive(id) => {
-                if !has_signature(id) {
+                if !has_signature(*id) {
                     state.term_binding_group(&context, [*id]);
                 }
                 items::check_term_item(&mut state, &context, *id)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(mutual) => {
-                let binding_group = mutual.iter().copied().filter(|id| !has_signature(id));
+                let binding_group = mutual.iter().copied().filter(|&id| !has_signature(id));
                 state.term_binding_group(&context, binding_group);
 
-                for id in mutual.iter().filter(|id| has_signature(id)) {
+                for id in mutual.iter().filter(|&id| has_signature(*id)) {
                     items::check_term_item(&mut state, &context, *id)?;
                 }
-                for id in mutual.iter().filter(|id| !has_signature(id)) {
+                for id in mutual.iter().filter(|&id| !has_signature(*id)) {
                     items::check_term_item(&mut state, &context, *id)?;
                 }
 
