@@ -1,6 +1,6 @@
 //! Implements the type checker.
 
-use std::iter::{self, zip};
+use std::iter;
 
 use building_types::QueryResult;
 use indexing::TermItemId;
@@ -69,8 +69,10 @@ where
         let argument_types = &argument_types[..minimum_equation_arity];
         let expected_type = state.make_function(argument_types, result_type);
 
-        check_guarded_expression(state, context, &equation.guarded, result_type)?;
-        let _ = unification::unify(state, context, item_type, expected_type)?;
+        if let Some(guarded) = &equation.guarded {
+            check_guarded_expression(state, context, &guarded, result_type)?;
+            let _ = unification::unify(state, context, item_type, expected_type)?;
+        }
     }
 
     Ok(())
@@ -124,7 +126,9 @@ where
                 .for_each(drop);
         }
 
-        check_guarded_expression(state, context, &equation.guarded, signature.result)?;
+        if let Some(guarded) = &equation.guarded {
+            check_guarded_expression(state, context, &guarded, signature.result)?;
+        }
     }
 
     if let Some(variable) = signature.variables.first() {
@@ -204,24 +208,25 @@ where
 fn check_guarded_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    guarded: &Option<lowering::GuardedExpression>,
+    guarded: &lowering::GuardedExpression,
     expected: TypeId,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let Some(guarded) = guarded else {
-        return Ok(());
-    };
-
     match guarded {
         lowering::GuardedExpression::Unconditional { where_expression } => {
-            check_where_expression(state, context, where_expression.as_ref(), expected)
+            let Some(w) = where_expression else {
+                return Ok(());
+            };
+            check_where_expression(state, context, &w, expected)
         }
         lowering::GuardedExpression::Conditionals { pattern_guarded } => {
             for pattern_guarded in pattern_guarded.iter() {
-                let where_expression = &pattern_guarded.where_expression;
-                check_where_expression(state, context, where_expression.as_ref(), expected)?;
+                let Some(w) = &pattern_guarded.where_expression else {
+                    return Ok(());
+                };
+                check_where_expression(state, context, w, expected)?;
             }
             Ok(())
         }
@@ -231,20 +236,18 @@ where
 fn check_where_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    where_expression: Option<&lowering::WhereExpression>,
+    where_expression: &lowering::WhereExpression,
     expected_type: TypeId,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let Some(where_expr) = where_expression else {
-        return Ok(());
-    };
+    for binding in where_expression.bindings.iter() {
+        check_let_binding(state, context, binding)?;
+    }
 
-    // TODO: check let bindings in where_expr.bindings
-
-    if let Some(expression_id) = where_expr.expression {
-        check_expression(state, context, expression_id, expected_type)?;
+    if let Some(expression) = where_expression.expression {
+        check_expression(state, context, expression, expected_type)?;
     }
 
     Ok(())
@@ -542,16 +545,19 @@ where
             }
         }
         lowering::LetBinding::Pattern { binder, where_expression } => {
-            let Some(binder) = binder else {
+            let Some(w) = where_expression else {
                 return Ok(());
             };
 
-            let where_expression = where_expression.as_ref();
             let expected_type = state.fresh_unification_type(context);
-            check_where_expression(state, context, where_expression, expected_type)?;
+            check_where_expression(state, context, w, expected_type)?;
 
-            let binder_type = state.fresh_unification_type(context);
-            let _ = check_binder(state, context, *binder, binder_type)?;
+            let Some(b) = binder else {
+                return Ok(());
+            };
+
+            let expected_type = state.fresh_unification_type(context);
+            let _ = check_binder(state, context, *b, expected_type)?;
         }
     }
 
