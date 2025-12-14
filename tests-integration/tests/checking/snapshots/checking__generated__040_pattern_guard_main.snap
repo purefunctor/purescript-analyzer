@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+foo :: Int -> Int
+bar :: String -> String
+foo' :: forall (t1 :: Type). t1 -> Int
+bar' :: forall (t4 :: Type). t4 -> String
+
+Types

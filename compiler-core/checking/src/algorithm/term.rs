@@ -223,14 +223,33 @@ where
         }
         lowering::GuardedExpression::Conditionals { pattern_guarded } => {
             for pattern_guarded in pattern_guarded.iter() {
-                let Some(w) = &pattern_guarded.where_expression else {
-                    return Ok(());
-                };
-                check_where_expression(state, context, w, expected)?;
+                for pattern_guard in pattern_guarded.pattern_guards.iter() {
+                    check_pattern_guard(state, context, pattern_guard)?;
+                }
+                if let Some(w) = &pattern_guarded.where_expression {
+                    check_where_expression(state, context, w, expected)?;
+                }
             }
             Ok(())
         }
     }
+}
+
+fn check_pattern_guard<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guard: &lowering::PatternGuard,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(b) = guard.binder else { return Ok(()) };
+    let Some(e) = guard.expression else { return Ok(()) };
+
+    let t = infer_expression(state, context, e)?;
+    let _ = check_binder(state, context, b, t)?;
+
+    Ok(())
 }
 
 fn check_where_expression<Q>(

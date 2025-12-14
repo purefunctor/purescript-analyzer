@@ -428,3 +428,14 @@ fn test_039_value_mutual_multiple_type_variables_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_040_pattern_guard_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/040_pattern_guard"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
