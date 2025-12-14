@@ -170,7 +170,20 @@ where
             Ok(context.prim.number)
         }
 
-        lowering::BinderKind::Constructor { .. } => Ok(unknown),
+        lowering::BinderKind::Constructor { resolution, arguments } => {
+            let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
+
+            let mut function_t = lookup_file_term(state, context, *file_id, *term_id)?;
+
+            for &argument in arguments.iter() {
+                function_t =
+                    check_constructor_binder_application(state, context, function_t, argument)?;
+            }
+
+            let _ = unification::subsumes(state, context, function_t, type_id)?;
+
+            Ok(type_id)
+        }
 
         lowering::BinderKind::Variable { .. } => {
             state.bind_binder(binder_id, type_id);
@@ -547,6 +560,43 @@ where
             let unification = state.fresh_unification_kinded(kind);
             let function_t = substitute::substitute_bound(state, unification, function_t);
             check_function_term_application(state, context, function_t, argument)
+        }
+
+        _ => Ok(context.prim.unknown),
+    }
+}
+
+fn check_constructor_binder_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    function_t: TypeId,
+    argument: lowering::BinderId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let function_t = state.normalize_type(function_t);
+    match state.storage[function_t] {
+        Type::Function(argument_type, result_type) => {
+            check_binder(state, context, argument, argument_type)?;
+            Ok(result_type)
+        }
+
+        Type::Unification(unification_id) => {
+            let argument_u = state.fresh_unification_type(context);
+            let result_u = state.fresh_unification_type(context);
+            let function_u = state.storage.intern(Type::Function(argument_u, result_u));
+
+            state.unification.solve(unification_id, function_u);
+            check_binder(state, context, argument, argument_u)?;
+
+            Ok(result_u)
+        }
+
+        Type::Forall(ForallBinder { kind, .. }, function_t) => {
+            let unification = state.fresh_unification_kinded(kind);
+            let function_t = substitute::substitute_bound(state, unification, function_t);
+            check_constructor_binder_application(state, context, function_t, argument)
         }
 
         _ => Ok(context.prim.unknown),
