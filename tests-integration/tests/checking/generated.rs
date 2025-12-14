@@ -351,3 +351,80 @@ fn test_032_recursive_synonym_expansion_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_033_value_recursive_signature_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/033_value_recursive_signature"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_034_value_recursive_infer_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/034_value_recursive_infer"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_035_value_mutual_both_signature_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/035_value_mutual_both_signature"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_036_value_mutual_one_signature_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/036_value_mutual_one_signature"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_037_value_mutual_no_signature_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/037_value_mutual_no_signature"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_038_value_mutual_polytype_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/038_value_mutual_polytype"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_039_value_mutual_multiple_type_variables_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/039_value_mutual_multiple_type_variables"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
