@@ -353,4 +353,11 @@ impl CheckState {
 
         id
     }
+
+    pub fn make_function(&mut self, arguments: &[TypeId], result: TypeId) -> TypeId {
+        arguments.iter().copied().rfold(result, |result, argument| {
+            let function = Type::Function(argument, result);
+            self.storage.intern(function)
+        })
+    }
 }

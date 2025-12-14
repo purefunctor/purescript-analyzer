@@ -60,20 +60,13 @@ where
 
         // Only use the minimum number of binders across equations.
         let argument_types = &argument_types[..minimum_equation_arity];
-        let expected_type = build_function_type(state, argument_types, result_type);
+        let expected_type = state.make_function(argument_types, result_type);
 
         check_guarded_expression(state, context, &equation.guarded, result_type)?;
         let _ = unification::unify(state, context, group_type, expected_type)?;
     }
 
     Ok(())
-}
-
-fn build_function_type(state: &mut CheckState, arguments: &[TypeId], result: TypeId) -> TypeId {
-    arguments
-        .iter()
-        .copied()
-        .rfold(result, |result, argument| state.storage.intern(Type::Function(argument, result)))
 }
 
 pub(crate) fn check_value_group<Q>(
@@ -275,8 +268,14 @@ where
 
         lowering::ExpressionKind::Application { function, arguments } => {
             let Some(function) = function else { return Ok(unknown) };
-            let function_type = infer_expression(state, context, *function)?;
-            infer_application_spine(state, context, function_type, arguments)
+
+            let mut function_t = infer_expression(state, context, *function)?;
+
+            for argument in arguments.iter() {
+                function_t = check_function_application(state, context, function_t, argument)?;
+            }
+
+            Ok(function_t)
         }
 
         lowering::ExpressionKind::IfThenElse { if_, then, else_ } => {
@@ -314,7 +313,7 @@ where
                 state.fresh_unification_type(context)
             };
 
-            Ok(build_function_type(state, &argument_types, result_type))
+            Ok(state.make_function(&argument_types, result_type))
         }
 
         lowering::ExpressionKind::CaseOf { .. } => Ok(unknown),
@@ -400,72 +399,81 @@ where
     Ok(term_id)
 }
 
-fn infer_application_spine<Q>(
+fn check_function_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    mut function_type: TypeId,
-    arguments: &[lowering::ExpressionArgument],
+    function_t: TypeId,
+    argument: &lowering::ExpressionArgument,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    for argument in arguments {
-        function_type = state.normalize_type(function_type);
-
-        match state.storage[function_type] {
-            Type::Forall(ForallBinder { kind, .. }, inner) => {
-                let unification = state.fresh_unification_kinded(kind);
-                function_type = substitute::substitute_bound(state, unification, inner);
-            }
-            _ => {}
+    match argument {
+        lowering::ExpressionArgument::Type(type_argument) => {
+            let Some(type_argument) = type_argument else { return Ok(context.prim.unknown) };
+            check_function_type_application(state, context, function_t, *type_argument)
         }
-
-        function_type = state.normalize_type(function_type);
-
-        match argument {
-            lowering::ExpressionArgument::Type(type_argument) => match state.storage[function_type]
-            {
-                Type::Forall(ForallBinder { kind, .. }, inner) => {
-                    if let Some(type_argument) = type_argument {
-                        let (argument_type, _) =
-                            kind::check_surface_kind(state, context, *type_argument, kind)?;
-                        function_type = substitute::substitute_bound(state, argument_type, inner);
-                    } else {
-                        let unification = state.fresh_unification_kinded(kind);
-                        function_type = substitute::substitute_bound(state, unification, inner);
-                    }
-                }
-                _ => {
-                    return Ok(context.prim.unknown);
-                }
-            },
-            lowering::ExpressionArgument::Term(term_argument) => match state.storage[function_type]
-            {
-                Type::Function(argument_type, result_type) => {
-                    if let Some(term_argument) = term_argument {
-                        check_expression(state, context, *term_argument, argument_type)?;
-                    }
-                    function_type = result_type;
-                }
-                Type::Unification(unification_id) => {
-                    let argument_u = state.fresh_unification_type(context);
-                    let result_u = state.fresh_unification_type(context);
-                    let function_u = state.storage.intern(Type::Function(argument_u, result_u));
-
-                    state.unification.solve(unification_id, function_u);
-
-                    if let Some(term_argument) = term_argument {
-                        check_expression(state, context, *term_argument, argument_u)?;
-                    }
-
-                    function_type = result_u;
-                }
-                _ => {
-                    return Ok(context.prim.unknown);
-                }
-            },
+        lowering::ExpressionArgument::Term(term_argument) => {
+            let Some(term_argument) = term_argument else { return Ok(context.prim.unknown) };
+            check_function_term_application(state, context, function_t, *term_argument)
         }
     }
+}
 
-    Ok(function_type)
+fn check_function_type_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    function_t: TypeId,
+    argument: lowering::TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let function_t = state.normalize_type(function_t);
+    match state.storage[function_t] {
+        Type::Forall(ForallBinder { kind, .. }, inner) => {
+            let (argument_type, _) = kind::check_surface_kind(state, context, argument, kind)?;
+            Ok(substitute::substitute_bound(state, argument_type, inner))
+        }
+        _ => {
+            return Ok(context.prim.unknown);
+        }
+    }
+}
+
+fn check_function_term_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    function_t: TypeId,
+    argument: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let function_t = state.normalize_type(function_t);
+    match state.storage[function_t] {
+        Type::Function(argument_type, result_type) => {
+            check_expression(state, context, argument, argument_type)?;
+            Ok(result_type)
+        }
+
+        Type::Unification(unification_id) => {
+            let argument_u = state.fresh_unification_type(context);
+            let result_u = state.fresh_unification_type(context);
+            let function_u = state.storage.intern(Type::Function(argument_u, result_u));
+
+            state.unification.solve(unification_id, function_u);
+            check_expression(state, context, argument, argument_u)?;
+
+            Ok(result_u)
+        }
+
+        Type::Forall(ForallBinder { kind, .. }, function_t) => {
+            let unification = state.fresh_unification_kinded(kind);
+            let function_t = substitute::substitute_bound(state, unification, function_t);
+            check_function_term_application(state, context, function_t, argument)
+        }
+
+        _ => Ok(context.prim.unknown),
+    }
 }
