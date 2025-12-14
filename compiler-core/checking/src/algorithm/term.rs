@@ -8,7 +8,7 @@ use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, substitute, transfer, unification};
+use crate::algorithm::{inspect, kind, substitute, transfer, unification};
 use crate::core::{ForallBinder, Type, TypeId};
 
 pub(crate) fn infer_value_group<Q>(
@@ -273,13 +273,49 @@ where
 
         lowering::ExpressionKind::Negate { .. } => Ok(unknown),
 
-        lowering::ExpressionKind::Application { .. } => Ok(unknown),
+        lowering::ExpressionKind::Application { function, arguments } => {
+            let Some(function) = function else { return Ok(unknown) };
+            let function_type = infer_expression(state, context, *function)?;
+            infer_application_spine(state, context, function_type, arguments)
+        }
 
-        lowering::ExpressionKind::IfThenElse { .. } => Ok(unknown),
+        lowering::ExpressionKind::IfThenElse { if_, then, else_ } => {
+            if let Some(if_) = if_ {
+                check_expression(state, context, *if_, context.prim.boolean)?;
+            }
+
+            let result_type = state.fresh_unification_type(context);
+
+            if let Some(then) = then {
+                check_expression(state, context, *then, result_type)?;
+            }
+
+            if let Some(else_) = else_ {
+                check_expression(state, context, *else_, result_type)?;
+            }
+
+            Ok(result_type)
+        }
 
         lowering::ExpressionKind::LetIn { .. } => Ok(unknown),
 
-        lowering::ExpressionKind::Lambda { .. } => Ok(unknown),
+        lowering::ExpressionKind::Lambda { binders, expression } => {
+            let mut argument_types = vec![];
+
+            for &binder_id in binders.iter() {
+                let argument_type = state.fresh_unification_type(context);
+                let _ = check_binder(state, context, binder_id, argument_type)?;
+                argument_types.push(argument_type);
+            }
+
+            let result_type = if let Some(body) = expression {
+                infer_expression(state, context, *body)?
+            } else {
+                state.fresh_unification_type(context)
+            };
+
+            Ok(build_function_type(state, &argument_types, result_type))
+        }
 
         lowering::ExpressionKind::CaseOf { .. } => Ok(unknown),
 
@@ -287,7 +323,10 @@ where
 
         lowering::ExpressionKind::Ado { .. } => Ok(unknown),
 
-        lowering::ExpressionKind::Constructor { .. } => Ok(unknown),
+        lowering::ExpressionKind::Constructor { resolution } => {
+            let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
+            lookup_file_term(state, context, *file_id, *term_id)
+        }
 
         lowering::ExpressionKind::Variable { resolution } => match resolution {
             Some(lowering::TermVariableResolution::Binder(binder_id)) => {
@@ -342,39 +381,91 @@ fn lookup_file_term<Q>(
 where
     Q: ExternalQueries,
 {
-    let type_id = if file_id == context.id {
-        state.binding_group.lookup_term(term_id).or_else(|| state.checked.lookup_term(term_id))
+    let term_id = if file_id == context.id {
+        if let Some(&k) = state.binding_group.terms.get(&term_id) {
+            k
+        } else if let Some(&k) = state.checked.terms.get(&term_id) {
+            transfer::localize(state, context, k)
+        } else {
+            context.prim.unknown
+        }
     } else {
         let checked = context.queries.checked(file_id)?;
-        checked.lookup_term(term_id)
+        if let Some(id) = checked.terms.get(&term_id) {
+            transfer::localize(state, context, *id)
+        } else {
+            context.prim.unknown
+        }
     };
-
-    let type_id = type_id.unwrap_or(context.prim.unknown);
-
-    if file_id != context.id {
-        let type_id = transfer::localize(state, context, type_id);
-        Ok(instantiate_type(state, context, type_id))
-    } else {
-        Ok(instantiate_type(state, context, type_id))
-    }
+    Ok(term_id)
 }
 
-fn instantiate_type<Q>(
+fn infer_application_spine<Q>(
     state: &mut CheckState,
-    _context: &CheckContext<Q>,
-    mut type_id: TypeId,
-) -> TypeId
+    context: &CheckContext<Q>,
+    mut function_type: TypeId,
+    arguments: &[lowering::ExpressionArgument],
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    loop {
-        let type_id_norm = state.normalize_type(type_id);
-        match state.storage[type_id_norm] {
+    for argument in arguments {
+        function_type = state.normalize_type(function_type);
+
+        match state.storage[function_type] {
             Type::Forall(ForallBinder { kind, .. }, inner) => {
-                let fresh = state.fresh_unification_kinded(kind);
-                type_id = substitute::substitute_bound(state, fresh, inner);
+                let unification = state.fresh_unification_kinded(kind);
+                function_type = substitute::substitute_bound(state, unification, inner);
             }
-            _ => return type_id_norm,
+            _ => {}
+        }
+
+        function_type = state.normalize_type(function_type);
+
+        match argument {
+            lowering::ExpressionArgument::Type(type_argument) => match state.storage[function_type]
+            {
+                Type::Forall(ForallBinder { kind, .. }, inner) => {
+                    if let Some(type_argument) = type_argument {
+                        let (argument_type, _) =
+                            kind::check_surface_kind(state, context, *type_argument, kind)?;
+                        function_type = substitute::substitute_bound(state, argument_type, inner);
+                    } else {
+                        let unification = state.fresh_unification_kinded(kind);
+                        function_type = substitute::substitute_bound(state, unification, inner);
+                    }
+                }
+                _ => {
+                    return Ok(context.prim.unknown);
+                }
+            },
+            lowering::ExpressionArgument::Term(term_argument) => match state.storage[function_type]
+            {
+                Type::Function(argument_type, result_type) => {
+                    if let Some(term_argument) = term_argument {
+                        check_expression(state, context, *term_argument, argument_type)?;
+                    }
+                    function_type = result_type;
+                }
+                Type::Unification(unification_id) => {
+                    let argument_u = state.fresh_unification_type(context);
+                    let result_u = state.fresh_unification_type(context);
+                    let function_u = state.storage.intern(Type::Function(argument_u, result_u));
+
+                    state.unification.solve(unification_id, function_u);
+
+                    if let Some(term_argument) = term_argument {
+                        check_expression(state, context, *term_argument, argument_u)?;
+                    }
+
+                    function_type = result_u;
+                }
+                _ => {
+                    return Ok(context.prim.unknown);
+                }
+            },
         }
     }
+
+    Ok(function_type)
 }

@@ -82,12 +82,14 @@ where
                 let operator = Operator { associativity, precedence, file_id, type_id };
                 state.checked.operators.insert(item_id, operator);
 
-                if let Some(id) = kind::lookup_file_type(state, context, file_id, type_id)? {
-                    if !is_binary_operator_type(state, id) {
-                        state.insert_error(ErrorKind::InvalidTypeOperator { id });
-                    }
-                    state.binding_group.types.insert(item_id, id);
+                let id = kind::lookup_file_type(state, context, file_id, type_id)?;
+
+                if !is_binary_operator_type(state, id) {
+                    state.insert_error(ErrorKind::InvalidTypeOperator { id });
                 }
+
+                state.binding_group.types.insert(item_id, id);
+
                 Ok(())
             }
         }

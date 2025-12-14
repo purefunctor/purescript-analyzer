@@ -116,8 +116,7 @@ where
             }
 
             let t = state.storage.intern(Type::Constructor(file_id, type_id));
-            let k =
-                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
+            let k = lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
         }
@@ -180,8 +179,7 @@ where
             let Some((file_id, type_id)) = *resolution else { return Ok(unknown) };
 
             let t = state.storage.intern(Type::Operator(file_id, type_id));
-            let k =
-                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
+            let k = lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
         }
@@ -394,7 +392,8 @@ where
 {
     let unknown = context.prim.unknown;
     let id = state.normalize_type(id);
-    Ok(match state.storage[id] {
+
+    let type_id = match state.storage[id] {
         Type::Application(function, _) => {
             let function_kind = elaborate_kind(state, context, function)?;
             let function_kind = state.normalize_type(function_kind);
@@ -418,9 +417,7 @@ where
 
         Type::Constrained(_, _) => context.prim.t,
 
-        Type::Constructor(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown)
-        }
+        Type::Constructor(file_id, type_id) => lookup_file_type(state, context, file_id, type_id)?,
 
         Type::Forall(_, _) => context.prim.t,
 
@@ -442,9 +439,7 @@ where
 
         Type::Kinded(_, kind) => kind,
 
-        Type::Operator(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown)
-        }
+        Type::Operator(file_id, type_id) => lookup_file_type(state, context, file_id, type_id)?,
 
         Type::OperatorApplication(file_id, type_id, _, _) => {
             operator::elaborate_operator_application_kind(state, context, file_id, type_id)?
@@ -474,8 +469,7 @@ where
         Type::SynonymApplication(_, file_id, type_id, ref arguments) => {
             let arguments = Arc::clone(arguments);
 
-            let mut synonym_kind =
-                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown);
+            let mut synonym_kind = lookup_file_type(state, context, file_id, type_id)?;
 
             for _ in arguments.iter() {
                 synonym_kind = state.normalize_type(synonym_kind);
@@ -499,7 +493,9 @@ where
         },
 
         Type::Unknown => unknown,
-    })
+    };
+
+    Ok(type_id)
 }
 
 pub fn check_surface_kind<Q>(
@@ -543,21 +539,25 @@ pub(crate) fn lookup_file_type<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
-) -> QueryResult<Option<TypeId>>
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    if file_id == context.id {
+    let type_id = if file_id == context.id {
         if let Some(&k) = state.binding_group.types.get(&type_id) {
-            Ok(Some(k))
+            k
         } else if let Some(&k) = state.checked.types.get(&type_id) {
-            Ok(Some(transfer::localize(state, context, k)))
+            transfer::localize(state, context, k)
         } else {
-            Ok(None)
+            context.prim.unknown
         }
     } else {
         let checked = context.queries.checked(file_id)?;
-        let global_id = checked.types.get(&type_id);
-        Ok(global_id.map(|id| transfer::localize(state, context, *id)))
-    }
+        if let Some(id) = checked.types.get(&type_id) {
+            transfer::localize(state, context, *id)
+        } else {
+            context.prim.unknown
+        }
+    };
+    Ok(type_id)
 }

@@ -78,8 +78,7 @@ where
                 };
             };
 
-            let operator_kind = kind::lookup_file_type(state, context, file_id, type_item_id)?
-                .unwrap_or(context.prim.unknown);
+            let operator_kind = kind::lookup_file_type(state, context, file_id, type_item_id)?;
 
             operator_branch_kind(
                 state,
@@ -164,8 +163,7 @@ pub fn elaborate_operator_application_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let operator_kind =
-        kind::lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
+    let operator_kind = kind::lookup_file_type(state, context, file_id, type_id)?;
 
     let operator_kind = instantiate_kind_foralls(state, operator_kind);
 
