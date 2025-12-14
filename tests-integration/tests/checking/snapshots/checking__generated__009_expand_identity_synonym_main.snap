@@ -5,13 +5,13 @@ expression: report
 Terms
 
 Types
-Identity :: forall (t0 :: Type). t0 -> t0
+Identity :: forall (t1 :: Type). t1 -> t1
 Digit :: Int
 Test1 :: Type
 Test2 :: Int
 
 Synonyms
-Identity = forall (t0 :: Type) (a :: t0). a
+Identity = forall (t1 :: Type) (a :: t1). a
   Quantified = :1
   Kind = :0
   Type = :1

@@ -96,7 +96,13 @@ where
     })
 }
 
+enum SignatureOrigin {
+    Syntax,
+    Inferred,
+}
+
 struct SignatureLike {
+    origin: SignatureOrigin,
     kind_variables: Vec<ForallBinder>,
     type_variables: Vec<ForallBinder>,
     result_kind: TypeId,
@@ -119,7 +125,7 @@ where
 
     let signature = signature.transpose()?;
 
-    let (kind_variables, type_variables, result_kind) =
+    let (origin, kind_variables, type_variables, result_kind) =
         if let Some((signature_id, signature)) = signature {
             if variables.len() != signature.arguments.len() {
                 state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
@@ -174,7 +180,7 @@ where
                 ForallBinder { visible, name, level, kind }
             });
 
-            (kind_variables, type_variables.collect_vec(), result_kind)
+            (SignatureOrigin::Syntax, kind_variables, type_variables.collect_vec(), result_kind)
         } else {
             let kind_variables = vec![];
             let result_kind = infer_result(state);
@@ -194,10 +200,10 @@ where
 
             let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
 
-            (kind_variables, type_variables, result_kind)
+            (SignatureOrigin::Inferred, kind_variables, type_variables, result_kind)
         };
 
-    Ok(Some(SignatureLike { kind_variables, type_variables, result_kind }))
+    Ok(Some(SignatureLike { origin, kind_variables, type_variables, result_kind }))
 }
 
 fn check_data_like<Q>(
@@ -210,7 +216,7 @@ fn check_data_like<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
+    let Some(SignatureLike { origin, kind_variables, type_variables, result_kind }) =
         check_signature_like(state, context, signature, variables, |_| context.prim.t)?
     else {
         return Ok(());
@@ -236,15 +242,14 @@ where
         state.storage.intern(Type::Function(variable.kind, result))
     });
 
-    if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
-        let _ = unification::unify(state, context, *pending_kind, type_kind)?;
-    } else {
-        let type_kind = kind_variables.iter().rfold(type_kind, |inner, binder| {
-            let binder = binder.clone();
-            state.storage.intern(Type::Forall(binder, inner))
-        });
-        state.binding_group.types.insert(item_id, type_kind);
-    };
+    match origin {
+        SignatureOrigin::Syntax => {
+            insert_checked_kind(state, item_id, &kind_variables, type_kind);
+        }
+        SignatureOrigin::Inferred => {
+            unify_inferred_kind(state, context, item_id, type_kind)?;
+        }
+    }
 
     check_data_constructors(
         state,
@@ -266,15 +271,18 @@ where
     Ok(())
 }
 
-fn check_synonym<Q: ExternalQueries>(
+fn check_synonym<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
     synonym: lowering::TypeId,
-) -> QueryResult<()> {
-    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(SignatureLike { origin, kind_variables, type_variables, result_kind }) =
         check_signature_like(state, context, signature, variables, |state| {
             state.fresh_unification_type(context)
         })?
@@ -288,15 +296,14 @@ fn check_synonym<Q: ExternalQueries>(
         state.storage.intern(Type::Function(binder.kind, result))
     });
 
-    if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
-        let _ = unification::unify(state, context, *pending_kind, type_kind)?;
-    } else {
-        let type_kind = kind_variables.iter().rfold(type_kind, |inner, binder| {
-            let binder = binder.clone();
-            state.storage.intern(Type::Forall(binder, inner))
-        });
-        state.binding_group.types.insert(item_id, type_kind);
-    };
+    match origin {
+        SignatureOrigin::Syntax => {
+            insert_checked_kind(state, item_id, &kind_variables, type_kind);
+        }
+        SignatureOrigin::Inferred => {
+            unify_inferred_kind(state, context, item_id, type_kind)?;
+        }
+    }
 
     if let Some(variable) = type_variables.first() {
         state.unbind(variable.level);
@@ -311,14 +318,17 @@ fn check_synonym<Q: ExternalQueries>(
     Ok(())
 }
 
-fn check_class<Q: ExternalQueries>(
+fn check_class<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     ClassIr { constraints, variables }: &ClassIr,
-) -> QueryResult<()> {
-    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(SignatureLike { origin, kind_variables, type_variables, result_kind }) =
         check_signature_like(state, context, signature, variables, |_| context.prim.constraint)?
     else {
         return Ok(());
@@ -352,15 +362,14 @@ fn check_class<Q: ExternalQueries>(
         state.storage.intern(Type::Function(variable.kind, result))
     });
 
-    if let Some(pending_kind) = state.binding_group.types.get(&item_id) {
-        let _ = unification::unify(state, context, *pending_kind, class_kind)?;
-    } else {
-        let class_kind = kind_variables.iter().rfold(class_kind, |inner, binder| {
-            let binder = binder.clone();
-            state.storage.intern(Type::Forall(binder, inner))
-        });
-        state.binding_group.types.insert(item_id, class_kind);
-    };
+    match origin {
+        SignatureOrigin::Syntax => {
+            insert_checked_kind(state, item_id, &kind_variables, class_kind);
+        }
+        SignatureOrigin::Inferred => {
+            unify_inferred_kind(state, context, item_id, class_kind)?;
+        }
+    }
 
     check_class_members(
         state,
@@ -460,6 +469,44 @@ fn is_binary_operator_type(state: &CheckState, mut id: TypeId) -> bool {
     };
 
     !matches!(state.storage[result_id], Type::Function(_, _))
+}
+
+fn insert_checked_kind(
+    state: &mut CheckState,
+    item_id: TypeItemId,
+    kind_variables: &[ForallBinder],
+    item_kind: TypeId,
+) {
+    debug_assert!(
+        state.binding_group.lookup_type(item_id).is_none(),
+        "invariant violated: binding_group entry exists for checked type item"
+    );
+
+    let item_kind = kind_variables.iter().rfold(item_kind, |inner, binder| {
+        let binder = binder.clone();
+        state.storage.intern(Type::Forall(binder, inner))
+    });
+
+    state.binding_group.types.insert(item_id, item_kind);
+}
+
+fn unify_inferred_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    item_kind: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let pending_kind = state
+        .binding_group
+        .lookup_type(item_id)
+        .expect("invariant violated: invalid binding_group in kind inference");
+
+    let _ = unification::unify(state, context, pending_kind, item_kind)?;
+
+    Ok(())
 }
 
 fn insert_type_synonym(

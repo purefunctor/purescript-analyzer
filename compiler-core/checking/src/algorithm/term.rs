@@ -20,18 +20,13 @@ pub(crate) fn infer_value_group<Q>(
 where
     Q: ExternalQueries,
 {
+    let item_type = state
+        .binding_group
+        .lookup_term(item_id)
+        .expect("invariant violated: invalid binding_group in type inference");
+
     let minimum_equation_arity =
         equations.iter().map(|equation| equation.binders.len()).min().unwrap_or(0);
-
-    // For `Scc::Recursive` and `Scc::Mutual`, this is likely to be a
-    // unification variable already, we create one for `Scc::Base` as
-    // an anchor type to be unified against on each equation.
-    let pending_type = state.binding_group.lookup_term(item_id);
-    let group_type = pending_type.unwrap_or_else(|| state.fresh_unification_type(context));
-
-    if pending_type.is_none() {
-        state.binding_group.terms.insert(item_id, group_type);
-    }
 
     for equation in equations {
         let binder_count = equation.binders.len();
@@ -63,7 +58,7 @@ where
         let expected_type = state.make_function(argument_types, result_type);
 
         check_guarded_expression(state, context, &equation.guarded, result_type)?;
-        let _ = unification::unify(state, context, group_type, expected_type)?;
+        let _ = unification::unify(state, context, item_type, expected_type)?;
     }
 
     Ok(())
@@ -79,7 +74,15 @@ pub(crate) fn check_value_group<Q>(
 where
     Q: ExternalQueries,
 {
+    debug_assert!(
+        state.binding_group.lookup_term(item_id).is_none(),
+        "invariant violated: check_value_group in binding_group"
+    );
+
     let minimum_equation_arity = signature.arguments.len();
+
+    let item_type = signature.restore(state);
+    state.binding_group.terms.insert(item_id, item_type);
 
     for equation in equations {
         let binder_count = equation.binders.len();
@@ -95,20 +98,12 @@ where
                 .for_each(drop);
         }
 
-        check_guarded_expression(state, context, &equation.guarded, signature.result)?
+        check_guarded_expression(state, context, &equation.guarded, signature.result)?;
     }
-
-    debug_assert!(
-        state.binding_group.lookup_term(item_id).is_none(),
-        "invariant violated: signatured value group appears in binding_group"
-    );
 
     if let Some(variable) = signature.variables.first() {
         state.unbind(variable.level);
     }
-
-    let signature = signature.restore(state);
-    state.binding_group.terms.insert(item_id, signature);
 
     Ok(())
 }
@@ -435,9 +430,8 @@ where
             let (argument_type, _) = kind::check_surface_kind(state, context, argument, kind)?;
             Ok(substitute::substitute_bound(state, argument_type, inner))
         }
-        _ => {
-            return Ok(context.prim.unknown);
-        }
+
+        _ => Ok(context.prim.unknown),
     }
 }
 

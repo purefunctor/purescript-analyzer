@@ -8,7 +8,7 @@ Types
 Tuple :: Type -> Type -> Type
 AliasType :: Type
 AliasTypeType :: Type -> Type
-InferApply :: forall (t2 :: Type) (t7 :: Type). (t7 -> t2) -> t7 -> t2
+InferApply :: forall (t5 :: Type) (t10 :: Type). (t10 -> t5) -> t10 -> t5
 InferTuple :: Type -> Type -> Type
 CheckApply :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
 CheckApplyElab :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
@@ -24,7 +24,7 @@ AliasTypeType = Array
   Kind = :0
   Type = :0
 
-InferApply = forall (t2 :: Type) (t7 :: Type) (f :: t7 -> t2) (a :: t7). f a
+InferApply = forall (t5 :: Type) (t10 :: Type) (f :: t10 -> t5) (a :: t10). f a
   Quantified = :2
   Kind = :0
   Type = :2
