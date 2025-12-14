@@ -560,16 +560,15 @@ where
             continue;
         };
 
-        let arguments = arguments
-            .iter()
-            .map(|&argument| {
-                state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
-                    let (inferred_type, _) =
-                        kind::check_surface_kind(state, context, argument, context.prim.t)?;
-                    Ok(inferred_type)
-                })
+        let arguments = arguments.iter().map(|&argument| {
+            state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, argument, context.prim.t)?;
+                Ok(inferred_type)
             })
-            .collect::<QueryResult<Vec<_>>>()?;
+        });
+
+        let arguments = arguments.collect::<QueryResult<Vec<_>>>()?;
 
         let constructor_type = arguments.into_iter().rfold(data_reference, |result, argument| {
             state.storage.intern(Type::Function(argument, result))
