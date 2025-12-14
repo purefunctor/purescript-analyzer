@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-f :: forall (t5 :: Type) (t6 :: Type). t6 -> t5
-g :: forall (t5 :: Type) (t6 :: Type). t6 -> t5
+f :: forall (t3 :: Type) (t6 :: Type). t6 -> t3
+g :: forall (t3 :: Type) (t6 :: Type). t6 -> t3
 
 Types

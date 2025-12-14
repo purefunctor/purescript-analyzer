@@ -3,6 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-loop :: forall (t1 :: Type) (t2 :: Type). t1 -> t2
+apply :: forall (t3 :: Type). t3 -> t3
+apply' :: forall (b :: Type). b -> b
 
 Types

@@ -439,3 +439,25 @@ fn test_040_pattern_guard_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_041_where_expression_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/041_where_expression"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_042_where_polymorphic_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/042_where_polymorphic"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
