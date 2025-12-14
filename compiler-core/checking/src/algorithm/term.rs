@@ -173,14 +173,14 @@ where
         lowering::BinderKind::Constructor { resolution, arguments } => {
             let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
 
-            let mut function_t = lookup_file_term(state, context, *file_id, *term_id)?;
+            let mut constructor_t = lookup_file_term(state, context, *file_id, *term_id)?;
 
             for &argument in arguments.iter() {
-                function_t =
-                    check_constructor_binder_application(state, context, function_t, argument)?;
+                constructor_t =
+                    check_constructor_binder_application(state, context, constructor_t, argument)?;
             }
 
-            let _ = unification::subsumes(state, context, function_t, type_id)?;
+            let _ = unification::subsumes(state, context, constructor_t, type_id)?;
 
             Ok(type_id)
         }
@@ -304,13 +304,13 @@ fn check_expression<Q>(
     context: &CheckContext<Q>,
     expr_id: lowering::ExpressionId,
     expected: TypeId,
-) -> QueryResult<()>
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
     let inferred = infer_expression(state, context, expr_id)?;
     let _ = unification::subsumes(state, context, inferred, expected)?;
-    Ok(())
+    Ok(inferred)
 }
 
 fn infer_expression<Q>(
@@ -529,19 +529,21 @@ where
     }
 }
 
-fn check_function_term_application<Q>(
+fn check_function_application_core<Q, A, F>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function_t: TypeId,
-    argument: lowering::ExpressionId,
+    argument_id: A,
+    check_argument: F,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
+    F: Fn(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {
         Type::Function(argument_type, result_type) => {
-            check_expression(state, context, argument, argument_type)?;
+            check_argument(state, context, argument_id, argument_type)?;
             Ok(result_type)
         }
 
@@ -551,7 +553,7 @@ where
             let function_u = state.storage.intern(Type::Function(argument_u, result_u));
 
             state.unification.solve(unification_id, function_u);
-            check_expression(state, context, argument, argument_u)?;
+            check_argument(state, context, argument_id, argument_u)?;
 
             Ok(result_u)
         }
@@ -559,48 +561,34 @@ where
         Type::Forall(ForallBinder { kind, .. }, function_t) => {
             let unification = state.fresh_unification_kinded(kind);
             let function_t = substitute::substitute_bound(state, unification, function_t);
-            check_function_term_application(state, context, function_t, argument)
+            check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
         _ => Ok(context.prim.unknown),
     }
 }
 
-fn check_constructor_binder_application<Q>(
+fn check_function_term_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function_t: TypeId,
-    argument: lowering::BinderId,
+    expression_id: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let function_t = state.normalize_type(function_t);
-    match state.storage[function_t] {
-        Type::Function(argument_type, result_type) => {
-            check_binder(state, context, argument, argument_type)?;
-            Ok(result_type)
-        }
-
-        Type::Unification(unification_id) => {
-            let argument_u = state.fresh_unification_type(context);
-            let result_u = state.fresh_unification_type(context);
-            let function_u = state.storage.intern(Type::Function(argument_u, result_u));
-
-            state.unification.solve(unification_id, function_u);
-            check_binder(state, context, argument, argument_u)?;
-
-            Ok(result_u)
-        }
-
-        Type::Forall(ForallBinder { kind, .. }, function_t) => {
-            let unification = state.fresh_unification_kinded(kind);
-            let function_t = substitute::substitute_bound(state, unification, function_t);
-            check_constructor_binder_application(state, context, function_t, argument)
-        }
-
-        _ => Ok(context.prim.unknown),
-    }
+    check_function_application_core(state, context, function_t, expression_id, check_expression)
+}
+fn check_constructor_binder_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constructor_t: TypeId,
+    binder_id: lowering::BinderId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    check_function_application_core(state, context, constructor_t, binder_id, check_binder)
 }
 
 fn check_let_binding<Q>(
