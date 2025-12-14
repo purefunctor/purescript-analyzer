@@ -5,7 +5,7 @@ use checking::core::pretty;
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem};
 use lowering::{
-    ExpressionKind, GraphNode, ImplicitTypeVariable, LetBound, TermVariableResolution, TypeKind,
+    ExpressionKind, GraphNode, ImplicitTypeVariable, TermVariableResolution, TypeKind,
     TypeVariableResolution,
 };
 use rowan::ast::AstNode;
@@ -135,14 +135,15 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                     let position = locate::offset_to_position(&content, range.start());
                     writeln!(buffer, "  resolves to binder {position:?}").unwrap();
                 }
-                TermVariableResolution::Let(LetBound { signature, equations }) => {
-                    if let Some(signature) = signature {
-                        let cst = stabilized.ast_ptr(*signature).unwrap();
+                TermVariableResolution::Let(let_binding_id) => {
+                    let let_binding = info.get_let_binding_group(*let_binding_id);
+                    if let Some(signature) = let_binding.signature {
+                        let cst = stabilized.ast_ptr(signature).unwrap();
                         let range = cst.syntax_node_ptr().text_range();
                         let position = locate::offset_to_position(&content, range.start());
                         writeln!(buffer, "  resolves to signature {position:?}").unwrap();
                     }
-                    for equation in equations.iter() {
+                    for equation in let_binding.equations.iter() {
                         let cst = stabilized.ast_ptr(*equation).unwrap();
                         let range = cst.syntax_node_ptr().text_range();
                         let position = locate::offset_to_position(&content, range.start());

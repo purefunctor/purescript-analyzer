@@ -9,7 +9,10 @@ use std::sync::Arc;
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
-use lowering::{GraphNodeId, ImplicitBindingId, LoweredModule, TypeVariableBindingId};
+use lowering::{
+    BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
+    TypeVariableBindingId,
+};
 use rustc_hash::FxHashMap;
 
 use crate::algorithm::{quantify, transfer};
@@ -30,6 +33,9 @@ pub struct CheckState {
     pub check_steps: Vec<ErrorStep>,
 
     pub defer_synonym_expansion: bool,
+
+    pub env_binder: FxHashMap<BinderId, TypeId>,
+    pub env_let: FxHashMap<LetBindingNameGroupId, TypeId>,
 }
 
 #[derive(Default)]
@@ -194,6 +200,22 @@ impl CheckState {
     pub fn unbind(&mut self, level: debruijn::Level) {
         self.bound.unbind(level);
         self.kinds.unbind(level);
+    }
+
+    pub fn bind_binder(&mut self, id: BinderId, type_id: TypeId) {
+        self.env_binder.insert(id, type_id);
+    }
+
+    pub fn lookup_binder(&self, id: BinderId) -> Option<TypeId> {
+        self.env_binder.get(&id).copied()
+    }
+
+    pub fn bind_let(&mut self, id: LetBindingNameGroupId, type_id: TypeId) {
+        self.env_let.insert(id, type_id);
+    }
+
+    pub fn lookup_let(&self, id: LetBindingNameGroupId) -> Option<TypeId> {
+        self.env_let.get(&id).copied()
     }
 
     pub fn term_binding_group<Q>(

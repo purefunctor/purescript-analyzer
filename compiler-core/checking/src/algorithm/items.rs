@@ -12,7 +12,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, substitute, unification};
+use crate::algorithm::{inspect, kind, substitute, transfer, unification};
 use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -636,7 +636,10 @@ where
 
         lowering::BinderKind::Constructor { .. } => Ok(unknown),
 
-        lowering::BinderKind::Variable { .. } => Ok(unknown),
+        lowering::BinderKind::Variable { .. } => {
+            state.bind_binder(binder_id, type_id);
+            Ok(type_id)
+        }
 
         lowering::BinderKind::Named { .. } => Ok(unknown),
 
@@ -824,27 +827,118 @@ where
 }
 
 fn check_expression<Q>(
-    _state: &mut CheckState,
-    _context: &CheckContext<Q>,
-    _expr_id: lowering::ExpressionId,
-    _expected: TypeId,
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expr_id: lowering::ExpressionId,
+    expected: TypeId,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
+    let inferred = infer_expression(state, context, expr_id)?;
+    let _ = unification::unify(state, context, expected, inferred)?;
     Ok(())
 }
 
-// fn infer_expression<Q>(
-//     _state: &mut CheckState,
-//     _context: &CheckContext<Q>,
-//     _expr_id: lowering::ExpressionId,
-// ) -> QueryResult<TypeId>
-// where
-//     Q: ExternalQueries,
-// {
-//     Ok(context.prim.unknown)
-// }
+fn infer_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expr_id: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let unknown = context.prim.unknown;
+
+    let Some(kind) = context.lowered.info.get_expression_kind(expr_id) else {
+        return Ok(unknown);
+    };
+
+    match kind {
+        lowering::ExpressionKind::Variable { resolution } => {
+            let Some(resolution) = resolution else {
+                return Ok(unknown);
+            };
+
+            match resolution {
+                lowering::TermVariableResolution::Binder(binder_id) => {
+                    Ok(state.lookup_binder(*binder_id).unwrap_or(unknown))
+                }
+                lowering::TermVariableResolution::Let(let_binding_id) => {
+                    Ok(state.lookup_let(*let_binding_id).unwrap_or(unknown))
+                }
+                lowering::TermVariableResolution::Reference(file_id, term_id) => {
+                    lookup_file_term(state, context, *file_id, *term_id)
+                }
+            }
+        }
+
+        lowering::ExpressionKind::Integer => Ok(context.prim.int),
+
+        lowering::ExpressionKind::Number => Ok(context.prim.number),
+
+        lowering::ExpressionKind::String => Ok(context.prim.string),
+
+        lowering::ExpressionKind::Char => Ok(context.prim.char),
+
+        lowering::ExpressionKind::Boolean { .. } => Ok(context.prim.boolean),
+
+        lowering::ExpressionKind::Parenthesized { parenthesized } => {
+            let Some(parenthesized) = parenthesized else {
+                return Ok(unknown);
+            };
+            infer_expression(state, context, *parenthesized)
+        }
+
+        _ => Ok(unknown),
+    }
+}
+
+fn lookup_file_term<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: files::FileId,
+    term_id: indexing::TermItemId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let type_id = if file_id == context.id {
+        state.binding_group.lookup_term(term_id).or_else(|| state.checked.lookup_term(term_id))
+    } else {
+        let checked = context.queries.checked(file_id)?;
+        checked.lookup_term(term_id)
+    };
+
+    let type_id = type_id.unwrap_or(context.prim.unknown);
+
+    if file_id != context.id {
+        let type_id = transfer::localize(state, context, type_id);
+        Ok(instantiate_type(state, context, type_id))
+    } else {
+        Ok(instantiate_type(state, context, type_id))
+    }
+}
+
+fn instantiate_type<Q>(
+    state: &mut CheckState,
+    _context: &CheckContext<Q>,
+    mut type_id: TypeId,
+) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    loop {
+        let type_id_norm = state.normalize_type(type_id);
+        match state.storage[type_id_norm] {
+            Type::Forall(ForallBinder { kind, .. }, inner) => {
+                let fresh = state.fresh_unification_kinded(kind);
+                type_id = substitute::substitute_bound(state, fresh, inner);
+            }
+            _ => return type_id_norm,
+        }
+    }
+}
 
 fn build_function_type(state: &mut CheckState, arguments: &[TypeId], result: TypeId) -> TypeId {
     arguments

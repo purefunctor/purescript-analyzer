@@ -77,6 +77,10 @@ impl State {
         self.synonym_graph.add_node(id);
     }
 
+    fn alloc_let_binding(&mut self, group: LetBindingNameGroup) -> LetBindingNameGroupId {
+        self.info.let_binding.alloc(group)
+    }
+
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
         self.info.binder_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
@@ -93,6 +97,12 @@ impl State {
         self.info.type_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
         self.nodes.type_node.insert(id, node);
+    }
+
+    fn associate_let_binding_name(&mut self, id: LetBindingNameGroupId, info: LetBindingName) {
+        self.info.let_binding_name.insert(id, info);
+        let Some(node) = self.graph_scope else { return };
+        self.nodes.let_node.insert(id, node);
     }
 
     fn insert_binder(&mut self, name: &str, id: BinderId) {
@@ -181,7 +191,7 @@ impl State {
                 Some(TermVariableResolution::Binder(r))
             }
             GraphNode::Let { bindings, .. } => {
-                let r = bindings.get(name)?.clone();
+                let r = *bindings.get(name)?;
                 Some(TermVariableResolution::Let(r))
             }
             _ => None,

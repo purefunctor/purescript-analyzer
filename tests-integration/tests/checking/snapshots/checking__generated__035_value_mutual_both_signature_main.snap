@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+f :: forall (a :: Type). a -> a
+g :: forall (a :: Type). a -> a
+
+Types

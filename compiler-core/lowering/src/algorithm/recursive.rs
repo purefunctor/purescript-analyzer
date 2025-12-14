@@ -546,6 +546,12 @@ fn lower_pattern_bindings(
     }))
 }
 
+struct PendingLetBinding {
+    name: Option<SmolStr>,
+    signature: Option<LetBindingSignatureId>,
+    equations: Arc<[LetBindingEquationId]>,
+}
+
 fn lower_equation_bindings(
     state: &mut State,
     context: &Context,
@@ -566,7 +572,8 @@ fn lower_equation_bindings(
         }),
     });
 
-    let mut in_scope = FxHashMap::default();
+    let mut pending = vec![];
+
     for (name, mut children) in children.into_iter() {
         let mut signature = None;
         let mut equations = vec![];
@@ -579,59 +586,77 @@ fn lower_equation_bindings(
                     );
                 }
                 cst::LetBinding::LetBindingSignature(cst) => {
-                    let id = context.stabilized.lookup_cst(&cst).expect_id();
-                    signature = Some(id);
+                    let ast_id = context.stabilized.lookup_cst(&cst).expect_id();
+                    signature = Some(ast_id);
                 }
                 cst::LetBinding::LetBindingEquation(cst) => {
-                    let id = context.stabilized.lookup_cst(&cst).expect_id();
-                    equations.push(id);
+                    let ast_id = context.stabilized.lookup_cst(&cst).expect_id();
+                    equations.push(ast_id);
                 }
             }
         }
 
         children.for_each(|cst| {
             if let cst::LetBinding::LetBindingEquation(cst) = cst {
-                let id = context.stabilized.lookup_cst(&cst).expect_id();
-                equations.push(id);
+                let ast_id = context.stabilized.lookup_cst(&cst).expect_id();
+                equations.push(ast_id);
             }
         });
 
         let equations = equations.into();
-        let resolution = LetBound { signature, equations };
-
-        if let Some(name) = name {
-            in_scope.insert(name, resolution);
-        }
+        pending.push(PendingLetBinding { name, signature, equations });
     }
 
-    let parent = state.graph_scope;
-    let to_traverse = in_scope.values().cloned().collect_vec();
+    let mut let_bound = FxHashMap::default();
+    let mut groups = vec![];
 
-    let id = state.graph.inner.alloc(GraphNode::Let { parent, bindings: in_scope });
-    state.graph_scope = Some(id);
+    for PendingLetBinding { name, signature, equations } in pending {
+        let group = LetBindingNameGroup { signature, equations };
 
-    bindings.extend(to_traverse.into_iter().map(|resolution| {
+        let id = state.alloc_let_binding(group);
+
+        if let Some(ref name) = name {
+            let_bound.insert(name.clone(), id);
+        }
+
+        groups.push(id);
+    }
+
+    let graph_node =
+        state.graph.inner.alloc(GraphNode::Let { parent: state.graph_scope, bindings: let_bound });
+
+    state.graph_scope = Some(graph_node);
+
+    bindings.extend(groups.into_iter().map(|id| {
+        let let_binding = &state.info.let_binding[id];
+
+        let signature = let_binding.signature;
+        let equations = Arc::clone(&let_binding.equations);
+
         state.with_scope(|state| {
-            let signature = resolution.signature.and_then(|id| {
+            let signature = signature.and_then(|id| {
                 let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
                 let cst = cst.type_()?;
                 Some(lower_forall(state, context, &cst))
             });
-            let equations = resolution
-                .equations
-                .iter()
-                .filter_map(|&id| {
-                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
-                    Some(lower_equation_like(
-                        state,
-                        context,
-                        cst,
-                        cst::LetBindingEquation::function_binders,
-                        cst::LetBindingEquation::guarded_expression,
-                    ))
-                })
-                .collect();
-            LetBinding::Name { signature, equations }
+
+            let equations = equations.iter().filter_map(|&id| {
+                let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
+                Some(lower_equation_like(
+                    state,
+                    context,
+                    cst,
+                    cst::LetBindingEquation::function_binders,
+                    cst::LetBindingEquation::guarded_expression,
+                ))
+            });
+
+            let equations = equations.collect();
+
+            let info = LetBindingName { signature, equations };
+            state.associate_let_binding_name(id, info);
+
+            LetBinding::Name { id }
         })
     }));
 }

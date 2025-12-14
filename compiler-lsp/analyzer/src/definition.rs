@@ -210,8 +210,10 @@ fn definition_expression(
                         .ok_or(AnalyzerError::NonFatal)?;
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
                 }
-                TermVariableResolution::Let(binding) => {
+                TermVariableResolution::Let(binding_id) => {
                     let root = parsed.syntax_node();
+
+                    let binding = lowered.info.get_let_binding_group(*binding_id);
 
                     let signature = binding
                         .signature

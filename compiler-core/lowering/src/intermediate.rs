@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
+use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
@@ -207,9 +208,31 @@ pub struct WhereExpression {
     pub bindings: Arc<[LetBinding]>,
 }
 
+/// Group of IDs for a let-bound name
+///
+/// This mirrors the [`indexing::TermItemKind::Value`] pattern for top-level
+/// value declarations, where the declaration group is assigned a stable ID.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LetBindingNameGroup {
+    pub signature: Option<LetBindingSignatureId>,
+    pub equations: Arc<[LetBindingEquationId]>,
+}
+
+pub type LetBindingNameGroupId = Idx<LetBindingNameGroup>;
+
+/// Core representation of the let-bound name
+///
+/// This is stored in [`LoweringInfo`] and can be obtained from the stable
+/// ID for any given let-bound name group [`LetBindingNameGroupId`].
+#[derive(Debug, PartialEq, Eq)]
+pub struct LetBindingName {
+    pub signature: Option<TypeId>,
+    pub equations: Arc<[Equation]>,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum LetBinding {
-    Name { signature: Option<TypeId>, equations: Arc<[Equation]> },
+    Name { id: LetBindingNameGroupId },
     Pattern { binder: Option<BinderId>, where_expression: Option<WhereExpression> },
 }
 
@@ -374,6 +397,10 @@ pub struct LoweringInfo {
     pub(crate) type_kind: FxHashMap<TypeId, TypeKind>,
     pub(crate) term_item: FxHashMap<TermItemId, TermItemIr>,
     pub(crate) type_item: FxHashMap<TypeItemId, TypeItemIr>,
+
+    pub(crate) let_binding: Arena<LetBindingNameGroup>,
+    pub(crate) let_binding_name: ArenaMap<LetBindingNameGroupId, LetBindingName>,
+
     pub(crate) term_operator: FxHashMap<TermOperatorId, (FileId, TermItemId)>,
     pub(crate) type_operator: FxHashMap<TypeOperatorId, (FileId, TypeItemId)>,
 }
@@ -417,6 +444,14 @@ impl LoweringInfo {
 
     pub fn get_type_item(&self, id: TypeItemId) -> Option<&TypeItemIr> {
         self.type_item.get(&id)
+    }
+
+    pub fn get_let_binding_group(&self, id: LetBindingNameGroupId) -> &LetBindingNameGroup {
+        &self.let_binding[id]
+    }
+
+    pub fn get_let_binding(&self, id: LetBindingNameGroupId) -> Option<&LetBindingName> {
+        self.let_binding_name.get(id)
     }
 
     pub fn get_term_operator(&self, id: TermOperatorId) -> Option<(FileId, TermItemId)> {

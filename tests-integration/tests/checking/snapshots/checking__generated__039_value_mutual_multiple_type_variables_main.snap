@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+loop :: forall (t3 :: Type). t3 -> ???
+chooseFirst :: forall (a :: Type) (b :: Type). a -> b -> a
+
+Types
