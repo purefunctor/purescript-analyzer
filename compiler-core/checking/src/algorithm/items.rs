@@ -636,15 +636,9 @@ fn check_value_group_item<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature.map(|id| {
+    if let Some(id) = signature {
         let signature = inspect::inspect_signature(state, context, id)?;
-        Ok((id, signature))
-    });
-
-    let signature = signature.transpose()?;
-
-    if let Some(signature) = signature {
-        term::check_value_group(state, context, item_id, signature, equations)
+        term::check_value_group(state, context, item_id, (id, signature), equations)
     } else {
         term::infer_value_group(state, context, item_id, equations)
     }

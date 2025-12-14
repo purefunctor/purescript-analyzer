@@ -1,6 +1,6 @@
 //! Implements the type checker.
 
-use std::iter;
+use std::iter::{self, zip};
 
 use building_types::QueryResult;
 use indexing::TermItemId;
@@ -25,6 +25,18 @@ where
         .lookup_term(item_id)
         .expect("invariant violated: invalid binding_group in type inference");
 
+    infer_equations(state, context, item_type, equations)
+}
+
+fn infer_equations<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_type: TypeId,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     let minimum_equation_arity =
         equations.iter().map(|equation| equation.binders.len()).min().unwrap_or(0);
 
@@ -79,10 +91,24 @@ where
         "invariant violated: check_value_group in binding_group"
     );
 
-    let minimum_equation_arity = signature.arguments.len();
-
     let item_type = signature.restore(state);
     state.binding_group.terms.insert(item_id, item_type);
+
+    check_equations(state, context, signature, equations)?;
+
+    Ok(())
+}
+
+fn check_equations<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    signature: inspect::InspectSignature,
+    equations: &[lowering::Equation],
+) -> Result<(), building_types::QueryError>
+where
+    Q: ExternalQueries,
+{
+    let minimum_equation_arity = signature.arguments.len();
 
     for equation in equations {
         let binder_count = equation.binders.len();
@@ -253,7 +279,15 @@ where
     };
 
     match kind {
-        lowering::ExpressionKind::Typed { .. } => Ok(unknown),
+        lowering::ExpressionKind::Typed { expression, type_ } => {
+            let Some(e) = expression else { return Ok(unknown) };
+            let Some(t) = type_ else { return Ok(unknown) };
+
+            let (t, _) = kind::infer_surface_kind(state, context, *t)?;
+            check_expression(state, context, *e, t)?;
+
+            Ok(t)
+        }
 
         lowering::ExpressionKind::OperatorChain { .. } => Ok(unknown),
 
@@ -291,7 +325,15 @@ where
             Ok(result_type)
         }
 
-        lowering::ExpressionKind::LetIn { .. } => Ok(unknown),
+        lowering::ExpressionKind::LetIn { bindings, expression } => {
+            for binding in bindings.iter() {
+                check_let_binding(state, context, binding)?;
+            }
+
+            let Some(expression) = expression else { return Ok(unknown) };
+
+            infer_expression(state, context, *expression)
+        }
 
         lowering::ExpressionKind::Lambda { binders, expression } => {
             let mut argument_types = vec![];
@@ -335,7 +377,10 @@ where
             None => Ok(unknown),
         },
 
-        lowering::ExpressionKind::OperatorName { .. } => Ok(unknown),
+        lowering::ExpressionKind::OperatorName { resolution } => {
+            let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
+            lookup_file_term(state, context, *file_id, *term_id)
+        }
 
         lowering::ExpressionKind::Section => Ok(unknown),
 
@@ -470,4 +515,45 @@ where
 
         _ => Ok(context.prim.unknown),
     }
+}
+
+fn check_let_binding<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binding: &lowering::LetBinding,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    match binding {
+        lowering::LetBinding::Name { id } => {
+            let Some(name) = context.lowered.info.get_let_binding(*id) else {
+                return Ok(());
+            };
+            if let Some(signature) = name.signature {
+                let signature = inspect::inspect_signature(state, context, signature)?;
+                let name_type = signature.restore(state);
+                state.env_let.insert(*id, name_type);
+                check_equations(state, context, signature, &name.equations)?;
+            } else {
+                let name_type = state.fresh_unification_type(context);
+                state.env_let.insert(*id, name_type);
+                infer_equations(state, context, name_type, &name.equations)?;
+            }
+        }
+        lowering::LetBinding::Pattern { binder, where_expression } => {
+            let Some(binder) = binder else {
+                return Ok(());
+            };
+
+            let where_expression = where_expression.as_ref();
+            let expected_type = state.fresh_unification_type(context);
+            check_where_expression(state, context, where_expression, expected_type)?;
+
+            let binder_type = state.fresh_unification_type(context);
+            let _ = check_binder(state, context, *binder, binder_type)?;
+        }
+    }
+
+    Ok(())
 }
