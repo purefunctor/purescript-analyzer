@@ -4,6 +4,7 @@ pub mod kind;
 pub mod quantify;
 pub mod state;
 pub mod substitute;
+pub mod term;
 pub mod transfer;
 pub mod unification;
 
