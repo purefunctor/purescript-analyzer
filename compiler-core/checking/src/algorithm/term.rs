@@ -607,11 +607,11 @@ where
             if let Some(signature) = name.signature {
                 let signature = inspect::inspect_signature(state, context, signature)?;
                 let name_type = signature.restore(state);
-                state.env_let.insert(*id, name_type);
+                state.bind_let(*id, name_type);
                 check_equations(state, context, signature, &name.equations)?;
             } else {
                 let name_type = state.fresh_unification_type(context);
-                state.env_let.insert(*id, name_type);
+                state.bind_let(*id, name_type);
                 infer_equations(state, context, name_type, &name.equations)?;
             }
         }
