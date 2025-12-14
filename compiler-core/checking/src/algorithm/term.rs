@@ -177,9 +177,16 @@ where
             Ok(type_id)
         }
 
-        lowering::BinderKind::Named { .. } => Ok(unknown),
+        lowering::BinderKind::Named { binder, .. } => {
+            let Some(binder) = binder else { return Ok(unknown) };
 
-        lowering::BinderKind::Wildcard => Ok(unknown),
+            let type_id = check_binder(state, context, *binder, type_id)?;
+            state.bind_binder(binder_id, type_id);
+
+            Ok(type_id)
+        }
+
+        lowering::BinderKind::Wildcard => Ok(type_id),
 
         lowering::BinderKind::String => {
             let _ = unification::unify(state, context, context.prim.string, type_id)?;
