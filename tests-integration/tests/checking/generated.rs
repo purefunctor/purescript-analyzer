@@ -483,3 +483,47 @@ fn test_044_binder_constructor_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_045_do_discard_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/045_do_discard"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_046_do_bind_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/046_do_bind"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_047_do_non_monadic_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/047_do_non_monadic"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_048_do_non_monadic_discard_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/048_do_non_monadic_discard"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

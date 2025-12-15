@@ -404,7 +404,25 @@ where
 
         lowering::ExpressionKind::CaseOf { .. } => Ok(unknown),
 
-        lowering::ExpressionKind::Do { .. } => Ok(unknown),
+        lowering::ExpressionKind::Do { bind, discard, statements } => {
+            let Some(bind) = bind else { return Ok(unknown) };
+            let Some(discard) = discard else { return Ok(unknown) };
+
+            let bind_type = lookup_term_variable(state, context, *bind)?;
+            let discard_type = lookup_term_variable(state, context, *discard)?;
+
+            let mut inferred_type = unknown;
+
+            for statement in statements.iter() {
+                if let Some(t) =
+                    infer_do_statement(state, context, bind_type, discard_type, statement)?
+                {
+                    inferred_type = t;
+                }
+            }
+
+            Ok(inferred_type)
+        }
 
         lowering::ExpressionKind::Ado { .. } => Ok(unknown),
 
@@ -457,6 +475,112 @@ where
         lowering::ExpressionKind::RecordAccess { .. } => Ok(unknown),
 
         lowering::ExpressionKind::RecordUpdate { .. } => Ok(unknown),
+    }
+}
+
+fn lookup_term_variable<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: lowering::TermVariableResolution,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    match resolution {
+        lowering::TermVariableResolution::Binder(binder_id) => {
+            Ok(state.lookup_binder(binder_id).unwrap_or(context.prim.unknown))
+        }
+        lowering::TermVariableResolution::Let(let_binding_id) => {
+            Ok(state.lookup_let(let_binding_id).unwrap_or(context.prim.unknown))
+        }
+        lowering::TermVariableResolution::Reference(file_id, term_id) => {
+            lookup_file_term(state, context, file_id, term_id)
+        }
+    }
+}
+
+fn infer_do_statement<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bind_type: TypeId,
+    discard_type: TypeId,
+    statement: &lowering::DoStatement,
+) -> QueryResult<Option<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    match statement {
+        lowering::DoStatement::Bind { binder, expression } => {
+            let Some(expression) = expression else { return Ok(None) };
+            let inferred_type = infer_expression(state, context, *expression)?;
+
+            // Apply `bind_type` to get the `remaining_type`
+            //
+            // bind_type      := a -> (a -> m b) -> m b
+            // remaining_type := (a -> m b) -> m b
+            let remaining_type = check_function_application_core(
+                state,
+                context,
+                bind_type,
+                inferred_type,
+                |state, context, inferred_type, expected_type| {
+                    let _ = unification::subsumes(state, context, inferred_type, expected_type)?;
+                    Ok(inferred_type)
+                },
+            )?;
+
+            // Apply the remaining_type to () to get the continuation_type;
+            // apply the continuation_type to () get the binder_type; 
+            // finally, check the binder_id against the binder_type.
+            //
+            // continuation_type := (a -> m b)
+            // binder_type       := a
+            let _ = check_function_application_core(
+                state,
+                context,
+                remaining_type,
+                (),
+                |state, context, _, continuation_type| {
+                    check_function_application_core(
+                        state,
+                        context,
+                        continuation_type,
+                        (),
+                        |state, context, _, binder_type| {
+                            if let Some(binder_id) = binder {
+                                let _ = check_binder(state, context, *binder_id, binder_type)?;
+                            }
+                            Ok(context.prim.unknown)
+                        },
+                    )
+                },
+            )?;
+
+            Ok(None)
+        }
+        lowering::DoStatement::Let { statements } => {
+            for statement in statements.iter() {
+                check_let_binding(state, context, statement)?;
+            }
+            Ok(None)
+        }
+        lowering::DoStatement::Discard { expression } => {
+            let Some(expression) = expression else { return Ok(None) };
+            let inferred_type = infer_expression(state, context, *expression)?;
+
+            let _ = check_function_application_core(
+                state,
+                context,
+                discard_type,
+                inferred_type,
+                |state, context, inferred_type, expected_type| {
+                    let _ = unification::subsumes(state, context, inferred_type, expected_type)?;
+                    Ok(expected_type)
+                },
+            )?;
+
+            Ok(Some(inferred_type))
+        }
     }
 }
 
@@ -538,7 +662,7 @@ fn check_function_application_core<Q, A, F>(
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
-    F: Fn(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
+    F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {

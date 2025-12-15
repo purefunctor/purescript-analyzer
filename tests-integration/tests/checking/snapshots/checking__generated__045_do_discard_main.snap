@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Unit :: Unit
+pure :: forall (a :: Type). a -> Effect a
+bind :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+discard :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+unit :: Unit
+test :: Effect Unit
+test' :: Effect Unit
+
+Types
+Effect :: Type -> Type
+Unit :: Type

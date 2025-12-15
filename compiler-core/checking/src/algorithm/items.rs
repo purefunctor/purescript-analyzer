@@ -613,7 +613,15 @@ where
 
             TermItemIr::Derive { .. } => Ok(()),
 
-            TermItemIr::Foreign { .. } => Ok(()),
+            TermItemIr::Foreign { signature } => {
+                let Some(signature_id) = signature else {
+                    return Ok(());
+                };
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
+                state.binding_group.terms.insert(item_id, inferred_type);
+                Ok(())
+            }
 
             TermItemIr::Instance { .. } => Ok(()),
 
