@@ -162,7 +162,7 @@ where
                     //   [Argument <: Variable, Type <: Type]
                     let kind = if let Some(kind_id) = variable.kind {
                         let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
-                        let valid = unification::subsumes(state, context, argument, kind)?;
+                        let valid = unification::subtype(state, context, argument, kind)?;
                         if valid { kind } else { context.prim.unknown }
                     } else {
                         argument

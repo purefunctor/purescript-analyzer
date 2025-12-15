@@ -292,49 +292,49 @@ fn make_forall_a_to_a(context: &CheckContext<QueryEngine>, state: &mut CheckStat
 }
 
 #[test]
-fn test_subsumes_forall_left_pass() {
+fn test_subtype_poly_of_mono_pass() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // Given ∀a. (a -> a)
     let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    // ∀a. (a -> a) should subsume (Int -> Int)
+    // ∀a. (a -> a) <: (Int -> Int) should pass (LHS forall gets instantiated)
     let int_to_int = state.function(context.prim.int, context.prim.int);
-    let result = unification::subsumes(state, context, forall_a_to_a, int_to_int).unwrap();
-    assert!(result, "∀a. (a -> a) should subsume (Int -> Int)");
+    let result = unification::subtype(state, context, forall_a_to_a, int_to_int).unwrap();
+    assert!(result, "∀a. (a -> a) <: (Int -> Int) should pass");
 }
 
 #[test]
-fn test_subsumes_forall_left_fail() {
+fn test_subtype_poly_of_mono_fail() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // Given ∀a. (a -> a)
     let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    // ∀a. (a -> a) should NOT subsume (Int -> String)
+    // ∀a. (a -> a) <: (Int -> String) should fail
     let int_to_string = state.function(context.prim.int, context.prim.string);
-    let result = unification::subsumes(state, context, forall_a_to_a, int_to_string).unwrap();
-    assert!(!result, "∀a. (a -> a) should not subsume (Int -> String)");
+    let result = unification::subtype(state, context, forall_a_to_a, int_to_string).unwrap();
+    assert!(!result, "∀a. (a -> a) <: (Int -> String) should fail");
 }
 
 #[test]
-fn test_subsumes_forall_right_fail() {
+fn test_subtype_mono_of_poly_fail() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // Create ∀a. a -> a
     let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    // (Int -> Int) should NOT subsume ∀a. (a -> a)
+    // (Int -> Int) <: ∀a. (a -> a) should fail (RHS forall gets skolemized)
     let int_to_int = state.function(context.prim.int, context.prim.int);
-    let result = unification::subsumes(state, context, int_to_int, forall_a_to_a).unwrap();
-    assert!(!result, "(Int -> Int) should not subsume ∀a. (a -> a)");
+    let result = unification::subtype(state, context, int_to_int, forall_a_to_a).unwrap();
+    assert!(!result, "(Int -> Int) <: ∀a. (a -> a) should fail");
 }
 
 #[test]
-fn test_subsumes_nested_forall() {
+fn test_subtype_nested_forall() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
@@ -359,12 +359,12 @@ fn test_subsumes_nested_forall() {
     ));
     state.unbind(level_a);
 
-    // ∀a. ∀b. (a -> b -> a) should subsume (Int -> String -> Int)
+    // ∀a. ∀b. (a -> b -> a) <: (Int -> String -> Int) should pass (LHS foralls get instantiated)
     let string_to_int = state.function(context.prim.string, context.prim.int);
     let int_to_string_to_int = state.function(context.prim.int, string_to_int);
 
-    let result = unification::subsumes(state, context, forall_a_b, int_to_string_to_int).unwrap();
-    assert!(result, "∀a. ∀b. (a -> b -> a) should subsume (Int -> String -> Int)");
+    let result = unification::subtype(state, context, forall_a_b, int_to_string_to_int).unwrap();
+    assert!(result, "∀a. ∀b. (a -> b -> a) <: (Int -> String -> Int) should pass");
 }
 
 // Error tests

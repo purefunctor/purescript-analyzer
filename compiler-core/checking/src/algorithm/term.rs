@@ -69,11 +69,11 @@ where
         // Only use the minimum number of binders across equations.
         let argument_types = &argument_types[..minimum_equation_arity];
         let expected_type = state.make_function(argument_types, result_type);
-        let _ = unification::subsumes(state, context, expected_type, item_type)?;
+        let _ = unification::subtype(state, context, expected_type, item_type)?;
 
         if let Some(guarded) = &equation.guarded {
             let inferred_type = infer_guarded_expression(state, context, &guarded)?;
-            let _ = unification::subsumes(state, context, inferred_type, result_type)?;
+            let _ = unification::subtype(state, context, inferred_type, result_type)?;
         }
     }
 
@@ -130,7 +130,7 @@ where
 
         if let Some(guarded) = &equation.guarded {
             let inferred_type = infer_guarded_expression(state, context, &guarded)?;
-            let _ = unification::subsumes(state, context, inferred_type, signature.result)?;
+            let _ = unification::subtype(state, context, inferred_type, signature.result)?;
         }
     }
 
@@ -181,7 +181,7 @@ where
                     check_constructor_binder_application(state, context, constructor_t, argument)?;
             }
 
-            let _ = unification::subsumes(state, context, constructor_t, type_id)?;
+            let _ = unification::subtype(state, context, constructor_t, type_id)?;
 
             Ok(type_id)
         }
@@ -310,7 +310,7 @@ where
     Q: ExternalQueries,
 {
     let inferred = infer_expression(state, context, expr_id)?;
-    let _ = unification::subsumes(state, context, inferred, expected)?;
+    let _ = unification::subtype(state, context, inferred, expected)?;
     Ok(inferred)
 }
 
@@ -561,7 +561,7 @@ where
 
             for expression in array.iter() {
                 let element_type = infer_expression(state, context, *expression)?;
-                unification::subsumes(state, context, element_type, inferred_type)?;
+                unification::subtype(state, context, element_type, inferred_type)?;
             }
 
             let array_type =
@@ -668,7 +668,7 @@ where
                 bind_type,
                 inferred_type,
                 |state, context, inferred_type, expected_type| {
-                    let _ = unification::subsumes(state, context, inferred_type, expected_type)?;
+                    let _ = unification::subtype(state, context, inferred_type, expected_type)?;
                     Ok(inferred_type)
                 },
             )?;
@@ -718,7 +718,7 @@ where
                 discard_type,
                 inferred_type,
                 |state, context, inferred_type, expected_type| {
-                    let _ = unification::subsumes(state, context, inferred_type, expected_type)?;
+                    let _ = unification::subtype(state, context, inferred_type, expected_type)?;
                     Ok(expected_type)
                 },
             )?;
@@ -750,7 +750,7 @@ where
         map_type,
         lambda_type,
         |state, context, lambda_type, expected_type| {
-            let _ = unification::subsumes(state, context, lambda_type, expected_type)?;
+            let _ = unification::subtype(state, context, lambda_type, expected_type)?;
             Ok(lambda_type)
         },
     )?;
@@ -761,7 +761,7 @@ where
         map_applied,
         expression_type,
         |state, context, expression_type, expected_type| {
-            let _ = unification::subsumes(state, context, expression_type, expected_type)?;
+            let _ = unification::subtype(state, context, expression_type, expected_type)?;
             Ok(expression_type)
         },
     )
@@ -789,7 +789,7 @@ where
         apply_type,
         accumulated_type,
         |state, context, accumulated_type, expected_type| {
-            let _ = unification::subsumes(state, context, accumulated_type, expected_type)?;
+            let _ = unification::subtype(state, context, accumulated_type, expected_type)?;
             Ok(accumulated_type)
         },
     )?;
@@ -800,7 +800,7 @@ where
         apply_applied,
         expression_type,
         |state, context, expr_type, expected_type| {
-            let _ = unification::subsumes(state, context, expr_type, expected_type)?;
+            let _ = unification::subtype(state, context, expr_type, expected_type)?;
             Ok(expr_type)
         },
     )

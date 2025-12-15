@@ -12,7 +12,39 @@ use crate::algorithm::{kind, substitute, transfer};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
-pub fn subsumes<Q>(
+/// Check that `t1` is a subtype of `t2`
+///
+/// In the type system, we define that polymorphic types are subtypes of
+/// monomorphic types because they can be instantiated by turning type
+/// variables into unification variables, for example:
+///
+/// ```text
+/// subtype (forall a. a -> a) (Int -> Int)
+///   subtype (?a -> ?a) (Int -> Int)
+///     subtype ?a Int
+/// ```
+///
+/// Similarly, polymorphic types are subtypes of other polymorphic types
+/// through skolemisation, for example:
+///
+/// ```text
+/// subtype (forall a. a -> a) (forall b. b -> b)
+///   subtype (?a -> ?a) (~b -> ~b)
+///     subtype ?a ~b
+/// ```
+///
+/// With this in mind, [`subtype`] can be used to check if an inferred
+/// type properly fits a declared type, for example:
+///
+/// ```text
+/// id :: forall a. a -> a
+/// id = \a -> a
+///
+/// subtype (?a -> ?a) (forall a. a -> a)
+///   subtype (?a -> ?a) (~a -> ~a)
+///     subtype ?a ~a
+/// ```
+pub fn subtype<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     t1: TypeId,
@@ -33,8 +65,8 @@ where
 
     match (t1_core, t2_core) {
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            Ok(subsumes(state, context, t2_argument, t1_argument)?
-                && subsumes(state, context, t1_result, t2_result)?)
+            Ok(subtype(state, context, t2_argument, t1_argument)?
+                && subtype(state, context, t1_result, t2_result)?)
         }
 
         (_, Type::Forall(ref binder, inner)) => {
@@ -42,7 +74,7 @@ where
             let t = state.storage.intern(Type::Variable(v));
 
             let inner = substitute::substitute_bound(state, t, inner);
-            subsumes(state, context, t1, inner)
+            subtype(state, context, t1, inner)
         }
 
         (Type::Forall(ref binder, inner), _) => {
@@ -50,7 +82,7 @@ where
             let t = state.fresh_unification_kinded(k);
 
             let inner = substitute::substitute_bound(state, t, inner);
-            subsumes(state, context, inner, t2)
+            subtype(state, context, inner, t2)
         }
 
         (_, _) => unify(state, context, t1, t2),

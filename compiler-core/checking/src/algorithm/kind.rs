@@ -223,7 +223,7 @@ where
                 state.storage.intern(Type::Application(context.prim.row, context.prim.t));
 
             let (row_t, row_k) = infer_row_kind(state, context, items, tail)?;
-            let _ = unification::subsumes(state, context, row_k, expected_kind)?;
+            let _ = unification::subtype(state, context, row_k, expected_kind)?;
 
             let t = state.storage.intern(Type::Application(context.prim.record, row_t));
             let k = context.prim.t;
@@ -318,7 +318,7 @@ where
         let (t, k) = infer_surface_kind(state, context, *tail)?;
 
         let expected_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
-        let _ = unification::subsumes(state, context, k, expected_kind)?;
+        let _ = unification::subtype(state, context, k, expected_kind)?;
 
         Some(t)
     } else {
@@ -508,7 +508,7 @@ where
     Q: ExternalQueries,
 {
     let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id)?;
-    let _ = unification::subsumes(state, context, inferred_kind, kind)?;
+    let _ = unification::subtype(state, context, inferred_kind, kind)?;
     Ok((inferred_type, inferred_kind))
 }
 

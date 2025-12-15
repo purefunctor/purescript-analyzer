@@ -123,7 +123,7 @@ where
     };
 
     if let OperatorKindMode::Check { expected_kind } = mode {
-        let _ = unification::subsumes(state, context, result_kind, expected_kind)?;
+        let _ = unification::subtype(state, context, result_kind, expected_kind)?;
     }
 
     let [left_tree, right_tree] = children;
