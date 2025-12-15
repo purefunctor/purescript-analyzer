@@ -9,10 +9,10 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, substitute, transfer, unification};
+use crate::algorithm::{inspect, kind, operator, substitute, transfer, unification};
 use crate::core::{ForallBinder, RowField, RowType, Type, TypeId};
 
-pub(crate) fn infer_value_group<Q>(
+pub fn infer_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TermItemId,
@@ -80,7 +80,7 @@ where
     Ok(())
 }
 
-pub(crate) fn check_value_group<Q>(
+pub fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TermItemId,
@@ -141,7 +141,7 @@ where
     Ok(())
 }
 
-fn check_binder<Q>(
+pub fn check_binder<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     binder_id: lowering::BinderId,
@@ -159,7 +159,11 @@ where
     match kind {
         lowering::BinderKind::Typed { .. } => Ok(unknown),
 
-        lowering::BinderKind::OperatorChain { .. } => Ok(unknown),
+        lowering::BinderKind::OperatorChain { .. } => {
+            let (_, inferred_type) = operator::infer_operator_chain(state, context, binder_id)?;
+            let _ = unification::subtype(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
+        }
 
         lowering::BinderKind::Integer => {
             let _ = unification::unify(state, context, context.prim.int, type_id)?;
@@ -300,7 +304,7 @@ where
     infer_expression(state, context, expression)
 }
 
-fn check_expression<Q>(
+pub fn check_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     expr_id: lowering::ExpressionId,
@@ -314,7 +318,7 @@ where
     Ok(inferred)
 }
 
-fn infer_expression<Q>(
+pub fn infer_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     expr_id: lowering::ExpressionId,
@@ -339,7 +343,10 @@ where
             Ok(t)
         }
 
-        lowering::ExpressionKind::OperatorChain { .. } => Ok(unknown),
+        lowering::ExpressionKind::OperatorChain { .. } => {
+            let (_, inferred_type) = operator::infer_operator_chain(state, context, expr_id)?;
+            Ok(inferred_type)
+        }
 
         lowering::ExpressionKind::InfixChain { .. } => Ok(unknown),
 
@@ -806,7 +813,7 @@ where
     )
 }
 
-fn lookup_file_term<Q>(
+pub fn lookup_file_term<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: files::FileId,
