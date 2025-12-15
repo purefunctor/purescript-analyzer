@@ -5,11 +5,12 @@ use std::iter;
 use building_types::QueryResult;
 use indexing::TermItemId;
 use itertools::Itertools;
+use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{inspect, kind, substitute, transfer, unification};
-use crate::core::{ForallBinder, Type, TypeId};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId};
 
 pub(crate) fn infer_value_group<Q>(
     state: &mut CheckState,
@@ -555,9 +556,60 @@ where
 
         lowering::ExpressionKind::Number => Ok(context.prim.number),
 
-        lowering::ExpressionKind::Array { .. } => Ok(unknown),
+        lowering::ExpressionKind::Array { array } => {
+            let inferred_type = state.fresh_unification_type(context);
 
-        lowering::ExpressionKind::Record { .. } => Ok(unknown),
+            for expression in array.iter() {
+                let element_type = infer_expression(state, context, *expression)?;
+                unification::subsumes(state, context, element_type, inferred_type)?;
+            }
+
+            let array_type =
+                state.storage.intern(Type::Application(context.prim.array, inferred_type));
+
+            Ok(array_type)
+        }
+
+        lowering::ExpressionKind::Record { record } => {
+            let mut fields = vec![];
+
+            for field in record.iter() {
+                match field {
+                    lowering::ExpressionRecordItem::RecordField { name, value } => {
+                        let Some(name) = name else { continue };
+                        let Some(value) = value else { continue };
+
+                        let label = SmolStr::clone(name);
+                        let id = infer_expression(state, context, *value)?;
+
+                        // Instantiate to avoid polymorphic types in record fields.
+                        let id = instantiate_type(state, context, id)?;
+
+                        fields.push(RowField { label, id });
+                    }
+                    lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
+                        let Some(name) = name else { continue };
+                        let Some(resolution) = resolution else { continue };
+
+                        let label = SmolStr::clone(name);
+                        let id = lookup_term_variable(state, context, *resolution)?;
+
+                        // Instantiate to avoid polymorphic types in record fields.
+                        let id = instantiate_type(state, context, id)?;
+
+                        fields.push(RowField { label, id });
+                    }
+                }
+            }
+
+            let row_type = RowType::from_unsorted(fields, None);
+            let row_type = state.storage.intern(Type::Row(row_type));
+
+            let record_type =
+                state.storage.intern(Type::Application(context.prim.record, row_type));
+
+            Ok(record_type)
+        }
 
         lowering::ExpressionKind::Parenthesized { parenthesized } => {
             let Some(parenthesized) = parenthesized else { return Ok(unknown) };
@@ -925,4 +977,24 @@ where
     }
 
     Ok(())
+}
+
+fn instantiate_type<Q>(
+    state: &mut CheckState,
+    _context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut current_id = id;
+
+    while let normalized_id = state.normalize_type(current_id)
+        && let Type::Forall(ref binder, inner_id) = state.storage[normalized_id]
+    {
+        let unification = state.fresh_unification_kinded(binder.kind);
+        current_id = substitute::substitute_bound(state, unification, inner_id);
+    }
+
+    Ok(current_id)
 }
