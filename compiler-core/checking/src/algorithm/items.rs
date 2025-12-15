@@ -625,7 +625,22 @@ where
 
             TermItemIr::Instance { .. } => Ok(()),
 
-            TermItemIr::Operator { .. } => Ok(()),
+            TermItemIr::Operator { associativity, precedence, resolution } => {
+                let Some(_associativity) = *associativity else {
+                    return Ok(());
+                };
+                let Some(_precedence) = *precedence else {
+                    return Ok(());
+                };
+                let Some((file_id, term_id)) = *resolution else {
+                    return Ok(());
+                };
+
+                let id = term::lookup_file_term(state, context, file_id, term_id)?;
+                state.binding_group.terms.insert(item_id, id);
+
+                Ok(())
+            }
 
             TermItemIr::ValueGroup { signature, equations } => {
                 check_value_group_item(context, item_id, state, *signature, equations)
