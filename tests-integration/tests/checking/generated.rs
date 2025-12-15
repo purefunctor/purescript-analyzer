@@ -527,3 +527,47 @@ fn test_048_do_non_monadic_discard_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_049_ado_discard_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/049_ado_discard"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_050_ado_bind_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/050_ado_bind"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_051_ado_non_applicative_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/051_ado_non_applicative"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_052_ado_non_applicative_discard_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/052_ado_non_applicative_discard"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

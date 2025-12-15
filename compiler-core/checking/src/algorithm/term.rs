@@ -424,7 +424,99 @@ where
             Ok(inferred_type)
         }
 
-        lowering::ExpressionKind::Ado { .. } => Ok(unknown),
+        lowering::ExpressionKind::Ado { map, apply, statements, expression } => {
+            let Some(map) = map else { return Ok(unknown) };
+            let Some(apply) = apply else { return Ok(unknown) };
+
+            let map_type = lookup_term_variable(state, context, *map)?;
+            let apply_type = lookup_term_variable(state, context, *apply)?;
+
+            let mut applicative_statements = vec![];
+            for statement in statements.iter() {
+                match statement {
+                    lowering::DoStatement::Bind { binder, expression } => {
+                        applicative_statements.push((*binder, *expression));
+                    }
+                    lowering::DoStatement::Let { statements } => {
+                        for statement in statements.iter() {
+                            check_let_binding(state, context, statement)?;
+                        }
+                    }
+                    lowering::DoStatement::Discard { expression } => {
+                        applicative_statements.push((None, *expression));
+                    }
+                }
+            }
+
+            if applicative_statements.is_empty() {
+                return if let Some(expression) = expression {
+                    infer_expression(state, context, *expression)
+                } else {
+                    Ok(unknown)
+                };
+            }
+
+            let mut binder_types = vec![];
+            for (binder, _) in &applicative_statements {
+                let binder_type = state.fresh_unification_type(context);
+                if let Some(binder_id) = binder {
+                    let _ = check_binder(state, context, *binder_id, binder_type)?;
+                }
+                binder_types.push(binder_type);
+            }
+
+            let expression_type = if let Some(expression) = expression {
+                infer_expression(state, context, *expression)?
+            } else {
+                state.fresh_unification_type(context)
+            };
+
+            // Create a function type using the unification variables created
+            // for the statement binders to infer the expression type with.
+            // Inference would usually constrain these unification variables
+            // so you may expect a signature like `Int -> Int -> Int` for the
+            // following example, for instance.
+            //
+            // main = do
+            //   x <- pure 1
+            //   y <- pure 2
+            //   in x + y
+            let lambda_type = state.make_function(&binder_types, expression_type);
+
+            let [(_, expression), tail @ ..] = &applicative_statements[..] else {
+                unreachable!("invariant violated: empty applicative_statements");
+            };
+
+            // This applies map_type to the lambda_type that we just built
+            // and then to the inferred expression type, like so:
+            //
+            // map_type         := (a -> b) -> f a -> f b
+            // lambda_type      := Int -> Int -> Int
+            //
+            // map_applied      := f Int -> f (Int -> Int)
+            // expression_type  := f Int
+            //
+            // accumulated_type := f (Int -> Int)
+            let mut accumulated_type =
+                infer_ado_map(state, context, map_type, lambda_type, *expression)?;
+
+            // This applies apply_type to the accumulated_type that we have
+            // so far, and then to the inferred expression type, like so:
+            //
+            // apply_type       := f (a -> b) -> f a -> f b
+            // accumulated_type := f (Int -> Int)
+            //
+            // accumulated_type := f Int -> f Int
+            // expression_type  := f Int
+            //
+            // accumulated_type := f Int
+            for (_, expression) in tail {
+                accumulated_type =
+                    infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
+            }
+
+            Ok(accumulated_type)
+        }
 
         lowering::ExpressionKind::Constructor { resolution } => {
             let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
@@ -530,7 +622,7 @@ where
             )?;
 
             // Apply the remaining_type to () to get the continuation_type;
-            // apply the continuation_type to () get the binder_type; 
+            // apply the continuation_type to () get the binder_type;
             // finally, check the binder_id against the binder_type.
             //
             // continuation_type := (a -> m b)
@@ -582,6 +674,84 @@ where
             Ok(Some(inferred_type))
         }
     }
+}
+
+fn infer_ado_map<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    map_type: TypeId,
+    lambda_type: TypeId,
+    expression: Option<lowering::ExpressionId>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Some(expression) = expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    let expression_type = infer_expression(state, context, expression)?;
+
+    let map_applied = check_function_application_core(
+        state,
+        context,
+        map_type,
+        lambda_type,
+        |state, context, lambda_type, expected_type| {
+            let _ = unification::subsumes(state, context, lambda_type, expected_type)?;
+            Ok(lambda_type)
+        },
+    )?;
+
+    check_function_application_core(
+        state,
+        context,
+        map_applied,
+        expression_type,
+        |state, context, expression_type, expected_type| {
+            let _ = unification::subsumes(state, context, expression_type, expected_type)?;
+            Ok(expression_type)
+        },
+    )
+}
+
+fn infer_ado_apply<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    apply_type: TypeId,
+    accumulated_type: TypeId,
+    expression: Option<lowering::ExpressionId>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Some(expression) = expression else {
+        return Ok(accumulated_type);
+    };
+
+    let expression_type = infer_expression(state, context, expression)?;
+
+    let apply_applied = check_function_application_core(
+        state,
+        context,
+        apply_type,
+        accumulated_type,
+        |state, context, accumulated_type, expected_type| {
+            let _ = unification::subsumes(state, context, accumulated_type, expected_type)?;
+            Ok(accumulated_type)
+        },
+    )?;
+
+    check_function_application_core(
+        state,
+        context,
+        apply_applied,
+        expression_type,
+        |state, context, expr_type, expected_type| {
+            let _ = unification::subsumes(state, context, expr_type, expected_type)?;
+            Ok(expr_type)
+        },
+    )
 }
 
 fn lookup_file_term<Q>(
