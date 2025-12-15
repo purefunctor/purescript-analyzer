@@ -53,7 +53,7 @@ where
             subsumes(state, context, inner, t2)
         }
 
-        _ => unify(state, context, t1, t2),
+        (_, _) => unify(state, context, t1, t2),
     }
 }
 
@@ -271,6 +271,7 @@ where
     Q: ExternalQueries,
 {
     let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
+
     if !ok {
         return Ok(false);
     }
@@ -297,7 +298,11 @@ where
         }
 
         (Some(t1_tail), Some(t2_tail)) => {
-            let unification = state.fresh_unification(context);
+            if extras_left.is_empty() && extras_right.is_empty() {
+                return unify(state, context, t1_tail, t2_tail);
+            }
+
+            let unification = state.fresh_unification_type(context);
 
             let left_tail_row =
                 Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });
