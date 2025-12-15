@@ -419,8 +419,9 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 
             let resolution = cst.as_ref().and_then(|cst| {
                 let cst = cst.qualified()?;
-                let (qualifier, name) =
-                    recursive::lower_qualified_name(&cst, cst::QualifiedName::lower)?;
+                let (qualifier, name) = None
+                    .or_else(|| recursive::lower_qualified_name(&cst, cst::QualifiedName::lower))
+                    .or_else(|| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))?;
                 state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
 
