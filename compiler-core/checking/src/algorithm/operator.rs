@@ -37,7 +37,7 @@ where
         return Ok(unknown);
     };
 
-    traverse_operator_tree(state, context, &operator_tree, OperatorKindMode::Infer)
+    traverse_operator_tree(state, context, operator_tree, OperatorKindMode::Infer)
 }
 
 fn traverse_operator_tree<Q, E>(

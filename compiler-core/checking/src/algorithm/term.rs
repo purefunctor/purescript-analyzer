@@ -72,7 +72,7 @@ where
         let _ = unification::subtype(state, context, expected_type, item_type)?;
 
         if let Some(guarded) = &equation.guarded {
-            let inferred_type = infer_guarded_expression(state, context, &guarded)?;
+            let inferred_type = infer_guarded_expression(state, context, guarded)?;
             let _ = unification::subtype(state, context, inferred_type, result_type)?;
         }
     }
@@ -129,7 +129,7 @@ where
         }
 
         if let Some(guarded) = &equation.guarded {
-            let inferred_type = infer_guarded_expression(state, context, &guarded)?;
+            let inferred_type = infer_guarded_expression(state, context, guarded)?;
             let _ = unification::subtype(state, context, inferred_type, signature.result)?;
         }
     }
@@ -245,7 +245,7 @@ where
             let Some(w) = where_expression else {
                 return Ok(context.prim.unknown);
             };
-            infer_where_expression(state, context, &w)
+            infer_where_expression(state, context, w)
         }
         lowering::GuardedExpression::Conditionals { pattern_guarded } => {
             let mut inferred_type = context.prim.unknown;
