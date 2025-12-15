@@ -571,3 +571,25 @@ fn test_052_ado_non_applicative_discard_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_053_do_polymorphic_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/053_do_polymorphic"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_054_ado_polymorphic_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/054_ado_polymorphic"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
