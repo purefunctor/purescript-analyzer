@@ -7,6 +7,7 @@ pub mod substitute;
 pub mod term;
 pub mod transfer;
 pub mod unification;
+pub mod operator;
 
 use building_types::QueryResult;
 use files::FileId;

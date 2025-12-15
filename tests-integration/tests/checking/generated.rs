@@ -615,3 +615,25 @@ fn test_056_record_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_057_term_operator_chain_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/057_term_operator_chain"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_058_binder_operator_chain_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/058_binder_operator_chain"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
