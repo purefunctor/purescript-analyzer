@@ -141,6 +141,134 @@ where
     Ok(())
 }
 
+pub fn infer_binder<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binder_id: lowering::BinderId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let unknown = context.prim.unknown;
+
+    let Some(kind) = context.lowered.info.get_binder_kind(binder_id) else {
+        return Ok(unknown);
+    };
+
+    match kind {
+        lowering::BinderKind::Typed { binder, type_ } => {
+            let Some(b) = binder else { return Ok(unknown) };
+            let Some(t) = type_ else { return Ok(unknown) };
+
+            let (t, _) = kind::infer_surface_kind(state, context, *t)?;
+            check_binder(state, context, *b, t)?;
+
+            Ok(t)
+        }
+
+        lowering::BinderKind::OperatorChain { .. } => {
+            let (_, inferred_type) = operator::infer_operator_chain(state, context, binder_id)?;
+            Ok(inferred_type)
+        }
+
+        lowering::BinderKind::Integer => Ok(context.prim.int),
+
+        lowering::BinderKind::Number => Ok(context.prim.number),
+
+        lowering::BinderKind::Constructor { resolution, arguments } => {
+            let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
+
+            let mut constructor_t = lookup_file_term(state, context, *file_id, *term_id)?;
+
+            for &argument in arguments.iter() {
+                constructor_t =
+                    check_constructor_binder_application(state, context, constructor_t, argument)?;
+            }
+
+            Ok(constructor_t)
+        }
+
+        lowering::BinderKind::Variable { .. } => {
+            let type_id = state.fresh_unification_type(context);
+            state.bind_binder(binder_id, type_id);
+            Ok(type_id)
+        }
+
+        lowering::BinderKind::Named { binder, .. } => {
+            let Some(binder) = binder else { return Ok(unknown) };
+
+            let type_id = infer_binder(state, context, *binder)?;
+            state.bind_binder(binder_id, type_id);
+
+            Ok(type_id)
+        }
+
+        lowering::BinderKind::Wildcard => {
+            let type_id = state.fresh_unification_type(context);
+            Ok(type_id)
+        }
+
+        lowering::BinderKind::String => Ok(context.prim.string),
+
+        lowering::BinderKind::Char => Ok(context.prim.char),
+
+        lowering::BinderKind::Boolean { .. } => Ok(context.prim.boolean),
+
+        lowering::BinderKind::Array { array } => {
+            let inferred_type = state.fresh_unification_type(context);
+
+            for binder in array.iter() {
+                let element_type = infer_binder(state, context, *binder)?;
+                unification::subtype(state, context, element_type, inferred_type)?;
+            }
+
+            let array_type =
+                state.storage.intern(Type::Application(context.prim.array, inferred_type));
+            Ok(array_type)
+        }
+
+        lowering::BinderKind::Record { record } => {
+            let mut fields = vec![];
+
+            for field in record.iter() {
+                match field {
+                    lowering::BinderRecordItem::RecordField { name, value } => {
+                        let Some(name) = name else { continue };
+                        let Some(value) = value else { continue };
+
+                        let label = SmolStr::clone(name);
+                        let id = infer_binder(state, context, *value)?;
+
+                        fields.push(RowField { label, id });
+                    }
+                    lowering::BinderRecordItem::RecordPun { id, name } => {
+                        let Some(name) = name else { continue };
+
+                        let label = SmolStr::clone(name);
+                        let field_type = state.fresh_unification_type(context);
+                        state.bind_pun(*id, field_type);
+
+                        fields.push(RowField { label, id: field_type });
+                    }
+                }
+            }
+
+            let row_type = RowType::from_unsorted(fields, None);
+            let row_type = state.storage.intern(Type::Row(row_type));
+
+            let record_type =
+                state.storage.intern(Type::Application(context.prim.record, row_type));
+
+            Ok(record_type)
+        }
+
+        lowering::BinderKind::Parenthesized { parenthesized } => {
+            let Some(parenthesized) = parenthesized else { return Ok(unknown) };
+            infer_binder(state, context, *parenthesized)
+        }
+    }
+}
+
 pub fn check_binder<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -157,36 +285,33 @@ where
     };
 
     match kind {
-        lowering::BinderKind::Typed { .. } => Ok(unknown),
+        lowering::BinderKind::Typed { .. } => {
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::subtype(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
+        }
 
         lowering::BinderKind::OperatorChain { .. } => {
-            let (_, inferred_type) = operator::infer_operator_chain(state, context, binder_id)?;
+            let inferred_type = infer_binder(state, context, binder_id)?;
             let _ = unification::subtype(state, context, inferred_type, type_id)?;
             Ok(inferred_type)
         }
 
         lowering::BinderKind::Integer => {
-            let _ = unification::unify(state, context, context.prim.int, type_id)?;
-            Ok(context.prim.int)
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::unify(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
         }
 
         lowering::BinderKind::Number => {
-            let _ = unification::unify(state, context, context.prim.number, type_id)?;
-            Ok(context.prim.number)
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::unify(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
         }
 
-        lowering::BinderKind::Constructor { resolution, arguments } => {
-            let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
-
-            let mut constructor_t = lookup_file_term(state, context, *file_id, *term_id)?;
-
-            for &argument in arguments.iter() {
-                constructor_t =
-                    check_constructor_binder_application(state, context, constructor_t, argument)?;
-            }
-
-            let _ = unification::subtype(state, context, constructor_t, type_id)?;
-
+        lowering::BinderKind::Constructor { .. } => {
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::subtype(state, context, inferred_type, type_id)?;
             Ok(type_id)
         }
 
@@ -207,23 +332,34 @@ where
         lowering::BinderKind::Wildcard => Ok(type_id),
 
         lowering::BinderKind::String => {
-            let _ = unification::unify(state, context, context.prim.string, type_id)?;
-            Ok(context.prim.string)
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::unify(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
         }
 
         lowering::BinderKind::Char => {
-            let _ = unification::unify(state, context, context.prim.char, type_id)?;
-            Ok(context.prim.char)
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::unify(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
         }
 
         lowering::BinderKind::Boolean { .. } => {
-            let _ = unification::unify(state, context, context.prim.boolean, type_id)?;
-            Ok(context.prim.boolean)
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::unify(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
         }
 
-        lowering::BinderKind::Array { .. } => Ok(unknown),
+        lowering::BinderKind::Array { .. } => {
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::subtype(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
+        }
 
-        lowering::BinderKind::Record { .. } => Ok(unknown),
+        lowering::BinderKind::Record { .. } => {
+            let inferred_type = infer_binder(state, context, binder_id)?;
+            let _ = unification::subtype(state, context, inferred_type, type_id)?;
+            Ok(inferred_type)
+        }
 
         lowering::BinderKind::Parenthesized { parenthesized } => {
             let Some(parenthesized) = parenthesized else { return Ok(unknown) };

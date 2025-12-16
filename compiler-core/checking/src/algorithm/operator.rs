@@ -356,9 +356,8 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
         context: &CheckContext<Q>,
         id: Self,
     ) -> QueryResult<(Self::Elaborated, TypeId)> {
-        let expected_type = state.fresh_unification_type(context);
-        let checked_type = term::check_binder(state, context, id, expected_type)?;
-        Ok(((), checked_type))
+        let inferred_type = term::infer_binder(state, context, id)?;
+        Ok(((), inferred_type))
     }
 
     fn check_surface(

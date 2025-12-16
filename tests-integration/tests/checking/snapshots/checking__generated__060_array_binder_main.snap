@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+test1 :: Array Int -> Record ( x :: Int, y :: Int )
+test1' :: forall (t7 :: Type). Array t7 -> Record ( x :: t7, y :: t7 )
+test2 :: forall (a :: Type). Array a -> Array a
+test2' :: forall (t24 :: Type). Array t24 -> Array t24
+test3 :: Array Int -> Int
+test3' :: Array Int -> Int
+nested :: Array (Array Int) -> Int
+nested' :: forall (t61 :: Type). Array (Array t61) -> t61
+
+Types
