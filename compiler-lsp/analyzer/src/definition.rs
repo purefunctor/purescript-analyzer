@@ -235,6 +235,13 @@ fn definition_expression(
 
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
                 }
+                TermVariableResolution::RecordPun(id) => {
+                    let root = parsed.syntax_node();
+                    let ptr = stabilized.syntax_ptr(*id).ok_or(AnalyzerError::NonFatal)?;
+                    let range = locate::syntax_range(&content, &root, &ptr)
+                        .ok_or(AnalyzerError::NonFatal)?;
+                    Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
+                }
                 TermVariableResolution::Reference(f_id, t_id) => {
                     definition_file_term(engine, files, *f_id, *t_id)
                 }

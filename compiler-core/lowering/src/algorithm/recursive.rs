@@ -95,15 +95,20 @@ fn lower_binder_kind(
                     BinderRecordItem::RecordField { name, value }
                 }
                 cst::RecordItem::RecordPun(cst) => {
+                    // Get the RecordPun node's ID from stabilizing
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
+
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
+
                     if let Some(name) = &name {
-                        state.insert_binder(name, id);
+                        state.insert_record_pun(name, id);
                     }
-                    BinderRecordItem::RecordPun { name }
+
+                    BinderRecordItem::RecordPun { id, name }
                 }
             };
             let record = cst.children().map(lower_item).collect();

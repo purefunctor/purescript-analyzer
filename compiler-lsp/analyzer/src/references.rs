@@ -201,6 +201,7 @@ fn references_expression(
             match resolution {
                 TermVariableResolution::Binder(_) => Ok(None),
                 TermVariableResolution::Let(_) => Ok(None),
+                TermVariableResolution::RecordPun(_) => Ok(None),
                 TermVariableResolution::Reference(f_id, t_id) => {
                     references_file_term(engine, files, current_file, *f_id, *t_id)
                 }

@@ -150,6 +150,12 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                         writeln!(buffer, "  resolves to equation {position:?}").unwrap();
                     }
                 }
+                TermVariableResolution::RecordPun(record_pun) => {
+                    let cst = stabilized.ast_ptr(*record_pun).unwrap();
+                    let range = cst.syntax_node_ptr().text_range();
+                    let position = locate::offset_to_position(&content, range.start());
+                    writeln!(buffer, "  resolves to record pun {position:?}").unwrap();
+                }
                 TermVariableResolution::Reference(_, _) => {
                     writeln!(buffer, "  resolves to top-level name").unwrap();
                 }

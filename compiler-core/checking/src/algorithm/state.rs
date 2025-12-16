@@ -10,7 +10,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{
-    BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
+    BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule, RecordPunId,
     TypeVariableBindingId,
 };
 use rustc_hash::FxHashMap;
@@ -37,6 +37,7 @@ pub struct CheckState {
 
     pub env_binder: FxHashMap<BinderId, TypeId>,
     pub env_let: FxHashMap<LetBindingNameGroupId, TypeId>,
+    pub env_pun: FxHashMap<RecordPunId, TypeId>,
 }
 
 #[derive(Default)]
@@ -219,6 +220,14 @@ impl CheckState {
 
     pub fn lookup_let(&self, id: LetBindingNameGroupId) -> Option<TypeId> {
         self.env_let.get(&id).copied()
+    }
+
+    pub fn bind_pun(&mut self, id: RecordPunId, type_id: TypeId) {
+        self.env_pun.insert(id, type_id);
+    }
+
+    pub fn lookup_pun(&self, id: RecordPunId) -> Option<TypeId> {
+        self.env_pun.get(&id).copied()
     }
 
     pub fn term_binding_group<Q>(

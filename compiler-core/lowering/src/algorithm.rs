@@ -107,10 +107,18 @@ impl State {
 
     fn insert_binder(&mut self, name: &str, id: BinderId) {
         let Some(node) = self.graph_scope else { return };
-        let GraphNode::Binder { bindings, .. } = &mut self.graph.inner[node] else { return };
+        let GraphNode::Binder { binders, .. } = &mut self.graph.inner[node] else { return };
 
         let name = SmolStr::from(name);
-        bindings.insert(name, id);
+        binders.insert(name, id);
+    }
+
+    fn insert_record_pun(&mut self, name: &str, id: RecordPunId) {
+        let Some(node) = self.graph_scope else { return };
+        let GraphNode::Binder { puns, .. } = &mut self.graph.inner[node] else { return };
+
+        let name = SmolStr::from(name);
+        puns.insert(name, id);
     }
 
     fn insert_bound_variable(&mut self, name: &str, id: TypeVariableBindingId) {
@@ -123,8 +131,9 @@ impl State {
 
     fn push_binder_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
-        let bindings = FxHashMap::default();
-        let id = self.graph.inner.alloc(GraphNode::Binder { parent, bindings });
+        let binders = FxHashMap::default();
+        let puns = FxHashMap::default();
+        let id = self.graph.inner.alloc(GraphNode::Binder { parent, binders, puns });
         self.graph_scope.replace(id)
     }
 
@@ -186,9 +195,14 @@ impl State {
     fn resolve_term_local(&self, name: &str) -> Option<TermVariableResolution> {
         let id = self.graph_scope?;
         self.graph.traverse(id).find_map(|(_, graph)| match graph {
-            GraphNode::Binder { bindings, .. } => {
-                let r = *bindings.get(name)?;
-                Some(TermVariableResolution::Binder(r))
+            GraphNode::Binder { binders, puns, .. } => {
+                if let Some(r) = binders.get(name) {
+                    return Some(TermVariableResolution::Binder(*r));
+                }
+                if let Some(r) = puns.get(name) {
+                    return Some(TermVariableResolution::RecordPun(*r));
+                }
+                None
             }
             GraphNode::Let { bindings, .. } => {
                 let r = *bindings.get(name)?;

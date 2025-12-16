@@ -29,6 +29,7 @@ use crate::source::*;
 pub enum TermVariableResolution {
     Binder(BinderId),
     Let(LetBindingNameGroupId),
+    RecordPun(RecordPunId),
     Reference(FileId, TermItemId),
 }
 
@@ -108,7 +109,11 @@ impl ImplicitBindings {
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
     /// Names bound by patterns.
-    Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
+    Binder {
+        parent: Option<GraphNodeId>,
+        binders: FxHashMap<SmolStr, BinderId>,
+        puns: FxHashMap<SmolStr, RecordPunId>,
+    },
     /// Explicitly quantified type variables.
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
     /// Names bound by `let`.

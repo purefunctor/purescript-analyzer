@@ -3,6 +3,7 @@ use syntax::cst;
 
 pub type BinderId = AstId<cst::Binder>;
 pub type ExpressionId = AstId<cst::Expression>;
+pub type RecordPunId = AstId<cst::RecordPun>;
 
 pub type TypeId = AstId<cst::Type>;
 pub type TypeVariableBindingId = AstId<cst::TypeVariableBinding>;

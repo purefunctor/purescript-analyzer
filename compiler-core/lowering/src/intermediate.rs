@@ -19,7 +19,7 @@ pub enum StringKind {
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {
     RecordField { name: Option<SmolStr>, value: Option<BinderId> },
-    RecordPun { name: Option<SmolStr> },
+    RecordPun { id: RecordPunId, name: Option<SmolStr> },
 }
 
 #[derive(Debug, PartialEq, Eq)]

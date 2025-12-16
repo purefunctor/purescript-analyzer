@@ -188,6 +188,7 @@ fn hover_expression(
                     let let_binding = lowered.info.get_let_binding_group(*let_binding_id);
                     hover_let(&root, &stabilized, let_binding)
                 }
+                TermVariableResolution::RecordPun(_) => Ok(None),
                 TermVariableResolution::Reference(f_id, t_id) => {
                     hover_file_term(engine, *f_id, *t_id)
                 }

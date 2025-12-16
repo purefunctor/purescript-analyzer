@@ -558,18 +558,10 @@ where
             lookup_file_term(state, context, *file_id, *term_id)
         }
 
-        lowering::ExpressionKind::Variable { resolution } => match resolution {
-            Some(lowering::TermVariableResolution::Binder(binder_id)) => {
-                Ok(state.lookup_binder(*binder_id).unwrap_or(unknown))
-            }
-            Some(lowering::TermVariableResolution::Let(let_binding_id)) => {
-                Ok(state.lookup_let(*let_binding_id).unwrap_or(unknown))
-            }
-            Some(lowering::TermVariableResolution::Reference(file_id, term_id)) => {
-                lookup_file_term(state, context, *file_id, *term_id)
-            }
-            None => Ok(unknown),
-        },
+        lowering::ExpressionKind::Variable { resolution } => {
+            let Some(resolution) = *resolution else { return Ok(unknown) };
+            lookup_term_variable(state, context, resolution)
+        }
 
         lowering::ExpressionKind::OperatorName { resolution } => {
             let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
@@ -670,6 +662,9 @@ where
         }
         lowering::TermVariableResolution::Let(let_binding_id) => {
             Ok(state.lookup_let(let_binding_id).unwrap_or(context.prim.unknown))
+        }
+        lowering::TermVariableResolution::RecordPun(pun_id) => {
+            Ok(state.lookup_pun(pun_id).unwrap_or(context.prim.unknown))
         }
         lowering::TermVariableResolution::Reference(file_id, term_id) => {
             lookup_file_term(state, context, file_id, term_id)
