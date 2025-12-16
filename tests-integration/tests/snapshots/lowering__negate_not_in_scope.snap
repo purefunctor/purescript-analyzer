@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: lowered.errors
+---
+[
+    NotInScope(
+        NegateFn {
+            id: AstId<syntax::cst::ExpressionNegate>(8),
+        },
+    ),
+]

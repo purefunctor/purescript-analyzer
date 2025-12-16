@@ -134,3 +134,75 @@ type H = H
 
     insta::assert_debug_snapshot!(lowered.errors);
 }
+
+#[test]
+fn test_do_fn_not_in_scope() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+x = do
+  pure 1
+"#,
+    );
+    let content = files.content(id);
+
+    engine.set_content(id, content);
+
+    let lowered = engine.lowered(id).unwrap();
+
+    insta::assert_debug_snapshot!(lowered.errors);
+}
+
+#[test]
+fn test_ado_fn_not_in_scope() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+x = ado
+  y <- pure 1
+  in y
+"#,
+    );
+    let content = files.content(id);
+
+    engine.set_content(id, content);
+
+    let lowered = engine.lowered(id).unwrap();
+
+    insta::assert_debug_snapshot!(lowered.errors);
+}
+
+#[test]
+fn test_negate_not_in_scope() {
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+
+    let id = files.insert(
+        "Main.purs",
+        r#"
+module Main where
+
+x = -1
+"#,
+    );
+    let content = files.content(id);
+
+    engine.set_content(id, content);
+
+    let lowered = engine.lowered(id).unwrap();
+
+    insta::assert_debug_snapshot!(lowered.errors);
+}

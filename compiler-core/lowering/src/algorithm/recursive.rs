@@ -174,8 +174,15 @@ fn lower_expression_kind(
             ExpressionKind::InfixChain { head, tail }
         }
         cst::Expression::ExpressionNegate(cst) => {
+            let negate = state.resolve_term_full(context, None, "negate");
+
+            if negate.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::NegateFn { id }));
+            }
+
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
-            ExpressionKind::Negate { expression }
+            ExpressionKind::Negate { negate, expression }
         }
         cst::Expression::ExpressionApplicationChain(cst) => {
             let lower_argument =

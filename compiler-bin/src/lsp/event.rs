@@ -113,6 +113,9 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
                 lowering::NotInScope::TypeOperatorName { id } => {
                     (context.stabilized.syntax_ptr(*id)?, None)
                 }
+                lowering::NotInScope::NegateFn { id } => {
+                    (context.stabilized.syntax_ptr(*id)?, Some("negate"))
+                }
                 lowering::NotInScope::DoFn { kind, id } => (
                     context.stabilized.syntax_ptr(*id)?,
                     match kind {

@@ -513,7 +513,13 @@ where
             Ok(infix_type)
         }
 
-        lowering::ExpressionKind::Negate { .. } => Ok(unknown),
+        lowering::ExpressionKind::Negate { negate, expression } => {
+            let Some(negate) = negate else { return Ok(unknown) };
+            let Some(expression) = expression else { return Ok(unknown) };
+
+            let negate_type = lookup_term_variable(state, context, *negate)?;
+            check_function_term_application(state, context, negate_type, *expression)
+        }
 
         lowering::ExpressionKind::Application { function, arguments } => {
             let Some(function) = function else { return Ok(unknown) };

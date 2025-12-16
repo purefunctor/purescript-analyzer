@@ -86,6 +86,7 @@ pub enum ExpressionKind {
         tail: Arc<[InfixPair<ExpressionId>]>,
     },
     Negate {
+        negate: Option<TermVariableResolution>,
         expression: Option<ExpressionId>,
     },
     Application {

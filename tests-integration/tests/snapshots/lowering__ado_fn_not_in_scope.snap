@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: lowered.errors
+---
+[
+    NotInScope(
+        AdoFn {
+            kind: Map,
+            id: AstId<syntax::cst::ExpressionAdo>(8),
+        },
+    ),
+    NotInScope(
+        AdoFn {
+            kind: Apply,
+            id: AstId<syntax::cst::ExpressionAdo>(8),
+        },
+    ),
+    NotInScope(
+        ExprVariable {
+            id: AstId<syntax::cst::ExpressionVariable>(13),
+        },
+    ),
+]

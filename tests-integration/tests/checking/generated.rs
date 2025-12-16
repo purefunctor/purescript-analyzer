@@ -681,3 +681,25 @@ fn test_062_case_of_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_063_negate_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/063_negate"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_064_negate_local_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/064_negate_local"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

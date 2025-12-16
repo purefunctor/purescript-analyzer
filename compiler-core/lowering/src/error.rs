@@ -20,6 +20,7 @@ pub enum NotInScope {
     TypeOperatorName { id: AstId<cst::TypeOperatorName> },
     DoFn { kind: DoFn, id: AstId<cst::ExpressionDo> },
     AdoFn { kind: AdoFn, id: AstId<cst::ExpressionAdo> },
+    NegateFn { id: AstId<cst::ExpressionNegate> },
     TermOperator { id: AstId<cst::TermOperator> },
     TypeOperator { id: AstId<cst::TypeOperator> },
 }
