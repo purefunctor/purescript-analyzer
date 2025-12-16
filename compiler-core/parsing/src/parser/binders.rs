@@ -61,6 +61,14 @@ fn binder_2(p: &mut Parser) {
     }
 }
 
+fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
+    names::upper(p);
+    while p.at_in(BINDER_ATOM_START) && !p.at_eof() {
+        binder_atom(p);
+    }
+    m.end(p, SyntaxKind::BinderConstructor);
+}
+
 pub(super) const BINDER_ATOM_START: TokenSet = TokenSet::new(&[
     SyntaxKind::UPPER,
     SyntaxKind::UNDERSCORE,
@@ -85,7 +93,8 @@ pub(super) fn binder_atom(p: &mut Parser) {
     if p.at_in(names::LOWER) {
         binder_named_or_variable(p, &mut m);
     } else if p.at(SyntaxKind::UPPER) {
-        binder_constructor(p, m);
+        names::upper(p);
+        m.end(p, SyntaxKind::BinderConstructor);
     } else if p.eat(SyntaxKind::UNDERSCORE) {
         m.end(p, SyntaxKind::BinderWildcard);
     } else if p.eat(SyntaxKind::STRING) || p.eat(SyntaxKind::RAW_STRING) {
@@ -129,14 +138,6 @@ fn binder_named_or_variable(p: &mut Parser, m: &mut NodeMarker) {
     } else {
         m.end(p, SyntaxKind::BinderVariable);
     }
-}
-
-fn binder_constructor(p: &mut Parser, mut m: NodeMarker) {
-    names::upper(p);
-    while p.at_in(BINDER_ATOM_START) && !p.at_eof() {
-        binder_atom(p);
-    }
-    m.end(p, SyntaxKind::BinderConstructor);
 }
 
 fn binder_array(p: &mut Parser, mut m: NodeMarker) {

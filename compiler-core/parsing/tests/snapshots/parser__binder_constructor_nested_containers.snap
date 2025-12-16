@@ -1,0 +1,200 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+---
+(
+    Module@0..189
+      ModuleHeader@0..46
+        MODULE@0..6 "module"
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..40
+          UPPER@7..40 "BinderConstructorNest ..."
+        Annotation@40..41
+          TEXT@40..41 " "
+        WHERE@41..46 "where"
+      LAYOUT_START@46..46 ""
+      ModuleStatements@46..188
+        ValueEquation@46..188
+          Annotation@46..48
+            TEXT@46..48 "\n\n"
+          LOWER@48..52 "test"
+          FunctionBinders@52..54
+            BinderVariable@52..54
+              Annotation@52..53
+                TEXT@52..53 " "
+              LOWER@53..54 "a"
+          Unconditional@54..188
+            Annotation@54..55
+              TEXT@54..55 " "
+            EQUAL@55..56 "="
+            WhereExpression@56..188
+              ExpressionCaseOf@56..188
+                Annotation@56..57
+                  TEXT@56..57 " "
+                CASE@57..61 "case"
+                CaseTrunk@61..63
+                  ExpressionVariable@61..63
+                    Annotation@61..62
+                      TEXT@61..62 " "
+                    QualifiedName@62..63
+                      LOWER@62..63 "a"
+                Annotation@63..64
+                  TEXT@63..64 " "
+                OF@64..66 "of"
+                CaseBranches@66..188
+                  LAYOUT_START@66..66 ""
+                  CaseBranch@66..92
+                    CaseBranchBinders@66..87
+                      BinderArray@66..87
+                        Annotation@66..69
+                          TEXT@66..69 "\n  "
+                        LEFT_SQUARE@69..70 "["
+                        BinderConstructor@70..77
+                          QualifiedName@70..77
+                            UPPER@70..77 "Nothing"
+                        COMMA@77..78 ","
+                        BinderConstructor@78..86
+                          Annotation@78..79
+                            TEXT@78..79 " "
+                          QualifiedName@79..86
+                            UPPER@79..86 "Nothing"
+                        RIGHT_SQUARE@86..87 "]"
+                    Unconditional@87..92
+                      Annotation@87..88
+                        TEXT@87..88 " "
+                      RIGHT_ARROW@88..90 "->"
+                      WhereExpression@90..92
+                        ExpressionInteger@90..92
+                          Annotation@90..91
+                            TEXT@90..91 " "
+                          INTEGER@91..92 "0"
+                  LAYOUT_SEPARATOR@92..92 ""
+                  CaseBranch@92..117
+                    CaseBranchBinders@92..112
+                      BinderArray@92..112
+                        Annotation@92..95
+                          TEXT@92..95 "\n  "
+                        LEFT_SQUARE@95..96 "["
+                        BinderConstructor@96..102
+                          QualifiedName@96..100
+                            UPPER@96..100 "Just"
+                          BinderVariable@100..102
+                            Annotation@100..101
+                              TEXT@100..101 " "
+                            LOWER@101..102 "x"
+                        COMMA@102..103 ","
+                        BinderConstructor@103..111
+                          Annotation@103..104
+                            TEXT@103..104 " "
+                          QualifiedName@104..111
+                            UPPER@104..111 "Nothing"
+                        RIGHT_SQUARE@111..112 "]"
+                    Unconditional@112..117
+                      Annotation@112..113
+                        TEXT@112..113 " "
+                      RIGHT_ARROW@113..115 "->"
+                      WhereExpression@115..117
+                        ExpressionVariable@115..117
+                          Annotation@115..116
+                            TEXT@115..116 " "
+                          QualifiedName@116..117
+                            LOWER@116..117 "x"
+                  LAYOUT_SEPARATOR@117..117 ""
+                  CaseBranch@117..150
+                    CaseBranchBinders@117..145
+                      BinderRecord@117..145
+                        Annotation@117..120
+                          TEXT@117..120 "\n  "
+                        LEFT_CURLY@120..121 "{"
+                        RecordField@121..132
+                          LabelName@121..123
+                            Annotation@121..122
+                              TEXT@121..122 " "
+                            TEXT@122..123 "a"
+                          COLON@123..124 ":"
+                          BinderConstructor@124..132
+                            Annotation@124..125
+                              TEXT@124..125 " "
+                            QualifiedName@125..132
+                              UPPER@125..132 "Nothing"
+                        COMMA@132..133 ","
+                        RecordField@133..143
+                          LabelName@133..135
+                            Annotation@133..134
+                              TEXT@133..134 " "
+                            TEXT@134..135 "b"
+                          COLON@135..136 ":"
+                          BinderConstructor@136..143
+                            Annotation@136..137
+                              TEXT@136..137 " "
+                            QualifiedName@137..141
+                              UPPER@137..141 "Just"
+                            BinderVariable@141..143
+                              Annotation@141..142
+                                TEXT@141..142 " "
+                              LOWER@142..143 "x"
+                        Annotation@143..144
+                          TEXT@143..144 " "
+                        RIGHT_CURLY@144..145 "}"
+                    Unconditional@145..150
+                      Annotation@145..146
+                        TEXT@145..146 " "
+                      RIGHT_ARROW@146..148 "->"
+                      WhereExpression@148..150
+                        ExpressionVariable@148..150
+                          Annotation@148..149
+                            TEXT@148..149 " "
+                          QualifiedName@149..150
+                            LOWER@149..150 "x"
+                  LAYOUT_SEPARATOR@150..150 ""
+                  CaseBranch@150..188
+                    CaseBranchBinders@150..183
+                      BinderConstructor@150..183
+                        Annotation@150..153
+                          TEXT@150..153 "\n  "
+                        QualifiedName@153..158
+                          UPPER@153..158 "Tuple"
+                        BinderArray@158..168
+                          Annotation@158..159
+                            TEXT@158..159 " "
+                          LEFT_SQUARE@159..160 "["
+                          BinderConstructor@160..167
+                            QualifiedName@160..167
+                              UPPER@160..167 "Nothing"
+                          RIGHT_SQUARE@167..168 "]"
+                        BinderRecord@168..183
+                          Annotation@168..169
+                            TEXT@168..169 " "
+                          LEFT_CURLY@169..170 "{"
+                          RecordField@170..181
+                            LabelName@170..172
+                              Annotation@170..171
+                                TEXT@170..171 " "
+                              TEXT@171..172 "x"
+                            COLON@172..173 ":"
+                            BinderConstructor@173..181
+                              Annotation@173..174
+                                TEXT@173..174 " "
+                              QualifiedName@174..181
+                                UPPER@174..181 "Nothing"
+                          Annotation@181..182
+                            TEXT@181..182 " "
+                          RIGHT_CURLY@182..183 "}"
+                    Unconditional@183..188
+                      Annotation@183..184
+                        TEXT@183..184 " "
+                      RIGHT_ARROW@184..186 "->"
+                      WhereExpression@186..188
+                        ExpressionInteger@186..188
+                          Annotation@186..187
+                            TEXT@186..187 " "
+                          INTEGER@187..188 "0"
+                  LAYOUT_END@188..188 ""
+      LAYOUT_END@188..188 ""
+      Annotation@188..189
+        TEXT@188..189 "\n"
+      END_OF_FILE@189..189 ""
+    ,
+    [],
+)
