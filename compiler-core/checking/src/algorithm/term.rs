@@ -348,7 +348,34 @@ where
             Ok(inferred_type)
         }
 
-        lowering::ExpressionKind::InfixChain { .. } => Ok(unknown),
+        lowering::ExpressionKind::InfixChain { head, tail } => {
+            let Some(head) = *head else { return Ok(unknown) };
+
+            let mut infix_type = infer_expression(state, context, head)?;
+
+            for lowering::InfixPair { tick, element } in tail.iter() {
+                let Some(tick) = *tick else { return Ok(unknown) };
+                let Some(element) = *element else { return Ok(unknown) };
+
+                let tick_type = infer_expression(state, context, tick)?;
+
+                let applied_tick = check_function_application_core(
+                    state,
+                    context,
+                    tick_type,
+                    infix_type,
+                    |state, context, infix_type, expected_type| {
+                        let _ = unification::subtype(state, context, infix_type, expected_type)?;
+                        Ok(infix_type)
+                    },
+                )?;
+
+                infix_type =
+                    check_function_term_application(state, context, applied_tick, element)?;
+            }
+
+            Ok(infix_type)
+        }
 
         lowering::ExpressionKind::Negate { .. } => Ok(unknown),
 

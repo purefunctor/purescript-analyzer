@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+add :: Int -> Int -> Int
+sub :: Int -> Int -> Int
+mul :: Int -> Int -> Int
+test1 :: Int
+test1' :: Int
+test2 :: Int
+test2' :: Int
+test3 :: Int
+test3' :: Int
+const :: forall (a :: Type) (b :: Type). a -> b -> a
+test4 :: Int
+test4' :: Int
+test5 :: Int
+test5' :: Int
+apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
+chain :: forall (a :: Type) (b :: Type) (c :: Type). (b -> c) -> (a -> b) -> a -> c
+test6 :: Int
+test6' :: Int
+curry :: forall (a :: Type) (b :: Type) (c :: Type). (a -> b -> c) -> a -> b -> c
+test7 :: Int -> Int
+test7' :: Int -> Int
+
+Types

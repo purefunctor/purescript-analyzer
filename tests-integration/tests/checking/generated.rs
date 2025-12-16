@@ -637,3 +637,14 @@ fn test_058_binder_operator_chain_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_059_term_infix_chain_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/059_term_infix_chain"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
