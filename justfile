@@ -22,7 +22,12 @@ coverage-html:
   cargo llvm-cov report --html
 
 @integration *args="":
-  cargo nextest run -p tests-integration "$@"
+  cargo nextest run -p tests-integration "$@" --status-level=fail --final-status-level=fail --failure-output=final
+
+[doc("Generate and display pending snapshots")]
+@pending-snapshots *args="":
+  INSTA_FORCE_PASS=1 cargo nextest run -p tests-integration {{args}} --status-level=none > /dev/null 2>&1
+  cargo insta pending-snapshots 2>/dev/null | while read snap; do cargo insta show "$snap.new"; done
 
 [doc("Apply clippy fixes and format")]
 fix:
