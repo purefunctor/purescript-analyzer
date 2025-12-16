@@ -670,3 +670,14 @@ fn test_061_record_binder_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_062_case_of_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/062_case_of"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

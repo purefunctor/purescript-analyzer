@@ -573,7 +573,27 @@ where
             Ok(state.make_function(&argument_types, result_type))
         }
 
-        lowering::ExpressionKind::CaseOf { .. } => Ok(unknown),
+        lowering::ExpressionKind::CaseOf { trunk, branches } => {
+            let inferred_type = state.fresh_unification_type(context);
+
+            let mut trunk_types = vec![];
+            for trunk in trunk.iter() {
+                let trunk_type = infer_expression(state, context, *trunk)?;
+                trunk_types.push(trunk_type);
+            }
+
+            for branch in branches.iter() {
+                for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
+                    let _ = check_binder(state, context, *binder, *trunk)?;
+                }
+                if let Some(guarded) = &branch.guarded_expression {
+                    let guarded_type = infer_guarded_expression(state, context, guarded)?;
+                    let _ = unification::subtype(state, context, inferred_type, guarded_type)?;
+                }
+            }
+
+            Ok(inferred_type)
+        }
 
         lowering::ExpressionKind::Do { bind, discard, statements } => {
             let Some(bind) = bind else { return Ok(unknown) };

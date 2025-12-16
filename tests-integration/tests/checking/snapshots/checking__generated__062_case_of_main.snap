@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Just :: forall (a :: Type). a -> Maybe a
+Nothing :: forall (a :: Type). Maybe a
+Left :: forall (a :: Type) (b :: Type). a -> Either a b
+Right :: forall (a :: Type) (b :: Type). b -> Either a b
+Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+test1 :: Maybe Int -> Int
+test1' :: Maybe Int -> Int
+test2 :: Maybe Int -> Maybe Int -> Int
+test2' :: Maybe Int -> Maybe Int -> Int
+test3 :: Either Int String -> Int
+test3' :: forall (t51 :: Type). Either Int t51 -> Int
+test4 :: Tuple (Maybe Int) (Maybe Int) -> Int
+test4' :: Tuple (Maybe Int) (Maybe Int) -> Int
+
+Types
+Maybe :: Type -> Type
+Either :: Type -> Type -> Type
+Tuple :: Type -> Type -> Type
