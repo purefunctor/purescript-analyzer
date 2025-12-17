@@ -701,11 +701,21 @@ where
             let map_type = lookup_term_variable(state, context, *map)?;
             let apply_type = lookup_term_variable(state, context, *apply)?;
 
-            let mut ado_statements = vec![];
+            // First, perform a forward pass where variable bindings are
+            // bound to unification variables and let bindings are checked.
+            // This is like inferring the lambda in a desugared representation.
+            let mut binder_types = vec![];
+            let mut expressions = vec![];
             for statement in statements.iter() {
                 match statement {
                     lowering::DoStatement::Bind { binder, expression } => {
-                        ado_statements.push((*binder, *expression));
+                        let binder_type = if let Some(binder) = binder {
+                            infer_binder(state, context, *binder)?
+                        } else {
+                            state.fresh_unification_type(context)
+                        };
+                        binder_types.push(binder_type);
+                        expressions.push(*expression);
                     }
                     lowering::DoStatement::Let { statements } => {
                         for statement in statements.iter() {
@@ -713,12 +723,16 @@ where
                         }
                     }
                     lowering::DoStatement::Discard { expression } => {
-                        ado_statements.push((None, *expression));
+                        let binder_type = state.fresh_unification_type(context);
+                        binder_types.push(binder_type);
+                        expressions.push(*expression);
                     }
                 }
             }
 
-            if ado_statements.is_empty() {
+            assert_eq!(binder_types.len(), expressions.len());
+
+            if expressions.is_empty() {
                 return if let Some(expression) = expression {
                     infer_expression(state, context, *expression)
                 } else {
@@ -726,61 +740,57 @@ where
                 };
             }
 
-            let mut binder_types = vec![];
-            for (binder, _) in &ado_statements {
-                let binder_type = state.fresh_unification_type(context);
-                if let Some(binder_id) = binder {
-                    let _ = check_binder(state, context, *binder_id, binder_type)?;
-                }
-                binder_types.push(binder_type);
-            }
-
+            // With the binders and let-bound names in scope, infer
+            // the type of the final expression as our starting point.
+            //
+            // main = ado
+            //   pure 1
+            //   y <- pure "Hello!"
+            //   in Message y
+            //
+            // expression_type := Message
             let expression_type = if let Some(expression) = expression {
                 infer_expression(state, context, *expression)?
             } else {
                 state.fresh_unification_type(context)
             };
 
-            // Create a function type using the unification variables created
-            // for the statement binders to infer the expression type with.
-            // Inference would usually constrain these unification variables
-            // so you may expect a signature like `Int -> Int -> Int` for the
-            // following example, for instance.
+            // Create a function type using the binder types collected
+            // from the forward pass. We made sure to allocate unification
+            // variables for the discard statements too.
             //
-            // main = do
-            //   x <- pure 1
-            //   y <- pure 2
-            //   in x + y
+            // lambda_type := ?discard -> ?y -> Message
             let lambda_type = state.make_function(&binder_types, expression_type);
 
-            let [(_, expression), tail @ ..] = &ado_statements[..] else {
+            let [expression, tail_expressions @ ..] = &expressions[..] else {
                 unreachable!("invariant violated: empty ado_statements");
             };
 
             // This applies map_type to the lambda_type that we just built
-            // and then to the inferred expression type, like so:
+            // and then to the inferred type of the first expression.
             //
             // map_type         := (a -> b) -> f a -> f b
-            // lambda_type      := Int -> Int -> Int
+            // lambda_type      := ?discard -> ?y -> Message
             //
-            // map_applied      := f Int -> f (Int -> Int)
+            // map_applied      := f ?discard -> f (?y -> Message)
             // expression_type  := f Int
             //
-            // accumulated_type := f (Int -> Int)
+            // accumulated_type := f (?y -> Message)
             let mut accumulated_type =
                 infer_ado_map(state, context, map_type, lambda_type, *expression)?;
 
-            // This applies apply_type to the accumulated_type that we have
-            // so far, and then to the inferred expression type, like so:
+            //
+            // This applies apply_type to the accumulated_type, and then to the
+            // inferred type of the expression to update the accumulated_type.
             //
             // apply_type       := f (a -> b) -> f a -> f b
-            // accumulated_type := f (Int -> Int)
+            // accumulated_type := f (?y -> Message)
             //
-            // accumulated_type := f Int -> f Int
-            // expression_type  := f Int
+            // accumulated_type := f ?y -> f Message
+            // expression_type  := f String
             //
-            // accumulated_type := f Int
-            for (_, expression) in tail {
+            // accumulated_type := f Message
+            for expression in tail_expressions {
                 accumulated_type =
                     infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
             }
