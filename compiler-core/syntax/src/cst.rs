@@ -896,6 +896,7 @@ has_children!(
 
 has_child!(
     ExpressionRecordUpdate
+    | expression() -> Expression
     | record_updates() -> RecordUpdates
 );
 

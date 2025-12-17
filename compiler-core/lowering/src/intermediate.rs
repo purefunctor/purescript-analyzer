@@ -153,6 +153,7 @@ pub enum ExpressionKind {
         labels: Option<Arc<[SmolStr]>>,
     },
     RecordUpdate {
+        record: Option<ExpressionId>,
         updates: Arc<[RecordUpdate]>,
     },
 }

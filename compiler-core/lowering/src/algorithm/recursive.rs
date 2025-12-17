@@ -428,11 +428,12 @@ fn lower_expression_kind(
             ExpressionKind::RecordAccess { record, labels }
         }
         cst::Expression::ExpressionRecordUpdate(cst) => {
+            let record = cst.expression().map(|cst| lower_expression(state, context, &cst));
             let updates = cst
                 .record_updates()
                 .map(|cst| lower_record_updates(state, context, &cst))
                 .unwrap_or_default();
-            ExpressionKind::RecordUpdate { updates }
+            ExpressionKind::RecordUpdate { record, updates }
         }
     }
 }
