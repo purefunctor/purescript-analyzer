@@ -4,8 +4,8 @@ expression: report
 ---
 Terms
 negate :: forall (a :: Type). a -> a
-testRecord :: Record ( a :: Int, b :: Int )
-testRecord' :: Record ( a :: Int, b :: Int )
+testRecord :: { a :: Int, b :: Int }
+testRecord' :: { a :: Int, b :: Int }
 testArray :: Array Int
 testArray' :: Array Int
 testFunction :: Int -> Int

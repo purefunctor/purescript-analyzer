@@ -106,6 +106,19 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
 ) -> String {
     match source.lookup(id) {
         Type::Application(mut function, argument) => {
+            if is_record_constructor(source, function) {
+                return match source.lookup(argument) {
+                    Type::Row(RowType { fields, tail }) => {
+                        let body = traverse_row_body(source, context, &fields, tail);
+                        format!("{{ {body} }}")
+                    }
+                    _ => {
+                        let inner = traverse_precedence(source, context, Precedence::Top, argument);
+                        format!("{{ | {inner} }}")
+                    }
+                };
+            }
+
             let mut arguments = vec![argument];
 
             while let Type::Application(inner_function, argument) = source.lookup(function) {
@@ -266,22 +279,12 @@ fn traverse_precedence<'a, Q: ExternalQueries>(
         },
 
         Type::Row(RowType { fields, tail }) => {
-            let fields = fields
-                .iter()
-                .map(|RowField { label, id }| {
-                    let label_type = traverse_precedence(source, context, Precedence::Top, *id);
-                    format!("{label} :: {label_type}")
-                })
-                .join(", ");
-
-            let tail = tail.map(|tail| traverse_precedence(source, context, Precedence::Top, tail));
-
-            match tail {
-                Some(tail) if fields.is_empty() => format!("( | {tail} )"),
-                Some(tail) => format!("( {fields} | {tail} )"),
-                None if fields.is_empty() => "()".to_string(),
-                None => format!("( {fields} )"),
+            if fields.is_empty() && tail.is_none() {
+                return "()".to_string();
             }
+
+            let body = traverse_row_body(source, context, &fields, tail);
+            format!("( {body} )")
         }
 
         Type::Variable(ref variable) => render_variable(variable, context),
@@ -307,4 +310,36 @@ fn render_variable(variable: &Variable, context: &TraversalContext) -> String {
         }
         Variable::Free(name) => format!("{name}"),
     }
+}
+
+fn traverse_row_body<Q: ExternalQueries>(
+    source: &mut TraversalSource<'_, Q>,
+    context: &mut TraversalContext,
+    fields: &[RowField],
+    tail: Option<TypeId>,
+) -> String {
+    let fields = fields
+        .iter()
+        .map(|RowField { label, id }| {
+            let label_type = traverse_precedence(source, context, Precedence::Top, *id);
+            format!("{label} :: {label_type}")
+        })
+        .join(", ");
+
+    let tail = tail.map(|tail| traverse_precedence(source, context, Precedence::Top, tail));
+
+    match tail {
+        Some(tail) if fields.is_empty() => format!("| {tail}"),
+        Some(tail) => format!("{fields} | {tail}"),
+        None => fields,
+    }
+}
+
+fn is_record_constructor<Q: ExternalQueries>(source: &mut TraversalSource<Q>, id: TypeId) -> bool {
+    if let Type::Constructor(file_id, type_id) = source.lookup(id)
+        && file_id == source.queries().prim_id()
+            && let Some(name) = lookup_type_name(source, file_id, type_id) {
+                return name == "Record";
+            }
+    false
 }

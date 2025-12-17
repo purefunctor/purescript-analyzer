@@ -3,13 +3,13 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-test1 :: Record ( x :: Int, y :: Int ) -> Int
-test1' :: forall (t7 :: Type) (t8 :: Type). Record ( x :: t8, y :: t7 ) -> t8
-test2 :: Record ( x :: Int, y :: String ) -> Record ( x :: Int, y :: String )
-test2' :: forall (t17 :: Type) (t18 :: Type). Record ( x :: t17, y :: t18 ) -> Record ( x :: t17, y :: t18 )
-test3 :: Record ( age :: Int, name :: String ) -> String
-test3' :: forall (t27 :: Type) (t28 :: Type). Record ( age :: t27, name :: t28 ) -> t28
-nested :: Record ( inner :: Record ( x :: Int ) ) -> Int
-nested' :: forall (t37 :: Type). Record ( inner :: Record ( x :: t37 ) ) -> t37
+test1 :: { x :: Int, y :: Int } -> Int
+test1' :: forall (t7 :: Type) (t8 :: Type). { x :: t8, y :: t7 } -> t8
+test2 :: { x :: Int, y :: String } -> { x :: Int, y :: String }
+test2' :: forall (t17 :: Type) (t18 :: Type). { x :: t17, y :: t18 } -> { x :: t17, y :: t18 }
+test3 :: { age :: Int, name :: String } -> String
+test3' :: forall (t27 :: Type) (t28 :: Type). { age :: t27, name :: t28 } -> t28
+nested :: { inner :: { x :: Int } } -> Int
+nested' :: forall (t37 :: Type). { inner :: { x :: t37 } } -> t37
 
 Types

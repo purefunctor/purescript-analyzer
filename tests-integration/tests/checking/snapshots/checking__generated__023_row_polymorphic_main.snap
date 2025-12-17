@@ -9,7 +9,7 @@ HasName :: Row Type -> Type
 HasNameRow :: Row Type -> Row Type
 
 Synonyms
-HasName = forall (r :: Row Type). Record ( name :: String | r )
+HasName = forall (r :: Row Type). { name :: String | r }
   Quantified = :0
   Kind = :0
   Type = :1

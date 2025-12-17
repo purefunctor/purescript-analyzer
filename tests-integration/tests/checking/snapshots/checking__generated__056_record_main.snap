@@ -3,9 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-label :: Record ( a :: Int, b :: String )
-field :: forall (t3 :: Type) (t4 :: Type). t3 -> t4 -> Record ( a :: t3, b :: t4 )
+label :: { a :: Int, b :: String }
+field :: forall (t3 :: Type) (t4 :: Type). t3 -> t4 -> { a :: t3, b :: t4 }
 id :: forall (a :: Type). a -> a
-polymorphic :: forall (t9 :: Type) (t10 :: Type). Record ( a :: t9 -> t9, b :: t10 -> t10 )
+polymorphic :: forall (t9 :: Type) (t10 :: Type). { a :: t9 -> t9, b :: t10 -> t10 }
 
 Types

@@ -6,7 +6,7 @@ Terms
 pure :: forall (a :: Type). a -> Effect a
 map :: forall (a :: Type) (b :: Type). (a -> b) -> Effect a -> Effect b
 apply :: forall (a :: Type) (b :: Type). Effect (a -> b) -> Effect a -> Effect b
-test :: Effect (Record ( x :: Int, y :: Record ( x :: Int ), z :: String ))
+test :: Effect { x :: Int, y :: { x :: Int }, z :: String }
 
 Types
 Effect :: Type -> Type

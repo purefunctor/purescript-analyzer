@@ -10,7 +10,7 @@ PersonRow :: Row Type
 PersonRecord :: Type
 
 Synonyms
-Person = Record ( age :: Int, name :: String )
+Person = { age :: Int, name :: String }
   Quantified = :0
   Kind = :0
   Type = :0
@@ -20,7 +20,7 @@ PersonRow = ( age :: Int, name :: String )
   Kind = :0
   Type = :0
 
-PersonRecord = Record ( age :: Int, name :: String )
+PersonRecord = { age :: Int, name :: String }
   Quantified = :0
   Kind = :0
   Type = :0

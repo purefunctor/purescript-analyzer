@@ -16,7 +16,7 @@ EmptyRow = ()
   Kind = :0
   Type = :0
 
-EmptyRecord = Record ()
+EmptyRecord = {  }
   Quantified = :0
   Kind = :0
   Type = :0
@@ -26,7 +26,7 @@ TailOnly = forall (t13 :: Type) (r :: Row t13). ( | r )
   Kind = :0
   Type = :1
 
-TailOnlyRecord = forall (r :: Row Type). Record ( | r )
+TailOnlyRecord = forall (r :: Row Type). { | r }
   Quantified = :0
   Kind = :0
   Type = :1
