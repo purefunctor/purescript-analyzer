@@ -1,0 +1,41 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+pure@Some(Position { line: 10, character: 6 })
+  resolves to top-level name
+{ x, y }@Some(Position { line: 11, character: 4 })
+  resolves to binder Some(Position { line: 8, character: 10 })
+{ x, y }@Some(Position { line: 11, character: 4 })
+  resolves to binder Some(Position { line: 9, character: 14 })
+x@Some(Position { line: 10, character: 11 })
+  resolves to binder Some(Position { line: 8, character: 10 })
+pure@Some(Position { line: 9, character: 6 })
+  resolves to top-level name
+
+Types:
+
+b@Some(Position { line: 5, character: 39 })
+  resolves to forall Some(Position { line: 5, character: 30 })
+a@Some(Position { line: 6, character: 61 })
+  resolves to forall Some(Position { line: 6, character: 30 })
+b@Some(Position { line: 6, character: 73 })
+  resolves to forall Some(Position { line: 6, character: 32 })
+b@Some(Position { line: 6, character: 48 })
+  resolves to forall Some(Position { line: 6, character: 32 })
+a@Some(Position { line: 5, character: 35 })
+  resolves to forall Some(Position { line: 5, character: 28 })
+a@Some(Position { line: 6, character: 44 })
+  resolves to forall Some(Position { line: 6, character: 30 })
+a@Some(Position { line: 5, character: 52 })
+  resolves to forall Some(Position { line: 5, character: 28 })
+b@Some(Position { line: 5, character: 64 })
+  resolves to forall Some(Position { line: 5, character: 30 })
+a@Some(Position { line: 4, character: 32 })
+  resolves to forall Some(Position { line: 4, character: 29 })
+a@Some(Position { line: 4, character: 44 })
+  resolves to forall Some(Position { line: 4, character: 29 })

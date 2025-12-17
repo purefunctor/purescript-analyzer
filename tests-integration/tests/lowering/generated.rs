@@ -131,3 +131,25 @@ fn test_012_recursive_synonym_main() {
     let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_013_ado_statement_let_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/013_ado_statement_let"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_014_ado_statement_binder_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/014_ado_statement_binder"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, "Main");
+    insta::assert_snapshot!(report);
+}
