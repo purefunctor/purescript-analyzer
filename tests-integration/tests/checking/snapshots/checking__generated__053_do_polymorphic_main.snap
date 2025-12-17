@@ -8,7 +8,7 @@ bind :: forall (m :: Type -> Type) (a :: Type) (b :: Type). m a -> (a -> m b) ->
 discard :: forall (m :: Type -> Type) (a :: Type) (b :: Type). m a -> (a -> m b) -> m b
 pure :: forall (m :: Type -> Type) (a :: Type). a -> m a
 test :: forall (m :: Type -> Type). m (Tuple Int String)
-test' :: forall (t62 :: Type -> Type). t62 (Tuple Int String)
+test' :: forall (t60 :: Type -> Type). t60 (Tuple Int String)
 
 Types
 Tuple :: Type -> Type -> Type
