@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+singleFieldUpdate :: forall (t3 :: Type) (t4 :: Type). { a :: t3 | t4 } -> { a :: Int | t4 }
+multipleFieldUpdate :: forall (t8 :: Type) (t9 :: Type) (t10 :: Type) (t11 :: Type). { a :: t8, b :: t9, c :: t10 | t11 } -> { a :: Int, b :: Boolean, c :: String | t11 }
+nestedRecordUpdate :: forall (t15 :: Type) (t16 :: Type) (t17 :: Type) (t18 :: Type). { a :: { b :: { c :: t15 | t16 } | t17 } | t18 } -> { a :: { b :: { c :: Int | t16 } | t17 } | t18 }
+updateWithValueSection :: forall (t22 :: Type) (t24 :: Type). { a :: t22 | t24 } -> { a :: Int -> Int | t24 }
+updateWithSectionInteraction :: forall (t28 :: Type) (t29 :: Type) (t30 :: Type). { a :: t29 | t30 } -> t28 -> { a :: t28 | t30 }
+polymorphicRecordUpdate :: forall (t34 :: Type) (t35 :: Type). { foo :: t34 | t35 } -> { foo :: Int | t35 }
+higherOrderContext :: forall (t44 :: Type) (t45 :: Type). Array { x :: t44 | t45 } -> Array { x :: Int | t45 }
+multipleSectionsInteraction :: forall (t49 :: Type) (t50 :: Type) (t51 :: Type) (t52 :: Type) (t53 :: Type). { x :: t51, y :: t52 | t53 } -> t49 -> t50 -> { x :: t49, y :: t50 | t53 }
+nestedSectionInteraction :: forall (t57 :: Type) (t58 :: Type) (t59 :: Type) (t60 :: Type). { a :: { b :: t58 | t59 } | t60 } -> t57 -> { a :: { b :: t57 | t59 } | t60 }
+mixedSections :: forall (t64 :: Type) (t66 :: Type) (t67 :: Type). { a :: t64, b :: t66 | t67 } -> { a :: Int -> Int, b :: Int | t67 }
+recordAccessSectionUpdate :: forall (t71 :: Type) (t73 :: Type) (t74 :: Type) (t75 :: Type). { a :: t71 | t75 } -> { a :: { b :: t73 | t74 } -> t73 | t75 }
+concreteRecordUpdateSection :: forall (t78 :: Type). t78 -> { a :: t78 | () }
+map :: forall (a :: Type) (b :: Type). (a -> b) -> Array a -> Array b
++ :: Int -> Int -> Int
+add :: Int -> Int -> Int
+
+Types

@@ -736,3 +736,47 @@ fn test_067_ado_let_main() {
     let report = tests_integration::generated::basic::report_checked(&engine, id);
     insta::assert_snapshot!(report);
 }
+
+#[rustfmt::skip]
+#[test]
+fn test_068_expression_sections_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/068_expression_sections"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_069_expression_sections_inference_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/069_expression_sections_inference"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_070_record_access_sections_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/070_record_access_sections"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}
+
+#[rustfmt::skip]
+#[test]
+fn test_071_record_update_sections_main() {
+    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/071_record_update_sections"));
+    let Some(id) = engine.module_file("Main") else {
+        return;
+    };
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    insta::assert_snapshot!(report);
+}

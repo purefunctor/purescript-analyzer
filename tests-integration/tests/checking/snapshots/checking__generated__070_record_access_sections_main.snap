@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+map :: forall (a :: Type) (b :: Type). (a -> b) -> Array a -> Array b
+apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
+f :: ({ foo :: Int } -> Int) -> Int
+test1 :: forall (t9 :: Type) (t10 :: Type). { prop :: t9 | t10 } -> t9
+test2 :: forall (t15 :: Type) (t17 :: Type) (t18 :: Type) (t19 :: Type). { a :: { b :: { c :: t18 | t19 } | t17 } | t15 } -> t18
+test3 :: forall (t23 :: Type) (t24 :: Type). { poly :: t23 | t24 } -> t23
+test4 :: forall (t28 :: Type) (t31 :: Type). Array { prop :: t28 | t31 } -> Array t28
+test5 :: Int
+test6 :: forall (t40 :: Type) (t42 :: Type) (t46 :: Type) (t47 :: Type). t40 -> (({ bar :: t46 | t47 } -> t46) -> t42) -> t42
+test7 :: forall (t52 :: Type) (t53 :: Type). { nonexistent :: t52 | t53 } -> t52
+test8 :: forall (t58 :: Type) (t60 :: Type) (t61 :: Type). (({ foo :: t60 | t61 } -> t60) -> t58) -> t58
+test9 :: forall (t65 :: Type) (t70 :: Type) (t71 :: Type). Array (({ prop :: t70 | t71 } -> t70) -> t65) -> Array t65
+test10 :: forall (t75 :: Type) (t78 :: Type) (t80 :: Type). { a :: { b :: t75 | t80 } | t78 } -> t75
+test11 :: forall (t83 :: Type) (t85 :: Type) (t86 :: Type). t83 -> { a :: t83, b :: { foo :: t85 | t86 } -> t85 }
+test12 :: forall (t92 :: Type) (t93 :: Type). ({ bar :: t92 | t93 } -> t92) -> Array ({ bar :: t92 | t93 } -> t92)
+test13 :: forall (t96 :: Type) (t99 :: Type) (t100 :: Type). t96 -> { prop :: t99 | t100 } -> t99
+test14 :: forall (t106 :: Type) (t111 :: Type). Boolean -> { a :: t106 | ( b :: t106 | t111 ) } -> t106
+
+Types

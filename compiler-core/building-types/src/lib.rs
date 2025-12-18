@@ -16,6 +16,7 @@ pub enum QueryKey {
     Lowered(FileId),
     Resolved(FileId),
     Bracketed(FileId),
+    Sectioned(FileId),
     Checked(FileId),
 }
 
@@ -36,6 +37,7 @@ pub trait QueryProxy {
     type Lowered;
     type Resolved;
     type Bracketed;
+    type Sectioned;
     type Checked;
 
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed>;
@@ -49,6 +51,8 @@ pub trait QueryProxy {
     fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved>;
 
     fn bracketed(&self, id: FileId) -> QueryResult<Self::Bracketed>;
+
+    fn sectioned(&self, id: FileId) -> QueryResult<Self::Sectioned>;
 
     fn checked(&self, id: FileId) -> QueryResult<Self::Checked>;
 

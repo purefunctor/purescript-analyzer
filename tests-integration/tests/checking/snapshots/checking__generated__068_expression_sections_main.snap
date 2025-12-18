@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
++ :: Int -> Int -> Int
+Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+add :: Int -> Int -> Int
+negate :: Int -> Int
+test1 :: Int -> Int
+test2 :: Int -> Int
+test3 :: Int -> Int -> Int
+test4 :: forall (t17 :: Type) (t18 :: Type). { foo :: t17 | t18 } -> t17
+test5 :: forall (t22 :: Type) (t23 :: Type). { foo :: t22 | t23 } -> { foo :: Int | t23 }
+test6 :: forall (t29 :: Type). Boolean -> t29 -> t29 -> t29
+test7 :: Int -> Int
+test8 :: Int -> Int
+test9 :: Int -> Int -> Int
+test10 :: forall (t43 :: Type). ((Int -> Int) -> t43) -> t43
+test11 :: forall (t50 :: Type). t50 -> Array t50
+test12 :: forall (t53 :: Type). t53 -> { foo :: t53 }
+test13 :: forall (t56 :: Type). t56 -> t56
+test14 :: forall (t61 :: Type). t61 -> t61 -> Array t61
+test15 :: forall (t64 :: Type) (t65 :: Type). t64 -> t65 -> { a :: t64, b :: t65 }
+test16 :: forall (t69 :: Type). t69 -> Tuple t69 Int
+test17 :: Tuple String Int
+test18 :: Int -> Int
+
+Types
+Tuple :: Type -> Type -> Type

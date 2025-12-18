@@ -14,7 +14,7 @@ use lowering::{
     TypeVariableBindingId,
 };
 use rustc_hash::FxHashMap;
-use sugar::Bracketed;
+use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{quantify, transfer};
 use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
@@ -38,6 +38,7 @@ pub struct CheckState {
     pub env_binder: FxHashMap<BinderId, TypeId>,
     pub env_let: FxHashMap<LetBindingNameGroupId, TypeId>,
     pub env_pun: FxHashMap<RecordPunId, TypeId>,
+    pub env_section: FxHashMap<lowering::ExpressionId, TypeId>,
 }
 
 #[derive(Default)]
@@ -72,6 +73,7 @@ where
     pub indexed: Arc<IndexedModule>,
     pub lowered: Arc<LoweredModule>,
     pub bracketed: Arc<Bracketed>,
+    pub sectioned: Arc<Sectioned>,
 
     pub prim_indexed: Arc<IndexedModule>,
 }
@@ -88,10 +90,20 @@ where
         let indexed = queries.indexed(id)?;
         let lowered = queries.lowered(id)?;
         let bracketed = queries.bracketed(id)?;
+        let sectioned = queries.sectioned(id)?;
         let prim = PrimCore::collect(queries, state)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
-        Ok(CheckContext { queries, prim, id, indexed, lowered, bracketed, prim_indexed })
+        Ok(CheckContext {
+            queries,
+            prim,
+            id,
+            indexed,
+            lowered,
+            bracketed,
+            sectioned,
+            prim_indexed,
+        })
     }
 }
 

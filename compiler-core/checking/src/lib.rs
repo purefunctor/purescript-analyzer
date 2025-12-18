@@ -21,6 +21,7 @@ pub trait ExternalQueries:
         Lowered = Arc<LoweredModule>,
         Resolved = Arc<ResolvedModule>,
         Bracketed = Arc<sugar::Bracketed>,
+        Sectioned = Arc<sugar::Sectioned>,
         Checked = Arc<CheckedModule>,
     >
 {

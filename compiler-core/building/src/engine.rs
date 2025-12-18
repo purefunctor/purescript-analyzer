@@ -96,6 +96,7 @@ struct DerivedStorage {
     lowered: FxHashMap<FileId, DerivedState<Arc<LoweredModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
     bracketed: FxHashMap<FileId, DerivedState<Arc<sugar::Bracketed>>>,
+    sectioned: FxHashMap<FileId, DerivedState<Arc<sugar::Sectioned>>>,
     checked: FxHashMap<FileId, DerivedState<Arc<CheckedModule>>>,
 }
 
@@ -423,6 +424,7 @@ impl QueryEngine {
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
                 QueryKey::Bracketed(k) => derived_changed!(bracketed, k),
+                QueryKey::Sectioned(k) => derived_changed!(sectioned, k),
                 QueryKey::Checked(k) => derived_changed!(checked, k),
             }
         }
@@ -715,6 +717,19 @@ impl QueryEngine {
         )
     }
 
+    pub fn sectioned(&self, id: FileId) -> QueryResult<Arc<sugar::Sectioned>> {
+        self.query(
+            QueryKey::Sectioned(id),
+            |storage| storage.derived.sectioned.get(&id),
+            |storage| storage.derived.sectioned.entry(id),
+            |this| {
+                let lowered = this.lowered(id)?;
+                let sectioned = sugar::sectioned(&lowered);
+                Ok(Arc::new(sectioned))
+            },
+        )
+    }
+
     pub fn checked(&self, id: FileId) -> QueryResult<Arc<CheckedModule>> {
         self.query(
             QueryKey::Checked(id),
@@ -747,6 +762,8 @@ impl QueryProxy for QueryEngine {
 
     type Bracketed = Arc<sugar::Bracketed>;
 
+    type Sectioned = Arc<sugar::Sectioned>;
+
     type Checked = Arc<CheckedModule>;
 
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
@@ -771,6 +788,10 @@ impl QueryProxy for QueryEngine {
 
     fn bracketed(&self, id: FileId) -> QueryResult<Self::Bracketed> {
         QueryEngine::bracketed(self, id)
+    }
+
+    fn sectioned(&self, id: FileId) -> QueryResult<Self::Sectioned> {
+        QueryEngine::sectioned(self, id)
     }
 
     fn checked(&self, id: FileId) -> QueryResult<Self::Checked> {

@@ -462,6 +462,42 @@ pub fn infer_expression<Q>(
 where
     Q: ExternalQueries,
 {
+    if let Some(section_result) = context.sectioned.expressions.get(&expr_id) {
+        infer_sectioned_expression(state, context, expr_id, section_result)
+    } else {
+        infer_expression_core(state, context, expr_id)
+    }
+}
+
+fn infer_sectioned_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expr_id: lowering::ExpressionId,
+    section_result: &sugar::SectionResult,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let parameter_types = section_result.iter().map(|&section_id| {
+        let parameter_type = state.fresh_unification_type(context);
+        state.env_section.insert(section_id, parameter_type);
+        parameter_type
+    });
+
+    let parameter_types = parameter_types.collect_vec();
+    let result_type = infer_expression_core(state, context, expr_id)?;
+
+    Ok(state.make_function(&parameter_types, result_type))
+}
+
+fn infer_expression_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expr_id: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     let unknown = context.prim.unknown;
 
     let Some(kind) = context.lowered.info.get_expression_kind(expr_id) else {
@@ -813,7 +849,13 @@ where
             lookup_file_term(state, context, *file_id, *term_id)
         }
 
-        lowering::ExpressionKind::Section => Ok(unknown),
+        lowering::ExpressionKind::Section => {
+            if let Some(&type_id) = state.env_section.get(&expr_id) {
+                Ok(type_id)
+            } else {
+                Ok(unknown)
+            }
+        }
 
         lowering::ExpressionKind::Hole => Ok(unknown),
 
@@ -887,10 +929,105 @@ where
             infer_expression(state, context, *parenthesized)
         }
 
-        lowering::ExpressionKind::RecordAccess { .. } => Ok(unknown),
+        lowering::ExpressionKind::RecordAccess { record, labels } => {
+            let Some(record) = record else { return Ok(unknown) };
+            let Some(labels) = labels else { return Ok(unknown) };
 
-        lowering::ExpressionKind::RecordUpdate { .. } => Ok(unknown),
+            let mut current_type = infer_expression(state, context, *record)?;
+
+            for label in labels.iter() {
+                let label = SmolStr::clone(label);
+
+                let field_type = state.fresh_unification_type(context);
+                let tail_type = state.fresh_unification_type(context);
+
+                let row_type = RowType::from_unsorted(
+                    vec![RowField { label, id: field_type }],
+                    Some(tail_type),
+                );
+
+                let row_type = state.storage.intern(Type::Row(row_type));
+                let record_type =
+                    state.storage.intern(Type::Application(context.prim.record, row_type));
+
+                unification::subtype(state, context, current_type, record_type)?;
+                current_type = field_type;
+            }
+
+            Ok(current_type)
+        }
+
+        lowering::ExpressionKind::RecordUpdate { record, updates } => {
+            let Some(record) = record else { return Ok(unknown) };
+
+            let (input_fields, output_fields, tail) = infer_record_updates(state, context, updates)?;
+
+            let input_row = RowType::from_unsorted(input_fields, Some(tail));
+            let input_row = state.storage.intern(Type::Row(input_row));
+            let input_record =
+                state.storage.intern(Type::Application(context.prim.record, input_row));
+
+            let output_row = RowType::from_unsorted(output_fields, Some(tail));
+            let output_row = state.storage.intern(Type::Row(output_row));
+            let output_record =
+                state.storage.intern(Type::Application(context.prim.record, output_row));
+
+            check_expression(state, context, *record, input_record)?;
+
+            Ok(output_record)
+        }
     }
+}
+
+fn infer_record_updates<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    updates: &[lowering::RecordUpdate],
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let mut input_fields = vec![];
+    let mut output_fields = vec![];
+
+    for update in updates {
+        match update {
+            lowering::RecordUpdate::Leaf { name, expression } => {
+                let Some(name) = name else { continue };
+                let label = SmolStr::clone(name);
+
+                let input_id = state.fresh_unification_type(context);
+                let output_id = if let Some(expression) = expression {
+                    infer_expression(state, context, *expression)?
+                } else {
+                    context.prim.unknown
+                };
+
+                input_fields.push(RowField { label: label.clone(), id: input_id });
+                output_fields.push(RowField { label, id: output_id });
+            }
+            lowering::RecordUpdate::Branch { name, updates } => {
+                let Some(name) = name else { continue };
+                let label = SmolStr::clone(name);
+
+                let (in_f, out_f, tail) = infer_record_updates(state, context, updates)?;
+
+                let in_row = RowType::from_unsorted(in_f, Some(tail));
+                let in_row = state.storage.intern(Type::Row(in_row));
+                let in_id = state.storage.intern(Type::Application(context.prim.record, in_row));
+
+                let out_row = RowType::from_unsorted(out_f, Some(tail));
+                let out_row = state.storage.intern(Type::Row(out_row));
+                let out_id = state.storage.intern(Type::Application(context.prim.record, out_row));
+
+                input_fields.push(RowField { label: label.clone(), id: in_id });
+                output_fields.push(RowField { label, id: out_id });
+            }
+        }
+    }
+
+    let tail = state.fresh_unification_type(context);
+    Ok((input_fields, output_fields, tail))
 }
 
 fn lookup_term_variable<Q>(
