@@ -6,28 +6,19 @@ Terms
 map :: forall (a :: Type) (b :: Type). (a -> b) -> Array a -> Array b
 apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
 f :: ({ foo :: Int } -> Int) -> Int
-test1 :: forall (t9 :: Type) (t10 :: Type). { prop :: t9 | t10 } -> t9
-test2 :: forall (t15 :: Type) (t17 :: Type) (t18 :: Type) (t19 :: Type). { a :: { b :: { c :: t18 | t19 } | t17 } | t15 } -> t18
-test3 :: forall (t23 :: Type) (t24 :: Type). { poly :: t23 | t24 } -> t23
-test4 :: forall (t28 :: Type) (t31 :: Type). Array { prop :: t28 | t31 } -> Array t28
+test1 :: forall (t16 :: Type) (t17 :: Row Type). { prop :: t16 | t17 } -> t16
+test2 :: forall (t22 :: Row Type) (t24 :: Row Type) (t25 :: Type) (t26 :: Row Type). { a :: { b :: { c :: t25 | t26 } | t24 } | t22 } -> t25
+test3 :: forall (t30 :: Type) (t31 :: Row Type). { poly :: t30 | t31 } -> t30
+test4 :: forall (t35 :: Type) (t38 :: Row Type). Array { prop :: t35 | t38 } -> Array t35
 test5 :: Int
-test6 :: forall (t40 :: Type) (t42 :: Type) (t46 :: Type) (t47 :: Type). t40 -> (({ bar :: t46 | t47 } -> t46) -> t42) -> t42
-test7 :: forall (t52 :: Type) (t53 :: Type). { nonexistent :: t52 | t53 } -> t52
-test8 :: forall (t58 :: Type) (t60 :: Type) (t61 :: Type). (({ foo :: t60 | t61 } -> t60) -> t58) -> t58
-test9 :: forall (t65 :: Type) (t70 :: Type) (t71 :: Type). Array (({ prop :: t70 | t71 } -> t70) -> t65) -> Array t65
-test10 :: forall (t75 :: Type) (t78 :: Type) (t80 :: Type). { a :: { b :: t75 | t80 } | t78 } -> t75
-test11 :: forall (t83 :: Type) (t85 :: Type) (t86 :: Type). t83 -> { a :: t83, b :: { foo :: t85 | t86 } -> t85 }
-test12 :: forall (t92 :: Type) (t93 :: Type). ({ bar :: t92 | t93 } -> t92) -> Array ({ bar :: t92 | t93 } -> t92)
-test13 :: forall (t96 :: Type) (t99 :: Type) (t100 :: Type). t96 -> { prop :: t99 | t100 } -> t99
-test14 :: forall (t106 :: Type) (t111 :: Type). Boolean -> { a :: t106 | ( b :: t106 | t111 ) } -> t106
+test6 :: forall (t47 :: Type) (t49 :: Type) (t53 :: Type) (t54 :: Row Type). t47 -> (({ bar :: t53 | t54 } -> t53) -> t49) -> t49
+test7 :: forall (t59 :: Type) (t60 :: Row Type). { nonexistent :: t59 | t60 } -> t59
+test8 :: forall (t65 :: Type) (t67 :: Type) (t68 :: Row Type). (({ foo :: t67 | t68 } -> t67) -> t65) -> t65
+test9 :: forall (t72 :: Type) (t77 :: Type) (t78 :: Row Type). Array (({ prop :: t77 | t78 } -> t77) -> t72) -> Array t72
+test10 :: forall (t82 :: Type) (t85 :: Row Type) (t87 :: Row Type). { a :: { b :: t82 | t87 } | t85 } -> t82
+test11 :: forall (t90 :: Type) (t92 :: Type) (t93 :: Row Type). t90 -> { a :: t90, b :: { foo :: t92 | t93 } -> t92 }
+test12 :: forall (t99 :: Type) (t100 :: Row Type). ({ bar :: t99 | t100 } -> t99) -> Array ({ bar :: t99 | t100 } -> t99)
+test13 :: forall (t103 :: Type) (t106 :: Type) (t107 :: Row Type). t103 -> { prop :: t106 | t107 } -> t106
+test14 :: forall (t113 :: Type) (t118 :: Row Type). Boolean -> { a :: t113 | ( b :: t113 | t118 ) } -> t113
 
 Types
-
-Errors
-CannotUnify { t1: Id<checking::core::Type>(8), t2: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(0))]
-CannotUnify { t1: Id<checking::core::Type>(11), t2: Id<checking::core::Type>(12) } at [TermDeclaration(Idx::<TermItem>(0))]
-CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(55) } at [TermDeclaration(Idx::<TermItem>(7))]
-CannotUnify { t1: Id<checking::core::Type>(6), t2: Id<checking::core::Type>(1) } at [TermDeclaration(Idx::<TermItem>(16))]
-CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(6) } at [TermDeclaration(Idx::<TermItem>(16))]
-CannotUnify { t1: Id<checking::core::Type>(6), t2: Id<checking::core::Type>(1) } at [TermDeclaration(Idx::<TermItem>(16))]
-CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(6) } at [TermDeclaration(Idx::<TermItem>(16))]

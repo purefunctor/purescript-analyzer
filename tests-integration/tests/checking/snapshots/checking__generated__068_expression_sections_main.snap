@@ -10,8 +10,8 @@ negate :: Int -> Int
 test1 :: Int -> Int
 test2 :: Int -> Int
 test3 :: Int -> Int -> Int
-test4 :: forall (t17 :: Type) (t18 :: Type). { foo :: t17 | t18 } -> t17
-test5 :: forall (t22 :: Type) (t23 :: Type). { foo :: t22 | t23 } -> { foo :: Int | t23 }
+test4 :: forall (t17 :: Type) (t18 :: Row Type). { foo :: t17 | t18 } -> t17
+test5 :: forall (t22 :: Type) (t23 :: Row Type). { foo :: t22 | t23 } -> { foo :: Int | t23 }
 test6 :: forall (t29 :: Type). Boolean -> t29 -> t29 -> t29
 test7 :: Int -> Int
 test8 :: Int -> Int

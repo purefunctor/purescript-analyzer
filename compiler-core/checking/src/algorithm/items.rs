@@ -579,6 +579,34 @@ where
     Ok(())
 }
 
+pub fn check_term_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let Some(item) = context.lowered.info.get_term_item(item_id) else {
+            return Ok(());
+        };
+
+        if let TermItemIr::Foreign { signature } | TermItemIr::ValueGroup { signature, .. } = item {
+            let Some(signature) = signature else { return Ok(()) };
+            let (inferred_type, _) =
+                kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+            state.binding_group.terms.insert(item_id, inferred_type);
+        } else if let TermItemIr::Operator { resolution, .. } = item {
+            let Some((file_id, term_id)) = *resolution else { return Ok(()) };
+            let id = term::lookup_file_term(state, context, file_id, term_id)?;
+            state.binding_group.terms.insert(item_id, id);
+        }
+
+        Ok(())
+    })
+}
+
 pub(crate) fn check_term_item<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -591,63 +619,15 @@ where
         let Some(item) = context.lowered.info.get_term_item(item_id) else {
             return Ok(());
         };
-        match item {
-            TermItemIr::ClassMember { .. } => Ok(()),
-
-            TermItemIr::Constructor { .. } => Ok(()),
-
-            TermItemIr::Derive { .. } => Ok(()),
-
-            TermItemIr::Foreign { signature } => {
-                let Some(signature_id) = signature else {
-                    return Ok(());
-                };
-                let (inferred_type, _) =
-                    kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
-                state.binding_group.terms.insert(item_id, inferred_type);
-                Ok(())
+        if let TermItemIr::ValueGroup { signature, equations } = item {
+            if let Some(signature) = signature {
+                let signature = inspect::inspect_signature(state, context, *signature)?;
+                term::check_equations(state, context, signature, equations)
+            } else {
+                term::infer_value_group(state, context, item_id, equations)
             }
-
-            TermItemIr::Instance { .. } => Ok(()),
-
-            TermItemIr::Operator { associativity, precedence, resolution } => {
-                let Some(_associativity) = *associativity else {
-                    return Ok(());
-                };
-                let Some(_precedence) = *precedence else {
-                    return Ok(());
-                };
-                let Some((file_id, term_id)) = *resolution else {
-                    return Ok(());
-                };
-
-                let id = term::lookup_file_term(state, context, file_id, term_id)?;
-                state.binding_group.terms.insert(item_id, id);
-
-                Ok(())
-            }
-
-            TermItemIr::ValueGroup { signature, equations } => {
-                check_value_group_item(context, item_id, state, *signature, equations)
-            }
+        } else {
+            Ok(())
         }
     })
-}
-
-fn check_value_group_item<Q>(
-    context: &CheckContext<'_, Q>,
-    item_id: TermItemId,
-    state: &mut CheckState,
-    signature: Option<lowering::TypeId>,
-    equations: &[lowering::Equation],
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    if let Some(id) = signature {
-        let signature = inspect::inspect_signature(state, context, id)?;
-        term::check_value_group(state, context, item_id, (id, signature), equations)
-    } else {
-        term::infer_value_group(state, context, item_id, equations)
-    }
 }

@@ -26,6 +26,3 @@ test7 :: Int -> Int
 test7' :: Int -> Int
 
 Types
-
-Errors
-CannotUnify { t1: Id<checking::core::Type>(9), t2: Id<checking::core::Type>(8) } at [TermDeclaration(Idx::<TermItem>(19))]

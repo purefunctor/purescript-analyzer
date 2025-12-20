@@ -80,30 +80,7 @@ where
     Ok(())
 }
 
-pub fn check_value_group<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    item_id: TermItemId,
-    (_, signature): (lowering::TypeId, inspect::InspectSignature),
-    equations: &[lowering::Equation],
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    debug_assert!(
-        state.binding_group.lookup_term(item_id).is_none(),
-        "invariant violated: check_value_group in binding_group"
-    );
-
-    let item_type = signature.restore(state);
-    state.binding_group.terms.insert(item_id, item_type);
-
-    check_equations(state, context, signature, equations)?;
-
-    Ok(())
-}
-
-fn check_equations<Q>(
+pub fn check_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     signature: inspect::InspectSignature,
@@ -128,9 +105,12 @@ where
                 .for_each(drop);
         }
 
+        let expected_type =
+            if binder_count > 0 { signature.result } else { signature.restore(state) };
+
         if let Some(guarded) = &equation.guarded {
             let inferred_type = infer_guarded_expression(state, context, guarded)?;
-            let _ = unification::subtype(state, context, inferred_type, signature.result)?;
+            let _ = unification::subtype(state, context, inferred_type, expected_type)?;
         }
     }
 
@@ -939,7 +919,11 @@ where
                 let label = SmolStr::clone(label);
 
                 let field_type = state.fresh_unification_type(context);
-                let tail_type = state.fresh_unification_type(context);
+
+                let row_type_kind =
+                    state.storage.intern(Type::Application(context.prim.row, context.prim.t));
+
+                let tail_type = state.fresh_unification_kinded(row_type_kind);
 
                 let row_type = RowType::from_unsorted(
                     vec![RowField { label, id: field_type }],
@@ -960,7 +944,8 @@ where
         lowering::ExpressionKind::RecordUpdate { record, updates } => {
             let Some(record) = record else { return Ok(unknown) };
 
-            let (input_fields, output_fields, tail) = infer_record_updates(state, context, updates)?;
+            let (input_fields, output_fields, tail) =
+                infer_record_updates(state, context, updates)?;
 
             let input_row = RowType::from_unsorted(input_fields, Some(tail));
             let input_row = state.storage.intern(Type::Row(input_row));
@@ -1026,7 +1011,9 @@ where
         }
     }
 
-    let tail = state.fresh_unification_type(context);
+    let row_type_kind = state.storage.intern(Type::Application(context.prim.row, context.prim.t));
+    let tail = state.fresh_unification_kinded(row_type_kind);
+
     Ok((input_fields, output_fields, tail))
 }
 
@@ -1200,24 +1187,15 @@ where
         },
     )?;
 
-    check_function_application_core(
+    let result_type = check_function_application_core(
         state,
         context,
         discard_applied,
         (),
-        |state, context, _, continuation_type| {
-            check_function_application_core(
-                state,
-                context,
-                continuation_type,
-                (),
-                |state, context, _, expected_type| {
-                    let _ = unification::subtype(state, context, accumulated_type, expected_type)?;
-                    Ok(accumulated_type)
-                },
-            )
-        },
+        |_, _, _, continuation_type| Ok(continuation_type),
     )?;
+
+    let _ = unification::subtype(state, context, accumulated_type, result_type)?;
 
     Ok(accumulated_type)
 }
@@ -1286,7 +1264,8 @@ where
             let binder_level = binder.level;
             let binder_kind = binder.kind;
 
-            let (argument_type, _) = kind::check_surface_kind(state, context, argument, binder_kind)?;
+            let (argument_type, _) =
+                kind::check_surface_kind(state, context, argument, binder_kind)?;
             Ok(substitute::substitute_bound(state, binder_level, argument_type, inner))
         }
 

@@ -13,6 +13,3 @@ baz' :: forall (t9 :: Type). t9 -> t9
 qux' :: Int
 
 Types
-
-Errors
-CannotUnify { t1: Id<checking::core::Type>(13), t2: Id<checking::core::Type>(8) } at [TermDeclaration(Idx::<TermItem>(2))]

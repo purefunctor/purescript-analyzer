@@ -1,7 +1,7 @@
 module Main where
 
 map :: forall a b. (a -> b) -> Array a -> Array b
-map f x = x
+map f x = []
 
 apply :: forall a b. (a -> b) -> a -> b
 apply f x = f x

@@ -9,7 +9,3 @@ test :: Int
 test' :: Int
 
 Types
-
-Errors
-CannotUnify { t1: Id<checking::core::Type>(15), t2: Id<checking::core::Type>(16) } at [TermDeclaration(Idx::<TermItem>(2))]
-CannotUnify { t1: Id<checking::core::Type>(15), t2: Id<checking::core::Type>(16) } at [TermDeclaration(Idx::<TermItem>(3))]

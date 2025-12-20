@@ -336,7 +336,10 @@ where
                 return unify(state, context, t1_tail, t2_tail);
             }
 
-            let unification = state.fresh_unification_type(context);
+            let row_type_kind =
+                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
+
+            let unification = state.fresh_unification_kinded(row_type_kind);
 
             let left_tail_row =
                 Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });

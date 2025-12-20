@@ -11,6 +11,7 @@ pub mod unification;
 
 use building_types::QueryResult;
 use files::FileId;
+use itertools::Itertools;
 use lowering::Scc;
 
 use crate::core::{Type, TypeId};
@@ -59,31 +60,54 @@ pub(crate) fn check_source(
         }
     }
 
-    let term_binding_group = |id: indexing::TermItemId| {
-        let item = &context.indexed.items[id];
+    for scc in &context.lowered.term_scc {
+        match scc {
+            Scc::Base(item) | Scc::Recursive(item) => {
+                items::check_term_signature(&mut state, &context, *item)?;
+            }
+            Scc::Mutual(items) => {
+                for item in items {
+                    items::check_term_signature(&mut state, &context, *item)?;
+                }
+            }
+        }
+    }
+
+    let needs_binding_group = |item: &indexing::TermItemId| {
+        let item = &context.indexed.items[*item];
         matches!(item.kind, indexing::TermItemKind::Value { signature: None, .. })
     };
 
     for scc in &context.lowered.term_scc {
         match scc {
-            Scc::Base(id) | Scc::Recursive(id) => {
-                if term_binding_group(*id) {
-                    state.term_binding_group(&context, [*id]);
+            Scc::Base(item) | Scc::Recursive(item) => {
+                if !state.binding_group.terms.contains_key(item) && needs_binding_group(item) {
+                    state.term_binding_group(&context, [*item]);
                 }
-                items::check_term_item(&mut state, &context, *id)?;
+                items::check_term_item(&mut state, &context, *item)?;
                 state.commit_binding_group(&context);
             }
-            Scc::Mutual(mutual) => {
-                let binding_group = mutual.iter().copied().filter(|&id| term_binding_group(id));
-                state.term_binding_group(&context, binding_group);
+            Scc::Mutual(items) => {
+                let with_signature = items
+                    .iter()
+                    .filter(|id| state.binding_group.terms.contains_key(id))
+                    .copied()
+                    .collect_vec();
 
-                for id in mutual.iter().filter(|&id| !term_binding_group(*id)) {
+                let without_signature =
+                    items.iter().filter(|id| needs_binding_group(id)).copied().collect_vec();
+
+                let group = without_signature.iter().copied();
+                state.term_binding_group(&context, group);
+
+                for id in &without_signature {
                     items::check_term_item(&mut state, &context, *id)?;
                 }
-                for id in mutual.iter().filter(|&id| term_binding_group(*id)) {
+                state.commit_binding_group(&context);
+
+                for id in &with_signature {
                     items::check_term_item(&mut state, &context, *id)?;
                 }
-
                 state.commit_binding_group(&context);
             }
         }

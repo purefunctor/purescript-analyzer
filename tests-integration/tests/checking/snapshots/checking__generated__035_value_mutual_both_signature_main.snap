@@ -7,6 +7,3 @@ f :: forall (a :: Type). a -> a
 g :: forall (a :: Type). a -> a
 
 Types
-
-Errors
-CannotUnify { t1: Id<checking::core::Type>(8), t2: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(1))]

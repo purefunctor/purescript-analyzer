@@ -9,9 +9,6 @@ testRecord' :: { a :: Int, b :: Int }
 testArray :: Array Int
 testArray' :: Array Int
 testFunction :: Int -> Int
-testFunction' :: forall (t29 :: Type). t29 -> Int
+testFunction' :: forall (t31 :: Type). t31 -> Int
 
 Types
-
-Errors
-CannotUnify { t1: Id<checking::core::Type>(18), t2: Id<checking::core::Type>(12) } at [TermDeclaration(Idx::<TermItem>(5))]
