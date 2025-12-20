@@ -16,7 +16,7 @@ use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
-pub(crate) fn check_type_item<Q>(
+pub fn check_type_item<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
@@ -58,26 +58,12 @@ where
                 check_class(state, context, item_id, *signature, class)
             }
 
-            TypeItemIr::Foreign { signature, .. } => {
-                let Some(signature_id) = signature else {
-                    return Ok(());
-                };
-                let (inferred_type, _) =
-                    kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
-                state.binding_group.types.insert(item_id, inferred_type);
-                Ok(())
-            }
+            TypeItemIr::Foreign { .. } => Ok(()),
 
             TypeItemIr::Operator { associativity, precedence, resolution } => {
-                let Some(associativity) = *associativity else {
-                    return Ok(());
-                };
-                let Some(precedence) = *precedence else {
-                    return Ok(());
-                };
-                let Some((file_id, type_id)) = *resolution else {
-                    return Ok(());
-                };
+                let Some(associativity) = *associativity else { return Ok(()) };
+                let Some(precedence) = *precedence else { return Ok(()) };
+                let Some((file_id, type_id)) = *resolution else { return Ok(()) };
 
                 let operator = Operator { associativity, precedence, file_id, type_id };
                 state.checked.operators.insert(item_id, operator);
@@ -96,13 +82,39 @@ where
     })
 }
 
-enum SignatureOrigin {
-    Syntax,
-    Inferred,
+pub fn check_type_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
+        let Some(item) = context.lowered.info.get_type_item(item_id) else {
+            return Ok(());
+        };
+
+        match item {
+            TypeItemIr::DataGroup { signature, .. }
+            | TypeItemIr::NewtypeGroup { signature, .. }
+            | TypeItemIr::SynonymGroup { signature, .. }
+            | TypeItemIr::ClassGroup { signature, .. }
+            | TypeItemIr::Foreign { signature, .. } => {
+                let Some(signature) = signature else { return Ok(()) };
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+                state.binding_group.types.insert(item_id, inferred_type);
+            }
+
+            TypeItemIr::Operator { .. } => {}
+        }
+
+        Ok(())
+    })
 }
 
 struct SignatureLike {
-    origin: SignatureOrigin,
     kind_variables: Vec<ForallBinder>,
     type_variables: Vec<ForallBinder>,
     result_kind: TypeId,
@@ -125,85 +137,86 @@ where
 
     let signature = signature.transpose()?;
 
-    let (origin, kind_variables, type_variables, result_kind) =
-        if let Some((signature_id, signature)) = signature {
-            if variables.len() != signature.arguments.len() {
-                state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
-                    id: signature_id,
-                    expected: 0,
-                    actual: 0,
-                });
-
-                if let Some(variable) = signature.variables.first() {
-                    state.unbind(variable.level);
-                }
-
-                return Ok(None);
-            };
-
-            let variables = variables.iter();
-            let arguments = signature.arguments.iter();
-
-            let kinds = variables
-                .zip(arguments)
-                .map(|(variable, &argument)| {
-                    // Use contravariant subtyping for type variables:
-                    //
-                    // data Example :: Argument -> Type
-                    // data Example (a :: Variable) = Example
-                    //
-                    // Signature: Argument -> Type
-                    // Inferred: Variable -> Type
-                    //
-                    // Given
-                    //   Variable -> Type <: Argument -> Type
-                    //
-                    // Therefore
-                    //   [Argument <: Variable, Type <: Type]
-                    let kind = if let Some(kind_id) = variable.kind {
-                        let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
-                        let valid = unification::subtype(state, context, argument, kind)?;
-                        if valid { kind } else { context.prim.unknown }
-                    } else {
-                        argument
-                    };
-
-                    let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                    Ok((variable.id, variable.visible, name, kind))
-                })
-                .collect::<QueryResult<Vec<_>>>()?;
-
-            let kind_variables = signature.variables;
-            let result_kind = signature.result;
-            let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-                let level = state.bind_forall(id, kind);
-                ForallBinder { visible, name, level, kind }
+    let signature = if let Some((signature_id, signature)) = signature {
+        if variables.len() != signature.arguments.len() {
+            state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+                id: signature_id,
+                expected: 0,
+                actual: 0,
             });
 
-            (SignatureOrigin::Syntax, kind_variables, type_variables.collect_vec(), result_kind)
-        } else {
-            let kind_variables = vec![];
-            let result_kind = infer_result(state);
-            let type_variables = variables.iter().map(|variable| {
-                let kind = if let Some(id) = variable.kind {
-                    let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
-                    kind
-                } else {
-                    state.fresh_unification_type(context)
-                };
+            if let Some(variable) = signature.variables.first() {
+                state.unbind(variable.level);
+            }
 
-                let visible = variable.visible;
-                let name = variable.name.clone().unwrap_or(MISSING_NAME);
-                let level = state.bind_forall(variable.id, kind);
-                Ok(ForallBinder { visible, name, level, kind })
-            });
-
-            let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
-
-            (SignatureOrigin::Inferred, kind_variables, type_variables, result_kind)
+            return Ok(None);
         };
 
-    Ok(Some(SignatureLike { origin, kind_variables, type_variables, result_kind }))
+        let variables = variables.iter();
+        let arguments = signature.arguments.iter();
+
+        let kinds = variables
+            .zip(arguments)
+            .map(|(variable, &argument)| {
+                // Use contravariant subtyping for type variables:
+                //
+                // data Example :: Argument -> Type
+                // data Example (a :: Variable) = Example
+                //
+                // Signature: Argument -> Type
+                // Inferred: Variable -> Type
+                //
+                // Given
+                //   Variable -> Type <: Argument -> Type
+                //
+                // Therefore
+                //   [Argument <: Variable, Type <: Type]
+                let kind = if let Some(kind_id) = variable.kind {
+                    let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
+                    let valid = unification::subtype(state, context, argument, kind)?;
+                    if valid { kind } else { context.prim.unknown }
+                } else {
+                    argument
+                };
+
+                let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                Ok((variable.id, variable.visible, name, kind))
+            })
+            .collect::<QueryResult<Vec<_>>>()?;
+
+        let kind_variables = signature.variables;
+        let result_kind = signature.result;
+        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+            let level = state.bind_forall(id, kind);
+            ForallBinder { visible, name, level, kind }
+        });
+
+        let type_variables = type_variables.collect_vec();
+
+        SignatureLike { kind_variables, type_variables, result_kind }
+    } else {
+        let kind_variables = vec![];
+        let result_kind = infer_result(state);
+        let type_variables = variables.iter().map(|variable| {
+            let kind = if let Some(id) = variable.kind {
+                let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
+                kind
+            } else {
+                state.fresh_unification_type(context)
+            };
+
+            let visible = variable.visible;
+            let name = variable.name.clone().unwrap_or(MISSING_NAME);
+            let level = state.bind_forall(variable.id, kind);
+            Ok(ForallBinder { visible, name, level, kind })
+        });
+
+        let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
+
+        SignatureLike { kind_variables, type_variables, result_kind }
+    };
+
+    Ok(Some(signature))
 }
 
 fn check_data_like<Q>(
@@ -216,7 +229,7 @@ fn check_data_like<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { origin, kind_variables, type_variables, result_kind }) =
+    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
         check_signature_like(state, context, signature, variables, |_| context.prim.t)?
     else {
         return Ok(());
@@ -236,13 +249,8 @@ where
         state.storage.intern(Type::Function(variable.kind, result))
     });
 
-    match origin {
-        SignatureOrigin::Syntax => {
-            insert_checked_kind(state, item_id, &kind_variables, type_kind);
-        }
-        SignatureOrigin::Inferred => {
-            unify_inferred_kind(state, context, item_id, type_kind)?;
-        }
+    if signature.is_none() {
+        unify_pending_kind(state, context, item_id, type_kind)?;
     }
 
     check_data_constructors(
@@ -276,7 +284,7 @@ fn check_synonym<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { origin, kind_variables, type_variables, result_kind }) =
+    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
         check_signature_like(state, context, signature, variables, |state| {
             state.fresh_unification_type(context)
         })?
@@ -290,13 +298,8 @@ where
         state.storage.intern(Type::Function(binder.kind, result))
     });
 
-    match origin {
-        SignatureOrigin::Syntax => {
-            insert_checked_kind(state, item_id, &kind_variables, type_kind);
-        }
-        SignatureOrigin::Inferred => {
-            unify_inferred_kind(state, context, item_id, type_kind)?;
-        }
+    if signature.is_none() {
+        unify_pending_kind(state, context, item_id, type_kind)?;
     }
 
     if let Some(variable) = type_variables.first() {
@@ -322,7 +325,7 @@ fn check_class<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { origin, kind_variables, type_variables, result_kind }) =
+    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
         check_signature_like(state, context, signature, variables, |_| context.prim.constraint)?
     else {
         return Ok(());
@@ -350,13 +353,8 @@ where
         state.storage.intern(Type::Function(variable.kind, result))
     });
 
-    match origin {
-        SignatureOrigin::Syntax => {
-            insert_checked_kind(state, item_id, &kind_variables, class_kind);
-        }
-        SignatureOrigin::Inferred => {
-            unify_inferred_kind(state, context, item_id, class_kind)?;
-        }
+    if signature.is_none() {
+        unify_pending_kind(state, context, item_id, class_kind)?;
     }
 
     check_class_members(
@@ -456,26 +454,7 @@ fn is_binary_operator_type(state: &CheckState, mut id: TypeId) -> bool {
     !matches!(state.storage[result_id], Type::Function(_, _))
 }
 
-fn insert_checked_kind(
-    state: &mut CheckState,
-    item_id: TypeItemId,
-    kind_variables: &[ForallBinder],
-    item_kind: TypeId,
-) {
-    debug_assert!(
-        state.binding_group.lookup_type(item_id).is_none(),
-        "invariant violated: binding_group entry exists for checked type item"
-    );
-
-    let item_kind = kind_variables.iter().rfold(item_kind, |inner, binder| {
-        let binder = binder.clone();
-        state.storage.intern(Type::Forall(binder, inner))
-    });
-
-    state.binding_group.types.insert(item_id, item_kind);
-}
-
-fn unify_inferred_kind<Q>(
+fn unify_pending_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
@@ -489,7 +468,7 @@ where
         .lookup_type(item_id)
         .expect("invariant violated: invalid binding_group in kind inference");
 
-    let _ = unification::unify(state, context, pending_kind, item_kind)?;
+    let _ = unification::subtype(state, context, pending_kind, item_kind)?;
 
     Ok(())
 }
@@ -592,15 +571,19 @@ where
             return Ok(());
         };
 
-        if let TermItemIr::Foreign { signature } | TermItemIr::ValueGroup { signature, .. } = item {
-            let Some(signature) = signature else { return Ok(()) };
-            let (inferred_type, _) =
-                kind::check_surface_kind(state, context, *signature, context.prim.t)?;
-            state.binding_group.terms.insert(item_id, inferred_type);
-        } else if let TermItemIr::Operator { resolution, .. } = item {
-            let Some((file_id, term_id)) = *resolution else { return Ok(()) };
-            let id = term::lookup_file_term(state, context, file_id, term_id)?;
-            state.binding_group.terms.insert(item_id, id);
+        match item {
+            TermItemIr::Foreign { signature } | TermItemIr::ValueGroup { signature, .. } => {
+                let Some(signature) = signature else { return Ok(()) };
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+                state.binding_group.terms.insert(item_id, inferred_type);
+            }
+            TermItemIr::Operator { resolution, .. } => {
+                let Some((file_id, term_id)) = *resolution else { return Ok(()) };
+                let id = term::lookup_file_term(state, context, file_id, term_id)?;
+                state.binding_group.terms.insert(item_id, id);
+            }
+            _ => (),
         }
 
         Ok(())

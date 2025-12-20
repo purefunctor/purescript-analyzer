@@ -24,8 +24,21 @@ pub(crate) fn check_source(
     let mut state = state::CheckState::default();
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
-    let type_binding_group = |id: indexing::TypeItemId| {
-        let item = &context.indexed.items[id];
+    for scc in &context.lowered.type_scc {
+        match scc {
+            Scc::Base(id) | Scc::Recursive(id) => {
+                items::check_type_signature(&mut state, &context, *id)?;
+            }
+            Scc::Mutual(mutual) => {
+                for id in mutual {
+                    items::check_type_signature(&mut state, &context, *id)?;
+                }
+            }
+        }
+    }
+
+    let needs_binding_group = |id: &indexing::TypeItemId| {
+        let item = &context.indexed.items[*id];
         matches!(
             item.kind,
             indexing::TypeItemKind::Data { signature: None, .. }
@@ -37,24 +50,34 @@ pub(crate) fn check_source(
 
     for scc in &context.lowered.type_scc {
         match scc {
-            Scc::Base(id) | Scc::Recursive(id) => {
-                if type_binding_group(*id) {
-                    state.type_binding_group(&context, [*id]);
+            Scc::Base(item) | Scc::Recursive(item) => {
+                if !state.binding_group.types.contains_key(item) && needs_binding_group(item) {
+                    state.type_binding_group(&context, [*item]);
                 }
-                items::check_type_item(&mut state, &context, *id)?;
+                items::check_type_item(&mut state, &context, *item)?;
                 state.commit_binding_group(&context);
             }
-            Scc::Mutual(mutual) => {
-                let binding_group = mutual.iter().copied().filter(|&id| type_binding_group(id));
-                state.type_binding_group(&context, binding_group);
+            Scc::Mutual(items) => {
+                let with_signature = items
+                    .iter()
+                    .filter(|item| state.binding_group.types.contains_key(item))
+                    .copied()
+                    .collect_vec();
 
-                for id in mutual.iter().filter(|&id| !type_binding_group(*id)) {
-                    items::check_type_item(&mut state, &context, *id)?;
-                }
-                for id in mutual.iter().filter(|&id| type_binding_group(*id)) {
-                    items::check_type_item(&mut state, &context, *id)?;
-                }
+                let without_signature =
+                    items.iter().filter(|item| needs_binding_group(item)).copied().collect_vec();
 
+                let group = without_signature.iter().copied();
+                state.type_binding_group(&context, group);
+
+                for item in &without_signature {
+                    items::check_type_item(&mut state, &context, *item)?;
+                }
+                state.commit_binding_group(&context);
+
+                for item in &with_signature {
+                    items::check_type_item(&mut state, &context, *item)?;
+                }
                 state.commit_binding_group(&context);
             }
         }
@@ -90,23 +113,23 @@ pub(crate) fn check_source(
             Scc::Mutual(items) => {
                 let with_signature = items
                     .iter()
-                    .filter(|id| state.binding_group.terms.contains_key(id))
+                    .filter(|item| state.binding_group.terms.contains_key(item))
                     .copied()
                     .collect_vec();
 
                 let without_signature =
-                    items.iter().filter(|id| needs_binding_group(id)).copied().collect_vec();
+                    items.iter().filter(|item| needs_binding_group(item)).copied().collect_vec();
 
                 let group = without_signature.iter().copied();
                 state.term_binding_group(&context, group);
 
-                for id in &without_signature {
-                    items::check_term_item(&mut state, &context, *id)?;
+                for item in &without_signature {
+                    items::check_term_item(&mut state, &context, *item)?;
                 }
                 state.commit_binding_group(&context);
 
-                for id in &with_signature {
-                    items::check_term_item(&mut state, &context, *id)?;
+                for item in &with_signature {
+                    items::check_term_item(&mut state, &context, *item)?;
                 }
                 state.commit_binding_group(&context);
             }
