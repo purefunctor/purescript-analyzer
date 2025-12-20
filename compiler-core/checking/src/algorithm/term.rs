@@ -21,18 +21,18 @@ pub fn infer_value_group<Q>(
 where
     Q: ExternalQueries,
 {
-    let item_type = state
+    let group_type = state
         .binding_group
         .lookup_term(item_id)
         .expect("invariant violated: invalid binding_group in type inference");
 
-    infer_equations(state, context, item_type, equations)
+    infer_equations(state, context, group_type, equations)
 }
 
 fn infer_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    item_type: TypeId,
+    group_type: TypeId,
     equations: &[lowering::Equation],
 ) -> QueryResult<()>
 where
@@ -68,8 +68,8 @@ where
 
         // Only use the minimum number of binders across equations.
         let argument_types = &argument_types[..minimum_equation_arity];
-        let expected_type = state.make_function(argument_types, result_type);
-        let _ = unification::subtype(state, context, expected_type, item_type)?;
+        let equation_type = state.make_function(argument_types, result_type);
+        let _ = unification::subtype(state, context, equation_type, group_type)?;
 
         if let Some(guarded) = &equation.guarded {
             let inferred_type = infer_guarded_expression(state, context, guarded)?;

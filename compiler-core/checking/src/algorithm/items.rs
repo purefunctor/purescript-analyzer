@@ -468,7 +468,7 @@ where
         .lookup_type(item_id)
         .expect("invariant violated: invalid binding_group in kind inference");
 
-    let _ = unification::subtype(state, context, pending_kind, item_kind)?;
+    let _ = unification::subtype(state, context, item_kind, pending_kind)?;
 
     Ok(())
 }
