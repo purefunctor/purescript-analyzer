@@ -31,10 +31,14 @@ pub(crate) struct State {
 
     pub(crate) current_term: Option<TermItemId>,
     pub(crate) current_type: Option<TypeItemId>,
+
+    pub(crate) current_kind: Option<TypeItemId>,
     pub(crate) current_synonym: Option<TypeItemId>,
 
     pub(crate) term_graph: ItemGraph<TermItemId>,
     pub(crate) type_graph: ItemGraph<TypeItemId>,
+
+    pub(crate) kind_graph: ItemGraph<TypeItemId>,
     pub(crate) synonym_graph: ItemGraph<TypeItemId>,
 
     pub(crate) errors: Vec<LoweringError>,
@@ -75,6 +79,19 @@ impl State {
     fn begin_synonym(&mut self, id: TypeItemId) {
         self.current_synonym = Some(id);
         self.synonym_graph.add_node(id);
+    }
+
+    fn end_synonym(&mut self) {
+        self.current_synonym = None;
+    }
+
+    fn begin_kind(&mut self, id: TypeItemId) {
+        self.current_kind = Some(id);
+        self.kind_graph.add_node(id);
+    }
+
+    fn end_kind(&mut self) {
+        self.current_kind = None;
     }
 
     fn alloc_let_binding(&mut self, group: LetBindingNameGroup) -> LetBindingNameGroupId {
@@ -229,6 +246,10 @@ impl State {
                 && let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind
             {
                 self.synonym_graph.add_edge(synonym_id, type_id, ());
+            }
+
+            if let Some(kind_id) = self.current_kind {
+                self.kind_graph.add_edge(kind_id, type_id, ());
             }
         }
 
@@ -479,12 +500,16 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, item: &TypeItem) {
     match &item.kind {
         TypeItemKind::Data { signature, equation, role } => {
+            state.begin_kind(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
 
             let data = equation.and_then(|id| {
                 let cst =
@@ -508,12 +533,16 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Newtype { signature, equation, role } => {
+            state.begin_kind(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
 
             let newtype = equation.and_then(|id| {
                 let cst =
@@ -537,7 +566,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Synonym { signature, equation } => {
-            state.begin_synonym(item_id);
+            state.begin_kind(item_id);
 
             let signature = signature.and_then(|id| {
                 let cst =
@@ -545,6 +574,10 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
+
+            state.begin_synonym(item_id);
 
             let synonym = equation.and_then(|id| {
                 let cst =
@@ -561,17 +594,23 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 Some(SynonymIr { variables, synonym })
             });
 
+            state.end_synonym();
+
             let kind = TypeItemIr::SynonymGroup { signature, synonym };
             state.info.type_item.insert(item_id, kind);
         }
 
         TypeItemKind::Class { signature, declaration } => {
+            state.begin_kind(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
 
             let class = declaration.and_then(|id| {
                 let cst =
@@ -606,12 +645,16 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Foreign { id, role } => {
+            state.begin_kind(item_id);
+
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let signature = cst.as_ref().and_then(|cst| {
                 let cst = cst.type_()?;
                 Some(recursive::lower_type(state, context, &cst))
             });
+
+            state.end_kind();
 
             let roles = role.map(|id| lower_roles(context, id)).unwrap_or_default();
 
@@ -634,12 +677,16 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 cst.text().parse().ok()
             });
 
+            state.begin_kind(item_id);
+
             let resolution = cst.as_ref().and_then(|cst| {
                 let cst = cst.qualified()?;
                 let (qualifier, name) =
                     recursive::lower_qualified_name(&cst, cst::QualifiedName::upper)?;
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
+
+            state.end_kind();
 
             let kind = TypeItemIr::Operator { associativity, precedence, resolution };
             state.info.type_item.insert(item_id, kind);

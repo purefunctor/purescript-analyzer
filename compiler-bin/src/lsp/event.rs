@@ -3,7 +3,7 @@ use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
 use files::FileId;
 use indexing::{IndexedModule, TypeItemKind};
-use lowering::{LoweringError, RecursiveSynonym};
+use lowering::{LoweringError, RecursiveGroup};
 use resolving::{ResolvedModule, ResolvingError};
 use rowan::ast::AstNode;
 use stabilizing::StabilizedModule;
@@ -161,7 +161,7 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
             })
         }
 
-        LoweringError::RecursiveSynonym(RecursiveSynonym { group }) => {
+        LoweringError::RecursiveSynonym(RecursiveGroup { group }) => {
             let equations = group.iter().filter_map(|id| {
                 if let TypeItemKind::Synonym { equation, .. } = context.indexed.items[*id].kind {
                     equation
@@ -201,6 +201,8 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
                 data: None,
             })
         }
+
+        _ => None,
     }
 }
 

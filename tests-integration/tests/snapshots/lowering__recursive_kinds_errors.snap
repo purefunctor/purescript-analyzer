@@ -3,7 +3,7 @@ source: tests-integration/tests/lowering.rs
 expression: lowered.errors
 ---
 [
-    RecursiveSynonym(
+    RecursiveKinds(
         RecursiveGroup {
             group: [
                 Idx::<TypeItem>(1),
@@ -11,9 +11,10 @@ expression: lowered.errors
             ],
         },
     ),
-    RecursiveSynonym(
+    RecursiveKinds(
         RecursiveGroup {
             group: [
+                Idx::<TypeItem>(3),
                 Idx::<TypeItem>(2),
             ],
         },

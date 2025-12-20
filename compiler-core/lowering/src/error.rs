@@ -7,7 +7,8 @@ use syntax::cst;
 #[derive(Debug, PartialEq, Eq)]
 pub enum LoweringError {
     NotInScope(NotInScope),
-    RecursiveSynonym(RecursiveSynonym),
+    RecursiveSynonym(RecursiveGroup),
+    RecursiveKinds(RecursiveGroup),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -38,6 +39,6 @@ pub enum AdoFn {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct RecursiveSynonym {
+pub struct RecursiveGroup {
     pub group: Arc<[TypeItemId]>,
 }
