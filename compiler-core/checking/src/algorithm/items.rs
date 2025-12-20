@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, substitute, term, unification};
+use crate::algorithm::{inspect, kind, term, unification};
 use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -223,15 +223,9 @@ where
     };
 
     let data_reference = {
-        let size = state.bound.size();
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
-        type_variables.iter().cloned().fold(reference_type, |reference_type, variable| {
-            let Some(index) = variable.level.to_index(size) else {
-                let level = variable.level;
-                unreachable!("invariant violated: invalid {level} for {size}");
-            };
-
-            let variable = Variable::Bound(index);
+        type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
+            let variable = Variable::Bound(binder.level);
             let variable = state.storage.intern(Type::Variable(variable));
 
             state.storage.intern(Type::Application(reference_type, variable))
@@ -343,15 +337,9 @@ where
     let _constraints = constraints.collect::<QueryResult<Vec<_>>>()?;
 
     let class_reference = {
-        let size = state.bound.size();
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
-        type_variables.iter().cloned().fold(reference_type, |reference_type, variable| {
-            let Some(index) = variable.level.to_index(size) else {
-                let level = variable.level;
-                unreachable!("invariant violated: invalid {level} for {size}");
-            };
-
-            let variable = Variable::Bound(index);
+        type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
+            let variable = Variable::Bound(binder.level);
             let variable = state.storage.intern(Type::Variable(variable));
 
             state.storage.intern(Type::Application(reference_type, variable))
@@ -416,12 +404,9 @@ where
 
         let (member_foralls, member_inner) = collect_foralls(state, member_type);
 
-        let shift_amount = member_foralls.len() as u32;
-        let shifted_class_reference =
-            substitute::shift_indices(state, shift_amount, class_reference);
-
+        // With levels, no shifting is needed - levels are absolute positions
         let constrained_type =
-            state.storage.intern(Type::Constrained(shifted_class_reference, member_inner));
+            state.storage.intern(Type::Constrained(class_reference, member_inner));
 
         let all_variables = {
             let from_kind = kind_variables.iter().cloned();

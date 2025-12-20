@@ -10,7 +10,7 @@ ExampleRow :: Row Type -> Row Type
 F :: Row Type
 
 Synonyms
-RowApply = forall (k :: Type) (f :: Row k -> Row k) (a :: Row f). f a
+RowApply = forall (k :: Type) (f :: Row k -> Row k) (a :: Row k). f a
   Quantified = :0
   Kind = :1
   Type = :2

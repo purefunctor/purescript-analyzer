@@ -14,3 +14,7 @@ test' :: Effect Unit
 Types
 Effect :: Type -> Type
 Unit :: Type
+
+Errors
+CannotUnify { t1: Id<checking::core::Type>(21), t2: Id<checking::core::Type>(22) } at [TermDeclaration(Idx::<TermItem>(5))]
+CannotUnify { t1: Id<checking::core::Type>(21), t2: Id<checking::core::Type>(22) } at [TermDeclaration(Idx::<TermItem>(6))]

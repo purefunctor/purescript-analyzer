@@ -292,5 +292,12 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot).unwrap();
     }
 
+    if !checked.errors.is_empty() {
+        writeln!(snapshot, "\nErrors").unwrap();
+    }
+    for error in &checked.errors {
+        writeln!(snapshot, "{:?} at {:?}", error.kind, &error.step).unwrap();
+    }
+
     snapshot
 }

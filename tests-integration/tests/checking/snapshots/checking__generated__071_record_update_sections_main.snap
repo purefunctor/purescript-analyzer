@@ -20,3 +20,6 @@ map :: forall (a :: Type) (b :: Type). (a -> b) -> Array a -> Array b
 add :: Int -> Int -> Int
 
 Types
+
+Errors
+CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(135) } at [TermDeclaration(Idx::<TermItem>(11))]

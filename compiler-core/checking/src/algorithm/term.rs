@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{inspect, kind, operator, substitute, transfer, unification};
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId};
+use crate::core::{RowField, RowType, Type, TypeId};
 
 pub fn infer_value_group<Q>(
     state: &mut CheckState,
@@ -1282,9 +1282,12 @@ where
 {
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {
-        Type::Forall(ForallBinder { kind, .. }, inner) => {
-            let (argument_type, _) = kind::check_surface_kind(state, context, argument, kind)?;
-            Ok(substitute::substitute_bound(state, argument_type, inner))
+        Type::Forall(ref binder, inner) => {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let (argument_type, _) = kind::check_surface_kind(state, context, argument, binder_kind)?;
+            Ok(substitute::substitute_bound(state, binder_level, argument_type, inner))
         }
 
         _ => Ok(context.prim.unknown),
@@ -1320,9 +1323,12 @@ where
             Ok(result_u)
         }
 
-        Type::Forall(ForallBinder { kind, .. }, function_t) => {
-            let unification = state.fresh_unification_kinded(kind);
-            let function_t = substitute::substitute_bound(state, unification, function_t);
+        Type::Forall(ref binder, inner) => {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let unification = state.fresh_unification_kinded(binder_kind);
+            let function_t = substitute::substitute_bound(state, binder_level, unification, inner);
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
@@ -1408,8 +1414,11 @@ where
     while let normalized_id = state.normalize_type(current_id)
         && let Type::Forall(ref binder, inner_id) = state.storage[normalized_id]
     {
-        let unification = state.fresh_unification_kinded(binder.kind);
-        current_id = substitute::substitute_bound(state, unification, inner_id);
+        let binder_level = binder.level;
+        let binder_kind = binder.kind;
+
+        let unification = state.fresh_unification_kinded(binder_kind);
+        current_id = substitute::substitute_bound(state, binder_level, unification, inner_id);
     }
 
     Ok(current_id)

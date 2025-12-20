@@ -165,9 +165,9 @@ impl CheckState {
         level
     }
 
-    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Index> {
+    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Level> {
         let variable = debruijn::Variable::Forall(id);
-        self.bound.index_of(variable)
+        self.bound.level_of(variable)
     }
 
     pub fn forall_binding_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
@@ -192,9 +192,9 @@ impl CheckState {
         &self,
         node: GraphNodeId,
         id: ImplicitBindingId,
-    ) -> Option<debruijn::Index> {
+    ) -> Option<debruijn::Level> {
         let variable = debruijn::Variable::Implicit { node, id };
-        self.bound.index_of(variable)
+        self.bound.level_of(variable)
     }
 
     pub fn implicit_binding_kind(

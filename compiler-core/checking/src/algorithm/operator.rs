@@ -10,7 +10,7 @@ use sugar::bracketing::BracketingResult;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, term, unification};
-use crate::core::{ForallBinder, Type, TypeId};
+use crate::core::{Type, TypeId};
 
 #[derive(Copy, Clone, Debug)]
 enum OperatorKindMode {
@@ -145,9 +145,12 @@ where
 pub fn instantiate_forall(state: &mut CheckState, mut kind_id: TypeId) -> TypeId {
     loop {
         kind_id = state.normalize_type(kind_id);
-        if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[kind_id] {
-            let unification = state.fresh_unification_kinded(kind);
-            kind_id = substitute::substitute_bound(state, unification, inner);
+        if let Type::Forall(ref binder, inner) = state.storage[kind_id] {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let unification = state.fresh_unification_kinded(binder_kind);
+            kind_id = substitute::substitute_bound(state, binder_level, unification, inner);
         } else {
             break kind_id;
         }

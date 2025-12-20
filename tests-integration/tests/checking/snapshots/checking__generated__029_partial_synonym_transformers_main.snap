@@ -15,7 +15,7 @@ StateT :: Type -> (Type -> Type) -> Type -> Type
 Tuple :: Type -> Type -> Type
 Reader :: Type -> Type -> Type
 State :: Type -> Type -> Type
-Apply :: forall (k :: Type). (k -> Type) -> k -> Type
+Apply :: forall (k :: Type) (l :: Type). (k -> l) -> k -> l
 ReaderInt :: Type
 StateString :: Type
 NestedReader :: Type
@@ -31,9 +31,9 @@ State = forall (s :: Type). StateT s Identity
   Kind = :0
   Type = :1
 
-Apply = forall (k :: Type) (f :: k -> Type) (a :: f). f a
+Apply = forall (k :: Type) (l :: Type) (f :: k -> l) (a :: k). f a
   Quantified = :0
-  Kind = :1
+  Kind = :2
   Type = :2
 
 ReaderInt = Apply (Reader Int) String

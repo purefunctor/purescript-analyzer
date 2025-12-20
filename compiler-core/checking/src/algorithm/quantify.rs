@@ -26,11 +26,13 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         debruijn::Size(size as u32)
     };
 
-    let mut quantified = id;
+    // Shift existing bound variable levels to make room for new quantifiers
+    let mut quantified = shift_levels(state, id, size.0);
     let mut substitutions = UniToLevel::default();
 
     for (index, &id) in unsolved.iter().rev().enumerate() {
         let kind = state.unification.get(id).kind;
+        let kind = shift_levels(state, kind, size.0);
         let name = generate_type_name(id);
 
         let index = debruijn::Index(index as u32);
@@ -174,74 +176,147 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
 
 type UniToLevel = FxHashMap<u32, debruijn::Level>;
 
+/// Shifts all bound variable levels in a type by a given offset.
+///
+/// This is needed when adding new forall binders at the front of a type,
+/// as existing bound variables need their levels adjusted to account for
+/// the new binders.
+fn shift_levels(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
+    fn aux(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
+        let id = state.normalize_type(id);
+        match state.storage[id] {
+            Type::Application(function, argument) => {
+                let function = aux(state, function, offset);
+                let argument = aux(state, argument, offset);
+                state.storage.intern(Type::Application(function, argument))
+            }
+            Type::Constrained(constraint, inner) => {
+                let constraint = aux(state, constraint, offset);
+                let inner = aux(state, inner, offset);
+                state.storage.intern(Type::Constrained(constraint, inner))
+            }
+            Type::Constructor(_, _) => id,
+            Type::Forall(ref binder, inner) => {
+                let mut binder = binder.clone();
+                binder.level = debruijn::Level(binder.level.0 + offset);
+                binder.kind = aux(state, binder.kind, offset);
+                let inner = aux(state, inner, offset);
+                state.storage.intern(Type::Forall(binder, inner))
+            }
+            Type::Function(argument, result) => {
+                let argument = aux(state, argument, offset);
+                let result = aux(state, result, offset);
+                state.storage.intern(Type::Function(argument, result))
+            }
+            Type::Integer(_) => id,
+            Type::KindApplication(function, argument) => {
+                let function = aux(state, function, offset);
+                let argument = aux(state, argument, offset);
+                state.storage.intern(Type::KindApplication(function, argument))
+            }
+            Type::Kinded(inner, kind) => {
+                let inner = aux(state, inner, offset);
+                let kind = aux(state, kind, offset);
+                state.storage.intern(Type::Kinded(inner, kind))
+            }
+            Type::Operator(_, _) => id,
+            Type::OperatorApplication(file_id, type_id, left, right) => {
+                let left = aux(state, left, offset);
+                let right = aux(state, right, offset);
+                state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
+            }
+            Type::Row(RowType { ref fields, tail }) => {
+                let mut fields = fields.to_vec();
+                fields.iter_mut().for_each(|field| field.id = aux(state, field.id, offset));
+                let tail = tail.map(|tail| aux(state, tail, offset));
+                let row = RowType { fields: Arc::from(fields), tail };
+                state.storage.intern(Type::Row(row))
+            }
+            Type::String(_, _) => id,
+            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                let arguments = arguments.iter().map(|&argument| aux(state, argument, offset)).collect();
+                state.storage.intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
+            }
+            Type::Unification(_) => id,
+            Type::Variable(Variable::Bound(level)) => {
+                let shifted = debruijn::Level(level.0 + offset);
+                state.storage.intern(Type::Variable(Variable::Bound(shifted)))
+            }
+            Type::Variable(Variable::Free(_)) => id,
+            Type::Variable(Variable::Implicit(_)) => id,
+            Type::Variable(Variable::Skolem(_, _)) => id,
+            Type::Unknown => id,
+        }
+    }
+
+    if offset == 0 {
+        id
+    } else {
+        aux(state, id, offset)
+    }
+}
+
 /// Level-based substitution over a [`Type`].
 ///
-/// A direct mapping from unification variables to [`debruijn::Index`] is
-/// insufficient because of the scoping rule for [`ForallBinder::kind`].
-///
-/// Instead, we use a [`debruijn::Level`]-based approach alongside
-/// explicit [`debruijn::Size`] tracking to get the proper indices.
+/// Replaces unification variables with bound variables using a level-based
+/// mapping. Since levels are absolute positions, no scope tracking is needed.
 fn substitute_unification(
     substitutions: &UniToLevel,
     state: &mut CheckState,
     id: TypeId,
 ) -> TypeId {
-    fn aux(
-        substitutions: &UniToLevel,
-        state: &mut CheckState,
-        id: TypeId,
-        size: debruijn::Size,
-    ) -> TypeId {
+    fn aux(substitutions: &UniToLevel, state: &mut CheckState, id: TypeId) -> TypeId {
         let id = state.normalize_type(id);
         match state.storage[id] {
             Type::Application(function, argument) => {
-                let function = aux(substitutions, state, function, size);
-                let argument = aux(substitutions, state, argument, size);
+                let function = aux(substitutions, state, function);
+                let argument = aux(substitutions, state, argument);
                 state.storage.intern(Type::Application(function, argument))
             }
             Type::Constrained(constraint, inner) => {
-                let constraint = aux(substitutions, state, constraint, size);
-                let inner = aux(substitutions, state, inner, size);
+                let constraint = aux(substitutions, state, constraint);
+                let inner = aux(substitutions, state, inner);
                 state.storage.intern(Type::Constrained(constraint, inner))
             }
             Type::Constructor(_, _) => id,
             Type::Forall(ref binder, inner) => {
                 let mut binder = binder.clone();
 
-                binder.kind = aux(substitutions, state, binder.kind, size);
-                let inner = aux(substitutions, state, inner, size.increment());
+                binder.kind = aux(substitutions, state, binder.kind);
+                let inner = aux(substitutions, state, inner);
 
                 state.storage.intern(Type::Forall(binder, inner))
             }
             Type::Function(argument, result) => {
-                let argument = aux(substitutions, state, argument, size);
-                let result = aux(substitutions, state, result, size);
+                let argument = aux(substitutions, state, argument);
+                let result = aux(substitutions, state, result);
                 state.storage.intern(Type::Function(argument, result))
             }
             Type::Integer(_) => id,
             Type::KindApplication(function, argument) => {
-                let function = aux(substitutions, state, function, size);
-                let argument = aux(substitutions, state, argument, size);
+                let function = aux(substitutions, state, function);
+                let argument = aux(substitutions, state, argument);
                 state.storage.intern(Type::KindApplication(function, argument))
             }
             Type::Kinded(inner, kind) => {
-                let inner = aux(substitutions, state, inner, size);
-                let kind = aux(substitutions, state, kind, size);
+                let inner = aux(substitutions, state, inner);
+                let kind = aux(substitutions, state, kind);
                 state.storage.intern(Type::Kinded(inner, kind))
             }
             Type::Operator(_, _) => id,
             Type::OperatorApplication(file_id, type_id, left, right) => {
-                let left = aux(substitutions, state, left, size);
-                let right = aux(substitutions, state, right, size);
+                let left = aux(substitutions, state, left);
+                let right = aux(substitutions, state, right);
                 state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
             }
             Type::Row(RowType { ref fields, tail }) => {
                 let mut fields = fields.to_vec();
                 fields
                     .iter_mut()
-                    .for_each(|field| field.id = aux(substitutions, state, field.id, size));
+                    .for_each(|field| field.id = aux(substitutions, state, field.id));
 
-                let tail = tail.map(|tail| aux(substitutions, state, tail, size));
+                let tail = tail.map(|tail| aux(substitutions, state, tail));
                 let row = RowType { fields: Arc::from(fields), tail };
 
                 state.storage.intern(Type::Row(row))
@@ -251,25 +326,22 @@ fn substitute_unification(
                 let arguments = Arc::clone(arguments);
                 let arguments = arguments
                     .iter()
-                    .map(|&argument| aux(substitutions, state, argument, size))
+                    .map(|&argument| aux(substitutions, state, argument))
                     .collect();
                 state
                     .storage
                     .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
             }
             Type::Unification(unification_id) => {
-                let Some(level) = substitutions.get(&unification_id) else { return id };
-                let index = level.to_index(size).unwrap_or_else(|| {
-                    unreachable!("invariant violated: invalid {level} for {size}")
-                });
-                state.storage.intern(Type::Variable(Variable::Bound(index)))
+                let Some(&level) = substitutions.get(&unification_id) else { return id };
+                state.storage.intern(Type::Variable(Variable::Bound(level)))
             }
             Type::Variable(_) => id,
             Type::Unknown => id,
         }
     }
 
-    aux(substitutions, state, id, debruijn::Size(0))
+    aux(substitutions, state, id)
 }
 
 #[cfg(test)]

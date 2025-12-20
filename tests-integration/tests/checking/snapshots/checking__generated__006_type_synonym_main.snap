@@ -34,12 +34,12 @@ InferTuple = forall (x :: Type) (y :: Type). Tuple x y
   Kind = :0
   Type = :2
 
-CheckApply = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: y). f a
+CheckApply = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
   Quantified = :0
   Kind = :2
   Type = :2
 
-CheckApplyElab = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: y). f a
+CheckApplyElab = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
   Quantified = :0
   Kind = :2
   Type = :2

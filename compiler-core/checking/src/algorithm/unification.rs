@@ -73,7 +73,7 @@ where
             let v = Variable::Skolem(binder.level, binder.kind);
             let t = state.storage.intern(Type::Variable(v));
 
-            let inner = substitute::substitute_bound(state, t, inner);
+            let inner = substitute::substitute_bound(state, binder.level, t, inner);
             subtype(state, context, t1, inner)
         }
 
@@ -81,7 +81,7 @@ where
             let k = state.normalize_type(binder.kind);
             let t = state.fresh_unification_kinded(k);
 
-            let inner = substitute::substitute_bound(state, t, inner);
+            let inner = substitute::substitute_bound(state, binder.level, t, inner);
             subtype(state, context, inner, t2)
         }
 
@@ -280,8 +280,10 @@ pub fn promote_type(
 
         Type::Variable(ref variable) => {
             let unification = state.unification.get(unification_id);
-            if let Variable::Bound(index) = variable
-                && !index.in_scope(unification.domain)
+            // A bound variable escapes if its level >= the unification variable's domain.
+            // This means the variable was bound at or after the unification was created.
+            if let Variable::Bound(level) = variable
+                && level.0 >= unification.domain.0
             {
                 return false;
             }

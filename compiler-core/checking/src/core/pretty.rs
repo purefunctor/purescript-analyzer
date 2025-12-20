@@ -297,15 +297,15 @@ fn render_variable(variable: &Variable, context: &TraversalContext) -> String {
     match variable {
         Variable::Implicit(level) => format!("{level}"),
         Variable::Skolem(level, _kind) => format!("~{level} :: <kind>"),
-        Variable::Bound(index) => {
+        Variable::Bound(level) => {
             if context.config.use_names {
-                let Some(level) = index.to_level(context.depth) else {
-                    return format!("{index}");
-                };
                 let name = context.names.get(&level.0).cloned();
-                name.unwrap_or_else(|| format!("{index}"))
+                name.unwrap_or_else(|| format!("{level}"))
             } else {
-                format!("{index}")
+                // Display as index for familiar De Bruijn notation
+                level
+                    .to_index(context.depth)
+                    .map_or_else(|| format!("{level}"), |index| format!("{index}"))
             }
         }
         Variable::Free(name) => format!("{name}"),

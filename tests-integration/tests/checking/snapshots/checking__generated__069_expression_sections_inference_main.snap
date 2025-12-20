@@ -16,3 +16,7 @@ test5 :: { x :: Int, y :: Int | () }
 test6 :: Int
 
 Types
+
+Errors
+CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(32) } at [TermDeclaration(Idx::<TermItem>(8))]
+CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(32) } at [TermDeclaration(Idx::<TermItem>(9))]

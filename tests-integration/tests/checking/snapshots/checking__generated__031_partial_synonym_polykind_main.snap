@@ -19,12 +19,12 @@ EndoFn :: Type -> Type
 Function :: Type -> Type -> Type
 
 Synonyms
-PolyApply = forall (k :: Type) (f :: k -> Type) (a :: f). f a
+PolyApply = forall (k :: Type) (f :: k -> Type) (a :: k). f a
   Quantified = :0
   Kind = :1
   Type = :2
 
-RowApply = forall (k :: Type) (f :: Row k -> Row k) (r :: Row f). f r
+RowApply = forall (k :: Type) (f :: Row k -> Row k) (r :: Row k). f r
   Quantified = :0
   Kind = :1
   Type = :2
@@ -59,12 +59,12 @@ Combined = ComposeRow AddField AddAnother ()
   Kind = :0
   Type = :0
 
-NaturalTransformation = forall (k :: Type) (f :: k -> Type) (g :: f -> Type) (a :: g). f a -> g a
+NaturalTransformation = forall (k :: Type) (f :: k -> Type) (g :: k -> Type) (a :: k). f a -> g a
   Quantified = :0
   Kind = :1
   Type = :2
 
-Endo = forall (k :: Type) (c :: k -> k -> Type) (a :: c). c a a
+Endo = forall (k :: Type) (c :: k -> k -> Type) (a :: k). c a a
   Quantified = :0
   Kind = :1
   Type = :2

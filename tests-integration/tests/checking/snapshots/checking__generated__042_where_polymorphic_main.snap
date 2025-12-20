@@ -7,3 +7,6 @@ apply :: forall (t3 :: Type). t3 -> t3
 apply' :: forall (b :: Type). b -> b
 
 Types
+
+Errors
+CannotUnify { t1: Id<checking::core::Type>(12), t2: Id<checking::core::Type>(8) } at [TermDeclaration(Idx::<TermItem>(1))]

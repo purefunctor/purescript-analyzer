@@ -5,7 +5,7 @@ expression: checked.errors
 [
     CheckError {
         kind: InvalidTypeOperator {
-            id: Id<checking::core::Type>(23),
+            id: Id<checking::core::Type>(24),
         },
         step: [
             TypeDeclaration(

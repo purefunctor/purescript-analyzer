@@ -22,3 +22,12 @@ test13 :: forall (t96 :: Type) (t99 :: Type) (t100 :: Type). t96 -> { prop :: t9
 test14 :: forall (t106 :: Type) (t111 :: Type). Boolean -> { a :: t106 | ( b :: t106 | t111 ) } -> t106
 
 Types
+
+Errors
+CannotUnify { t1: Id<checking::core::Type>(8), t2: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(0))]
+CannotUnify { t1: Id<checking::core::Type>(11), t2: Id<checking::core::Type>(12) } at [TermDeclaration(Idx::<TermItem>(0))]
+CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(55) } at [TermDeclaration(Idx::<TermItem>(7))]
+CannotUnify { t1: Id<checking::core::Type>(6), t2: Id<checking::core::Type>(1) } at [TermDeclaration(Idx::<TermItem>(16))]
+CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(6) } at [TermDeclaration(Idx::<TermItem>(16))]
+CannotUnify { t1: Id<checking::core::Type>(6), t2: Id<checking::core::Type>(1) } at [TermDeclaration(Idx::<TermItem>(16))]
+CannotUnify { t1: Id<checking::core::Type>(1), t2: Id<checking::core::Type>(6) } at [TermDeclaration(Idx::<TermItem>(16))]

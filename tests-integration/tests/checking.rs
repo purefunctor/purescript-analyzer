@@ -33,7 +33,7 @@ trait CheckStateExt {
 
 impl CheckStateExt for CheckState {
     fn bound_variable(&mut self, index: u32) -> TypeId {
-        let var = Variable::Bound(debruijn::Index(index));
+        let var = Variable::Bound(debruijn::Level(index));
         self.storage.intern(Type::Variable(var))
     }
 

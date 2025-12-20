@@ -244,8 +244,8 @@ fn infer_forall_variable(
     state: &mut CheckState,
     forall: TypeVariableBindingId,
 ) -> (TypeId, TypeId) {
-    let index = state.lookup_forall(forall).expect("invariant violated: CheckState::bind_forall");
-    let variable = Variable::Bound(index);
+    let level = state.lookup_forall(forall).expect("invariant violated: CheckState::bind_forall");
+    let variable = Variable::Bound(level);
 
     let t = state.storage.intern(Type::Variable(variable));
     let k = state.forall_binding_kind(forall).expect("invariant violated: CheckState::bind_forall");
@@ -266,10 +266,10 @@ fn infer_implicit_variable<Q: ExternalQueries>(
 
         state.storage.intern(Type::Variable(variable))
     } else {
-        let index = state
+        let level = state
             .lookup_implicit(implicit.node, implicit.id)
             .expect("invariant violated: CheckState::bind_implicit");
-        let variable = Variable::Bound(index);
+        let variable = Variable::Bound(level);
         state.storage.intern(Type::Variable(variable))
     };
 
@@ -368,12 +368,15 @@ where
             Ok((t, k))
         }
 
-        Type::Forall(ForallBinder { kind, .. }, function_k) => {
-            let k = state.normalize_type(kind);
+        Type::Forall(ref binder, function_k) => {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let function_k = substitute::substitute_bound(state, t, function_k);
+            let function_k = substitute::substitute_bound(state, binder_level, t, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
@@ -429,9 +432,10 @@ where
             let function_kind = elaborate_kind(state, context, function)?;
             let function_kind = state.normalize_type(function_kind);
             match state.storage[function_kind] {
-                Type::Forall(_, inner) => {
+                Type::Forall(ref binder, inner) => {
+                    let binder_level = binder.level;
                     let argument = state.normalize_type(argument);
-                    substitute::substitute_bound(state, argument, inner)
+                    substitute::substitute_bound(state, binder_level, argument, inner)
                 }
                 _ => unknown,
             }
@@ -488,7 +492,7 @@ where
         Type::Variable(ref variable) => match variable {
             Variable::Implicit(_) => unknown,
             Variable::Skolem(_, kind) => *kind,
-            Variable::Bound(index) => state.core_kind(*index).unwrap_or(unknown),
+            Variable::Bound(level) => state.kinds.get(*level).copied().unwrap_or(unknown),
             Variable::Free(_) => unknown,
         },
 

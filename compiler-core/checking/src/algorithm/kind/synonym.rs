@@ -16,7 +16,7 @@ use lowering::LoweredModule;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
-use crate::core::{ForallBinder, Saturation, Synonym, Type, TypeId};
+use crate::core::{Saturation, Synonym, Type, TypeId};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 
@@ -282,11 +282,14 @@ where
             Ok((t, k))
         }
 
-        Type::Forall(ForallBinder { kind, .. }, function_k) => {
-            let k = state.normalize_type(kind);
+        Type::Forall(ref binder, inner) => {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
-            let function_k = substitute::substitute_bound(state, t, function_k);
+            let function_k = substitute::substitute_bound(state, binder_level, t, inner);
             infer_synonym_application_argument(state, context, function_k, argument)
         }
 
@@ -426,17 +429,20 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
     let mut instantiated = state.normalize_type(synonym.synonym_type);
 
     for _ in 0..count {
-        if let Type::Forall(ForallBinder { kind, .. }, inner) = state.storage[instantiated] {
-            let unification = state.fresh_unification_kinded(kind);
-            instantiated = substitute::substitute_bound(state, unification, inner);
+        if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let unification = state.fresh_unification_kinded(binder_kind);
+            instantiated = substitute::substitute_bound(state, binder_level, unification, inner);
         } else {
             break;
         }
     }
 
     for &argument in arguments {
-        if let Type::Forall(_, inner) = state.storage[instantiated] {
-            instantiated = substitute::substitute_bound(state, argument, inner);
+        if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
+            instantiated = substitute::substitute_bound(state, binder.level, argument, inner);
         } else {
             break;
         }

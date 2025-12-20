@@ -26,7 +26,7 @@ pub struct ForallBinder {
 pub enum Variable {
     Implicit(debruijn::Level),
     Skolem(debruijn::Level, TypeId),
-    Bound(debruijn::Index),
+    Bound(debruijn::Level),
     Free(SmolStr),
 }
 

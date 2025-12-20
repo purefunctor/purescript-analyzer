@@ -3,7 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-loop :: *1 -> *1
+loop :: &0 -> &0
 chooseFirst :: forall (a :: Type) (b :: Type). a -> b -> a
 
 Types
+
+Errors
+CannotUnify { t1: Id<checking::core::Type>(8), t2: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(0))]
