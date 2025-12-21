@@ -12,7 +12,7 @@ use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{inspect, kind, operator, substitute, transfer, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
 
-pub fn infer_value_group<Q>(
+pub fn infer_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TermItemId,
@@ -26,10 +26,10 @@ where
         .lookup_term(item_id)
         .expect("invariant violated: invalid binding_group in type inference");
 
-    infer_equations(state, context, group_type, equations)
+    infer_equations_core(state, context, group_type, equations)
 }
 
-fn infer_equations<Q>(
+fn infer_equations_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     group_type: TypeId,
@@ -1359,7 +1359,7 @@ where
             } else {
                 let name_type = state.fresh_unification_type(context);
                 state.bind_let(*id, name_type);
-                infer_equations(state, context, name_type, &name.equations)?;
+                infer_equations_core(state, context, name_type, &name.equations)?;
             }
         }
         lowering::LetBinding::Pattern { binder, where_expression } => {

@@ -607,7 +607,7 @@ where
                 let signature = inspect::inspect_signature(state, context, *signature)?;
                 term::check_equations(state, context, signature, equations)
             } else {
-                term::infer_value_group(state, context, item_id, equations)
+                term::infer_equations(state, context, item_id, equations)
             }
         } else {
             Ok(())
