@@ -33,16 +33,16 @@ pub fn inspect_signature<Q>(
 where
     Q: ExternalQueries,
 {
-    let unknown = || {
-        let variables = [].into();
+    let unknown = {
+        let variables = vec![];
         let function = context.prim.unknown;
-        let arguments = [].into();
+        let arguments = vec![];
         let result = context.prim.unknown;
         InspectSignature { variables, function, arguments, result }
     };
 
     let Some(kind) = context.lowered.info.get_type_kind(id) else {
-        return Ok(unknown());
+        return Ok(unknown);
     };
 
     match kind {
@@ -67,7 +67,7 @@ where
 
         lowering::TypeKind::Parenthesized { parenthesized } => match parenthesized {
             Some(id) => inspect_signature(state, context, *id),
-            None => Ok(unknown()),
+            None => Ok(unknown),
         },
 
         _ => {
