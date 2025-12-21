@@ -39,6 +39,9 @@ pub struct CheckState {
     pub env_let: FxHashMap<LetBindingNameGroupId, TypeId>,
     pub env_pun: FxHashMap<RecordPunId, TypeId>,
     pub env_section: FxHashMap<lowering::ExpressionId, TypeId>,
+
+    pub term_signature_variables: FxHashMap<TermItemId, Arc<[TypeVariableBindingId]>>,
+    pub type_signature_variables: FxHashMap<TypeItemId, Arc<[TypeVariableBindingId]>>,
 }
 
 #[derive(Default)]
@@ -94,16 +97,7 @@ where
         let prim = PrimCore::collect(queries, state)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
-        Ok(CheckContext {
-            queries,
-            prim,
-            id,
-            indexed,
-            lowered,
-            bracketed,
-            sectioned,
-            prim_indexed,
-        })
+        Ok(CheckContext { queries, prim, id, indexed, lowered, bracketed, sectioned, prim_indexed })
     }
 }
 

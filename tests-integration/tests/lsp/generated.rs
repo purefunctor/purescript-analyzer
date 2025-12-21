@@ -1,5 +1,6 @@
 // Do not edit! See build.rs
 
+#[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {
     let path = std::path::Path::new("fixtures/lsp").join(folder);
     let (engine, files) = tests_integration::load_compiler(&path);

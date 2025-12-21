@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+const :: forall (a :: Type). a -> ForConst a
+triple :: forall (a :: Type). a -> TripleForall a
+flip :: forall (a :: Type). Flip a
+
+Types
+ForConst :: Type -> Type
+TripleForall :: Type -> Type
+Flip :: Type -> Type
+
+Synonyms
+ForConst = forall (a :: Type) (b :: Type). b -> a
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+TripleForall = forall (a :: Type) (b :: Type) (c :: Type). b -> c -> a
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+Flip = forall (a :: Type) (b :: Type) (c :: Type). (a -> b -> c) -> b -> a -> c
+  Quantified = :0
+  Kind = :0
+  Type = :1

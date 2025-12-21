@@ -104,7 +104,7 @@ pub(crate) fn check_source(
     for scc in &context.lowered.term_scc {
         match scc {
             Scc::Base(item) | Scc::Recursive(item) => {
-                if !state.binding_group.terms.contains_key(item) && needs_binding_group(item) {
+                if !state.checked.terms.contains_key(item) && needs_binding_group(item) {
                     state.term_binding_group(&context, [*item]);
                 }
                 items::check_term_item(&mut state, &context, *item)?;
@@ -113,7 +113,7 @@ pub(crate) fn check_source(
             Scc::Mutual(items) => {
                 let with_signature = items
                     .iter()
-                    .filter(|item| state.binding_group.terms.contains_key(item))
+                    .filter(|item| state.checked.terms.contains_key(item))
                     .copied()
                     .collect_vec();
 

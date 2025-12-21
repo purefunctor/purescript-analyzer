@@ -1,0 +1,62 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+justInt :: Int
+notFunction :: forall (a :: Type). a -> Int
+deeply :: forall (a :: Type). Level3 a
+outer :: forall (a :: Type). a -> a
+parens :: (Int -> Int) -> Int
+zeroArg :: forall (a :: Type). a
+
+Types
+JustInt :: Type
+NotAFunction :: Type
+Level1 :: Type
+Level2 :: Type
+Level3 :: Type -> Type
+Inner :: Type
+Outer :: Type
+Parens :: Type
+
+Synonyms
+JustInt = Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+NotAFunction = Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Level1 = Int -> Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Level2 = Int -> Int -> Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Level3 = forall (a :: Type). a -> Int -> Int -> Int
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+Inner = forall (a :: Type). a -> a
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Outer = forall (a :: Type). a -> a
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Parens = (Int -> Int) -> Int
+  Quantified = :0
+  Kind = :0
+  Type = :0

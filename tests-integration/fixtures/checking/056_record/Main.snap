@@ -6,6 +6,6 @@ Terms
 label :: { a :: Int, b :: String }
 field :: forall (t4 :: Type) (t5 :: Type). t4 -> t5 -> { a :: t4, b :: t5 }
 id :: forall (a :: Type). a -> a
-polymorphic :: forall (t10 :: Type) (t11 :: Type). { a :: t10 -> t10, b :: t11 -> t11 }
+polymorphic :: forall (t9 :: Type) (t10 :: Type). { a :: t9 -> t9, b :: t10 -> t10 }
 
 Types

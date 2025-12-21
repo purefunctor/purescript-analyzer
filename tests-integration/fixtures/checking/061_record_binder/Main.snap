@@ -4,12 +4,12 @@ expression: report
 ---
 Terms
 test1 :: { x :: Int, y :: Int } -> Int
-test1' :: forall (t19 :: Type) (t20 :: Type). { x :: t20, y :: t19 } -> t20
+test1' :: forall (t16 :: Type) (t17 :: Type). { x :: t17, y :: t16 } -> t17
 test2 :: { x :: Int, y :: String } -> { x :: Int, y :: String }
-test2' :: forall (t29 :: Type) (t30 :: Type). { x :: t29, y :: t30 } -> { x :: t29, y :: t30 }
+test2' :: forall (t21 :: Type) (t22 :: Type). { x :: t21, y :: t22 } -> { x :: t21, y :: t22 }
 test3 :: { age :: Int, name :: String } -> String
-test3' :: forall (t39 :: Type) (t40 :: Type). { age :: t39, name :: t40 } -> t40
+test3' :: forall (t28 :: Type) (t29 :: Type). { age :: t28, name :: t29 } -> t29
 nested :: { inner :: { x :: Int } } -> Int
-nested' :: forall (t49 :: Type). { inner :: { x :: t49 } } -> t49
+nested' :: forall (t33 :: Type). { inner :: { x :: t33 } } -> t33
 
 Types

@@ -28,6 +28,28 @@ expression: checked.errors
     CheckError {
         kind: RecursiveSynonymExpansion {
             file_id: Idx::<File>(9),
+            item_id: Idx::<TypeItem>(0),
+        },
+        step: [
+            TermDeclaration(
+                Idx::<TermItem>(0),
+            ),
+        ],
+    },
+    CheckError {
+        kind: RecursiveSynonymExpansion {
+            file_id: Idx::<File>(9),
+            item_id: Idx::<TypeItem>(2),
+        },
+        step: [
+            TermDeclaration(
+                Idx::<TermItem>(1),
+            ),
+        ],
+    },
+    CheckError {
+        kind: RecursiveSynonymExpansion {
+            file_id: Idx::<File>(9),
             item_id: Idx::<TypeItem>(2),
         },
         step: [

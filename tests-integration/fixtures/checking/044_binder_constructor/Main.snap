@@ -12,10 +12,10 @@ foo :: Pair Int String -> Int
 bar :: Maybe Int -> Int
 baz :: List Int -> Int
 qux :: Pair String String -> String
-foo' :: forall (t19 :: Type) (t20 :: Type). Pair t20 t19 -> t20
+foo' :: forall (t18 :: Type) (t19 :: Type). Pair t19 t18 -> t19
 bar' :: Maybe Int -> Int
 baz' :: List Int -> Int
-qux' :: forall (t38 :: Type) (t39 :: Type). Pair t39 t38 -> t39
+qux' :: forall (t32 :: Type) (t33 :: Type). Pair t33 t32 -> t33
 
 Types
 Pair :: Type -> Type -> Type

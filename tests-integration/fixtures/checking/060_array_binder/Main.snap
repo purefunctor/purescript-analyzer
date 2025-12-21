@@ -4,12 +4,12 @@ expression: report
 ---
 Terms
 test1 :: Array Int -> { x :: Int, y :: Int }
-test1' :: forall (t10 :: Type). Array t10 -> { x :: t10, y :: t10 }
+test1' :: forall (t7 :: Type). Array t7 -> { x :: t7, y :: t7 }
 test2 :: forall (a :: Type). Array a -> Array a
-test2' :: forall (t27 :: Type). Array t27 -> Array t27
+test2' :: forall (t22 :: Type). Array t22 -> Array t22
 test3 :: Array Int -> Int
 test3' :: Array Int -> Int
 nested :: Array (Array Int) -> Int
-nested' :: forall (t64 :: Type). Array (Array t64) -> t64
+nested' :: forall (t54 :: Type). Array (Array t54) -> t54
 
 Types

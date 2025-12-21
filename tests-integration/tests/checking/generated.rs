@@ -152,3 +152,17 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_070_record_access_sections_main() { run_test("070_record_access_sections", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_071_record_update_sections_main() { run_test("071_record_update_sections", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_072_inspect_synonym_forall_main() { run_test("072_inspect_synonym_forall", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_073_inspect_synonym_return_main() { run_test("073_inspect_synonym_return", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_074_inspect_nested_forall_main() { run_test("074_inspect_nested_forall", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_075_inspect_edge_cases_main() { run_test("075_inspect_edge_cases", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_076_inspect_constraints_main() { run_test("076_inspect_constraints", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_077_inspect_arity_main() { run_test("077_inspect_arity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_078_inspect_arity_invalid_main() { run_test("078_inspect_arity_invalid", "Main"); }

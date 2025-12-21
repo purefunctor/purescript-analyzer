@@ -11,6 +11,7 @@ use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{inspect, kind, operator, substitute, transfer, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
+use crate::error::ErrorKind;
 
 pub fn infer_equations<Q>(
     state: &mut CheckState,
@@ -42,26 +43,10 @@ where
         equations.iter().map(|equation| equation.binders.len()).min().unwrap_or(0);
 
     for equation in equations {
-        let binder_count = equation.binders.len();
-
-        let argument_types = iter::repeat_with(|| state.fresh_unification_type(context))
-            .take(binder_count)
-            .collect_vec();
-
-        for (&binder_id, &argument_type) in equation.binders.iter().zip(&argument_types) {
-            let _ = check_binder(state, context, binder_id, argument_type)?;
-        }
-
-        // ✨ Create unification variables for additional binders.
-        // This is particularly useful for when the user is editing
-        // an equation and they haven't updated the other equations
-        // yet. TODO: per-binder errors, BinderId can be obtained
-        // by dropping binder_count on equation.binders.
-        if binder_count > minimum_equation_arity {
-            let additional = binder_count - minimum_equation_arity;
-            iter::repeat_with(|| state.fresh_unification_type(context))
-                .take(additional)
-                .for_each(drop);
+        let mut argument_types = vec![];
+        for &binder_id in equation.binders.iter() {
+            let argument_type = infer_binder(state, context, binder_id)?;
+            argument_types.push(argument_type);
         }
 
         let result_type = state.fresh_unification_type(context);
@@ -83,30 +68,83 @@ where
 pub fn check_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    signature_id: lowering::TypeId,
     signature: inspect::InspectSignature,
     equations: &[lowering::Equation],
 ) -> Result<(), building_types::QueryError>
 where
     Q: ExternalQueries,
 {
-    let minimum_equation_arity = signature.arguments.len();
+    let expected_arity = signature.arguments.len();
 
     for equation in equations {
-        let binder_count = equation.binders.len();
+        let equation_arity = equation.binders.len();
+
+        if equation_arity > expected_arity {
+            let expected = expected_arity as u32;
+            let actual = equation_arity as u32;
+            state.insert_error(ErrorKind::TooManyBinders {
+                signature: signature_id,
+                expected,
+                actual,
+            });
+        }
 
         for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
             let _ = check_binder(state, context, binder_id, argument_type)?;
         }
 
-        if binder_count > minimum_equation_arity {
-            let additional = binder_count - minimum_equation_arity;
-            iter::repeat_with(|| state.fresh_unification_type(context))
-                .take(additional)
-                .for_each(drop);
+        if equation_arity > expected_arity {
+            let extra_binders = &equation.binders[expected_arity..];
+            for &binder_id in extra_binders {
+                let _ = infer_binder(state, context, binder_id)?;
+            }
         }
 
-        let expected_type =
-            if binder_count > 0 { signature.result } else { signature.restore(state) };
+        // Compute expected result type based on how many binders there
+        // are on each equation, wrapping remaining arguments if partial.
+        //
+        // foo :: forall a. a -> a -> Int
+        // foo = \a b -> a + b
+        // foo a = \b -> a + b
+        // foo a b = a + b
+        //
+        // signature.arguments := [a, a]
+        // signature.result    := Int
+        //
+        // expected_type :=
+        //   0 binders := forall a. a -> a -> Int
+        //   1 binder  := a -> Int
+        //   2 binders := Int
+        //
+        // This matters for type synonyms that expand to functions. The
+        // return type synonym introduces hidden function arrows that
+        // increase the expected arity after expansion.
+        //
+        // type ReturnsInt a = a -> Int
+        //
+        // bar :: forall a. ReturnsInt a -> ReturnsInt a
+        // bar = \f -> f
+        // bar f = f
+        // bar f a = f a
+        //
+        // signature.arguments := [ReturnsInt a, a]
+        // signature.result    := Int
+        //
+        // expected_type :=
+        //   0 binders := forall a. ReturnsInt a -> ReturnsInt a
+        //   1 binder  := ReturnsInt a
+        //   2 binders := Int
+        let expected_type = if equation_arity == 0 {
+            signature.restore(state)
+        } else if equation_arity >= expected_arity {
+            signature.result
+        } else {
+            let remaining_arguments = &signature.arguments[equation_arity..];
+            remaining_arguments.iter().rfold(signature.result, |result, &argument| {
+                state.storage.intern(Type::Function(argument, result))
+            })
+        };
 
         if let Some(guarded) = &equation.guarded {
             let inferred_type = infer_guarded_expression(state, context, guarded)?;
@@ -158,8 +196,15 @@ where
         lowering::BinderKind::Constructor { resolution, arguments } => {
             let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
 
-            let mut constructor_t = lookup_file_term(state, context, *file_id, *term_id)?;
+            let constructor_t = lookup_file_term(state, context, *file_id, *term_id)?;
 
+            // Instantiate nullary constructors to avoid polymorphic types.
+            // Non-nullary constructors are instantiated during application.
+            if arguments.is_empty() {
+                return instantiate_type(state, context, constructor_t);
+            }
+
+            let mut constructor_t = constructor_t;
             for &argument in arguments.iter() {
                 constructor_t =
                     check_constructor_binder_application(state, context, constructor_t, argument)?;
@@ -1351,11 +1396,11 @@ where
             let Some(name) = context.lowered.info.get_let_binding(*id) else {
                 return Ok(());
             };
-            if let Some(signature) = name.signature {
-                let signature = inspect::inspect_signature(state, context, signature)?;
+            if let Some(signature_id) = name.signature {
+                let signature = inspect::inspect_signature(state, context, signature_id)?;
                 let name_type = signature.restore(state);
                 state.bind_let(*id, name_type);
-                check_equations(state, context, signature, &name.equations)?;
+                check_equations(state, context, signature_id, signature, &name.equations)?;
             } else {
                 let name_type = state.fresh_unification_type(context);
                 state.bind_let(*id, name_type);

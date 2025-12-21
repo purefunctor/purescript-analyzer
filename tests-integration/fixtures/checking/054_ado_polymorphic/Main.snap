@@ -8,7 +8,7 @@ map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). (a -> b) -> f a -> f 
 apply :: forall (f :: Type -> Type) (a :: Type) (b :: Type). f (a -> b) -> f a -> f b
 pure :: forall (f :: Type -> Type) (a :: Type). a -> f a
 test :: forall (f :: Type -> Type). f (Tuple Int String)
-test' :: forall (t61 :: Type -> Type). t61 (Tuple Int String)
+test' :: forall (t56 :: Type -> Type). t56 (Tuple Int String)
 
 Types
 Tuple :: Type -> Type -> Type

@@ -26,8 +26,11 @@ fn main() {
 
 fn generate_lsp() {
     let mut buffer = fs::File::create("./tests/lsp/generated.rs").unwrap();
-    writeln!(buffer, r#"// Do not edit! See build.rs
+    writeln!(
+        buffer,
+        r#"// Do not edit! See build.rs
 
+#[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {{
     let path = std::path::Path::new("fixtures/lsp").join(folder);
     let (engine, files) = tests_integration::load_compiler(&path);
@@ -37,7 +40,9 @@ fn run_test(folder: &str, file: &str) {{
     settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/lsp").join(folder));
     settings.set_prepend_module_to_snapshot(false);
     settings.bind(|| insta::assert_snapshot!(file, report));
-}}"#).unwrap();
+}}"#
+    )
+    .unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
     for folder in read_dir(Path::new("./fixtures/lsp")) {

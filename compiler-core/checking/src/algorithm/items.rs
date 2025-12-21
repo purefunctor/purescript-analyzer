@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, term, unification};
+use crate::algorithm::{inspect, kind, term, transfer, unification};
 use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -574,14 +574,20 @@ where
         match item {
             TermItemIr::Foreign { signature } | TermItemIr::ValueGroup { signature, .. } => {
                 let Some(signature) = signature else { return Ok(()) };
+
+                let signature_variables = inspect::collect_signature_variables(context, *signature);
+                state.term_signature_variables.insert(item_id, signature_variables);
+
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
-                state.binding_group.terms.insert(item_id, inferred_type);
+                let global_type = transfer::globalize(state, context, inferred_type);
+                state.checked.terms.insert(item_id, global_type);
             }
             TermItemIr::Operator { resolution, .. } => {
                 let Some((file_id, term_id)) = *resolution else { return Ok(()) };
                 let id = term::lookup_file_term(state, context, file_id, term_id)?;
-                state.binding_group.terms.insert(item_id, id);
+                let global_type = transfer::globalize(state, context, id);
+                state.checked.terms.insert(item_id, global_type);
             }
             _ => (),
         }
@@ -603,9 +609,16 @@ where
             return Ok(());
         };
         if let TermItemIr::ValueGroup { signature, equations } = item {
-            if let Some(signature) = signature {
-                let signature = inspect::inspect_signature(state, context, *signature)?;
-                term::check_equations(state, context, signature, equations)
+            if let Some(signature_id) = signature {
+                let group_type = term::lookup_file_term(state, context, context.id, item_id)?;
+
+                let forall_bindings = state.term_signature_variables.get(&item_id).cloned();
+                let surface_bindings = forall_bindings.as_deref().unwrap_or_default();
+
+                let signature =
+                    inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
+
+                term::check_equations(state, context, *signature_id, signature, equations)
             } else {
                 term::infer_equations(state, context, item_id, equations)
             }

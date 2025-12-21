@@ -338,8 +338,9 @@ fn traverse_row_body<Q: ExternalQueries>(
 fn is_record_constructor<Q: ExternalQueries>(source: &mut TraversalSource<Q>, id: TypeId) -> bool {
     if let Type::Constructor(file_id, type_id) = source.lookup(id)
         && file_id == source.queries().prim_id()
-            && let Some(name) = lookup_type_name(source, file_id, type_id) {
-                return name == "Record";
-            }
+        && let Some(name) = lookup_type_name(source, file_id, type_id)
+    {
+        return name == "Record";
+    }
     false
 }

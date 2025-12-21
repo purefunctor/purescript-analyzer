@@ -296,7 +296,21 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "\nErrors").unwrap();
     }
     for error in &checked.errors {
-        writeln!(snapshot, "{:?} at {:?}", error.kind, &error.step).unwrap();
+        match error.kind {
+            checking::error::ErrorKind::CannotUnify { t1, t2 } => {
+                let t1_pretty = pretty::print_global(engine, t1);
+                let t2_pretty = pretty::print_global(engine, t2);
+                writeln!(
+                    snapshot,
+                    "CannotUnify {{ {t1_pretty}, {t2_pretty} }} at {:?}",
+                    &error.step
+                )
+                .unwrap();
+            }
+            _ => {
+                writeln!(snapshot, "{:?} at {:?}", error.kind, &error.step).unwrap();
+            }
+        }
     }
 
     snapshot

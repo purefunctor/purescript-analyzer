@@ -235,8 +235,11 @@ fn shift_levels(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
             Type::String(_, _) => id,
             Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
                 let arguments = Arc::clone(arguments);
-                let arguments = arguments.iter().map(|&argument| aux(state, argument, offset)).collect();
-                state.storage.intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
+                let arguments =
+                    arguments.iter().map(|&argument| aux(state, argument, offset)).collect();
+                state
+                    .storage
+                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
             }
             Type::Unification(_) => id,
             Type::Variable(Variable::Bound(level)) => {
@@ -250,11 +253,7 @@ fn shift_levels(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
         }
     }
 
-    if offset == 0 {
-        id
-    } else {
-        aux(state, id, offset)
-    }
+    if offset == 0 { id } else { aux(state, id, offset) }
 }
 
 /// Level-based substitution over a [`Type`].
@@ -312,9 +311,7 @@ fn substitute_unification(
             }
             Type::Row(RowType { ref fields, tail }) => {
                 let mut fields = fields.to_vec();
-                fields
-                    .iter_mut()
-                    .for_each(|field| field.id = aux(substitutions, state, field.id));
+                fields.iter_mut().for_each(|field| field.id = aux(substitutions, state, field.id));
 
                 let tail = tail.map(|tail| aux(substitutions, state, tail));
                 let row = RowType { fields: Arc::from(fields), tail };
@@ -324,10 +321,8 @@ fn substitute_unification(
             Type::String(_, _) => id,
             Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
                 let arguments = Arc::clone(arguments);
-                let arguments = arguments
-                    .iter()
-                    .map(|&argument| aux(substitutions, state, argument))
-                    .collect();
+                let arguments =
+                    arguments.iter().map(|&argument| aux(substitutions, state, argument)).collect();
                 state
                     .storage
                     .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
