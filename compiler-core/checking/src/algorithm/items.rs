@@ -326,7 +326,7 @@ fn check_class<Q>(
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
-    ClassIr { constraints, variables }: &ClassIr,
+    ClassIr { constraints, variables, .. }: &ClassIr,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,

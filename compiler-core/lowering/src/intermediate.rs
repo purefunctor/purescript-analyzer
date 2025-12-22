@@ -167,6 +167,12 @@ pub struct TypeVariableBinding {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct FunctionalDependency {
+    pub determiners: Arc<[u8]>,
+    pub determined: Arc<[u8]>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct TypeRowItem {
     pub name: Option<SmolStr>,
     pub type_: Option<TypeId>,
@@ -359,6 +365,7 @@ pub struct SynonymIr {
 pub struct ClassIr {
     pub constraints: Arc<[TypeId]>,
     pub variables: Arc<[TypeVariableBinding]>,
+    pub functional_dependencies: Arc<[FunctionalDependency]>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

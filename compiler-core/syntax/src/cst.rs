@@ -507,6 +507,7 @@ has_child!(
     | class_constraints() -> ClassConstraints
     | class_head() -> ClassHead
     | class_statements() -> ClassStatements
+    | class_functional_dependencies() -> ClassFunctionalDependencies
 );
 
 has_children!(
@@ -538,6 +539,38 @@ has_child!(
     ClassMemberStatement
     | type_() -> Type
 );
+
+has_children!(
+    ClassFunctionalDependencies
+    | children() -> FunctionalDependency
+);
+
+impl FunctionalDependencyDetermined {
+    pub fn children(&self) -> impl Iterator<Item = crate::SyntaxToken> {
+        self.syntax().children_with_tokens().filter_map(|n| {
+            let t = n.into_token()?;
+            (t.kind() == crate::SyntaxKind::LOWER).then_some(t)
+        })
+    }
+}
+
+impl FunctionalDependencyDetermines {
+    pub fn determiners(&self) -> impl Iterator<Item = crate::SyntaxToken> + '_ {
+        self.syntax()
+            .children_with_tokens()
+            .take_while(|n| n.kind() != crate::SyntaxKind::RIGHT_ARROW)
+            .filter_map(|n| n.into_token())
+            .filter(|t| t.kind() == crate::SyntaxKind::LOWER)
+    }
+
+    pub fn determined(&self) -> impl Iterator<Item = crate::SyntaxToken> + '_ {
+        self.syntax()
+            .children_with_tokens()
+            .skip_while(|n| n.kind() != crate::SyntaxKind::RIGHT_ARROW)
+            .filter_map(|n| n.into_token())
+            .filter(|t| t.kind() == crate::SyntaxKind::LOWER)
+    }
+}
 
 has_token!(
     NewtypeSignature

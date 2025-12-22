@@ -628,7 +628,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
-                let variables = cst
+                let variables: Arc<[_]> = cst
                     .class_head()
                     .map(|cst| {
                         cst.children()
@@ -646,7 +646,22 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                     })
                     .unwrap_or_default();
 
-                Some(ClassIr { constraints, variables })
+                let variable_map: FxHashMap<&str, u8> = variables
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, v)| v.name.as_deref().map(|n| (n, i as u8)))
+                    .collect();
+
+                let functional_dependencies = cst
+                    .class_functional_dependencies()
+                    .map(|deps| {
+                        deps.children()
+                            .map(|dep| lower_functional_dependency(&variable_map, &dep))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+
+                Some(ClassIr { constraints, variables, functional_dependencies })
             });
 
             let kind = TypeItemIr::ClassGroup { signature, class };
@@ -835,4 +850,24 @@ fn lower_roles(context: &Context, id: TypeRoleId) -> Arc<[Role]> {
             .collect()
     })
     .unwrap_or_default()
+}
+
+fn lower_functional_dependency(
+    var_map: &FxHashMap<&str, u8>,
+    cst: &cst::FunctionalDependency,
+) -> FunctionalDependency {
+    match cst {
+        cst::FunctionalDependency::FunctionalDependencyDetermined(fd) => {
+            let determined: Arc<[u8]> =
+                fd.children().filter_map(|t| var_map.get(t.text()).copied()).collect();
+            FunctionalDependency { determiners: Arc::from([]), determined }
+        }
+        cst::FunctionalDependency::FunctionalDependencyDetermines(fd) => {
+            let determiners: Arc<[u8]> =
+                fd.determiners().filter_map(|t| var_map.get(t.text()).copied()).collect();
+            let determined: Arc<[u8]> =
+                fd.determined().filter_map(|t| var_map.get(t.text()).copied()).collect();
+            FunctionalDependency { determiners, determined }
+        }
+    }
 }
