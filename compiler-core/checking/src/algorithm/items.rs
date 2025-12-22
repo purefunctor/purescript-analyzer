@@ -102,6 +102,10 @@ where
             | TypeItemIr::ClassGroup { signature, .. }
             | TypeItemIr::Foreign { signature, .. } => {
                 let Some(signature) = signature else { return Ok(()) };
+
+                let signature_variables = inspect::collect_signature_variables(context, *signature);
+                state.type_signature_variables.insert(item_id, signature_variables);
+
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
                 state.binding_group.types.insert(item_id, inferred_type);
@@ -123,6 +127,7 @@ struct SignatureLike {
 fn check_signature_like<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
     infer_result: impl FnOnce(&mut CheckState) -> TypeId,
@@ -130,14 +135,14 @@ fn check_signature_like<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature.map(|id| {
-        let signature = inspect::inspect_signature(state, context, id)?;
-        Ok((id, signature))
-    });
+    let signature = if let Some(signature_id) = signature {
+        let stored_kind = kind::lookup_file_type(state, context, context.id, item_id)?;
 
-    let signature = signature.transpose()?;
+        let surface_bindings = state.type_signature_variables.get(&item_id).cloned();
+        let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-    let signature = if let Some((signature_id, signature)) = signature {
+        let signature = inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
+
         if variables.len() != signature.arguments.len() {
             state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
                 id: signature_id,
@@ -230,7 +235,7 @@ where
     Q: ExternalQueries,
 {
     let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, signature, variables, |_| context.prim.t)?
+        check_signature_like(state, context, item_id, signature, variables, |_| context.prim.t)?
     else {
         return Ok(());
     };
@@ -285,7 +290,7 @@ where
     Q: ExternalQueries,
 {
     let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, signature, variables, |state| {
+        check_signature_like(state, context, item_id, signature, variables, |state| {
             state.fresh_unification_type(context)
         })?
     else {
@@ -326,7 +331,7 @@ where
     Q: ExternalQueries,
 {
     let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, signature, variables, |_| context.prim.constraint)?
+        check_signature_like(state, context, item_id, signature, variables, |_| context.prim.constraint)?
     else {
         return Ok(());
     };
