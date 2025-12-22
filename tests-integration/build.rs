@@ -61,6 +61,7 @@ fn generate_lowering() {
     let mut buffer = fs::File::create("./tests/lowering/generated.rs").unwrap();
     writeln!(buffer, r#"// Do not edit! See build.rs
 
+#[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {{
     let path = std::path::Path::new("fixtures/lowering").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);
@@ -94,6 +95,7 @@ fn generate_resolving() {
     let mut buffer = fs::File::create("./tests/resolving/generated.rs").unwrap();
     writeln!(buffer, r#"// Do not edit! See build.rs
 
+#[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {{
     let path = std::path::Path::new("fixtures/resolving").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);
@@ -127,6 +129,7 @@ fn generate_checking() {
     let mut buffer = fs::File::create("./tests/checking/generated.rs").unwrap();
     writeln!(buffer, r#"// Do not edit! See build.rs
 
+#[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {{
     let path = std::path::Path::new("fixtures/checking").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);

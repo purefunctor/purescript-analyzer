@@ -141,7 +141,8 @@ where
         let surface_bindings = state.type_signature_variables.get(&item_id).cloned();
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature = inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
+        let signature =
+            inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
 
         if variables.len() != signature.arguments.len() {
             state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
@@ -331,7 +332,9 @@ where
     Q: ExternalQueries,
 {
     let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, item_id, signature, variables, |_| context.prim.constraint)?
+        check_signature_like(state, context, item_id, signature, variables, |_| {
+            context.prim.constraint
+        })?
     else {
         return Ok(());
     };
