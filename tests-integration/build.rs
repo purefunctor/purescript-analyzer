@@ -10,7 +10,7 @@ fn read_dir<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<'output
 }
 
 fn read_purs_files<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<'output> {
-    read_dir(path).filter(|p| p.extension().map_or(false, |ext| ext == "purs"))
+    read_dir(path).filter(|p| p.extension().is_some_and(|ext| ext == "purs"))
 }
 
 fn main() {

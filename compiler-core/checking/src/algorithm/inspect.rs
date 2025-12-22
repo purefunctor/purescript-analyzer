@@ -127,10 +127,8 @@ where
                     aux(context, *inner_id, variables);
                 }
             }
-            lowering::TypeKind::Parenthesized { parenthesized } => {
-                if let Some(id) = parenthesized {
-                    aux(context, *id, variables);
-                }
+            lowering::TypeKind::Parenthesized { parenthesized: Some(parenthesized) } => {
+                aux(context, *parenthesized, variables);
             }
             _ => (),
         }

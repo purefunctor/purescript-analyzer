@@ -1,6 +1,5 @@
 //! Implements the type checker.
 
-use std::iter;
 
 use building_types::QueryResult;
 use indexing::TermItemId;
