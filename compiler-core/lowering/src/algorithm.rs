@@ -34,12 +34,15 @@ pub(crate) struct State {
 
     pub(crate) current_kind: Option<TypeItemId>,
     pub(crate) current_synonym: Option<TypeItemId>,
+    pub(crate) current_let_binding: Option<LetBindingNameGroupId>,
+    pub(crate) current_let_scope: Option<GraphNodeId>,
 
     pub(crate) term_graph: ItemGraph<TermItemId>,
     pub(crate) type_graph: ItemGraph<TypeItemId>,
 
     pub(crate) kind_graph: ItemGraph<TypeItemId>,
     pub(crate) synonym_graph: ItemGraph<TypeItemId>,
+    pub(crate) let_binding_graph: ItemGraph<LetBindingNameGroupId>,
 
     pub(crate) errors: Vec<LoweringError>,
 }
@@ -209,9 +212,9 @@ impl State {
         Some((file_id, term_id))
     }
 
-    fn resolve_term_local(&self, name: &str) -> Option<TermVariableResolution> {
+    fn resolve_term_local(&mut self, name: &str) -> Option<TermVariableResolution> {
         let id = self.graph_scope?;
-        self.graph.traverse(id).find_map(|(_, graph)| match graph {
+        self.graph.traverse(id).find_map(|(node_id, graph)| match graph {
             GraphNode::Binder { binders, puns, .. } => {
                 if let Some(r) = binders.get(name) {
                     return Some(TermVariableResolution::Binder(*r));
@@ -222,8 +225,16 @@ impl State {
                 None
             }
             GraphNode::Let { bindings, .. } => {
-                let r = *bindings.get(name)?;
-                Some(TermVariableResolution::Let(r))
+                let target_id = *bindings.get(name)?;
+
+                // Track dependency if we're inside a let binding in the SAME let scope
+                if let Some(source_id) = self.current_let_binding
+                    && self.current_let_scope == Some(node_id)
+                {
+                    self.let_binding_graph.add_edge(source_id, target_id, ());
+                }
+
+                Some(TermVariableResolution::Let(target_id))
             }
             _ => None,
         })

@@ -167,3 +167,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_077_inspect_arity_main() { run_test("077_inspect_arity", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_078_inspect_arity_invalid_main() { run_test("078_inspect_arity_invalid", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_079_let_recursive_main() { run_test("079_let_recursive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_080_let_recursive_errors_main() { run_test("080_let_recursive_errors", "Main"); }

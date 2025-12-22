@@ -1,6 +1,8 @@
+use std::mem;
 use std::sync::Arc;
 
 use itertools::Itertools;
+use petgraph::algo::tarjan_scc;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, StrExt};
@@ -513,7 +515,7 @@ fn lower_bindings(
     state: &mut State,
     context: &Context,
     cst: &cst::LetBindingStatements,
-) -> Arc<[LetBinding]> {
+) -> Arc<[LetBindingChunk]> {
     #[derive(Debug, PartialEq, Eq)]
     enum Chunk {
         Pattern,
@@ -526,37 +528,38 @@ fn lower_bindings(
         cst::LetBinding::LetBindingEquation(_) => Chunk::Equation,
     });
 
-    let mut bindings = vec![];
+    let mut result = vec![];
     for (kind, children) in chunks.into_iter() {
         match kind {
             Chunk::Pattern => {
-                lower_pattern_bindings(state, context, &mut bindings, children);
+                // Each pattern becomes its own chunk
+                for pattern in children {
+                    result.push(lower_pattern_chunk(state, context, pattern));
+                }
             }
             Chunk::Equation => {
-                lower_equation_bindings(state, context, &mut bindings, children);
+                // All consecutive equations become one Names chunk
+                result.push(lower_equation_chunk(state, context, children));
             }
         }
     }
 
-    bindings.into()
+    result.into()
 }
 
-fn lower_pattern_bindings(
+fn lower_pattern_chunk(
     state: &mut State,
     context: &Context,
-    bindings: &mut Vec<LetBinding>,
-    children: impl Iterator<Item = cst::LetBinding>,
-) {
-    bindings.extend(children.map(|pattern| {
-        let cst::LetBinding::LetBindingPattern(pattern) = &pattern else {
-            unreachable!("invariant violated: expected LetBindingPattern");
-        };
-        let where_expression =
-            pattern.where_expression().map(|cst| lower_where_expression(state, context, &cst));
-        state.push_binder_scope();
-        let binder = pattern.binder().map(|cst| lower_binder(state, context, &cst));
-        LetBinding::Pattern { binder, where_expression }
-    }))
+    pattern: cst::LetBinding,
+) -> LetBindingChunk {
+    let cst::LetBinding::LetBindingPattern(pattern) = &pattern else {
+        unreachable!("invariant violated: expected LetBindingPattern");
+    };
+    let where_expression =
+        pattern.where_expression().map(|cst| lower_where_expression(state, context, &cst));
+    state.push_binder_scope();
+    let binder = pattern.binder().map(|cst| lower_binder(state, context, &cst));
+    LetBindingChunk::Pattern { binder, where_expression }
 }
 
 struct PendingLetBinding {
@@ -565,12 +568,13 @@ struct PendingLetBinding {
     equations: Arc<[LetBindingEquationId]>,
 }
 
-fn lower_equation_bindings(
+fn lower_equation_chunk(
     state: &mut State,
     context: &Context,
-    bindings: &mut Vec<LetBinding>,
     children: impl Iterator<Item = cst::LetBinding>,
-) {
+) -> LetBindingChunk {
+    let outer_graph = mem::take(&mut state.let_binding_graph);
+
     let children = children.chunk_by(|cst| match cst {
         cst::LetBinding::LetBindingPattern(_) => {
             unreachable!("invariant violated: expected LetBindingSignature / LetBindingEquation");
@@ -639,10 +643,13 @@ fn lower_equation_bindings(
         state.graph.inner.alloc(GraphNode::Let { parent: state.graph_scope, bindings: let_bound });
 
     state.graph_scope = Some(graph_node);
+    state.current_let_scope = Some(graph_node);
 
-    bindings.extend(groups.into_iter().map(|id| {
+    // Lower each binding, tracking current_let_binding for dependency tracking
+    for &id in &groups {
+        state.current_let_binding = Some(id);
+
         let let_binding = &state.info.let_binding[id];
-
         let signature = let_binding.signature;
         let equations = Arc::clone(&let_binding.equations);
 
@@ -668,10 +675,32 @@ fn lower_equation_bindings(
 
             let info = LetBindingName { signature, equations };
             state.associate_let_binding_name(id, info);
+        });
 
-            LetBinding::Name { id }
+        state.current_let_binding = None;
+    }
+
+    state.current_let_scope = None;
+
+    // Compute SCCs from dependency graph
+    let mut graph = mem::take(&mut state.let_binding_graph);
+    for &id in &groups {
+        graph.add_node(id);
+    }
+
+    let sccs = tarjan_scc(&graph);
+    let scc = sccs
+        .into_iter()
+        .map(|scc| match scc[..] {
+            [single] if !graph.contains_edge(single, single) => Scc::Base(single),
+            [single] => Scc::Recursive(single),
+            _ => Scc::Mutual(scc),
         })
-    }));
+        .collect();
+
+    state.let_binding_graph = outer_graph;
+
+    LetBindingChunk::Names { bindings: groups.into(), scc }
 }
 
 pub(crate) fn lower_equation_like<T: AstNode>(

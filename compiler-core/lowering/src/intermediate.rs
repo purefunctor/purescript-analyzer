@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::source::*;
-use crate::{TermVariableResolution, TypeVariableResolution};
+use crate::{Scc, TermVariableResolution, TypeVariableResolution};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StringKind {
@@ -61,7 +61,7 @@ pub struct CaseBranch {
 #[derive(Debug, PartialEq, Eq)]
 pub enum DoStatement {
     Bind { binder: Option<BinderId>, expression: Option<ExpressionId> },
-    Let { statements: Arc<[LetBinding]> },
+    Let { statements: Arc<[LetBindingChunk]> },
     Discard { expression: Option<ExpressionId> },
 }
 
@@ -99,7 +99,7 @@ pub enum ExpressionKind {
         else_: Option<ExpressionId>,
     },
     LetIn {
-        bindings: Arc<[LetBinding]>,
+        bindings: Arc<[LetBindingChunk]>,
         expression: Option<ExpressionId>,
     },
     Lambda {
@@ -207,7 +207,7 @@ pub enum GuardedExpression {
 #[derive(Debug, PartialEq, Eq)]
 pub struct WhereExpression {
     pub expression: Option<ExpressionId>,
-    pub bindings: Arc<[LetBinding]>,
+    pub bindings: Arc<[LetBindingChunk]>,
 }
 
 /// Group of IDs for a let-bound name
@@ -232,10 +232,16 @@ pub struct LetBindingName {
     pub equations: Arc<[Equation]>,
 }
 
+/// A chunk of let bindings. Pattern bindings act as boundaries between chunks.
+///
+/// This structure enables 2-phase type checking for mutually recursive let bindings:
+/// within a `Names` chunk, all bindings can reference each other.
 #[derive(Debug, PartialEq, Eq)]
-pub enum LetBinding {
-    Name { id: LetBindingNameGroupId },
+pub enum LetBindingChunk {
+    /// Pattern binding (acts as boundary between name binding groups)
     Pattern { binder: Option<BinderId>, where_expression: Option<WhereExpression> },
+    /// Group of name bindings with SCC ordering for type checking
+    Names { bindings: Arc<[LetBindingNameGroupId]>, scc: Vec<Scc<LetBindingNameGroupId>> },
 }
 
 #[derive(Debug, PartialEq, Eq)]

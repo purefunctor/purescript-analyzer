@@ -1,6 +1,5 @@
 //! Implements the type checker.
 
-
 use building_types::QueryResult;
 use indexing::TermItemId;
 use itertools::Itertools;
@@ -430,17 +429,17 @@ fn check_pattern_guard<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(e) = guard.expression else {
+    let Some(expression) = guard.expression else {
         return Ok(());
     };
 
-    let t = infer_expression(state, context, e)?;
+    let expression_type = infer_expression(state, context, expression)?;
 
-    let Some(b) = guard.binder else {
+    let Some(binder) = guard.binder else {
         return Ok(());
     };
 
-    let _ = check_binder(state, context, b, t)?;
+    let _ = check_binder(state, context, binder, expression_type)?;
 
     Ok(())
 }
@@ -453,9 +452,7 @@ fn infer_where_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    for binding in where_expression.bindings.iter() {
-        check_let_binding(state, context, binding)?;
-    }
+    check_let_chunks(state, context, &where_expression.bindings)?;
 
     let Some(expression) = where_expression.expression else {
         return Ok(context.prim.unknown);
@@ -612,9 +609,7 @@ where
         }
 
         lowering::ExpressionKind::LetIn { bindings, expression } => {
-            for binding in bindings.iter() {
-                check_let_binding(state, context, binding)?;
-            }
+            check_let_chunks(state, context, bindings)?;
 
             let Some(expression) = expression else { return Ok(unknown) };
 
@@ -683,9 +678,7 @@ where
                         do_statements.push((Some(binder_type), *expression));
                     }
                     lowering::DoStatement::Let { statements } => {
-                        for statement in statements.iter() {
-                            check_let_binding(state, context, statement)?;
-                        }
+                        check_let_chunks(state, context, statements)?;
                     }
                     lowering::DoStatement::Discard { expression } => {
                         do_statements.push((None, *expression));
@@ -778,9 +771,7 @@ where
                         expressions.push(*expression);
                     }
                     lowering::DoStatement::Let { statements } => {
-                        for statement in statements.iter() {
-                            check_let_binding(state, context, statement)?;
-                        }
+                        check_let_chunks(state, context, statements)?;
                     }
                     lowering::DoStatement::Discard { expression } => {
                         let binder_type = state.fresh_unification_type(context);
@@ -1382,46 +1373,112 @@ where
     check_function_application_core(state, context, constructor_t, binder_id, check_binder)
 }
 
-fn check_let_binding<Q>(
+fn check_let_chunks<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    binding: &lowering::LetBinding,
+    chunks: &[lowering::LetBindingChunk],
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    match binding {
-        lowering::LetBinding::Name { id } => {
-            let Some(name) = context.lowered.info.get_let_binding(*id) else {
-                return Ok(());
-            };
-            if let Some(signature_id) = name.signature {
-                let signature = inspect::inspect_signature(state, context, signature_id)?;
-                let name_type = signature.restore(state);
-                state.bind_let(*id, name_type);
-                check_equations(state, context, signature_id, signature, &name.equations)?;
-            } else {
-                let name_type = state.fresh_unification_type(context);
-                state.bind_let(*id, name_type);
-                infer_equations_core(state, context, name_type, &name.equations)?;
+    for chunk in chunks {
+        match chunk {
+            lowering::LetBindingChunk::Pattern { binder, where_expression } => {
+                check_pattern_let_binding(state, context, binder, where_expression)?;
+            }
+            lowering::LetBindingChunk::Names { bindings, scc } => {
+                check_names_chunk(state, context, bindings, scc)?;
             }
         }
-        lowering::LetBinding::Pattern { binder, where_expression } => {
-            let Some(w) = where_expression else {
-                return Ok(());
-            };
+    }
+    Ok(())
+}
 
-            let t = infer_where_expression(state, context, w)?;
+fn check_pattern_let_binding<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binder: &Option<lowering::BinderId>,
+    where_expression: &Option<lowering::WhereExpression>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(where_expression) = where_expression else {
+        return Ok(());
+    };
 
-            let Some(b) = binder else {
-                return Ok(());
-            };
+    let expression_type = infer_where_expression(state, context, where_expression)?;
 
-            let _ = check_binder(state, context, *b, t)?;
+    let Some(binder) = binder else {
+        return Ok(());
+    };
+
+    let _ = check_binder(state, context, *binder, expression_type)?;
+
+    Ok(())
+}
+
+fn check_names_chunk<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &[lowering::LetBindingNameGroupId],
+    scc: &[lowering::Scc<lowering::LetBindingNameGroupId>],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for &id in bindings {
+        let Some(name) = context.lowered.info.get_let_binding(id) else {
+            continue;
+        };
+        if let Some(signature_id) = name.signature {
+            let signature = inspect::inspect_signature(state, context, signature_id)?;
+            let name_type = signature.restore(state);
+            state.bind_let(id, name_type);
+        } else {
+            let name_type = state.fresh_unification_type(context);
+            state.bind_let(id, name_type);
+        }
+    }
+
+    for item in scc {
+        match item {
+            lowering::Scc::Base(id) | lowering::Scc::Recursive(id) => {
+                check_let_name_binding(state, context, *id)?;
+            }
+            lowering::Scc::Mutual(mutual) => {
+                for id in mutual {
+                    check_let_name_binding(state, context, *id)?;
+                }
+            }
         }
     }
 
     Ok(())
+}
+
+fn check_let_name_binding<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::LetBindingNameGroupId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(name) = context.lowered.info.get_let_binding(id) else {
+        return Ok(());
+    };
+
+    let Some(name_type) = state.lookup_let(id) else {
+        return Ok(());
+    };
+
+    if let Some(signature_id) = name.signature {
+        let signature = inspect::inspect_signature(state, context, signature_id)?;
+        check_equations(state, context, signature_id, signature, &name.equations)
+    } else {
+        infer_equations_core(state, context, name_type, &name.equations)
+    }
 }
 
 fn instantiate_type<Q>(
