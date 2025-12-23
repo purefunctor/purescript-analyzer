@@ -171,3 +171,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_079_let_recursive_main() { run_test("079_let_recursive", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_080_let_recursive_errors_main() { run_test("080_let_recursive_errors", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_081_prim_rowlist_main() { run_test("081_prim_rowlist", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_082_prim_function_main() { run_test("082_prim_function", "Main"); }

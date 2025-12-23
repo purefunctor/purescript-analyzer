@@ -847,16 +847,44 @@ fn lower_type_kind(
             TypeKind::Kinded { type_, kind }
         }
         cst::Type::TypeOperatorName(cst) => {
-            let resolution = cst.name().and_then(|cst| {
-                let (qualifier, name) =
-                    lower_qualified_name(&cst, cst::QualifiedName::operator_name)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
-            });
-            if resolution.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state.errors.push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+            let qualified = cst
+                .name()
+                .and_then(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name));
+
+            const FUNCTION_ARROW: &str = "->";
+
+            // The function arrow `->` is treated as a reserved operator by the
+            // compiler; we cannot create an operator declaration for it in the
+            // Prim module; subsequently, it has no TypeItemId and cannot be
+            // resolved like TypeKind::Operator.
+            //
+            // In light of this, we desugar the function arrow into the `Function`
+            // constructor, which does have a TypeItemId and can be resolved as a
+            // TypeKind::Constructor.
+            if let Some((qualifier, name)) = &qualified
+                && name == FUNCTION_ARROW
+            {
+                let resolution =
+                    state.resolve_type_reference(context, qualifier.as_deref(), "Function");
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state
+                        .errors
+                        .push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+                }
+                TypeKind::Constructor { resolution }
+            } else {
+                let resolution = qualified.and_then(|(qualifier, name)| {
+                    state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                });
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state
+                        .errors
+                        .push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+                }
+                TypeKind::Operator { resolution }
             }
-            TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(cst) => {
             let head = cst.type_().map(|cst| lower_type(state, context, &cst));
