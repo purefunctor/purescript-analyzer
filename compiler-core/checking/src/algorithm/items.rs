@@ -638,45 +638,41 @@ where
                 }
             }
 
-            TermItemIr::Instance { constraints, arguments, .. } => {
-                dbg!(&state.bound);
-                dbg!(&state.kinds);
+            TermItemIr::Instance { constraints, resolution, arguments, .. } => {
+                let Some(resolution) = *resolution else {
+                    return Ok(());
+                };
 
+                // Save the current size of the environment for unbinding.
                 let size = state.bound.size();
-                let level = debruijn::Level(size.0);
 
                 let mut core_arguments = vec![];
                 for argument in arguments.iter() {
                     let (inferred_type, inferred_kind) =
                         infer_surface_kind(state, context, *argument)?;
-                    println!(
-                        "{:?} :: {:?}",
-                        &state.storage[inferred_type], &state.storage[inferred_kind],
-                    );
-                    println!(
-                        "{} :: {}",
-                        pretty::print_local(state, context, inferred_type),
-                        pretty::print_local(state, context, inferred_kind),
-                    );
+
+                    let inferred_type = transfer::globalize(state, context, inferred_type);
+                    let inferred_kind = transfer::globalize(state, context, inferred_kind);
+
                     core_arguments.push((inferred_type, inferred_kind));
                 }
 
-                // This will either resolve the implicit variables or it will
-                // bind more implicit variables. TODO: Add test for fundeps
-                // etc.
+                let mut core_constraints = vec![];
                 for constraint in constraints.iter() {
                     let (inferred_type, inferred_kind) =
                         infer_surface_kind(state, context, *constraint)?;
-                    println!(
-                        "{:?} :: {:?}",
-                        &state.storage[inferred_type], &state.storage[inferred_kind],
-                    );
-                    println!(
-                        "{} :: {}",
-                        pretty::print_local(state, context, inferred_type),
-                        pretty::print_local(state, context, inferred_kind),
-                    );
+
+                    let inferred_type = transfer::globalize(state, context, inferred_type);
+                    let inferred_kind = transfer::globalize(state, context, inferred_kind);
+
+                    core_constraints.push((inferred_type, inferred_kind));
                 }
+
+                state.checked.instances.push(Instance {
+                    arguments: core_arguments,
+                    constraints: core_constraints,
+                    resolution,
+                });
 
                 // Open question:
                 //
@@ -847,7 +843,7 @@ where
                 // depending on `?0` can now be solved as the constraint solver was
                 // able to unify types on behalf of other instances.
 
-                state.unbind(level);
+                state.unbind(debruijn::Level(size.0));
 
                 dbg!(&state.bound);
                 dbg!(&state.kinds);

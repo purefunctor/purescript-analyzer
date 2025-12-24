@@ -323,6 +323,7 @@ pub enum TermItemIr {
     },
     Instance {
         constraints: Arc<[TypeId]>,
+        resolution: Option<(FileId, TypeItemId)>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },

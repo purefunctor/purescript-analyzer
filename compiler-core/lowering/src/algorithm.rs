@@ -410,6 +410,16 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Instance { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
+            let resolution = cst.as_ref().and_then(|cst| {
+                let cst = cst.instance_head()?;
+                let cst = cst.qualified()?;
+
+                let (qualifier, name) =
+                    recursive::lower_qualified_name(&cst, cst::QualifiedName::upper)?;
+
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+            });
+
             let arguments = cst
                 .as_ref()
                 .and_then(|cst| {
@@ -444,7 +454,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 })
                 .unwrap_or_default();
 
-            let kind = TermItemIr::Instance { constraints, arguments, members };
+            let kind = TermItemIr::Instance { constraints, resolution, arguments, members };
             state.info.term_item.insert(item_id, kind);
         }
 

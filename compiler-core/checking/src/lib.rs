@@ -37,6 +37,7 @@ pub struct CheckedModule {
 
     pub operators: FxHashMap<TypeItemId, core::Operator>,
     pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
+    pub instances: Vec<core::Instance>,
 
     pub errors: Vec<CheckError>,
 }

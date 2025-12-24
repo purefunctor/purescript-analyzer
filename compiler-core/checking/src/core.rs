@@ -118,3 +118,10 @@ impl Synonym {
         self
     }
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Instance {
+    pub arguments: Vec<(TypeId, TypeId)>,
+    pub constraints: Vec<(TypeId, TypeId)>,
+    pub resolution: (FileId, TypeItemId),
+}
