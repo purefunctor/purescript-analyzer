@@ -1346,6 +1346,17 @@ where
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
+        Type::Constrained(constraint, constrained) => {
+            state.wanted_constraints.push_back(constraint);
+            check_function_application_core(
+                state,
+                context,
+                constrained,
+                argument_id,
+                check_argument,
+            )
+        }
+
         _ => Ok(context.prim.unknown),
     }
 }
@@ -1496,17 +1507,24 @@ fn instantiate_type<Q>(
 where
     Q: ExternalQueries,
 {
+    const FUEL: u32 = 1_000_000;
+
     let mut current_id = id;
 
-    while let normalized_id = state.normalize_type(current_id)
-        && let Type::Forall(ref binder, inner_id) = state.storage[normalized_id]
-    {
-        let binder_level = binder.level;
-        let binder_kind = binder.kind;
-
-        let unification = state.fresh_unification_kinded(binder_kind);
-        current_id = substitute::substitute_bound(state, binder_level, unification, inner_id);
+    for _ in 0..FUEL {
+        current_id = state.normalize_type(current_id);
+        if let Type::Forall(ref binder, inner_id) = state.storage[current_id] {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+            let unification = state.fresh_unification_kinded(binder_kind);
+            current_id = substitute::substitute_bound(state, binder_level, unification, inner_id);
+        } else if let Type::Constrained(constraint, constrained) = state.storage[current_id] {
+            state.wanted_constraints.push_back(constraint);
+            current_id = constrained;
+        } else {
+            return Ok(current_id);
+        }
     }
 
-    Ok(current_id)
+    unreachable!("critical violation: limit reached in instantiate_type")
 }

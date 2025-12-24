@@ -845,9 +845,6 @@ where
 
                 state.unbind(debruijn::Level(size.0));
 
-                dbg!(&state.bound);
-                dbg!(&state.kinds);
-
                 Ok(())
             }
 

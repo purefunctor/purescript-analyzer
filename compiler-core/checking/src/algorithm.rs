@@ -3,6 +3,7 @@ pub mod items;
 pub mod kind;
 pub mod operator;
 pub mod quantify;
+pub mod solver;
 pub mod state;
 pub mod substitute;
 pub mod term;
@@ -108,6 +109,7 @@ pub(crate) fn check_source(
                     state.term_binding_group(&context, [*item]);
                 }
                 items::check_term_item(&mut state, &context, *item)?;
+                state.solve_constraints(&context)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(items) => {

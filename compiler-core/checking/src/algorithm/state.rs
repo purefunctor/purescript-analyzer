@@ -3,6 +3,7 @@
 pub mod unification;
 pub use unification::*;
 
+use std::collections::VecDeque;
 use std::mem;
 use std::sync::Arc;
 
@@ -16,8 +17,8 @@ use lowering::{
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
-use crate::algorithm::{quantify, transfer};
-use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
+use crate::algorithm::{quantify, solver, transfer};
+use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -31,6 +32,10 @@ pub struct CheckState {
 
     pub unification: UnificationContext,
     pub binding_group: BindingGroupContext,
+
+    pub wanted_constraints: VecDeque<TypeId>,
+    pub given_constraints: Vec<TypeId>,
+
     pub check_steps: Vec<ErrorStep>,
 
     pub defer_synonym_expansion: bool,
@@ -261,6 +266,21 @@ impl CheckState {
             let t = self.fresh_unification_type(context);
             self.binding_group.types.insert(item, t);
         }
+    }
+
+    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<()>
+    where
+        Q: ExternalQueries,
+    {
+        let wanted = mem::take(&mut self.wanted_constraints);
+        let given = mem::take(&mut self.given_constraints);
+        let stuck = solver::solve_constraints(self, context, wanted, given)?;
+        println!("=== Stuck ===");
+        for stuck in stuck {
+            let stuck = pretty::print_local(self, context, stuck);
+            println!("{stuck}");
+        }
+        Ok(())
     }
 
     pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>)

@@ -177,3 +177,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_082_prim_function_main() { run_test("082_prim_function", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_083_instance_basic_main() { run_test("083_instance_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_084_instance_eq_main() { run_test("084_instance_eq", "Main"); }
