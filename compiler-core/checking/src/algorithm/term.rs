@@ -1432,8 +1432,11 @@ where
             continue;
         };
         if let Some(signature_id) = name.signature {
-            let signature = inspect::inspect_signature(state, context, signature_id)?;
-            let name_type = signature.restore(state);
+            let signature_variables = inspect::collect_signature_variables(context, signature_id);
+            state.let_signature_variables.insert(id, signature_variables);
+
+            let (name_type, _) =
+                kind::check_surface_kind(state, context, signature_id, context.prim.t)?;
             state.bind_let(id, name_type);
         } else {
             let name_type = state.fresh_unification_type(context);
@@ -1474,7 +1477,11 @@ where
     };
 
     if let Some(signature_id) = name.signature {
-        let signature = inspect::inspect_signature(state, context, signature_id)?;
+        let surface_bindings = state.let_signature_variables.get(&id).cloned();
+        let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
+
+        let signature =
+            inspect::inspect_signature_core(state, context, name_type, surface_bindings)?;
         check_equations(state, context, signature_id, signature, &name.equations)
     } else {
         infer_equations_core(state, context, name_type, &name.equations)

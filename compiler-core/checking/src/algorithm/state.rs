@@ -42,6 +42,7 @@ pub struct CheckState {
 
     pub term_signature_variables: FxHashMap<TermItemId, Arc<[TypeVariableBindingId]>>,
     pub type_signature_variables: FxHashMap<TypeItemId, Arc<[TypeVariableBindingId]>>,
+    pub let_signature_variables: FxHashMap<LetBindingNameGroupId, Arc<[TypeVariableBindingId]>>,
 }
 
 #[derive(Default)]
