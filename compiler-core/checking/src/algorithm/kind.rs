@@ -490,6 +490,11 @@ where
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
         Type::Variable(ref variable) => match variable {
+            // TODO: handle implicit variables. This is important when we begin
+            // storing instance data in the CheckState or CheckedModule, because
+            // it needs to be visible in the environment before being able to be
+            // used by other variables. Implicit carries a level but would it ever
+            // be used? It should also carry its kind like a Skolem variable would.
             Variable::Implicit(_) => unknown,
             Variable::Skolem(_, kind) => *kind,
             Variable::Bound(level) => state.kinds.get(*level).copied().unwrap_or(unknown),
