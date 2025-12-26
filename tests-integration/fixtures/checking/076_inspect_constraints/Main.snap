@@ -33,12 +33,3 @@ NestedConstraint = forall (a :: Type) (b :: Type). Show b => a -> b -> String
   Quantified = :0
   Kind = :0
   Type = :1
-
-
-Errors
-CannotUnify { ???, String } at [TermDeclaration(Idx::<TermItem>(2))]
-CannotUnify { ???, Boolean } at [TermDeclaration(Idx::<TermItem>(3))]
-CannotUnify { ???, String } at [TermDeclaration(Idx::<TermItem>(3))]
-CannotUnify { ???, String } at [TermDeclaration(Idx::<TermItem>(4))]
-CannotUnify { ???, String } at [TermDeclaration(Idx::<TermItem>(5))]
-CannotUnify { ???, String } at [TermDeclaration(Idx::<TermItem>(6))]

@@ -119,7 +119,7 @@ impl Synonym {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Instance {
     pub arguments: Vec<(TypeId, TypeId)>,
     pub constraints: Vec<(TypeId, TypeId)>,
