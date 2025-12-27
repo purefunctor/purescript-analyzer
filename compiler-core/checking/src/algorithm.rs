@@ -1,3 +1,4 @@
+pub mod fd;
 pub mod inspect;
 pub mod items;
 pub mod kind;

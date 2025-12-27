@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 
 use building_types::QueryResult;
 use files::FileId;
@@ -6,6 +6,7 @@ use indexing::TypeItemId;
 use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
+use crate::algorithm::fd::{self, FunDep};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
 use crate::core::{Instance, Variable, debruijn, pretty};
@@ -51,7 +52,7 @@ where
             continue;
         };
         for instance in collect_instances(state, context, file_id, item_id)? {
-            match_instance(state, context, &arguments, instance);
+            match_instance(state, context, file_id, item_id, &arguments, instance)?;
         }
     }
 
@@ -92,6 +93,64 @@ struct ConstraintApplication {
     arguments: Vec<TypeId>,
 }
 
+fn get_functional_dependencies<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<Vec<FunDep>>
+where
+    Q: ExternalQueries,
+{
+    fn extract_fundeps(type_item: Option<&lowering::TypeItemIr>) -> Vec<FunDep> {
+        let Some(lowering::TypeItemIr::ClassGroup { class: Some(class), .. }) = type_item else {
+            return vec![];
+        };
+
+        let class = class.functional_dependencies.iter().map(|functional_dependency| {
+            FunDep::new(
+                functional_dependency.determiners.iter().map(|&x| x as usize),
+                functional_dependency.determined.iter().map(|&x| x as usize),
+            )
+        });
+
+        class.collect()
+    }
+
+    if file_id == context.id {
+        Ok(extract_fundeps(context.lowered.info.get_type_item(item_id)))
+    } else {
+        let lowered = context.queries.lowered(file_id)?;
+        Ok(extract_fundeps(lowered.info.get_type_item(item_id)))
+    }
+}
+
+fn compute_match_closures(fundeps: &[FunDep], match_results: &[MatchResult]) -> HashSet<usize> {
+    let initial: HashSet<usize> = match_results
+        .iter()
+        .enumerate()
+        .filter(|(_, result)| matches!(result, MatchResult::Match | MatchResult::Improve))
+        .map(|(index, _)| index)
+        .collect();
+    fd::compute_closure(fundeps, &initial)
+}
+
+fn adjust_match_by_closure(
+    match_results: &[MatchResult],
+    determined_positions: &HashSet<usize>,
+) -> Vec<MatchResult> {
+    match_results
+        .iter()
+        .enumerate()
+        .map(|(idx, result)| {
+            if matches!(result, MatchResult::Stuck) && determined_positions.contains(&idx) {
+                MatchResult::Match
+            } else {
+                *result
+            }
+        })
+        .collect()
+}
+
 fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<ConstraintApplication> {
     let mut arguments = vec![];
     let mut current_id = id;
@@ -115,9 +174,12 @@ fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<Constrai
 fn match_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
     arguments: &[TypeId],
     instance: Instance,
-) where
+) -> QueryResult<()>
+where
     Q: ExternalQueries,
 {
     let mut bindings = FxHashMap::default();
@@ -129,10 +191,19 @@ fn match_instance<Q>(
     });
 
     let match_results = match_results.collect_vec();
-    println!("{match_results:?}");
+    let functional_dependencies = get_functional_dependencies(context, file_id, item_id)?;
+
+    let determined_positions = compute_match_closures(&functional_dependencies, &match_results);
+    let adjusted_results = adjust_match_by_closure(&match_results, &determined_positions);
+
+    println!("Match results: {match_results:?}");
+    println!("Determined positions: {determined_positions:?}");
+    println!("Adjusted results: {adjusted_results:?}");
+
+    Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum MatchResult {
     Match,
     Improve,

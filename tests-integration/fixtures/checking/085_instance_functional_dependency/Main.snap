@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+convert :: forall (a :: Type) (b :: Type). Convert a b => a -> b
+test :: forall (t4 :: Type). t4
+
+Types
+Convert :: Type -> Type -> Constraint

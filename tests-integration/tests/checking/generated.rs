@@ -179,3 +179,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_083_instance_basic_main() { run_test("083_instance_basic", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_084_instance_eq_main() { run_test("084_instance_eq", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_085_instance_functional_dependency_main() { run_test("085_instance_functional_dependency", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_086_instance_functional_dependency_transitive_main() { run_test("086_instance_functional_dependency_transitive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_087_instance_functional_dependency_multiple_main() { run_test("087_instance_functional_dependency_multiple", "Main"); }
