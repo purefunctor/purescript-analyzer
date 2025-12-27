@@ -46,22 +46,28 @@ where
 
     println!("=== Wanted ===");
     for wanted in wanted {
+        let wanted_pretty = pretty::print_local(state, context, wanted);
+        println!("Constraint: {wanted_pretty}");
+
         let Some(ConstraintApplication { file_id, item_id, arguments }) =
             constraint_application(state, wanted)
         else {
+            println!("  Could not decompose constraint");
             continue;
         };
         for instance in collect_instances(state, context, file_id, item_id)? {
-            match_instance(state, context, file_id, item_id, &arguments, instance)?;
+            let result = match_instance(state, context, file_id, item_id, &arguments, instance)?;
+            println!("  => {result:?}");
         }
     }
 
     println!("=== Given ===");
-    for given in given {
-        let given = pretty::print_local(state, context, given);
-        println!("{given}");
+    for given in &given {
+        let given_pretty = pretty::print_local(state, context, *given);
+        println!("{given_pretty}");
     }
 
+    let _ = given;
     Ok(vec![])
 }
 
@@ -124,31 +130,14 @@ where
     }
 }
 
-fn compute_match_closures(fundeps: &[FunDep], match_results: &[MatchResult]) -> HashSet<usize> {
+fn compute_match_closures(fundeps: &[FunDep], match_results: &[MatchType]) -> HashSet<usize> {
     let initial: HashSet<usize> = match_results
         .iter()
         .enumerate()
-        .filter(|(_, result)| matches!(result, MatchResult::Match | MatchResult::Improve))
+        .filter(|(_, result)| matches!(result, MatchType::Match | MatchType::Improve))
         .map(|(index, _)| index)
         .collect();
     fd::compute_closure(fundeps, &initial)
-}
-
-fn adjust_match_by_closure(
-    match_results: &[MatchResult],
-    determined_positions: &HashSet<usize>,
-) -> Vec<MatchResult> {
-    match_results
-        .iter()
-        .enumerate()
-        .map(|(idx, result)| {
-            if matches!(result, MatchResult::Stuck) && determined_positions.contains(&idx) {
-                MatchResult::Match
-            } else {
-                *result
-            }
-        })
-        .collect()
 }
 
 fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<ConstraintApplication> {
@@ -178,43 +167,81 @@ fn match_instance<Q>(
     item_id: TypeItemId,
     arguments: &[TypeId],
     instance: Instance,
-) -> QueryResult<()>
+) -> QueryResult<MatchInstance>
 where
     Q: ExternalQueries,
 {
     let mut bindings = FxHashMap::default();
-    let mut improvement = vec![];
+    let mut improvements = vec![];
+    let mut match_results = Vec::with_capacity(arguments.len());
+    let mut stuck_positions = vec![];
 
-    let match_results = arguments.iter().zip(instance.arguments).map(|(wanted, (given, _))| {
-        let given = transfer::localize(state, context, given);
-        match_type(state, &mut bindings, &mut improvement, *wanted, given)
-    });
+    for (index, (wanted, (given, _))) in arguments.iter().zip(&instance.arguments).enumerate() {
+        let given = transfer::localize(state, context, *given);
+        let match_result = match_type(state, &mut bindings, &mut improvements, *wanted, given);
 
-    let match_results = match_results.collect_vec();
-    let functional_dependencies = get_functional_dependencies(context, file_id, item_id)?;
+        if matches!(match_result, MatchType::Apart) {
+            return Ok(MatchInstance::Apart);
+        }
 
-    let determined_positions = compute_match_closures(&functional_dependencies, &match_results);
-    let adjusted_results = adjust_match_by_closure(&match_results, &determined_positions);
+        if matches!(match_result, MatchType::Stuck) {
+            stuck_positions.push(index);
+        }
 
-    println!("Match results: {match_results:?}");
-    println!("Determined positions: {determined_positions:?}");
-    println!("Adjusted results: {adjusted_results:?}");
+        match_results.push(match_result);
+    }
 
-    Ok(())
+    if !stuck_positions.is_empty() {
+        let functional_dependencies = get_functional_dependencies(context, file_id, item_id)?;
+        let determined_positions = compute_match_closures(&functional_dependencies, &match_results);
+
+        for &stuck_index in &stuck_positions {
+            if !determined_positions.contains(&stuck_index) {
+                return Ok(MatchInstance::Stuck);
+            }
+        }
+    }
+
+    if improvements.is_empty() {
+        let constraints = instance
+            .constraints
+            .iter()
+            .map(|(constraint, _)| transfer::localize(state, context, *constraint))
+            .collect();
+        Ok(MatchInstance::Match { constraints })
+    } else {
+        Ok(MatchInstance::Improve { improvements })
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
-enum MatchResult {
+enum MatchType {
+    /// Types are structurally equal
     Match,
+    /// Instance variable was seen before, generates an improvement
     Improve,
+    /// Types are structurally incompatible
     Apart,
+    /// Wanted type is a unification variable
     Stuck,
 }
 
-impl MatchResult {
-    fn and_also(self, f: impl FnOnce() -> MatchResult) -> MatchResult {
-        if matches!(self, MatchResult::Match) { f() } else { self }
+impl MatchType {
+    fn and_also(self, f: impl FnOnce() -> MatchType) -> MatchType {
+        if matches!(self, MatchType::Match) { f() } else { self }
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum MatchInstance {
+    /// Instance matches - return its constraints as new wanted
+    Match { constraints: Vec<TypeId> },
+    /// Needs unification first, then re-queue the original constraint
+    Improve { improvements: Vec<(TypeId, TypeId)> },
+    /// Instance definitely doesn't match
+    Apart,
+    /// Has unification variable not determinable via fundeps
+    Stuck,
 }
 
 fn match_type(
@@ -223,7 +250,7 @@ fn match_type(
     improvements: &mut Vec<(TypeId, TypeId)>,
     wanted: TypeId,
     given: TypeId,
-) -> MatchResult {
+) -> MatchType {
     let wanted = state.normalize_type(wanted);
     let given = state.normalize_type(given);
 
@@ -234,24 +261,24 @@ fn match_type(
         (_, Type::Variable(variable)) => {
             if let Variable::Implicit(level) = variable {
                 bindings.insert(*level, wanted);
-                MatchResult::Match
+                MatchType::Match
             } else if let Variable::Bound(level) = variable
                 && let Some(bound) = bindings.get(level)
             {
                 improvements.push((wanted, *bound));
-                MatchResult::Improve
+                MatchType::Improve
             } else {
-                MatchResult::Apart
+                MatchType::Apart
             }
         }
 
-        (Type::Unification(_), _) => MatchResult::Stuck,
+        (Type::Unification(_), _) => MatchType::Stuck,
 
         (&Type::Constructor(w_file_id, w_type_id), &Type::Constructor(g_file_id, g_type_id)) => {
             if w_file_id == g_file_id && w_type_id == g_type_id {
-                MatchResult::Match
+                MatchType::Match
             } else {
-                MatchResult::Apart
+                MatchType::Apart
             }
         }
 
@@ -266,6 +293,6 @@ fn match_type(
                 .and_also(|| match_type(state, bindings, improvements, w_result, g_result))
         }
 
-        _ => MatchResult::Apart,
+        _ => MatchType::Apart,
     }
 }
