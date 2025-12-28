@@ -191,3 +191,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_089_no_instance_found_main() { run_test("089_no_instance_found", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_090_instance_improve_main() { run_test("090_instance_improve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_091_superclass_elaboration_main() { run_test("091_superclass_elaboration", "Main"); }

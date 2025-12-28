@@ -362,7 +362,7 @@ pub struct SynonymIr {
     pub synonym: Option<TypeId>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClassIr {
     pub constraints: Arc<[TypeId]>,
     pub variables: Arc<[TypeVariableBinding]>,

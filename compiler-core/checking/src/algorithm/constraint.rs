@@ -2,6 +2,7 @@ mod functional_dependency;
 use functional_dependency::Fd;
 
 use std::collections::{HashSet, VecDeque};
+use std::mem;
 
 use building_types::QueryResult;
 use files::FileId;
@@ -11,7 +12,7 @@ use rustc_hash::FxHashMap;
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{transfer, unification};
+use crate::algorithm::{kind, transfer, unification};
 use crate::core::{Instance, Variable, debruijn};
 use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};
@@ -51,37 +52,15 @@ pub fn solve_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    // Constraint solving todo:
-    //
-    // 1. Take wanted -> (TypeId, Vec<TypeId>)
-    // 2. TypeId -> Constructor(FileId, TypeItemId)
-    // 3. Search arguments for all constructors, these files are to look for instances in
-    //    We can do this some time later, let's just focus on constraint solving within
-    //    this file for now.
-    //
-    // From the constructor, we can look up instances in the local file that we've saved
-    // earlier in the CheckedModule::instances field, simply filter by the `resolution`
-    //
-    // Time to match instance heads! Matching is like unification that doesn't generate
-    // unification constraints, but instead substitutions for type variables. If the
-    // instance head has a type variable, it matches with anything. Further uses of
-    // that type variable will be replaced with the type it originally matched with.
-    // If the wanted head has a unification variable that ends up matching with another
-    // type through this mechanism, we make sure to generate an 'improvement' i.e. please
-    // unify these types for me so the next solving turn there's no more constraints kthxbye
-    //
-    // When matching an instance head, consider that we also need to apply functional dependency
-    // closure checking, especially to determine if a unification variable completely stalls
-    // matching for that constraint or if it can be improved.
+    let given = elaborate_given(state, context, given)?;
 
     let mut work_queue = wanted;
 
-    'outer: while let Some(wanted) = work_queue.pop_front() {
+    'work: while let Some(wanted) = work_queue.pop_front() {
         if match_given(state, wanted, &given).is_some() {
             continue;
         }
 
-        // Fall back to instance matching
         let Some(ConstraintApplication { file_id, item_id, arguments }) =
             constraint_application(state, wanted)
         else {
@@ -96,25 +75,43 @@ where
             match match_instance(state, context, file_id, item_id, &arguments, instance)? {
                 MatchInstance::Match { constraints } => {
                     work_queue.extend(constraints);
-                    continue 'outer;
+                    continue 'work;
                 }
                 MatchInstance::Improve { improvements } => {
                     for (wanted_type, bound_type) in improvements {
                         unification::unify(state, context, wanted_type, bound_type)?;
                     }
                     work_queue.push_back(wanted);
-                    continue 'outer;
+                    continue 'work;
                 }
                 MatchInstance::Apart | MatchInstance::Stuck => continue,
             }
         }
 
-        // No instance matched
         let constraint = transfer::globalize(state, context, wanted);
         state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
 
     Ok(vec![])
+}
+
+fn elaborate_given<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut given: Vec<TypeId>,
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let initial_given = mem::take(&mut given);
+
+    let mut given = vec![];
+    for constraint in initial_given {
+        given.push(constraint);
+        elaborate_superclasses(state, context, constraint, &mut given)?;
+    }
+
+    Ok(given)
 }
 
 fn collect_instances<Q>(
@@ -174,6 +171,93 @@ where
         let lowered = context.queries.lowered(file_id)?;
         Ok(extract_fundeps(lowered.info.get_type_item(item_id)))
     }
+}
+
+fn get_class_superclasses<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<Option<lowering::ClassIr>>
+where
+    Q: ExternalQueries,
+{
+    fn extract_class(type_item: Option<&lowering::TypeItemIr>) -> Option<lowering::ClassIr> {
+        let lowering::TypeItemIr::ClassGroup { class: Some(class), .. } = type_item? else {
+            return None;
+        };
+        Some(lowering::ClassIr::clone(class))
+    }
+
+    if file_id == context.id {
+        let lowered = &context.lowered;
+        Ok(extract_class(lowered.info.get_type_item(item_id)))
+    } else {
+        let lowered = context.queries.lowered(file_id)?;
+        Ok(extract_class(lowered.info.get_type_item(item_id)))
+    }
+}
+
+pub fn elaborate_superclasses<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraint: TypeId,
+    constraints: &mut Vec<TypeId>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    fn aux<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        constraint: TypeId,
+        constraints: &mut Vec<TypeId>,
+    ) -> QueryResult<()>
+    where
+        Q: ExternalQueries,
+    {
+        let Some(ConstraintApplication { file_id, item_id, arguments }) =
+            constraint_application(state, constraint)
+        else {
+            return Ok(());
+        };
+
+        let Some(class) = get_class_superclasses(context, file_id, item_id)? else {
+            return Ok(());
+        };
+
+        if class.constraints.is_empty() {
+            return Ok(());
+        }
+
+        let mut bindings = FxHashMap::default();
+        let mut initial_level = None;
+
+        for (variable, &argument) in class.variables.iter().zip(&arguments) {
+            let level = state.type_scope.bind_forall(variable.id, context.prim.t);
+            if initial_level.is_none() {
+                initial_level.replace(level);
+            }
+            bindings.insert(level, argument);
+        }
+
+        for &superclass in class.constraints.iter() {
+            let (elaborated_superclass, _) =
+                kind::check_surface_kind(state, context, superclass, context.prim.constraint)?;
+
+            let elaborated_superclass = ApplyBindings::on(state, &bindings, elaborated_superclass);
+            constraints.push(elaborated_superclass);
+
+            aux(state, context, elaborated_superclass, constraints)?;
+        }
+
+        if let Some(level) = initial_level {
+            state.type_scope.unbind(level);
+        }
+
+        Ok(())
+    }
+
+    aux(state, context, constraint, constraints)
 }
 
 fn compute_match_closures(

@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
+expression: report
+---
+Terms
+eq :: forall (a :: Type). Eq a => a -> a -> Boolean
+compare :: forall (a :: Type). Ord a => a -> a -> Ordering
+LT :: Ordering
+EQ :: Ordering
+GT :: Ordering
+test :: forall (a :: Type). Ord a => a -> a -> Boolean
+test2 :: forall (a :: Type). Ord a => a -> a -> Ordering
+
+Types
+Eq :: Type -> Constraint
+Ord :: Type -> Constraint
+Ordering :: Type
