@@ -1,11 +1,10 @@
 pub mod binder;
-pub mod fd;
+pub mod constraint;
 pub mod fold;
 pub mod inspect;
 pub mod kind;
 pub mod operator;
 pub mod quantify;
-pub mod solver;
 pub mod state;
 pub mod substitute;
 pub mod term;

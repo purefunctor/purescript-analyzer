@@ -1,3 +1,6 @@
+mod functional_dependency;
+use functional_dependency::Fd;
+
 use std::collections::{HashSet, VecDeque};
 
 use building_types::QueryResult;
@@ -6,7 +9,6 @@ use indexing::TypeItemId;
 use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
-use crate::algorithm::fd::{self, FunDep};
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{transfer, unification};
@@ -147,17 +149,17 @@ fn get_functional_dependencies<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
-) -> QueryResult<Vec<FunDep>>
+) -> QueryResult<Vec<Fd>>
 where
     Q: ExternalQueries,
 {
-    fn extract_fundeps(type_item: Option<&lowering::TypeItemIr>) -> Vec<FunDep> {
+    fn extract_fundeps(type_item: Option<&lowering::TypeItemIr>) -> Vec<Fd> {
         let Some(lowering::TypeItemIr::ClassGroup { class: Some(class), .. }) = type_item else {
             return vec![];
         };
 
         let class = class.functional_dependencies.iter().map(|functional_dependency| {
-            FunDep::new(
+            Fd::new(
                 functional_dependency.determiners.iter().map(|&x| x as usize),
                 functional_dependency.determined.iter().map(|&x| x as usize),
             )
@@ -174,14 +176,16 @@ where
     }
 }
 
-fn compute_match_closures(fundeps: &[FunDep], match_results: &[MatchType]) -> HashSet<usize> {
-    let initial: HashSet<usize> = match_results
-        .iter()
-        .enumerate()
-        .filter(|(_, result)| matches!(result, MatchType::Match | MatchType::Improve))
-        .map(|(index, _)| index)
-        .collect();
-    fd::compute_closure(fundeps, &initial)
+fn compute_match_closures(
+    functional_dependencies: &[Fd],
+    match_results: &[MatchType],
+) -> HashSet<usize> {
+    let initial = match_results.iter().enumerate().filter_map(|(index, result)| {
+        if matches!(result, MatchType::Match | MatchType::Improve) { Some(index) } else { None }
+    });
+
+    let initial: HashSet<usize> = initial.collect();
+    functional_dependency::compute_closure(functional_dependencies, &initial)
 }
 
 fn match_given(state: &mut CheckState, wanted: TypeId, given: &[TypeId]) -> Option<MatchInstance> {

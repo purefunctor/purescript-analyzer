@@ -17,7 +17,7 @@ use lowering::{
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
-use crate::algorithm::{quantify, solver, transfer};
+use crate::algorithm::{quantify, constraint, transfer};
 use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
@@ -349,7 +349,7 @@ impl CheckState {
         Q: ExternalQueries,
     {
         let (wanted, given) = self.constraints.take();
-        let _stuck = solver::solve_constraints(self, context, wanted, given)?;
+        let _stuck = constraint::solve_constraints(self, context, wanted, given)?;
         Ok(())
     }
 
