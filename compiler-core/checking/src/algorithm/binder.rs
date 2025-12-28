@@ -109,8 +109,12 @@ where
             } else {
                 let mut constructor_t = constructor_t;
                 for &argument in arguments.iter() {
-                    constructor_t =
-                        term::check_constructor_binder_application(state, context, constructor_t, argument)?;
+                    constructor_t = term::check_constructor_binder_application(
+                        state,
+                        context,
+                        constructor_t,
+                        argument,
+                    )?;
                 }
                 constructor_t
             };
@@ -129,7 +133,7 @@ where
                 BinderMode::Infer => state.fresh_unification_type(context),
                 BinderMode::Check { expected_type } => expected_type,
             };
-            state.bind_binder(binder_id, type_id);
+            state.term_scope.bind_binder(binder_id, type_id);
             Ok(type_id)
         }
 
@@ -142,7 +146,7 @@ where
                     check_binder(state, context, *binder, expected_type)?
                 }
             };
-            state.bind_binder(binder_id, type_id);
+            state.term_scope.bind_binder(binder_id, type_id);
 
             Ok(type_id)
         }
@@ -219,7 +223,7 @@ where
 
                         let label = SmolStr::clone(name);
                         let field_type = state.fresh_unification_type(context);
-                        state.bind_pun(*id, field_type);
+                        state.term_scope.bind_pun(*id, field_type);
 
                         fields.push(RowField { label, id: field_type });
                     }

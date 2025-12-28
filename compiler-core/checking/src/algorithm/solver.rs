@@ -8,8 +8,7 @@ use rustc_hash::FxHashMap;
 
 use crate::algorithm::fd::{self, FunDep};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::transfer;
-use crate::algorithm::unification;
+use crate::algorithm::{transfer, unification};
 use crate::core::{Instance, Variable, debruijn};
 use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};

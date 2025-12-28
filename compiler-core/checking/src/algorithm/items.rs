@@ -105,7 +105,7 @@ where
                 let Some(signature) = signature else { return Ok(()) };
 
                 let signature_variables = inspect::collect_signature_variables(context, *signature);
-                state.type_signature_variables.insert(item_id, signature_variables);
+                state.surface_bindings.insert_type(item_id, signature_variables);
 
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
@@ -139,7 +139,7 @@ where
     let signature = if let Some(signature_id) = signature {
         let stored_kind = kind::lookup_file_type(state, context, context.id, item_id)?;
 
-        let surface_bindings = state.type_signature_variables.get(&item_id).cloned();
+        let surface_bindings = state.surface_bindings.get_type(item_id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
         let signature =
@@ -153,7 +153,7 @@ where
             });
 
             if let Some(variable) = signature.variables.first() {
-                state.unbind(variable.level);
+                state.type_scope.unbind(variable.level);
             }
 
             return Ok(None);
@@ -194,7 +194,7 @@ where
         let kind_variables = signature.variables;
         let result_kind = signature.result;
         let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-            let level = state.bind_forall(id, kind);
+            let level = state.type_scope.bind_forall(id, kind);
             ForallBinder { visible, name, level, kind }
         });
 
@@ -214,7 +214,7 @@ where
 
             let visible = variable.visible;
             let name = variable.name.clone().unwrap_or(MISSING_NAME);
-            let level = state.bind_forall(variable.id, kind);
+            let level = state.type_scope.bind_forall(variable.id, kind);
             Ok(ForallBinder { visible, name, level, kind })
         });
 
@@ -270,11 +270,11 @@ where
     )?;
 
     if let Some(variable) = type_variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     if let Some(variable) = kind_variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     Ok(())
@@ -310,11 +310,11 @@ where
     }
 
     if let Some(variable) = type_variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     if let Some(variable) = kind_variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     insert_type_synonym(state, item_id, kind_variables, type_variables, synonym_type);
@@ -376,11 +376,11 @@ where
     )?;
 
     if let Some(variable) = type_variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     if let Some(variable) = kind_variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     Ok(())
@@ -585,7 +585,7 @@ where
                 let Some(signature) = signature else { return Ok(()) };
 
                 let signature_variables = inspect::collect_signature_variables(context, *signature);
-                state.term_signature_variables.insert(item_id, signature_variables);
+                state.surface_bindings.insert_term(item_id, signature_variables);
 
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
@@ -622,8 +622,8 @@ where
                 if let Some(signature_id) = signature {
                     let group_type = term::lookup_file_term(state, context, context.id, item_id)?;
 
-                    let forall_bindings = state.term_signature_variables.get(&item_id).cloned();
-                    let surface_bindings = forall_bindings.as_deref().unwrap_or_default();
+                    let surface_bindings = state.surface_bindings.get_term(item_id);
+                    let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
                     let signature = inspect::inspect_signature_core(
                         state,
@@ -644,7 +644,7 @@ where
                 };
 
                 // Save the current size of the environment for unbinding.
-                let size = state.bound.size();
+                let size = state.type_scope.size();
 
                 let mut core_arguments = vec![];
                 for argument in arguments.iter() {
@@ -843,7 +843,7 @@ where
                 // depending on `?0` can now be solved as the constraint solver was
                 // able to unify types on behalf of other instances.
 
-                state.unbind(debruijn::Level(size.0));
+                state.type_scope.unbind(debruijn::Level(size.0));
 
                 Ok(())
             }

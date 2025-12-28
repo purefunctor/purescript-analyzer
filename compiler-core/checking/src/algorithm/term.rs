@@ -155,7 +155,7 @@ where
     state.solve_constraints(context)?;
 
     if let Some(variable) = signature.variables.first() {
-        state.unbind(variable.level);
+        state.type_scope.unbind(variable.level);
     }
 
     Ok(())
@@ -271,7 +271,7 @@ where
 {
     let parameter_types = section_result.iter().map(|&section_id| {
         let parameter_type = state.fresh_unification_type(context);
-        state.env_section.insert(section_id, parameter_type);
+        state.term_scope.bind_section(section_id, parameter_type);
         parameter_type
     });
 
@@ -635,7 +635,7 @@ where
         }
 
         lowering::ExpressionKind::Section => {
-            if let Some(&type_id) = state.env_section.get(&expr_id) {
+            if let Some(type_id) = state.term_scope.lookup_section(expr_id) {
                 Ok(type_id)
             } else {
                 Ok(unknown)
@@ -832,13 +832,13 @@ where
 {
     match resolution {
         lowering::TermVariableResolution::Binder(binder_id) => {
-            Ok(state.lookup_binder(binder_id).unwrap_or(context.prim.unknown))
+            Ok(state.term_scope.lookup_binder(binder_id).unwrap_or(context.prim.unknown))
         }
         lowering::TermVariableResolution::Let(let_binding_id) => {
-            Ok(state.lookup_let(let_binding_id).unwrap_or(context.prim.unknown))
+            Ok(state.term_scope.lookup_let(let_binding_id).unwrap_or(context.prim.unknown))
         }
         lowering::TermVariableResolution::RecordPun(pun_id) => {
-            Ok(state.lookup_pun(pun_id).unwrap_or(context.prim.unknown))
+            Ok(state.term_scope.lookup_pun(pun_id).unwrap_or(context.prim.unknown))
         }
         lowering::TermVariableResolution::Reference(file_id, term_id) => {
             lookup_file_term(state, context, file_id, term_id)
@@ -1112,12 +1112,13 @@ where
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            let function_t = substitute::SubstituteBound::on(state, binder_level, unification, inner);
+            let function_t =
+                substitute::SubstituteBound::on(state, binder_level, unification, inner);
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
         Type::Constrained(constraint, constrained) => {
-            state.wanted_constraints.push_back(constraint);
+            state.constraints.push_wanted(constraint);
             check_function_application_core(
                 state,
                 context,
@@ -1214,14 +1215,14 @@ where
         };
         if let Some(signature_id) = name.signature {
             let signature_variables = inspect::collect_signature_variables(context, signature_id);
-            state.let_signature_variables.insert(id, signature_variables);
+            state.surface_bindings.insert_let(id, signature_variables);
 
             let (name_type, _) =
                 kind::check_surface_kind(state, context, signature_id, context.prim.t)?;
-            state.bind_let(id, name_type);
+            state.term_scope.bind_let(id, name_type);
         } else {
             let name_type = state.fresh_unification_type(context);
-            state.bind_let(id, name_type);
+            state.term_scope.bind_let(id, name_type);
         }
     }
 
@@ -1253,16 +1254,17 @@ where
         return Ok(());
     };
 
-    let Some(name_type) = state.lookup_let(id) else {
+    let Some(name_type) = state.term_scope.lookup_let(id) else {
         return Ok(());
     };
 
     if let Some(signature_id) = name.signature {
-        let surface_bindings = state.let_signature_variables.get(&id).cloned();
+        let surface_bindings = state.surface_bindings.get_let(id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
         let signature =
             inspect::inspect_signature_core(state, context, name_type, surface_bindings)?;
+
         check_equations(state, context, signature_id, signature, &name.equations)
     } else {
         infer_equations_core(state, context, name_type, &name.equations)
@@ -1287,9 +1289,10 @@ where
             let binder_level = binder.level;
             let binder_kind = binder.kind;
             let unification = state.fresh_unification_kinded(binder_kind);
-            current_id = substitute::SubstituteBound::on(state, binder_level, unification, inner_id);
+            current_id =
+                substitute::SubstituteBound::on(state, binder_level, unification, inner_id);
         } else if let Type::Constrained(constraint, constrained) = state.storage[current_id] {
-            state.wanted_constraints.push_back(constraint);
+            state.constraints.push_wanted(constraint);
             current_id = constrained;
         } else {
             return Ok(current_id);

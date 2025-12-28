@@ -144,7 +144,7 @@ where
             let k = context.prim.t;
 
             if let Some(binder) = binders.first() {
-                state.unbind(binder.level);
+                state.type_scope.unbind(binder.level);
             }
 
             Ok((t, k))
@@ -244,11 +244,15 @@ fn infer_forall_variable(
     state: &mut CheckState,
     forall: TypeVariableBindingId,
 ) -> (TypeId, TypeId) {
-    let level = state.lookup_forall(forall).expect("invariant violated: CheckState::bind_forall");
+    let level =
+        state.type_scope.lookup_forall(forall).expect("invariant violated: TypeScope::bind_forall");
     let variable = Variable::Bound(level);
 
     let t = state.storage.intern(Type::Variable(variable));
-    let k = state.forall_binding_kind(forall).expect("invariant violated: CheckState::bind_forall");
+    let k = state
+        .type_scope
+        .forall_binding_kind(forall)
+        .expect("invariant violated: TypeScope::bind_forall");
 
     (t, k)
 }
@@ -261,21 +265,23 @@ fn infer_implicit_variable<Q: ExternalQueries>(
     let t = if implicit.binding {
         let kind = state.fresh_unification(context);
 
-        let level = state.bind_implicit(implicit.node, implicit.id, kind);
+        let level = state.type_scope.bind_implicit(implicit.node, implicit.id, kind);
         let variable = Variable::Implicit(level);
 
         state.storage.intern(Type::Variable(variable))
     } else {
         let level = state
+            .type_scope
             .lookup_implicit(implicit.node, implicit.id)
-            .expect("invariant violated: CheckState::bind_implicit");
+            .expect("invariant violated: TypeScope::bind_implicit");
         let variable = Variable::Bound(level);
         state.storage.intern(Type::Variable(variable))
     };
 
     let k = state
+        .type_scope
         .implicit_binding_kind(implicit.node, implicit.id)
-        .expect("invariant violated: CheckState::bind_implicit");
+        .expect("invariant violated: TypeScope::bind_implicit");
 
     (t, k)
 }
@@ -497,7 +503,9 @@ where
             // be used? It should also carry its kind like a Skolem variable would.
             Variable::Implicit(_) => unknown,
             Variable::Skolem(_, kind) => *kind,
-            Variable::Bound(level) => state.kinds.get(*level).copied().unwrap_or(unknown),
+            Variable::Bound(level) => {
+                state.type_scope.kinds.get(*level).copied().unwrap_or(unknown)
+            }
             Variable::Free(_) => unknown,
         },
 
@@ -539,7 +547,7 @@ where
         state.fresh_unification_type(context)
     };
 
-    let level = state.bind_forall(binding.id, kind);
+    let level = state.type_scope.bind_forall(binding.id, kind);
     Ok(ForallBinder { visible, name, level, kind })
 }
 

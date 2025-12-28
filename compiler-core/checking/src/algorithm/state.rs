@@ -22,32 +22,192 @@ use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
+/// Manually-managed scope for type-level bindings.
+#[derive(Default)]
+pub struct TypeScope {
+    pub bound: debruijn::Bound,
+    pub kinds: debruijn::BoundMap<TypeId>,
+}
+
+impl TypeScope {
+    pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
+        let variable = debruijn::Variable::Forall(id);
+        let level = self.bound.bind(variable);
+        self.kinds.insert(level, kind);
+        level
+    }
+
+    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Level> {
+        let variable = debruijn::Variable::Forall(id);
+        self.bound.level_of(variable)
+    }
+
+    pub fn forall_binding_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
+        let variable = debruijn::Variable::Forall(id);
+        let level = self.bound.level_of(variable)?;
+        self.kinds.get(level).copied()
+    }
+
+    pub fn bind_implicit(
+        &mut self,
+        node: GraphNodeId,
+        id: ImplicitBindingId,
+        kind: TypeId,
+    ) -> debruijn::Level {
+        let variable = debruijn::Variable::Implicit { node, id };
+        let level = self.bound.level_of(variable).unwrap_or_else(|| self.bound.bind(variable));
+        self.kinds.insert(level, kind);
+        level
+    }
+
+    pub fn lookup_implicit(
+        &self,
+        node: GraphNodeId,
+        id: ImplicitBindingId,
+    ) -> Option<debruijn::Level> {
+        let variable = debruijn::Variable::Implicit { node, id };
+        self.bound.level_of(variable)
+    }
+
+    pub fn implicit_binding_kind(
+        &self,
+        node: GraphNodeId,
+        id: ImplicitBindingId,
+    ) -> Option<TypeId> {
+        let variable = debruijn::Variable::Implicit { node, id };
+        let level = self.bound.level_of(variable)?;
+        self.kinds.get(level).copied()
+    }
+
+    pub fn core_kind(&self, index: debruijn::Index) -> Option<TypeId> {
+        let size = self.bound.size();
+        let level = index.to_level(size)?;
+        self.kinds.get(level).copied()
+    }
+
+    pub fn unbind(&mut self, level: debruijn::Level) {
+        self.bound.unbind(level);
+        self.kinds.unbind(level);
+    }
+
+    pub fn size(&self) -> debruijn::Size {
+        self.bound.size()
+    }
+}
+
+/// Manually-managed scope for term-level bindings.
+#[derive(Default)]
+pub struct TermScope {
+    pub binder: FxHashMap<BinderId, TypeId>,
+    pub let_binding: FxHashMap<LetBindingNameGroupId, TypeId>,
+    pub record_pun: FxHashMap<RecordPunId, TypeId>,
+    pub section: FxHashMap<lowering::ExpressionId, TypeId>,
+}
+
+impl TermScope {
+    pub fn bind_binder(&mut self, id: BinderId, type_id: TypeId) {
+        self.binder.insert(id, type_id);
+    }
+
+    pub fn lookup_binder(&self, id: BinderId) -> Option<TypeId> {
+        self.binder.get(&id).copied()
+    }
+
+    pub fn bind_let(&mut self, id: LetBindingNameGroupId, type_id: TypeId) {
+        self.let_binding.insert(id, type_id);
+    }
+
+    pub fn lookup_let(&self, id: LetBindingNameGroupId) -> Option<TypeId> {
+        self.let_binding.get(&id).copied()
+    }
+
+    pub fn bind_pun(&mut self, id: RecordPunId, type_id: TypeId) {
+        self.record_pun.insert(id, type_id);
+    }
+
+    pub fn lookup_pun(&self, id: RecordPunId) -> Option<TypeId> {
+        self.record_pun.get(&id).copied()
+    }
+
+    pub fn bind_section(&mut self, id: lowering::ExpressionId, type_id: TypeId) {
+        self.section.insert(id, type_id);
+    }
+
+    pub fn lookup_section(&self, id: lowering::ExpressionId) -> Option<TypeId> {
+        self.section.get(&id).copied()
+    }
+}
+
+/// Signature variable bindings from surface syntax.
+#[derive(Default)]
+pub struct SurfaceBindings {
+    pub term_item: FxHashMap<TermItemId, Arc<[TypeVariableBindingId]>>,
+    pub type_item: FxHashMap<TypeItemId, Arc<[TypeVariableBindingId]>>,
+    pub let_binding: FxHashMap<LetBindingNameGroupId, Arc<[TypeVariableBindingId]>>,
+}
+
+impl SurfaceBindings {
+    pub fn insert_term(&mut self, id: TermItemId, v: Arc<[TypeVariableBindingId]>) {
+        self.term_item.insert(id, v);
+    }
+
+    pub fn get_term(&self, id: TermItemId) -> Option<Arc<[TypeVariableBindingId]>> {
+        self.term_item.get(&id).cloned()
+    }
+
+    pub fn insert_type(&mut self, id: TypeItemId, v: Arc<[TypeVariableBindingId]>) {
+        self.type_item.insert(id, v);
+    }
+
+    pub fn get_type(&self, id: TypeItemId) -> Option<Arc<[TypeVariableBindingId]>> {
+        self.type_item.get(&id).cloned()
+    }
+
+    pub fn insert_let(&mut self, id: LetBindingNameGroupId, v: Arc<[TypeVariableBindingId]>) {
+        self.let_binding.insert(id, v);
+    }
+
+    pub fn get_let(&self, id: LetBindingNameGroupId) -> Option<Arc<[TypeVariableBindingId]>> {
+        self.let_binding.get(&id).cloned()
+    }
+}
+
+/// Constraint collection context.
+#[derive(Default)]
+pub struct ConstraintContext {
+    pub wanted: VecDeque<TypeId>,
+    pub given: Vec<TypeId>,
+}
+
+impl ConstraintContext {
+    pub fn push_wanted(&mut self, constraint: TypeId) {
+        self.wanted.push_back(constraint);
+    }
+
+    pub fn push_given(&mut self, constraint: TypeId) {
+        self.given.push(constraint);
+    }
+
+    pub fn take(&mut self) -> (VecDeque<TypeId>, Vec<TypeId>) {
+        (mem::take(&mut self.wanted), mem::take(&mut self.given))
+    }
+}
+
 #[derive(Default)]
 pub struct CheckState {
     pub storage: TypeInterner,
     pub checked: CheckedModule,
 
-    pub bound: debruijn::Bound,
-    pub kinds: debruijn::BoundMap<TypeId>,
+    pub type_scope: TypeScope,
+    pub term_scope: TermScope,
+    pub surface_bindings: SurfaceBindings,
 
+    pub constraints: ConstraintContext,
     pub unification: UnificationContext,
     pub binding_group: BindingGroupContext,
 
-    pub wanted_constraints: VecDeque<TypeId>,
-    pub given_constraints: Vec<TypeId>,
-
     pub check_steps: Vec<ErrorStep>,
-
     pub defer_synonym_expansion: bool,
-
-    pub env_binder: FxHashMap<BinderId, TypeId>,
-    pub env_let: FxHashMap<LetBindingNameGroupId, TypeId>,
-    pub env_pun: FxHashMap<RecordPunId, TypeId>,
-    pub env_section: FxHashMap<lowering::ExpressionId, TypeId>,
-
-    pub term_signature_variables: FxHashMap<TermItemId, Arc<[TypeVariableBindingId]>>,
-    pub type_signature_variables: FxHashMap<TypeItemId, Arc<[TypeVariableBindingId]>>,
-    pub let_signature_variables: FxHashMap<LetBindingNameGroupId, Arc<[TypeVariableBindingId]>>,
 }
 
 #[derive(Default)]
@@ -158,90 +318,6 @@ impl PrimCore {
 }
 
 impl CheckState {
-    pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
-        let variable = debruijn::Variable::Forall(id);
-        let level = self.bound.bind(variable);
-        self.kinds.insert(level, kind);
-        level
-    }
-
-    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Level> {
-        let variable = debruijn::Variable::Forall(id);
-        self.bound.level_of(variable)
-    }
-
-    pub fn forall_binding_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
-        let variable = debruijn::Variable::Forall(id);
-        let level = self.bound.level_of(variable)?;
-        self.kinds.get(level).copied()
-    }
-
-    pub fn bind_implicit(
-        &mut self,
-        node: GraphNodeId,
-        id: ImplicitBindingId,
-        kind: TypeId,
-    ) -> debruijn::Level {
-        let variable = debruijn::Variable::Implicit { node, id };
-        let level = self.bound.level_of(variable).unwrap_or_else(|| self.bound.bind(variable));
-        self.kinds.insert(level, kind);
-        level
-    }
-
-    pub fn lookup_implicit(
-        &self,
-        node: GraphNodeId,
-        id: ImplicitBindingId,
-    ) -> Option<debruijn::Level> {
-        let variable = debruijn::Variable::Implicit { node, id };
-        self.bound.level_of(variable)
-    }
-
-    pub fn implicit_binding_kind(
-        &self,
-        node: GraphNodeId,
-        id: ImplicitBindingId,
-    ) -> Option<TypeId> {
-        let variable = debruijn::Variable::Implicit { node, id };
-        let level = self.bound.level_of(variable)?;
-        self.kinds.get(level).copied()
-    }
-
-    pub fn core_kind(&self, index: debruijn::Index) -> Option<TypeId> {
-        let size = self.bound.size();
-        let level = index.to_level(size)?;
-        self.kinds.get(level).copied()
-    }
-
-    pub fn unbind(&mut self, level: debruijn::Level) {
-        self.bound.unbind(level);
-        self.kinds.unbind(level);
-    }
-
-    pub fn bind_binder(&mut self, id: BinderId, type_id: TypeId) {
-        self.env_binder.insert(id, type_id);
-    }
-
-    pub fn lookup_binder(&self, id: BinderId) -> Option<TypeId> {
-        self.env_binder.get(&id).copied()
-    }
-
-    pub fn bind_let(&mut self, id: LetBindingNameGroupId, type_id: TypeId) {
-        self.env_let.insert(id, type_id);
-    }
-
-    pub fn lookup_let(&self, id: LetBindingNameGroupId) -> Option<TypeId> {
-        self.env_let.get(&id).copied()
-    }
-
-    pub fn bind_pun(&mut self, id: RecordPunId, type_id: TypeId) {
-        self.env_pun.insert(id, type_id);
-    }
-
-    pub fn lookup_pun(&self, id: RecordPunId) -> Option<TypeId> {
-        self.env_pun.get(&id).copied()
-    }
-
     pub fn term_binding_group<Q>(
         &mut self,
         context: &CheckContext<Q>,
@@ -272,8 +348,7 @@ impl CheckState {
     where
         Q: ExternalQueries,
     {
-        let wanted = mem::take(&mut self.wanted_constraints);
-        let given = mem::take(&mut self.given_constraints);
+        let (wanted, given) = self.constraints.take();
         let _stuck = solver::solve_constraints(self, context, wanted, given)?;
         Ok(())
     }
@@ -334,7 +409,7 @@ impl CheckState {
 
     /// Creates a fresh unification variable with the provided kind.
     pub fn fresh_unification_kinded(&mut self, kind: TypeId) -> TypeId {
-        let domain = self.bound.size();
+        let domain = self.type_scope.size();
         self.fresh_unification_kinded_at(domain, kind)
     }
 

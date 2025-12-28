@@ -162,7 +162,7 @@ pub fn solve<Q>(
 where
     Q: ExternalQueries,
 {
-    let codomain = state.bound.size();
+    let codomain = state.type_scope.size();
     let occurs = unification_id;
 
     if !promote_type(state, occurs, codomain, unification_id, solution) {

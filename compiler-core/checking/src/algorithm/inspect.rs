@@ -91,14 +91,14 @@ where
                 let mut binder = binder.clone();
 
                 let new_level = if let Some(&binding_id) = surface_bindings.next() {
-                    state.bound.bind(debruijn::Variable::Forall(binding_id))
+                    state.type_scope.bound.bind(debruijn::Variable::Forall(binding_id))
                 } else {
-                    state.bound.bind(debruijn::Variable::Core)
+                    state.type_scope.bound.bind(debruijn::Variable::Core)
                 };
 
                 let old_level = mem::replace(&mut binder.level, new_level);
 
-                state.kinds.insert(new_level, binder.kind);
+                state.type_scope.kinds.insert(new_level, binder.kind);
 
                 let variable = state.storage.intern(Type::Variable(Variable::Bound(new_level)));
                 let inner = substitute::SubstituteBound::on(state, old_level, variable, inner);
@@ -109,7 +109,7 @@ where
             }
 
             Type::Constrained(constraint, constrained) => {
-                state.given_constraints.push(constraint);
+                state.constraints.push_given(constraint);
                 current_id = constrained;
             }
 
@@ -149,8 +149,8 @@ where
                 let binder_level = binder.level;
                 let binder_kind = binder.kind;
 
-                let level = state.bound.bind(debruijn::Variable::Core);
-                state.kinds.insert(level, binder_kind);
+                let level = state.type_scope.bound.bind(debruijn::Variable::Core);
+                state.type_scope.kinds.insert(level, binder_kind);
 
                 let variable = state.storage.intern(Type::Variable(Variable::Bound(level)));
                 current_id = substitute::SubstituteBound::on(state, binder_level, variable, inner);
