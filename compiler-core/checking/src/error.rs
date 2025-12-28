@@ -1,3 +1,5 @@
+//! Implements the errors emitted by the type checker.
+
 use std::sync::Arc;
 
 use crate::TypeId;

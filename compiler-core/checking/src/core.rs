@@ -1,3 +1,5 @@
+//! Implements the core structures used in the type checker.
+
 pub mod debruijn;
 pub mod pretty;
 
@@ -38,8 +40,7 @@ pub struct RowField {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RowType {
-    /// Invariant: fields are stable-sorted to maintain `Map<Label, NonEmptyList<Type>>`
-    /// semantics for duplicate labels.
+    /// A stable-sorted list representing `Map<Label, NonEmptyList<Type>>`.
     pub fields: Arc<[RowField]>,
     /// Closed row if [`None`]; Open row if [`Some`].
     ///
