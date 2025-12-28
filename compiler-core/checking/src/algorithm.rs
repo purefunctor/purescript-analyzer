@@ -1,3 +1,4 @@
+pub mod binder;
 pub mod fd;
 pub mod inspect;
 pub mod items;

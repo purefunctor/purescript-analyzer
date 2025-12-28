@@ -9,7 +9,7 @@ use sugar::bracketing::BracketingResult;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute, term, unification};
+use crate::algorithm::{binder, kind, substitute, term, unification};
 use crate::core::{Type, TypeId};
 
 #[derive(Copy, Clone, Debug)]
@@ -359,7 +359,7 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
         context: &CheckContext<Q>,
         id: Self,
     ) -> QueryResult<(Self::Elaborated, TypeId)> {
-        let inferred_type = term::infer_binder(state, context, id)?;
+        let inferred_type = binder::infer_binder(state, context, id)?;
         Ok(((), inferred_type))
     }
 
@@ -369,7 +369,7 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
         id: Self,
         expected: TypeId,
     ) -> QueryResult<(Self::Elaborated, TypeId)> {
-        let checked_type = term::check_binder(state, context, id, expected)?;
+        let checked_type = binder::check_binder(state, context, id, expected)?;
         Ok(((), checked_type))
     }
 

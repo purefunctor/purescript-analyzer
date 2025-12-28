@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, operator, substitute, transfer, unification};
+use crate::algorithm::{binder, inspect, kind, operator, substitute, transfer, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::ErrorKind;
 
@@ -43,7 +43,7 @@ where
     for equation in equations {
         let mut argument_types = vec![];
         for &binder_id in equation.binders.iter() {
-            let argument_type = infer_binder(state, context, binder_id)?;
+            let argument_type = binder::infer_binder(state, context, binder_id)?;
             argument_types.push(argument_type);
         }
 
@@ -91,13 +91,13 @@ where
         }
 
         for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
-            let _ = check_binder(state, context, binder_id, argument_type)?;
+            let _ = binder::check_binder(state, context, binder_id, argument_type)?;
         }
 
         if equation_arity > expected_arity {
             let extra_binders = &equation.binders[expected_arity..];
             for &binder_id in extra_binders {
-                let _ = infer_binder(state, context, binder_id)?;
+                let _ = binder::infer_binder(state, context, binder_id)?;
             }
         }
 
@@ -161,240 +161,6 @@ where
     Ok(())
 }
 
-pub fn infer_binder<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    binder_id: lowering::BinderId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let unknown = context.prim.unknown;
-
-    let Some(kind) = context.lowered.info.get_binder_kind(binder_id) else {
-        return Ok(unknown);
-    };
-
-    match kind {
-        lowering::BinderKind::Typed { binder, type_ } => {
-            let Some(b) = binder else { return Ok(unknown) };
-            let Some(t) = type_ else { return Ok(unknown) };
-
-            let (t, _) = kind::infer_surface_kind(state, context, *t)?;
-            check_binder(state, context, *b, t)?;
-
-            Ok(t)
-        }
-
-        lowering::BinderKind::OperatorChain { .. } => {
-            let (_, inferred_type) = operator::infer_operator_chain(state, context, binder_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Integer => Ok(context.prim.int),
-
-        lowering::BinderKind::Number => Ok(context.prim.number),
-
-        lowering::BinderKind::Constructor { resolution, arguments } => {
-            let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
-
-            let constructor_t = lookup_file_term(state, context, *file_id, *term_id)?;
-
-            // Instantiate nullary constructors to avoid polymorphic types.
-            // Non-nullary constructors are instantiated during application.
-            if arguments.is_empty() {
-                return instantiate_type(state, context, constructor_t);
-            }
-
-            let mut constructor_t = constructor_t;
-            for &argument in arguments.iter() {
-                constructor_t =
-                    check_constructor_binder_application(state, context, constructor_t, argument)?;
-            }
-
-            Ok(constructor_t)
-        }
-
-        lowering::BinderKind::Variable { .. } => {
-            let type_id = state.fresh_unification_type(context);
-            state.bind_binder(binder_id, type_id);
-            Ok(type_id)
-        }
-
-        lowering::BinderKind::Named { binder, .. } => {
-            let Some(binder) = binder else { return Ok(unknown) };
-
-            let type_id = infer_binder(state, context, *binder)?;
-            state.bind_binder(binder_id, type_id);
-
-            Ok(type_id)
-        }
-
-        lowering::BinderKind::Wildcard => {
-            let type_id = state.fresh_unification_type(context);
-            Ok(type_id)
-        }
-
-        lowering::BinderKind::String => Ok(context.prim.string),
-
-        lowering::BinderKind::Char => Ok(context.prim.char),
-
-        lowering::BinderKind::Boolean { .. } => Ok(context.prim.boolean),
-
-        lowering::BinderKind::Array { array } => {
-            let inferred_type = state.fresh_unification_type(context);
-
-            for binder in array.iter() {
-                let element_type = infer_binder(state, context, *binder)?;
-                unification::subtype(state, context, element_type, inferred_type)?;
-            }
-
-            let array_type =
-                state.storage.intern(Type::Application(context.prim.array, inferred_type));
-            Ok(array_type)
-        }
-
-        lowering::BinderKind::Record { record } => {
-            let mut fields = vec![];
-
-            for field in record.iter() {
-                match field {
-                    lowering::BinderRecordItem::RecordField { name, value } => {
-                        let Some(name) = name else { continue };
-                        let Some(value) = value else { continue };
-
-                        let label = SmolStr::clone(name);
-                        let id = infer_binder(state, context, *value)?;
-
-                        fields.push(RowField { label, id });
-                    }
-                    lowering::BinderRecordItem::RecordPun { id, name } => {
-                        let Some(name) = name else { continue };
-
-                        let label = SmolStr::clone(name);
-                        let field_type = state.fresh_unification_type(context);
-                        state.bind_pun(*id, field_type);
-
-                        fields.push(RowField { label, id: field_type });
-                    }
-                }
-            }
-
-            let row_type = RowType::from_unsorted(fields, None);
-            let row_type = state.storage.intern(Type::Row(row_type));
-
-            let record_type =
-                state.storage.intern(Type::Application(context.prim.record, row_type));
-
-            Ok(record_type)
-        }
-
-        lowering::BinderKind::Parenthesized { parenthesized } => {
-            let Some(parenthesized) = parenthesized else { return Ok(unknown) };
-            infer_binder(state, context, *parenthesized)
-        }
-    }
-}
-
-pub fn check_binder<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    binder_id: lowering::BinderId,
-    type_id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let unknown = context.prim.unknown;
-
-    let Some(kind) = context.lowered.info.get_binder_kind(binder_id) else {
-        return Ok(unknown);
-    };
-
-    match kind {
-        lowering::BinderKind::Typed { .. } => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::subtype(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::OperatorChain { .. } => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::subtype(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Integer => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::unify(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Number => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::unify(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Constructor { .. } => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::subtype(state, context, inferred_type, type_id)?;
-            Ok(type_id)
-        }
-
-        lowering::BinderKind::Variable { .. } => {
-            state.bind_binder(binder_id, type_id);
-            Ok(type_id)
-        }
-
-        lowering::BinderKind::Named { binder, .. } => {
-            let Some(binder) = binder else { return Ok(unknown) };
-
-            let type_id = check_binder(state, context, *binder, type_id)?;
-            state.bind_binder(binder_id, type_id);
-
-            Ok(type_id)
-        }
-
-        lowering::BinderKind::Wildcard => Ok(type_id),
-
-        lowering::BinderKind::String => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::unify(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Char => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::unify(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Boolean { .. } => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::unify(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Array { .. } => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::subtype(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Record { .. } => {
-            let inferred_type = infer_binder(state, context, binder_id)?;
-            let _ = unification::subtype(state, context, inferred_type, type_id)?;
-            Ok(inferred_type)
-        }
-
-        lowering::BinderKind::Parenthesized { parenthesized } => {
-            let Some(parenthesized) = parenthesized else { return Ok(unknown) };
-            check_binder(state, context, *parenthesized, type_id)
-        }
-    }
-}
-
 fn infer_guarded_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -443,7 +209,7 @@ where
         return Ok(());
     };
 
-    let _ = check_binder(state, context, binder, expression_type)?;
+    let _ = binder::check_binder(state, context, binder, expression_type)?;
 
     Ok(())
 }
@@ -625,7 +391,7 @@ where
 
             for &binder_id in binders.iter() {
                 let argument_type = state.fresh_unification_type(context);
-                let _ = check_binder(state, context, binder_id, argument_type)?;
+                let _ = binder::check_binder(state, context, binder_id, argument_type)?;
                 argument_types.push(argument_type);
             }
 
@@ -649,7 +415,7 @@ where
 
             for branch in branches.iter() {
                 for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
-                    let _ = check_binder(state, context, *binder, *trunk)?;
+                    let _ = binder::check_binder(state, context, *binder, *trunk)?;
                 }
                 if let Some(guarded) = &branch.guarded_expression {
                     let guarded_type = infer_guarded_expression(state, context, guarded)?;
@@ -675,7 +441,7 @@ where
                 match statement {
                     lowering::DoStatement::Bind { binder, expression } => {
                         let binder_type = if let Some(binder) = binder {
-                            infer_binder(state, context, *binder)?
+                            binder::infer_binder(state, context, *binder)?
                         } else {
                             state.fresh_unification_type(context)
                         };
@@ -767,7 +533,7 @@ where
                 match statement {
                     lowering::DoStatement::Bind { binder, expression } => {
                         let binder_type = if let Some(binder) = binder {
-                            infer_binder(state, context, *binder)?
+                            binder::infer_binder(state, context, *binder)?
                         } else {
                             state.fresh_unification_type(context)
                         };
@@ -1376,7 +1142,7 @@ where
 {
     check_function_application_core(state, context, function_t, expression_id, check_expression)
 }
-fn check_constructor_binder_application<Q>(
+pub fn check_constructor_binder_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     constructor_t: TypeId,
@@ -1385,7 +1151,7 @@ fn check_constructor_binder_application<Q>(
 where
     Q: ExternalQueries,
 {
-    check_function_application_core(state, context, constructor_t, binder_id, check_binder)
+    check_function_application_core(state, context, constructor_t, binder_id, binder::check_binder)
 }
 
 fn check_let_chunks<Q>(
@@ -1428,7 +1194,7 @@ where
         return Ok(());
     };
 
-    let _ = check_binder(state, context, *binder, expression_type)?;
+    let _ = binder::check_binder(state, context, *binder, expression_type)?;
 
     Ok(())
 }
@@ -1503,7 +1269,7 @@ where
     }
 }
 
-fn instantiate_type<Q>(
+pub fn instantiate_type<Q>(
     state: &mut CheckState,
     _context: &CheckContext<Q>,
     id: TypeId,
