@@ -101,7 +101,7 @@ where
                 state.kinds.insert(new_level, binder.kind);
 
                 let variable = state.storage.intern(Type::Variable(Variable::Bound(new_level)));
-                let inner = substitute::substitute_bound(state, old_level, variable, inner);
+                let inner = substitute::SubstituteBound::on(state, old_level, variable, inner);
 
                 variables.push(binder);
 
@@ -153,7 +153,7 @@ where
                 state.kinds.insert(level, binder_kind);
 
                 let variable = state.storage.intern(Type::Variable(Variable::Bound(level)));
-                current_id = substitute::substitute_bound(state, binder_level, variable, inner);
+                current_id = substitute::SubstituteBound::on(state, binder_level, variable, inner);
             }
 
             _ => {

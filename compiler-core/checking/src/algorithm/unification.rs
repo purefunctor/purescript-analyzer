@@ -73,7 +73,7 @@ where
             let v = Variable::Skolem(binder.level, binder.kind);
             let t = state.storage.intern(Type::Variable(v));
 
-            let inner = substitute::substitute_bound(state, binder.level, t, inner);
+            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
             subtype(state, context, t1, inner)
         }
 
@@ -81,7 +81,7 @@ where
             let k = state.normalize_type(binder.kind);
             let t = state.fresh_unification_kinded(k);
 
-            let inner = substitute::substitute_bound(state, binder.level, t, inner);
+            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
             subtype(state, context, inner, t2)
         }
 

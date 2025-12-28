@@ -1,5 +1,6 @@
 pub mod binder;
 pub mod fd;
+pub mod fold;
 pub mod inspect;
 pub mod items;
 pub mod kind;

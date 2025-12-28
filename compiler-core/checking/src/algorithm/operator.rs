@@ -150,7 +150,7 @@ pub fn instantiate_forall(state: &mut CheckState, mut kind_id: TypeId) -> TypeId
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            kind_id = substitute::substitute_bound(state, binder_level, unification, inner);
+            kind_id = substitute::SubstituteBound::on(state, binder_level, unification, inner);
         } else {
             break kind_id;
         }

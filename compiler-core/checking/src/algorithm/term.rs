@@ -1071,7 +1071,7 @@ where
 
             let (argument_type, _) =
                 kind::check_surface_kind(state, context, argument, binder_kind)?;
-            Ok(substitute::substitute_bound(state, binder_level, argument_type, inner))
+            Ok(substitute::SubstituteBound::on(state, binder_level, argument_type, inner))
         }
 
         _ => Ok(context.prim.unknown),
@@ -1112,7 +1112,7 @@ where
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            let function_t = substitute::substitute_bound(state, binder_level, unification, inner);
+            let function_t = substitute::SubstituteBound::on(state, binder_level, unification, inner);
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
@@ -1287,7 +1287,7 @@ where
             let binder_level = binder.level;
             let binder_kind = binder.kind;
             let unification = state.fresh_unification_kinded(binder_kind);
-            current_id = substitute::substitute_bound(state, binder_level, unification, inner_id);
+            current_id = substitute::SubstituteBound::on(state, binder_level, unification, inner_id);
         } else if let Type::Constrained(constraint, constrained) = state.storage[current_id] {
             state.wanted_constraints.push_back(constraint);
             current_id = constrained;

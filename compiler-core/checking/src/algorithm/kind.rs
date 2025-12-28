@@ -376,7 +376,7 @@ where
             let t = state.fresh_unification_kinded(k);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let function_k = substitute::substitute_bound(state, binder_level, t, function_k);
+            let function_k = substitute::SubstituteBound::on(state, binder_level, t, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
@@ -435,7 +435,7 @@ where
                 Type::Forall(ref binder, inner) => {
                     let binder_level = binder.level;
                     let argument = state.normalize_type(argument);
-                    substitute::substitute_bound(state, binder_level, argument, inner)
+                    substitute::SubstituteBound::on(state, binder_level, argument, inner)
                 }
                 _ => unknown,
             }

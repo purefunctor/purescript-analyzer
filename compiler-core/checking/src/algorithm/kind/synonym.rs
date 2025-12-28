@@ -289,7 +289,7 @@ where
             let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
-            let function_k = substitute::substitute_bound(state, binder_level, t, inner);
+            let function_k = substitute::SubstituteBound::on(state, binder_level, t, inner);
             infer_synonym_application_argument(state, context, function_k, argument)
         }
 
@@ -434,7 +434,7 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            instantiated = substitute::substitute_bound(state, binder_level, unification, inner);
+            instantiated = substitute::SubstituteBound::on(state, binder_level, unification, inner);
         } else {
             break;
         }
@@ -442,7 +442,7 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
 
     for &argument in arguments {
         if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
-            instantiated = substitute::substitute_bound(state, binder.level, argument, inner);
+            instantiated = substitute::SubstituteBound::on(state, binder.level, argument, inner);
         } else {
             break;
         }

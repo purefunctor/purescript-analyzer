@@ -6,11 +6,11 @@ use std::sync::Arc;
 use indexmap::IndexSet;
 use petgraph::prelude::DiGraphMap;
 use petgraph::visit::{DfsPostOrder, Reversed};
-use rustc_hash::FxHashMap;
 use smol_str::SmolStrBuilder;
 
 use crate::algorithm::state::CheckState;
-use crate::core::{ForallBinder, RowType, Type, TypeId, Variable, debruijn};
+use crate::algorithm::substitute::{ShiftLevels, SubstituteUnification, UniToLevel};
+use crate::core::{ForallBinder, RowType, Type, TypeId, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -27,12 +27,12 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
     };
 
     // Shift existing bound variable levels to make room for new quantifiers
-    let mut quantified = shift_levels(state, id, size.0);
+    let mut quantified = ShiftLevels::on(state, id, size.0);
     let mut substitutions = UniToLevel::default();
 
     for (index, &id) in unsolved.iter().rev().enumerate() {
         let kind = state.unification.get(id).kind;
-        let kind = shift_levels(state, kind, size.0);
+        let kind = ShiftLevels::on(state, kind, size.0);
         let name = generate_type_name(id);
 
         let index = debruijn::Index(index as u32);
@@ -46,7 +46,7 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         substitutions.insert(id, level);
     }
 
-    let quantified = substitute_unification(&substitutions, state, quantified);
+    let quantified = SubstituteUnification::on(&substitutions, state, quantified);
 
     Some((quantified, size))
 }
@@ -172,153 +172,6 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
     let mut graph = UniGraph::default();
     aux(&mut graph, state, id, None);
     graph
-}
-
-enum FoldAction {
-    /// Replace this node entirely (skip recursion)
-    Replace(TypeId),
-    /// Continue with default recursion
-    Continue,
-}
-
-trait TypeFold {
-    /// Called before recursing into a type. Return `Replace(id)` to short-circuit.
-    fn transform(&mut self, state: &mut CheckState, id: TypeId, ty: &Type) -> FoldAction;
-
-    /// Called when visiting a Forall binder. Override to modify binder fields.
-    fn transform_binder(&mut self, _binder: &mut ForallBinder) {}
-}
-
-fn fold_type<F: TypeFold>(state: &mut CheckState, id: TypeId, folder: &mut F) -> TypeId {
-    let id = state.normalize_type(id);
-    let ty = state.storage[id].clone();
-
-    // Check if transform wants to replace this node
-    if let FoldAction::Replace(new_id) = folder.transform(state, id, &ty) {
-        return new_id;
-    }
-
-    match ty {
-        Type::Application(function, argument) => {
-            let function = fold_type(state, function, folder);
-            let argument = fold_type(state, argument, folder);
-            state.storage.intern(Type::Application(function, argument))
-        }
-        Type::Constrained(constraint, inner) => {
-            let constraint = fold_type(state, constraint, folder);
-            let inner = fold_type(state, inner, folder);
-            state.storage.intern(Type::Constrained(constraint, inner))
-        }
-        Type::Constructor(_, _) => id,
-        Type::Forall(mut binder, inner) => {
-            folder.transform_binder(&mut binder);
-            binder.kind = fold_type(state, binder.kind, folder);
-            let inner = fold_type(state, inner, folder);
-            state.storage.intern(Type::Forall(binder, inner))
-        }
-        Type::Function(argument, result) => {
-            let argument = fold_type(state, argument, folder);
-            let result = fold_type(state, result, folder);
-            state.storage.intern(Type::Function(argument, result))
-        }
-        Type::Integer(_) => id,
-        Type::KindApplication(function, argument) => {
-            let function = fold_type(state, function, folder);
-            let argument = fold_type(state, argument, folder);
-            state.storage.intern(Type::KindApplication(function, argument))
-        }
-        Type::Kinded(inner, kind) => {
-            let inner = fold_type(state, inner, folder);
-            let kind = fold_type(state, kind, folder);
-            state.storage.intern(Type::Kinded(inner, kind))
-        }
-        Type::Operator(_, _) => id,
-        Type::OperatorApplication(file_id, type_id, left, right) => {
-            let left = fold_type(state, left, folder);
-            let right = fold_type(state, right, folder);
-            state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
-        }
-        Type::Row(RowType { fields, tail }) => {
-            let mut fields = fields.to_vec();
-            fields.iter_mut().for_each(|field| field.id = fold_type(state, field.id, folder));
-            let tail = tail.map(|tail| fold_type(state, tail, folder));
-            let row = RowType { fields: Arc::from(fields), tail };
-            state.storage.intern(Type::Row(row))
-        }
-        Type::String(_, _) => id,
-        Type::SynonymApplication(saturation, file_id, type_id, arguments) => {
-            let arguments =
-                arguments.iter().map(|&argument| fold_type(state, argument, folder)).collect();
-            state.storage.intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
-        }
-        Type::Unification(_) => id,
-        Type::Variable(_) => id,
-        Type::Unknown => id,
-    }
-}
-
-struct ShiftLevels {
-    offset: u32,
-}
-
-impl TypeFold for ShiftLevels {
-    fn transform(&mut self, state: &mut CheckState, _id: TypeId, ty: &Type) -> FoldAction {
-        if let Type::Variable(Variable::Bound(level)) = ty {
-            let shifted = debruijn::Level(level.0 + self.offset);
-            return FoldAction::Replace(
-                state.storage.intern(Type::Variable(Variable::Bound(shifted))),
-            );
-        }
-        FoldAction::Continue
-    }
-
-    fn transform_binder(&mut self, binder: &mut ForallBinder) {
-        binder.level = debruijn::Level(binder.level.0 + self.offset);
-    }
-}
-
-/// Shifts all bound variable levels in a type by a given offset.
-///
-/// This is needed when adding new forall binders at the front of a type,
-/// as existing bound variables need their levels adjusted to account for
-/// the new binders.
-fn shift_levels(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
-    if offset == 0 {
-        return id;
-    }
-    fold_type(state, id, &mut ShiftLevels { offset })
-}
-
-type UniToLevel = FxHashMap<u32, debruijn::Level>;
-
-struct SubstituteUnification<'a> {
-    substitutions: &'a UniToLevel,
-}
-
-impl TypeFold for SubstituteUnification<'_> {
-    fn transform(&mut self, state: &mut CheckState, id: TypeId, ty: &Type) -> FoldAction {
-        if let Type::Unification(unification_id) = ty {
-            if let Some(&level) = self.substitutions.get(unification_id) {
-                return FoldAction::Replace(
-                    state.storage.intern(Type::Variable(Variable::Bound(level))),
-                );
-            }
-            return FoldAction::Replace(id);
-        }
-        FoldAction::Continue
-    }
-}
-
-/// Level-based substitution over a [`Type`].
-///
-/// Replaces unification variables with bound variables using a level-based
-/// mapping. Since levels are absolute positions, no scope tracking is needed.
-fn substitute_unification(
-    substitutions: &UniToLevel,
-    state: &mut CheckState,
-    id: TypeId,
-) -> TypeId {
-    fold_type(state, id, &mut SubstituteUnification { substitutions })
 }
 
 #[cfg(test)]
