@@ -4,7 +4,7 @@ expression: report
 ---
 Terms
 chain :: forall (t4 :: Type) (a :: Type) (b :: t4) (c :: Type). Chain a b c => a -> c
-test :: forall (t6 :: Type). t6
+test :: Boolean
 
 Types
 Chain :: forall (t4 :: Type). Type -> t4 -> Type -> Constraint

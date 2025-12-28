@@ -9,9 +9,34 @@ use rustc_hash::FxHashMap;
 use crate::algorithm::fd::{self, FunDep};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
+use crate::algorithm::unification;
 use crate::core::{Instance, Variable, debruijn};
 use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};
+
+fn apply_bindings(
+    state: &mut CheckState,
+    bindings: &FxHashMap<debruijn::Level, TypeId>,
+    type_id: TypeId,
+) -> TypeId {
+    let type_id = state.normalize_type(type_id);
+    match &state.storage[type_id] {
+        Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+            bindings.get(level).copied().unwrap_or(type_id)
+        }
+        &Type::Application(function, argument) => {
+            let function = apply_bindings(state, bindings, function);
+            let argument = apply_bindings(state, bindings, argument);
+            state.storage.intern(Type::Application(function, argument))
+        }
+        &Type::Function(argument, result) => {
+            let argument = apply_bindings(state, bindings, argument);
+            let result = apply_bindings(state, bindings, result);
+            state.storage.intern(Type::Function(argument, result))
+        }
+        _ => type_id,
+    }
+}
 
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
@@ -45,7 +70,9 @@ where
     // closure checking, especially to determine if a unification variable completely stalls
     // matching for that constraint or if it can be improved.
 
-    for wanted in wanted {
+    let mut work_queue = wanted;
+
+    'outer: while let Some(wanted) = work_queue.pop_front() {
         if match_given(state, wanted, &given).is_some() {
             continue;
         }
@@ -60,20 +87,27 @@ where
         };
 
         let instances = collect_instances(state, context, file_id, item_id)?;
-        let mut found_match = false;
 
         for instance in instances {
-            let result = match_instance(state, context, file_id, item_id, &arguments, instance)?;
-            if matches!(result, MatchInstance::Match { .. }) {
-                found_match = true;
-                break;
+            match match_instance(state, context, file_id, item_id, &arguments, instance)? {
+                MatchInstance::Match { constraints } => {
+                    work_queue.extend(constraints);
+                    continue 'outer;
+                }
+                MatchInstance::Improve { improvements } => {
+                    for (wanted_type, bound_type) in improvements {
+                        unification::unify(state, context, wanted_type, bound_type)?;
+                    }
+                    work_queue.push_back(wanted);
+                    continue 'outer;
+                }
+                MatchInstance::Apart | MatchInstance::Stuck => continue,
             }
         }
 
-        if !found_match {
-            let constraint = transfer::globalize(state, context, wanted);
-            state.insert_error(ErrorKind::NoInstanceFound { constraint });
-        }
+        // No instance matched
+        let constraint = transfer::globalize(state, context, wanted);
+        state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
 
     Ok(vec![])
@@ -280,6 +314,11 @@ where
             if !determined_positions.contains(&stuck_index) {
                 return Ok(MatchInstance::Stuck);
             }
+            // Generate improvement for this fundep-determined stuck position
+            let (instance_type, _) = &instance.arguments[stuck_index];
+            let instance_type = transfer::localize(state, context, *instance_type);
+            let substituted = apply_bindings(state, &bindings, instance_type);
+            improvements.push((arguments[stuck_index], substituted));
         }
     }
 
@@ -340,14 +379,21 @@ fn match_type(
 
     match (wanted_core, given_core) {
         (_, Type::Variable(variable)) => {
-            if let Variable::Implicit(level) = variable {
-                bindings.insert(*level, wanted);
-                MatchType::Match
-            } else if let Variable::Bound(level) = variable
-                && let Some(bound) = bindings.get(level)
-            {
-                improvements.push((wanted, *bound));
-                MatchType::Improve
+            if let Variable::Implicit(level) | Variable::Bound(level) = variable {
+                if let Some(&bound) = bindings.get(level) {
+                    // Same instance variable seen before
+                    if wanted != bound {
+                        // Need to improve - wanted differs from bound type
+                        improvements.push((wanted, bound));
+                        MatchType::Improve
+                    } else {
+                        // Same type - trivial match
+                        MatchType::Match
+                    }
+                } else {
+                    bindings.insert(*level, wanted);
+                    MatchType::Match
+                }
             } else {
                 MatchType::Apart
             }

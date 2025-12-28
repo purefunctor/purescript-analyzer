@@ -4,7 +4,7 @@ expression: report
 ---
 Terms
 typeEq :: forall (a :: Type) (b :: Type) (c :: Type). TypeEq a b c => a -> b -> c
-test :: forall (t6 :: Type). t6
+test :: Boolean
 
 Types
 TypeEq :: Type -> Type -> Type -> Constraint

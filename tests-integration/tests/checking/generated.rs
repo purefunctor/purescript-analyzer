@@ -189,3 +189,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_088_given_constraint_matching_main() { run_test("088_given_constraint_matching", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_089_no_instance_found_main() { run_test("089_no_instance_found", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_090_instance_improve_main() { run_test("090_instance_improve", "Main"); }

@@ -17,6 +17,7 @@ pub enum ErrorKind {
     InvalidTypeOperator { id: TypeId },
     RecursiveSynonymExpansion { file_id: files::FileId, item_id: indexing::TypeItemId },
     TooManyBinders { signature: lowering::TypeId, expected: u32, actual: u32 },
+    NoInstanceFound { constraint: TypeId },
 }
 
 #[derive(Debug, PartialEq, Eq)]
