@@ -1,9 +1,3 @@
-//! Implements the kind checker.
-//!
-//! This module is organized into submodules:
-//! - [`operator`]: Kind checking for type operator chains
-//! - [`synonym`]: Kind checking for type synonym applications
-
 pub mod operator;
 pub mod synonym;
 

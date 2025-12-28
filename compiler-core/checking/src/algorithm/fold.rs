@@ -1,8 +1,3 @@
-//! Generic type folding infrastructure.
-//!
-//! Provides a trait-based approach for transforming types by recursively
-//! visiting all type nodes and optionally replacing them.
-
 use std::sync::Arc;
 
 use crate::algorithm::state::CheckState;

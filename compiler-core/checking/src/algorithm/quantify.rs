@@ -1,5 +1,3 @@
-//! Implements type quantification.
-
 use std::fmt::Write;
 use std::sync::Arc;
 

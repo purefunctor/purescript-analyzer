@@ -1,5 +1,3 @@
-//! Implements syntax-driven elaboration for term declarations.
-
 use building_types::QueryResult;
 use indexing::TermItemId;
 use lowering::TermItemIr;

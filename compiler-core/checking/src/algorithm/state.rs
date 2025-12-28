@@ -1,5 +1,3 @@
-//! Implements the algorithm's state.
-
 pub mod unification;
 pub use unification::*;
 

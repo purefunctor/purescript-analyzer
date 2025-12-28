@@ -1,5 +1,3 @@
-//! Implements syntax-driven elaboration for type declarations.
-
 use building_types::QueryResult;
 use indexing::TypeItemId;
 use itertools::Itertools;

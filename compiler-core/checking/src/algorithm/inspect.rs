@@ -1,4 +1,3 @@
-//! Implements type signature inspection.
 use std::mem;
 use std::sync::Arc;
 

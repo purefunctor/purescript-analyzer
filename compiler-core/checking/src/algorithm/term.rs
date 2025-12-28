@@ -1,5 +1,3 @@
-//! Implements the type checker.
-
 use building_types::QueryResult;
 use indexing::TermItemId;
 use itertools::Itertools;

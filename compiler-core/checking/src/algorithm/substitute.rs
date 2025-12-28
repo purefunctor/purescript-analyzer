@@ -1,5 +1,3 @@
-//! Implements type variable substitution.
-
 use rustc_hash::FxHashMap;
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};

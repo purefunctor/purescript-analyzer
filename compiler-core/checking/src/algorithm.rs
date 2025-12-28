@@ -1,16 +1,51 @@
+//! Implements the type checking algorithm for PureScript.
+//!
+//! The type checker algorithm is organised into different submodules,
+//! which are listed below. This module implements the [`check_source`]
+//! and [`check_prim`] functions. `check_source` defines the order in
+//! which items in a module are checked; `check_prim` implements special
+//! handling for the `Prim` module as it contains language primitives.
+
+/// Inference and checking for [`lowering::BinderKind`].
 pub mod binder;
+
+/// Implements the type class constraint solver.
 pub mod constraint;
+
+/// Implements type folding for traversals that modify.
 pub mod fold;
+
+/// Implements type signature inspection.
 pub mod inspect;
+
+/// Implements kind inference and checking for [`lowering::TypeKind`].
 pub mod kind;
+
+/// Implements surface-generic operator chain inference.
 pub mod operator;
+
+/// Implements generalisation for inferred types.
 pub mod quantify;
+
+/// Implements the algorithm's core state structures.
 pub mod state;
+
+/// Implements various type variable substitutions.
 pub mod substitute;
+
+/// Implements type inference and checking for [`lowering::ExpressionKind`].
 pub mod term;
+
+/// Implements type inference and checking for [`lowering::TermItemIr`].
 pub mod term_item;
+
+/// Implements context transfer for types.
 pub mod transfer;
+
+/// Implements type inference and checking for [`lowering::TypeItemIr`].
 pub mod type_item;
+
+/// Implements the subsumption and unification algorithms.
 pub mod unification;
 
 use std::slice;

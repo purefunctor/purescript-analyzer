@@ -1,5 +1,3 @@
-//! Binder type checking with unified inference/check mode.
-
 use building_types::QueryResult;
 use smol_str::SmolStr;
 

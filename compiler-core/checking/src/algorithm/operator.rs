@@ -1,5 +1,3 @@
-//! Generic operator chain inference
-
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};

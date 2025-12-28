@@ -1,5 +1,3 @@
-//! Implements subsumption and unification.
-
 use std::sync::Arc;
 
 use building_types::QueryResult;
