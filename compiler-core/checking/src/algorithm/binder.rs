@@ -100,14 +100,13 @@ where
         lowering::BinderKind::Constructor { resolution, arguments } => {
             let Some((file_id, term_id)) = resolution else { return Ok(unknown) };
 
-            let constructor_t = term::lookup_file_term(state, context, *file_id, *term_id)?;
+            let mut constructor_t = term::lookup_file_term(state, context, *file_id, *term_id)?;
 
             // Instantiate nullary constructors to avoid polymorphic types.
             // Non-nullary constructors are instantiated during application.
             let inferred_type = if arguments.is_empty() {
                 term::instantiate_type(state, context, constructor_t)?
             } else {
-                let mut constructor_t = constructor_t;
                 for &argument in arguments.iter() {
                     constructor_t = term::check_constructor_binder_application(
                         state,
@@ -119,12 +118,11 @@ where
                 constructor_t
             };
 
-            match mode {
-                BinderMode::Infer => Ok(inferred_type),
-                BinderMode::Check { expected_type } => {
-                    unification::subtype(state, context, inferred_type, expected_type)?;
-                    Ok(expected_type)
-                }
+            if let BinderMode::Check { expected_type } = mode {
+                unification::subtype(state, context, inferred_type, expected_type)?;
+                Ok(expected_type)
+            } else {
+                Ok(inferred_type)
             }
         }
 
