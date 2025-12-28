@@ -14,7 +14,6 @@ use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, transfer, unification};
 use crate::core::{Instance, Variable, debruijn};
-use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};
 
 struct ApplyBindings<'a> {
@@ -55,6 +54,7 @@ where
     let given = elaborate_given(state, context, given)?;
 
     let mut work_queue = wanted;
+    let mut residual = vec![];
 
     'work: while let Some(wanted) = work_queue.pop_front() {
         if match_given(state, wanted, &given).is_some() {
@@ -64,8 +64,7 @@ where
         let Some(ConstraintApplication { file_id, item_id, arguments }) =
             constraint_application(state, wanted)
         else {
-            let constraint = transfer::globalize(state, context, wanted);
-            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+            residual.push(wanted);
             continue;
         };
 
@@ -88,11 +87,10 @@ where
             }
         }
 
-        let constraint = transfer::globalize(state, context, wanted);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
+        residual.push(wanted);
     }
 
-    Ok(vec![])
+    Ok(residual)
 }
 
 fn elaborate_given<Q>(

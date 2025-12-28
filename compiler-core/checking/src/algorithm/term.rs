@@ -58,7 +58,7 @@ where
         }
     }
 
-    state.solve_constraints(context)?;
+    let _residual = state.solve_constraints(context)?;
 
     Ok(())
 }
@@ -150,7 +150,11 @@ where
         }
     }
 
-    state.solve_constraints(context)?;
+    let residual = state.solve_constraints(context)?;
+    for constraint in residual {
+        let constraint = transfer::globalize(state, context, constraint);
+        state.insert_error(ErrorKind::NoInstanceFound { constraint });
+    }
 
     if let Some(variable) = signature.variables.first() {
         state.type_scope.unbind(variable.level);

@@ -342,13 +342,12 @@ impl CheckState {
         }
     }
 
-    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<()>
+    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
     where
         Q: ExternalQueries,
     {
         let (wanted, given) = self.constraints.take();
-        let _stuck = constraint::solve_constraints(self, context, wanted, given)?;
-        Ok(())
+        constraint::solve_constraints(self, context, wanted, given)
     }
 
     pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>)
