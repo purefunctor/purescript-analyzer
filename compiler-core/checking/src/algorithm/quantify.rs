@@ -174,7 +174,108 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
     graph
 }
 
-type UniToLevel = FxHashMap<u32, debruijn::Level>;
+enum FoldAction {
+    /// Replace this node entirely (skip recursion)
+    Replace(TypeId),
+    /// Continue with default recursion
+    Continue,
+}
+
+trait TypeFold {
+    /// Called before recursing into a type. Return `Replace(id)` to short-circuit.
+    fn transform(&mut self, state: &mut CheckState, id: TypeId, ty: &Type) -> FoldAction;
+
+    /// Called when visiting a Forall binder. Override to modify binder fields.
+    fn transform_binder(&mut self, _binder: &mut ForallBinder) {}
+}
+
+fn fold_type<F: TypeFold>(state: &mut CheckState, id: TypeId, folder: &mut F) -> TypeId {
+    let id = state.normalize_type(id);
+    let ty = state.storage[id].clone();
+
+    // Check if transform wants to replace this node
+    if let FoldAction::Replace(new_id) = folder.transform(state, id, &ty) {
+        return new_id;
+    }
+
+    match ty {
+        Type::Application(function, argument) => {
+            let function = fold_type(state, function, folder);
+            let argument = fold_type(state, argument, folder);
+            state.storage.intern(Type::Application(function, argument))
+        }
+        Type::Constrained(constraint, inner) => {
+            let constraint = fold_type(state, constraint, folder);
+            let inner = fold_type(state, inner, folder);
+            state.storage.intern(Type::Constrained(constraint, inner))
+        }
+        Type::Constructor(_, _) => id,
+        Type::Forall(mut binder, inner) => {
+            folder.transform_binder(&mut binder);
+            binder.kind = fold_type(state, binder.kind, folder);
+            let inner = fold_type(state, inner, folder);
+            state.storage.intern(Type::Forall(binder, inner))
+        }
+        Type::Function(argument, result) => {
+            let argument = fold_type(state, argument, folder);
+            let result = fold_type(state, result, folder);
+            state.storage.intern(Type::Function(argument, result))
+        }
+        Type::Integer(_) => id,
+        Type::KindApplication(function, argument) => {
+            let function = fold_type(state, function, folder);
+            let argument = fold_type(state, argument, folder);
+            state.storage.intern(Type::KindApplication(function, argument))
+        }
+        Type::Kinded(inner, kind) => {
+            let inner = fold_type(state, inner, folder);
+            let kind = fold_type(state, kind, folder);
+            state.storage.intern(Type::Kinded(inner, kind))
+        }
+        Type::Operator(_, _) => id,
+        Type::OperatorApplication(file_id, type_id, left, right) => {
+            let left = fold_type(state, left, folder);
+            let right = fold_type(state, right, folder);
+            state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
+        }
+        Type::Row(RowType { fields, tail }) => {
+            let mut fields = fields.to_vec();
+            fields.iter_mut().for_each(|field| field.id = fold_type(state, field.id, folder));
+            let tail = tail.map(|tail| fold_type(state, tail, folder));
+            let row = RowType { fields: Arc::from(fields), tail };
+            state.storage.intern(Type::Row(row))
+        }
+        Type::String(_, _) => id,
+        Type::SynonymApplication(saturation, file_id, type_id, arguments) => {
+            let arguments =
+                arguments.iter().map(|&argument| fold_type(state, argument, folder)).collect();
+            state.storage.intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
+        }
+        Type::Unification(_) => id,
+        Type::Variable(_) => id,
+        Type::Unknown => id,
+    }
+}
+
+struct ShiftLevels {
+    offset: u32,
+}
+
+impl TypeFold for ShiftLevels {
+    fn transform(&mut self, state: &mut CheckState, _id: TypeId, ty: &Type) -> FoldAction {
+        if let Type::Variable(Variable::Bound(level)) = ty {
+            let shifted = debruijn::Level(level.0 + self.offset);
+            return FoldAction::Replace(
+                state.storage.intern(Type::Variable(Variable::Bound(shifted))),
+            );
+        }
+        FoldAction::Continue
+    }
+
+    fn transform_binder(&mut self, binder: &mut ForallBinder) {
+        binder.level = debruijn::Level(binder.level.0 + self.offset);
+    }
+}
 
 /// Shifts all bound variable levels in a type by a given offset.
 ///
@@ -182,78 +283,30 @@ type UniToLevel = FxHashMap<u32, debruijn::Level>;
 /// as existing bound variables need their levels adjusted to account for
 /// the new binders.
 fn shift_levels(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
-    fn aux(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
-        let id = state.normalize_type(id);
-        match state.storage[id] {
-            Type::Application(function, argument) => {
-                let function = aux(state, function, offset);
-                let argument = aux(state, argument, offset);
-                state.storage.intern(Type::Application(function, argument))
-            }
-            Type::Constrained(constraint, inner) => {
-                let constraint = aux(state, constraint, offset);
-                let inner = aux(state, inner, offset);
-                state.storage.intern(Type::Constrained(constraint, inner))
-            }
-            Type::Constructor(_, _) => id,
-            Type::Forall(ref binder, inner) => {
-                let mut binder = binder.clone();
-                binder.level = debruijn::Level(binder.level.0 + offset);
-                binder.kind = aux(state, binder.kind, offset);
-                let inner = aux(state, inner, offset);
-                state.storage.intern(Type::Forall(binder, inner))
-            }
-            Type::Function(argument, result) => {
-                let argument = aux(state, argument, offset);
-                let result = aux(state, result, offset);
-                state.storage.intern(Type::Function(argument, result))
-            }
-            Type::Integer(_) => id,
-            Type::KindApplication(function, argument) => {
-                let function = aux(state, function, offset);
-                let argument = aux(state, argument, offset);
-                state.storage.intern(Type::KindApplication(function, argument))
-            }
-            Type::Kinded(inner, kind) => {
-                let inner = aux(state, inner, offset);
-                let kind = aux(state, kind, offset);
-                state.storage.intern(Type::Kinded(inner, kind))
-            }
-            Type::Operator(_, _) => id,
-            Type::OperatorApplication(file_id, type_id, left, right) => {
-                let left = aux(state, left, offset);
-                let right = aux(state, right, offset);
-                state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
-            }
-            Type::Row(RowType { ref fields, tail }) => {
-                let mut fields = fields.to_vec();
-                fields.iter_mut().for_each(|field| field.id = aux(state, field.id, offset));
-                let tail = tail.map(|tail| aux(state, tail, offset));
-                let row = RowType { fields: Arc::from(fields), tail };
-                state.storage.intern(Type::Row(row))
-            }
-            Type::String(_, _) => id,
-            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
-                let arguments = Arc::clone(arguments);
-                let arguments =
-                    arguments.iter().map(|&argument| aux(state, argument, offset)).collect();
-                state
-                    .storage
-                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
-            }
-            Type::Unification(_) => id,
-            Type::Variable(Variable::Bound(level)) => {
-                let shifted = debruijn::Level(level.0 + offset);
-                state.storage.intern(Type::Variable(Variable::Bound(shifted)))
-            }
-            Type::Variable(Variable::Free(_)) => id,
-            Type::Variable(Variable::Implicit(_)) => id,
-            Type::Variable(Variable::Skolem(_, _)) => id,
-            Type::Unknown => id,
-        }
+    if offset == 0 {
+        return id;
     }
+    fold_type(state, id, &mut ShiftLevels { offset })
+}
 
-    if offset == 0 { id } else { aux(state, id, offset) }
+type UniToLevel = FxHashMap<u32, debruijn::Level>;
+
+struct SubstituteUnification<'a> {
+    substitutions: &'a UniToLevel,
+}
+
+impl TypeFold for SubstituteUnification<'_> {
+    fn transform(&mut self, state: &mut CheckState, id: TypeId, ty: &Type) -> FoldAction {
+        if let Type::Unification(unification_id) = ty {
+            if let Some(&level) = self.substitutions.get(unification_id) {
+                return FoldAction::Replace(
+                    state.storage.intern(Type::Variable(Variable::Bound(level))),
+                );
+            }
+            return FoldAction::Replace(id);
+        }
+        FoldAction::Continue
+    }
 }
 
 /// Level-based substitution over a [`Type`].
@@ -265,78 +318,7 @@ fn substitute_unification(
     state: &mut CheckState,
     id: TypeId,
 ) -> TypeId {
-    fn aux(substitutions: &UniToLevel, state: &mut CheckState, id: TypeId) -> TypeId {
-        let id = state.normalize_type(id);
-        match state.storage[id] {
-            Type::Application(function, argument) => {
-                let function = aux(substitutions, state, function);
-                let argument = aux(substitutions, state, argument);
-                state.storage.intern(Type::Application(function, argument))
-            }
-            Type::Constrained(constraint, inner) => {
-                let constraint = aux(substitutions, state, constraint);
-                let inner = aux(substitutions, state, inner);
-                state.storage.intern(Type::Constrained(constraint, inner))
-            }
-            Type::Constructor(_, _) => id,
-            Type::Forall(ref binder, inner) => {
-                let mut binder = binder.clone();
-
-                binder.kind = aux(substitutions, state, binder.kind);
-                let inner = aux(substitutions, state, inner);
-
-                state.storage.intern(Type::Forall(binder, inner))
-            }
-            Type::Function(argument, result) => {
-                let argument = aux(substitutions, state, argument);
-                let result = aux(substitutions, state, result);
-                state.storage.intern(Type::Function(argument, result))
-            }
-            Type::Integer(_) => id,
-            Type::KindApplication(function, argument) => {
-                let function = aux(substitutions, state, function);
-                let argument = aux(substitutions, state, argument);
-                state.storage.intern(Type::KindApplication(function, argument))
-            }
-            Type::Kinded(inner, kind) => {
-                let inner = aux(substitutions, state, inner);
-                let kind = aux(substitutions, state, kind);
-                state.storage.intern(Type::Kinded(inner, kind))
-            }
-            Type::Operator(_, _) => id,
-            Type::OperatorApplication(file_id, type_id, left, right) => {
-                let left = aux(substitutions, state, left);
-                let right = aux(substitutions, state, right);
-                state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
-            }
-            Type::Row(RowType { ref fields, tail }) => {
-                let mut fields = fields.to_vec();
-                fields.iter_mut().for_each(|field| field.id = aux(substitutions, state, field.id));
-
-                let tail = tail.map(|tail| aux(substitutions, state, tail));
-                let row = RowType { fields: Arc::from(fields), tail };
-
-                state.storage.intern(Type::Row(row))
-            }
-            Type::String(_, _) => id,
-            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
-                let arguments = Arc::clone(arguments);
-                let arguments =
-                    arguments.iter().map(|&argument| aux(substitutions, state, argument)).collect();
-                state
-                    .storage
-                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
-            }
-            Type::Unification(unification_id) => {
-                let Some(&level) = substitutions.get(&unification_id) else { return id };
-                state.storage.intern(Type::Variable(Variable::Bound(level)))
-            }
-            Type::Variable(_) => id,
-            Type::Unknown => id,
-        }
-    }
-
-    aux(substitutions, state, id)
+    fold_type(state, id, &mut SubstituteUnification { substitutions })
 }
 
 #[cfg(test)]
