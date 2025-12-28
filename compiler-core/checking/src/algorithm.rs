@@ -2,7 +2,6 @@ pub mod binder;
 pub mod fd;
 pub mod fold;
 pub mod inspect;
-pub mod items;
 pub mod kind;
 pub mod operator;
 pub mod quantify;
@@ -10,7 +9,9 @@ pub mod solver;
 pub mod state;
 pub mod substitute;
 pub mod term;
+pub mod term_item;
 pub mod transfer;
+pub mod type_item;
 pub mod unification;
 
 use building_types::QueryResult;
@@ -31,11 +32,11 @@ pub(crate) fn check_source(
     for scc in &context.lowered.type_scc {
         match scc {
             Scc::Base(id) | Scc::Recursive(id) => {
-                items::check_type_signature(&mut state, &context, *id)?;
+                type_item::check_type_signature(&mut state, &context, *id)?;
             }
             Scc::Mutual(mutual) => {
                 for id in mutual {
-                    items::check_type_signature(&mut state, &context, *id)?;
+                    type_item::check_type_signature(&mut state, &context, *id)?;
                 }
             }
         }
@@ -58,7 +59,7 @@ pub(crate) fn check_source(
                 if !state.binding_group.types.contains_key(item) && needs_binding_group(item) {
                     state.type_binding_group(&context, [*item]);
                 }
-                items::check_type_item(&mut state, &context, *item)?;
+                type_item::check_type_item(&mut state, &context, *item)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(items) => {
@@ -75,12 +76,12 @@ pub(crate) fn check_source(
                 state.type_binding_group(&context, group);
 
                 for item in &without_signature {
-                    items::check_type_item(&mut state, &context, *item)?;
+                    type_item::check_type_item(&mut state, &context, *item)?;
                 }
                 state.commit_binding_group(&context);
 
                 for item in &with_signature {
-                    items::check_type_item(&mut state, &context, *item)?;
+                    type_item::check_type_item(&mut state, &context, *item)?;
                 }
                 state.commit_binding_group(&context);
             }
@@ -90,11 +91,11 @@ pub(crate) fn check_source(
     for scc in &context.lowered.term_scc {
         match scc {
             Scc::Base(item) | Scc::Recursive(item) => {
-                items::check_term_signature(&mut state, &context, *item)?;
+                term_item::check_term_signature(&mut state, &context, *item)?;
             }
             Scc::Mutual(items) => {
                 for item in items {
-                    items::check_term_signature(&mut state, &context, *item)?;
+                    term_item::check_term_signature(&mut state, &context, *item)?;
                 }
             }
         }
@@ -111,7 +112,7 @@ pub(crate) fn check_source(
                 if !state.checked.terms.contains_key(item) && needs_binding_group(item) {
                     state.term_binding_group(&context, [*item]);
                 }
-                items::check_term_item(&mut state, &context, *item)?;
+                term_item::check_term_item(&mut state, &context, *item)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(items) => {
@@ -128,12 +129,12 @@ pub(crate) fn check_source(
                 state.term_binding_group(&context, group);
 
                 for item in &without_signature {
-                    items::check_term_item(&mut state, &context, *item)?;
+                    term_item::check_term_item(&mut state, &context, *item)?;
                 }
                 state.commit_binding_group(&context);
 
                 for item in &with_signature {
-                    items::check_term_item(&mut state, &context, *item)?;
+                    term_item::check_term_item(&mut state, &context, *item)?;
                 }
                 state.commit_binding_group(&context);
             }
