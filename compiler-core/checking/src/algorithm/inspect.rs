@@ -108,7 +108,8 @@ where
                 current_id = inner;
             }
 
-            Type::Constrained(_, constrained) => {
+            Type::Constrained(constraint, constrained) => {
+                state.given_constraints.push(constraint);
                 current_id = constrained;
             }
 

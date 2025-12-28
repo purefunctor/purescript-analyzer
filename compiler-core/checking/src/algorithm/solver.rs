@@ -49,6 +49,12 @@ where
         let wanted_pretty = pretty::print_local(state, context, wanted);
         println!("Constraint: {wanted_pretty}");
 
+        if let Some(result) = match_given(state, wanted, &given) {
+            println!("  => (given) {result:?}");
+            continue;
+        }
+
+        // Fall back to instance matching
         let Some(ConstraintApplication { file_id, item_id, arguments }) =
             constraint_application(state, wanted)
         else {
@@ -67,7 +73,6 @@ where
         println!("{given_pretty}");
     }
 
-    let _ = given;
     Ok(vec![])
 }
 
@@ -138,6 +143,79 @@ fn compute_match_closures(fundeps: &[FunDep], match_results: &[MatchType]) -> Ha
         .map(|(index, _)| index)
         .collect();
     fd::compute_closure(fundeps, &initial)
+}
+
+fn match_given(state: &mut CheckState, wanted: TypeId, given: &[TypeId]) -> Option<MatchInstance> {
+    let Some(wanted_application) = constraint_application(state, wanted) else {
+        return None;
+    };
+
+    for &given in given {
+        let Some(given_application) = constraint_application(state, given) else {
+            continue;
+        };
+
+        if wanted_application.file_id != given_application.file_id
+            || wanted_application.item_id != given_application.item_id
+        {
+            continue;
+        }
+
+        if wanted_application.arguments.len() != given_application.arguments.len() {
+            continue;
+        }
+
+        let all_match = wanted_application.arguments.iter().zip(&given_application.arguments).all(
+            |(&wanted, &given)| matches!(match_given_type(state, wanted, given), MatchType::Match),
+        );
+
+        if all_match {
+            return Some(MatchInstance::Match { constraints: vec![] });
+        }
+    }
+
+    None
+}
+
+fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> MatchType {
+    let wanted = state.normalize_type(wanted);
+    let given = state.normalize_type(given);
+
+    let wanted_core = &state.storage[wanted];
+    let given_core = &state.storage[given];
+
+    match (wanted_core, given_core) {
+        (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Bound(g_level))) => {
+            if w_level == g_level {
+                MatchType::Match
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (Type::Unification(_), _) => MatchType::Stuck,
+
+        (&Type::Constructor(w_file_id, w_type_id), &Type::Constructor(g_file_id, g_type_id)) => {
+            if w_file_id == g_file_id && w_type_id == g_type_id {
+                MatchType::Match
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (
+            &Type::Application(w_function, w_argument),
+            &Type::Application(g_function, g_argument),
+        ) => match_given_type(state, w_function, g_function)
+            .and_also(|| match_given_type(state, w_argument, g_argument)),
+
+        (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
+            match_given_type(state, w_argument, g_argument)
+                .and_also(|| match_given_type(state, w_result, g_result))
+        }
+
+        _ => MatchType::Apart,
+    }
 }
 
 fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<ConstraintApplication> {

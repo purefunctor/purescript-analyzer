@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+eq :: forall (a :: Type). Eq a => a -> a -> Boolean
+test :: forall (a :: Type). Eq a => a -> Boolean
+
+Types
+Eq :: Type -> Constraint

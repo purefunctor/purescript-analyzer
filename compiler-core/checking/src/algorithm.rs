@@ -110,7 +110,6 @@ pub(crate) fn check_source(
                     state.term_binding_group(&context, [*item]);
                 }
                 items::check_term_item(&mut state, &context, *item)?;
-                state.solve_constraints(&context)?;
                 state.commit_binding_group(&context);
             }
             Scc::Mutual(items) => {

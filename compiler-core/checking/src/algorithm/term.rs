@@ -60,6 +60,8 @@ where
         }
     }
 
+    state.solve_constraints(context)?;
+
     Ok(())
 }
 
@@ -149,6 +151,8 @@ where
             let _ = unification::subtype(state, context, inferred_type, expected_type)?;
         }
     }
+
+    state.solve_constraints(context)?;
 
     if let Some(variable) = signature.variables.first() {
         state.unbind(variable.level);

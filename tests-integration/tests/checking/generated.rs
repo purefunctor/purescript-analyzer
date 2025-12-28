@@ -185,3 +185,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_086_instance_functional_dependency_transitive_main() { run_test("086_instance_functional_dependency_transitive", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_087_instance_functional_dependency_multiple_main() { run_test("087_instance_functional_dependency_multiple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_088_given_constraint_matching_main() { run_test("088_given_constraint_matching", "Main"); }
