@@ -131,7 +131,9 @@ fn test_solve_invalid() {
     };
 
     // [a :: Int, b :: String]
-    let level = state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    let level = state
+        .type_scope
+        .bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
 
     let bound_b = state.bound_variable(0);
     let bound_a = state.bound_variable(1);
@@ -339,8 +341,10 @@ fn test_subtype_nested_forall() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // Create ∀a. ∀b. (a -> b -> a)
-    let level_a = state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.t);
-    let level_b = state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
+    let level_a =
+        state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.t);
+    let level_b =
+        state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
 
     let bound_a = state.bound_variable(1);
     let bound_b = state.bound_variable(0);

@@ -293,12 +293,8 @@ where
             let surface_bindings = state.surface_bindings.get_term(item_id);
             let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-            let signature = inspect::inspect_signature_core(
-                state,
-                context,
-                group_type,
-                surface_bindings,
-            )?;
+            let signature =
+                inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
 
             term::check_equations(state, context, *signature_id, signature, equations)
         } else {

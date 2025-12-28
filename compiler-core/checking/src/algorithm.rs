@@ -181,7 +181,7 @@ fn check_value_groups<Q: ExternalQueries>(
 
                 let without_signature = items
                     .iter()
-                    .filter(|item| is_value_group(item) && needs_binding_group(*item))
+                    .filter(|item| is_value_group(item) && needs_binding_group(item))
                     .copied()
                     .collect_vec();
 

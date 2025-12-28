@@ -3,7 +3,9 @@
 use building_types::QueryResult;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::{ClassIr, DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding};
+use lowering::{
+    ClassIr, DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding,
+};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;

@@ -17,7 +17,7 @@ use lowering::{
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
-use crate::algorithm::{quantify, constraint, transfer};
+use crate::algorithm::{constraint, quantify, transfer};
 use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
