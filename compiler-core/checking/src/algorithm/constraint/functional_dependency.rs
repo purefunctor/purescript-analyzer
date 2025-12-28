@@ -27,9 +27,11 @@ pub fn compute_closure(
     functional_dependencies: &[Fd],
     initial_positions: &HashSet<usize>,
 ) -> HashSet<usize> {
+    const FUEL: u32 = 1_000_000;
+
     let mut determined = initial_positions.clone();
 
-    loop {
+    for _ in 0..FUEL {
         let mut changed = false;
 
         for functional_dependency in functional_dependencies {
@@ -43,11 +45,11 @@ pub fn compute_closure(
         }
 
         if !changed {
-            break;
+            return determined;
         }
     }
 
-    determined
+    unreachable!("critical violation: limit reached in compute_closure")
 }
 
 #[cfg(test)]
