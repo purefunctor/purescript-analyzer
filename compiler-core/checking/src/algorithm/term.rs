@@ -313,31 +313,7 @@ where
 
         lowering::ExpressionKind::InfixChain { head, tail } => {
             let Some(head) = *head else { return Ok(unknown) };
-
-            let mut infix_type = infer_expression(state, context, head)?;
-
-            for lowering::InfixPair { tick, element } in tail.iter() {
-                let Some(tick) = *tick else { return Ok(unknown) };
-                let Some(element) = *element else { return Ok(unknown) };
-
-                let tick_type = infer_expression(state, context, tick)?;
-
-                let applied_tick = check_function_application_core(
-                    state,
-                    context,
-                    tick_type,
-                    infix_type,
-                    |state, context, infix_type, expected_type| {
-                        let _ = unification::subtype(state, context, infix_type, expected_type)?;
-                        Ok(infix_type)
-                    },
-                )?;
-
-                infix_type =
-                    check_function_term_application(state, context, applied_tick, element)?;
-            }
-
-            Ok(infix_type)
+            infer_infix_chain(state, context, head, tail)
         }
 
         lowering::ExpressionKind::Negate { negate, expression } => {
@@ -361,21 +337,7 @@ where
         }
 
         lowering::ExpressionKind::IfThenElse { if_, then, else_ } => {
-            if let Some(if_) = if_ {
-                check_expression(state, context, *if_, context.prim.boolean)?;
-            }
-
-            let result_type = state.fresh_unification_type(context);
-
-            if let Some(then) = then {
-                check_expression(state, context, *then, result_type)?;
-            }
-
-            if let Some(else_) = else_ {
-                check_expression(state, context, *else_, result_type)?;
-            }
-
-            Ok(result_type)
+            infer_if_then_else(state, context, *if_, *then, *else_)
         }
 
         lowering::ExpressionKind::LetIn { bindings, expression } => {
@@ -387,236 +349,23 @@ where
         }
 
         lowering::ExpressionKind::Lambda { binders, expression } => {
-            let mut argument_types = vec![];
-
-            for &binder_id in binders.iter() {
-                let argument_type = state.fresh_unification_type(context);
-                let _ = binder::check_binder(state, context, binder_id, argument_type)?;
-                argument_types.push(argument_type);
-            }
-
-            let result_type = if let Some(body) = expression {
-                infer_expression(state, context, *body)?
-            } else {
-                state.fresh_unification_type(context)
-            };
-
-            Ok(state.make_function(&argument_types, result_type))
+            infer_lambda(state, context, binders, *expression)
         }
 
         lowering::ExpressionKind::CaseOf { trunk, branches } => {
-            let inferred_type = state.fresh_unification_type(context);
-
-            let mut trunk_types = vec![];
-            for trunk in trunk.iter() {
-                let trunk_type = infer_expression(state, context, *trunk)?;
-                trunk_types.push(trunk_type);
-            }
-
-            for branch in branches.iter() {
-                for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
-                    let _ = binder::check_binder(state, context, *binder, *trunk)?;
-                }
-                if let Some(guarded) = &branch.guarded_expression {
-                    let guarded_type = infer_guarded_expression(state, context, guarded)?;
-                    let _ = unification::subtype(state, context, inferred_type, guarded_type)?;
-                }
-            }
-
-            Ok(inferred_type)
+            infer_case_of(state, context, trunk, branches)
         }
 
         lowering::ExpressionKind::Do { bind, discard, statements } => {
             let Some(bind) = bind else { return Ok(unknown) };
             let Some(discard) = discard else { return Ok(unknown) };
-
-            let bind_type = lookup_term_variable(state, context, *bind)?;
-            let discard_type = lookup_term_variable(state, context, *discard)?;
-
-            // First, perform a forward pass where variable bindings are
-            // bound to unification variables and let bindings are checked.
-            // This is like inferring the lambda in a desugared representation.
-            let mut do_statements = vec![];
-            for statement in statements.iter() {
-                match statement {
-                    lowering::DoStatement::Bind { binder, expression } => {
-                        let binder_type = if let Some(binder) = binder {
-                            binder::infer_binder(state, context, *binder)?
-                        } else {
-                            state.fresh_unification_type(context)
-                        };
-                        do_statements.push((Some(binder_type), *expression));
-                    }
-                    lowering::DoStatement::Let { statements } => {
-                        check_let_chunks(state, context, statements)?;
-                    }
-                    lowering::DoStatement::Discard { expression } => {
-                        do_statements.push((None, *expression));
-                    }
-                }
-            }
-
-            let [bind_statements @ .., (_, pure_expression)] = &do_statements[..] else {
-                unreachable!("invariant violated: empty do_statements");
-            };
-
-            let Some(pure_expression) = pure_expression else {
-                return Ok(unknown);
-            };
-
-            // With the binders and let-bound names in scope, infer
-            // the type of the last expression as our starting point.
-            //
-            // main = do
-            //   pure 42
-            //   y <- pure "Hello!"
-            //   pure $ Message y
-            //
-            // accumulated_type := Effect Message
-            let mut accumulated_type = infer_expression(state, context, *pure_expression)?;
-
-            // Then, infer do statements in reverse order to emulate
-            // inside-out type inference for desugared do statements.
-            for (binder, expression) in bind_statements.iter().rev() {
-                accumulated_type = if let Some(binder) = binder {
-                    // This applies bind_type to expression_type to get
-                    // bind_applied, which is then applied to lambda_type
-                    // to get the accumulated_type and to solve ?y.
-                    //
-                    // bind_type        := m a -> (a -> m b) -> m b
-                    // expression_type  := Effect String
-                    //
-                    // bind_applied     := (String -> Effect b) -> Effect b
-                    // lambda_type      := ?y -> Effect Message
-                    //
-                    // accumulated_type := Effect Message
-                    infer_do_bind(
-                        state,
-                        context,
-                        bind_type,
-                        accumulated_type,
-                        *expression,
-                        *binder,
-                    )?
-                } else {
-                    // This applies discard_type to expression_type to
-                    // get discard_applied, which is then deconstructed
-                    // to subsume against the `Effect b`.
-                    //
-                    // discard_type     := m a -> (a -> m b) -> m b
-                    // expression_type  := Effect Int
-                    //
-                    // discard_applied  := (Int -> Effect b) -> Effect b
-                    // accumulated_type := Effect Message
-                    //
-                    // accumulated_type <: Effect b
-                    infer_do_discard(state, context, discard_type, accumulated_type, *expression)?
-                }
-            }
-
-            Ok(accumulated_type)
+            infer_do(state, context, *bind, *discard, statements)
         }
 
         lowering::ExpressionKind::Ado { map, apply, statements, expression } => {
             let Some(map) = map else { return Ok(unknown) };
             let Some(apply) = apply else { return Ok(unknown) };
-
-            let map_type = lookup_term_variable(state, context, *map)?;
-            let apply_type = lookup_term_variable(state, context, *apply)?;
-
-            // First, perform a forward pass where variable bindings are
-            // bound to unification variables and let bindings are checked.
-            // This is like inferring the lambda in a desugared representation.
-            let mut binder_types = vec![];
-            let mut expressions = vec![];
-            for statement in statements.iter() {
-                match statement {
-                    lowering::DoStatement::Bind { binder, expression } => {
-                        let binder_type = if let Some(binder) = binder {
-                            binder::infer_binder(state, context, *binder)?
-                        } else {
-                            state.fresh_unification_type(context)
-                        };
-                        binder_types.push(binder_type);
-                        expressions.push(*expression);
-                    }
-                    lowering::DoStatement::Let { statements } => {
-                        check_let_chunks(state, context, statements)?;
-                    }
-                    lowering::DoStatement::Discard { expression } => {
-                        let binder_type = state.fresh_unification_type(context);
-                        binder_types.push(binder_type);
-                        expressions.push(*expression);
-                    }
-                }
-            }
-
-            assert_eq!(binder_types.len(), expressions.len());
-
-            if expressions.is_empty() {
-                return if let Some(expression) = expression {
-                    infer_expression(state, context, *expression)
-                } else {
-                    Ok(unknown)
-                };
-            }
-
-            // With the binders and let-bound names in scope, infer
-            // the type of the final expression as our starting point.
-            //
-            // main = ado
-            //   pure 1
-            //   y <- pure "Hello!"
-            //   in Message y
-            //
-            // expression_type := Message
-            let expression_type = if let Some(expression) = expression {
-                infer_expression(state, context, *expression)?
-            } else {
-                state.fresh_unification_type(context)
-            };
-
-            // Create a function type using the binder types collected
-            // from the forward pass. We made sure to allocate unification
-            // variables for the discard statements too.
-            //
-            // lambda_type := ?discard -> ?y -> Message
-            let lambda_type = state.make_function(&binder_types, expression_type);
-
-            let [expression, tail_expressions @ ..] = &expressions[..] else {
-                unreachable!("invariant violated: empty ado_statements");
-            };
-
-            // This applies map_type to the lambda_type that we just built
-            // and then to the inferred type of the first expression.
-            //
-            // map_type         := (a -> b) -> f a -> f b
-            // lambda_type      := ?discard -> ?y -> Message
-            //
-            // map_applied      := f ?discard -> f (?y -> Message)
-            // expression_type  := f Int
-            //
-            // accumulated_type := f (?y -> Message)
-            let mut accumulated_type =
-                infer_ado_map(state, context, map_type, lambda_type, *expression)?;
-
-            //
-            // This applies apply_type to the accumulated_type, and then to the
-            // inferred type of the expression to update the accumulated_type.
-            //
-            // apply_type       := f (a -> b) -> f a -> f b
-            // accumulated_type := f (?y -> Message)
-            //
-            // accumulated_type := f ?y -> f Message
-            // expression_type  := f String
-            //
-            // accumulated_type := f Message
-            for expression in tail_expressions {
-                accumulated_type =
-                    infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
-            }
-
-            Ok(accumulated_type)
+            infer_ado(state, context, *map, *apply, statements, *expression)
         }
 
         lowering::ExpressionKind::Constructor { resolution } => {
@@ -654,60 +403,9 @@ where
 
         lowering::ExpressionKind::Number => Ok(context.prim.number),
 
-        lowering::ExpressionKind::Array { array } => {
-            let inferred_type = state.fresh_unification_type(context);
+        lowering::ExpressionKind::Array { array } => infer_array(state, context, array),
 
-            for expression in array.iter() {
-                let element_type = infer_expression(state, context, *expression)?;
-                unification::subtype(state, context, element_type, inferred_type)?;
-            }
-
-            let array_type =
-                state.storage.intern(Type::Application(context.prim.array, inferred_type));
-
-            Ok(array_type)
-        }
-
-        lowering::ExpressionKind::Record { record } => {
-            let mut fields = vec![];
-
-            for field in record.iter() {
-                match field {
-                    lowering::ExpressionRecordItem::RecordField { name, value } => {
-                        let Some(name) = name else { continue };
-                        let Some(value) = value else { continue };
-
-                        let label = SmolStr::clone(name);
-                        let id = infer_expression(state, context, *value)?;
-
-                        // Instantiate to avoid polymorphic types in record fields.
-                        let id = instantiate_type(state, context, id)?;
-
-                        fields.push(RowField { label, id });
-                    }
-                    lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
-                        let Some(name) = name else { continue };
-                        let Some(resolution) = resolution else { continue };
-
-                        let label = SmolStr::clone(name);
-                        let id = lookup_term_variable(state, context, *resolution)?;
-
-                        // Instantiate to avoid polymorphic types in record fields.
-                        let id = instantiate_type(state, context, id)?;
-
-                        fields.push(RowField { label, id });
-                    }
-                }
-            }
-
-            let row_type = RowType::from_unsorted(fields, None);
-            let row_type = state.storage.intern(Type::Row(row_type));
-
-            let record_type =
-                state.storage.intern(Type::Application(context.prim.record, row_type));
-
-            Ok(record_type)
-        }
+        lowering::ExpressionKind::Record { record } => infer_record(state, context, record),
 
         lowering::ExpressionKind::Parenthesized { parenthesized } => {
             let Some(parenthesized) = parenthesized else { return Ok(unknown) };
@@ -715,58 +413,456 @@ where
         }
 
         lowering::ExpressionKind::RecordAccess { record, labels } => {
-            let Some(record) = record else { return Ok(unknown) };
+            let Some(record) = *record else { return Ok(unknown) };
             let Some(labels) = labels else { return Ok(unknown) };
-
-            let mut current_type = infer_expression(state, context, *record)?;
-
-            for label in labels.iter() {
-                let label = SmolStr::clone(label);
-
-                let field_type = state.fresh_unification_type(context);
-
-                let row_type_kind =
-                    state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-                let tail_type = state.fresh_unification_kinded(row_type_kind);
-
-                let row_type = RowType::from_unsorted(
-                    vec![RowField { label, id: field_type }],
-                    Some(tail_type),
-                );
-
-                let row_type = state.storage.intern(Type::Row(row_type));
-                let record_type =
-                    state.storage.intern(Type::Application(context.prim.record, row_type));
-
-                unification::subtype(state, context, current_type, record_type)?;
-                current_type = field_type;
-            }
-
-            Ok(current_type)
+            infer_record_access(state, context, record, labels)
         }
 
         lowering::ExpressionKind::RecordUpdate { record, updates } => {
-            let Some(record) = record else { return Ok(unknown) };
-
-            let (input_fields, output_fields, tail) =
-                infer_record_updates(state, context, updates)?;
-
-            let input_row = RowType::from_unsorted(input_fields, Some(tail));
-            let input_row = state.storage.intern(Type::Row(input_row));
-            let input_record =
-                state.storage.intern(Type::Application(context.prim.record, input_row));
-
-            let output_row = RowType::from_unsorted(output_fields, Some(tail));
-            let output_row = state.storage.intern(Type::Row(output_row));
-            let output_record =
-                state.storage.intern(Type::Application(context.prim.record, output_row));
-
-            check_expression(state, context, *record, input_record)?;
-
-            Ok(output_record)
+            let Some(record) = *record else { return Ok(unknown) };
+            infer_record_update(state, context, record, updates)
         }
     }
+}
+
+fn infer_if_then_else<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    if_: Option<lowering::ExpressionId>,
+    then: Option<lowering::ExpressionId>,
+    else_: Option<lowering::ExpressionId>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(if_) = if_ {
+        check_expression(state, context, if_, context.prim.boolean)?;
+    }
+
+    let result_type = state.fresh_unification_type(context);
+
+    if let Some(then) = then {
+        check_expression(state, context, then, result_type)?;
+    }
+
+    if let Some(else_) = else_ {
+        check_expression(state, context, else_, result_type)?;
+    }
+
+    Ok(result_type)
+}
+
+fn infer_infix_chain<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    head: lowering::ExpressionId,
+    tail: &[lowering::InfixPair<lowering::ExpressionId>],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut infix_type = infer_expression(state, context, head)?;
+
+    for lowering::InfixPair { tick, element } in tail.iter() {
+        let Some(tick) = tick else { return Ok(context.prim.unknown) };
+        let Some(element) = element else { return Ok(context.prim.unknown) };
+
+        let tick_type = infer_expression(state, context, *tick)?;
+
+        let applied_tick = check_function_application_core(
+            state,
+            context,
+            tick_type,
+            infix_type,
+            |state, context, infix_type, expected_type| {
+                let _ = unification::subtype(state, context, infix_type, expected_type)?;
+                Ok(infix_type)
+            },
+        )?;
+
+        infix_type = check_function_term_application(state, context, applied_tick, *element)?;
+    }
+
+    Ok(infix_type)
+}
+
+fn infer_lambda<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binders: &[lowering::BinderId],
+    expression: Option<lowering::ExpressionId>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut argument_types = vec![];
+
+    for &binder_id in binders.iter() {
+        let argument_type = state.fresh_unification_type(context);
+        let _ = binder::check_binder(state, context, binder_id, argument_type)?;
+        argument_types.push(argument_type);
+    }
+
+    let result_type = if let Some(body) = expression {
+        infer_expression(state, context, body)?
+    } else {
+        state.fresh_unification_type(context)
+    };
+
+    Ok(state.make_function(&argument_types, result_type))
+}
+
+fn infer_case_of<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk: &[lowering::ExpressionId],
+    branches: &[lowering::CaseBranch],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let inferred_type = state.fresh_unification_type(context);
+
+    let mut trunk_types = vec![];
+    for trunk in trunk.iter() {
+        let trunk_type = infer_expression(state, context, *trunk)?;
+        trunk_types.push(trunk_type);
+    }
+
+    for branch in branches.iter() {
+        for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
+            let _ = binder::check_binder(state, context, *binder, *trunk)?;
+        }
+        if let Some(guarded) = &branch.guarded_expression {
+            let guarded_type = infer_guarded_expression(state, context, guarded)?;
+            let _ = unification::subtype(state, context, inferred_type, guarded_type)?;
+        }
+    }
+
+    Ok(inferred_type)
+}
+
+fn infer_do<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bind: lowering::TermVariableResolution,
+    discard: lowering::TermVariableResolution,
+    statements: &[lowering::DoStatement],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let bind_type = lookup_term_variable(state, context, bind)?;
+    let discard_type = lookup_term_variable(state, context, discard)?;
+
+    // First, perform a forward pass where variable bindings are
+    // bound to unification variables and let bindings are checked.
+    // This is like inferring the lambda in a desugared representation.
+    let mut do_statements = vec![];
+    for statement in statements.iter() {
+        match statement {
+            lowering::DoStatement::Bind { binder, expression } => {
+                let binder_type = if let Some(binder) = binder {
+                    binder::infer_binder(state, context, *binder)?
+                } else {
+                    state.fresh_unification_type(context)
+                };
+                do_statements.push((Some(binder_type), *expression));
+            }
+            lowering::DoStatement::Let { statements } => {
+                check_let_chunks(state, context, statements)?;
+            }
+            lowering::DoStatement::Discard { expression } => {
+                do_statements.push((None, *expression));
+            }
+        }
+    }
+
+    let [bind_statements @ .., (_, pure_expression)] = &do_statements[..] else {
+        unreachable!("invariant violated: empty do_statements");
+    };
+
+    let Some(pure_expression) = pure_expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    // With the binders and let-bound names in scope, infer
+    // the type of the last expression as our starting point.
+    //
+    // main = do
+    //   pure 42
+    //   y <- pure "Hello!"
+    //   pure $ Message y
+    //
+    // accumulated_type := Effect Message
+    let mut accumulated_type = infer_expression(state, context, *pure_expression)?;
+
+    // Then, infer do statements in reverse order to emulate
+    // inside-out type inference for desugared do statements.
+    for (binder, expression) in bind_statements.iter().rev() {
+        accumulated_type = if let Some(binder) = binder {
+            // This applies bind_type to expression_type to get
+            // bind_applied, which is then applied to lambda_type
+            // to get the accumulated_type and to solve ?y.
+            //
+            // bind_type        := m a -> (a -> m b) -> m b
+            // expression_type  := Effect String
+            //
+            // bind_applied     := (String -> Effect b) -> Effect b
+            // lambda_type      := ?y -> Effect Message
+            //
+            // accumulated_type := Effect Message
+            infer_do_bind(state, context, bind_type, accumulated_type, *expression, *binder)?
+        } else {
+            // This applies discard_type to expression_type to
+            // get discard_applied, which is then deconstructed
+            // to subsume against the `Effect b`.
+            //
+            // discard_type     := m a -> (a -> m b) -> m b
+            // expression_type  := Effect Int
+            //
+            // discard_applied  := (Int -> Effect b) -> Effect b
+            // accumulated_type := Effect Message
+            //
+            // accumulated_type <: Effect b
+            infer_do_discard(state, context, discard_type, accumulated_type, *expression)?
+        }
+    }
+
+    Ok(accumulated_type)
+}
+
+fn infer_ado<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    map: lowering::TermVariableResolution,
+    apply: lowering::TermVariableResolution,
+    statements: &[lowering::DoStatement],
+    expression: Option<lowering::ExpressionId>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let map_type = lookup_term_variable(state, context, map)?;
+    let apply_type = lookup_term_variable(state, context, apply)?;
+
+    // First, perform a forward pass where variable bindings are
+    // bound to unification variables and let bindings are checked.
+    // This is like inferring the lambda in a desugared representation.
+    let mut binder_types = vec![];
+    let mut expressions = vec![];
+    for statement in statements.iter() {
+        match statement {
+            lowering::DoStatement::Bind { binder, expression } => {
+                let binder_type = if let Some(binder) = binder {
+                    binder::infer_binder(state, context, *binder)?
+                } else {
+                    state.fresh_unification_type(context)
+                };
+                binder_types.push(binder_type);
+                expressions.push(*expression);
+            }
+            lowering::DoStatement::Let { statements } => {
+                check_let_chunks(state, context, statements)?;
+            }
+            lowering::DoStatement::Discard { expression } => {
+                let binder_type = state.fresh_unification_type(context);
+                binder_types.push(binder_type);
+                expressions.push(*expression);
+            }
+        }
+    }
+
+    assert_eq!(binder_types.len(), expressions.len());
+
+    if expressions.is_empty() {
+        return if let Some(expression) = expression {
+            infer_expression(state, context, expression)
+        } else {
+            Ok(context.prim.unknown)
+        };
+    }
+
+    // With the binders and let-bound names in scope, infer
+    // the type of the final expression as our starting point.
+    //
+    // main = ado
+    //   pure 1
+    //   y <- pure "Hello!"
+    //   in Message y
+    //
+    // expression_type := Message
+    let expression_type = if let Some(expression) = expression {
+        infer_expression(state, context, expression)?
+    } else {
+        state.fresh_unification_type(context)
+    };
+
+    // Create a function type using the binder types collected
+    // from the forward pass. We made sure to allocate unification
+    // variables for the discard statements too.
+    //
+    // lambda_type := ?discard -> ?y -> Message
+    let lambda_type = state.make_function(&binder_types, expression_type);
+
+    let [expression, tail_expressions @ ..] = &expressions[..] else {
+        unreachable!("invariant violated: empty ado_statements");
+    };
+
+    // This applies map_type to the lambda_type that we just built
+    // and then to the inferred type of the first expression.
+    //
+    // map_type         := (a -> b) -> f a -> f b
+    // lambda_type      := ?discard -> ?y -> Message
+    //
+    // map_applied      := f ?discard -> f (?y -> Message)
+    // expression_type  := f Int
+    //
+    // accumulated_type := f (?y -> Message)
+    let mut accumulated_type = infer_ado_map(state, context, map_type, lambda_type, *expression)?;
+
+    //
+    // This applies apply_type to the accumulated_type, and then to the
+    // inferred type of the expression to update the accumulated_type.
+    //
+    // apply_type       := f (a -> b) -> f a -> f b
+    // accumulated_type := f (?y -> Message)
+    //
+    // accumulated_type := f ?y -> f Message
+    // expression_type  := f String
+    //
+    // accumulated_type := f Message
+    for expression in tail_expressions {
+        accumulated_type =
+            infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
+    }
+
+    Ok(accumulated_type)
+}
+
+fn infer_array<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    array: &[lowering::ExpressionId],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let inferred_type = state.fresh_unification_type(context);
+
+    for expression in array.iter() {
+        let element_type = infer_expression(state, context, *expression)?;
+        unification::subtype(state, context, element_type, inferred_type)?;
+    }
+
+    let array_type = state.storage.intern(Type::Application(context.prim.array, inferred_type));
+
+    Ok(array_type)
+}
+
+fn infer_record<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    record: &[lowering::ExpressionRecordItem],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut fields = vec![];
+
+    for field in record.iter() {
+        match field {
+            lowering::ExpressionRecordItem::RecordField { name, value } => {
+                let Some(name) = name else { continue };
+                let Some(value) = value else { continue };
+
+                let label = SmolStr::clone(name);
+                let id = infer_expression(state, context, *value)?;
+
+                // Instantiate to avoid polymorphic types in record fields.
+                let id = instantiate_type(state, context, id)?;
+
+                fields.push(RowField { label, id });
+            }
+            lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
+                let Some(name) = name else { continue };
+                let Some(resolution) = resolution else { continue };
+
+                let label = SmolStr::clone(name);
+                let id = lookup_term_variable(state, context, *resolution)?;
+
+                // Instantiate to avoid polymorphic types in record fields.
+                let id = instantiate_type(state, context, id)?;
+
+                fields.push(RowField { label, id });
+            }
+        }
+    }
+
+    let row_type = RowType::from_unsorted(fields, None);
+    let row_type = state.storage.intern(Type::Row(row_type));
+
+    let record_type = state.storage.intern(Type::Application(context.prim.record, row_type));
+
+    Ok(record_type)
+}
+
+fn infer_record_access<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    record: lowering::ExpressionId,
+    labels: &[SmolStr],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut current_type = infer_expression(state, context, record)?;
+
+    for label in labels.iter() {
+        let label = SmolStr::clone(label);
+
+        let field_type = state.fresh_unification_type(context);
+
+        let row_type_kind =
+            state.storage.intern(Type::Application(context.prim.row, context.prim.t));
+
+        let tail_type = state.fresh_unification_kinded(row_type_kind);
+
+        let row_type =
+            RowType::from_unsorted(vec![RowField { label, id: field_type }], Some(tail_type));
+
+        let row_type = state.storage.intern(Type::Row(row_type));
+        let record_type = state.storage.intern(Type::Application(context.prim.record, row_type));
+
+        unification::subtype(state, context, current_type, record_type)?;
+        current_type = field_type;
+    }
+
+    Ok(current_type)
+}
+
+fn infer_record_update<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    record: lowering::ExpressionId,
+    updates: &[lowering::RecordUpdate],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let (input_fields, output_fields, tail) = infer_record_updates(state, context, updates)?;
+
+    let input_row = RowType::from_unsorted(input_fields, Some(tail));
+    let input_row = state.storage.intern(Type::Row(input_row));
+    let input_record = state.storage.intern(Type::Application(context.prim.record, input_row));
+
+    let output_row = RowType::from_unsorted(output_fields, Some(tail));
+    let output_row = state.storage.intern(Type::Row(output_row));
+    let output_record = state.storage.intern(Type::Application(context.prim.record, output_row));
+
+    check_expression(state, context, record, input_record)?;
+
+    Ok(output_record)
 }
 
 fn infer_record_updates<Q>(
