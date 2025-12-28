@@ -7,33 +7,36 @@ use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
 use crate::algorithm::fd::{self, FunDep};
+use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{transfer, unification};
 use crate::core::{Instance, Variable, debruijn};
 use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};
 
-fn apply_bindings(
-    state: &mut CheckState,
-    bindings: &FxHashMap<debruijn::Level, TypeId>,
-    type_id: TypeId,
-) -> TypeId {
-    let type_id = state.normalize_type(type_id);
-    match &state.storage[type_id] {
-        Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
-            bindings.get(level).copied().unwrap_or(type_id)
+struct ApplyBindings<'a> {
+    bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+}
+
+impl<'a> ApplyBindings<'a> {
+    fn on(
+        state: &mut CheckState,
+        bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+        type_id: TypeId,
+    ) -> TypeId {
+        fold_type(state, type_id, &mut ApplyBindings { bindings })
+    }
+}
+
+impl TypeFold for ApplyBindings<'_> {
+    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+                let id = self.bindings.get(level).copied().unwrap_or(id);
+                FoldAction::Replace(id)
+            }
+            _ => FoldAction::Continue,
         }
-        &Type::Application(function, argument) => {
-            let function = apply_bindings(state, bindings, function);
-            let argument = apply_bindings(state, bindings, argument);
-            state.storage.intern(Type::Application(function, argument))
-        }
-        &Type::Function(argument, result) => {
-            let argument = apply_bindings(state, bindings, argument);
-            let result = apply_bindings(state, bindings, result);
-            state.storage.intern(Type::Function(argument, result))
-        }
-        _ => type_id,
     }
 }
 
@@ -314,7 +317,7 @@ where
             // Generate improvement for this fundep-determined stuck position
             let (instance_type, _) = &instance.arguments[stuck_index];
             let instance_type = transfer::localize(state, context, *instance_type);
-            let substituted = apply_bindings(state, &bindings, instance_type);
+            let substituted = ApplyBindings::on(state, &bindings, instance_type);
             improvements.push((arguments[stuck_index], substituted));
         }
     }
