@@ -14,6 +14,8 @@ pub mod transfer;
 pub mod type_item;
 pub mod unification;
 
+use std::slice;
+
 use building_types::QueryResult;
 use files::FileId;
 use itertools::Itertools;
@@ -26,19 +28,40 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
     let mut state = state::CheckState::default();
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
+    check_type_signatures(&mut state, &context)?;
+    check_type_items(&mut state, &context)?;
+
+    check_term_signatures(&mut state, &context)?;
+    check_instances(&mut state, &context)?;
+    check_value_groups(&mut state, &context)?;
+
+    Ok(state.checked)
+}
+
+fn check_type_signatures<Q: ExternalQueries>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+) -> QueryResult<()> {
     for scc in &context.lowered.type_scc {
         match scc {
             Scc::Base(id) | Scc::Recursive(id) => {
-                type_item::check_type_signature(&mut state, &context, *id)?;
+                type_item::check_type_signature(state, context, *id)?;
             }
             Scc::Mutual(mutual) => {
                 for id in mutual {
-                    type_item::check_type_signature(&mut state, &context, *id)?;
+                    type_item::check_type_signature(state, context, *id)?;
                 }
             }
         }
     }
 
+    Ok(())
+}
+
+fn check_type_items<Q: ExternalQueries>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+) -> QueryResult<()> {
     let needs_binding_group = |id: &indexing::TypeItemId| {
         let item = &context.indexed.items[*id];
         matches!(
@@ -54,10 +77,10 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
         match scc {
             Scc::Base(item) | Scc::Recursive(item) => {
                 if !state.binding_group.types.contains_key(item) && needs_binding_group(item) {
-                    state.type_binding_group(&context, [*item]);
+                    state.type_binding_group(context, [*item]);
                 }
-                type_item::check_type_item(&mut state, &context, *item)?;
-                state.commit_binding_group(&context);
+                type_item::check_type_item(state, context, *item)?;
+                state.commit_binding_group(context);
             }
             Scc::Mutual(items) => {
                 let with_signature = items
@@ -70,33 +93,71 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
                     items.iter().filter(|item| needs_binding_group(item)).copied().collect_vec();
 
                 let group = without_signature.iter().copied();
-                state.type_binding_group(&context, group);
+                state.type_binding_group(context, group);
 
                 for item in &without_signature {
-                    type_item::check_type_item(&mut state, &context, *item)?;
+                    type_item::check_type_item(state, context, *item)?;
                 }
-                state.commit_binding_group(&context);
+                state.commit_binding_group(context);
 
                 for item in &with_signature {
-                    type_item::check_type_item(&mut state, &context, *item)?;
+                    type_item::check_type_item(state, context, *item)?;
                 }
-                state.commit_binding_group(&context);
+                state.commit_binding_group(context);
             }
         }
     }
 
+    Ok(())
+}
+
+fn check_term_signatures<Q: ExternalQueries>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+) -> QueryResult<()> {
     for scc in &context.lowered.term_scc {
         match scc {
             Scc::Base(item) | Scc::Recursive(item) => {
-                term_item::check_term_signature(&mut state, &context, *item)?;
+                term_item::check_term_signature(state, context, *item)?;
             }
             Scc::Mutual(items) => {
                 for item in items {
-                    term_item::check_term_signature(&mut state, &context, *item)?;
+                    term_item::check_term_signature(state, context, *item)?;
                 }
             }
         }
     }
+
+    Ok(())
+}
+
+fn check_instances<Q: ExternalQueries>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+) -> QueryResult<()> {
+    let is_instance = |item: &&indexing::TermItemId| {
+        matches!(context.indexed.items[**item].kind, indexing::TermItemKind::Instance { .. })
+    };
+
+    let flattened = context.lowered.term_scc.iter().flat_map(|scc| match scc {
+        Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
+        Scc::Mutual(items) => items.as_slice(),
+    });
+
+    for item in flattened.filter(is_instance) {
+        term_item::check_instance(state, context, *item)?;
+    }
+
+    Ok(())
+}
+
+fn check_value_groups<Q: ExternalQueries>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+) -> QueryResult<()> {
+    let is_value_group = |item: &&indexing::TermItemId| {
+        matches!(context.indexed.items[**item].kind, indexing::TermItemKind::Value { .. })
+    };
 
     let needs_binding_group = |item: &indexing::TermItemId| {
         let item = &context.indexed.items[*item];
@@ -105,40 +166,43 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
 
     for scc in &context.lowered.term_scc {
         match scc {
-            Scc::Base(item) | Scc::Recursive(item) => {
+            Scc::Base(item) | Scc::Recursive(item) if is_value_group(&item) => {
                 if !state.checked.terms.contains_key(item) && needs_binding_group(item) {
-                    state.term_binding_group(&context, [*item]);
+                    state.term_binding_group(context, [*item]);
                 }
-                term_item::check_term_item(&mut state, &context, *item)?;
-                state.commit_binding_group(&context);
+                term_item::check_value_group(state, context, *item)?;
+                state.commit_binding_group(context);
             }
             Scc::Mutual(items) => {
                 let with_signature = items
                     .iter()
-                    .filter(|item| state.checked.terms.contains_key(item))
+                    .filter(|item| is_value_group(item) && state.checked.terms.contains_key(item))
                     .copied()
                     .collect_vec();
 
-                let without_signature =
-                    items.iter().filter(|item| needs_binding_group(item)).copied().collect_vec();
+                let without_signature = items
+                    .iter()
+                    .filter(|item| is_value_group(item) && needs_binding_group(*item))
+                    .copied()
+                    .collect_vec();
 
                 let group = without_signature.iter().copied();
-                state.term_binding_group(&context, group);
+                state.term_binding_group(context, group);
 
                 for item in &without_signature {
-                    term_item::check_term_item(&mut state, &context, *item)?;
+                    term_item::check_value_group(state, context, *item)?;
                 }
-                state.commit_binding_group(&context);
+                state.commit_binding_group(context);
 
                 for item in &with_signature {
-                    term_item::check_term_item(&mut state, &context, *item)?;
+                    term_item::check_value_group(state, context, *item)?;
                 }
-                state.commit_binding_group(&context);
+                state.commit_binding_group(context);
             }
+            _ => {}
         }
     }
-
-    Ok(state.checked)
+    Ok(())
 }
 
 pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
