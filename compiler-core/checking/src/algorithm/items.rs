@@ -605,7 +605,7 @@ where
     })
 }
 
-pub(crate) fn check_term_item<Q>(
+pub fn check_term_item<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TermItemId,
