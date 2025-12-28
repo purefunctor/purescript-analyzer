@@ -1,3 +1,6 @@
+#[macro_use]
+mod recover;
+
 mod algorithm;
 
 pub mod error;

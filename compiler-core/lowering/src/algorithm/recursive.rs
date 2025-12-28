@@ -221,20 +221,18 @@ fn lower_expression_kind(
             ExpressionKind::IfThenElse { if_, then, else_ }
         }
         cst::Expression::ExpressionLetIn(cst) => state.with_scope(|s| {
-            let bindings =
-                cst.bindings().map(|cst| lower_bindings(s, context, &cst)).unwrap_or_default();
+            let bindings = recover! { lower_bindings(s, context, &cst.bindings()?) };
             let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
             ExpressionKind::LetIn { bindings, expression }
         }),
         cst::Expression::ExpressionLambda(cst) => state.with_scope(|state| {
             state.push_binder_scope();
-            let binders = cst
-                .function_binders()
-                .map(|cst| {
-                    let children = cst.children();
-                    children.map(|cst| lower_binder(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let binders = recover! {
+                cst.function_binders()?
+                    .children()
+                    .map(|cst| lower_binder(state, context, &cst))
+                    .collect()
+            };
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             ExpressionKind::Lambda { binders, expression }
         }),
@@ -246,30 +244,30 @@ fn lower_expression_kind(
             ) -> CaseBranch {
                 state.with_scope(|state| {
                     state.push_binder_scope();
-                    let binders = cst
-                        .binders()
-                        .map(|cst| {
-                            cst.children().map(|cst| lower_binder(state, context, &cst)).collect()
-                        })
-                        .unwrap_or_default();
+                    let binders = recover! {
+                        cst.binders()?
+                            .children()
+                            .map(|cst| lower_binder(state, context, &cst))
+                            .collect()
+                    };
                     let guarded_expression =
                         cst.guarded_expression().map(|cst| lower_guarded(state, context, &cst));
                     CaseBranch { binders, guarded_expression }
                 })
             }
 
-            let trunk = cst
-                .trunk()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_expression(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
-            let branches = cst
-                .branches()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_case_branch(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let trunk = recover! {
+                cst.trunk()?
+                    .children()
+                    .map(|cst| lower_expression(state, context, &cst))
+                    .collect()
+            };
+            let branches = recover! {
+                cst.branches()?
+                    .children()
+                    .map(|cst| lower_case_branch(state, context, &cst))
+                    .collect()
+            };
 
             ExpressionKind::CaseOf { trunk, branches }
         }
@@ -297,12 +295,12 @@ fn lower_expression_kind(
                     .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Discard, id }));
             }
 
-            let statements = cst
-                .statements()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_do_statement(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let statements = recover! {
+                cst.statements()?
+                    .children()
+                    .map(|cst| lower_do_statement(state, context, &cst))
+                    .collect()
+            };
 
             ExpressionKind::Do { bind, discard, statements }
         }),
@@ -330,12 +328,12 @@ fn lower_expression_kind(
                     .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
             }
 
-            let statements = cst
-                .statements()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_do_statement(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let statements = recover! {
+                cst.statements()?
+                    .children()
+                    .map(|cst| lower_do_statement(state, context, &cst))
+                    .collect()
+            };
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
 
             ExpressionKind::Ado { map, apply, statements, expression }
@@ -431,10 +429,7 @@ fn lower_expression_kind(
         }
         cst::Expression::ExpressionRecordUpdate(cst) => {
             let record = cst.expression().map(|cst| lower_expression(state, context, &cst));
-            let updates = cst
-                .record_updates()
-                .map(|cst| lower_record_updates(state, context, &cst))
-                .unwrap_or_default();
+            let updates = recover! { lower_record_updates(state, context, &cst.record_updates()?) };
             ExpressionKind::RecordUpdate { record, updates }
         }
     }
@@ -465,8 +460,7 @@ fn lower_where_expression(
     cst: &cst::WhereExpression,
 ) -> WhereExpression {
     state.with_scope(|s| {
-        let bindings =
-            cst.bindings().map(|cst| lower_bindings(s, context, &cst)).unwrap_or_default();
+        let bindings = recover! { lower_bindings(s, context, &cst.bindings()?) };
         let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
         WhereExpression { expression, bindings }
     })
@@ -712,9 +706,12 @@ pub(crate) fn lower_equation_like<T: AstNode>(
 ) -> Equation {
     state.with_scope(|state| {
         state.push_binder_scope();
-        let binders = binders(&equation)
-            .map(|cst| cst.children().map(|cst| lower_binder(state, context, &cst)).collect())
-            .unwrap_or_default();
+        let binders = recover! {
+            binders(&equation)?
+                .children()
+                .map(|cst| lower_binder(state, context, &cst))
+                .collect()
+        };
         let guarded = guarded(&equation).map(|cst| lower_guarded(state, context, &cst));
         Equation { binders, guarded }
     })
@@ -729,10 +726,7 @@ fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStateme
             DoStatement::Bind { binder, expression }
         }
         cst::DoStatement::DoStatementLet(cst) => {
-            let statements = cst
-                .statements()
-                .map(|cst| lower_bindings(state, context, &cst))
-                .unwrap_or_default();
+            let statements = recover! { lower_bindings(state, context, &cst.statements()?) };
             DoStatement::Let { statements }
         }
         cst::DoStatement::DoStatementDiscard(cst) => {
@@ -764,10 +758,8 @@ fn lower_record_updates(
                     let text = token.text();
                     Some(SmolStr::from(text))
                 });
-                let updates = cst
-                    .record_updates()
-                    .map(|cst| lower_record_updates(state, context, &cst))
-                    .unwrap_or_default();
+                let updates =
+                    recover! { lower_record_updates(state, context, &cst.record_updates()?) };
                 RecordUpdate::Branch { name, updates }
             }
         })

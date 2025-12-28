@@ -365,31 +365,24 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Derive { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
-            let arguments = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_head()?;
-                    state.push_implicit_scope();
-                    let arguments = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    state.finish_implicit_scope();
-                    Some(arguments)
-                })
-                .unwrap_or_default();
+            let arguments = recover! {
+                let head = cst.as_ref()?.instance_head()?;
+                state.push_implicit_scope();
+                let arguments = head
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect();
+                state.finish_implicit_scope();
+                arguments
+            };
 
-            let constraints = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_constraints()?;
-                    let constraints = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    Some(constraints)
-                })
-                .unwrap_or_default();
+            let constraints = recover! {
+                cst.as_ref()?
+                    .instance_constraints()?
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect()
+            };
 
             let kind = TermItemIr::Derive { constraints, arguments };
             state.info.term_item.insert(item_id, kind);
@@ -420,39 +413,29 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
 
-            let arguments = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_head()?;
-                    state.push_implicit_scope();
-                    let arguments = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    state.finish_implicit_scope();
-                    Some(arguments)
-                })
-                .unwrap_or_default();
+            let arguments = recover! {
+                let head = cst.as_ref()?.instance_head()?;
+                state.push_implicit_scope();
+                let arguments = head
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect();
+                state.finish_implicit_scope();
+                arguments
+            };
 
-            let constraints = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_constraints()?;
-                    let constraints = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    Some(constraints)
-                })
-                .unwrap_or_default();
+            let constraints = recover! {
+                cst.as_ref()?
+                    .instance_constraints()?
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect()
+            };
 
-            let members = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_statements()?;
-                    Some(lower_instance_statements(state, context, &cst))
-                })
-                .unwrap_or_default();
+            let members = recover! {
+                let statements = cst.as_ref()?.instance_statements()?;
+                lower_instance_statements(state, context, &statements)
+            };
 
             let kind = TermItemIr::Instance { constraints, resolution, arguments, members };
             state.info.term_item.insert(item_id, kind);
@@ -638,23 +621,19 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
-                let variables: Arc<[_]> = cst
-                    .class_head()
-                    .map(|cst| {
-                        cst.children()
-                            .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let variables: Arc<[_]> = recover! {
+                    cst.class_head()?
+                        .children()
+                        .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
+                        .collect()
+                };
 
-                let constraints = cst
-                    .class_constraints()
-                    .map(|cst| {
-                        cst.children()
-                            .map(|cst| recursive::lower_type(state, context, &cst))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let constraints = recover! {
+                    cst.class_constraints()?
+                        .children()
+                        .map(|cst| recursive::lower_type(state, context, &cst))
+                        .collect()
+                };
 
                 let variable_map: FxHashMap<&str, u8> = variables
                     .iter()
@@ -662,14 +641,12 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                     .filter_map(|(i, v)| v.name.as_deref().map(|n| (n, i as u8)))
                     .collect();
 
-                let functional_dependencies = cst
-                    .class_functional_dependencies()
-                    .map(|deps| {
-                        deps.children()
-                            .map(|dep| lower_functional_dependency(&variable_map, &dep))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let functional_dependencies = recover! {
+                    cst.class_functional_dependencies()?
+                        .children()
+                        .map(|dep| lower_functional_dependency(&variable_map, &dep))
+                        .collect()
+                };
 
                 Some(ClassIr { constraints, variables, functional_dependencies })
             });
