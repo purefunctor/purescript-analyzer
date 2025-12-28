@@ -193,3 +193,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_090_instance_improve_main() { run_test("090_instance_improve", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_091_superclass_elaboration_main() { run_test("091_superclass_elaboration", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_092_ambiguous_constraint_main() { run_test("092_ambiguous_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_093_constraint_generalization_main() { run_test("093_constraint_generalization", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_094_let_binding_constraint_error_main() { run_test("094_let_binding_constraint_error", "Main"); }

@@ -182,6 +182,10 @@ impl ConstraintContext {
         self.wanted.push_back(constraint);
     }
 
+    pub fn extend_wanted(&mut self, constraints: &[TypeId]) {
+        self.wanted.extend(constraints);
+    }
+
     pub fn push_given(&mut self, constraint: TypeId) {
         self.given.push(constraint);
     }
@@ -213,6 +217,7 @@ pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, TypeId>,
     pub synonyms: FxHashMap<TypeItemId, Synonym>,
+    pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
 }
 
 impl BindingGroupContext {
@@ -354,9 +359,22 @@ impl CheckState {
     where
         Q: ExternalQueries,
     {
+        let mut residuals = mem::take(&mut self.binding_group.residual);
         for (item_id, type_id) in mem::take(&mut self.binding_group.terms) {
-            if let Some((type_id, _)) = quantify::quantify(self, type_id) {
-                let type_id = transfer::globalize(self, context, type_id);
+            let constraints = residuals.remove(&item_id).unwrap_or_default();
+            if let Some(result) = quantify::quantify_with_constraints(self, type_id, constraints) {
+                self.with_error_step(ErrorStep::TermDeclaration(item_id), |this| {
+                    for constraint in result.ambiguous {
+                        let constraint = transfer::globalize(this, context, constraint);
+                        this.insert_error(ErrorKind::AmbiguousConstraint { constraint });
+                    }
+                    for constraint in result.unsatisfied {
+                        let constraint = transfer::globalize(this, context, constraint);
+                        this.insert_error(ErrorKind::NoInstanceFound { constraint });
+                    }
+                });
+
+                let type_id = transfer::globalize(self, context, result.quantified);
                 self.checked.terms.insert(item_id, type_id);
             }
         }
@@ -381,7 +399,7 @@ impl CheckState {
 
     pub fn with_error_step<T, F>(&mut self, step: ErrorStep, f: F) -> T
     where
-        F: Fn(&mut CheckState) -> T,
+        F: FnOnce(&mut CheckState) -> T,
     {
         self.check_steps.push(step);
         let r = f(self);

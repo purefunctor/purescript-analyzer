@@ -4,6 +4,7 @@ use std::sync::Arc;
 use indexmap::IndexSet;
 use petgraph::prelude::DiGraphMap;
 use petgraph::visit::{DfsPostOrder, Reversed};
+use rustc_hash::FxHashSet;
 use smol_str::SmolStrBuilder;
 
 use crate::algorithm::state::CheckState;
@@ -47,6 +48,71 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
     let quantified = SubstituteUnification::on(&substitutions, state, quantified);
 
     Some((quantified, size))
+}
+
+/// Output of constraint quantification.
+pub struct QuantifyConstraints {
+    /// The quantified type with generalisable constraints.
+    pub quantified: TypeId,
+    /// The number of quantified type variables.
+    pub size: debruijn::Size,
+    /// Constraints with unification variables not appearing in the signature.
+    pub ambiguous: Vec<TypeId>,
+    /// Constraints with no unification variables (fully concrete & unsatisfied).
+    pub unsatisfied: Vec<TypeId>,
+}
+
+/// Quantifies a type while incorporating residual constraints.
+///
+/// This function partitions the residual constraints into three categories:
+/// - Generalisable: has unification variables that all appear in the signature
+/// - Ambiguous: has unification variables that don't appear in the signature
+/// - Unsatisfied: has no unification variables, a concrete constraint
+///
+/// Generalisable constraints are added to the signature before generalisation.
+/// Ambiguous and unsatisfied constraints are returned for error reporting.
+pub fn quantify_with_constraints(
+    state: &mut CheckState,
+    type_id: TypeId,
+    constraints: Vec<TypeId>,
+) -> Option<QuantifyConstraints> {
+    if constraints.is_empty() {
+        let (quantified, size) = quantify(state, type_id)?;
+        return Some(QuantifyConstraints {
+            quantified,
+            size,
+            ambiguous: vec![],
+            unsatisfied: vec![],
+        });
+    }
+
+    let unsolved_graph = collect_unification(state, type_id);
+    let unsolved_nodes: FxHashSet<u32> = unsolved_graph.nodes().collect();
+
+    let mut valid = vec![];
+    let mut ambiguous = vec![];
+    let mut unsatisfied = vec![];
+
+    for constraint in constraints {
+        let unsolved_graph = collect_unification(state, constraint);
+        if unsolved_graph.node_count() == 0 {
+            unsatisfied.push(constraint);
+        } else if unsolved_graph.nodes().all(|unification| unsolved_nodes.contains(&unification)) {
+            valid.push(constraint);
+        } else {
+            ambiguous.push(constraint);
+        }
+    }
+
+    // Subtle: stable ordering for consistent output
+    valid.sort();
+
+    let constrained_type = valid.iter().copied().rfold(type_id, |constrained, constraint| {
+        state.storage.intern(Type::Constrained(constraint, constrained))
+    });
+
+    let (quantified, size) = quantify(state, constrained_type)?;
+    Some(QuantifyConstraints { quantified, size, ambiguous, unsatisfied })
 }
 
 fn generate_type_name(id: u32) -> smol_str::SmolStr {

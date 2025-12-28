@@ -316,6 +316,15 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
                 )
                 .unwrap();
             }
+            checking::error::ErrorKind::AmbiguousConstraint { constraint } => {
+                let constraint_pretty = pretty::print_global(engine, constraint);
+                writeln!(
+                    snapshot,
+                    "AmbiguousConstraint {{ {constraint_pretty} }} at {:?}",
+                    &error.step
+                )
+                .unwrap();
+            }
             _ => {
                 writeln!(snapshot, "{:?} at {:?}", error.kind, &error.step).unwrap();
             }

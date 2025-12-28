@@ -20,6 +20,7 @@ pub enum ErrorKind {
     RecursiveSynonymExpansion { file_id: files::FileId, item_id: indexing::TypeItemId },
     TooManyBinders { signature: lowering::TypeId, expected: u32, actual: u32 },
     NoInstanceFound { constraint: TypeId },
+    AmbiguousConstraint { constraint: TypeId },
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -23,7 +23,12 @@ where
         .lookup_term(item_id)
         .expect("invariant violated: invalid binding_group in type inference");
 
-    infer_equations_core(state, context, group_type, equations)
+    infer_equations_core(state, context, group_type, equations)?;
+
+    let residual = state.solve_constraints(context)?;
+    state.binding_group.residual.insert(item_id, residual);
+
+    Ok(())
 }
 
 fn infer_equations_core<Q>(
@@ -57,8 +62,6 @@ where
             let _ = unification::subtype(state, context, inferred_type, result_type)?;
         }
     }
-
-    let _residual = state.solve_constraints(context)?;
 
     Ok(())
 }
@@ -1365,7 +1368,14 @@ where
 
         check_equations(state, context, signature_id, signature, &name.equations)
     } else {
-        infer_equations_core(state, context, name_type, &name.equations)
+        infer_equations_core(state, context, name_type, &name.equations)?;
+
+        // No let-generalization: infer equations and solve constraints;
+        // residuals are deferred to parent scope for later error reporting.
+        let residual = state.solve_constraints(context)?;
+        state.constraints.extend_wanted(&residual);
+
+        Ok(())
     }
 }
 
