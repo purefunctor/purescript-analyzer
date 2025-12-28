@@ -12,8 +12,8 @@ use rustc_hash::FxHashMap;
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, transfer, unification};
-use crate::core::{Instance, Variable, debruijn};
+use crate::algorithm::{transfer, unification};
+use crate::core::{ClassInfo, Instance, Variable, debruijn};
 use crate::{ExternalQueries, Type, TypeId};
 
 struct ApplyBindings<'a> {
@@ -171,27 +171,20 @@ where
     }
 }
 
-fn get_class_superclasses<Q>(
+fn get_class_info<Q>(
+    state: &CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
-) -> QueryResult<Option<lowering::ClassIr>>
+) -> QueryResult<Option<ClassInfo>>
 where
     Q: ExternalQueries,
 {
-    fn extract_class(type_item: Option<&lowering::TypeItemIr>) -> Option<lowering::ClassIr> {
-        let lowering::TypeItemIr::ClassGroup { class: Some(class), .. } = type_item? else {
-            return None;
-        };
-        Some(lowering::ClassIr::clone(class))
-    }
-
     if file_id == context.id {
-        let lowered = &context.lowered;
-        Ok(extract_class(lowered.info.get_type_item(item_id)))
+        Ok(state.checked.classes.get(&item_id).cloned())
     } else {
-        let lowered = context.queries.lowered(file_id)?;
-        Ok(extract_class(lowered.info.get_type_item(item_id)))
+        let checked = context.queries.checked(file_id)?;
+        Ok(checked.classes.get(&item_id).cloned())
     }
 }
 
@@ -209,6 +202,7 @@ where
         context: &CheckContext<Q>,
         constraint: TypeId,
         constraints: &mut Vec<TypeId>,
+        seen: &mut HashSet<(FileId, TypeItemId)>,
     ) -> QueryResult<()>
     where
         Q: ExternalQueries,
@@ -219,43 +213,38 @@ where
             return Ok(());
         };
 
-        let Some(class) = get_class_superclasses(context, file_id, item_id)? else {
+        if !seen.insert((file_id, item_id)) {
+            return Ok(());
+        }
+
+        let Some(class_info) = get_class_info(state, context, file_id, item_id)? else {
             return Ok(());
         };
 
-        if class.constraints.is_empty() {
+        if class_info.superclasses.is_empty() {
             return Ok(());
         }
 
+        // Build bindings: stored level -> provided argument
         let mut bindings = FxHashMap::default();
-        let mut initial_level = None;
-
-        for (variable, &argument) in class.variables.iter().zip(&arguments) {
-            let level = state.type_scope.bind_forall(variable.id, context.prim.t);
-            if initial_level.is_none() {
-                initial_level.replace(level);
-            }
+        for (&level, &argument) in class_info.variable_levels.iter().zip(&arguments) {
             bindings.insert(level, argument);
         }
 
-        for &superclass in class.constraints.iter() {
-            let (elaborated_superclass, _) =
-                kind::check_surface_kind(state, context, superclass, context.prim.constraint)?;
+        // Localize and apply bindings to each superclass
+        for &(superclass, _kind) in &class_info.superclasses {
+            let localized = transfer::localize(state, context, superclass);
+            let substituted = ApplyBindings::on(state, &bindings, localized);
+            constraints.push(substituted);
 
-            let elaborated_superclass = ApplyBindings::on(state, &bindings, elaborated_superclass);
-            constraints.push(elaborated_superclass);
-
-            aux(state, context, elaborated_superclass, constraints)?;
-        }
-
-        if let Some(level) = initial_level {
-            state.type_scope.unbind(level);
+            aux(state, context, substituted, constraints, seen)?;
         }
 
         Ok(())
     }
 
-    aux(state, context, constraint, constraints)
+    let mut seen = HashSet::new();
+    aux(state, context, constraint, constraints, &mut seen)
 }
 
 fn compute_match_closures(

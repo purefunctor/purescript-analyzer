@@ -126,3 +126,12 @@ pub struct Instance {
     pub constraints: Vec<(TypeId, TypeId)>,
     pub resolution: (FileId, TypeItemId),
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClassInfo {
+    /// Superclass constraints (globalized). Each pair is (constraint, kind).
+    pub superclasses: Vec<(TypeId, TypeId)>,
+    /// Levels of class type variables from original elaboration.
+    /// Used to build bindings when applying superclasses.
+    pub variable_levels: Vec<debruijn::Level>,
+}

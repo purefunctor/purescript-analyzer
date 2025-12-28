@@ -8,8 +8,8 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, unification};
-use crate::core::{ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
+use crate::algorithm::{inspect, kind, transfer, unification};
+use crate::core::{ClassInfo, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
@@ -337,13 +337,23 @@ where
         return Ok(());
     };
 
-    let constraints = constraints.iter().map(|&constraint| {
-        let (constraint_type, _) =
-            kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
-        Ok(constraint_type)
-    });
+    // Elaborate and globalize superclass constraints
+    let superclasses = constraints
+        .iter()
+        .map(|&constraint| {
+            let (constraint_type, constraint_kind) =
+                kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
+            let constraint_type = transfer::globalize(state, context, constraint_type);
+            let constraint_kind = transfer::globalize(state, context, constraint_kind);
+            Ok((constraint_type, constraint_kind))
+        })
+        .collect::<QueryResult<Vec<_>>>()?;
 
-    let _constraints = constraints.collect::<QueryResult<Vec<_>>>()?;
+    // Collect type variable levels for binding during elaboration
+    let variable_levels: Vec<_> = type_variables.iter().map(|v| v.level).collect();
+
+    // Store class info
+    state.checked.classes.insert(item_id, ClassInfo { superclasses, variable_levels });
 
     let class_reference = {
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
