@@ -183,9 +183,7 @@ fn compute_match_closures(fundeps: &[FunDep], match_results: &[MatchType]) -> Ha
 }
 
 fn match_given(state: &mut CheckState, wanted: TypeId, given: &[TypeId]) -> Option<MatchInstance> {
-    let Some(wanted_application) = constraint_application(state, wanted) else {
-        return None;
-    };
+    let wanted_application = constraint_application(state, wanted)?;
 
     for &given in given {
         let Some(given_application) = constraint_application(state, given) else {

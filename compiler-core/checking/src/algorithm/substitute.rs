@@ -28,11 +28,10 @@ impl SubstituteBound {
 
 impl TypeFold for SubstituteBound {
     fn transform(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
-        if let Type::Variable(Variable::Bound(level)) = t {
-            if *level == self.target_level {
+        if let Type::Variable(Variable::Bound(level)) = t
+            && *level == self.target_level {
                 return FoldAction::Replace(self.with_type);
             }
-        }
         FoldAction::Continue
     }
 }
