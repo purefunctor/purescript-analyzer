@@ -307,6 +307,15 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
                 )
                 .unwrap();
             }
+            checking::error::ErrorKind::NoInstanceFound { constraint } => {
+                let constraint_pretty = pretty::print_global(engine, constraint);
+                writeln!(
+                    snapshot,
+                    "NoInstanceFound {{ {constraint_pretty} }} at {:?}",
+                    &error.step
+                )
+                .unwrap();
+            }
             _ => {
                 writeln!(snapshot, "{:?} at {:?}", error.kind, &error.step).unwrap();
             }

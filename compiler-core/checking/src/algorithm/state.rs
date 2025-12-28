@@ -18,7 +18,7 @@ use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{quantify, solver, transfer};
-use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn, pretty};
+use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -274,12 +274,7 @@ impl CheckState {
     {
         let wanted = mem::take(&mut self.wanted_constraints);
         let given = mem::take(&mut self.given_constraints);
-        let stuck = solver::solve_constraints(self, context, wanted, given)?;
-        println!("=== Stuck ===");
-        for stuck in stuck {
-            let stuck = pretty::print_local(self, context, stuck);
-            println!("{stuck}");
-        }
+        let _stuck = solver::solve_constraints(self, context, wanted, given)?;
         Ok(())
     }
 

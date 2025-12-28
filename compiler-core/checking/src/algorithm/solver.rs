@@ -9,7 +9,8 @@ use rustc_hash::FxHashMap;
 use crate::algorithm::fd::{self, FunDep};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
-use crate::core::{Instance, Variable, debruijn, pretty};
+use crate::core::{Instance, Variable, debruijn};
+use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};
 
 pub fn solve_constraints<Q>(
@@ -44,13 +45,8 @@ where
     // closure checking, especially to determine if a unification variable completely stalls
     // matching for that constraint or if it can be improved.
 
-    println!("=== Wanted ===");
     for wanted in wanted {
-        let wanted_pretty = pretty::print_local(state, context, wanted);
-        println!("Constraint: {wanted_pretty}");
-
-        if let Some(result) = match_given(state, wanted, &given) {
-            println!("  => (given) {result:?}");
+        if match_given(state, wanted, &given).is_some() {
             continue;
         }
 
@@ -58,19 +54,26 @@ where
         let Some(ConstraintApplication { file_id, item_id, arguments }) =
             constraint_application(state, wanted)
         else {
-            println!("  Could not decompose constraint");
+            let constraint = transfer::globalize(state, context, wanted);
+            state.insert_error(ErrorKind::NoInstanceFound { constraint });
             continue;
         };
-        for instance in collect_instances(state, context, file_id, item_id)? {
-            let result = match_instance(state, context, file_id, item_id, &arguments, instance)?;
-            println!("  => {result:?}");
-        }
-    }
 
-    println!("=== Given ===");
-    for given in &given {
-        let given_pretty = pretty::print_local(state, context, *given);
-        println!("{given_pretty}");
+        let instances = collect_instances(state, context, file_id, item_id)?;
+        let mut found_match = false;
+
+        for instance in instances {
+            let result = match_instance(state, context, file_id, item_id, &arguments, instance)?;
+            if matches!(result, MatchInstance::Match { .. }) {
+                found_match = true;
+                break;
+            }
+        }
+
+        if !found_match {
+            let constraint = transfer::globalize(state, context, wanted);
+            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+        }
     }
 
     Ok(vec![])
