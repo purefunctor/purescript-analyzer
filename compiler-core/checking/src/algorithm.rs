@@ -22,10 +22,7 @@ use lowering::Scc;
 use crate::core::{Type, TypeId};
 use crate::{CheckedModule, ExternalQueries};
 
-pub(crate) fn check_source(
-    queries: &impl ExternalQueries,
-    file_id: FileId,
-) -> QueryResult<CheckedModule> {
+pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
     let mut state = state::CheckState::default();
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
@@ -144,10 +141,7 @@ pub(crate) fn check_source(
     Ok(state.checked)
 }
 
-pub(crate) fn check_prim(
-    queries: &impl ExternalQueries,
-    file_id: FileId,
-) -> QueryResult<CheckedModule> {
+pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
     let mut checked_module = CheckedModule::default();
     let resolved = queries.resolved(file_id)?;
 
