@@ -5,7 +5,7 @@ use lowering::TermItemIr;
 use crate::ExternalQueries;
 use crate::algorithm::kind::infer_surface_kind;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{inspect, kind, term, transfer};
+use crate::algorithm::{inspect, kind, quantify, term, transfer};
 use crate::core::{Instance, debruijn};
 use crate::error::ErrorStep;
 
@@ -31,7 +31,12 @@ where
 
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
-                let global_type = transfer::globalize(state, context, inferred_type);
+
+                let quantified_type = quantify::quantify(state, inferred_type)
+                    .map(|(quantified_type, _)| quantified_type)
+                    .unwrap_or(inferred_type);
+
+                let global_type = transfer::globalize(state, context, quantified_type);
                 state.checked.terms.insert(item_id, global_type);
             }
             TermItemIr::Operator { resolution, .. } => {
