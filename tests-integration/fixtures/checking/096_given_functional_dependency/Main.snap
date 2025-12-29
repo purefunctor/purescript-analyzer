@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
+expression: report
+---
+Terms
+convert :: forall (a :: Type) (b :: Type). Convert a b => a -> b
+useGiven :: forall (x :: Type). Convert Int x => x
+relate :: forall (a :: Type) (b :: Type) (c :: Type). Relate a b c => a -> b -> c
+useRelate :: forall (y :: Type). Relate Int String y => y
+
+Types
+Convert :: Type -> Type -> Constraint
+Relate :: Type -> Type -> Type -> Constraint
