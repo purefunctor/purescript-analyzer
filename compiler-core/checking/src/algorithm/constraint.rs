@@ -297,7 +297,8 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Bound(g_level))) => {
+        (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Bound(g_level)))
+        | (Type::Variable(Variable::Skolem(w_level, _)), Type::Variable(Variable::Skolem(g_level, _))) => {
             if w_level == g_level {
                 MatchType::Match
             } else {
@@ -337,6 +338,9 @@ fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<Constrai
         match state.storage[current_id] {
             Type::Application(function, argument) => {
                 arguments.push(argument);
+                current_id = state.normalize_type(function);
+            }
+            Type::KindApplication(function, _) => {
                 current_id = state.normalize_type(function);
             }
             Type::Constructor(file_id, item_id) => {

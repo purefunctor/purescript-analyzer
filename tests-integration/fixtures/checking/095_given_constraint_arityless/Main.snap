@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
+expression: report
+---
+Terms
+eq :: forall (a :: Type). Eq a => a -> a -> Boolean
+coerce :: forall (a :: Type) (b :: Type). Coercible a b => a -> b
+eqSelf :: forall (a :: Type). Eq a => a -> Boolean
+eqCoerce :: forall (a :: Type) (b :: Type). Eq a => Coercible a b => a -> b
+eqBoth :: forall (a :: Type) (b :: Type). Eq a => Eq b => a -> b -> Boolean
+
+Types
+Eq :: Type -> Constraint
+Coercible :: Type -> Type -> Constraint

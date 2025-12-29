@@ -137,6 +137,14 @@ where
             solve(state, context, unification_id, t1)?.is_some()
         }
 
+        (
+            Type::Constrained(t1_constraint, t1_inner),
+            Type::Constrained(t2_constraint, t2_inner),
+        ) => {
+            unify(state, context, t1_constraint, t2_constraint)?
+                && unify(state, context, t1_inner, t2_inner)?
+        }
+
         _ => false,
     };
 

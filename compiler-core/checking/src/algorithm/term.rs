@@ -137,7 +137,7 @@ where
         //   1 binder  := ReturnsInt a
         //   2 binders := Int
         let expected_type = if equation_arity == 0 {
-            signature.restore(state)
+            signature.function
         } else if equation_arity >= expected_arity {
             signature.result
         } else {

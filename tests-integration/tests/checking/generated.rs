@@ -199,3 +199,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_093_constraint_generalization_main() { run_test("093_constraint_generalization", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_094_let_binding_constraint_error_main() { run_test("094_let_binding_constraint_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_095_given_constraint_arityless_main() { run_test("095_given_constraint_arityless", "Main"); }

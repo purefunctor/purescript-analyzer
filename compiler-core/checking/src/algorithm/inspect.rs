@@ -17,15 +17,6 @@ pub struct InspectSignature {
     pub result: TypeId,
 }
 
-impl InspectSignature {
-    pub fn restore(&self, state: &mut CheckState) -> TypeId {
-        self.variables.iter().rfold(self.function, |inner, binder| {
-            let binder = binder.clone();
-            state.storage.intern(Type::Forall(binder, inner))
-        })
-    }
-}
-
 pub fn collect_signature_variables<Q>(
     context: &CheckContext<Q>,
     id: lowering::TypeId,
