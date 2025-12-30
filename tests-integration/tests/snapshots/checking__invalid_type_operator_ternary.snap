@@ -1,11 +1,12 @@
 ---
 source: tests-integration/tests/checking.rs
+assertion_line: 460
 expression: checked.errors
 ---
 [
     CheckError {
         kind: InvalidTypeOperator {
-            id: Id<checking::core::Type>(42),
+            id: Id<checking::core::Type>(45),
         },
         step: [
             TypeDeclaration(

@@ -1,7 +1,11 @@
+mod compiler_solved;
 mod functional_dependency;
+
+use compiler_solved::*;
 use functional_dependency::Fd;
 
 use std::collections::{HashSet, VecDeque};
+use std::sync::Arc;
 use std::{iter, mem};
 
 use building_types::QueryResult;
@@ -15,156 +19,6 @@ use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{transfer, unification};
 use crate::core::{ClassInfo, Instance, Variable, debruijn};
 use crate::{ExternalQueries, Type, TypeId};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CanUnify {
-    Equal,
-    Apart,
-    Unify,
-}
-
-impl CanUnify {
-    fn and_also(self, f: impl FnOnce() -> CanUnify) -> CanUnify {
-        if let CanUnify::Equal = self { f() } else { self }
-    }
-}
-
-fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
-    use CanUnify::*;
-
-    let t1 = state.normalize_type(t1);
-    let t2 = state.normalize_type(t2);
-
-    if t1 == t2 {
-        return Equal;
-    }
-
-    let t1_core = &state.storage[t1];
-    let t2_core = &state.storage[t2];
-
-    match (t1_core, t2_core) {
-        (Type::Unification(_), _) | (_, Type::Unification(_)) => Unify,
-
-        (Type::Unknown, _) | (_, Type::Unknown) => Unify,
-
-        (&Type::Constructor(f1, t1), &Type::Constructor(f2, t2)) => {
-            if f1 == f2 && t1 == t2 {
-                Equal
-            } else {
-                Apart
-            }
-        }
-
-        (&Type::Operator(f1, t1), &Type::Operator(f2, t2)) => {
-            if f1 == f2 && t1 == t2 {
-                Equal
-            } else {
-                Apart
-            }
-        }
-
-        (Type::Integer(n1), Type::Integer(n2)) => {
-            if n1 == n2 {
-                Equal
-            } else {
-                Apart
-            }
-        }
-
-        (Type::String(k1, s1), Type::String(k2, s2)) => {
-            if k1 == k2 && s1 == s2 {
-                Equal
-            } else {
-                Apart
-            }
-        }
-
-        (&Type::Application(f1, a1), &Type::Application(f2, a2)) => {
-            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
-        }
-
-        (&Type::Function(a1, r1), &Type::Function(a2, r2)) => {
-            can_unify(state, a1, a2).and_also(|| can_unify(state, r1, r2))
-        }
-
-        (&Type::KindApplication(f1, a1), &Type::KindApplication(f2, a2)) => {
-            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
-        }
-
-        (&Type::Kinded(t1, k1), &Type::Kinded(t2, k2)) => {
-            can_unify(state, t1, t2).and_also(|| can_unify(state, k1, k2))
-        }
-
-        (&Type::Constrained(c1, b1), &Type::Constrained(c2, b2)) => {
-            can_unify(state, c1, c2).and_also(|| can_unify(state, b1, b2))
-        }
-
-        (&Type::Forall(_, b1), &Type::Forall(_, b2)) => can_unify(state, b1, b2),
-
-        (
-            &Type::OperatorApplication(f1, t1, l1, r1),
-            &Type::OperatorApplication(f2, t2, l2, r2),
-        ) => {
-            if f1 == f2 && t1 == t2 {
-                can_unify(state, l1, l2).and_also(|| can_unify(state, r1, r2))
-            } else {
-                Apart
-            }
-        }
-
-        (
-            Type::SynonymApplication(_, f1, t1, args1),
-            Type::SynonymApplication(_, f2, t2, args2),
-        ) => {
-            if f1 == f2 && t1 == t2 && args1.len() == args2.len() {
-                let args1 = args1.clone();
-                let args2 = args2.clone();
-                iter::zip(args1.iter(), args2.iter())
-                    .fold(Equal, |result, (&a1, &a2)| result.and_also(|| can_unify(state, a1, a2)))
-            } else {
-                Apart
-            }
-        }
-
-        (Type::Row(_), Type::Row(_)) => Unify,
-
-        (Type::Variable(v1), Type::Variable(v2)) => {
-            if v1 == v2 {
-                Equal
-            } else {
-                Apart
-            }
-        }
-
-        _ => Apart,
-    }
-}
-
-struct ApplyBindings<'a> {
-    bindings: &'a FxHashMap<debruijn::Level, TypeId>,
-}
-
-impl<'a> ApplyBindings<'a> {
-    fn on(
-        state: &mut CheckState,
-        bindings: &'a FxHashMap<debruijn::Level, TypeId>,
-        type_id: TypeId,
-    ) -> TypeId {
-        fold_type(state, type_id, &mut ApplyBindings { bindings })
-    }
-}
-
-impl TypeFold for ApplyBindings<'_> {
-    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
-        match t {
-            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
-                let id = self.bindings.get(level).copied().unwrap_or(id);
-                FoldAction::Replace(id)
-            }
-            _ => FoldAction::Continue,
-        }
-    }
-}
 
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
@@ -184,7 +38,7 @@ where
         let mut made_progress = false;
 
         'work: while let Some(wanted) = work_queue.pop_front() {
-            match match_given(state, context, wanted, &given)? {
+            match match_given_instances(state, context, wanted, &given)? {
                 Some(MatchInstance::Match { equalities, .. }) => {
                     for (t1, t2) in equalities {
                         if unification::unify(state, context, t1, t2)? {
@@ -202,6 +56,27 @@ where
                 residual.push(wanted);
                 continue;
             };
+
+            if let Some(result) =
+                match_compiler_instances(state, context, file_id, item_id, &arguments)
+            {
+                match result {
+                    MatchInstance::Match { constraints, equalities } => {
+                        for (t1, t2) in equalities {
+                            if unification::unify(state, context, t1, t2)? {
+                                made_progress = true;
+                            }
+                        }
+                        work_queue.extend(constraints);
+                        continue 'work;
+                    }
+                    MatchInstance::Apart => (),
+                    MatchInstance::Stuck => {
+                        residual.push(wanted);
+                        continue 'work;
+                    }
+                }
+            }
 
             let instance_chains = collect_instances(state, context, file_id, item_id)?;
 
@@ -234,6 +109,35 @@ where
     }
 
     Ok(residual)
+}
+
+struct ConstraintApplication {
+    file_id: FileId,
+    item_id: TypeItemId,
+    arguments: Vec<TypeId>,
+}
+
+fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<ConstraintApplication> {
+    let mut arguments = vec![];
+    let mut current_id = id;
+    loop {
+        match state.storage[current_id] {
+            Type::Application(function, argument) => {
+                arguments.push(argument);
+                current_id = state.normalize_type(function);
+            }
+            Type::KindApplication(function, _) => {
+                current_id = state.normalize_type(function);
+            }
+            Type::Constructor(file_id, item_id) => {
+                arguments.reverse();
+                return Some(ConstraintApplication { file_id, item_id, arguments });
+            }
+            _ => {
+                return None;
+            }
+        }
+    }
 }
 
 fn elaborate_given<Q>(
@@ -295,10 +199,21 @@ where
     Ok(result)
 }
 
-struct ConstraintApplication {
+fn get_class_info<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
-    arguments: Vec<TypeId>,
+) -> QueryResult<Option<ClassInfo>>
+where
+    Q: ExternalQueries,
+{
+    if file_id == context.id {
+        Ok(state.checked.classes.get(&item_id).cloned())
+    } else {
+        let checked = context.queries.checked(file_id)?;
+        Ok(checked.classes.get(&item_id).cloned())
+    }
 }
 
 fn get_functional_dependencies<Q>(
@@ -332,24 +247,19 @@ where
     }
 }
 
-fn get_class_info<Q>(
-    state: &CheckState,
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    item_id: TypeItemId,
-) -> QueryResult<Option<ClassInfo>>
-where
-    Q: ExternalQueries,
-{
-    if file_id == context.id {
-        Ok(state.checked.classes.get(&item_id).cloned())
-    } else {
-        let checked = context.queries.checked(file_id)?;
-        Ok(checked.classes.get(&item_id).cloned())
-    }
+fn compute_match_closures(
+    functional_dependencies: &[Fd],
+    match_results: &[MatchType],
+) -> HashSet<usize> {
+    let initial = match_results.iter().enumerate().filter_map(|(index, result)| {
+        if matches!(result, MatchType::Match) { Some(index) } else { None }
+    });
+
+    let initial: HashSet<usize> = initial.collect();
+    functional_dependency::compute_closure(functional_dependencies, &initial)
 }
 
-pub fn elaborate_superclasses<Q>(
+fn elaborate_superclasses<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     constraint: TypeId,
@@ -405,18 +315,6 @@ where
     aux(state, context, constraint, constraints, &mut seen)
 }
 
-fn compute_match_closures(
-    functional_dependencies: &[Fd],
-    match_results: &[MatchType],
-) -> HashSet<usize> {
-    let initial = match_results.iter().enumerate().filter_map(|(index, result)| {
-        if matches!(result, MatchType::Match) { Some(index) } else { None }
-    });
-
-    let initial: HashSet<usize> = initial.collect();
-    functional_dependency::compute_closure(functional_dependencies, &initial)
-}
-
 fn unstuck<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
@@ -445,7 +343,322 @@ where
     Ok(Some(resolved))
 }
 
-fn match_given<Q>(
+#[derive(Debug, Clone, Copy)]
+enum MatchType {
+    Match,
+    Apart,
+    Stuck,
+}
+
+impl MatchType {
+    fn and_also(self, f: impl FnOnce() -> MatchType) -> MatchType {
+        if let MatchType::Match = self { f() } else { self }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CanUnify {
+    Equal,
+    Apart,
+    Unify,
+}
+
+impl CanUnify {
+    fn and_also(self, f: impl FnOnce() -> CanUnify) -> CanUnify {
+        if let CanUnify::Equal = self { f() } else { self }
+    }
+}
+
+#[derive(Debug, Clone)]
+enum MatchInstance {
+    Match { constraints: Vec<TypeId>, equalities: Vec<(TypeId, TypeId)> },
+    Apart,
+    Stuck,
+}
+
+fn match_type(
+    state: &mut CheckState,
+    bindings: &mut FxHashMap<debruijn::Level, TypeId>,
+    equalities: &mut Vec<(TypeId, TypeId)>,
+    wanted: TypeId,
+    given: TypeId,
+) -> MatchType {
+    let wanted = state.normalize_type(wanted);
+    let given = state.normalize_type(given);
+
+    if wanted == given {
+        return MatchType::Match;
+    }
+
+    let wanted_core = &state.storage[wanted];
+    let given_core = &state.storage[given];
+
+    match (wanted_core, given_core) {
+        (_, Type::Variable(variable)) => {
+            if let Variable::Implicit(level) | Variable::Bound(level) = variable {
+                if let Some(&bound) = bindings.get(level) {
+                    match can_unify(state, wanted, bound) {
+                        CanUnify::Equal => MatchType::Match,
+                        CanUnify::Apart => MatchType::Apart,
+                        CanUnify::Unify => {
+                            equalities.push((wanted, bound));
+                            MatchType::Match
+                        }
+                    }
+                } else {
+                    bindings.insert(*level, wanted);
+                    MatchType::Match
+                }
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (Type::Unification(_), _) => MatchType::Stuck,
+
+        (
+            &Type::Application(w_function, w_argument),
+            &Type::Application(g_function, g_argument),
+        ) => match_type(state, bindings, equalities, w_function, g_function)
+            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
+
+        (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
+            match_type(state, bindings, equalities, w_argument, g_argument)
+                .and_also(|| match_type(state, bindings, equalities, w_result, g_result))
+        }
+
+        (
+            &Type::KindApplication(w_function, w_argument),
+            &Type::KindApplication(g_function, g_argument),
+        ) => match_type(state, bindings, equalities, w_function, g_function)
+            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
+
+        (
+            &Type::OperatorApplication(f1, t1, l1, r1),
+            &Type::OperatorApplication(f2, t2, l2, r2),
+        ) => {
+            if f1 == f2 && t1 == t2 {
+                match_type(state, bindings, equalities, l1, l2)
+                    .and_also(|| match_type(state, bindings, equalities, r1, r2))
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (Type::SynonymApplication(_, f1, t1, a1), Type::SynonymApplication(_, f2, t2, a2)) => {
+            if f1 == f2 && t1 == t2 && a1.len() == a2.len() {
+                let a1 = Arc::clone(a1);
+                let a2 = Arc::clone(a2);
+                iter::zip(a1.iter(), a2.iter()).fold(MatchType::Match, |result, (&a1, &a2)| {
+                    result.and_also(|| match_type(state, bindings, equalities, a1, a2))
+                })
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        _ => MatchType::Apart,
+    }
+}
+
+fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> MatchType {
+    let wanted = state.normalize_type(wanted);
+    let given = state.normalize_type(given);
+
+    if wanted == given {
+        return MatchType::Match;
+    }
+
+    let wanted_core = &state.storage[wanted];
+    let given_core = &state.storage[given];
+
+    match (wanted_core, given_core) {
+        (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Bound(g_level)))
+        | (
+            Type::Variable(Variable::Skolem(w_level, _)),
+            Type::Variable(Variable::Skolem(g_level, _)),
+        ) => {
+            if w_level == g_level {
+                MatchType::Match
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (Type::Unification(_), _) => MatchType::Stuck,
+
+        (
+            &Type::Application(w_function, w_argument),
+            &Type::Application(g_function, g_argument),
+        ) => match_given_type(state, w_function, g_function)
+            .and_also(|| match_given_type(state, w_argument, g_argument)),
+
+        (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
+            match_given_type(state, w_argument, g_argument)
+                .and_also(|| match_given_type(state, w_result, g_result))
+        }
+
+        (
+            &Type::KindApplication(w_function, w_argument),
+            &Type::KindApplication(g_function, g_argument),
+        ) => match_given_type(state, w_function, g_function)
+            .and_also(|| match_given_type(state, w_argument, g_argument)),
+
+        (
+            &Type::OperatorApplication(f1, t1, l1, r1),
+            &Type::OperatorApplication(f2, t2, l2, r2),
+        ) => {
+            if f1 == f2 && t1 == t2 {
+                match_given_type(state, l1, l2).and_also(|| match_given_type(state, r1, r2))
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (Type::SynonymApplication(_, f1, t1, a1), Type::SynonymApplication(_, f2, t2, a2)) => {
+            if f1 == f2 && t1 == t2 && a1.len() == a2.len() {
+                let a1 = Arc::clone(a1);
+                let a2 = Arc::clone(a2);
+                iter::zip(a1.iter(), a2.iter()).fold(MatchType::Match, |result, (&a1, &a2)| {
+                    result.and_also(|| match_given_type(state, a1, a2))
+                })
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        _ => MatchType::Apart,
+    }
+}
+
+fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
+    use CanUnify::*;
+
+    let t1 = state.normalize_type(t1);
+    let t2 = state.normalize_type(t2);
+
+    if t1 == t2 {
+        return Equal;
+    }
+
+    let t1_core = &state.storage[t1];
+    let t2_core = &state.storage[t2];
+
+    match (t1_core, t2_core) {
+        (Type::Unification(_), _) | (_, Type::Unification(_)) => Unify,
+
+        (Type::Unknown, _) | (_, Type::Unknown) => Unify,
+
+        (Type::Row(_), Type::Row(_)) => Unify,
+
+        (&Type::Application(f1, a1), &Type::Application(f2, a2)) => {
+            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
+        }
+
+        (&Type::Function(a1, r1), &Type::Function(a2, r2)) => {
+            can_unify(state, a1, a2).and_also(|| can_unify(state, r1, r2))
+        }
+
+        (&Type::KindApplication(f1, a1), &Type::KindApplication(f2, a2)) => {
+            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
+        }
+
+        (&Type::Kinded(t1, k1), &Type::Kinded(t2, k2)) => {
+            can_unify(state, t1, t2).and_also(|| can_unify(state, k1, k2))
+        }
+
+        (&Type::Constrained(c1, b1), &Type::Constrained(c2, b2)) => {
+            can_unify(state, c1, c2).and_also(|| can_unify(state, b1, b2))
+        }
+
+        (&Type::Forall(_, b1), &Type::Forall(_, b2)) => can_unify(state, b1, b2),
+
+        (
+            &Type::OperatorApplication(f1, t1, l1, r1),
+            &Type::OperatorApplication(f2, t2, l2, r2),
+        ) => {
+            if f1 == f2 && t1 == t2 {
+                can_unify(state, l1, l2).and_also(|| can_unify(state, r1, r2))
+            } else {
+                Apart
+            }
+        }
+
+        (Type::SynonymApplication(_, f1, t1, a1), Type::SynonymApplication(_, f2, t2, a2)) => {
+            if f1 == f2 && t1 == t2 && a1.len() == a2.len() {
+                let a1 = Arc::clone(a1);
+                let a2 = Arc::clone(a2);
+                iter::zip(a1.iter(), a2.iter())
+                    .fold(Equal, |result, (&a1, &a2)| result.and_also(|| can_unify(state, a1, a2)))
+            } else {
+                Apart
+            }
+        }
+
+        _ => Apart,
+    }
+}
+
+fn match_instance<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+    arguments: &[TypeId],
+    instance: Instance,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let mut bindings = FxHashMap::default();
+    let mut equalities = vec![];
+
+    let mut match_results = vec![];
+    let mut stuck_positions = vec![];
+
+    for (index, (wanted, (given, _))) in arguments.iter().zip(&instance.arguments).enumerate() {
+        let given = transfer::localize(state, context, *given);
+        let match_result = match_type(state, &mut bindings, &mut equalities, *wanted, given);
+
+        if matches!(match_result, MatchType::Apart) {
+            return Ok(MatchInstance::Apart);
+        }
+
+        if matches!(match_result, MatchType::Stuck) {
+            stuck_positions.push(index);
+        }
+
+        match_results.push(match_result);
+    }
+
+    if !stuck_positions.is_empty() {
+        let Some(unstuck) = unstuck(context, file_id, item_id, &match_results, &stuck_positions)?
+        else {
+            return Ok(MatchInstance::Stuck);
+        };
+
+        if unstuck.len() < stuck_positions.len() {
+            return Ok(MatchInstance::Stuck);
+        }
+
+        for &index in &stuck_positions {
+            let (instance_type, _) = &instance.arguments[index];
+            let instance_type = transfer::localize(state, context, *instance_type);
+            let substituted = ApplyBindings::on(state, &bindings, instance_type);
+            equalities.push((arguments[index], substituted));
+        }
+    }
+
+    let constraints = instance
+        .constraints
+        .iter()
+        .map(|(constraint, _)| transfer::localize(state, context, *constraint))
+        .collect();
+
+    Ok(MatchInstance::Match { constraints, equalities })
+}
+
+fn match_given_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: TypeId,
@@ -526,211 +739,55 @@ where
     Ok(None)
 }
 
-fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> MatchType {
-    let wanted = state.normalize_type(wanted);
-    let given = state.normalize_type(given);
-
-    let wanted_core = &state.storage[wanted];
-    let given_core = &state.storage[given];
-
-    match (wanted_core, given_core) {
-        (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Bound(g_level)))
-        | (
-            Type::Variable(Variable::Skolem(w_level, _)),
-            Type::Variable(Variable::Skolem(g_level, _)),
-        ) => {
-            if w_level == g_level {
-                MatchType::Match
-            } else {
-                MatchType::Apart
-            }
-        }
-
-        (Type::Unification(_), _) => MatchType::Stuck,
-
-        (&Type::Constructor(w_file_id, w_type_id), &Type::Constructor(g_file_id, g_type_id)) => {
-            if w_file_id == g_file_id && w_type_id == g_type_id {
-                MatchType::Match
-            } else {
-                MatchType::Apart
-            }
-        }
-
-        (
-            &Type::Application(w_function, w_argument),
-            &Type::Application(g_function, g_argument),
-        ) => match_given_type(state, w_function, g_function)
-            .and_also(|| match_given_type(state, w_argument, g_argument)),
-
-        (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
-            match_given_type(state, w_argument, g_argument)
-                .and_also(|| match_given_type(state, w_result, g_result))
-        }
-
-        _ => MatchType::Apart,
-    }
-}
-
-fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<ConstraintApplication> {
-    let mut arguments = vec![];
-    let mut current_id = id;
-    loop {
-        match state.storage[current_id] {
-            Type::Application(function, argument) => {
-                arguments.push(argument);
-                current_id = state.normalize_type(function);
-            }
-            Type::KindApplication(function, _) => {
-                current_id = state.normalize_type(function);
-            }
-            Type::Constructor(file_id, item_id) => {
-                arguments.reverse();
-                return Some(ConstraintApplication { file_id, item_id, arguments });
-            }
-            _ => {
-                return None;
-            }
-        }
-    }
-}
-
-fn match_instance<Q>(
+fn match_compiler_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
     arguments: &[TypeId],
-    instance: Instance,
-) -> QueryResult<MatchInstance>
+) -> Option<MatchInstance>
 where
     Q: ExternalQueries,
 {
-    let mut bindings = FxHashMap::default();
-    let mut equalities = vec![];
-
-    let mut match_results = vec![];
-    let mut stuck_positions = vec![];
-
-    for (index, (wanted, (given, _))) in arguments.iter().zip(&instance.arguments).enumerate() {
-        let given = transfer::localize(state, context, *given);
-        let match_result = match_type(state, &mut bindings, &mut equalities, *wanted, given);
-
-        if matches!(match_result, MatchType::Apart) {
-            return Ok(MatchInstance::Apart);
-        }
-
-        if matches!(match_result, MatchType::Stuck) {
-            stuck_positions.push(index);
-        }
-
-        match_results.push(match_result);
+    if file_id != context.prim_int.file_id {
+        return None;
     }
 
-    if !stuck_positions.is_empty() {
-        let Some(unstuck) = unstuck(context, file_id, item_id, &match_results, &stuck_positions)?
-        else {
-            return Ok(MatchInstance::Stuck);
-        };
-
-        if unstuck.len() < stuck_positions.len() {
-            return Ok(MatchInstance::Stuck);
-        }
-
-        for &index in &stuck_positions {
-            let (instance_type, _) = &instance.arguments[index];
-            let instance_type = transfer::localize(state, context, *instance_type);
-            let substituted = ApplyBindings::on(state, &bindings, instance_type);
-            equalities.push((arguments[index], substituted));
-        }
-    }
-
-    let constraints = instance
-        .constraints
-        .iter()
-        .map(|(constraint, _)| transfer::localize(state, context, *constraint))
-        .collect();
-
-    Ok(MatchInstance::Match { constraints, equalities })
-}
-
-#[derive(Debug, Clone, Copy)]
-enum MatchType {
-    Match,
-    Apart,
-    Stuck,
-}
-
-impl MatchType {
-    fn and_also(self, f: impl FnOnce() -> MatchType) -> MatchType {
-        match self {
-            MatchType::Match => f(),
-            other => other,
-        }
+    if item_id == context.prim_int.add {
+        prim_int_add(state, arguments)
+    } else if item_id == context.prim_int.mul {
+        prim_int_mul(state, arguments)
+    } else if item_id == context.prim_int.compare {
+        prim_int_compare(state, context, arguments)
+    } else if item_id == context.prim_int.to_string {
+        prim_int_to_string(state, arguments)
+    } else {
+        None
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum MatchInstance {
-    Match { constraints: Vec<TypeId>, equalities: Vec<(TypeId, TypeId)> },
-    Apart,
-    Stuck,
+struct ApplyBindings<'a> {
+    bindings: &'a FxHashMap<debruijn::Level, TypeId>,
 }
 
-fn match_type(
-    state: &mut CheckState,
-    bindings: &mut FxHashMap<debruijn::Level, TypeId>,
-    equalities: &mut Vec<(TypeId, TypeId)>,
-    wanted: TypeId,
-    given: TypeId,
-) -> MatchType {
-    let wanted = state.normalize_type(wanted);
-    let given = state.normalize_type(given);
+impl<'a> ApplyBindings<'a> {
+    fn on(
+        state: &mut CheckState,
+        bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+        type_id: TypeId,
+    ) -> TypeId {
+        fold_type(state, type_id, &mut ApplyBindings { bindings })
+    }
+}
 
-    let wanted_core = &state.storage[wanted];
-    let given_core = &state.storage[given];
-
-    match (wanted_core, given_core) {
-        (_, Type::Variable(variable)) => {
-            if let Variable::Implicit(level) | Variable::Bound(level) = variable {
-                if let Some(&bound) = bindings.get(level) {
-                    match can_unify(state, wanted, bound) {
-                        CanUnify::Equal => MatchType::Match,
-                        CanUnify::Apart => MatchType::Apart,
-                        CanUnify::Unify => {
-                            equalities.push((wanted, bound));
-                            MatchType::Match
-                        }
-                    }
-                } else {
-                    bindings.insert(*level, wanted);
-                    MatchType::Match
-                }
-            } else {
-                MatchType::Apart
+impl TypeFold for ApplyBindings<'_> {
+    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+                let id = self.bindings.get(level).copied().unwrap_or(id);
+                FoldAction::Replace(id)
             }
+            _ => FoldAction::Continue,
         }
-
-        (Type::Unification(_), _) => MatchType::Stuck,
-
-        (&Type::Constructor(w_file_id, w_type_id), &Type::Constructor(g_file_id, g_type_id)) => {
-            if w_file_id == g_file_id && w_type_id == g_type_id {
-                MatchType::Match
-            } else {
-                MatchType::Apart
-            }
-        }
-
-        (
-            &Type::Application(w_function, w_argument),
-            &Type::Application(g_function, g_argument),
-        ) => match_type(state, bindings, equalities, w_function, g_function)
-            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
-
-        (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
-            match_type(state, bindings, equalities, w_argument, g_argument)
-                .and_also(|| match_type(state, bindings, equalities, w_result, g_result))
-        }
-
-        _ => MatchType::Apart,
     }
 }

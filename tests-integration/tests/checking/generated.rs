@@ -207,3 +207,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_097_instance_chains_main() { run_test("097_instance_chains", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_098_fundep_propagation_main() { run_test("098_fundep_propagation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_099_builtin_int_main() { run_test("099_builtin_int", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_100_builtin_given_main() { run_test("100_builtin_given", "Main"); }

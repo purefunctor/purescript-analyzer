@@ -255,6 +255,8 @@ where
 {
     pub queries: &'a Q,
     pub prim: PrimCore,
+    pub prim_int: PrimIntCore,
+    pub prim_ordering: PrimOrderingCore,
 
     pub id: FileId,
     pub indexed: Arc<IndexedModule>,
@@ -279,9 +281,22 @@ where
         let bracketed = queries.bracketed(id)?;
         let sectioned = queries.sectioned(id)?;
         let prim = PrimCore::collect(queries, state)?;
+        let prim_int = PrimIntCore::collect(queries)?;
+        let prim_ordering = PrimOrderingCore::collect(queries, state)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
-        Ok(CheckContext { queries, prim, id, indexed, lowered, bracketed, sectioned, prim_indexed })
+        Ok(CheckContext {
+            queries,
+            prim,
+            prim_int,
+            prim_ordering,
+            id,
+            indexed,
+            lowered,
+            bracketed,
+            sectioned,
+            prim_indexed,
+        })
     }
 }
 
@@ -332,6 +347,67 @@ impl PrimCore {
             row: lookup_type("Row"),
             unknown: state.storage.intern(Type::Unknown),
         })
+    }
+}
+
+pub struct PrimIntCore {
+    pub file_id: FileId,
+    pub add: TypeItemId,
+    pub mul: TypeItemId,
+    pub compare: TypeItemId,
+    pub to_string: TypeItemId,
+}
+
+impl PrimIntCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimIntCore> {
+        let file_id = queries
+            .module_file("Prim.Int")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Int not found"));
+
+        let resolved = queries.resolved(file_id)?;
+
+        let lookup_class = |name: &str| {
+            let (_, type_id) = resolved
+                .lookup_type(&resolved, None, name)
+                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Int"));
+            type_id
+        };
+
+        Ok(PrimIntCore {
+            file_id,
+            add: lookup_class("Add"),
+            mul: lookup_class("Mul"),
+            compare: lookup_class("Compare"),
+            to_string: lookup_class("ToString"),
+        })
+    }
+}
+
+pub struct PrimOrderingCore {
+    pub lt: TypeId,
+    pub eq: TypeId,
+    pub gt: TypeId,
+}
+
+impl PrimOrderingCore {
+    fn collect(
+        queries: &impl ExternalQueries,
+        state: &mut CheckState,
+    ) -> QueryResult<PrimOrderingCore> {
+        let file_id = queries
+            .module_file("Prim.Ordering")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Ordering not found"));
+
+        let resolved = queries.resolved(file_id)?;
+
+        let mut lookup_type = |name: &str| {
+            let (file_id, type_id) = resolved
+                .lookup_type(&resolved, None, name)
+                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Ordering"));
+            state.storage.intern(Type::Constructor(file_id, type_id))
+        };
+
+        Ok(PrimOrderingCore { lt: lookup_type("LT"), eq: lookup_type("EQ"), gt: lookup_type("GT") })
     }
 }
 
