@@ -16,7 +16,7 @@ use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, quantify, transfer};
-use crate::core::{Synonym, Type, TypeId, TypeInterner, debruijn};
+use crate::core::{ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -212,12 +212,27 @@ pub struct CheckState {
     pub defer_synonym_expansion: bool,
 }
 
+#[derive(Clone)]
+pub struct CheckedConstructor {
+    pub item_id: TermItemId,
+    pub arguments: Vec<TypeId>,
+}
+
+#[derive(Clone)]
+pub struct CheckedDataLike {
+    pub kind_variables: Vec<ForallBinder>,
+    pub type_variables: Vec<ForallBinder>,
+    pub result_kind: TypeId,
+    pub constructors: Vec<CheckedConstructor>,
+}
+
 #[derive(Default)]
 pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, TypeId>,
     pub synonyms: FxHashMap<TypeItemId, Synonym>,
     pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
+    pub data: FxHashMap<TypeItemId, CheckedDataLike>,
 }
 
 impl BindingGroupContext {

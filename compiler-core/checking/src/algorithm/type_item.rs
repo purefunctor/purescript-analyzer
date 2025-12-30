@@ -7,7 +7,7 @@ use lowering::{
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
-use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, CheckedDataLike};
 use crate::algorithm::{inspect, kind, transfer, unification};
 use crate::core::{ClassInfo, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -239,16 +239,6 @@ where
         return Ok(());
     };
 
-    let data_reference = {
-        let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
-        type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
-            let variable = Variable::Bound(binder.level);
-            let variable = state.storage.intern(Type::Variable(variable));
-
-            state.storage.intern(Type::Application(reference_type, variable))
-        })
-    };
-
     let type_kind = type_variables.iter().rfold(result_kind, |result, variable| {
         state.storage.intern(Type::Function(variable.kind, result))
     });
@@ -257,21 +247,20 @@ where
         unify_pending_kind(state, context, item_id, type_kind)?;
     }
 
-    check_data_constructors(
-        state,
-        context,
-        item_id,
-        &kind_variables,
-        &type_variables,
-        data_reference,
-    )?;
+    let constructors = check_constructor_arguments(state, context, item_id)?;
 
-    if let Some(variable) = type_variables.first() {
-        state.type_scope.unbind(variable.level);
+    let type_unbind_level = type_variables.first().map(|variable| variable.level);
+    let kind_unbind_level = kind_variables.first().map(|variable| variable.level);
+
+    let data = CheckedDataLike { kind_variables, type_variables, result_kind, constructors };
+    state.binding_group.data.insert(item_id, data);
+
+    if let Some(level) = type_unbind_level {
+        state.type_scope.unbind(level);
     }
 
-    if let Some(variable) = kind_variables.first() {
-        state.type_scope.unbind(variable.level);
+    if let Some(level) = kind_unbind_level {
+        state.type_scope.unbind(level);
     }
 
     Ok(())
@@ -418,7 +407,6 @@ where
 
         let (member_foralls, member_inner) = collect_foralls(state, member_type);
 
-        // With levels, no shifting is needed - levels are absolute positions
         let constrained_type =
             state.storage.intern(Type::Constrained(class_reference, member_inner));
 
@@ -522,17 +510,16 @@ fn insert_type_synonym(
     state.binding_group.synonyms.insert(item_id, group);
 }
 
-fn check_data_constructors<Q>(
+fn check_constructor_arguments<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
-    kind_variables: &[ForallBinder],
-    type_variables: &[ForallBinder],
-    data_reference: TypeId,
-) -> QueryResult<()>
+) -> QueryResult<Vec<CheckedConstructor>>
 where
     Q: ExternalQueries,
 {
+    let mut constructors = vec![];
+
     for item_id in context.indexed.pairs.data_constructors(item_id) {
         let Some(TermItemIr::Constructor { arguments }) =
             context.lowered.info.get_term_item(item_id)
@@ -540,19 +527,68 @@ where
             continue;
         };
 
-        let arguments = arguments.iter().map(|&argument| {
-            state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
-                let (inferred_type, _) =
-                    kind::check_surface_kind(state, context, argument, context.prim.t)?;
-                Ok(inferred_type)
-            })
+        let mut inferred_arguments = vec![];
+
+        for &argument in arguments.iter() {
+            let inferred_type =
+                state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
+                    let (inferred_type, _) =
+                        kind::check_surface_kind(state, context, argument, context.prim.t)?;
+                    Ok(inferred_type)
+                })?;
+            inferred_arguments.push(inferred_type);
+        }
+
+        constructors.push(CheckedConstructor { item_id, arguments: inferred_arguments });
+    }
+
+    Ok(constructors)
+}
+
+pub fn build_constructor_types<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    kind_variables: &[ForallBinder],
+    type_variables: &[ForallBinder],
+    constructors: &[CheckedConstructor],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let data_reference = {
+        let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
+
+        let reference_type = kind_variables.iter().fold(reference_type, |reference, binder| {
+            let variable = Variable::Bound(binder.level);
+            let variable = state.storage.intern(Type::Variable(variable));
+            state.storage.intern(Type::KindApplication(reference, variable))
         });
 
-        let arguments = arguments.collect::<QueryResult<Vec<_>>>()?;
-
-        let constructor_type = arguments.into_iter().rfold(data_reference, |result, argument| {
-            state.storage.intern(Type::Function(argument, result))
+        let unsolved_kinds = type_variables.iter().filter_map(|binder| {
+            let kind = state.normalize_type(binder.kind);
+            if let Type::Unification(id) = state.storage[kind] { Some((kind, id)) } else { None }
         });
+
+        let mut unsolved_kinds = unsolved_kinds.collect_vec();
+        unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).domain, id));
+
+        let reference_type = unsolved_kinds.iter().fold(reference_type, |reference, &(kind, _)| {
+            state.storage.intern(Type::KindApplication(reference, kind))
+        });
+
+        type_variables.iter().fold(reference_type, |reference, binder| {
+            let variable = Variable::Bound(binder.level);
+            let variable = state.storage.intern(Type::Variable(variable));
+            state.storage.intern(Type::Application(reference, variable))
+        })
+    };
+
+    for constructor in constructors {
+        let constructor_type =
+            constructor.arguments.iter().rfold(data_reference, |result, &argument| {
+                state.storage.intern(Type::Function(argument, result))
+            });
 
         let all_variables = {
             let from_kind = kind_variables.iter();
@@ -564,10 +600,10 @@ where
             state.storage.intern(Type::Forall(variable, inner))
         });
 
-        if let Some(pending_type) = state.binding_group.terms.get(&item_id) {
+        if let Some(pending_type) = state.binding_group.terms.get(&constructor.item_id) {
             let _ = unification::unify(state, context, *pending_type, constructor_type)?;
         } else {
-            state.binding_group.terms.insert(item_id, constructor_type);
+            state.binding_group.terms.insert(constructor.item_id, constructor_type);
         }
     }
 

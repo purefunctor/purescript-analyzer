@@ -53,9 +53,9 @@ use std::slice;
 use building_types::QueryResult;
 use files::FileId;
 use itertools::Itertools;
-use lowering::Scc;
+use lowering::{DataIr, NewtypeIr, Scc, TypeItemIr};
 
-use crate::core::{Type, TypeId};
+use crate::core::{ForallBinder, Type, TypeId, debruijn};
 use crate::{CheckedModule, ExternalQueries};
 
 pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
@@ -114,6 +114,8 @@ fn check_type_items<Q: ExternalQueries>(
                     state.type_binding_group(context, [*item]);
                 }
                 type_item::check_type_item(state, context, *item)?;
+
+                build_data_constructor_types(state, context, slice::from_ref(item))?;
                 state.commit_binding_group(context);
             }
             Scc::Mutual(items) => {
@@ -132,13 +134,98 @@ fn check_type_items<Q: ExternalQueries>(
                 for item in &without_signature {
                     type_item::check_type_item(state, context, *item)?;
                 }
+
+                build_data_constructor_types(state, context, &without_signature)?;
                 state.commit_binding_group(context);
 
                 for item in &with_signature {
                     type_item::check_type_item(state, context, *item)?;
                 }
+
+                build_data_constructor_types(state, context, &with_signature)?;
                 state.commit_binding_group(context);
             }
+        }
+    }
+
+    Ok(())
+}
+
+fn build_data_constructor_types<Q>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+    items: &[indexing::TypeItemId],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for &item_id in items {
+        let Some(data) = state.binding_group.data.remove(&item_id) else {
+            continue;
+        };
+
+        let Some(item) = context.lowered.info.get_type_item(item_id) else {
+            continue;
+        };
+
+        let variables = match item {
+            TypeItemIr::DataGroup { data: Some(DataIr { variables }), .. } => variables,
+            TypeItemIr::NewtypeGroup { newtype: Some(NewtypeIr { variables }), .. } => variables,
+            _ => continue,
+        };
+
+        let kind_variables = data.kind_variables.iter();
+        let surface_bindings = state.surface_bindings.get_type(item_id);
+        let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
+        let mut surface_binding_iter = surface_bindings.iter();
+
+        let kind_variables = kind_variables.map(|binder| {
+            let level = if let Some(&binding_id) = surface_binding_iter.next() {
+                state.type_scope.bound.bind(debruijn::Variable::Forall(binding_id))
+            } else {
+                state.type_scope.bound.bind(debruijn::Variable::Core)
+            };
+            state.type_scope.kinds.insert(level, binder.kind);
+            ForallBinder {
+                visible: binder.visible,
+                name: binder.name.clone(),
+                level,
+                kind: binder.kind,
+            }
+        });
+
+        let kind_variables = kind_variables.collect_vec();
+
+        let type_variables = data.type_variables.iter();
+        let surface_bindings = variables.iter();
+
+        let type_variables = type_variables.zip(surface_bindings).map(|(binder, variable)| {
+            let level = state.type_scope.bind_forall(variable.id, binder.kind);
+            ForallBinder {
+                visible: binder.visible,
+                name: binder.name.clone(),
+                level,
+                kind: binder.kind,
+            }
+        });
+
+        let type_variables = type_variables.collect_vec();
+
+        type_item::build_constructor_types(
+            state,
+            context,
+            item_id,
+            &kind_variables,
+            &type_variables,
+            &data.constructors,
+        )?;
+
+        if let Some(variable) = type_variables.first() {
+            state.type_scope.unbind(variable.level);
+        }
+
+        if let Some(variable) = kind_variables.first() {
+            state.type_scope.unbind(variable.level);
         }
     }
 
