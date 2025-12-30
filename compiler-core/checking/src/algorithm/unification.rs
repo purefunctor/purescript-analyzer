@@ -116,6 +116,14 @@ where
         }
 
         (
+            Type::KindApplication(t1_function, t1_argument),
+            Type::KindApplication(t2_function, t2_argument),
+        ) => {
+            unify(state, context, t1_function, t2_function)?
+                && unify(state, context, t1_argument, t2_argument)?
+        }
+
+        (
             Type::OperatorApplication(t1_file, t1_type, t1_left, t1_right),
             Type::OperatorApplication(t2_file, t2_type, t2_left, t2_right),
         ) if t1_file == t2_file && t1_type == t2_type => {
