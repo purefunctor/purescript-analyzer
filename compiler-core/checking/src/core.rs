@@ -6,7 +6,7 @@ pub mod pretty;
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::TypeItemId;
+use indexing::{InstanceChainId, TypeItemId};
 use smol_str::SmolStr;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -125,13 +125,12 @@ pub struct Instance {
     pub arguments: Vec<(TypeId, TypeId)>,
     pub constraints: Vec<(TypeId, TypeId)>,
     pub resolution: (FileId, TypeItemId),
+    pub chain_id: InstanceChainId,
+    pub chain_position: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClassInfo {
-    /// Superclass constraints (globalized). Each pair is (constraint, kind).
     pub superclasses: Vec<(TypeId, TypeId)>,
-    /// Levels of class type variables from original elaboration.
-    /// Used to build bindings when applying superclasses.
     pub variable_levels: Vec<debruijn::Level>,
 }

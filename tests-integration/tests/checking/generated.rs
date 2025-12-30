@@ -203,3 +203,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_095_given_constraint_arityless_main() { run_test("095_given_constraint_arityless", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_096_given_functional_dependency_main() { run_test("096_given_functional_dependency", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_097_instance_chains_main() { run_test("097_instance_chains", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_098_fundep_propagation_main() { run_test("098_fundep_propagation", "Main"); }

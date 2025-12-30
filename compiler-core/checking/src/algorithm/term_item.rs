@@ -1,5 +1,5 @@
 use building_types::QueryResult;
-use indexing::TermItemId;
+use indexing::{TermItemId, TermItemKind};
 use lowering::TermItemIr;
 
 use crate::ExternalQueries;
@@ -71,6 +71,17 @@ where
             return Ok(());
         };
 
+        let TermItemKind::Instance { id: instance_id } = context.indexed.items[item_id].kind else {
+            return Ok(());
+        };
+
+        let Some(chain_id) = context.indexed.pairs.instance_chain_id(instance_id) else {
+            return Ok(());
+        };
+
+        let chain_position =
+            context.indexed.pairs.instance_chain_position(instance_id).unwrap_or(0);
+
         // Save the current size of the environment for unbinding.
         let size = state.type_scope.size();
 
@@ -98,6 +109,8 @@ where
             arguments: core_arguments,
             constraints: core_constraints,
             resolution,
+            chain_id,
+            chain_position,
         });
 
         // Open question:

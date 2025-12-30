@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
+testSame :: forall (t14 :: Type) (r :: t14). TypeEq @Type @Type @t14 Int Int r => Proxy @t14 r
+testDiff :: forall (t21 :: Type) (r :: t21). TypeEq @Type @Type @t21 Int String r => Proxy @t21 r
+test :: { testDiff :: Proxy @Boolean False, testSame :: Proxy @Boolean True }
+
+Types
+Proxy :: forall (t1 :: Type). t1 -> Type
+TypeEq :: forall (t3 :: Type) (t6 :: Type) (t7 :: Type). t3 -> t6 -> t7 -> Constraint
