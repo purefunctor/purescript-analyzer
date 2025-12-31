@@ -279,6 +279,14 @@ impl BindingGroupContext {
     }
 }
 
+/// The core environment structure threaded through the [`algorithm`].
+///
+/// This structure contains [`queries`], the internally-mutable [`ExternalQueries`]
+/// that serves as a proxy to the build system. This structure also contains references
+/// to modules and items that the compiler is aware of, like the various prim modules.
+///
+/// [`algorithm`]: crate::algorithm
+/// [`queries`]: CheckContext::queries
 pub struct CheckContext<'a, Q>
 where
     Q: ExternalQueries,
