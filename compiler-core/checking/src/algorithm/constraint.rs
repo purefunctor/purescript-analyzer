@@ -1,4 +1,7 @@
+/// Implements compiler-solved instances.
 mod compiler_solved;
+
+/// Implements functional dependencies.
 mod functional_dependency;
 
 use compiler_solved::*;
@@ -17,7 +20,7 @@ use rustc_hash::FxHashMap;
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{transfer, unification};
-use crate::core::{ClassInfo, Instance, Variable, debruijn};
+use crate::core::{Class, Instance, Variable, debruijn};
 use crate::{ExternalQueries, Type, TypeId};
 
 pub fn solve_constraints<Q>(
@@ -204,7 +207,7 @@ fn get_class_info<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
-) -> QueryResult<Option<ClassInfo>>
+) -> QueryResult<Option<Class>>
 where
     Q: ExternalQueries,
 {

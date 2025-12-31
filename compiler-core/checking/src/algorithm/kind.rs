@@ -245,7 +245,7 @@ fn infer_forall_variable(
     let t = state.storage.intern(Type::Variable(variable));
     let k = state
         .type_scope
-        .forall_binding_kind(forall)
+        .lookup_forall_kind(forall)
         .expect("invariant violated: TypeScope::bind_forall");
 
     (t, k)
@@ -274,7 +274,7 @@ fn infer_implicit_variable<Q: ExternalQueries>(
 
     let k = state
         .type_scope
-        .implicit_binding_kind(implicit.node, implicit.id)
+        .lookup_implicit_kind(implicit.node, implicit.id)
         .expect("invariant violated: TypeScope::bind_implicit");
 
     (t, k)

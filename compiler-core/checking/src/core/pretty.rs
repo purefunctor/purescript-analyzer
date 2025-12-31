@@ -1,3 +1,5 @@
+//! Implements the pretty printer.
+
 use std::fmt::Write;
 
 use itertools::Itertools;

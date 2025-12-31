@@ -40,7 +40,7 @@ impl TypeScope {
         self.bound.level_of(variable)
     }
 
-    pub fn forall_binding_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
+    pub fn lookup_forall_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
         let variable = debruijn::Variable::Forall(id);
         let level = self.bound.level_of(variable)?;
         self.kinds.get(level).copied()
@@ -67,19 +67,9 @@ impl TypeScope {
         self.bound.level_of(variable)
     }
 
-    pub fn implicit_binding_kind(
-        &self,
-        node: GraphNodeId,
-        id: ImplicitBindingId,
-    ) -> Option<TypeId> {
+    pub fn lookup_implicit_kind(&self, node: GraphNodeId, id: ImplicitBindingId) -> Option<TypeId> {
         let variable = debruijn::Variable::Implicit { node, id };
         let level = self.bound.level_of(variable)?;
-        self.kinds.get(level).copied()
-    }
-
-    pub fn core_kind(&self, index: debruijn::Index) -> Option<TypeId> {
-        let size = self.bound.size();
-        let level = index.to_level(size)?;
         self.kinds.get(level).copied()
     }
 
@@ -136,7 +126,32 @@ impl TermScope {
     }
 }
 
-/// Signature variable bindings from surface syntax.
+/// Tracks type variables declared in surface syntax.
+///
+/// The type checker checks kind/type declarations first before equation
+/// declarations. In order to make the type variable binders visible in
+/// the equation body, we need to save the [`TypeVariableBindingId`] and
+/// then subsequently rebind them as needed.
+///
+/// Here's a small example for value groups:
+///
+/// ```purescript
+/// identity :: forall a. a -> a
+/// identity = impl
+///   where
+///   impl :: a -> a
+///   impl = \a -> a
+/// ```
+///
+/// The type signature is checked in isolation first to elaborate it, then,
+/// when checking the body of the value equation, `a` is rebound such its
+/// use `impl` in is properly in scope.
+///
+/// See usages of [`get_term`] and [`get_type`] for more information on
+/// how this is used in context.
+///
+/// [`get_term`]: SurfaceBindings::get_term
+/// [`get_type`]: SurfaceBindings::get_type
 #[derive(Default)]
 pub struct SurfaceBindings {
     pub term_item: FxHashMap<TermItemId, Arc<[TypeVariableBindingId]>>,
@@ -170,7 +185,7 @@ impl SurfaceBindings {
     }
 }
 
-/// Constraint collection context.
+/// Collects wanted and given constraints.
 #[derive(Default)]
 pub struct ConstraintContext {
     pub wanted: VecDeque<TypeId>,
@@ -195,20 +210,35 @@ impl ConstraintContext {
     }
 }
 
+/// The core state structure threaded through the [`algorithm`].
+///
+/// [`algorithm`]: crate::algorithm
 #[derive(Default)]
 pub struct CheckState {
+    /// Interns and stores all types created during checking.
     pub storage: TypeInterner,
+    /// The output being built, populated by checking rules.
     pub checked: CheckedModule,
 
+    /// Type variable bindings, forall-bound, implicit, core.
     pub type_scope: TypeScope,
+    /// Term variable bindings, binders, let names, record puns, sections.
     pub term_scope: TermScope,
+
+    /// Tracks surface variables for rebinding, see struct documentation.
     pub surface_bindings: SurfaceBindings,
 
+    /// Collects wanted/given type class constraints.
     pub constraints: ConstraintContext,
+    /// Collects unification variables and solutions.
     pub unification: UnificationContext,
+    /// The in-progress binding group; used for recursive declarations.
     pub binding_group: BindingGroupContext,
 
+    /// Error context breadcrumbs for [`CheckedModule::errors`].
     pub check_steps: Vec<ErrorStep>,
+
+    /// Flag that determines when it's appropriate to expand synonyms.
     pub defer_synonym_expansion: bool,
 }
 
@@ -488,6 +518,7 @@ impl CheckState {
         }
     }
 
+    /// Executes an action with an [`ErrorStep`] in scope.
     pub fn with_error_step<T, F>(&mut self, step: ErrorStep, f: F) -> T
     where
         F: FnOnce(&mut CheckState) -> T,
@@ -498,6 +529,7 @@ impl CheckState {
         r
     }
 
+    /// Inserts a [`CheckError`] with the [`ErrorStep`] in scope.
     pub fn insert_error(&mut self, kind: ErrorKind) {
         let step = self.check_steps.iter().copied().collect();
         let error = CheckError { kind, step };
@@ -569,6 +601,7 @@ impl CheckState {
         id
     }
 
+    /// Helper function for creating [`Type::Function`].
     pub fn make_function(&mut self, arguments: &[TypeId], result: TypeId) -> TypeId {
         arguments.iter().copied().rfold(result, |result, argument| {
             let function = Type::Function(argument, result);

@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, CheckedDataLike};
 use crate::algorithm::{inspect, kind, transfer, unification};
-use crate::core::{ClassInfo, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
+use crate::core::{Class, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
@@ -342,7 +342,7 @@ where
     let variable_levels: Vec<_> = type_variables.iter().map(|v| v.level).collect();
 
     // Store class info
-    state.checked.classes.insert(item_id, ClassInfo { superclasses, variable_levels });
+    state.checked.classes.insert(item_id, Class { superclasses, variable_levels });
 
     let class_reference = {
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));

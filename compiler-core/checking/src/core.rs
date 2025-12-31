@@ -9,13 +9,6 @@ use files::FileId;
 use indexing::{InstanceChainId, TypeItemId};
 use smol_str::SmolStr;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub enum BuiltinConstructor {
-    Boolean,
-    Int,
-    Number,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForallBinder {
     pub visible: bool,
@@ -130,7 +123,7 @@ pub struct Instance {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ClassInfo {
+pub struct Class {
     pub superclasses: Vec<(TypeId, TypeId)>,
     pub variable_levels: Vec<debruijn::Level>,
 }
