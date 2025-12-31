@@ -289,7 +289,7 @@ fn infer_row_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut field_kind = state.fresh_unification(context);
+    let mut field_kind = state.fresh_unification_type(context);
 
     let fields: QueryResult<Vec<_>> = items
         .iter()
@@ -452,7 +452,7 @@ where
         Type::Row(RowType { ref fields, tail }) => {
             let fields = Arc::clone(fields);
 
-            let field_kind = state.fresh_unification(context);
+            let field_kind = state.fresh_unification_type(context);
             let tail_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
 
             for field in fields.iter() {

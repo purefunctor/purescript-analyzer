@@ -9,6 +9,6 @@ testRecord' :: { a :: Int, b :: Int }
 testArray :: Array Int
 testArray' :: Array Int
 testFunction :: Int -> Int
-testFunction' :: forall (t29 :: Type). t29 -> Int
+testFunction' :: forall (t28 :: Type). t28 -> Int
 
 Types

@@ -6,19 +6,19 @@ Terms
 map :: forall (a :: Type) (b :: Type). (a -> b) -> Array a -> Array b
 apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
 f :: ({ foo :: Int } -> Int) -> Int
-test1 :: forall (t10 :: Type) (t11 :: Row Type). { prop :: t10 | t11 } -> t10
-test2 :: forall (t16 :: Row Type) (t18 :: Row Type) (t19 :: Type) (t20 :: Row Type). { a :: { b :: { c :: t19 | t20 } | t18 } | t16 } -> t19
-test3 :: forall (t24 :: Type) (t25 :: Row Type). { poly :: t24 | t25 } -> t24
-test4 :: forall (t29 :: Type) (t32 :: Row Type). Array { prop :: t29 | t32 } -> Array t29
+test1 :: forall (t9 :: Type) (t10 :: Row Type). { prop :: t9 | t10 } -> t9
+test2 :: forall (t15 :: Row Type) (t17 :: Row Type) (t18 :: Type) (t19 :: Row Type). { a :: { b :: { c :: t18 | t19 } | t17 } | t15 } -> t18
+test3 :: forall (t23 :: Type) (t24 :: Row Type). { poly :: t23 | t24 } -> t23
+test4 :: forall (t28 :: Type) (t31 :: Row Type). Array { prop :: t28 | t31 } -> Array t28
 test5 :: Int
-test6 :: forall (t41 :: Type) (t43 :: Type) (t47 :: Type) (t48 :: Row Type). t41 -> (({ bar :: t47 | t48 } -> t47) -> t43) -> t43
-test7 :: forall (t53 :: Type) (t54 :: Row Type). { nonexistent :: t53 | t54 } -> t53
-test8 :: forall (t59 :: Type) (t61 :: Type) (t62 :: Row Type). (({ foo :: t61 | t62 } -> t61) -> t59) -> t59
-test9 :: forall (t66 :: Type) (t71 :: Type) (t72 :: Row Type). Array (({ prop :: t71 | t72 } -> t71) -> t66) -> Array t66
-test10 :: forall (t76 :: Type) (t79 :: Row Type) (t81 :: Row Type). { a :: { b :: t76 | t81 } | t79 } -> t76
-test11 :: forall (t84 :: Type) (t86 :: Type) (t87 :: Row Type). t84 -> { a :: t84, b :: { foo :: t86 | t87 } -> t86 }
-test12 :: forall (t93 :: Type) (t94 :: Row Type). ({ bar :: t93 | t94 } -> t93) -> Array ({ bar :: t93 | t94 } -> t93)
-test13 :: forall (t97 :: Type) (t100 :: Type) (t101 :: Row Type). t97 -> { prop :: t100 | t101 } -> t100
-test14 :: forall (t107 :: Type) (t112 :: Row Type). Boolean -> { a :: t107 | ( b :: t107 | t112 ) } -> t107
+test6 :: forall (t39 :: Type) (t41 :: Type) (t45 :: Type) (t46 :: Row Type). t39 -> (({ bar :: t45 | t46 } -> t45) -> t41) -> t41
+test7 :: forall (t51 :: Type) (t52 :: Row Type). { nonexistent :: t51 | t52 } -> t51
+test8 :: forall (t57 :: Type) (t59 :: Type) (t60 :: Row Type). (({ foo :: t59 | t60 } -> t59) -> t57) -> t57
+test9 :: forall (t64 :: Type) (t69 :: Type) (t70 :: Row Type). Array (({ prop :: t69 | t70 } -> t69) -> t64) -> Array t64
+test10 :: forall (t74 :: Type) (t77 :: Row Type) (t79 :: Row Type). { a :: { b :: t74 | t79 } | t77 } -> t74
+test11 :: forall (t82 :: Type) (t84 :: Type) (t85 :: Row Type). t82 -> { a :: t82, b :: { foo :: t84 | t85 } -> t84 }
+test12 :: forall (t91 :: Type) (t92 :: Row Type). ({ bar :: t91 | t92 } -> t91) -> Array ({ bar :: t91 | t92 } -> t91)
+test13 :: forall (t95 :: Type) (t98 :: Type) (t99 :: Row Type). t95 -> { prop :: t98 | t99 } -> t98
+test14 :: forall (t105 :: Type) (t110 :: Row Type). Boolean -> { a :: t105 | ( b :: t105 | t110 ) } -> t105
 
 Types
