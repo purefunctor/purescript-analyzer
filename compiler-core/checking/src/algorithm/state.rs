@@ -12,6 +12,7 @@ use lowering::{
     BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule, RecordPunId,
     TypeVariableBindingId,
 };
+use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
@@ -322,10 +323,10 @@ where
         let bracketed = queries.bracketed(id)?;
         let sectioned = queries.sectioned(id)?;
         let prim = PrimCore::collect(queries, state)?;
-        let prim_int = PrimIntCore::collect(queries)?;
+        let prim_int = PrimIntCore::collect(queries, state)?;
         let prim_ordering = PrimOrderingCore::collect(queries, state)?;
-        let prim_symbol = PrimSymbolCore::collect(queries)?;
-        let prim_row = PrimRowCore::collect(queries)?;
+        let prim_symbol = PrimSymbolCore::collect(queries, state)?;
+        let prim_row = PrimRowCore::collect(queries, state)?;
         let prim_row_list = PrimRowListCore::collect(queries, state)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
@@ -344,6 +345,42 @@ where
             sectioned,
             prim_indexed,
         })
+    }
+}
+
+struct PrimLookup<'r, 's> {
+    resolved: &'r ResolvedModule,
+    storage: &'s mut TypeInterner,
+    module_name: &'static str,
+}
+
+impl<'r, 's> PrimLookup<'r, 's> {
+    fn new(
+        resolved: &'r ResolvedModule,
+        storage: &'s mut TypeInterner,
+        module_name: &'static str,
+    ) -> Self {
+        PrimLookup { resolved, storage, module_name }
+    }
+
+    fn type_item(&self, name: &str) -> TypeItemId {
+        let (_, type_id) =
+            self.resolved.lookup_type(self.resolved, None, name).unwrap_or_else(|| {
+                unreachable!("invariant violated: {name} not in {}", self.module_name)
+            });
+        type_id
+    }
+
+    fn type_constructor(&mut self, name: &str) -> TypeId {
+        let (file_id, type_id) =
+            self.resolved.lookup_type(self.resolved, None, name).unwrap_or_else(|| {
+                unreachable!("invariant violated: {name} not in {}", self.module_name)
+            });
+        self.storage.intern(Type::Constructor(file_id, type_id))
+    }
+
+    fn intern(&mut self, ty: Type) -> TypeId {
+        self.storage.intern(ty)
     }
 }
 
@@ -366,33 +403,24 @@ pub struct PrimCore {
 
 impl PrimCore {
     fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimCore> {
-        let file_id = queries.prim_id();
-        let resolved = queries.resolved(file_id)?;
-
-        let mut lookup_type = |name: &str| {
-            let prim_type = resolved.lookup_type(&resolved, None, name);
-
-            let (file_id, type_id) =
-                prim_type.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"));
-
-            state.storage.intern(Type::Constructor(file_id, type_id))
-        };
+        let resolved = queries.resolved(queries.prim_id())?;
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim");
 
         Ok(PrimCore {
-            t: lookup_type("Type"),
-            function: lookup_type("Function"),
-            array: lookup_type("Array"),
-            record: lookup_type("Record"),
-            number: lookup_type("Number"),
-            int: lookup_type("Int"),
-            string: lookup_type("String"),
-            char: lookup_type("Char"),
-            boolean: lookup_type("Boolean"),
-            partial: lookup_type("Partial"),
-            constraint: lookup_type("Constraint"),
-            symbol: lookup_type("Symbol"),
-            row: lookup_type("Row"),
-            unknown: state.storage.intern(Type::Unknown),
+            t: lookup.type_constructor("Type"),
+            function: lookup.type_constructor("Function"),
+            array: lookup.type_constructor("Array"),
+            record: lookup.type_constructor("Record"),
+            number: lookup.type_constructor("Number"),
+            int: lookup.type_constructor("Int"),
+            string: lookup.type_constructor("String"),
+            char: lookup.type_constructor("Char"),
+            boolean: lookup.type_constructor("Boolean"),
+            partial: lookup.type_constructor("Partial"),
+            constraint: lookup.type_constructor("Constraint"),
+            symbol: lookup.type_constructor("Symbol"),
+            row: lookup.type_constructor("Row"),
+            unknown: lookup.intern(Type::Unknown),
         })
     }
 }
@@ -406,26 +434,20 @@ pub struct PrimIntCore {
 }
 
 impl PrimIntCore {
-    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimIntCore> {
+    fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimIntCore> {
         let file_id = queries
             .module_file("Prim.Int")
             .unwrap_or_else(|| unreachable!("invariant violated: Prim.Int not found"));
 
         let resolved = queries.resolved(file_id)?;
-
-        let lookup_class = |name: &str| {
-            let (_, type_id) = resolved
-                .lookup_type(&resolved, None, name)
-                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Int"));
-            type_id
-        };
+        let lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.Int");
 
         Ok(PrimIntCore {
             file_id,
-            add: lookup_class("Add"),
-            mul: lookup_class("Mul"),
-            compare: lookup_class("Compare"),
-            to_string: lookup_class("ToString"),
+            add: lookup.type_item("Add"),
+            mul: lookup.type_item("Mul"),
+            compare: lookup.type_item("Compare"),
+            to_string: lookup.type_item("ToString"),
         })
     }
 }
@@ -444,25 +466,22 @@ pub struct PrimSymbolCore {
 }
 
 impl PrimSymbolCore {
-    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimSymbolCore> {
+    fn collect(
+        queries: &impl ExternalQueries,
+        state: &mut CheckState,
+    ) -> QueryResult<PrimSymbolCore> {
         let file_id = queries
             .module_file("Prim.Symbol")
             .unwrap_or_else(|| unreachable!("invariant violated: Prim.Symbol not found"));
 
         let resolved = queries.resolved(file_id)?;
-
-        let lookup_class = |name: &str| {
-            let (_, type_id) = resolved
-                .lookup_type(&resolved, None, name)
-                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Symbol"));
-            type_id
-        };
+        let lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.Symbol");
 
         Ok(PrimSymbolCore {
             file_id,
-            append: lookup_class("Append"),
-            compare: lookup_class("Compare"),
-            cons: lookup_class("Cons"),
+            append: lookup.type_item("Append"),
+            compare: lookup.type_item("Compare"),
+            cons: lookup.type_item("Cons"),
         })
     }
 }
@@ -477,15 +496,13 @@ impl PrimOrderingCore {
             .unwrap_or_else(|| unreachable!("invariant violated: Prim.Ordering not found"));
 
         let resolved = queries.resolved(file_id)?;
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.Ordering");
 
-        let mut lookup_type = |name: &str| {
-            let (file_id, type_id) = resolved
-                .lookup_type(&resolved, None, name)
-                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Ordering"));
-            state.storage.intern(Type::Constructor(file_id, type_id))
-        };
-
-        Ok(PrimOrderingCore { lt: lookup_type("LT"), eq: lookup_type("EQ"), gt: lookup_type("GT") })
+        Ok(PrimOrderingCore {
+            lt: lookup.type_constructor("LT"),
+            eq: lookup.type_constructor("EQ"),
+            gt: lookup.type_constructor("GT"),
+        })
     }
 }
 
@@ -498,26 +515,20 @@ pub struct PrimRowCore {
 }
 
 impl PrimRowCore {
-    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimRowCore> {
+    fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimRowCore> {
         let file_id = queries
             .module_file("Prim.Row")
             .unwrap_or_else(|| unreachable!("invariant violated: Prim.Row not found"));
 
         let resolved = queries.resolved(file_id)?;
-
-        let lookup_class = |name: &str| {
-            let (_, type_id) = resolved
-                .lookup_type(&resolved, None, name)
-                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Row"));
-            type_id
-        };
+        let lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.Row");
 
         Ok(PrimRowCore {
             file_id,
-            union: lookup_class("Union"),
-            cons: lookup_class("Cons"),
-            lacks: lookup_class("Lacks"),
-            nub: lookup_class("Nub"),
+            union: lookup.type_item("Union"),
+            cons: lookup.type_item("Cons"),
+            lacks: lookup.type_item("Lacks"),
+            nub: lookup.type_item("Nub"),
         })
     }
 }
@@ -539,26 +550,13 @@ impl PrimRowListCore {
             .unwrap_or_else(|| unreachable!("invariant violated: Prim.RowList not found"));
 
         let resolved = queries.resolved(file_id)?;
-
-        let lookup_class = |name: &str| {
-            let (_, type_id) = resolved
-                .lookup_type(&resolved, None, name)
-                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.RowList"));
-            type_id
-        };
-
-        let mut lookup_type = |name: &str| {
-            let (file_id, type_id) = resolved
-                .lookup_type(&resolved, None, name)
-                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.RowList"));
-            state.storage.intern(Type::Constructor(file_id, type_id))
-        };
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.RowList");
 
         Ok(PrimRowListCore {
             file_id,
-            row_to_list: lookup_class("RowToList"),
-            cons: lookup_type("Cons"),
-            nil: lookup_type("Nil"),
+            row_to_list: lookup.type_item("RowToList"),
+            cons: lookup.type_constructor("Cons"),
+            nil: lookup.type_constructor("Nil"),
         })
     }
 }
