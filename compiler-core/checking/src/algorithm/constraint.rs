@@ -81,7 +81,7 @@ where
                 }
             }
 
-            let instance_chains = collect_instances(state, context, file_id, item_id)?;
+            let instance_chains = collect_instance_chains(state, context, file_id, item_id)?;
 
             for chain in instance_chains {
                 'chain: for instance in chain {
@@ -143,6 +143,7 @@ fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<Constrai
     }
 }
 
+/// Discovers implied constraints from given constraints.
 fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -162,7 +163,64 @@ where
     Ok(given)
 }
 
-fn collect_instances<Q>(
+/// Discovers superclass constraints for a given constraint.
+fn elaborate_superclasses<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraint: TypeId,
+    constraints: &mut Vec<TypeId>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    fn aux<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        constraint: TypeId,
+        constraints: &mut Vec<TypeId>,
+        seen: &mut HashSet<(FileId, TypeItemId)>,
+    ) -> QueryResult<()>
+    where
+        Q: ExternalQueries,
+    {
+        let Some(ConstraintApplication { file_id, item_id, arguments }) =
+            constraint_application(state, constraint)
+        else {
+            return Ok(());
+        };
+
+        if !seen.insert((file_id, item_id)) {
+            return Ok(());
+        }
+
+        let Some(class_info) = get_class_info(state, context, file_id, item_id)? else {
+            return Ok(());
+        };
+
+        if class_info.superclasses.is_empty() {
+            return Ok(());
+        }
+
+        let mut bindings = FxHashMap::default();
+        for (&level, &argument) in class_info.variable_levels.iter().zip(&arguments) {
+            bindings.insert(level, argument);
+        }
+
+        for &(superclass, _kind) in &class_info.superclasses {
+            let localized = transfer::localize(state, context, superclass);
+            let substituted = ApplyBindings::on(state, &bindings, localized);
+            constraints.push(substituted);
+            aux(state, context, substituted, constraints, seen)?;
+        }
+
+        Ok(())
+    }
+
+    let mut seen = HashSet::new();
+    aux(state, context, constraint, constraints, &mut seen)
+}
+
+fn collect_instance_chains<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
@@ -171,7 +229,7 @@ fn collect_instances<Q>(
 where
     Q: ExternalQueries,
 {
-    let instances: Vec<Instance> = if file_id == context.id {
+    let instances = if file_id == context.id {
         state
             .checked
             .instances
@@ -262,88 +320,25 @@ fn compute_match_closures(
     functional_dependency::compute_closure(functional_dependencies, &initial)
 }
 
-fn elaborate_superclasses<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    constraint: TypeId,
-    constraints: &mut Vec<TypeId>,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    fn aux<Q>(
-        state: &mut CheckState,
-        context: &CheckContext<Q>,
-        constraint: TypeId,
-        constraints: &mut Vec<TypeId>,
-        seen: &mut HashSet<(FileId, TypeItemId)>,
-    ) -> QueryResult<()>
-    where
-        Q: ExternalQueries,
-    {
-        let Some(ConstraintApplication { file_id, item_id, arguments }) =
-            constraint_application(state, constraint)
-        else {
-            return Ok(());
-        };
-
-        if !seen.insert((file_id, item_id)) {
-            return Ok(());
-        }
-
-        let Some(class_info) = get_class_info(state, context, file_id, item_id)? else {
-            return Ok(());
-        };
-
-        if class_info.superclasses.is_empty() {
-            return Ok(());
-        }
-
-        let mut bindings = FxHashMap::default();
-        for (&level, &argument) in class_info.variable_levels.iter().zip(&arguments) {
-            bindings.insert(level, argument);
-        }
-
-        for &(superclass, _kind) in &class_info.superclasses {
-            let localized = transfer::localize(state, context, superclass);
-            let substituted = ApplyBindings::on(state, &bindings, localized);
-            constraints.push(substituted);
-            aux(state, context, substituted, constraints, seen)?;
-        }
-
-        Ok(())
-    }
-
-    let mut seen = HashSet::new();
-    aux(state, context, constraint, constraints, &mut seen)
-}
-
-fn unstuck<Q>(
+/// Determines if [`MatchType::Stuck`] arguments can be determined by functional dependencies.
+fn can_determine_stuck<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
     match_results: &[MatchType],
     stuck_positions: &[usize],
-) -> QueryResult<Option<HashSet<usize>>>
+) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
     if stuck_positions.is_empty() {
-        return Ok(Some(HashSet::new()));
+        return Ok(true);
     }
 
     let functional_dependencies = get_functional_dependencies(context, file_id, item_id)?;
     let determined_positions = compute_match_closures(&functional_dependencies, match_results);
 
-    let mut resolved = HashSet::new();
-    for &stuck_index in stuck_positions {
-        if !determined_positions.contains(&stuck_index) {
-            return Ok(None);
-        }
-        resolved.insert(stuck_index);
-    }
-
-    Ok(Some(resolved))
+    Ok(stuck_positions.iter().all(|index| determined_positions.contains(index)))
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -379,6 +374,21 @@ enum MatchInstance {
     Stuck,
 }
 
+/// Matches an argument from a wanted constraint to one from an instance.
+///
+/// This function emits substitutions and equalities when matching against
+/// instances, for example:
+///
+/// ```purescript
+/// instance TypeEq a a True
+/// ```
+///
+/// When matching the wanted constraint `TypeEq Int ?0` against this instance,
+/// it creates the binding `a := Int`. This means that subsequent usages of `a`
+/// are equal to `Int`, turning the second `match(a, ?0)` into `match(Int, ?0)`.
+/// We use the [`can_unify`] function to speculate if these two types can be
+/// unified, or if unifying them solves unification variables, encoded by the
+/// [`CanUnify::Unify`] variant.
 fn match_type(
     state: &mut CheckState,
     bindings: &mut FxHashMap<debruijn::Level, TypeId>,
@@ -464,6 +474,12 @@ fn match_type(
     }
 }
 
+/// Matches an argument from a wanted constraint to one from a given constraint.
+///
+/// This function is specialised for matching given constraints, like those
+/// found in value signatures rather than top-level instance declarations;
+/// unlike [`match_type`], this function does not build bindings or equalities
+/// for [`Variable::Bound`] or [`Variable::Implicit`] variables.
 fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> MatchType {
     let wanted = state.normalize_type(wanted);
     let given = state.normalize_type(given);
@@ -476,18 +492,6 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Bound(g_level)))
-        | (
-            Type::Variable(Variable::Skolem(w_level, _)),
-            Type::Variable(Variable::Skolem(g_level, _)),
-        ) => {
-            if w_level == g_level {
-                MatchType::Match
-            } else {
-                MatchType::Apart
-            }
-        }
-
         (Type::Unification(_), _) => MatchType::Stuck,
 
         (
@@ -534,6 +538,14 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
     }
 }
 
+/// Determines if two types [`CanUnify`].
+///
+/// This is used in [`match_type`], where if two different types bind to the
+/// same [`Variable::Implicit`] or [`Variable::Bound`] variable, we determine
+/// if the types can actually unify before generating an equality. This is
+/// effectively a pure version of the [`unify`] function.
+///
+/// [`unify`]: crate::algorithm::unification::unify
 fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
     use CanUnify::*;
 
@@ -602,6 +614,7 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
     }
 }
 
+/// Matches a wanted constraint to an instance.
 fn match_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -635,12 +648,7 @@ where
     }
 
     if !stuck_positions.is_empty() {
-        let Some(unstuck) = unstuck(context, file_id, item_id, &match_results, &stuck_positions)?
-        else {
-            return Ok(MatchInstance::Stuck);
-        };
-
-        if unstuck.len() < stuck_positions.len() {
+        if !can_determine_stuck(context, file_id, item_id, &match_results, &stuck_positions)? {
             return Ok(MatchInstance::Stuck);
         }
 
@@ -661,6 +669,7 @@ where
     Ok(MatchInstance::Match { constraints, equalities })
 }
 
+/// Matches a wanted constraint to given constraints.
 fn match_given_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -712,18 +721,13 @@ where
             return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
         }
 
-        let Some(unstuck) = unstuck(
+        if !can_determine_stuck(
             context,
             wanted_application.file_id,
             wanted_application.item_id,
             &match_results,
             &stuck_positions,
-        )?
-        else {
-            continue 'given;
-        };
-
-        if unstuck.len() < stuck_positions.len() {
+        )? {
             continue 'given;
         }
 
@@ -742,6 +746,7 @@ where
     Ok(None)
 }
 
+/// Matches a wanted constraint to compiler-solved instances.
 fn match_compiler_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
