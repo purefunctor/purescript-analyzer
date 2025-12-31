@@ -295,6 +295,7 @@ where
     pub prim: PrimCore,
     pub prim_int: PrimIntCore,
     pub prim_ordering: PrimOrderingCore,
+    pub prim_symbol: PrimSymbolCore,
 
     pub id: FileId,
     pub indexed: Arc<IndexedModule>,
@@ -321,6 +322,7 @@ where
         let prim = PrimCore::collect(queries, state)?;
         let prim_int = PrimIntCore::collect(queries)?;
         let prim_ordering = PrimOrderingCore::collect(queries, state)?;
+        let prim_symbol = PrimSymbolCore::collect(queries)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
         Ok(CheckContext {
@@ -328,6 +330,7 @@ where
             prim,
             prim_int,
             prim_ordering,
+            prim_symbol,
             id,
             indexed,
             lowered,
@@ -425,6 +428,37 @@ pub struct PrimOrderingCore {
     pub lt: TypeId,
     pub eq: TypeId,
     pub gt: TypeId,
+}
+
+pub struct PrimSymbolCore {
+    pub file_id: FileId,
+    pub append: TypeItemId,
+    pub compare: TypeItemId,
+    pub cons: TypeItemId,
+}
+
+impl PrimSymbolCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimSymbolCore> {
+        let file_id = queries
+            .module_file("Prim.Symbol")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Symbol not found"));
+
+        let resolved = queries.resolved(file_id)?;
+
+        let lookup_class = |name: &str| {
+            let (_, type_id) = resolved
+                .lookup_type(&resolved, None, name)
+                .unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim.Symbol"));
+            type_id
+        };
+
+        Ok(PrimSymbolCore {
+            file_id,
+            append: lookup_class("Append"),
+            compare: lookup_class("Compare"),
+            cons: lookup_class("Cons"),
+        })
+    }
 }
 
 impl PrimOrderingCore {

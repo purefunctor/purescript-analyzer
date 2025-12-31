@@ -757,18 +757,28 @@ fn match_compiler_instances<Q>(
 where
     Q: ExternalQueries,
 {
-    if file_id != context.prim_int.file_id {
-        return None;
-    }
-
-    if item_id == context.prim_int.add {
-        prim_int_add(state, arguments)
-    } else if item_id == context.prim_int.mul {
-        prim_int_mul(state, arguments)
-    } else if item_id == context.prim_int.compare {
-        prim_int_compare(state, context, arguments)
-    } else if item_id == context.prim_int.to_string {
-        prim_int_to_string(state, arguments)
+    if file_id == context.prim_int.file_id {
+        if item_id == context.prim_int.add {
+            prim_int_add(state, arguments)
+        } else if item_id == context.prim_int.mul {
+            prim_int_mul(state, arguments)
+        } else if item_id == context.prim_int.compare {
+            prim_int_compare(state, context, arguments)
+        } else if item_id == context.prim_int.to_string {
+            prim_int_to_string(state, arguments)
+        } else {
+            None
+        }
+    } else if file_id == context.prim_symbol.file_id {
+        if item_id == context.prim_symbol.append {
+            prim_symbol_append(state, arguments)
+        } else if item_id == context.prim_symbol.compare {
+            prim_symbol_compare(state, context, arguments)
+        } else if item_id == context.prim_symbol.cons {
+            prim_symbol_cons(state, arguments)
+        } else {
+            None
+        }
     } else {
         None
     }
