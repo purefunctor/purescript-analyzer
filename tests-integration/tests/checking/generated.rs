@@ -213,3 +213,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_100_builtin_given_main() { run_test("100_builtin_given", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_101_builtin_symbol_main() { run_test("101_builtin_symbol", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_102_builtin_row_main() { run_test("102_builtin_row", "Main"); }

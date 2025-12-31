@@ -779,6 +779,24 @@ where
         } else {
             None
         }
+    } else if file_id == context.prim_row.file_id {
+        if item_id == context.prim_row.union {
+            prim_row_union(state, arguments)
+        } else if item_id == context.prim_row.cons {
+            prim_row_cons(state, arguments)
+        } else if item_id == context.prim_row.lacks {
+            prim_row_lacks(state, arguments)
+        } else if item_id == context.prim_row.nub {
+            prim_row_nub(state, arguments)
+        } else {
+            None
+        }
+    } else if file_id == context.prim_row_list.file_id {
+        if item_id == context.prim_row_list.row_to_list {
+            prim_rowlist_row_to_list(state, context, arguments)
+        } else {
+            None
+        }
     } else {
         None
     }
