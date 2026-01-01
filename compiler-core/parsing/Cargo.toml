@@ -7,9 +7,9 @@ edition = "2024"
 drop_bomb = "0.1.5"
 lexing = { version = "0.1.0", path = "../lexing" }
 rowan = "0.16.1"
-smol_str = "0.3.2"
+smol_str = "0.3.4"
 syntax = { version = "0.1.0", path = "../syntax" }
 
 [dev-dependencies]
-insta = "1.43.2"
-test_each_file = "0.3.5"
+insta = "1.45.1"
+test_each_file = "0.3.6"
