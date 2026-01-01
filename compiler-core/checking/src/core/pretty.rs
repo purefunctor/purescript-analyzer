@@ -324,10 +324,7 @@ where
                 arena.nil()
             };
 
-            let forall_header = arena
-                .text("forall ")
-                .append(binders_doc)
-                .append(arena.text("."));
+            let forall_header = arena.text("forall ").append(binders_doc).append(arena.text("."));
 
             let inner_doc = traverse_precedence(arena, source, context, Precedence::Top, inner);
             context.depth = previous_depth;

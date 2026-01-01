@@ -94,7 +94,8 @@ pub mod snapshots {
                         ChangeTag::Insert => change.new_index().map(|i| i + 1),
                         ChangeTag::Equal => change.new_index().map(|i| i + 1),
                     };
-                    let line_no_str = line_no.map(|n| format!("{:3}", n)).unwrap_or_else(|| "   ".into());
+                    let line_no_str =
+                        line_no.map(|n| format!("{:3}", n)).unwrap_or_else(|| "   ".into());
 
                     match change.tag() {
                         ChangeTag::Delete => {

@@ -1,8 +1,7 @@
-use std::env;
-use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Instant;
+use std::{env, fs};
 
 use clap::Parser;
 use compiler_scripts::console::style;
@@ -32,12 +31,7 @@ fn main() {
 
     // Build cargo nextest command
     let mut cmd = Command::new("cargo");
-    cmd.arg("nextest")
-        .arg("run")
-        .arg("-p")
-        .arg("tests-integration")
-        .arg("--test")
-        .arg("checking");
+    cmd.arg("nextest").arg("run").arg("-p").arg("tests-integration").arg("--test").arg("checking");
 
     if !test_filter.is_empty() {
         cmd.arg(&test_filter);
