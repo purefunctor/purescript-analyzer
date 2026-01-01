@@ -37,7 +37,7 @@ jobs:
           prefix-key: "v2-maho"
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@v1.10.7
+        uses: cargo-bins/cargo-binstall@v1.16.6
 
       - name: Install cargo-nextest
         run: cargo binstall wasm-pack
