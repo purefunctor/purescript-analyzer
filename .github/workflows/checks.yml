@@ -34,13 +34,10 @@ jobs:
           cache-bin: "false"
           prefix-key: "v6-maho-${{ matrix.os }}-${{ matrix.toolchain }}"
 
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@v1.16.6
-
-      - name: Install cargo-nextest
-        run: cargo binstall cargo-nextest just
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,just
 
       - name: Build and Test
         run: |
@@ -69,13 +66,10 @@ jobs:
           cache-bin: "false"
           prefix-key: "v6-maho-${{ matrix.toolchain }}"
 
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@v1.16.6
-
-      - name: Install cargo-nextest
-        run: cargo binstall cargo-nextest cargo-llvm-cov just
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,cargo-llvm-cov,just
 
       - name: Build and Test
         run: |
