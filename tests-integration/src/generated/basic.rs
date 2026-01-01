@@ -266,16 +266,16 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
         let Some(n) = name else { continue };
         let Some(t) = checked.lookup_term(id) else { continue };
-        let t = pretty::print_global(engine, t);
-        writeln!(snapshot, "{n} :: {t}").unwrap();
+        let signature = pretty::print_signature_global(engine, n, t);
+        writeln!(snapshot, "{signature}").unwrap();
     }
 
     writeln!(snapshot, "\nTypes").unwrap();
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(n) = name else { continue };
         let Some(t) = checked.lookup_type(id) else { continue };
-        let t = pretty::print_global(engine, t);
-        writeln!(snapshot, "{n} :: {t}").unwrap();
+        let signature = pretty::print_signature_global(engine, n, t);
+        writeln!(snapshot, "{signature}").unwrap();
     }
 
     if !checked.synonyms.is_empty() {

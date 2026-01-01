@@ -4,7 +4,8 @@ expression: report
 ---
 Terms
 Proxy :: forall (k :: Type) (a :: k). Proxy @k a
-deriveAppended :: forall (appended :: Symbol). Append "Hello" "World" appended => Proxy @Symbol appended
+deriveAppended ::
+  forall (appended :: Symbol). Append "Hello" "World" appended => Proxy @Symbol appended
 deriveLeft :: forall (left :: Symbol). Append left "World" "HelloWorld" => Proxy @Symbol left
 deriveRight :: forall (right :: Symbol). Append "Hello" right "HelloWorld" => Proxy @Symbol right
 appendEmpty :: forall (result :: Symbol). Append "" "test" result => Proxy @Symbol result
@@ -14,10 +15,25 @@ compareEQ :: forall (ord :: Ordering). Compare "hello" "hello" ord => Proxy @Ord
 compareGT :: forall (ord :: Ordering). Compare "z" "a" ord => Proxy @Ordering ord
 comparePrefix :: forall (ord :: Ordering). Compare "ab" "abc" ord => Proxy @Ordering ord
 deriveCons :: forall (symbol :: Symbol). Cons "H" "ello" symbol => Proxy @Symbol symbol
-deriveHeadTail :: forall (head :: Symbol) (tail :: Symbol). Cons head tail "World" => Proxy @Symbol head
+deriveHeadTail ::
+  forall (head :: Symbol) (tail :: Symbol). Cons head tail "World" => Proxy @Symbol head
 consEmptyTail :: forall (symbol :: Symbol). Cons "X" "" symbol => Proxy @Symbol symbol
 consSingleChar :: forall (head :: Symbol) (tail :: Symbol). Cons head tail "A" => Proxy @Symbol tail
-forceSolve :: { appendEmpty :: Proxy @Symbol "test", appendEmptyRight :: Proxy @Symbol "test", compareEQ :: Proxy @Ordering EQ, compareGT :: Proxy @Ordering GT, compareLT :: Proxy @Ordering LT, comparePrefix :: Proxy @Ordering LT, consEmptyTail :: Proxy @Symbol "X", consSingleChar :: Proxy @Symbol "", deriveAppended :: Proxy @Symbol "HelloWorld", deriveCons :: Proxy @Symbol "Hello", deriveHeadTail :: Proxy @Symbol "W", deriveLeft :: Proxy @Symbol "Hello", deriveRight :: Proxy @Symbol "World" }
+forceSolve ::
+  { appendEmpty :: Proxy @Symbol "test"
+  , appendEmptyRight :: Proxy @Symbol "test"
+  , compareEQ :: Proxy @Ordering EQ
+  , compareGT :: Proxy @Ordering GT
+  , compareLT :: Proxy @Ordering LT
+  , comparePrefix :: Proxy @Ordering LT
+  , consEmptyTail :: Proxy @Symbol "X"
+  , consSingleChar :: Proxy @Symbol ""
+  , deriveAppended :: Proxy @Symbol "HelloWorld"
+  , deriveCons :: Proxy @Symbol "Hello"
+  , deriveHeadTail :: Proxy @Symbol "W"
+  , deriveLeft :: Proxy @Symbol "Hello"
+  , deriveRight :: Proxy @Symbol "World"
+  }
 
 Types
 Proxy :: forall (k :: Type). k -> Type

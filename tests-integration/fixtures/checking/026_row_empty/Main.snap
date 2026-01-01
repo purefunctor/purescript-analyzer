@@ -16,7 +16,7 @@ EmptyRow = ()
   Kind = :0
   Type = :0
 
-EmptyRecord = {  }
+EmptyRecord = {}
   Quantified = :0
   Kind = :0
   Type = :0

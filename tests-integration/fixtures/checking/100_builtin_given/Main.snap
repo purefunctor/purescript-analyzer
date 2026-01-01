@@ -1,14 +1,25 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
 Proxy :: forall (k :: Type) (a :: k). Proxy @k a
 N :: N
-mkN :: forall (i :: Int) (lower :: Int) (upper :: Int). Add 1 (-1) lower => Compare i lower GT => Add 5 1 upper => Compare i upper LT => Proxy @Int i -> N
+mkN ::
+  forall (i :: Int) (lower :: Int) (upper :: Int).
+    Add 1 (-1) lower =>
+    Compare i lower GT =>
+    Add 5 1 upper =>
+    Compare i upper LT =>
+    Proxy @Int i -> N
 Something :: N -> Something
-mkSomething :: forall (i :: Int) (lower :: Int) (upper :: Int). Add 1 (-1) lower => Compare i lower GT => Add 5 1 upper => Compare i upper LT => Proxy @Int i -> Something
+mkSomething ::
+  forall (i :: Int) (lower :: Int) (upper :: Int).
+    Add 1 (-1) lower =>
+    Compare i lower GT =>
+    Add 5 1 upper =>
+    Compare i upper LT =>
+    Proxy @Int i -> Something
 forceSolve :: Something
 
 Types

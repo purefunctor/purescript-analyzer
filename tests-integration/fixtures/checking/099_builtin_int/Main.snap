@@ -1,6 +1,5 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
@@ -14,7 +13,16 @@ compareLT :: forall (ord :: Ordering). Compare 1 2 ord => Proxy @Ordering ord
 compareEQ :: forall (ord :: Ordering). Compare 5 5 ord => Proxy @Ordering ord
 compareGT :: forall (ord :: Ordering). Compare 10 3 ord => Proxy @Ordering ord
 deriveString :: forall (s :: Symbol). ToString 42 s => Proxy @Symbol s
-forceSolve :: { compareEQ :: Proxy @Ordering EQ, compareGT :: Proxy @Ordering GT, compareLT :: Proxy @Ordering LT, deriveLeft :: Proxy @Int 1, deriveMul :: Proxy @Int 12, deriveRight :: Proxy @Int 2, deriveString :: Proxy @Symbol "42", deriveSum :: Proxy @Int 3 }
+forceSolve ::
+  { compareEQ :: Proxy @Ordering EQ
+  , compareGT :: Proxy @Ordering GT
+  , compareLT :: Proxy @Ordering LT
+  , deriveLeft :: Proxy @Int 1
+  , deriveMul :: Proxy @Int 12
+  , deriveRight :: Proxy @Int 2
+  , deriveString :: Proxy @Symbol "42"
+  , deriveSum :: Proxy @Int 3
+  }
 
 Types
 Proxy :: forall (k :: Type). k -> Type

@@ -3,11 +3,19 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-bind :: forall (a :: Type) (b :: Type) (x :: Type) (y :: Type). Collector x a -> (a -> Collector y b) -> Collector (Tuple x y) b
-discard :: forall (a :: Type) (b :: Type) (x :: Type) (y :: Type). Collector x a -> (a -> Collector y b) -> Collector (Tuple x y) b
+bind ::
+  forall (a :: Type) (b :: Type) (x :: Type) (y :: Type).
+    Collector x a -> (a -> Collector y b) -> Collector (Tuple x y) b
+discard ::
+  forall (a :: Type) (b :: Type) (x :: Type) (y :: Type).
+    Collector x a -> (a -> Collector y b) -> Collector (Tuple x y) b
 pure :: forall (a :: Type). a -> Collector a a
-test1 :: Collector (Tuple Int (Tuple String (Tuple Char { x :: Int, y :: String, z :: Char }))) { x :: Int, y :: String, z :: Char }
-test2 :: Collector (Tuple Char (Tuple Boolean { x :: Char, y :: Boolean })) { x :: Char, y :: Boolean }
+test1 ::
+  Collector
+    (Tuple Int (Tuple String (Tuple Char { x :: Int, y :: String, z :: Char })))
+    { x :: Int, y :: String, z :: Char }
+test2 ::
+  Collector (Tuple Char (Tuple Boolean { x :: Char, y :: Boolean })) { x :: Char, y :: Boolean }
 test3 :: Collector (Tuple Int (Tuple String { y :: Int, z :: String })) { y :: Int, z :: String }
 
 Types
