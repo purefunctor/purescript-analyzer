@@ -1,0 +1,41 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+N :: N
+mkN ::
+  forall (i :: Int) (lower :: Int) (upper :: Int).
+    Add 1 (-1) lower =>
+    Compare i lower GT =>
+    Add 5 1 upper =>
+    Compare i upper LT =>
+    Proxy @Int i -> N
+Something :: N -> Something
+mkSomething ::
+  forall (i :: Int) (lower :: Int) (upper :: Int).
+    Add 1 (-1) lower =>
+    Compare i lower GT =>
+    Add 5 1 upper =>
+    Compare i upper LT =>
+    Proxy @Int i -> Something
+forceSolve :: Something
+
+Types
+Proxy :: forall (k :: Type). k -> Type
+N :: Type
+MinN :: Int
+MaxN :: Int
+Something :: Type
+
+Synonyms
+MinN = 1
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+MaxN = 5
+  Quantified = :0
+  Kind = :0
+  Type = :0

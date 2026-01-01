@@ -1,5 +1,7 @@
 pub mod bracketing;
+pub mod sections;
 pub use bracketing::{Bracketed, OperatorTree, bracketed};
+pub use sections::{SectionResult, Sectioned, sectioned};
 
 use std::sync::Arc;
 

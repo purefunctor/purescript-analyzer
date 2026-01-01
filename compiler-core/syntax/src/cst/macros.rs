@@ -104,7 +104,7 @@ macro_rules! has_tokens {
                 pub fn $name(&self) -> impl Iterator<Item = crate::SyntaxToken> {
                     self.syntax().children_with_tokens().filter_map(|n| {
                         let t = n.into_token()?;
-                        if t.kind() == crate::SyntaxKind::UPPER {
+                        if t.kind() == crate::SyntaxKind::$token {
                             Some(t)
                         } else {
                             None

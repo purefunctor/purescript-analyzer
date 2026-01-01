@@ -196,6 +196,23 @@ impl IndexingPairs {
             if *class_member_id == id { Some(*term_id) } else { None }
         })
     }
+
+    pub fn instance_chain_id(&self, id: InstanceId) -> Option<InstanceChainId> {
+        self.instance_chain.iter().find_map(
+            |(chain_id, instance_id)| {
+                if *instance_id == id { Some(*chain_id) } else { None }
+            },
+        )
+    }
+
+    pub fn instance_chain_position(&self, id: InstanceId) -> Option<u32> {
+        let chain_of_id = self.instance_chain_id(id)?;
+        self.instance_chain
+            .iter()
+            .filter(|(chain_id, _)| *chain_id == chain_of_id)
+            .position(|(_, instance_id)| *instance_id == id)
+            .map(|position| position as u32)
+    }
 }
 
 pub fn index_module(cst: &cst::Module, stabilized: &StabilizedModule) -> IndexedModule {

@@ -1,0 +1,8 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+loop :: forall (t1 :: Type) (t2 :: Type). t1 -> t2
+
+Types

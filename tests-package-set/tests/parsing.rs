@@ -156,5 +156,35 @@ fn test_parallel_parse_package_set() {
     let lowering = start.elapsed();
     println!("Lowering {lowering:?}");
 
-    println!("Total {:?}", parsing + cst_id + indexing + resolving + lowering);
+    let start = Instant::now();
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let bracketed = engine.bracketed(id);
+        assert!(bracketed.is_ok());
+    });
+    let bracketing = start.elapsed();
+    println!("Bracketing {bracketing:?}");
+
+    let start = Instant::now();
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let sectioned = engine.sectioned(id);
+        assert!(sectioned.is_ok());
+    });
+    let sectioning = start.elapsed();
+    println!("Sectioning {sectioning:?}");
+
+    let start = Instant::now();
+    source.iter().for_each(|&id| {
+        let engine = engine.snapshot();
+        let checked = engine.checked(id);
+        assert!(checked.is_ok());
+    });
+    let checking = start.elapsed();
+    println!("Checking {checking:?}");
+
+    println!(
+        "Total {:?}",
+        parsing + cst_id + indexing + resolving + lowering + bracketing + sectioning + checking
+    );
 }

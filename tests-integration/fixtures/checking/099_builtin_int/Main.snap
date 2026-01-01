@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+Unit :: Unit
+deriveSum :: forall (sum :: Int). Add 1 2 sum => Proxy @Int sum
+deriveRight :: forall (right :: Int). Add 1 right 3 => Proxy @Int right
+deriveLeft :: forall (left :: Int). Add left 2 3 => Proxy @Int left
+deriveMul :: forall (product :: Int). Mul 3 4 product => Proxy @Int product
+compareLT :: forall (ord :: Ordering). Compare 1 2 ord => Proxy @Ordering ord
+compareEQ :: forall (ord :: Ordering). Compare 5 5 ord => Proxy @Ordering ord
+compareGT :: forall (ord :: Ordering). Compare 10 3 ord => Proxy @Ordering ord
+deriveString :: forall (s :: Symbol). ToString 42 s => Proxy @Symbol s
+forceSolve ::
+  { compareEQ :: Proxy @Ordering EQ
+  , compareGT :: Proxy @Ordering GT
+  , compareLT :: Proxy @Ordering LT
+  , deriveLeft :: Proxy @Int 1
+  , deriveMul :: Proxy @Int 12
+  , deriveRight :: Proxy @Int 2
+  , deriveString :: Proxy @Symbol "42"
+  , deriveSum :: Proxy @Int 3
+  }
+
+Types
+Proxy :: forall (k :: Type). k -> Type
+Unit :: Type

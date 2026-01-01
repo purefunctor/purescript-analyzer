@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+pure :: forall (a :: Type). a -> Effect a
+bind :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+discard :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+test :: Effect (Tuple Int Int)
+test' :: Effect (Tuple Int Int)
+
+Types
+Effect :: Type -> Type
+Tuple :: Type -> Type -> Type

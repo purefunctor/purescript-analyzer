@@ -15,7 +15,7 @@ type Reader r = ReaderT r Identity
 type State s = StateT s Identity
 
 -- Apply pattern for transformers
-type Apply :: forall k. (k -> Type) -> k -> Type
+type Apply :: forall k l. (k -> l) -> k -> l
 type Apply f a = f a
 
 -- Using Apply with transformer synonyms

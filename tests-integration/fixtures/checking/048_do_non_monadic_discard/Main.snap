@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+bind :: forall (a :: Type) (b :: Type). a -> (a -> b) -> b
+discard :: forall (a :: Type) (b :: Type). a -> (a -> b) -> b
+test :: Int
+test' :: Int
+
+Types

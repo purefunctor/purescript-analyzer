@@ -1,18 +1,13 @@
+//! Implements the core structures used in the type checker.
+
 pub mod debruijn;
 pub mod pretty;
 
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::TypeItemId;
+use indexing::{InstanceChainId, TypeItemId};
 use smol_str::SmolStr;
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub enum BuiltinConstructor {
-    Boolean,
-    Int,
-    Number,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForallBinder {
@@ -26,7 +21,7 @@ pub struct ForallBinder {
 pub enum Variable {
     Implicit(debruijn::Level),
     Skolem(debruijn::Level, TypeId),
-    Bound(debruijn::Index),
+    Bound(debruijn::Level),
     Free(SmolStr),
 }
 
@@ -38,8 +33,7 @@ pub struct RowField {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RowType {
-    /// Invariant: fields are stable-sorted to maintain `Map<Label, NonEmptyList<Type>>`
-    /// semantics for duplicate labels.
+    /// A stable-sorted list representing `Map<Label, NonEmptyList<Type>>`.
     pub fields: Arc<[RowField]>,
     /// Closed row if [`None`]; Open row if [`Some`].
     ///
@@ -117,4 +111,19 @@ impl Synonym {
         self.synonym_type = synonym_type;
         self
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Instance {
+    pub arguments: Vec<(TypeId, TypeId)>,
+    pub constraints: Vec<(TypeId, TypeId)>,
+    pub resolution: (FileId, TypeItemId),
+    pub chain_id: InstanceChainId,
+    pub chain_position: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Class {
+    pub superclasses: Vec<(TypeId, TypeId)>,
+    pub variable_levels: Vec<debruijn::Level>,
 }

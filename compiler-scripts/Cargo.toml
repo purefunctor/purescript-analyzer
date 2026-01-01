@@ -1,0 +1,15 @@
+[package]
+name = "compiler-scripts"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+console = "0.15"
+similar = { version = "2", features = ["inline"] }
+md-5 = "0.10"
+walkdir = "2"
+
+[[bin]]
+name = "test-checking"
+path = "src/bin/test-checking.rs"

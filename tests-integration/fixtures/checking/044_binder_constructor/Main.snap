@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+Nil :: forall (a :: Type). List a
+Cons :: forall (a :: Type). a -> List a -> List a
+foo :: Pair Int String -> Int
+bar :: Maybe Int -> Int
+baz :: List Int -> Int
+qux :: Pair String String -> String
+foo' :: forall (t18 :: Type) (t19 :: Type). Pair t19 t18 -> t19
+bar' :: Maybe Int -> Int
+baz' :: List Int -> Int
+qux' :: forall (t32 :: Type) (t33 :: Type). Pair t33 t32 -> t33
+
+Types
+Pair :: Type -> Type -> Type
+Maybe :: Type -> Type
+List :: Type -> Type

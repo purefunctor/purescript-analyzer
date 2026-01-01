@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+HasName :: Row Type -> Type
+HasNameRow :: Row Type -> Row Type
+
+Synonyms
+HasName = forall (r :: Row Type). { name :: String | r }
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+HasNameRow = forall (r :: Row Type). ( name :: String | r )
+  Quantified = :0
+  Kind = :0
+  Type = :1

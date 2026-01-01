@@ -1,9 +1,0 @@
----
-source: tests-integration/tests/checking/generated.rs
-expression: report
----
-Terms
-Proxy :: forall (t0 :: Type) (a :: t0). Proxy a
-
-Types
-Proxy :: forall (t0 :: Type). t0 -> Type

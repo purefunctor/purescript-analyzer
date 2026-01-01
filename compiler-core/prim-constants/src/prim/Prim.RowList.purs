@@ -9,5 +9,5 @@ data Cons label head tail
 data Nil :: forall (k :: Type). RowList k
 data Nil
 
-class RowToList :: forall (k :: Type). Row k -> RowList k
+class RowToList :: forall (k :: Type). Row k -> RowList k -> Constraint
 class RowToList row list | row -> list

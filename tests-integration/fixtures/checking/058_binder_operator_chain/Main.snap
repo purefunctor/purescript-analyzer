@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Nil :: forall (a :: Type). List a
+Cons :: forall (a :: Type). a -> List a -> List a
+: :: forall (a :: Type). a -> List a -> List a
+matchCons :: List Int -> Int
+matchSingle :: List Int -> Int
+matchCons' :: List Int -> Int
+
+Types
+List :: Type -> Type

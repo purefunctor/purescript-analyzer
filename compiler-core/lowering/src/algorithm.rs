@@ -31,11 +31,18 @@ pub(crate) struct State {
 
     pub(crate) current_term: Option<TermItemId>,
     pub(crate) current_type: Option<TypeItemId>,
+
+    pub(crate) current_kind: Option<TypeItemId>,
     pub(crate) current_synonym: Option<TypeItemId>,
+    pub(crate) current_let_binding: Option<LetBindingNameGroupId>,
+    pub(crate) current_let_scope: Option<GraphNodeId>,
 
     pub(crate) term_graph: ItemGraph<TermItemId>,
     pub(crate) type_graph: ItemGraph<TypeItemId>,
+
+    pub(crate) kind_graph: ItemGraph<TypeItemId>,
     pub(crate) synonym_graph: ItemGraph<TypeItemId>,
+    pub(crate) let_binding_graph: ItemGraph<LetBindingNameGroupId>,
 
     pub(crate) errors: Vec<LoweringError>,
 }
@@ -77,6 +84,23 @@ impl State {
         self.synonym_graph.add_node(id);
     }
 
+    fn end_synonym(&mut self) {
+        self.current_synonym = None;
+    }
+
+    fn begin_kind(&mut self, id: TypeItemId) {
+        self.current_kind = Some(id);
+        self.kind_graph.add_node(id);
+    }
+
+    fn end_kind(&mut self) {
+        self.current_kind = None;
+    }
+
+    fn alloc_let_binding(&mut self, group: LetBindingNameGroup) -> LetBindingNameGroupId {
+        self.info.let_binding.alloc(group)
+    }
+
     fn associate_binder_info(&mut self, id: BinderId, kind: BinderKind) {
         self.info.binder_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
@@ -95,12 +119,26 @@ impl State {
         self.nodes.type_node.insert(id, node);
     }
 
+    fn associate_let_binding_name(&mut self, id: LetBindingNameGroupId, info: LetBindingName) {
+        self.info.let_binding_name.insert(id, info);
+        let Some(node) = self.graph_scope else { return };
+        self.nodes.let_node.insert(id, node);
+    }
+
     fn insert_binder(&mut self, name: &str, id: BinderId) {
         let Some(node) = self.graph_scope else { return };
-        let GraphNode::Binder { bindings, .. } = &mut self.graph.inner[node] else { return };
+        let GraphNode::Binder { binders, .. } = &mut self.graph.inner[node] else { return };
 
         let name = SmolStr::from(name);
-        bindings.insert(name, id);
+        binders.insert(name, id);
+    }
+
+    fn insert_record_pun(&mut self, name: &str, id: RecordPunId) {
+        let Some(node) = self.graph_scope else { return };
+        let GraphNode::Binder { puns, .. } = &mut self.graph.inner[node] else { return };
+
+        let name = SmolStr::from(name);
+        puns.insert(name, id);
     }
 
     fn insert_bound_variable(&mut self, name: &str, id: TypeVariableBindingId) {
@@ -113,8 +151,9 @@ impl State {
 
     fn push_binder_scope(&mut self) -> Option<GraphNodeId> {
         let parent = mem::take(&mut self.graph_scope);
-        let bindings = FxHashMap::default();
-        let id = self.graph.inner.alloc(GraphNode::Binder { parent, bindings });
+        let binders = FxHashMap::default();
+        let puns = FxHashMap::default();
+        let id = self.graph.inner.alloc(GraphNode::Binder { parent, binders, puns });
         self.graph_scope.replace(id)
     }
 
@@ -173,16 +212,29 @@ impl State {
         Some((file_id, term_id))
     }
 
-    fn resolve_term_local(&self, name: &str) -> Option<TermVariableResolution> {
+    fn resolve_term_local(&mut self, name: &str) -> Option<TermVariableResolution> {
         let id = self.graph_scope?;
-        self.graph.traverse(id).find_map(|(_, graph)| match graph {
-            GraphNode::Binder { bindings, .. } => {
-                let r = *bindings.get(name)?;
-                Some(TermVariableResolution::Binder(r))
+        self.graph.traverse(id).find_map(|(node_id, graph)| match graph {
+            GraphNode::Binder { binders, puns, .. } => {
+                if let Some(r) = binders.get(name) {
+                    return Some(TermVariableResolution::Binder(*r));
+                }
+                if let Some(r) = puns.get(name) {
+                    return Some(TermVariableResolution::RecordPun(*r));
+                }
+                None
             }
             GraphNode::Let { bindings, .. } => {
-                let r = bindings.get(name)?.clone();
-                Some(TermVariableResolution::Let(r))
+                let target_id = *bindings.get(name)?;
+
+                // Track dependency if we're inside a let binding in the SAME let scope
+                if let Some(source_id) = self.current_let_binding
+                    && self.current_let_scope == Some(node_id)
+                {
+                    self.let_binding_graph.add_edge(source_id, target_id, ());
+                }
+
+                Some(TermVariableResolution::Let(target_id))
             }
             _ => None,
         })
@@ -205,6 +257,10 @@ impl State {
                 && let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind
             {
                 self.synonym_graph.add_edge(synonym_id, type_id, ());
+            }
+
+            if let Some(kind_id) = self.current_kind {
+                self.kind_graph.add_edge(kind_id, type_id, ());
             }
         }
 
@@ -309,31 +365,24 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Derive { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
-            let arguments = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_head()?;
-                    state.push_implicit_scope();
-                    let arguments = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    state.finish_implicit_scope();
-                    Some(arguments)
-                })
-                .unwrap_or_default();
+            let arguments = recover! {
+                let head = cst.as_ref()?.instance_head()?;
+                state.push_implicit_scope();
+                let arguments = head
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect();
+                state.finish_implicit_scope();
+                arguments
+            };
 
-            let constraints = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_constraints()?;
-                    let constraints = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    Some(constraints)
-                })
-                .unwrap_or_default();
+            let constraints = recover! {
+                cst.as_ref()?
+                    .instance_constraints()?
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect()
+            };
 
             let kind = TermItemIr::Derive { constraints, arguments };
             state.info.term_item.insert(item_id, kind);
@@ -354,41 +403,41 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Instance { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
-            let arguments = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_head()?;
-                    state.push_implicit_scope();
-                    let arguments = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    state.finish_implicit_scope();
-                    Some(arguments)
-                })
-                .unwrap_or_default();
+            let resolution = cst.as_ref().and_then(|cst| {
+                let cst = cst.instance_head()?;
+                let cst = cst.qualified()?;
 
-            let constraints = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_constraints()?;
-                    let constraints = cst
-                        .children()
-                        .map(|cst| recursive::lower_type(state, context, &cst))
-                        .collect();
-                    Some(constraints)
-                })
-                .unwrap_or_default();
+                let (qualifier, name) =
+                    recursive::lower_qualified_name(&cst, cst::QualifiedName::upper)?;
 
-            let members = cst
-                .as_ref()
-                .and_then(|cst| {
-                    let cst = cst.instance_statements()?;
-                    Some(lower_instance_statements(state, context, &cst))
-                })
-                .unwrap_or_default();
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+            });
 
-            let kind = TermItemIr::Instance { constraints, arguments, members };
+            let arguments = recover! {
+                let head = cst.as_ref()?.instance_head()?;
+                state.push_implicit_scope();
+                let arguments = head
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect();
+                state.finish_implicit_scope();
+                arguments
+            };
+
+            let constraints = recover! {
+                cst.as_ref()?
+                    .instance_constraints()?
+                    .children()
+                    .map(|cst| recursive::lower_type(state, context, &cst))
+                    .collect()
+            };
+
+            let members = recover! {
+                let statements = cst.as_ref()?.instance_statements()?;
+                lower_instance_statements(state, context, &statements)
+            };
+
+            let kind = TermItemIr::Instance { constraints, resolution, arguments, members };
             state.info.term_item.insert(item_id, kind);
         }
 
@@ -409,8 +458,9 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 
             let resolution = cst.as_ref().and_then(|cst| {
                 let cst = cst.qualified()?;
-                let (qualifier, name) =
-                    recursive::lower_qualified_name(&cst, cst::QualifiedName::lower)?;
+                let (qualifier, name) = None
+                    .or_else(|| recursive::lower_qualified_name(&cst, cst::QualifiedName::lower))
+                    .or_else(|| recursive::lower_qualified_name(&cst, cst::QualifiedName::upper))?;
                 state.resolve_term_reference(context, qualifier.as_deref(), &name)
             });
 
@@ -454,12 +504,16 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, item: &TypeItem) {
     match &item.kind {
         TypeItemKind::Data { signature, equation, role } => {
+            state.begin_kind(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
 
             let data = equation.and_then(|id| {
                 let cst =
@@ -483,12 +537,16 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Newtype { signature, equation, role } => {
+            state.begin_kind(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
 
             let newtype = equation.and_then(|id| {
                 let cst =
@@ -512,7 +570,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Synonym { signature, equation } => {
-            state.begin_synonym(item_id);
+            state.begin_kind(item_id);
 
             let signature = signature.and_then(|id| {
                 let cst =
@@ -520,6 +578,10 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 state.push_forall_scope();
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
+
+            state.end_kind();
+
+            state.begin_synonym(item_id);
 
             let synonym = equation.and_then(|id| {
                 let cst =
@@ -536,11 +598,15 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 Some(SynonymIr { variables, synonym })
             });
 
+            state.end_synonym();
+
             let kind = TypeItemIr::SynonymGroup { signature, synonym };
             state.info.type_item.insert(item_id, kind);
         }
 
         TypeItemKind::Class { signature, declaration } => {
+            state.begin_kind(item_id);
+
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
@@ -548,30 +614,41 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 cst.type_().map(|t| recursive::lower_forall(state, context, &t))
             });
 
+            state.end_kind();
+
             let class = declaration.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;
 
                 state.push_forall_scope();
-                let variables = cst
-                    .class_head()
-                    .map(|cst| {
-                        cst.children()
-                            .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let variables: Arc<[_]> = recover! {
+                    cst.class_head()?
+                        .children()
+                        .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
+                        .collect()
+                };
 
-                let constraints = cst
-                    .class_constraints()
-                    .map(|cst| {
-                        cst.children()
-                            .map(|cst| recursive::lower_type(state, context, &cst))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let constraints = recover! {
+                    cst.class_constraints()?
+                        .children()
+                        .map(|cst| recursive::lower_type(state, context, &cst))
+                        .collect()
+                };
 
-                Some(ClassIr { constraints, variables })
+                let variable_map: FxHashMap<&str, u8> = variables
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, v)| v.name.as_deref().map(|n| (n, i as u8)))
+                    .collect();
+
+                let functional_dependencies = recover! {
+                    cst.class_functional_dependencies()?
+                        .children()
+                        .map(|dep| lower_functional_dependency(&variable_map, &dep))
+                        .collect()
+                };
+
+                Some(ClassIr { constraints, variables, functional_dependencies })
             });
 
             let kind = TypeItemIr::ClassGroup { signature, class };
@@ -581,12 +658,16 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
         }
 
         TypeItemKind::Foreign { id, role } => {
+            state.begin_kind(item_id);
+
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
             let signature = cst.as_ref().and_then(|cst| {
                 let cst = cst.type_()?;
                 Some(recursive::lower_type(state, context, &cst))
             });
+
+            state.end_kind();
 
             let roles = role.map(|id| lower_roles(context, id)).unwrap_or_default();
 
@@ -609,12 +690,16 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 cst.text().parse().ok()
             });
 
+            state.begin_kind(item_id);
+
             let resolution = cst.as_ref().and_then(|cst| {
                 let cst = cst.qualified()?;
                 let (qualifier, name) =
                     recursive::lower_qualified_name(&cst, cst::QualifiedName::upper)?;
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
+
+            state.end_kind();
 
             let kind = TypeItemIr::Operator { associativity, precedence, resolution };
             state.info.type_item.insert(item_id, kind);
@@ -752,4 +837,24 @@ fn lower_roles(context: &Context, id: TypeRoleId) -> Arc<[Role]> {
             .collect()
     })
     .unwrap_or_default()
+}
+
+fn lower_functional_dependency(
+    var_map: &FxHashMap<&str, u8>,
+    cst: &cst::FunctionalDependency,
+) -> FunctionalDependency {
+    match cst {
+        cst::FunctionalDependency::FunctionalDependencyDetermined(fd) => {
+            let determined: Arc<[u8]> =
+                fd.children().filter_map(|t| var_map.get(t.text()).copied()).collect();
+            FunctionalDependency { determiners: Arc::from([]), determined }
+        }
+        cst::FunctionalDependency::FunctionalDependencyDetermines(fd) => {
+            let determiners: Arc<[u8]> =
+                fd.determiners().filter_map(|t| var_map.get(t.text()).copied()).collect();
+            let determined: Arc<[u8]> =
+                fd.determined().filter_map(|t| var_map.get(t.text()).copied()).collect();
+            FunctionalDependency { determiners, determined }
+        }
+    }
 }

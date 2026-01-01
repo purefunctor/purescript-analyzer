@@ -4,8 +4,7 @@ use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use itertools::Itertools;
 use lowering::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, LetBound, TermVariableResolution, TypeId,
-    TypeKind,
+    BinderId, BinderKind, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind,
 };
 use rowan::TextRange;
 use rowan::ast::{AstNode, AstPtr};
@@ -183,11 +182,13 @@ fn hover_expression(
             let resolution = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             match resolution {
                 TermVariableResolution::Binder(_) => Ok(None),
-                TermVariableResolution::Let(let_binding) => {
+                TermVariableResolution::Let(let_binding_id) => {
                     let (parsed, _) = engine.parsed(current_file)?;
                     let root = parsed.syntax_node();
+                    let let_binding = lowered.info.get_let_binding_group(*let_binding_id);
                     hover_let(&root, &stabilized, let_binding)
                 }
+                TermVariableResolution::RecordPun(_) => Ok(None),
                 TermVariableResolution::Reference(f_id, t_id) => {
                     hover_file_term(engine, *f_id, *t_id)
                 }
@@ -204,7 +205,7 @@ fn hover_expression(
 fn hover_let(
     root: &SyntaxNode,
     stabilized: &StabilizedModule,
-    let_binding: &LetBound,
+    let_binding: &lowering::LetBindingNameGroup,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let signature = let_binding.signature.and_then(|id| {
         let ptr = stabilized.syntax_ptr(id)?;

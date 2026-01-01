@@ -9,11 +9,15 @@ fn read_dir<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<'output
     fs::read_dir(path).unwrap().filter_map(|entry| Some(entry.ok()?.path())).sorted()
 }
 
+fn read_purs_files<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<'output> {
+    read_dir(path).filter(|p| p.extension().is_some_and(|ext| ext == "purs"))
+}
+
 fn main() {
-    println!("cargo::rerun-if-changed=fixtures/lsp");
-    println!("cargo::rerun-if-changed=fixtures/lowering");
-    println!("cargo::rerun-if-changed=fixtures/resolving");
-    println!("cargo::rerun-if-changed=fixtures/checking");
+    println!("cargo::rerun-if-env-changed=LSP_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=LOWERING_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=RESOLVING_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=CHECKING_FIXTURES_HASH");
     generate_lsp();
     generate_lowering();
     generate_resolving();
@@ -21,81 +25,66 @@ fn main() {
 }
 
 fn generate_lsp() {
-    let lsp = Path::new("./fixtures/lsp");
-    let lsp = read_dir(lsp);
-
     let mut buffer = fs::File::create("./tests/lsp/generated.rs").unwrap();
-    writeln!(buffer, "// Do not edit! See build.rs").unwrap();
+    writeln!(
+        buffer,
+        r#"// Do not edit! See build.rs
+
+#[rustfmt::skip]
+fn run_test(folder: &str, file: &str) {{
+    let path = std::path::Path::new("fixtures/lsp").join(folder);
+    let (engine, files) = tests_integration::load_compiler(&path);
+    let Some(id) = engine.module_file(file) else {{ return }};
+    let report = tests_integration::generated::lsp::report(&engine, &files, id);
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/lsp").join(folder));
+    settings.set_prepend_module_to_snapshot(false);
+    settings.bind(|| insta::assert_snapshot!(file, report));
+}}"#
+    )
+    .unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
-
-    for folder in lsp {
-        let Some(folder) = folder.file_stem() else {
-            continue;
-        };
-
-        let folder_name = folder.to_os_string().into_string().unwrap();
-        let folder_name = converter.convert(folder_name);
-
+    for folder in read_dir(Path::new("./fixtures/lsp")) {
+        let Some(stem) = folder.file_stem() else { continue };
+        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
         writeln!(
             buffer,
             r#"
-#[rustfmt::skip]
-#[test]
-fn test_{folder_name}_main() {{
-    let (engine, files) = tests_integration::load_compiler(std::path::Path::new("fixtures/lsp/{folder_name}"));
-    let Some(id) = engine.module_file("Main") else {{
-        return;
-    }};
-    let report = tests_integration::generated::lsp::report(&engine, &files, id);
-    insta::assert_snapshot!(report);
-}}"#
+#[rustfmt::skip] #[test] fn test_{folder_name}_main() {{ run_test("{folder_name}", "Main"); }}"#
         )
         .unwrap();
     }
 }
 
 fn generate_lowering() {
-    let lowering = Path::new("./fixtures/lowering");
-    let lowering = read_dir(lowering).map(|folder| {
-        let files = read_dir(&folder);
-        (folder, files)
-    });
-
     let mut buffer = fs::File::create("./tests/lowering/generated.rs").unwrap();
-    writeln!(buffer, "// Do not edit! See build.rs").unwrap();
+    writeln!(buffer, r#"// Do not edit! See build.rs
+
+#[rustfmt::skip]
+fn run_test(folder: &str, file: &str) {{
+    let path = std::path::Path::new("fixtures/lowering").join(folder);
+    let (engine, _) = tests_integration::load_compiler(&path);
+    let Some(id) = engine.module_file(file) else {{ return }};
+    let report = tests_integration::generated::basic::report_lowered(&engine, id, file);
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/lowering").join(folder));
+    settings.set_prepend_module_to_snapshot(false);
+    settings.bind(|| insta::assert_snapshot!(file, report));
+}}"#).unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
-
-    for (folder, files) in lowering {
-        let Some(folder) = folder.file_stem() else {
-            continue;
-        };
-
-        let folder_name = folder.to_os_string().into_string().unwrap();
-        let folder_name = converter.convert(folder_name);
-
-        for file in files {
-            let Some(file) = file.file_stem() else {
-                continue;
-            };
-
-            let file_name = file.to_os_string().into_string().unwrap();
-            let test_name = converter.convert(&file_name);
-
+    for folder in read_dir(Path::new("./fixtures/lowering")) {
+        let Some(stem) = folder.file_stem() else { continue };
+        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        for file in read_purs_files(&folder) {
+            let Some(file_stem) = file.file_stem() else { continue };
+            let file_name = file_stem.to_os_string().into_string().unwrap();
+            let test_name = format!("{}_{}", folder_name, converter.convert(&file_name));
             writeln!(
                 buffer,
                 r#"
-#[rustfmt::skip]
-#[test]
-fn test_{folder_name}_{test_name}() {{
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/lowering/{folder_name}"));
-    let Some(id) = engine.module_file("{file_name}") else {{
-        return;
-    }};
-    let report = tests_integration::generated::basic::report_lowered(&engine, id, "{file_name}");
-    insta::assert_snapshot!(report);
-}}"#
+#[rustfmt::skip] #[test] fn test_{test_name}() {{ run_test("{folder_name}", "{file_name}"); }}"#
             )
             .unwrap();
         }
@@ -103,46 +92,33 @@ fn test_{folder_name}_{test_name}() {{
 }
 
 fn generate_resolving() {
-    let resolving = Path::new("./fixtures/resolving");
-    let resolving = read_dir(resolving).map(|folder| {
-        let files = read_dir(&folder);
-        (folder, files)
-    });
-
     let mut buffer = fs::File::create("./tests/resolving/generated.rs").unwrap();
-    writeln!(buffer, "// Do not edit! See build.rs").unwrap();
+    writeln!(buffer, r#"// Do not edit! See build.rs
+
+#[rustfmt::skip]
+fn run_test(folder: &str, file: &str) {{
+    let path = std::path::Path::new("fixtures/resolving").join(folder);
+    let (engine, _) = tests_integration::load_compiler(&path);
+    let Some(id) = engine.module_file(file) else {{ return }};
+    let report = tests_integration::generated::basic::report_resolved(&engine, id, file);
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/resolving").join(folder));
+    settings.set_prepend_module_to_snapshot(false);
+    settings.bind(|| insta::assert_snapshot!(file, report));
+}}"#).unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
-
-    for (folder, files) in resolving {
-        let Some(folder) = folder.file_stem() else {
-            continue;
-        };
-
-        let folder_name = folder.to_os_string().into_string().unwrap();
-        let folder_name = converter.convert(folder_name);
-
-        for file in files {
-            let Some(file) = file.file_stem() else {
-                continue;
-            };
-
-            let file_name = file.to_os_string().into_string().unwrap();
-            let test_name = converter.convert(&file_name);
-
+    for folder in read_dir(Path::new("./fixtures/resolving")) {
+        let Some(stem) = folder.file_stem() else { continue };
+        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        for file in read_purs_files(&folder) {
+            let Some(file_stem) = file.file_stem() else { continue };
+            let file_name = file_stem.to_os_string().into_string().unwrap();
+            let test_name = format!("{}_{}", folder_name, converter.convert(&file_name));
             writeln!(
                 buffer,
                 r#"
-#[rustfmt::skip]
-#[test]
-fn test_{folder_name}_{test_name}() {{
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/resolving/{folder_name}"));
-    let Some(id) = engine.module_file("{file_name}") else {{
-        return;
-    }};
-    let report = tests_integration::generated::basic::report_resolved(&engine, id, "{file_name}");
-    insta::assert_snapshot!(report);
-}}"#
+#[rustfmt::skip] #[test] fn test_{test_name}() {{ run_test("{folder_name}", "{file_name}"); }}"#
             )
             .unwrap();
         }
@@ -150,35 +126,29 @@ fn test_{folder_name}_{test_name}() {{
 }
 
 fn generate_checking() {
-    let checking = Path::new("./fixtures/checking");
-    let checking = read_dir(checking);
-
     let mut buffer = fs::File::create("./tests/checking/generated.rs").unwrap();
-    writeln!(buffer, "// Do not edit! See build.rs").unwrap();
+    writeln!(buffer, r#"// Do not edit! See build.rs
+
+#[rustfmt::skip]
+fn run_test(folder: &str, file: &str) {{
+    let path = std::path::Path::new("fixtures/checking").join(folder);
+    let (engine, _) = tests_integration::load_compiler(&path);
+    let Some(id) = engine.module_file(file) else {{ return }};
+    let report = tests_integration::generated::basic::report_checked(&engine, id);
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking").join(folder));
+    settings.set_prepend_module_to_snapshot(false);
+    settings.bind(|| insta::assert_snapshot!(file, report));
+}}"#).unwrap();
 
     let converter = Converter::new().to_case(Case::Snake);
-
-    for folder in checking {
-        let Some(folder) = folder.file_stem() else {
-            continue;
-        };
-
-        let folder_name = folder.to_os_string().into_string().unwrap();
-        let folder_name = converter.convert(folder_name);
-
+    for folder in read_dir(Path::new("./fixtures/checking")) {
+        let Some(stem) = folder.file_stem() else { continue };
+        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
         writeln!(
             buffer,
             r#"
-#[rustfmt::skip]
-#[test]
-fn test_{folder_name}_main() {{
-    let (engine, _) = tests_integration::load_compiler(std::path::Path::new("fixtures/checking/{folder_name}"));
-    let Some(id) = engine.module_file("Main") else {{
-        return;
-    }};
-    let report = tests_integration::generated::basic::report_checked(&engine, id);
-    insta::assert_snapshot!(report);
-}}"#
+#[rustfmt::skip] #[test] fn test_{folder_name}_main() {{ run_test("{folder_name}", "Main"); }}"#
         )
         .unwrap();
     }

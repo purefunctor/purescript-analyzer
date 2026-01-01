@@ -3,11 +3,12 @@ use std::sync::Arc;
 
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
+use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::source::*;
-use crate::{TermVariableResolution, TypeVariableResolution};
+use crate::{Scc, TermVariableResolution, TypeVariableResolution};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StringKind {
@@ -18,7 +19,7 @@ pub enum StringKind {
 #[derive(Debug, PartialEq, Eq)]
 pub enum BinderRecordItem {
     RecordField { name: Option<SmolStr>, value: Option<BinderId> },
-    RecordPun { name: Option<SmolStr> },
+    RecordPun { id: RecordPunId, name: Option<SmolStr> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -60,7 +61,7 @@ pub struct CaseBranch {
 #[derive(Debug, PartialEq, Eq)]
 pub enum DoStatement {
     Bind { binder: Option<BinderId>, expression: Option<ExpressionId> },
-    Let { statements: Arc<[LetBinding]> },
+    Let { statements: Arc<[LetBindingChunk]> },
     Discard { expression: Option<ExpressionId> },
 }
 
@@ -85,6 +86,7 @@ pub enum ExpressionKind {
         tail: Arc<[InfixPair<ExpressionId>]>,
     },
     Negate {
+        negate: Option<TermVariableResolution>,
         expression: Option<ExpressionId>,
     },
     Application {
@@ -97,7 +99,7 @@ pub enum ExpressionKind {
         else_: Option<ExpressionId>,
     },
     LetIn {
-        bindings: Arc<[LetBinding]>,
+        bindings: Arc<[LetBindingChunk]>,
         expression: Option<ExpressionId>,
     },
     Lambda {
@@ -151,6 +153,7 @@ pub enum ExpressionKind {
         labels: Option<Arc<[SmolStr]>>,
     },
     RecordUpdate {
+        record: Option<ExpressionId>,
         updates: Arc<[RecordUpdate]>,
     },
 }
@@ -161,6 +164,12 @@ pub struct TypeVariableBinding {
     pub id: TypeVariableBindingId,
     pub name: Option<SmolStr>,
     pub kind: Option<TypeId>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct FunctionalDependency {
+    pub determiners: Arc<[u8]>,
+    pub determined: Arc<[u8]>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -204,13 +213,41 @@ pub enum GuardedExpression {
 #[derive(Debug, PartialEq, Eq)]
 pub struct WhereExpression {
     pub expression: Option<ExpressionId>,
-    pub bindings: Arc<[LetBinding]>,
+    pub bindings: Arc<[LetBindingChunk]>,
 }
 
+/// Group of IDs for a let-bound name
+///
+/// This mirrors the [`indexing::TermItemKind::Value`] pattern for top-level
+/// value declarations, where the declaration group is assigned a stable ID.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LetBindingNameGroup {
+    pub signature: Option<LetBindingSignatureId>,
+    pub equations: Arc<[LetBindingEquationId]>,
+}
+
+pub type LetBindingNameGroupId = Idx<LetBindingNameGroup>;
+
+/// Core representation of the let-bound name
+///
+/// This is stored in [`LoweringInfo`] and can be obtained from the stable
+/// ID for any given let-bound name group [`LetBindingNameGroupId`].
 #[derive(Debug, PartialEq, Eq)]
-pub enum LetBinding {
-    Name { signature: Option<TypeId>, equations: Arc<[Equation]> },
+pub struct LetBindingName {
+    pub signature: Option<TypeId>,
+    pub equations: Arc<[Equation]>,
+}
+
+/// A chunk of let bindings. Pattern bindings act as boundaries between chunks.
+///
+/// This structure enables 2-phase type checking for mutually recursive let bindings:
+/// within a `Names` chunk, all bindings can reference each other.
+#[derive(Debug, PartialEq, Eq)]
+pub enum LetBindingChunk {
+    /// Pattern binding (acts as boundary between name binding groups)
     Pattern { binder: Option<BinderId>, where_expression: Option<WhereExpression> },
+    /// Group of name bindings with SCC ordering for type checking
+    Names { bindings: Arc<[LetBindingNameGroupId]>, scc: Vec<Scc<LetBindingNameGroupId>> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -286,6 +323,7 @@ pub enum TermItemIr {
     },
     Instance {
         constraints: Arc<[TypeId]>,
+        resolution: Option<(FileId, TypeItemId)>,
         arguments: Arc<[TypeId]>,
         members: Arc<[InstanceMemberGroup]>,
     },
@@ -324,10 +362,11 @@ pub struct SynonymIr {
     pub synonym: Option<TypeId>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClassIr {
     pub constraints: Arc<[TypeId]>,
     pub variables: Arc<[TypeVariableBinding]>,
+    pub functional_dependencies: Arc<[FunctionalDependency]>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -374,6 +413,10 @@ pub struct LoweringInfo {
     pub(crate) type_kind: FxHashMap<TypeId, TypeKind>,
     pub(crate) term_item: FxHashMap<TermItemId, TermItemIr>,
     pub(crate) type_item: FxHashMap<TypeItemId, TypeItemIr>,
+
+    pub(crate) let_binding: Arena<LetBindingNameGroup>,
+    pub(crate) let_binding_name: ArenaMap<LetBindingNameGroupId, LetBindingName>,
+
     pub(crate) term_operator: FxHashMap<TermOperatorId, (FileId, TermItemId)>,
     pub(crate) type_operator: FxHashMap<TypeOperatorId, (FileId, TypeItemId)>,
 }
@@ -417,6 +460,14 @@ impl LoweringInfo {
 
     pub fn get_type_item(&self, id: TypeItemId) -> Option<&TypeItemIr> {
         self.type_item.get(&id)
+    }
+
+    pub fn get_let_binding_group(&self, id: LetBindingNameGroupId) -> &LetBindingNameGroup {
+        &self.let_binding[id]
+    }
+
+    pub fn get_let_binding(&self, id: LetBindingNameGroupId) -> Option<&LetBindingName> {
+        self.let_binding_name.get(id)
     }
 
     pub fn get_term_operator(&self, id: TermOperatorId) -> Option<(FileId, TermItemId)> {

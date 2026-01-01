@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/lowering.rs
+expression: lowered.errors
+---
+[
+    RecursiveKinds(
+        RecursiveGroup {
+            group: [
+                Idx::<TypeItem>(1),
+                Idx::<TypeItem>(0),
+            ],
+        },
+    ),
+    RecursiveKinds(
+        RecursiveGroup {
+            group: [
+                Idx::<TypeItem>(3),
+                Idx::<TypeItem>(2),
+            ],
+        },
+    ),
+]

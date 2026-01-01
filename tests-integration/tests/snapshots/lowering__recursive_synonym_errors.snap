@@ -4,7 +4,7 @@ expression: lowered.errors
 ---
 [
     RecursiveSynonym(
-        RecursiveSynonym {
+        RecursiveGroup {
             group: [
                 Idx::<TypeItem>(1),
                 Idx::<TypeItem>(0),
@@ -12,7 +12,7 @@ expression: lowered.errors
         },
     ),
     RecursiveSynonym(
-        RecursiveSynonym {
+        RecursiveGroup {
             group: [
                 Idx::<TypeItem>(2),
             ],

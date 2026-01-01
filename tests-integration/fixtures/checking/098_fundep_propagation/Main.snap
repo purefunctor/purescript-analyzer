@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
+test ::
+  forall (t24 :: Type) (t25 :: Type) (t28 :: Type) (r1 :: t24) (r2 :: t25) (r :: t28).
+    IsZero @Type @t24 Z r1 => IsZero @Type @t25 Z r2 => And @t24 @t25 @t28 r1 r2 r => Proxy @t28 r
+forceSolve :: { test :: Proxy @Boolean True }
+
+Types
+Proxy :: forall (t1 :: Type). t1 -> Type
+IsZero :: forall (t3 :: Type) (t5 :: Type). t3 -> t5 -> Constraint
+Z :: Type
+S :: Type -> Type
+And :: forall (t7 :: Type) (t10 :: Type) (t11 :: Type). t7 -> t10 -> t11 -> Constraint

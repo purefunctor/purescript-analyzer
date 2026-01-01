@@ -1,0 +1,611 @@
+use building_types::QueryResult;
+use indexing::TypeItemId;
+use itertools::Itertools;
+use lowering::{
+    ClassIr, DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding,
+};
+use smol_str::SmolStr;
+
+use crate::ExternalQueries;
+use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, CheckedDataLike};
+use crate::algorithm::{inspect, kind, transfer, unification};
+use crate::core::{Class, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
+use crate::error::{ErrorKind, ErrorStep};
+
+const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
+
+pub fn check_type_item<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
+        let Some(item) = context.lowered.info.get_type_item(item_id) else {
+            return Ok(());
+        };
+
+        match item {
+            TypeItemIr::DataGroup { signature, data, .. } => {
+                let Some(DataIr { variables }) = data else {
+                    return Ok(());
+                };
+                check_data_like(state, context, item_id, *signature, variables)
+            }
+
+            TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
+                let Some(NewtypeIr { variables }) = newtype else {
+                    return Ok(());
+                };
+                check_data_like(state, context, item_id, *signature, variables)
+            }
+
+            TypeItemIr::SynonymGroup { signature, synonym } => {
+                let Some(SynonymIr { variables, synonym: Some(synonym) }) = synonym else {
+                    return Ok(());
+                };
+                check_synonym(state, context, item_id, *signature, variables, *synonym)
+            }
+
+            TypeItemIr::ClassGroup { signature, class } => {
+                let Some(class) = class else {
+                    return Ok(());
+                };
+                check_class(state, context, item_id, *signature, class)
+            }
+
+            TypeItemIr::Foreign { .. } => Ok(()),
+
+            TypeItemIr::Operator { associativity, precedence, resolution } => {
+                let Some(associativity) = *associativity else { return Ok(()) };
+                let Some(precedence) = *precedence else { return Ok(()) };
+                let Some((file_id, type_id)) = *resolution else { return Ok(()) };
+
+                let operator = Operator { associativity, precedence, file_id, type_id };
+                state.checked.operators.insert(item_id, operator);
+
+                let id = kind::lookup_file_type(state, context, file_id, type_id)?;
+
+                if !is_binary_operator_type(state, id) {
+                    state.insert_error(ErrorKind::InvalidTypeOperator { id });
+                }
+
+                state.binding_group.types.insert(item_id, id);
+
+                Ok(())
+            }
+        }
+    })
+}
+
+pub fn check_type_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
+        let Some(item) = context.lowered.info.get_type_item(item_id) else {
+            return Ok(());
+        };
+
+        match item {
+            TypeItemIr::DataGroup { signature, .. }
+            | TypeItemIr::NewtypeGroup { signature, .. }
+            | TypeItemIr::SynonymGroup { signature, .. }
+            | TypeItemIr::ClassGroup { signature, .. }
+            | TypeItemIr::Foreign { signature, .. } => {
+                let Some(signature) = signature else { return Ok(()) };
+
+                let signature_variables = inspect::collect_signature_variables(context, *signature);
+                state.surface_bindings.insert_type(item_id, signature_variables);
+
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+                state.binding_group.types.insert(item_id, inferred_type);
+            }
+
+            TypeItemIr::Operator { .. } => {}
+        }
+
+        Ok(())
+    })
+}
+
+struct SignatureLike {
+    kind_variables: Vec<ForallBinder>,
+    type_variables: Vec<ForallBinder>,
+    result_kind: TypeId,
+}
+
+fn check_signature_like<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    variables: &[TypeVariableBinding],
+    infer_result: impl FnOnce(&mut CheckState) -> TypeId,
+) -> QueryResult<Option<SignatureLike>>
+where
+    Q: ExternalQueries,
+{
+    let signature = if let Some(signature_id) = signature {
+        let stored_kind = kind::lookup_file_type(state, context, context.id, item_id)?;
+
+        let surface_bindings = state.surface_bindings.get_type(item_id);
+        let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
+
+        let signature =
+            inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
+
+        if variables.len() != signature.arguments.len() {
+            state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+                id: signature_id,
+                expected: 0,
+                actual: 0,
+            });
+
+            if let Some(variable) = signature.variables.first() {
+                state.type_scope.unbind(variable.level);
+            }
+
+            return Ok(None);
+        };
+
+        let variables = variables.iter();
+        let arguments = signature.arguments.iter();
+
+        let kinds = variables
+            .zip(arguments)
+            .map(|(variable, &argument)| {
+                // Use contravariant subtyping for type variables:
+                //
+                // data Example :: Argument -> Type
+                // data Example (a :: Variable) = Example
+                //
+                // Signature: Argument -> Type
+                // Inferred: Variable -> Type
+                //
+                // Given
+                //   Variable -> Type <: Argument -> Type
+                //
+                // Therefore
+                //   [Argument <: Variable, Type <: Type]
+                let kind = if let Some(kind_id) = variable.kind {
+                    let (kind, _) = kind::infer_surface_kind(state, context, kind_id)?;
+                    let valid = unification::subtype(state, context, argument, kind)?;
+                    if valid { kind } else { context.prim.unknown }
+                } else {
+                    argument
+                };
+
+                let name = variable.name.clone().unwrap_or(MISSING_NAME);
+                Ok((variable.id, variable.visible, name, kind))
+            })
+            .collect::<QueryResult<Vec<_>>>()?;
+
+        let kind_variables = signature.variables;
+        let result_kind = signature.result;
+        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
+            let level = state.type_scope.bind_forall(id, kind);
+            ForallBinder { visible, name, level, kind }
+        });
+
+        let type_variables = type_variables.collect_vec();
+
+        SignatureLike { kind_variables, type_variables, result_kind }
+    } else {
+        let kind_variables = vec![];
+        let result_kind = infer_result(state);
+        let type_variables = variables.iter().map(|variable| {
+            let kind = if let Some(id) = variable.kind {
+                let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
+                kind
+            } else {
+                state.fresh_unification_type(context)
+            };
+
+            let visible = variable.visible;
+            let name = variable.name.clone().unwrap_or(MISSING_NAME);
+            let level = state.type_scope.bind_forall(variable.id, kind);
+            Ok(ForallBinder { visible, name, level, kind })
+        });
+
+        let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
+
+        SignatureLike { kind_variables, type_variables, result_kind }
+    };
+
+    Ok(Some(signature))
+}
+
+fn check_data_like<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    variables: &[TypeVariableBinding],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
+        check_signature_like(state, context, item_id, signature, variables, |_| context.prim.t)?
+    else {
+        return Ok(());
+    };
+
+    let type_kind = type_variables.iter().rfold(result_kind, |result, variable| {
+        state.storage.intern(Type::Function(variable.kind, result))
+    });
+
+    if signature.is_none() {
+        unify_pending_kind(state, context, item_id, type_kind)?;
+    }
+
+    let constructors = check_constructor_arguments(state, context, item_id)?;
+
+    let type_unbind_level = type_variables.first().map(|variable| variable.level);
+    let kind_unbind_level = kind_variables.first().map(|variable| variable.level);
+
+    let data = CheckedDataLike { kind_variables, type_variables, result_kind, constructors };
+    state.binding_group.data.insert(item_id, data);
+
+    if let Some(level) = type_unbind_level {
+        state.type_scope.unbind(level);
+    }
+
+    if let Some(level) = kind_unbind_level {
+        state.type_scope.unbind(level);
+    }
+
+    Ok(())
+}
+
+fn check_synonym<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    variables: &[TypeVariableBinding],
+    synonym: lowering::TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
+        check_signature_like(state, context, item_id, signature, variables, |state| {
+            state.fresh_unification_type(context)
+        })?
+    else {
+        return Ok(());
+    };
+
+    let (synonym_type, _) = kind::check_surface_kind(state, context, synonym, result_kind)?;
+
+    let type_kind = type_variables.iter().rfold(result_kind, |result, binder| {
+        state.storage.intern(Type::Function(binder.kind, result))
+    });
+
+    if signature.is_none() {
+        unify_pending_kind(state, context, item_id, type_kind)?;
+    }
+
+    if let Some(variable) = type_variables.first() {
+        state.type_scope.unbind(variable.level);
+    }
+
+    if let Some(variable) = kind_variables.first() {
+        state.type_scope.unbind(variable.level);
+    }
+
+    insert_type_synonym(state, item_id, kind_variables, type_variables, synonym_type);
+
+    Ok(())
+}
+
+fn check_class<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    ClassIr { constraints, variables, .. }: &ClassIr,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
+        check_signature_like(state, context, item_id, signature, variables, |_| {
+            context.prim.constraint
+        })?
+    else {
+        return Ok(());
+    };
+
+    // Elaborate and globalize superclass constraints
+    let superclasses = constraints
+        .iter()
+        .map(|&constraint| {
+            let (constraint_type, constraint_kind) =
+                kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
+            let constraint_type = transfer::globalize(state, context, constraint_type);
+            let constraint_kind = transfer::globalize(state, context, constraint_kind);
+            Ok((constraint_type, constraint_kind))
+        })
+        .collect::<QueryResult<Vec<_>>>()?;
+
+    // Collect type variable levels for binding during elaboration
+    let variable_levels: Vec<_> = type_variables.iter().map(|v| v.level).collect();
+
+    // Store class info
+    state.checked.classes.insert(item_id, Class { superclasses, variable_levels });
+
+    let class_reference = {
+        let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
+        type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
+            let variable = Variable::Bound(binder.level);
+            let variable = state.storage.intern(Type::Variable(variable));
+
+            state.storage.intern(Type::Application(reference_type, variable))
+        })
+    };
+
+    let class_kind = type_variables.iter().rfold(result_kind, |result, variable| {
+        state.storage.intern(Type::Function(variable.kind, result))
+    });
+
+    if signature.is_none() {
+        unify_pending_kind(state, context, item_id, class_kind)?;
+    }
+
+    check_class_members(
+        state,
+        context,
+        item_id,
+        &kind_variables,
+        &type_variables,
+        class_reference,
+    )?;
+
+    if let Some(variable) = type_variables.first() {
+        state.type_scope.unbind(variable.level);
+    }
+
+    if let Some(variable) = kind_variables.first() {
+        state.type_scope.unbind(variable.level);
+    }
+
+    Ok(())
+}
+
+fn check_class_members<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    kind_variables: &[ForallBinder],
+    type_variables: &[ForallBinder],
+    class_reference: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for member_id in context.indexed.pairs.class_members(item_id) {
+        let Some(TermItemIr::ClassMember { signature }) =
+            context.lowered.info.get_term_item(member_id)
+        else {
+            continue;
+        };
+
+        let Some(signature_id) = signature else { continue };
+
+        let (member_type, _) =
+            kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
+
+        let (member_foralls, member_inner) = collect_foralls(state, member_type);
+
+        let constrained_type =
+            state.storage.intern(Type::Constrained(class_reference, member_inner));
+
+        let all_variables = {
+            let from_kind = kind_variables.iter().cloned();
+            let from_type = type_variables.iter().cloned();
+            let from_member = member_foralls.into_iter();
+            from_kind.chain(from_type).chain(from_member)
+        };
+
+        let member_type = all_variables.rfold(constrained_type, |inner, variable| {
+            state.storage.intern(Type::Forall(variable, inner))
+        });
+
+        if let Some(pending_type) = state.binding_group.terms.get(&member_id) {
+            let _ = unification::unify(state, context, *pending_type, member_type)?;
+        } else {
+            state.binding_group.terms.insert(member_id, member_type);
+        }
+    }
+
+    Ok(())
+}
+
+fn collect_foralls(state: &CheckState, mut id: TypeId) -> (Vec<ForallBinder>, TypeId) {
+    let mut foralls = vec![];
+
+    while let Type::Forall(ref binder, inner) = state.storage[id] {
+        foralls.push(binder.clone());
+        id = inner;
+    }
+
+    (foralls, id)
+}
+
+fn is_binary_operator_type(state: &CheckState, mut id: TypeId) -> bool {
+    while let Type::Forall(_, inner_id) = state.storage[id] {
+        id = inner_id;
+    }
+
+    let Type::Function(_, result_id) = state.storage[id] else {
+        return false;
+    };
+
+    let Type::Function(_, result_id) = state.storage[result_id] else {
+        return false;
+    };
+
+    !matches!(state.storage[result_id], Type::Function(_, _))
+}
+
+fn unify_pending_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    item_kind: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let pending_kind = state
+        .binding_group
+        .lookup_type(item_id)
+        .expect("invariant violated: invalid binding_group in kind inference");
+
+    let _ = unification::subtype(state, context, item_kind, pending_kind)?;
+
+    Ok(())
+}
+
+fn insert_type_synonym(
+    state: &mut CheckState,
+    item_id: TypeItemId,
+    kind_variables: Vec<ForallBinder>,
+    type_variables: Vec<ForallBinder>,
+    synonym_type: TypeId,
+) {
+    let synonym_type = type_variables.iter().rfold(synonym_type, |inner, binder| {
+        let binder = binder.clone();
+        state.storage.intern(Type::Forall(binder, inner))
+    });
+
+    let synonym_type = kind_variables.iter().rfold(synonym_type, |inner, binder| {
+        let binder = binder.clone();
+        state.storage.intern(Type::Forall(binder, inner))
+    });
+
+    let quantified_variables = debruijn::Size(0);
+
+    let kind_variables = {
+        let length = kind_variables.len();
+        debruijn::Size(length as u32)
+    };
+
+    let type_variables = {
+        let length = type_variables.len();
+        debruijn::Size(length as u32)
+    };
+
+    let group = Synonym { quantified_variables, kind_variables, type_variables, synonym_type };
+    state.binding_group.synonyms.insert(item_id, group);
+}
+
+fn check_constructor_arguments<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+) -> QueryResult<Vec<CheckedConstructor>>
+where
+    Q: ExternalQueries,
+{
+    let mut constructors = vec![];
+
+    for item_id in context.indexed.pairs.data_constructors(item_id) {
+        let Some(TermItemIr::Constructor { arguments }) =
+            context.lowered.info.get_term_item(item_id)
+        else {
+            continue;
+        };
+
+        let mut inferred_arguments = vec![];
+
+        for &argument in arguments.iter() {
+            let inferred_type =
+                state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
+                    let (inferred_type, _) =
+                        kind::check_surface_kind(state, context, argument, context.prim.t)?;
+                    Ok(inferred_type)
+                })?;
+            inferred_arguments.push(inferred_type);
+        }
+
+        constructors.push(CheckedConstructor { item_id, arguments: inferred_arguments });
+    }
+
+    Ok(constructors)
+}
+
+pub fn build_constructor_types<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    kind_variables: &[ForallBinder],
+    type_variables: &[ForallBinder],
+    constructors: &[CheckedConstructor],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let data_reference = {
+        let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
+
+        let reference_type = kind_variables.iter().fold(reference_type, |reference, binder| {
+            let variable = Variable::Bound(binder.level);
+            let variable = state.storage.intern(Type::Variable(variable));
+            state.storage.intern(Type::KindApplication(reference, variable))
+        });
+
+        let unsolved_kinds = type_variables.iter().filter_map(|binder| {
+            let kind = state.normalize_type(binder.kind);
+            if let Type::Unification(id) = state.storage[kind] { Some((kind, id)) } else { None }
+        });
+
+        let mut unsolved_kinds = unsolved_kinds.collect_vec();
+        unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).domain, id));
+
+        let reference_type = unsolved_kinds.iter().fold(reference_type, |reference, &(kind, _)| {
+            state.storage.intern(Type::KindApplication(reference, kind))
+        });
+
+        type_variables.iter().fold(reference_type, |reference, binder| {
+            let variable = Variable::Bound(binder.level);
+            let variable = state.storage.intern(Type::Variable(variable));
+            state.storage.intern(Type::Application(reference, variable))
+        })
+    };
+
+    for constructor in constructors {
+        let constructor_type =
+            constructor.arguments.iter().rfold(data_reference, |result, &argument| {
+                state.storage.intern(Type::Function(argument, result))
+            });
+
+        let all_variables = {
+            let from_kind = kind_variables.iter();
+            let from_type = type_variables.iter();
+            from_kind.chain(from_type).cloned()
+        };
+
+        let constructor_type = all_variables.rfold(constructor_type, |inner, variable| {
+            state.storage.intern(Type::Forall(variable, inner))
+        });
+
+        if let Some(pending_type) = state.binding_group.terms.get(&constructor.item_id) {
+            let _ = unification::unify(state, context, *pending_type, constructor_type)?;
+        } else {
+            state.binding_group.terms.insert(constructor.item_id, constructor_type);
+        }
+    }
+
+    Ok(())
+}

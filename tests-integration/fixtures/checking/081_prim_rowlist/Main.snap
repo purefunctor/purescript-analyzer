@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Test :: RowList Type
+
+Synonyms
+Test = Cons @Type "T" Int Nil
+  Quantified = :0
+  Kind = :0
+  Type = :0

@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+eq :: forall (a :: Type). Eq a => a -> a -> Boolean
+test :: Array Boolean
+
+Types
+Eq :: Type -> Constraint
+
+Errors
+NoInstanceFound { Eq String } at [TermDeclaration(Idx::<TermItem>(2))]

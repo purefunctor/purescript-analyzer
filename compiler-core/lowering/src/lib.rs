@@ -1,3 +1,6 @@
+#[macro_use]
+mod recover;
+
 mod algorithm;
 
 pub mod error;
@@ -56,6 +59,7 @@ pub fn lower_module(
         nodes,
         term_graph,
         type_graph,
+        kind_graph,
         synonym_graph,
         mut errors,
         ..
@@ -67,6 +71,19 @@ pub fn lower_module(
     let type_scc = tarjan_scc(&type_graph);
     let type_scc = type_scc.into_iter().map(into_scc(&type_graph)).collect();
 
+    let kind_scc = tarjan_scc(&kind_graph);
+    for scc in kind_scc {
+        match scc.as_slice() {
+            [single] if !kind_graph.contains_edge(*single, *single) => {
+                continue;
+            }
+            group => {
+                let group = Arc::from(group);
+                errors.push(LoweringError::RecursiveKinds(RecursiveGroup { group }));
+            }
+        }
+    }
+
     let synonym_scc = tarjan_scc(&synonym_graph);
     for scc in synonym_scc {
         match scc.as_slice() {
@@ -75,7 +92,7 @@ pub fn lower_module(
             }
             group => {
                 let group = Arc::from(group);
-                errors.push(LoweringError::RecursiveSynonym(RecursiveSynonym { group }));
+                errors.push(LoweringError::RecursiveSynonym(RecursiveGroup { group }));
             }
         }
     }

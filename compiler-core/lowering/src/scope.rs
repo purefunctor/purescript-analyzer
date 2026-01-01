@@ -13,7 +13,6 @@
 //! [scope graph]: https://pl.ewi.tudelft.nl/research/projects/scope-graphs/
 use std::collections::VecDeque;
 use std::ops;
-use std::sync::Arc;
 
 use files::FileId;
 use indexing::TermItemId;
@@ -22,20 +21,16 @@ use la_arena::{Arena, Idx, RawIdx};
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use smol_str::SmolStr;
 
+use crate::intermediate::LetBindingNameGroupId;
 use crate::source::*;
 
 /// The result of resolving a term variable.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TermVariableResolution {
     Binder(BinderId),
-    Let(LetBound),
+    Let(LetBindingNameGroupId),
+    RecordPun(RecordPunId),
     Reference(FileId, TermItemId),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LetBound {
-    pub signature: Option<LetBindingSignatureId>,
-    pub equations: Arc<[LetBindingEquationId]>,
 }
 
 /// The result of resolving a type variable.
@@ -114,11 +109,15 @@ impl ImplicitBindings {
 #[derive(Debug, PartialEq, Eq)]
 pub enum GraphNode {
     /// Names bound by patterns.
-    Binder { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, BinderId> },
+    Binder {
+        parent: Option<GraphNodeId>,
+        binders: FxHashMap<SmolStr, BinderId>,
+        puns: FxHashMap<SmolStr, RecordPunId>,
+    },
     /// Explicitly quantified type variables.
     Forall { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, TypeVariableBindingId> },
     /// Names bound by `let`.
-    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBound> },
+    Let { parent: Option<GraphNodeId>, bindings: FxHashMap<SmolStr, LetBindingNameGroupId> },
     /// Implicitly quantified type variables.
     Implicit {
         parent: Option<GraphNodeId>,
@@ -159,6 +158,7 @@ pub struct LoweringGraphNodes {
     pub(crate) binder_node: FxHashMap<BinderId, GraphNodeId>,
     pub(crate) expression_node: FxHashMap<ExpressionId, GraphNodeId>,
     pub(crate) type_node: FxHashMap<TypeId, GraphNodeId>,
+    pub(crate) let_node: FxHashMap<LetBindingNameGroupId, GraphNodeId>,
 }
 
 /// An iterator that traverses the [`LoweringGraph`].

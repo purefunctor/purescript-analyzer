@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+absurd :: forall (a :: Type). Void -> a
+selfRecursive :: Void -> Int
+mutualRecursive :: Void -> Int
+threeWay :: Void -> Int
+patternBoundary :: Void -> Int
+pureChecking :: Int -> Int
+mixedRecursion :: Int -> Int
+
+Types
+Void :: Type

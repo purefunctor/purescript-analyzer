@@ -1,5 +1,3 @@
-//! Implements context transfer for types.
-//!
 //! # Context transfer?
 //!
 //! In the type checker, [core] types are interned and allocated in an
@@ -22,8 +20,8 @@
 //! dropped at the end of type checking, improving memory efficiency.
 //!
 //! [core]: crate::core
-//! [`localized`]: localize
-//! [`globalized`]: globalize
+//! [`localized`]: crate::algorithm::transfer::localize
+//! [`globalized`]: crate::algorithm::transfer::globalize
 
 use std::sync::Arc;
 

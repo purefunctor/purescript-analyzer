@@ -2,9 +2,8 @@ use analyzer::{common, locate};
 use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
 use files::FileId;
-use indexing::IndexedModule;
-use indexing::TypeItemKind;
-use lowering::{LoweringError, RecursiveSynonym};
+use indexing::{IndexedModule, TypeItemKind};
+use lowering::{LoweringError, RecursiveGroup};
 use resolving::{ResolvedModule, ResolvingError};
 use rowan::ast::AstNode;
 use stabilizing::StabilizedModule;
@@ -114,6 +113,9 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
                 lowering::NotInScope::TypeOperatorName { id } => {
                     (context.stabilized.syntax_ptr(*id)?, None)
                 }
+                lowering::NotInScope::NegateFn { id } => {
+                    (context.stabilized.syntax_ptr(*id)?, Some("negate"))
+                }
                 lowering::NotInScope::DoFn { kind, id } => (
                     context.stabilized.syntax_ptr(*id)?,
                     match kind {
@@ -159,7 +161,7 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
             })
         }
 
-        LoweringError::RecursiveSynonym(RecursiveSynonym { group }) => {
+        LoweringError::RecursiveSynonym(RecursiveGroup { group }) => {
             let equations = group.iter().filter_map(|id| {
                 if let TypeItemKind::Synonym { equation, .. } = context.indexed.items[*id].kind {
                     equation
@@ -199,6 +201,8 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
                 data: None,
             })
         }
+
+        _ => None,
     }
 }
 

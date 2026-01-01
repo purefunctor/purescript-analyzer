@@ -1,6 +1,8 @@
+use std::mem;
 use std::sync::Arc;
 
 use itertools::Itertools;
+use petgraph::algo::tarjan_scc;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, StrExt};
@@ -95,15 +97,20 @@ fn lower_binder_kind(
                     BinderRecordItem::RecordField { name, value }
                 }
                 cst::RecordItem::RecordPun(cst) => {
+                    // Get the RecordPun node's ID from stabilizing
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
+
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
                         let text = token.text();
                         Some(SmolStr::from(text))
                     });
+
                     if let Some(name) = &name {
-                        state.insert_binder(name, id);
+                        state.insert_record_pun(name, id);
                     }
-                    BinderRecordItem::RecordPun { name }
+
+                    BinderRecordItem::RecordPun { id, name }
                 }
             };
             let record = cst.children().map(lower_item).collect();
@@ -169,8 +176,15 @@ fn lower_expression_kind(
             ExpressionKind::InfixChain { head, tail }
         }
         cst::Expression::ExpressionNegate(cst) => {
+            let negate = state.resolve_term_full(context, None, "negate");
+
+            if negate.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state.errors.push(LoweringError::NotInScope(NotInScope::NegateFn { id }));
+            }
+
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
-            ExpressionKind::Negate { expression }
+            ExpressionKind::Negate { negate, expression }
         }
         cst::Expression::ExpressionApplicationChain(cst) => {
             let lower_argument =
@@ -207,20 +221,18 @@ fn lower_expression_kind(
             ExpressionKind::IfThenElse { if_, then, else_ }
         }
         cst::Expression::ExpressionLetIn(cst) => state.with_scope(|s| {
-            let bindings =
-                cst.bindings().map(|cst| lower_bindings(s, context, &cst)).unwrap_or_default();
+            let bindings = recover! { lower_bindings(s, context, &cst.bindings()?) };
             let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
             ExpressionKind::LetIn { bindings, expression }
         }),
         cst::Expression::ExpressionLambda(cst) => state.with_scope(|state| {
             state.push_binder_scope();
-            let binders = cst
-                .function_binders()
-                .map(|cst| {
-                    let children = cst.children();
-                    children.map(|cst| lower_binder(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let binders = recover! {
+                cst.function_binders()?
+                    .children()
+                    .map(|cst| lower_binder(state, context, &cst))
+                    .collect()
+            };
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             ExpressionKind::Lambda { binders, expression }
         }),
@@ -232,30 +244,30 @@ fn lower_expression_kind(
             ) -> CaseBranch {
                 state.with_scope(|state| {
                     state.push_binder_scope();
-                    let binders = cst
-                        .binders()
-                        .map(|cst| {
-                            cst.children().map(|cst| lower_binder(state, context, &cst)).collect()
-                        })
-                        .unwrap_or_default();
+                    let binders = recover! {
+                        cst.binders()?
+                            .children()
+                            .map(|cst| lower_binder(state, context, &cst))
+                            .collect()
+                    };
                     let guarded_expression =
                         cst.guarded_expression().map(|cst| lower_guarded(state, context, &cst));
                     CaseBranch { binders, guarded_expression }
                 })
             }
 
-            let trunk = cst
-                .trunk()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_expression(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
-            let branches = cst
-                .branches()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_case_branch(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let trunk = recover! {
+                cst.trunk()?
+                    .children()
+                    .map(|cst| lower_expression(state, context, &cst))
+                    .collect()
+            };
+            let branches = recover! {
+                cst.branches()?
+                    .children()
+                    .map(|cst| lower_case_branch(state, context, &cst))
+                    .collect()
+            };
 
             ExpressionKind::CaseOf { trunk, branches }
         }
@@ -283,12 +295,12 @@ fn lower_expression_kind(
                     .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Discard, id }));
             }
 
-            let statements = cst
-                .statements()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_do_statement(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let statements = recover! {
+                cst.statements()?
+                    .children()
+                    .map(|cst| lower_do_statement(state, context, &cst))
+                    .collect()
+            };
 
             ExpressionKind::Do { bind, discard, statements }
         }),
@@ -316,12 +328,12 @@ fn lower_expression_kind(
                     .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
             }
 
-            let statements = cst
-                .statements()
-                .map(|cst| {
-                    cst.children().map(|cst| lower_do_statement(state, context, &cst)).collect()
-                })
-                .unwrap_or_default();
+            let statements = recover! {
+                cst.statements()?
+                    .children()
+                    .map(|cst| lower_do_statement(state, context, &cst))
+                    .collect()
+            };
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
 
             ExpressionKind::Ado { map, apply, statements, expression }
@@ -416,11 +428,9 @@ fn lower_expression_kind(
             ExpressionKind::RecordAccess { record, labels }
         }
         cst::Expression::ExpressionRecordUpdate(cst) => {
-            let updates = cst
-                .record_updates()
-                .map(|cst| lower_record_updates(state, context, &cst))
-                .unwrap_or_default();
-            ExpressionKind::RecordUpdate { updates }
+            let record = cst.expression().map(|cst| lower_expression(state, context, &cst));
+            let updates = recover! { lower_record_updates(state, context, &cst.record_updates()?) };
+            ExpressionKind::RecordUpdate { record, updates }
         }
     }
 }
@@ -450,8 +460,7 @@ fn lower_where_expression(
     cst: &cst::WhereExpression,
 ) -> WhereExpression {
     state.with_scope(|s| {
-        let bindings =
-            cst.bindings().map(|cst| lower_bindings(s, context, &cst)).unwrap_or_default();
+        let bindings = recover! { lower_bindings(s, context, &cst.bindings()?) };
         let expression = cst.expression().map(|cst| lower_expression(s, context, &cst));
         WhereExpression { expression, bindings }
     })
@@ -500,7 +509,7 @@ fn lower_bindings(
     state: &mut State,
     context: &Context,
     cst: &cst::LetBindingStatements,
-) -> Arc<[LetBinding]> {
+) -> Arc<[LetBindingChunk]> {
     #[derive(Debug, PartialEq, Eq)]
     enum Chunk {
         Pattern,
@@ -513,45 +522,53 @@ fn lower_bindings(
         cst::LetBinding::LetBindingEquation(_) => Chunk::Equation,
     });
 
-    let mut bindings = vec![];
+    let mut result = vec![];
     for (kind, children) in chunks.into_iter() {
         match kind {
             Chunk::Pattern => {
-                lower_pattern_bindings(state, context, &mut bindings, children);
+                // Each pattern becomes its own chunk
+                for pattern in children {
+                    result.push(lower_pattern_chunk(state, context, pattern));
+                }
             }
             Chunk::Equation => {
-                lower_equation_bindings(state, context, &mut bindings, children);
+                // All consecutive equations become one Names chunk
+                result.push(lower_equation_chunk(state, context, children));
             }
         }
     }
 
-    bindings.into()
+    result.into()
 }
 
-fn lower_pattern_bindings(
+fn lower_pattern_chunk(
     state: &mut State,
     context: &Context,
-    bindings: &mut Vec<LetBinding>,
-    children: impl Iterator<Item = cst::LetBinding>,
-) {
-    bindings.extend(children.map(|pattern| {
-        let cst::LetBinding::LetBindingPattern(pattern) = &pattern else {
-            unreachable!("invariant violated: expected LetBindingPattern");
-        };
-        let where_expression =
-            pattern.where_expression().map(|cst| lower_where_expression(state, context, &cst));
-        state.push_binder_scope();
-        let binder = pattern.binder().map(|cst| lower_binder(state, context, &cst));
-        LetBinding::Pattern { binder, where_expression }
-    }))
+    pattern: cst::LetBinding,
+) -> LetBindingChunk {
+    let cst::LetBinding::LetBindingPattern(pattern) = &pattern else {
+        unreachable!("invariant violated: expected LetBindingPattern");
+    };
+    let where_expression =
+        pattern.where_expression().map(|cst| lower_where_expression(state, context, &cst));
+    state.push_binder_scope();
+    let binder = pattern.binder().map(|cst| lower_binder(state, context, &cst));
+    LetBindingChunk::Pattern { binder, where_expression }
 }
 
-fn lower_equation_bindings(
+struct PendingLetBinding {
+    name: Option<SmolStr>,
+    signature: Option<LetBindingSignatureId>,
+    equations: Arc<[LetBindingEquationId]>,
+}
+
+fn lower_equation_chunk(
     state: &mut State,
     context: &Context,
-    bindings: &mut Vec<LetBinding>,
     children: impl Iterator<Item = cst::LetBinding>,
-) {
+) -> LetBindingChunk {
+    let outer_graph = mem::take(&mut state.let_binding_graph);
+
     let children = children.chunk_by(|cst| match cst {
         cst::LetBinding::LetBindingPattern(_) => {
             unreachable!("invariant violated: expected LetBindingSignature / LetBindingEquation");
@@ -566,7 +583,8 @@ fn lower_equation_bindings(
         }),
     });
 
-    let mut in_scope = FxHashMap::default();
+    let mut pending = vec![];
+
     for (name, mut children) in children.into_iter() {
         let mut signature = None;
         let mut equations = vec![];
@@ -579,61 +597,104 @@ fn lower_equation_bindings(
                     );
                 }
                 cst::LetBinding::LetBindingSignature(cst) => {
-                    let id = context.stabilized.lookup_cst(&cst).expect_id();
-                    signature = Some(id);
+                    let ast_id = context.stabilized.lookup_cst(&cst).expect_id();
+                    signature = Some(ast_id);
                 }
                 cst::LetBinding::LetBindingEquation(cst) => {
-                    let id = context.stabilized.lookup_cst(&cst).expect_id();
-                    equations.push(id);
+                    let ast_id = context.stabilized.lookup_cst(&cst).expect_id();
+                    equations.push(ast_id);
                 }
             }
         }
 
         children.for_each(|cst| {
             if let cst::LetBinding::LetBindingEquation(cst) = cst {
-                let id = context.stabilized.lookup_cst(&cst).expect_id();
-                equations.push(id);
+                let ast_id = context.stabilized.lookup_cst(&cst).expect_id();
+                equations.push(ast_id);
             }
         });
 
         let equations = equations.into();
-        let resolution = LetBound { signature, equations };
-
-        if let Some(name) = name {
-            in_scope.insert(name, resolution);
-        }
+        pending.push(PendingLetBinding { name, signature, equations });
     }
 
-    let parent = state.graph_scope;
-    let to_traverse = in_scope.values().cloned().collect_vec();
+    let mut let_bound = FxHashMap::default();
+    let mut groups = vec![];
 
-    let id = state.graph.inner.alloc(GraphNode::Let { parent, bindings: in_scope });
-    state.graph_scope = Some(id);
+    for PendingLetBinding { name, signature, equations } in pending {
+        let group = LetBindingNameGroup { signature, equations };
 
-    bindings.extend(to_traverse.into_iter().map(|resolution| {
+        let id = state.alloc_let_binding(group);
+
+        if let Some(ref name) = name {
+            let_bound.insert(name.clone(), id);
+        }
+
+        groups.push(id);
+    }
+
+    let graph_node =
+        state.graph.inner.alloc(GraphNode::Let { parent: state.graph_scope, bindings: let_bound });
+
+    state.graph_scope = Some(graph_node);
+    state.current_let_scope = Some(graph_node);
+
+    // Lower each binding, tracking current_let_binding for dependency tracking
+    for &id in &groups {
+        state.current_let_binding = Some(id);
+
+        let let_binding = &state.info.let_binding[id];
+        let signature = let_binding.signature;
+        let equations = Arc::clone(&let_binding.equations);
+
         state.with_scope(|state| {
-            let signature = resolution.signature.and_then(|id| {
+            let signature = signature.and_then(|id| {
                 let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
                 let cst = cst.type_()?;
                 Some(lower_forall(state, context, &cst))
             });
-            let equations = resolution
-                .equations
-                .iter()
-                .filter_map(|&id| {
-                    let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
-                    Some(lower_equation_like(
-                        state,
-                        context,
-                        cst,
-                        cst::LetBindingEquation::function_binders,
-                        cst::LetBindingEquation::guarded_expression,
-                    ))
-                })
-                .collect();
-            LetBinding::Name { signature, equations }
+
+            let equations = equations.iter().filter_map(|&id| {
+                let cst = context.stabilized.ast_ptr(id)?.try_to_node(context.root)?;
+                Some(lower_equation_like(
+                    state,
+                    context,
+                    cst,
+                    cst::LetBindingEquation::function_binders,
+                    cst::LetBindingEquation::guarded_expression,
+                ))
+            });
+
+            let equations = equations.collect();
+
+            let info = LetBindingName { signature, equations };
+            state.associate_let_binding_name(id, info);
+        });
+
+        state.current_let_binding = None;
+    }
+
+    state.current_let_scope = None;
+
+    // Compute SCCs from dependency graph
+    let mut graph = mem::take(&mut state.let_binding_graph);
+    for &id in &groups {
+        graph.add_node(id);
+    }
+
+    let sccs = tarjan_scc(&graph);
+    let scc = sccs
+        .into_iter()
+        .map(|scc| match scc[..] {
+            [single] if !graph.contains_edge(single, single) => Scc::Base(single),
+            [single] => Scc::Recursive(single),
+            _ => Scc::Mutual(scc),
         })
-    }));
+        .collect();
+
+    state.let_binding_graph = outer_graph;
+
+    LetBindingChunk::Names { bindings: groups.into(), scc }
 }
 
 pub(crate) fn lower_equation_like<T: AstNode>(
@@ -645,9 +706,12 @@ pub(crate) fn lower_equation_like<T: AstNode>(
 ) -> Equation {
     state.with_scope(|state| {
         state.push_binder_scope();
-        let binders = binders(&equation)
-            .map(|cst| cst.children().map(|cst| lower_binder(state, context, &cst)).collect())
-            .unwrap_or_default();
+        let binders = recover! {
+            binders(&equation)?
+                .children()
+                .map(|cst| lower_binder(state, context, &cst))
+                .collect()
+        };
         let guarded = guarded(&equation).map(|cst| lower_guarded(state, context, &cst));
         Equation { binders, guarded }
     })
@@ -662,10 +726,7 @@ fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStateme
             DoStatement::Bind { binder, expression }
         }
         cst::DoStatement::DoStatementLet(cst) => {
-            let statements = cst
-                .statements()
-                .map(|cst| lower_bindings(state, context, &cst))
-                .unwrap_or_default();
+            let statements = recover! { lower_bindings(state, context, &cst.statements()?) };
             DoStatement::Let { statements }
         }
         cst::DoStatement::DoStatementDiscard(cst) => {
@@ -697,10 +758,8 @@ fn lower_record_updates(
                     let text = token.text();
                     Some(SmolStr::from(text))
                 });
-                let updates = cst
-                    .record_updates()
-                    .map(|cst| lower_record_updates(state, context, &cst))
-                    .unwrap_or_default();
+                let updates =
+                    recover! { lower_record_updates(state, context, &cst.record_updates()?) };
                 RecordUpdate::Branch { name, updates }
             }
         })
@@ -780,16 +839,44 @@ fn lower_type_kind(
             TypeKind::Kinded { type_, kind }
         }
         cst::Type::TypeOperatorName(cst) => {
-            let resolution = cst.name().and_then(|cst| {
-                let (qualifier, name) =
-                    lower_qualified_name(&cst, cst::QualifiedName::operator_name)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
-            });
-            if resolution.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state.errors.push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+            let qualified = cst
+                .name()
+                .and_then(|cst| lower_qualified_name(&cst, cst::QualifiedName::operator_name));
+
+            const FUNCTION_ARROW: &str = "->";
+
+            // The function arrow `->` is treated as a reserved operator by the
+            // compiler; we cannot create an operator declaration for it in the
+            // Prim module; subsequently, it has no TypeItemId and cannot be
+            // resolved like TypeKind::Operator.
+            //
+            // In light of this, we desugar the function arrow into the `Function`
+            // constructor, which does have a TypeItemId and can be resolved as a
+            // TypeKind::Constructor.
+            if let Some((qualifier, name)) = &qualified
+                && name == FUNCTION_ARROW
+            {
+                let resolution =
+                    state.resolve_type_reference(context, qualifier.as_deref(), "Function");
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state
+                        .errors
+                        .push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+                }
+                TypeKind::Constructor { resolution }
+            } else {
+                let resolution = qualified.and_then(|(qualifier, name)| {
+                    state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                });
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state
+                        .errors
+                        .push(LoweringError::NotInScope(NotInScope::TypeOperatorName { id }));
+                }
+                TypeKind::Operator { resolution }
             }
-            TypeKind::Operator { resolution }
         }
         cst::Type::TypeOperatorChain(cst) => {
             let head = cst.type_().map(|cst| lower_type(state, context, &cst));

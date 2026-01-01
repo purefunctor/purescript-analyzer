@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+id :: forall (a :: Type). a -> a
+typeMismatch :: Int -> Int
+occurCheck :: Int -> Int
+inferConflict :: Int -> Int
+threeWayConflict :: Int -> Int
+
+Types
+
+Errors
+CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { String, Int } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { ??? -> ???, ??? } at [TermDeclaration(Idx::<TermItem>(2))]
+CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(3))]
+CannotUnify { String, Int } at [TermDeclaration(Idx::<TermItem>(4))]

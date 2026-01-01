@@ -1,9 +1,3 @@
-//! Implements the kind checker.
-//!
-//! This module is organized into submodules:
-//! - [`operator`]: Kind checking for type operator chains
-//! - [`synonym`]: Kind checking for type synonym applications
-
 pub mod operator;
 pub mod synonym;
 
@@ -116,8 +110,7 @@ where
             }
 
             let t = state.storage.intern(Type::Constructor(file_id, type_id));
-            let k =
-                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
+            let k = lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
         }
@@ -145,7 +138,7 @@ where
             let k = context.prim.t;
 
             if let Some(binder) = binders.first() {
-                state.unbind(binder.level);
+                state.type_scope.unbind(binder.level);
             }
 
             Ok((t, k))
@@ -180,8 +173,7 @@ where
             let Some((file_id, type_id)) = *resolution else { return Ok(unknown) };
 
             let t = state.storage.intern(Type::Operator(file_id, type_id));
-            let k =
-                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(context.prim.unknown);
+            let k = lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
         }
@@ -225,7 +217,7 @@ where
                 state.storage.intern(Type::Application(context.prim.row, context.prim.t));
 
             let (row_t, row_k) = infer_row_kind(state, context, items, tail)?;
-            let _ = unification::subsumes(state, context, row_k, expected_kind)?;
+            let _ = unification::subtype(state, context, row_k, expected_kind)?;
 
             let t = state.storage.intern(Type::Application(context.prim.record, row_t));
             let k = context.prim.t;
@@ -246,11 +238,15 @@ fn infer_forall_variable(
     state: &mut CheckState,
     forall: TypeVariableBindingId,
 ) -> (TypeId, TypeId) {
-    let index = state.lookup_forall(forall).expect("invariant violated: CheckState::bind_forall");
-    let variable = Variable::Bound(index);
+    let level =
+        state.type_scope.lookup_forall(forall).expect("invariant violated: TypeScope::bind_forall");
+    let variable = Variable::Bound(level);
 
     let t = state.storage.intern(Type::Variable(variable));
-    let k = state.forall_binding_kind(forall).expect("invariant violated: CheckState::bind_forall");
+    let k = state
+        .type_scope
+        .lookup_forall_kind(forall)
+        .expect("invariant violated: TypeScope::bind_forall");
 
     (t, k)
 }
@@ -263,21 +259,23 @@ fn infer_implicit_variable<Q: ExternalQueries>(
     let t = if implicit.binding {
         let kind = state.fresh_unification(context);
 
-        let level = state.bind_implicit(implicit.node, implicit.id, kind);
+        let level = state.type_scope.bind_implicit(implicit.node, implicit.id, kind);
         let variable = Variable::Implicit(level);
 
         state.storage.intern(Type::Variable(variable))
     } else {
-        let index = state
+        let level = state
+            .type_scope
             .lookup_implicit(implicit.node, implicit.id)
-            .expect("invariant violated: CheckState::bind_implicit");
-        let variable = Variable::Bound(index);
+            .expect("invariant violated: TypeScope::bind_implicit");
+        let variable = Variable::Bound(level);
         state.storage.intern(Type::Variable(variable))
     };
 
     let k = state
-        .implicit_binding_kind(implicit.node, implicit.id)
-        .expect("invariant violated: CheckState::bind_implicit");
+        .type_scope
+        .lookup_implicit_kind(implicit.node, implicit.id)
+        .expect("invariant violated: TypeScope::bind_implicit");
 
     (t, k)
 }
@@ -291,7 +289,7 @@ fn infer_row_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut field_kind = state.fresh_unification(context);
+    let mut field_kind = state.fresh_unification_type(context);
 
     let fields: QueryResult<Vec<_>> = items
         .iter()
@@ -320,7 +318,7 @@ where
         let (t, k) = infer_surface_kind(state, context, *tail)?;
 
         let expected_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
-        let _ = unification::subsumes(state, context, k, expected_kind)?;
+        let _ = unification::subtype(state, context, k, expected_kind)?;
 
         Some(t)
     } else {
@@ -370,12 +368,15 @@ where
             Ok((t, k))
         }
 
-        Type::Forall(ForallBinder { kind, .. }, function_k) => {
-            let k = state.normalize_type(kind);
+        Type::Forall(ref binder, function_k) => {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let function_k = substitute::substitute_bound(state, t, function_k);
+            let function_k = substitute::SubstituteBound::on(state, binder_level, t, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
@@ -394,7 +395,8 @@ where
 {
     let unknown = context.prim.unknown;
     let id = state.normalize_type(id);
-    Ok(match state.storage[id] {
+
+    let type_id = match state.storage[id] {
         Type::Application(function, _) => {
             let function_kind = elaborate_kind(state, context, function)?;
             let function_kind = state.normalize_type(function_kind);
@@ -418,9 +420,7 @@ where
 
         Type::Constrained(_, _) => context.prim.t,
 
-        Type::Constructor(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown)
-        }
+        Type::Constructor(file_id, type_id) => lookup_file_type(state, context, file_id, type_id)?,
 
         Type::Forall(_, _) => context.prim.t,
 
@@ -432,9 +432,10 @@ where
             let function_kind = elaborate_kind(state, context, function)?;
             let function_kind = state.normalize_type(function_kind);
             match state.storage[function_kind] {
-                Type::Forall(_, inner) => {
+                Type::Forall(ref binder, inner) => {
+                    let binder_level = binder.level;
                     let argument = state.normalize_type(argument);
-                    substitute::substitute_bound(state, argument, inner)
+                    substitute::SubstituteBound::on(state, binder_level, argument, inner)
                 }
                 _ => unknown,
             }
@@ -442,9 +443,7 @@ where
 
         Type::Kinded(_, kind) => kind,
 
-        Type::Operator(file_id, type_id) => {
-            lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown)
-        }
+        Type::Operator(file_id, type_id) => lookup_file_type(state, context, file_id, type_id)?,
 
         Type::OperatorApplication(file_id, type_id, _, _) => {
             operator::elaborate_operator_application_kind(state, context, file_id, type_id)?
@@ -453,7 +452,7 @@ where
         Type::Row(RowType { ref fields, tail }) => {
             let fields = Arc::clone(fields);
 
-            let field_kind = state.fresh_unification(context);
+            let field_kind = state.fresh_unification_type(context);
             let tail_kind = state.storage.intern(Type::Application(context.prim.row, field_kind));
 
             for field in fields.iter() {
@@ -474,8 +473,7 @@ where
         Type::SynonymApplication(_, file_id, type_id, ref arguments) => {
             let arguments = Arc::clone(arguments);
 
-            let mut synonym_kind =
-                lookup_file_type(state, context, file_id, type_id)?.unwrap_or(unknown);
+            let mut synonym_kind = lookup_file_type(state, context, file_id, type_id)?;
 
             for _ in arguments.iter() {
                 synonym_kind = state.normalize_type(synonym_kind);
@@ -492,14 +490,23 @@ where
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
         Type::Variable(ref variable) => match variable {
+            // TODO: handle implicit variables. This is important when we begin
+            // storing instance data in the CheckState or CheckedModule, because
+            // it needs to be visible in the environment before being able to be
+            // used by other variables. Implicit carries a level but would it ever
+            // be used? It should also carry its kind like a Skolem variable would.
             Variable::Implicit(_) => unknown,
             Variable::Skolem(_, kind) => *kind,
-            Variable::Bound(index) => state.core_kind(*index).unwrap_or(unknown),
+            Variable::Bound(level) => {
+                state.type_scope.kinds.get(*level).copied().unwrap_or(unknown)
+            }
             Variable::Free(_) => unknown,
         },
 
         Type::Unknown => unknown,
-    })
+    };
+
+    Ok(type_id)
 }
 
 pub fn check_surface_kind<Q>(
@@ -512,7 +519,7 @@ where
     Q: ExternalQueries,
 {
     let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id)?;
-    let _ = unification::subsumes(state, context, inferred_kind, kind)?;
+    let _ = unification::subtype(state, context, inferred_kind, kind)?;
     Ok((inferred_type, inferred_kind))
 }
 
@@ -534,7 +541,7 @@ where
         state.fresh_unification_type(context)
     };
 
-    let level = state.bind_forall(binding.id, kind);
+    let level = state.type_scope.bind_forall(binding.id, kind);
     Ok(ForallBinder { visible, name, level, kind })
 }
 
@@ -543,21 +550,25 @@ pub(crate) fn lookup_file_type<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
-) -> QueryResult<Option<TypeId>>
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    if file_id == context.id {
+    let type_id = if file_id == context.id {
         if let Some(&k) = state.binding_group.types.get(&type_id) {
-            Ok(Some(k))
+            k
         } else if let Some(&k) = state.checked.types.get(&type_id) {
-            Ok(Some(transfer::localize(state, context, k)))
+            transfer::localize(state, context, k)
         } else {
-            Ok(None)
+            context.prim.unknown
         }
     } else {
         let checked = context.queries.checked(file_id)?;
-        let global_id = checked.types.get(&type_id);
-        Ok(global_id.map(|id| transfer::localize(state, context, *id)))
-    }
+        if let Some(id) = checked.types.get(&type_id) {
+            transfer::localize(state, context, *id)
+        } else {
+            context.prim.unknown
+        }
+    };
+    Ok(type_id)
 }

@@ -22,7 +22,11 @@ coverage-html:
   cargo llvm-cov report --html
 
 @integration *args="":
-  cargo nextest run -p tests-integration "$@"
+  cargo nextest run -p tests-integration "$@" --status-level=fail --final-status-level=fail --failure-output=final
+
+[doc("Run checking tests with snapshot diffing. Use --help for options.")]
+@tc *args="":
+  cargo run -q -p compiler-scripts --bin test-checking -- {{args}}
 
 [doc("Apply clippy fixes and format")]
 fix:

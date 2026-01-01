@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+TuplePoly :: forall (a :: Type) (b :: Type). a -> b -> Type
+InferTuplePoly :: forall (t8 :: Type) (t10 :: Type). t8 -> t10 -> Type
+
+Synonyms
+InferTuplePoly = forall (t8 :: Type) (t10 :: Type) (x :: t8) (y :: t10). TuplePoly @t8 @t10 x y
+  Quantified = :2
+  Kind = :0
+  Type = :2

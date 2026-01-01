@@ -210,8 +210,10 @@ fn definition_expression(
                         .ok_or(AnalyzerError::NonFatal)?;
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
                 }
-                TermVariableResolution::Let(binding) => {
+                TermVariableResolution::Let(binding_id) => {
                     let root = parsed.syntax_node();
+
+                    let binding = lowered.info.get_let_binding_group(*binding_id);
 
                     let signature = binding
                         .signature
@@ -231,6 +233,13 @@ fn definition_expression(
                         .reduce(|start, end| Range { start: start.start, end: end.end })
                         .ok_or(AnalyzerError::NonFatal)?;
 
+                    Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
+                }
+                TermVariableResolution::RecordPun(id) => {
+                    let root = parsed.syntax_node();
+                    let ptr = stabilized.syntax_ptr(*id).ok_or(AnalyzerError::NonFatal)?;
+                    let range = locate::syntax_range(&content, &root, &ptr)
+                        .ok_or(AnalyzerError::NonFatal)?;
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
                 }
                 TermVariableResolution::Reference(f_id, t_id) => {

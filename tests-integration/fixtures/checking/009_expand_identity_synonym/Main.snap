@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Identity :: forall (t1 :: Type). t1 -> t1
+Digit :: Int
+Test1 :: Type
+Test2 :: Int
+
+Synonyms
+Identity = forall (t1 :: Type) (a :: t1). a
+  Quantified = :1
+  Kind = :0
+  Type = :1
+
+Test1 = Identity Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Test2 = Identity Digit
+  Quantified = :0
+  Kind = :0
+  Type = :0

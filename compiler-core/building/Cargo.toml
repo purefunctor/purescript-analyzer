@@ -10,16 +10,16 @@ files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
 interner = { version = "0.1.0", path = "../interner" }
 lexing = { version = "0.1.0", path = "../lexing" }
-lock_api = "0.4.13"
+lock_api = "0.4.14"
 lowering = { version = "0.1.0", path = "../lowering" }
-parking_lot = "0.12.4"
+parking_lot = "0.12.5"
 parsing = { version = "0.1.0", path = "../parsing" }
 prim-constants = { version = "0.1.0", path = "../prim-constants" }
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"
 stabilizing = { version = "0.1.0", path = "../stabilizing" }
 sugar = { version = "0.1.0", path = "../sugar" }
-tempfile = "3.21.0"
+tempfile = "3.24.0"
 thread_local = "1.1.9"
 url = "2.5.7"
 

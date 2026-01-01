@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+read :: forall (a :: Type). Read a => String -> a
+show :: forall (a :: Type). Show a => a -> String
+test :: String -> String
+
+Types
+Read :: Type -> Constraint
+Show :: Type -> Constraint
+
+Errors
+AmbiguousConstraint { Show ??? } at [TermDeclaration(Idx::<TermItem>(2))]
+AmbiguousConstraint { Read ??? } at [TermDeclaration(Idx::<TermItem>(2))]

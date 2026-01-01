@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+add :: Int -> Int -> Int
++ :: Int -> Int -> Int
+mul :: Int -> Int -> Int
+* :: Int -> Int -> Int
+chain :: Int -> Int -> Int -> Int
+mixed :: Int -> Int -> Int -> Int
+mixedRev :: Int -> Int -> Int -> Int
+paren :: Int -> Int -> Int -> Int
+chain' :: Int -> Int -> Int -> Int
+mixed' :: Int -> Int -> Int -> Int
+
+Types

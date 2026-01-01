@@ -16,7 +16,9 @@ itertools = "0.14.0"
 line-index = "0.1.2"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
 rowan = "0.16.1"
+stabilizing = { version = "0.1.0", path = "../compiler-core/stabilizing" }
 sugar = { version = "0.1.0", path = "../compiler-core/sugar" }
+syntax = { version = "0.1.0", path = "../compiler-core/syntax" }
 tabled = "0.20.0"
 url = "2.5.7"
 
@@ -25,4 +27,4 @@ convert_case = "0.8.0"
 itertools = "0.14.0"
 
 [dev-dependencies]
-insta = "1.43.2"
+insta = "1.45.1"

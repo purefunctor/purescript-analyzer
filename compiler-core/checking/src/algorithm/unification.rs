@@ -1,5 +1,3 @@
-//! Implements subsumption and unification.
-
 use std::sync::Arc;
 
 use building_types::QueryResult;
@@ -12,7 +10,39 @@ use crate::algorithm::{kind, substitute, transfer};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
-pub fn subsumes<Q>(
+/// Check that `t1` is a subtype of `t2`
+///
+/// In the type system, we define that polymorphic types are subtypes of
+/// monomorphic types because they can be instantiated by turning type
+/// variables into unification variables, for example:
+///
+/// ```text
+/// subtype (forall a. a -> a) (Int -> Int)
+///   subtype (?a -> ?a) (Int -> Int)
+///     subtype ?a Int
+/// ```
+///
+/// Similarly, polymorphic types are subtypes of other polymorphic types
+/// through skolemisation, for example:
+///
+/// ```text
+/// subtype (forall a. a -> a) (forall b. b -> b)
+///   subtype (?a -> ?a) (~b -> ~b)
+///     subtype ?a ~b
+/// ```
+///
+/// With this in mind, [`subtype`] can be used to check if an inferred
+/// type properly fits a declared type, for example:
+///
+/// ```text
+/// id :: forall a. a -> a
+/// id = \a -> a
+///
+/// subtype (?a -> ?a) (forall a. a -> a)
+///   subtype (?a -> ?a) (~a -> ~a)
+///     subtype ?a ~a
+/// ```
+pub fn subtype<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     t1: TypeId,
@@ -33,27 +63,27 @@ where
 
     match (t1_core, t2_core) {
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            Ok(subsumes(state, context, t2_argument, t1_argument)?
-                && subsumes(state, context, t1_result, t2_result)?)
+            Ok(subtype(state, context, t2_argument, t1_argument)?
+                && subtype(state, context, t1_result, t2_result)?)
         }
 
         (_, Type::Forall(ref binder, inner)) => {
             let v = Variable::Skolem(binder.level, binder.kind);
             let t = state.storage.intern(Type::Variable(v));
 
-            let inner = substitute::substitute_bound(state, t, inner);
-            subsumes(state, context, t1, inner)
+            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
+            subtype(state, context, t1, inner)
         }
 
         (Type::Forall(ref binder, inner), _) => {
             let k = state.normalize_type(binder.kind);
             let t = state.fresh_unification_kinded(k);
 
-            let inner = substitute::substitute_bound(state, t, inner);
-            subsumes(state, context, inner, t2)
+            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
+            subtype(state, context, inner, t2)
         }
 
-        _ => unify(state, context, t1, t2),
+        (_, _) => unify(state, context, t1, t2),
     }
 }
 
@@ -86,6 +116,14 @@ where
         }
 
         (
+            Type::KindApplication(t1_function, t1_argument),
+            Type::KindApplication(t2_function, t2_argument),
+        ) => {
+            unify(state, context, t1_function, t2_function)?
+                && unify(state, context, t1_argument, t2_argument)?
+        }
+
+        (
             Type::OperatorApplication(t1_file, t1_type, t1_left, t1_right),
             Type::OperatorApplication(t2_file, t2_type, t2_left, t2_right),
         ) if t1_file == t2_file && t1_type == t2_type => {
@@ -105,6 +143,14 @@ where
 
         (_, Type::Unification(unification_id)) => {
             solve(state, context, unification_id, t1)?.is_some()
+        }
+
+        (
+            Type::Constrained(t1_constraint, t1_inner),
+            Type::Constrained(t2_constraint, t2_inner),
+        ) => {
+            unify(state, context, t1_constraint, t2_constraint)?
+                && unify(state, context, t1_inner, t2_inner)?
         }
 
         _ => false,
@@ -130,7 +176,7 @@ pub fn solve<Q>(
 where
     Q: ExternalQueries,
 {
-    let codomain = state.bound.size();
+    let codomain = state.type_scope.size();
     let occurs = unification_id;
 
     if !promote_type(state, occurs, codomain, unification_id, solution) {
@@ -248,8 +294,10 @@ pub fn promote_type(
 
         Type::Variable(ref variable) => {
             let unification = state.unification.get(unification_id);
-            if let Variable::Bound(index) = variable
-                && !index.in_scope(unification.domain)
+            // A bound variable escapes if its level >= the unification variable's domain.
+            // This means the variable was bound at or after the unification was created.
+            if let Variable::Bound(level) = variable
+                && level.0 >= unification.domain.0
             {
                 return false;
             }
@@ -271,6 +319,7 @@ where
     Q: ExternalQueries,
 {
     let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
+
     if !ok {
         return Ok(false);
     }
@@ -297,7 +346,14 @@ where
         }
 
         (Some(t1_tail), Some(t2_tail)) => {
-            let unification = state.fresh_unification(context);
+            if extras_left.is_empty() && extras_right.is_empty() {
+                return unify(state, context, t1_tail, t2_tail);
+            }
+
+            let row_type_kind =
+                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
+
+            let unification = state.fresh_unification_kinded(row_type_kind);
 
             let left_tail_row =
                 Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });

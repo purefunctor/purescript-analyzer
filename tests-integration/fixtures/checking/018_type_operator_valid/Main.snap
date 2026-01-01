@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Add :: forall (t1 :: Type) (t4 :: Type). t1 -> t4 -> t1
++ :: forall (t1 :: Type) (t4 :: Type). t1 -> t4 -> t1
+
+Synonyms
+Add = forall (t1 :: Type) (t4 :: Type) (a :: t1) (b :: t4). a
+  Quantified = :2
+  Kind = :0
+  Type = :2

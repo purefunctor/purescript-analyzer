@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Add :: forall (k :: Type). k -> k -> k
++ :: forall (k :: Type). k -> k -> k
+Chain :: forall (k :: Type). k -> k -> k -> k
+ChainParen :: forall (k :: Type). k -> k -> k -> k
+
+Synonyms
+Add = forall (k :: Type) (a :: k) (b :: k). a
+  Quantified = :0
+  Kind = :1
+  Type = :2
+
+Chain = forall (k :: Type) (a :: k) (b :: k) (c :: k). a + b + c
+  Quantified = :0
+  Kind = :1
+  Type = :3
+
+ChainParen = forall (k :: Type) (a :: k) (b :: k) (c :: k). a + b + c
+  Quantified = :0
+  Kind = :1
+  Type = :3

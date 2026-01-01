@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+map :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
+apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
+test :: Int
+test' :: Int
+
+Types

@@ -1,16 +1,15 @@
-//! Implements type quantification.
-
 use std::fmt::Write;
 use std::sync::Arc;
 
 use indexmap::IndexSet;
 use petgraph::prelude::DiGraphMap;
 use petgraph::visit::{DfsPostOrder, Reversed};
-use rustc_hash::FxHashMap;
+use rustc_hash::FxHashSet;
 use smol_str::SmolStrBuilder;
 
 use crate::algorithm::state::CheckState;
-use crate::core::{ForallBinder, RowType, Type, TypeId, Variable, debruijn};
+use crate::algorithm::substitute::{ShiftLevels, SubstituteUnification, UniToLevel};
+use crate::core::{ForallBinder, RowType, Type, TypeId, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -26,11 +25,13 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         debruijn::Size(size as u32)
     };
 
-    let mut quantified = id;
+    // Shift existing bound variable levels to make room for new quantifiers
+    let mut quantified = ShiftLevels::on(state, id, size.0);
     let mut substitutions = UniToLevel::default();
 
     for (index, &id) in unsolved.iter().rev().enumerate() {
         let kind = state.unification.get(id).kind;
+        let kind = ShiftLevels::on(state, kind, size.0);
         let name = generate_type_name(id);
 
         let index = debruijn::Index(index as u32);
@@ -44,9 +45,74 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         substitutions.insert(id, level);
     }
 
-    let quantified = substitute_unification(&substitutions, state, quantified);
+    let quantified = SubstituteUnification::on(&substitutions, state, quantified);
 
     Some((quantified, size))
+}
+
+/// Output of constraint quantification.
+pub struct QuantifyConstraints {
+    /// The quantified type with generalisable constraints.
+    pub quantified: TypeId,
+    /// The number of quantified type variables.
+    pub size: debruijn::Size,
+    /// Constraints with unification variables not appearing in the signature.
+    pub ambiguous: Vec<TypeId>,
+    /// Constraints with no unification variables (fully concrete & unsatisfied).
+    pub unsatisfied: Vec<TypeId>,
+}
+
+/// Quantifies a type while incorporating residual constraints.
+///
+/// This function partitions the residual constraints into three categories:
+/// - Generalisable: has unification variables that all appear in the signature
+/// - Ambiguous: has unification variables that don't appear in the signature
+/// - Unsatisfied: has no unification variables, a concrete constraint
+///
+/// Generalisable constraints are added to the signature before generalisation.
+/// Ambiguous and unsatisfied constraints are returned for error reporting.
+pub fn quantify_with_constraints(
+    state: &mut CheckState,
+    type_id: TypeId,
+    constraints: Vec<TypeId>,
+) -> Option<QuantifyConstraints> {
+    if constraints.is_empty() {
+        let (quantified, size) = quantify(state, type_id)?;
+        return Some(QuantifyConstraints {
+            quantified,
+            size,
+            ambiguous: vec![],
+            unsatisfied: vec![],
+        });
+    }
+
+    let unsolved_graph = collect_unification(state, type_id);
+    let unsolved_nodes: FxHashSet<u32> = unsolved_graph.nodes().collect();
+
+    let mut valid = vec![];
+    let mut ambiguous = vec![];
+    let mut unsatisfied = vec![];
+
+    for constraint in constraints {
+        let unsolved_graph = collect_unification(state, constraint);
+        if unsolved_graph.node_count() == 0 {
+            unsatisfied.push(constraint);
+        } else if unsolved_graph.nodes().all(|unification| unsolved_nodes.contains(&unification)) {
+            valid.push(constraint);
+        } else {
+            ambiguous.push(constraint);
+        }
+    }
+
+    // Subtle: stable ordering for consistent output
+    valid.sort();
+
+    let constrained_type = valid.iter().copied().rfold(type_id, |constrained, constraint| {
+        state.storage.intern(Type::Constrained(constraint, constrained))
+    });
+
+    let (quantified, size) = quantify(state, constrained_type)?;
+    Some(QuantifyConstraints { quantified, size, ambiguous, unsatisfied })
 }
 
 fn generate_type_name(id: u32) -> smol_str::SmolStr {
@@ -170,106 +236,6 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
     let mut graph = UniGraph::default();
     aux(&mut graph, state, id, None);
     graph
-}
-
-type UniToLevel = FxHashMap<u32, debruijn::Level>;
-
-/// Level-based substitution over a [`Type`].
-///
-/// A direct mapping from unification variables to [`debruijn::Index`] is
-/// insufficient because of the scoping rule for [`ForallBinder::kind`].
-///
-/// Instead, we use a [`debruijn::Level`]-based approach alongside
-/// explicit [`debruijn::Size`] tracking to get the proper indices.
-fn substitute_unification(
-    substitutions: &UniToLevel,
-    state: &mut CheckState,
-    id: TypeId,
-) -> TypeId {
-    fn aux(
-        substitutions: &UniToLevel,
-        state: &mut CheckState,
-        id: TypeId,
-        size: debruijn::Size,
-    ) -> TypeId {
-        let id = state.normalize_type(id);
-        match state.storage[id] {
-            Type::Application(function, argument) => {
-                let function = aux(substitutions, state, function, size);
-                let argument = aux(substitutions, state, argument, size);
-                state.storage.intern(Type::Application(function, argument))
-            }
-            Type::Constrained(constraint, inner) => {
-                let constraint = aux(substitutions, state, constraint, size);
-                let inner = aux(substitutions, state, inner, size);
-                state.storage.intern(Type::Constrained(constraint, inner))
-            }
-            Type::Constructor(_, _) => id,
-            Type::Forall(ref binder, inner) => {
-                let mut binder = binder.clone();
-
-                binder.kind = aux(substitutions, state, binder.kind, size);
-                let inner = aux(substitutions, state, inner, size.increment());
-
-                state.storage.intern(Type::Forall(binder, inner))
-            }
-            Type::Function(argument, result) => {
-                let argument = aux(substitutions, state, argument, size);
-                let result = aux(substitutions, state, result, size);
-                state.storage.intern(Type::Function(argument, result))
-            }
-            Type::Integer(_) => id,
-            Type::KindApplication(function, argument) => {
-                let function = aux(substitutions, state, function, size);
-                let argument = aux(substitutions, state, argument, size);
-                state.storage.intern(Type::KindApplication(function, argument))
-            }
-            Type::Kinded(inner, kind) => {
-                let inner = aux(substitutions, state, inner, size);
-                let kind = aux(substitutions, state, kind, size);
-                state.storage.intern(Type::Kinded(inner, kind))
-            }
-            Type::Operator(_, _) => id,
-            Type::OperatorApplication(file_id, type_id, left, right) => {
-                let left = aux(substitutions, state, left, size);
-                let right = aux(substitutions, state, right, size);
-                state.storage.intern(Type::OperatorApplication(file_id, type_id, left, right))
-            }
-            Type::Row(RowType { ref fields, tail }) => {
-                let mut fields = fields.to_vec();
-                fields
-                    .iter_mut()
-                    .for_each(|field| field.id = aux(substitutions, state, field.id, size));
-
-                let tail = tail.map(|tail| aux(substitutions, state, tail, size));
-                let row = RowType { fields: Arc::from(fields), tail };
-
-                state.storage.intern(Type::Row(row))
-            }
-            Type::String(_, _) => id,
-            Type::SynonymApplication(saturation, file_id, type_id, ref arguments) => {
-                let arguments = Arc::clone(arguments);
-                let arguments = arguments
-                    .iter()
-                    .map(|&argument| aux(substitutions, state, argument, size))
-                    .collect();
-                state
-                    .storage
-                    .intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
-            }
-            Type::Unification(unification_id) => {
-                let Some(level) = substitutions.get(&unification_id) else { return id };
-                let index = level.to_index(size).unwrap_or_else(|| {
-                    unreachable!("invariant violated: invalid {level} for {size}")
-                });
-                state.storage.intern(Type::Variable(Variable::Bound(index)))
-            }
-            Type::Variable(_) => id,
-            Type::Unknown => id,
-        }
-    }
-
-    aux(substitutions, state, id, debruijn::Size(0))
 }
 
 #[cfg(test)]

@@ -42,61 +42,35 @@ Additional concepts that you should be mindful of, the compiler:
 - uses techniques like interning and arena allocation to enable better caching patterns
   - for instance, whitespace does not immediately invalidate type checking results
 
-## Niche Guides
+## Skills
 
-Load these guides from `agents/guides/` when working on related tasks:
-- `build-system.md` - working with the build system
-- `integration-tests.md` - working with fixtures and snapshots
+Agent skills are specialized instruction sets for common tasks. They're stored in `.claude/skills/`.
 
-## Communication Guidelines
+- **type-checker-tests**: Adding integration tests for type checker inference and checking
 
-When working on this project, prefer succinct and direct responses. Keep output tokens
-minimal to reduce costs while using the default thinking budget to maintain reasoning.
+## Commands
 
-**Key principles:**
-- Provide brief, direct answers to queries
-- Only elaborate when explicitly asked
-- Keep output focused on what's necessary
-- Avoid verbose explanations unless requested
-- Do not write or edit code until permitted to do so
+This is your bread and butter to verify that code compiles, including test code.
+If updating the test code can be deferred, you may skip adding the `--tests flag`
+to speed up the task at hand.
 
-## Development Commands
-
-`cargo check` to verify what you've written is correct
-
-```bash
-# Check all crates
-cargo check
-
-# Check a crate
-cargo check -p indexing
+```
+cargo check -p <crate-name> --tests
 ```
 
-`cargo nextest` to run tests blazingly fast
+When working on the type checker `./compiler-core/checking/` you must run
+the full type checker snapshot test suite using the following command to
+verify if there's any change in behaviour. Use the `type-checker-tests`
+skill when asked to develop more type checker tests.
 
-```bash
-# Run unit tests for a specific crate
-cargo nextest run -p indexing
-
-# Run integration tests
-just integration
-
-# Run integration tests with filters
-just integration --test resolving 001
+```
+just tc
 ```
 
-`cargo clippy` and `cargo fmt` for code quality
+You can also specify a test fixture number to reduce noise. Once you've
+identified and fixed the bug, you must run the full test suite again to
+verify that the fix generalises.
 
-```bash
-# Get diagnostics from clippy
-cargo clippy --workspace
-
-# Format with stable and nightly
-cargo fmt && just format-imports
 ```
-
-### Testing Loop
-
-This project uses `cargo-insta` for snapshot tests. Fresh snapshots are prefixed with `.snap.new`,
-make sure to review these if a test run produces them. Use `cargo insta accept` once you're satisfied
-with the output.
+just tc 101
+```

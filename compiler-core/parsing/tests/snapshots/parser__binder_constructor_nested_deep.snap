@@ -1,0 +1,172 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+expression: "(node, errors)"
+---
+(
+    Module@0..152
+      ModuleHeader@0..40
+        MODULE@0..6 "module"
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..34
+          UPPER@7..34 "BinderConstructorNest ..."
+        Annotation@34..35
+          TEXT@34..35 " "
+        WHERE@35..40 "where"
+      LAYOUT_START@40..40 ""
+      ModuleStatements@40..151
+        ValueEquation@40..151
+          Annotation@40..42
+            TEXT@40..42 "\n\n"
+          LOWER@42..46 "test"
+          FunctionBinders@46..48
+            BinderVariable@46..48
+              Annotation@46..47
+                TEXT@46..47 " "
+              LOWER@47..48 "a"
+          Unconditional@48..151
+            Annotation@48..49
+              TEXT@48..49 " "
+            EQUAL@49..50 "="
+            WhereExpression@50..151
+              ExpressionCaseOf@50..151
+                Annotation@50..51
+                  TEXT@50..51 " "
+                CASE@51..55 "case"
+                CaseTrunk@55..57
+                  ExpressionVariable@55..57
+                    Annotation@55..56
+                      TEXT@55..56 " "
+                    QualifiedName@56..57
+                      LOWER@56..57 "a"
+                Annotation@57..58
+                  TEXT@57..58 " "
+                OF@58..60 "of"
+                CaseBranches@60..151
+                  LAYOUT_START@60..60 ""
+                  CaseBranch@60..88
+                    CaseBranchBinders@60..83
+                      BinderConstructor@60..83
+                        Annotation@60..63
+                          TEXT@60..63 "\n  "
+                        QualifiedName@63..67
+                          UPPER@63..67 "Just"
+                        BinderParenthesized@67..83
+                          Annotation@67..68
+                            TEXT@67..68 " "
+                          LEFT_PARENTHESIS@68..69 "("
+                          BinderConstructor@69..82
+                            QualifiedName@69..73
+                              UPPER@69..73 "Just"
+                            BinderParenthesized@73..82
+                              Annotation@73..74
+                                TEXT@73..74 " "
+                              LEFT_PARENTHESIS@74..75 "("
+                              BinderConstructor@75..81
+                                QualifiedName@75..79
+                                  UPPER@75..79 "Just"
+                                BinderVariable@79..81
+                                  Annotation@79..80
+                                    TEXT@79..80 " "
+                                  LOWER@80..81 "x"
+                              RIGHT_PARENTHESIS@81..82 ")"
+                          RIGHT_PARENTHESIS@82..83 ")"
+                    Unconditional@83..88
+                      Annotation@83..84
+                        TEXT@83..84 " "
+                      RIGHT_ARROW@84..86 "->"
+                      WhereExpression@86..88
+                        ExpressionVariable@86..88
+                          Annotation@86..87
+                            TEXT@86..87 " "
+                          QualifiedName@87..88
+                            LOWER@87..88 "x"
+                  LAYOUT_SEPARATOR@88..88 ""
+                  CaseBranch@88..115
+                    CaseBranchBinders@88..110
+                      BinderConstructor@88..110
+                        Annotation@88..91
+                          TEXT@88..91 "\n  "
+                        QualifiedName@91..95
+                          UPPER@91..95 "Just"
+                        BinderParenthesized@95..110
+                          Annotation@95..96
+                            TEXT@95..96 " "
+                          LEFT_PARENTHESIS@96..97 "("
+                          BinderConstructor@97..109
+                            QualifiedName@97..101
+                              UPPER@97..101 "Just"
+                            BinderConstructor@101..109
+                              Annotation@101..102
+                                TEXT@101..102 " "
+                              QualifiedName@102..109
+                                UPPER@102..109 "Nothing"
+                          RIGHT_PARENTHESIS@109..110 ")"
+                    Unconditional@110..115
+                      Annotation@110..111
+                        TEXT@110..111 " "
+                      RIGHT_ARROW@111..113 "->"
+                      WhereExpression@113..115
+                        ExpressionInteger@113..115
+                          Annotation@113..114
+                            TEXT@113..114 " "
+                          INTEGER@114..115 "0"
+                  LAYOUT_SEPARATOR@115..115 ""
+                  CaseBranch@115..151
+                    CaseBranchBinders@115..146
+                      BinderConstructor@115..146
+                        Annotation@115..118
+                          TEXT@115..118 "\n  "
+                        QualifiedName@118..122
+                          UPPER@118..122 "Cons"
+                        BinderVariable@122..124
+                          Annotation@122..123
+                            TEXT@122..123 " "
+                          LOWER@123..124 "x"
+                        BinderParenthesized@124..146
+                          Annotation@124..125
+                            TEXT@124..125 " "
+                          LEFT_PARENTHESIS@125..126 "("
+                          BinderConstructor@126..145
+                            QualifiedName@126..130
+                              UPPER@126..130 "Cons"
+                            BinderVariable@130..132
+                              Annotation@130..131
+                                TEXT@130..131 " "
+                              LOWER@131..132 "y"
+                            BinderParenthesized@132..145
+                              Annotation@132..133
+                                TEXT@132..133 " "
+                              LEFT_PARENTHESIS@133..134 "("
+                              BinderConstructor@134..144
+                                QualifiedName@134..138
+                                  UPPER@134..138 "Cons"
+                                BinderVariable@138..140
+                                  Annotation@138..139
+                                    TEXT@138..139 " "
+                                  LOWER@139..140 "z"
+                                BinderConstructor@140..144
+                                  Annotation@140..141
+                                    TEXT@140..141 " "
+                                  QualifiedName@141..144
+                                    UPPER@141..144 "Nil"
+                              RIGHT_PARENTHESIS@144..145 ")"
+                          RIGHT_PARENTHESIS@145..146 ")"
+                    Unconditional@146..151
+                      Annotation@146..147
+                        TEXT@146..147 " "
+                      RIGHT_ARROW@147..149 "->"
+                      WhereExpression@149..151
+                        ExpressionVariable@149..151
+                          Annotation@149..150
+                            TEXT@149..150 " "
+                          QualifiedName@150..151
+                            LOWER@150..151 "x"
+                  LAYOUT_END@151..151 ""
+      LAYOUT_END@151..151 ""
+      Annotation@151..152
+        TEXT@151..152 "\n"
+      END_OF_FILE@152..152 ""
+    ,
+    [],
+)

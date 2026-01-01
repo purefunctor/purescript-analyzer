@@ -1,0 +1,45 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Tuple :: Type -> Type -> Type
+AliasType :: Type
+AliasTypeType :: Type -> Type
+InferApply :: forall (t7 :: Type) (t12 :: Type). (t12 -> t7) -> t12 -> t7
+InferTuple :: Type -> Type -> Type
+CheckApply :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
+CheckApplyElab :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
+
+Synonyms
+AliasType = Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+AliasTypeType = Array
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+InferApply = forall (t7 :: Type) (t12 :: Type) (f :: t12 -> t7) (a :: t12). f a
+  Quantified = :2
+  Kind = :0
+  Type = :2
+
+InferTuple = forall (x :: Type) (y :: Type). Tuple x y
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+CheckApply = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
+  Quantified = :0
+  Kind = :2
+  Type = :2
+
+CheckApplyElab = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
+  Quantified = :0
+  Kind = :2
+  Type = :2

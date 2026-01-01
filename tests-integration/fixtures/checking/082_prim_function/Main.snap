@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
+expression: report
+---
+Terms
+
+Types
+Test :: Type
+Test2 :: Type -> Type
+Test3 :: Type -> Type -> Type
+
+Synonyms
+Test = Function Int Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Test2 = Function Int
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+Test3 = Function
+  Quantified = :0
+  Kind = :0
+  Type = :0

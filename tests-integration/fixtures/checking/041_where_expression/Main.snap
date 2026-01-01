@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+identity :: forall (t4 :: Type). t4 -> t4
+compose ::
+  forall (t11 :: Type) (t12 :: Type) (t14 :: Type). (t12 -> t11) -> (t14 -> t12) -> t14 -> t11
+apply :: forall (t19 :: Type). t19 -> t19
+nested :: forall (t24 :: Type). t24 -> t24
+multiPattern :: Boolean -> Int
+factorial :: Int -> Int
+
+Types
