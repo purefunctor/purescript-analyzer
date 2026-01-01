@@ -293,26 +293,41 @@ where
 
             let previous_depth = context.depth;
 
-            let binder_parts = binders
+            let binder_docs = binders
                 .iter()
                 .map(|ForallBinder { name, kind, .. }| {
                     let kind_doc =
                         traverse_precedence(arena, source, context, Precedence::Top, *kind);
                     context.names.insert(context.depth.0, name.to_string());
                     context.depth = debruijn::Size(context.depth.0 + 1);
-                    (name.to_string(), kind_doc)
+
+                    // Group each binder so it stays together as an atomic unit
+                    arena
+                        .text("(")
+                        .append(arena.text(name.to_string()))
+                        .append(arena.text(" :: "))
+                        .append(kind_doc)
+                        .append(arena.text(")"))
+                        .group()
                 })
                 .collect_vec();
 
-            let binders_doc = binder_parts.into_iter().fold(arena.nil(), |acc, (name, kind)| {
-                acc.append(arena.text(" ("))
-                    .append(arena.text(name))
-                    .append(arena.text(" :: "))
-                    .append(kind)
-                    .append(arena.text(")"))
-            });
+            // Build binders with fill behavior: each binder independently decides
+            // whether it fits on the current line or needs to break.
+            // Structure: binder1 + group(line + binder2) + group(line + binder3) + ...
+            let mut iter = binder_docs.into_iter();
+            let binders_doc = if let Some(first) = iter.next() {
+                iter.fold(first, |acc, binder| {
+                    acc.append(arena.line().append(binder).nest(2).group())
+                })
+            } else {
+                arena.nil()
+            };
 
-            let forall_header = arena.text("forall").append(binders_doc).append(arena.text("."));
+            let forall_header = arena
+                .text("forall ")
+                .append(binders_doc)
+                .append(arena.text("."));
 
             let inner_doc = traverse_precedence(arena, source, context, Precedence::Top, inner);
             context.depth = previous_depth;

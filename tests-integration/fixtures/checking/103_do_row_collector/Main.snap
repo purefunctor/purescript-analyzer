@@ -1,0 +1,41 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+bind ::
+  forall (countL :: Int) (countR :: Int) (countLR :: Int) (countOut :: Int) (fieldNum :: Symbol)
+    (fieldName :: Symbol) (a :: Type) (b :: Type) (r :: Row Type) (r' :: Row Type) (s :: Row Type).
+    Add countL countR countLR =>
+    Add countLR 1 countOut =>
+    ToString countOut fieldNum =>
+    Append "_" fieldNum fieldName =>
+    Cons @Type fieldName a r r' =>
+    Collector countL s a -> (a -> Collector countR r b) -> Collector countOut r' b
+discard ::
+  forall (countL :: Int) (countR :: Int) (countLR :: Int) (countOut :: Int) (fieldNum :: Symbol)
+    (fieldName :: Symbol) (a :: Type) (b :: Type) (r :: Row Type) (r' :: Row Type) (s :: Row Type).
+    Add countL countR countLR =>
+    Add countLR 1 countOut =>
+    ToString countOut fieldNum =>
+    Append "_" fieldNum fieldName =>
+    Cons @Type fieldName a r r' =>
+    Collector countL s a -> (a -> Collector countR r b) -> Collector countOut r' b
+pure :: forall (a :: Type). a -> Collector 0 () a
+test1 :: Collector 3 ( _1 :: Char, _2 :: String, _3 :: Int ) { x :: Int, y :: String, z :: Char }
+test2 :: Collector 2 ( _1 :: Boolean, _2 :: Char ) { x :: Char, y :: Boolean }
+test3 :: Collector 2 ( _1 :: String, _2 :: Int ) { y :: Int, z :: String }
+test4 ::
+  Collector
+    10
+    ( _10 :: { x :: Int, y :: String, z :: Char }
+    , _3 :: { y :: Int, z :: String }
+    , _6 :: { x :: Char, y :: Boolean }
+    )
+    { a :: { x :: Int, y :: String, z :: Char }
+    , b :: { x :: Char, y :: Boolean }
+    , c :: { y :: Int, z :: String }
+    }
+
+Types
+Collector :: Int -> Row Type -> Type -> Type
