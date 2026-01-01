@@ -14,10 +14,10 @@ fn read_purs_files<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<
 }
 
 fn main() {
-    println!("cargo::rerun-if-changed=fixtures/lsp");
-    println!("cargo::rerun-if-changed=fixtures/lowering");
-    println!("cargo::rerun-if-changed=fixtures/resolving");
-    println!("cargo::rerun-if-changed=fixtures/checking");
+    println!("cargo::rerun-if-env-changed=LSP_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=LOWERING_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=RESOLVING_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=CHECKING_FIXTURES_HASH");
     generate_lsp();
     generate_lowering();
     generate_resolving();

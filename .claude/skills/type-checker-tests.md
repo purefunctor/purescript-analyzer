@@ -3,62 +3,164 @@ name: type-checker-tests
 description: Add integration tests for type checker inference and checking functions
 ---
 
-# Integration Test Writing Skill
+# Type Checker Integration Tests
 
 Use this skill when adding new type checker functions or expanding behavior.
 
-**Important:** Test fixtures are written for PureScript, not Haskell.
+**Language:** Test fixtures use PureScript syntax, not Haskell.
 
-## Setup
+## Quick Reference
 
-1. Find next available test number: Check `tests-integration/fixtures/checking/` for highest NNN value
-2. Create fixture directory: `tests-integration/fixtures/checking/{NNN_name}/`
-3. Read existing fixture (e.g., `fixtures/checking/060_array_binder/Main.purs`) as reference for structure
+| Action | Command |
+|--------|---------|
+| Find next test number | `ls tests-integration/fixtures/checking/ \| tail -5` |
+| Run specific test | `just tc NNN` |
+| Run all checking tests | `just tc` |
+| Accept all pending snapshots | `cargo insta accept` |
 
-## Write Main.purs Fixture
+Use `just tc --help` for all options.
 
-**Required pattern:**
-- Write one `test :: Type -> Type` (checking mode with explicit signature)
-- Write one `test'` (inference mode, no signature)
-- Pair additional tests with their untyped variants (test2/test2', test3/test3')
+## Creating a Test
 
-**Focus:**
-- Test one specific inference/checking behavior per fixture
-- Use simple examples: pattern matching, binders, operators, recursion
-- Include edge cases: empty arrays, nullary constructors, nested patterns
+### 1. Create fixture directory
 
-## Run and Accept Snapshot
+```bash
+mkdir tests-integration/fixtures/checking/{NNN_descriptive_name}
+```
 
-1. Generate snapshots: `just pending-snapshots --test checking`
-   - Runs tests with `INSTA_FORCE_PASS=1` to generate `.snap.new` files
-   - Displays each pending snapshot for review
+Tests are auto-discovered by `build.rs` - no manual registration needed.
 
-2. Review output carefully:
-   - Verify types match expectations
-   - Check error messages if applicable
-   - Output shows file path and source location for reference
-   - **⚠️ Critical: Check for `???` in snapshot output**
-     - `???` indicates type inference failure (e.g., `test :: ???`)
-     - This means either:
-       - Bug in test code (invalid syntax, undefined values)
-       - Compiler bug (incomplete inference implementation)
-     - **Do NOT accept snapshots containing `???` without investigation**
-   - **⚠️ Snapshot test success does not imply task completion**
-   - **⚠️ Review snapshot contents against your success criteria**
+### 2. Write Main.purs
 
-3. Accept only if snapshots are valid: `cargo insta accept`
-   - Commits all pending snapshots to `.snap` files
+**Standard pattern** - pair typed (checking) and untyped (inference) variants:
 
-## Verify
+```purescript
+module Main where
 
-- Run full suite: `just pending-snapshots --test checking`
-- Confirm all tests pass (no `???` in output)
-- Verify test appears in snapshots with correct output
+-- Checking mode: explicit signature constrains type checker
+test :: Array Int -> Int
+test [x] = x
+
+-- Inference mode: type checker infers unconstrained
+test' [x] = x
+```
+
+**Guidelines:**
+- Test ONE specific behavior per fixture
+- Name tests descriptively: `test`, `test'`, `test2`, `test2'`, etc.
+- Include edge cases relevant to the behavior being tested
+
+### 3. Generate and review snapshot
+
+```bash
+just tc NNN
+```
+
+This outputs:
+- `CREATED path` (green) with numbered lines showing full content
+- `UPDATED path` (yellow) with chunked diff (2 lines context, line numbers)
+
+## Multi-File Tests
+
+For testing imports, re-exports, or cross-module behavior, add multiple `.purs` files
+to the same fixture directory. The type checker loads all `.purs` files in the folder.
+
+**Example structure:**
+```
+tests-integration/fixtures/checking/NNN_import_test/
+├── Main.purs    # The test file (snapshot generated for Main)
+├── Lib.purs     # Supporting module
+└── Main.snap    # Generated snapshot
+```
+
+**Lib.purs:**
+```purescript
+module Lib where
+
+life :: Int
+life = 42
+
+data Maybe a = Just a | Nothing
+```
+
+**Main.purs:**
+```purescript
+module Main where
+
+import Lib (life, Maybe(..))
+
+test :: Maybe Int
+test = Just life
+```
+
+**Key points:**
+- Module name must match filename (`Lib.purs` -> `module Lib where`)
+- Only `Main.purs` generates a snapshot (the test runs against `Main`)
+- Use standard PureScript import syntax
+
+## Reviewing Snapshots
+
+Snapshots have this structure:
+
+```
+Terms
+functionName :: InferredOrCheckedType
+...
+
+Types
+TypeName :: Kind
+...
+
+Errors
+ErrorKind { details } at [location]
+```
+
+### Acceptance Criteria
+
+**Before accepting, verify:**
+
+1. **Types are correct** - Check that inferred types match expectations
+   - `test :: Array Int -> Int` - explicit signature preserved
+   - `test' :: forall t. Array t -> t` - polymorphism inferred correctly
+
+2. **No unexpected `???`** - This indicates inference failure
+   - `test :: ???` - STOP: the term failed to type check
+   - `CannotUnify { ??? -> ???, Int }` - OK in error tests, shows unresolved unification variables
+
+3. **Errors appear where expected** - For tests validating error behavior
+   - Confirm error kind matches expectations (e.g., `NoInstanceFound`, `CannotUnify`)
+   - Verify error location points to the correct declaration
+
+4. **Polymorphism is appropriate**
+   - Check type variable names (`t6`, `a`, etc.) are scoped correctly
+   - Verify constraints propagate as expected
+
+### Common Issues
+
+| Symptom | Likely Cause |
+|---------|--------------|
+| `test :: ???` | Test code has syntax error or uses undefined names |
+| Unexpected monomorphism | Missing polymorphic context or over-constrained signature |
+| Wrong error location | Check binder/expression placement in source |
+| Missing types in snapshot | Module header or imports incorrect |
+
+## Accept and Verify
+
+```bash
+# Accept only after thorough review
+cargo insta accept
+
+# Verify full suite passes
+just tc
+```
 
 ## Debugging
 
-When debugging a specific test or a potential compiler bug, use
-`just pending-snapshots --test checking NNN` to focus on a single
-test case. This is context efficient and allows you to focus on
-a single problem. Once the user has confirmed that the bug has
-been resolved, run the full.
+When investigating a potential compiler bug:
+
+```bash
+# Focus on single test to reduce noise
+just tc NNN
+```
+
+Once the issue is resolved, run the full test suite to check for regressions.

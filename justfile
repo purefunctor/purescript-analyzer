@@ -24,10 +24,9 @@ coverage-html:
 @integration *args="":
   cargo nextest run -p tests-integration "$@" --status-level=fail --final-status-level=fail --failure-output=final
 
-[doc("Generate and display pending snapshots")]
-@pending-snapshots *args="":
-  INSTA_FORCE_PASS=1 cargo nextest run -p tests-integration {{args}} --status-level=none > /dev/null 2>&1
-  cargo insta pending-snapshots 2>/dev/null | while read snap; do cargo insta show "$snap.new"; done
+[doc("Run checking tests with snapshot diffing. Use --help for options.")]
+@tc *args="":
+  cargo run -q -p compiler-scripts --bin test-checking -- {{args}}
 
 [doc("Apply clippy fixes and format")]
 fix:
