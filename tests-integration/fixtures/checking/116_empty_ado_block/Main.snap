@@ -7,7 +7,7 @@ pure :: forall (a :: Type). a -> Effect a
 map :: forall (a :: Type) (b :: Type). (a -> b) -> Effect a -> Effect b
 apply :: forall (a :: Type) (b :: Type). Effect (a -> b) -> Effect a -> Effect b
 test1 :: ???
-test2 :: Int
+test2 :: Effect Int
 
 Types
 Effect :: Type -> Type

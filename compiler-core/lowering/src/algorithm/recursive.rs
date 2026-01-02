@@ -313,6 +313,7 @@ fn lower_expression_kind(
 
             let map = state.resolve_term_full(context, qualifier.as_deref(), "map");
             let apply = state.resolve_term_full(context, qualifier.as_deref(), "apply");
+            let pure = state.resolve_term_full(context, qualifier.as_deref(), "pure");
 
             if map.is_none() {
                 let id = context.stabilized.lookup_cst(cst).expect_id();
@@ -328,6 +329,13 @@ fn lower_expression_kind(
                     .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
             }
 
+            if pure.is_none() {
+                let id = context.stabilized.lookup_cst(cst).expect_id();
+                state
+                    .errors
+                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Pure, id }));
+            }
+
             let statements = recover! {
                 cst.statements()?
                     .children()
@@ -336,7 +344,7 @@ fn lower_expression_kind(
             };
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
 
-            ExpressionKind::Ado { map, apply, statements, expression }
+            ExpressionKind::Ado { map, apply, pure, statements, expression }
         }),
         cst::Expression::ExpressionConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {

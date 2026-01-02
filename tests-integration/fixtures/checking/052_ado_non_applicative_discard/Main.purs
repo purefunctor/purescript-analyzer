@@ -1,10 +1,10 @@
 module Main where
 
-map :: forall a b. (a -> b) -> a -> b
-map f x = f x
+foreign import pure :: forall a b. a -> b
 
-apply :: forall a b. (a -> b) -> a -> b
-apply f x = f x
+foreign import map :: forall a b. (a -> b) -> a -> b
+
+foreign import apply :: forall a b. (a -> b) -> a -> b
 
 test :: Int
 test = ado

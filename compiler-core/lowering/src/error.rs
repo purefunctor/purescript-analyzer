@@ -36,6 +36,7 @@ pub enum DoFn {
 pub enum AdoFn {
     Map,
     Apply,
+    Pure,
 }
 
 #[derive(Debug, PartialEq, Eq)]

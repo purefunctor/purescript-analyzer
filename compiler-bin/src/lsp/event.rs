@@ -128,6 +128,7 @@ fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Opt
                     match kind {
                         lowering::AdoFn::Map => Some("map"),
                         lowering::AdoFn::Apply => Some("apply"),
+                        lowering::AdoFn::Pure => Some("pure"),
                     },
                 ),
                 lowering::NotInScope::TermOperator { id } => {

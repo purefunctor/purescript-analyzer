@@ -2,11 +2,11 @@ module Main where
 
 data Tuple a b = Tuple a b
 
-map :: forall a b. (a -> b) -> a -> b
-map f x = f x
+foreign import pure :: forall a b. a -> b
 
-apply :: forall a b. (a -> b) -> a -> b
-apply f x = f x
+foreign import map :: forall a b. (a -> b) -> a -> b
+
+foreign import apply :: forall a b. (a -> b) -> a -> b
 
 test :: Tuple Int String
 test = ado

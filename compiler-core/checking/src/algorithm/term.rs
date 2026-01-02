@@ -382,10 +382,11 @@ where
             infer_do(state, context, *bind, *discard, statements)
         }
 
-        lowering::ExpressionKind::Ado { map, apply, statements, expression } => {
+        lowering::ExpressionKind::Ado { map, apply, pure, statements, expression } => {
             let Some(map) = map else { return Ok(unknown) };
             let Some(apply) = apply else { return Ok(unknown) };
-            infer_ado(state, context, *map, *apply, statements, *expression)
+            let Some(pure) = pure else { return Ok(unknown) };
+            infer_ado(state, context, *map, *apply, *pure, statements, *expression)
         }
 
         lowering::ExpressionKind::Constructor { resolution } => {
@@ -658,6 +659,7 @@ fn infer_ado<Q>(
     context: &CheckContext<Q>,
     map: lowering::TermVariableResolution,
     apply: lowering::TermVariableResolution,
+    pure: lowering::TermVariableResolution,
     statements: &[lowering::DoStatement],
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
@@ -666,6 +668,7 @@ where
 {
     let map_type = lookup_term_variable(state, context, map)?;
     let apply_type = lookup_term_variable(state, context, apply)?;
+    let pure_type = lookup_term_variable(state, context, pure)?;
 
     // First, perform a forward pass where variable bindings are
     // bound to unification variables and let bindings are checked.
@@ -698,7 +701,7 @@ where
 
     let [head_statement, tail_statements @ ..] = &ado_statements[..] else {
         return if let Some(expression) = expression {
-            infer_expression(state, context, expression)
+            check_function_term_application(state, context, pure_type, expression)
         } else {
             state.insert_error(ErrorKind::EmptyAdoBlock);
             Ok(context.prim.unknown)

@@ -4,6 +4,7 @@ expression: report
 ---
 Terms
 Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+pure :: forall (a :: Type) (b :: Type). a -> b
 map :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
 apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
 test :: Tuple Int String

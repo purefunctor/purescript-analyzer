@@ -118,6 +118,7 @@ pub enum ExpressionKind {
     Ado {
         map: Option<TermVariableResolution>,
         apply: Option<TermVariableResolution>,
+        pure: Option<TermVariableResolution>,
         statements: Arc<[DoStatement]>,
         expression: Option<ExpressionId>,
     },
