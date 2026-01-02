@@ -13,9 +13,7 @@ const lib = {
 
 export interface Lib {
   init(): Promise<void>;
-  parse(
-    source: string
-  ): Promise<{ output: string; lex: number; layout: number; parse: number }>;
+  parse(source: string): Promise<{ output: string; lex: number; layout: number; parse: number }>;
 }
 
 Comlink.expose(lib);

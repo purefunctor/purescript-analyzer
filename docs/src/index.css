@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* Catppuccin Macchiato (dark) */
+:root,
+[data-theme="dark"] {
+  --color-base: #24273a;
+  --color-mantle: #1e2030;
+  --color-crust: #181926;
+  --color-surface0: #363a4f;
+  --color-surface1: #494d64;
+  --color-surface2: #5b6078;
+  --color-overlay0: #6e738d;
+  --color-overlay1: #8087a2;
+  --color-text: #cad3f5;
+  --color-subtext0: #a5adcb;
+  --color-subtext1: #b8c0e0;
+  --color-red: #ed8796;
+  --color-teal: #8bd5ca;
+}
+
+/* Catppuccin Latte (light) */
+[data-theme="light"] {
+  --color-base: #eff1f5;
+  --color-mantle: #e6e9ef;
+  --color-crust: #dce0e8;
+  --color-surface0: #ccd0da;
+  --color-surface1: #bcc0cc;
+  --color-surface2: #acb0be;
+  --color-overlay0: #9ca0b0;
+  --color-overlay1: #8c8fa1;
+  --color-text: #4c4f69;
+  --color-subtext0: #6c6f85;
+  --color-subtext1: #5c5f77;
+  --color-red: #d20f39;
+  --color-teal: #179299;
+}
+
+@theme {
+  --color-bg: var(--color-base);
+  --color-bg-lighter: var(--color-surface0);
+  --color-fg: var(--color-text);
+  --color-fg-muted: var(--color-subtext0);
+  --color-fg-subtle: var(--color-overlay1);
+  --color-surface0: var(--color-surface0);
+  --color-surface1: var(--color-surface1);
+  --color-overlay1: var(--color-overlay1);
+  --color-red-400: var(--color-red);
+  --color-teal-400: var(--color-teal);
+
+  --font-sans: "Manrope", sans-serif;
+  --font-mono: "Iosevka", ui-monospace, monospace;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Iosevka needs more breathing room */
+code,
+pre,
+.font-mono {
+  line-height: 1.65;
+  letter-spacing: 0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-bg-lighter) var(--color-bg);
+}

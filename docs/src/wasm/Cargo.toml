@@ -2,7 +2,7 @@
 name = "docs-lib"
 version = "0.1.0"
 authors = ["Justin Garcia <purefunctor@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -12,15 +12,30 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 wasm-bindgen = "0.2.106"
-
-# The `console_error_panic_hook` crate provides better debugging of panics by
-# logging them with `console.error`. This is great for development, but requires
-# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
-# code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-lexing = { version = "0.1.0", path = "../../../compiler-core/lexing" }
-parsing = { version = "0.1.0", path = "../../../compiler-core/parsing" }
 web-sys = { version = "0.3.83", features = ["Performance", "Window", "Worker", "WorkerGlobalScope"] }
+
+# Serialization for JS interop
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+
+# Compiler core crates
+building-types = { version = "0.1.0", path = "../../../compiler-core/building-types" }
+checking = { version = "0.1.0", path = "../../../compiler-core/checking" }
+files = { version = "0.1.0", path = "../../../compiler-core/files" }
+indexing = { version = "0.1.0", path = "../../../compiler-core/indexing" }
+interner = { version = "0.1.0", path = "../../../compiler-core/interner" }
+lexing = { version = "0.1.0", path = "../../../compiler-core/lexing" }
+lowering = { version = "0.1.0", path = "../../../compiler-core/lowering" }
+parsing = { version = "0.1.0", path = "../../../compiler-core/parsing" }
+prim-constants = { version = "0.1.0", path = "../../../compiler-core/prim-constants" }
+resolving = { version = "0.1.0", path = "../../../compiler-core/resolving" }
+stabilizing = { version = "0.1.0", path = "../../../compiler-core/stabilizing" }
+sugar = { version = "0.1.0", path = "../../../compiler-core/sugar" }
+syntax = { version = "0.1.0", path = "../../../compiler-core/syntax" }
+
+# Data structures
+rustc-hash = "2"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.56"

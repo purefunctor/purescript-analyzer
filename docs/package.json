@@ -5,22 +5,29 @@
   "type": "module",
   "scripts": {
     "wasm": "cd src/wasm && wasm-pack build --target web",
-    "dev": "pnpm wasm && vite dev",
+    "dev": "pnpm wasm && vite",
     "build": "pnpm wasm --release && vite build",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{js,ts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{js,ts,json}\""
+  },
+  "dependencies": {
+    "@fontsource/iosevka": "^5.2.5",
+    "@fontsource/manrope": "^5.2.8",
+    "comlink": "^4.4.2",
+    "monaco-editor": "^0.52.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@fontsource-variable/montserrat": "^5.2.6",
-    "@sveltejs/adapter-auto": "^3.3.1",
-    "@sveltejs/adapter-static": "^3.0.9",
-    "@sveltejs/kit": "^2.37.0",
-    "@sveltejs/vite-plugin-svelte": "^4.0.4",
-    "comlink": "^4.4.2",
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
     "docs-lib": "workspace:*",
-    "svelte": "^5.38.6",
-    "svelte-check": "^4.3.1",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.0",
     "typescript": "^5.9.2",
     "vite": "^5.4.19"
   },
