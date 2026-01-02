@@ -22,14 +22,16 @@ pub enum ErrorStep {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
-    TypeSignatureVariableMismatch { id: lowering::TypeId, expected: u32, actual: u32 },
+    AmbiguousConstraint { constraint: TypeId },
     CannotUnify { t1: TypeId, t2: TypeId },
-    PartialSynonymApplication { id: lowering::TypeId },
+    EmptyAdoBlock,
+    EmptyDoBlock,
     InvalidTypeOperator { id: TypeId },
+    NoInstanceFound { constraint: TypeId },
+    PartialSynonymApplication { id: lowering::TypeId },
     RecursiveSynonymExpansion { file_id: files::FileId, item_id: indexing::TypeItemId },
     TooManyBinders { signature: lowering::TypeId, expected: u32, actual: u32 },
-    NoInstanceFound { constraint: TypeId },
-    AmbiguousConstraint { constraint: TypeId },
+    TypeSignatureVariableMismatch { id: lowering::TypeId, expected: u32, actual: u32 },
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -599,7 +599,7 @@ where
     }
 
     let [bind_statements @ .., (_, pure_expression)] = &do_statements[..] else {
-        // TODO: Emit warning message here.
+        state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };
 
@@ -671,7 +671,7 @@ where
     // bound to unification variables and let bindings are checked.
     // This is like inferring the lambda in a desugared representation.
     let mut binder_types = vec![];
-    let mut expressions = vec![];
+    let mut ado_statements = vec![];
     for statement in statements.iter() {
         match statement {
             lowering::DoStatement::Bind { binder, expression } => {
@@ -681,7 +681,7 @@ where
                     state.fresh_unification_type(context)
                 };
                 binder_types.push(binder_type);
-                expressions.push(*expression);
+                ado_statements.push(*expression);
             }
             lowering::DoStatement::Let { statements } => {
                 check_let_chunks(state, context, statements)?;
@@ -689,20 +689,21 @@ where
             lowering::DoStatement::Discard { expression } => {
                 let binder_type = state.fresh_unification_type(context);
                 binder_types.push(binder_type);
-                expressions.push(*expression);
+                ado_statements.push(*expression);
             }
         }
     }
 
-    assert_eq!(binder_types.len(), expressions.len());
+    assert_eq!(binder_types.len(), ado_statements.len());
 
-    if expressions.is_empty() {
+    let [head_statement, tail_statements @ ..] = &ado_statements[..] else {
         return if let Some(expression) = expression {
             infer_expression(state, context, expression)
         } else {
+            state.insert_error(ErrorKind::EmptyAdoBlock);
             Ok(context.prim.unknown)
         };
-    }
+    };
 
     // With the binders and let-bound names in scope, infer
     // the type of the final expression as our starting point.
@@ -726,11 +727,6 @@ where
     // lambda_type := ?discard -> ?y -> Message
     let lambda_type = state.make_function(&binder_types, expression_type);
 
-    let [expression, tail_expressions @ ..] = &expressions[..] else {
-        // TODO: Emit warning message here.
-        return Ok(context.prim.unknown);
-    };
-
     // This applies map_type to the lambda_type that we just built
     // and then to the inferred type of the first expression.
     //
@@ -741,7 +737,8 @@ where
     // expression_type  := f Int
     //
     // accumulated_type := f (?y -> Message)
-    let mut accumulated_type = infer_ado_map(state, context, map_type, lambda_type, *expression)?;
+    let mut accumulated_type =
+        infer_ado_map(state, context, map_type, lambda_type, *head_statement)?;
 
     //
     // This applies apply_type to the accumulated_type, and then to the
@@ -754,7 +751,7 @@ where
     // expression_type  := f String
     //
     // accumulated_type := f Message
-    for expression in tail_expressions {
+    for expression in tail_statements {
         accumulated_type =
             infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
     }

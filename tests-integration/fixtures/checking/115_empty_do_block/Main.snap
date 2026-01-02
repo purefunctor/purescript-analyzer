@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+pure :: forall (a :: Type). a -> Effect a
+bind :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+discard :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+test :: ???
+
+Types
+Effect :: Type -> Type
+
+Errors
+EmptyDoBlock at [TermDeclaration(Idx::<TermItem>(3)), InferringExpression(AstId<syntax::cst::Expression>(56))]
+CannotUnify { Type, ??? } at [TermDeclaration(Idx::<TermItem>(3))]

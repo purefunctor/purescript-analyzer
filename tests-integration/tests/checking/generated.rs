@@ -239,3 +239,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_113_int_compare_invalid_no_instance_main() { run_test("113_int_compare_invalid_no_instance", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_114_int_tostring_invalid_no_instance_main() { run_test("114_int_tostring_invalid_no_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_115_empty_do_block_main() { run_test("115_empty_do_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_116_empty_ado_block_main() { run_test("116_empty_ado_block", "Main"); }
