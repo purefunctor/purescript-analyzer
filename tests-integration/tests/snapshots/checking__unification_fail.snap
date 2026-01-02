@@ -15,6 +15,9 @@ expression: checked.errors
             ConstructorArgument(
                 AstId<syntax::cst::Type>(9),
             ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(9),
+            ),
         ],
     },
 ]

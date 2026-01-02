@@ -7,7 +7,7 @@ use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{binder, inspect, kind, operator, substitute, transfer, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
-use crate::error::ErrorKind;
+use crate::error::{ErrorKind, ErrorStep};
 
 pub fn infer_equations<Q>(
     state: &mut CheckState,
@@ -245,12 +245,27 @@ pub fn check_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    let inferred = infer_expression(state, context, expr_id)?;
-    let _ = unification::subtype(state, context, inferred, expected)?;
-    Ok(inferred)
+    state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
+        let inferred = infer_expression_quiet(state, context, expr_id)?;
+        let _ = unification::subtype(state, context, inferred, expected)?;
+        Ok(inferred)
+    })
 }
 
 pub fn infer_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expr_id: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::InferringExpression(expr_id), |state| {
+        infer_expression_quiet(state, context, expr_id)
+    })
+}
+
+fn infer_expression_quiet<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     expr_id: lowering::ExpressionId,

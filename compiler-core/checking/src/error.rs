@@ -9,6 +9,15 @@ pub enum ErrorStep {
     TermDeclaration(indexing::TermItemId),
     TypeDeclaration(indexing::TypeItemId),
     ConstructorArgument(lowering::TypeId),
+
+    InferringKind(lowering::TypeId),
+    CheckingKind(lowering::TypeId),
+
+    InferringBinder(lowering::BinderId),
+    CheckingBinder(lowering::BinderId),
+
+    InferringExpression(lowering::ExpressionId),
+    CheckingExpression(lowering::ExpressionId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

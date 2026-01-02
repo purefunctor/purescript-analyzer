@@ -11,6 +11,9 @@ expression: checked.errors
             TypeDeclaration(
                 Idx::<TypeItem>(1),
             ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(9),
+            ),
         ],
     },
     CheckError {
@@ -21,6 +24,9 @@ expression: checked.errors
         step: [
             TypeDeclaration(
                 Idx::<TypeItem>(1),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(9),
             ),
         ],
     },

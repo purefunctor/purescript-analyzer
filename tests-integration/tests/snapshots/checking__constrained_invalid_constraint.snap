@@ -12,6 +12,12 @@ expression: checked.errors
             TypeDeclaration(
                 Idx::<TypeItem>(1),
             ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(7),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(8),
+            ),
         ],
     },
 ]

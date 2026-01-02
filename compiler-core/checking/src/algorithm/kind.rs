@@ -13,10 +13,24 @@ use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer, unification};
 use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable};
+use crate::error::ErrorStep;
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
 pub fn infer_surface_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::TypeId,
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::InferringKind(id), |state| {
+        infer_surface_kind_core(state, context, id)
+    })
+}
+
+fn infer_surface_kind_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
@@ -518,9 +532,11 @@ pub fn check_surface_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let (inferred_type, inferred_kind) = infer_surface_kind(state, context, id)?;
-    let _ = unification::subtype(state, context, inferred_kind, kind)?;
-    Ok((inferred_type, inferred_kind))
+    state.with_error_step(ErrorStep::CheckingKind(id), |state| {
+        let (inferred_type, inferred_kind) = infer_surface_kind_core(state, context, id)?;
+        let _ = unification::subtype(state, context, inferred_kind, kind)?;
+        Ok((inferred_type, inferred_kind))
+    })
 }
 
 pub fn check_type_variable_binding<Q>(

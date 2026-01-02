@@ -5,6 +5,7 @@ use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, operator, term, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
+use crate::error::ErrorStep;
 
 #[derive(Copy, Clone, Debug)]
 enum BinderMode {
@@ -20,7 +21,9 @@ pub fn infer_binder<Q>(
 where
     Q: ExternalQueries,
 {
-    binder_core(state, context, binder_id, BinderMode::Infer)
+    state.with_error_step(ErrorStep::InferringBinder(binder_id), |state| {
+        binder_core(state, context, binder_id, BinderMode::Infer)
+    })
 }
 
 pub fn check_binder<Q>(
@@ -32,7 +35,9 @@ pub fn check_binder<Q>(
 where
     Q: ExternalQueries,
 {
-    binder_core(state, context, binder_id, BinderMode::Check { expected_type })
+    state.with_error_step(ErrorStep::CheckingBinder(binder_id), |state| {
+        binder_core(state, context, binder_id, BinderMode::Check { expected_type })
+    })
 }
 
 fn binder_core<Q>(
