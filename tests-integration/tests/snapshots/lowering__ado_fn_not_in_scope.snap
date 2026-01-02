@@ -16,6 +16,12 @@ expression: lowered.errors
         },
     ),
     NotInScope(
+        AdoFn {
+            kind: Pure,
+            id: AstId<syntax::cst::ExpressionAdo>(8),
+        },
+    ),
+    NotInScope(
         ExprVariable {
             id: AstId<syntax::cst::ExpressionVariable>(13),
         },
