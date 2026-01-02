@@ -365,6 +365,10 @@ impl CanUnify {
     fn and_also(self, f: impl FnOnce() -> CanUnify) -> CanUnify {
         if let CanUnify::Equal = self { f() } else { self }
     }
+
+    fn is_apart(self) -> bool {
+        matches!(self, CanUnify::Apart)
+    }
 }
 
 #[derive(Debug, Clone)]

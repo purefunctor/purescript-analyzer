@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+invalid :: forall (t :: Symbol). Cons "hello" t "helloworld" => Proxy @Symbol t
+forceSolve :: forall (t7 :: Symbol). Cons "hello" t7 "helloworld" => { invalid :: Proxy @Symbol t7 }
+
+Types
+Proxy :: forall (k :: Type). k -> Type

@@ -37,14 +37,23 @@ pub fn prim_int_add(state: &mut CheckState, arguments: &[TypeId]) -> Option<Matc
     match (left_int, right_int, sum_int) {
         (Some(left), Some(right), _) => {
             let result = state.storage.intern(Type::Integer(left + right));
+            if super::can_unify(state, sum, result).is_apart() {
+                return Some(MatchInstance::Apart);
+            }
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(sum, result)] })
         }
         (Some(left), _, Some(sum)) => {
             let result = state.storage.intern(Type::Integer(sum - left));
+            if super::can_unify(state, right, result).is_apart() {
+                return Some(MatchInstance::Apart);
+            }
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(right, result)] })
         }
         (_, Some(right), Some(sum)) => {
             let result = state.storage.intern(Type::Integer(sum - right));
+            if super::can_unify(state, left, result).is_apart() {
+                return Some(MatchInstance::Apart);
+            }
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(left, result)] })
         }
         _ => Some(MatchInstance::Stuck),
@@ -69,6 +78,11 @@ pub fn prim_int_mul(state: &mut CheckState, arguments: &[TypeId]) -> Option<Matc
     };
 
     let result = state.storage.intern(Type::Integer(left_int * right_int));
+
+    if super::can_unify(state, product, result).is_apart() {
+        return Some(MatchInstance::Apart);
+    }
+
     Some(MatchInstance::Match { constraints: vec![], equalities: vec![(product, result)] })
 }
 
@@ -102,6 +116,10 @@ where
         Ordering::Greater => context.prim_ordering.gt,
     };
 
+    if super::can_unify(state, ordering, result).is_apart() {
+        return Some(MatchInstance::Apart);
+    }
+
     Some(MatchInstance::Match { constraints: vec![], equalities: vec![(ordering, result)] })
 }
 
@@ -119,6 +137,10 @@ pub fn prim_int_to_string(state: &mut CheckState, arguments: &[TypeId]) -> Optio
 
     let value: SmolStr = value.to_string().into();
     let result = state.storage.intern(Type::String(StringKind::String, value));
+
+    if super::can_unify(state, symbol, result).is_apart() {
+        return Some(MatchInstance::Apart);
+    }
 
     Some(MatchInstance::Match { constraints: vec![], equalities: vec![(symbol, result)] })
 }
@@ -213,7 +235,7 @@ pub fn prim_symbol_cons(state: &mut CheckState, arguments: &[TypeId]) -> Option<
     let tail_symbol = extract_symbol(state, tail);
     let symbol_symbol = extract_symbol(state, symbol);
 
-    match (head_symbol, tail_symbol, symbol_symbol) {
+    match (&head_symbol, &tail_symbol, &symbol_symbol) {
         (Some(head), Some(tail), _) => {
             let mut chars = head.chars();
             if let (Some(c), None) = (chars.next(), chars.next()) {
@@ -230,6 +252,13 @@ pub fn prim_symbol_cons(state: &mut CheckState, arguments: &[TypeId]) -> Option<
         (_, _, Some(symbol_value)) => {
             let mut chars = symbol_value.chars();
             if let Some(c) = chars.next() {
+                if let Some(head_symbol) = head_symbol {
+                    let mut head_chars = head_symbol.chars();
+                    if head_chars.next() != Some(c) || head_chars.next().is_some() {
+                        return Some(MatchInstance::Apart);
+                    }
+                }
+
                 let head_result: SmolStr = c.to_string().into();
                 let tail_result: SmolStr = chars.as_str().into();
                 let head_result =
@@ -261,26 +290,43 @@ fn extract_row(state: &CheckState, id: TypeId) -> Option<RowType> {
     Some(row.clone())
 }
 
-fn merge_row_fields(left: &[RowField], right: &[RowField]) -> Vec<RowField> {
+fn merge_row_fields(
+    state: &mut CheckState,
+    left: &[RowField],
+    right: &[RowField],
+) -> Option<Vec<RowField>> {
     let left = left.iter();
     let right = right.iter();
 
-    let iter = itertools::merge_join_by(left, right, |left, right| left.label.cmp(&right.label));
-    let iter = iter.flat_map(|either| {
-        let (left, right) = match either {
-            EitherOrBoth::Left(left) => (Some(left), None),
-            EitherOrBoth::Right(right) => (Some(right), None),
-            EitherOrBoth::Both(left, right) => (Some(left), Some(right)),
-        };
-        left.into_iter().chain(right).cloned()
-    });
+    let merged_by_label =
+        itertools::merge_join_by(left, right, |left, right| left.label.cmp(&right.label));
 
-    iter.collect()
+    let mut result = vec![];
+    for field in merged_by_label {
+        match field {
+            EitherOrBoth::Left(left) => result.push(left.clone()),
+            EitherOrBoth::Right(right) => result.push(right.clone()),
+            EitherOrBoth::Both(left, right) => {
+                let left_type = state.normalize_type(left.id);
+                let right_type = state.normalize_type(right.id);
+                if super::can_unify(state, left_type, right_type).is_apart() {
+                    return None;
+                }
+                result.push(left.clone());
+            }
+        }
+    }
+
+    Some(result)
 }
 
 type SubtractResult = (Vec<RowField>, Vec<(TypeId, TypeId)>);
 
-fn subtract_row_fields(source: &[RowField], to_remove: &[RowField]) -> Option<SubtractResult> {
+fn subtract_row_fields(
+    state: &mut CheckState,
+    source: &[RowField],
+    to_remove: &[RowField],
+) -> Option<SubtractResult> {
     let mut result = vec![];
     let mut equalities = vec![];
     let mut to_remove_iter = to_remove.iter().peekable();
@@ -292,6 +338,11 @@ fn subtract_row_fields(source: &[RowField], to_remove: &[RowField]) -> Option<Su
                     result.push(field.clone());
                 }
                 Ordering::Equal => {
+                    let field_ty = state.normalize_type(field.id);
+                    let removed_ty = state.normalize_type(remove_field.id);
+                    if super::can_unify(state, field_ty, removed_ty).is_apart() {
+                        return None;
+                    }
                     equalities.push((field.id, remove_field.id));
                     to_remove_iter.next();
                 }
@@ -326,30 +377,36 @@ pub fn prim_row_union(state: &mut CheckState, arguments: &[TypeId]) -> Option<Ma
 
     match (left_row, right_row, union_row) {
         (Some(left_row), Some(right_row), _) => {
-            let merged = merge_row_fields(&left_row.fields, &right_row.fields);
-            let result = state.storage.intern(Type::Row(RowType::closed(merged)));
-            Some(MatchInstance::Match { constraints: vec![], equalities: vec![(union, result)] })
+            if let Some(merged) = merge_row_fields(state, &left_row.fields, &right_row.fields) {
+                let result = state.storage.intern(Type::Row(RowType::closed(merged)));
+                Some(MatchInstance::Match {
+                    constraints: vec![],
+                    equalities: vec![(union, result)],
+                })
+            } else {
+                Some(MatchInstance::Apart)
+            }
         }
         (_, Some(right_row), Some(union_row)) => {
-            match subtract_row_fields(&union_row.fields, &right_row.fields) {
-                Some((remaining, equalities)) => {
-                    let result = state.storage.intern(Type::Row(RowType::closed(remaining)));
-                    let mut all_equalities = vec![(left, result)];
-                    all_equalities.extend(equalities);
-                    Some(MatchInstance::Match { constraints: vec![], equalities: all_equalities })
-                }
-                None => Some(MatchInstance::Apart),
+            if let Some((remaining, mut equalities)) =
+                subtract_row_fields(state, &union_row.fields, &right_row.fields)
+            {
+                let result = state.storage.intern(Type::Row(RowType::closed(remaining)));
+                equalities.push((left, result));
+                Some(MatchInstance::Match { constraints: vec![], equalities })
+            } else {
+                Some(MatchInstance::Apart)
             }
         }
         (Some(left_row), _, Some(union_row)) => {
-            match subtract_row_fields(&union_row.fields, &left_row.fields) {
-                Some((remaining, equalities)) => {
-                    let result = state.storage.intern(Type::Row(RowType::closed(remaining)));
-                    let mut all_equalities = vec![(right, result)];
-                    all_equalities.extend(equalities);
-                    Some(MatchInstance::Match { constraints: vec![], equalities: all_equalities })
-                }
-                None => Some(MatchInstance::Apart),
+            if let Some((remaining, mut equalities)) =
+                subtract_row_fields(state, &union_row.fields, &left_row.fields)
+            {
+                let result = state.storage.intern(Type::Row(RowType::closed(remaining)));
+                equalities.push((right, result));
+                Some(MatchInstance::Match { constraints: vec![], equalities })
+            } else {
+                Some(MatchInstance::Apart)
             }
         }
         _ => Some(MatchInstance::Stuck),

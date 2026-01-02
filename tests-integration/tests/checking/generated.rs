@@ -221,3 +221,21 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_104_incomplete_signature_main() { run_test("104_incomplete_signature", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_105_incomplete_type_signature_main() { run_test("105_incomplete_type_signature", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_106_row_union_invalid_discharged_main() { run_test("106_row_union_invalid_discharged", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_107_symbol_append_invalid_discharged_main() { run_test("107_symbol_append_invalid_discharged", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_108_symbol_cons_invalid_discharged_main() { run_test("108_symbol_cons_invalid_discharged", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_109_row_cons_invalid_discharged_main() { run_test("109_row_cons_invalid_discharged", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_110_row_lacks_invalid_no_instance_main() { run_test("110_row_lacks_invalid_no_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_111_int_add_invalid_no_instance_main() { run_test("111_int_add_invalid_no_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_112_int_mul_invalid_no_instance_main() { run_test("112_int_mul_invalid_no_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_113_int_compare_invalid_no_instance_main() { run_test("113_int_compare_invalid_no_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_114_int_tostring_invalid_no_instance_main() { run_test("114_int_tostring_invalid_no_instance", "Main"); }

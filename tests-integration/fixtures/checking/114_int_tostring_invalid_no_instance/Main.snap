@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+invalid :: ToString 42 "999" => Proxy @Symbol "999"
+forceSolve :: { invalid :: Proxy @Symbol "999" }
+
+Types
+Proxy :: forall (k :: Type). k -> Type
+
+Errors
+NoInstanceFound { ToString 42 "999" } at [TermDeclaration(Idx::<TermItem>(2))]
