@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Bar :: Foo
+
+Types
+Foo :: Type

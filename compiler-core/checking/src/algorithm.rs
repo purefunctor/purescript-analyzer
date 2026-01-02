@@ -97,13 +97,19 @@ fn check_type_items<Q: ExternalQueries>(
     context: &state::CheckContext<Q>,
 ) -> QueryResult<()> {
     let needs_binding_group = |id: &indexing::TypeItemId| {
-        let item = &context.indexed.items[*id];
+        // Use the lowering representation to detypeine if we need a binding
+        // group to match invariant expectations in downstream checking rules.
+        // Previously, this used the indexing representation which would crash
+        // on partially-specified kind signatures like `data Foo ::`.
+        let Some(lowered) = context.lowered.info.get_type_item(*id) else {
+            return false;
+        };
         matches!(
-            item.kind,
-            indexing::TypeItemKind::Data { signature: None, .. }
-                | indexing::TypeItemKind::Newtype { signature: None, .. }
-                | indexing::TypeItemKind::Synonym { signature: None, .. }
-                | indexing::TypeItemKind::Class { signature: None, .. }
+            lowered,
+            TypeItemIr::DataGroup { signature: None, .. }
+                | TypeItemIr::NewtypeGroup { signature: None, .. }
+                | TypeItemIr::SynonymGroup { signature: None, .. }
+                | TypeItemIr::ClassGroup { signature: None, .. }
         )
     };
 
@@ -281,8 +287,14 @@ fn check_value_groups<Q: ExternalQueries>(
     };
 
     let needs_binding_group = |item: &indexing::TermItemId| {
-        let item = &context.indexed.items[*item];
-        matches!(item.kind, indexing::TermItemKind::Value { signature: None, .. })
+        // Use the lowering representation to determine if we need a binding
+        // group to match invariant expectations in downstream checking rules.
+        // Previously, this used the indexing representation which would crash
+        // on partially-specified type signatures like `value ::`.
+        let Some(lowered) = context.lowered.info.get_term_item(*item) else {
+            return false;
+        };
+        matches!(lowered, lowering::TermItemIr::ValueGroup { signature: None, .. })
     };
 
     for scc in &context.lowered.term_scc {

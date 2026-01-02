@@ -217,3 +217,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_102_builtin_row_main() { run_test("102_builtin_row", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_103_do_row_collector_main() { run_test("103_do_row_collector", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_104_incomplete_signature_main() { run_test("104_incomplete_signature", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_105_incomplete_type_signature_main() { run_test("105_incomplete_type_signature", "Main"); }

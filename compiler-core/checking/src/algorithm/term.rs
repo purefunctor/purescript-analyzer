@@ -584,7 +584,8 @@ where
     }
 
     let [bind_statements @ .., (_, pure_expression)] = &do_statements[..] else {
-        unreachable!("invariant violated: empty do_statements");
+        // TODO: Emit warning message here.
+        return Ok(context.prim.unknown);
     };
 
     let Some(pure_expression) = pure_expression else {
@@ -711,7 +712,8 @@ where
     let lambda_type = state.make_function(&binder_types, expression_type);
 
     let [expression, tail_expressions @ ..] = &expressions[..] else {
-        unreachable!("invariant violated: empty ado_statements");
+        // TODO: Emit warning message here.
+        return Ok(context.prim.unknown);
     };
 
     // This applies map_type to the lambda_type that we just built
