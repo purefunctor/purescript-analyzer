@@ -11,8 +11,9 @@ use compiler_scripts::snapshots::{print_diff, strip_frontmatter};
 #[derive(Parser)]
 #[command(about = "Run type checker integration tests with snapshot diffing")]
 struct Args {
-    /// Test name or number filter
-    filter: Option<String>,
+    /// Test name or number filters
+    #[arg(num_args = 0..)]
+    filters: Vec<String>,
 
     /// Verbose output (show test progress)
     #[arg(short, long)]
@@ -22,7 +23,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let verbose = args.verbose;
-    let test_filter = args.filter.unwrap_or_default();
+    let filters = args.filters;
 
     // Hash fixtures and print timing
     let start = Instant::now();
@@ -33,8 +34,8 @@ fn main() {
     let mut cmd = Command::new("cargo");
     cmd.arg("nextest").arg("run").arg("-p").arg("tests-integration").arg("--test").arg("checking");
 
-    if !test_filter.is_empty() {
-        cmd.arg(&test_filter);
+    for filter in &filters {
+        cmd.arg(filter);
     }
 
     if verbose {
@@ -69,8 +70,8 @@ fn main() {
                 .arg("tests-integration")
                 .arg("--test")
                 .arg("checking");
-            if !test_filter.is_empty() {
-                retry.arg(&test_filter);
+            for filter in &filters {
+                retry.arg(filter);
             }
             retry.arg("--status-level=fail");
             retry.arg("--color=always");

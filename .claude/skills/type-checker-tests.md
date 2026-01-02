@@ -14,7 +14,7 @@ Use this skill when adding new type checker functions or expanding behavior.
 | Action | Command |
 |--------|---------|
 | Find next test number | `ls tests-integration/fixtures/checking/ \| tail -5` |
-| Run specific test | `just tc NNN` |
+| Run a test or multiple tests | `just tc NNN` or `just tc 101 102` |
 | Run all checking tests | `just tc` |
 | Accept all pending snapshots | `cargo insta accept` |
 
