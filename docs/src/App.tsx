@@ -46,6 +46,7 @@ export default function App() {
         lex: parsed.lex,
         layout: parsed.layout,
         parse: parsed.parse,
+        total: parsed.lex + parsed.layout + parsed.parse,
       });
 
       // Run type checker if in that mode
@@ -61,6 +62,7 @@ export default function App() {
           resolve: checked.timing.resolve,
           lower: checked.timing.lower,
           check: checked.timing.check,
+          total: checked.timing.total,
         });
       }
     } catch (err) {

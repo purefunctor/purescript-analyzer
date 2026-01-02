@@ -31,6 +31,10 @@ export function PerformanceBar({ timing }: Props) {
           <span className="font-mono text-fg-muted">{formatMs(metric.value!)}</span>
         </div>
       ))}
+      <div className="flex items-center gap-1.5 border-l border-bg-lighter pl-4">
+        <span className="font-medium">Total:</span>
+        <span className="font-mono text-fg-muted">{formatMs(timing.total)}</span>
+      </div>
     </div>
   );
 }

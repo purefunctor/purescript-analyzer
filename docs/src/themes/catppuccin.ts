@@ -107,8 +107,10 @@ function createTheme(palette: Palette, base: "vs" | "vs-dark"): monaco.editor.IS
     colors: {
       "editor.background": palette.base,
       "editor.foreground": palette.text,
-      "editor.lineHighlightBackground": palette.surface0,
-      "editor.selectionBackground": palette.surface2,
+      "editor.lineHighlightBackground": palette.text + "12",
+      "editor.selectionBackground": palette.overlay2 + (base === "vs" ? "4D" : "40"),
+      "editor.wordHighlightBackground": palette.overlay2 + "33",
+      "editor.wordHighlightStrongBackground": palette.blue + (base === "vs" ? "26" : "33"),
       "editorCursor.foreground": palette.rosewater,
       "editorLineNumber.foreground": palette.overlay0,
       "editorLineNumber.activeForeground": palette.lavender,

@@ -30,6 +30,7 @@ export interface CheckTiming {
   resolve: number;
   lower: number;
   check: number;
+  total: number;
 }
 
 export interface CheckResult {
@@ -49,6 +50,7 @@ export interface Timing {
   resolve?: number;
   lower?: number;
   check?: number;
+  total: number;
 }
 
 export interface Lib {

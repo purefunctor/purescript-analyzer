@@ -87,6 +87,7 @@ pub struct CheckTiming {
     resolve: f64,
     lower: f64,
     check: f64,
+    total: f64,
 }
 
 #[derive(Serialize)]
@@ -103,6 +104,8 @@ pub fn check(source: &str) -> JsValue {
     let performance = get_performance();
 
     let result = ENGINE.with_borrow_mut(|engine| {
+        let total_start = performance.now();
+
         // Parse
         let start = performance.now();
         let lexed = lexing::lex(source);
@@ -145,6 +148,7 @@ pub fn check(source: &str) -> JsValue {
                         resolve: 0.0,
                         lower: 0.0,
                         check: 0.0,
+                        total: performance.now() - total_start,
                     },
                 };
             }
@@ -171,6 +175,7 @@ pub fn check(source: &str) -> JsValue {
                     resolve: 0.0,
                     lower: 0.0,
                     check: 0.0,
+                    total: performance.now() - total_start,
                 },
             };
         }
@@ -196,6 +201,7 @@ pub fn check(source: &str) -> JsValue {
                     resolve: resolve_time,
                     lower: 0.0,
                     check: 0.0,
+                    total: performance.now() - total_start,
                 },
             };
         }
@@ -223,6 +229,7 @@ pub fn check(source: &str) -> JsValue {
                         resolve: resolve_time,
                         lower: lower_time,
                         check: 0.0,
+                        total: performance.now() - total_start,
                     },
                 };
             }
@@ -283,6 +290,8 @@ pub fn check(source: &str) -> JsValue {
             });
         }
 
+        let total_time = performance.now() - total_start;
+
         CheckResult {
             terms,
             types,
@@ -297,6 +306,7 @@ pub fn check(source: &str) -> JsValue {
                 resolve: resolve_time,
                 lower: lower_time,
                 check: check_time,
+                total: total_time,
             },
         }
     });
