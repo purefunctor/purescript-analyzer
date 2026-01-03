@@ -1,5 +1,6 @@
 use building_types::QueryResult;
-use indexing::{TermItemId, TermItemKind};
+use files::FileId;
+use indexing::{TermItemId, TermItemKind, TypeItemId};
 use lowering::TermItemIr;
 
 use crate::ExternalQueries;
@@ -52,21 +53,23 @@ where
     })
 }
 
+pub struct CheckInstance<'a> {
+    pub item_id: TermItemId,
+    pub constraints: &'a [lowering::TypeId],
+    pub arguments: &'a [lowering::TypeId],
+    pub resolution: &'a Option<(FileId, TypeItemId)>,
+}
+
 pub fn check_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    item_id: TermItemId,
+    input: CheckInstance<'_>,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
+    let CheckInstance { item_id, constraints, arguments, resolution } = input;
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        let Some(TermItemIr::Instance { constraints, resolution, arguments, .. }) =
-            context.lowered.info.get_term_item(item_id)
-        else {
-            return Ok(());
-        };
-
         let Some(resolution) = *resolution else {
             return Ok(());
         };
@@ -119,21 +122,23 @@ where
     })
 }
 
+#[derive(Clone, Copy)]
+pub struct CheckValueGroup<'a> {
+    pub item_id: TermItemId,
+    pub signature: &'a Option<lowering::TypeId>,
+    pub equations: &'a [lowering::Equation],
+}
+
 pub fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    item_id: TermItemId,
+    input: CheckValueGroup<'_>,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
+    let CheckValueGroup { item_id, signature, equations } = input;
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        let Some(TermItemIr::ValueGroup { signature, equations }) =
-            context.lowered.info.get_term_item(item_id)
-        else {
-            return Ok(());
-        };
-
         if let Some(signature_id) = signature {
             let group_type = term::lookup_file_term(state, context, context.id, item_id)?;
 

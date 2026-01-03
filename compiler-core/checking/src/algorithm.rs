@@ -53,7 +53,7 @@ use std::slice;
 use building_types::QueryResult;
 use files::FileId;
 use itertools::Itertools;
-use lowering::{DataIr, NewtypeIr, Scc, TypeItemIr};
+use lowering::{DataIr, NewtypeIr, Scc, TermItemIr, TypeItemIr};
 
 use crate::core::{ForallBinder, Type, TypeId, debruijn};
 use crate::{CheckedModule, ExternalQueries};
@@ -72,10 +72,13 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
     Ok(state.checked)
 }
 
-fn check_type_signatures<Q: ExternalQueries>(
+fn check_type_signatures<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()> {
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     for scc in &context.lowered.type_scc {
         match scc {
             Scc::Base(id) | Scc::Recursive(id) => {
@@ -92,10 +95,13 @@ fn check_type_signatures<Q: ExternalQueries>(
     Ok(())
 }
 
-fn check_type_items<Q: ExternalQueries>(
+fn check_type_items<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()> {
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     let needs_binding_group = |id: &indexing::TypeItemId| {
         // Use the lowering representation to detypeine if we need a binding
         // group to match invariant expectations in downstream checking rules.
@@ -238,10 +244,13 @@ where
     Ok(())
 }
 
-fn check_term_signatures<Q: ExternalQueries>(
+fn check_term_signatures<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()> {
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     for scc in &context.lowered.term_scc {
         match scc {
             Scc::Base(item) | Scc::Recursive(item) => {
@@ -258,81 +267,89 @@ fn check_term_signatures<Q: ExternalQueries>(
     Ok(())
 }
 
-fn check_instances<Q: ExternalQueries>(
+fn check_instances<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()> {
-    let is_instance = |item: &&indexing::TermItemId| {
-        matches!(context.indexed.items[**item].kind, indexing::TermItemKind::Instance { .. })
-    };
-
-    let flattened = context.lowered.term_scc.iter().flat_map(|scc| match scc {
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let items = context.lowered.term_scc.iter().flat_map(|scc| match scc {
         Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
         Scc::Mutual(items) => items.as_slice(),
     });
 
-    for item in flattened.filter(is_instance) {
-        term_item::check_instance(state, context, *item)?;
+    for &item_id in items {
+        let Some(TermItemIr::Instance { constraints, resolution, arguments, .. }) =
+            context.lowered.info.get_term_item(item_id)
+        else {
+            continue;
+        };
+
+        let check_instance =
+            term_item::CheckInstance { item_id, constraints, arguments, resolution };
+
+        term_item::check_instance(state, context, check_instance)?;
     }
 
     Ok(())
 }
 
-fn check_value_groups<Q: ExternalQueries>(
+fn check_value_groups<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()> {
-    let is_value_group = |item: &&indexing::TermItemId| {
-        matches!(context.indexed.items[**item].kind, indexing::TermItemKind::Value { .. })
-    };
-
-    let needs_binding_group = |item: &indexing::TermItemId| {
-        // Use the lowering representation to determine if we need a binding
-        // group to match invariant expectations in downstream checking rules.
-        // Previously, this used the indexing representation which would crash
-        // on partially-specified type signatures like `value ::`.
-        let Some(lowered) = context.lowered.info.get_term_item(*item) else {
-            return false;
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let extract_value_group = |item_id: indexing::TermItemId| {
+        let TermItemIr::ValueGroup { signature, equations } =
+            context.lowered.info.get_term_item(item_id)?
+        else {
+            return None;
         };
-        matches!(lowered, lowering::TermItemIr::ValueGroup { signature: None, .. })
+        Some(term_item::CheckValueGroup { item_id, signature, equations })
     };
 
     for scc in &context.lowered.term_scc {
         match scc {
-            Scc::Base(item) | Scc::Recursive(item) if is_value_group(&item) => {
-                if !state.checked.terms.contains_key(item) && needs_binding_group(item) {
+            Scc::Base(item) | Scc::Recursive(item) => {
+                let Some(value_group) = extract_value_group(*item) else {
+                    continue;
+                };
+                if !state.checked.terms.contains_key(item) && value_group.signature.is_none() {
                     state.term_binding_group(context, [*item]);
                 }
-                term_item::check_value_group(state, context, *item)?;
+                term_item::check_value_group(state, context, value_group)?;
                 state.commit_binding_group(context)?;
             }
             Scc::Mutual(items) => {
-                let with_signature = items
+                let value_groups =
+                    items.iter().filter_map(|&id| extract_value_group(id)).collect_vec();
+
+                let with_signature = value_groups
                     .iter()
-                    .filter(|item| is_value_group(item) && state.checked.terms.contains_key(item))
-                    .copied()
+                    .filter(|value_group| state.checked.terms.contains_key(&value_group.item_id))
                     .collect_vec();
 
-                let without_signature = items
+                let without_signature = value_groups
                     .iter()
-                    .filter(|item| is_value_group(item) && needs_binding_group(item))
-                    .copied()
+                    .filter(|value_group| value_group.signature.is_none())
                     .collect_vec();
 
-                let group = without_signature.iter().copied();
+                let group = without_signature.iter().map(|value_group| value_group.item_id);
                 state.term_binding_group(context, group);
 
-                for item in &without_signature {
-                    term_item::check_value_group(state, context, *item)?;
+                for value_group in without_signature {
+                    term_item::check_value_group(state, context, *value_group)?;
                 }
                 state.commit_binding_group(context)?;
 
-                for item in &with_signature {
-                    term_item::check_value_group(state, context, *item)?;
+                for value_group in with_signature {
+                    term_item::check_value_group(state, context, *value_group)?;
                 }
                 state.commit_binding_group(context)?;
             }
-            _ => {}
         }
     }
     Ok(())
