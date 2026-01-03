@@ -1,0 +1,43 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module ReExporter
+
+Unqualified Imports:
+
+Terms:
+  - compare is Implicit
+  - show is Implicit
+  - notEq is Implicit
+  - eq is Implicit
+
+Types:
+  - Show is Implicit
+  - Ord is Implicit
+  - Eq is Implicit
+
+Qualified Imports:
+
+Exported Terms:
+  - compare
+  - show
+  - notEq
+  - eq
+
+Exported Types:
+  - Show
+  - Ord
+  - Eq
+
+Local Terms:
+
+Local Types:
+
+Class Members:
+  - Show.show (imported)
+  - Eq.eq (imported)
+  - Eq.notEq (imported)
+  - Ord.compare (imported)
+
+Errors:

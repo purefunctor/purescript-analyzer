@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+expression: report
+---
+module ReExportConsumer
+
+Unqualified Imports:
+
+Terms:
+
+Types:
+  - Show is Explicit
+  - Eq is Explicit
+
+Qualified Imports:
+
+Exported Terms:
+
+Exported Types:
+
+Local Terms:
+
+Local Types:
+
+Class Members:
+  - Show.show (imported)
+  - Eq.eq (imported)
+  - Eq.notEq (imported)
+
+Errors:

@@ -65,3 +65,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_005_class_members_imported_class() { run_test("005_class_members", "ImportedClass"); }
 
 #[rustfmt::skip] #[test] fn test_005_class_members_local_class() { run_test("005_class_members", "LocalClass"); }
+
+#[rustfmt::skip] #[test] fn test_005_class_members_re_export_consumer() { run_test("005_class_members", "ReExportConsumer"); }
+
+#[rustfmt::skip] #[test] fn test_005_class_members_re_exporter() { run_test("005_class_members", "ReExporter"); }
