@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(type-checker-tests)",
+      "WebSearch",
+      "Bash(cargo build:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo nextest run:*)",
+      "Bash(cargo test:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(just integration:*)",
+      "Bash(just tc:*)"
+    ]
+  }
+}

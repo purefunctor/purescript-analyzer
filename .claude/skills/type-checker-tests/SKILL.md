@@ -1,6 +1,7 @@
 ---
 name: type-checker-tests
 description: Add integration tests for type checker inference and checking functions
+allowed-tools: Bash(mkdir:*)
 ---
 
 # Type Checker Integration Tests
@@ -150,7 +151,7 @@ ErrorKind { details } at [location]
 # Accept only after thorough review
 cargo insta accept
 
-# Verify full suite passes
+# Verify all checking tests pass
 just tc
 ```
 
@@ -163,4 +164,4 @@ When investigating a potential compiler bug:
 just tc NNN
 ```
 
-Once the issue is resolved, run the full test suite to check for regressions.
+You should run `just tc` to check for regressions.

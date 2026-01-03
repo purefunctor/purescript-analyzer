@@ -46,31 +46,26 @@ Additional concepts that you should be mindful of, the compiler:
 
 Agent skills are specialized instruction sets for common tasks. They're stored in `.claude/skills/`.
 
-- **type-checker-tests**: Adding integration tests for type checker inference and checking
+- **type-checker-tests**: Use this when asked to implement tests for type checker inference and checking
 
-## Commands
+## Quick Commands
 
-This is your bread and butter to verify that code compiles, including test code.
-If updating the test code can be deferred, you may skip adding the `--tests flag`
-to speed up the task at hand.
+Always provide the crate name of the code that you're working on for efficiency.
 
 ```
+# Bread and butter, check for errors
 cargo check -p <crate-name> --tests
+
+# Run tests (always use nextest)
+cargo nextest run -p <crate-name>
 ```
 
-When working on the type checker `./compiler-core/checking/` you must run
-the full type checker snapshot test suite using the following command to
-verify if there's any change in behaviour. Use the `type-checker-tests`
-skill when asked to develop more type checker tests.
+### Domain Specific
 
 ```
+# Run type checker integration tests
 just tc
-```
 
-You can also specify a test fixture number to reduce noise. Once you've
-identified and fixed the bug, you must run the full test suite again to
-verify that the fix generalises.
-
-```
+# You can also provide a test filter
 just tc 101
 ```
