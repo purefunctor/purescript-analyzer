@@ -23,6 +23,8 @@ Local Terms:
 
 Local Types:
 
+Class Members:
+
 Errors:
   - TermImportConflict { existing: (Idx::<File>(14), Idx::<TermItem>(0), AstId<syntax::cst::ImportStatement>(9)), duplicate: (Idx::<File>(13), Idx::<TermItem>(0), AstId<syntax::cst::ImportStatement>(5)) }
   - TypeImportConflict { existing: (Idx::<File>(14), Idx::<TypeItem>(0), AstId<syntax::cst::ImportStatement>(9)), duplicate: (Idx::<File>(13), Idx::<TypeItem>(0), AstId<syntax::cst::ImportStatement>(5)) }

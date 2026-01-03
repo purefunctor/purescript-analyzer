@@ -16,11 +16,48 @@ pub trait ExternalQueries:
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
+pub struct ResolvedClassMembers {
+    members: FxHashMap<(TypeItemId, SmolStr), (FileId, TermItemId)>,
+}
+
+impl ResolvedClassMembers {
+    pub fn insert(
+        &mut self,
+        class_id: TypeItemId,
+        name: SmolStr,
+        file: FileId,
+        term_id: TermItemId,
+    ) {
+        self.members.insert((class_id, name), (file, term_id));
+    }
+
+    pub fn lookup(&self, class_id: TypeItemId, name: &str) -> Option<(FileId, TermItemId)> {
+        let key = &(class_id, SmolStr::new(name));
+        self.members.get(key).copied()
+    }
+
+    pub fn class_members(
+        &self,
+        class_id: TypeItemId,
+    ) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> + '_ {
+        self.members
+            .iter()
+            .filter(move |((type_id, _), _)| *type_id == class_id)
+            .map(|((_, name), (file, id))| (name, *file, *id))
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (TypeItemId, &SmolStr, FileId, TermItemId)> + '_ {
+        self.members.iter().map(|((class_id, name), (file, id))| (*class_id, name, *file, *id))
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ResolvedModule {
     pub unqualified: ResolvedImportsUnqualified,
     pub qualified: ResolvedImportsQualified,
     pub exports: ResolvedExports,
     pub locals: ResolvedLocals,
+    pub class: ResolvedClassMembers,
     pub errors: Vec<ResolvingError>,
 }
 
@@ -95,6 +132,14 @@ impl ResolvedModule {
                 .or_else(|| self.lookup_unqualified(lookup_item))
                 .or_else(|| self.lookup_prim_import(lookup_item, lookup_prim))
         }
+    }
+
+    pub fn lookup_class_member(
+        &self,
+        class_id: TypeItemId,
+        name: &str,
+    ) -> Option<(FileId, TermItemId)> {
+        self.class.lookup(class_id, name)
     }
 }
 
@@ -190,7 +235,7 @@ impl ResolvedImport {
 }
 
 pub fn resolve_module(queries: &impl ExternalQueries, file: FileId) -> QueryResult<ResolvedModule> {
-    let algorithm::State { unqualified, qualified, exports, locals, errors } =
+    let algorithm::State { unqualified, qualified, exports, locals, class, errors } =
         algorithm::resolve_module(queries, file)?;
-    Ok(ResolvedModule { unqualified, qualified, exports, locals, errors })
+    Ok(ResolvedModule { unqualified, qualified, exports, locals, class, errors })
 }

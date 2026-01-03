@@ -41,4 +41,7 @@ Local Types:
   - Synonym
   - Maybe
 
+Class Members:
+  - Eq.eq
+
 Errors:

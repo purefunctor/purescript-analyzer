@@ -2,27 +2,30 @@
 source: tests-integration/tests/resolving/generated.rs
 expression: report
 ---
-module LibraryExplicit
+module LocalClass
 
 Unqualified Imports:
 
 Qualified Imports:
 
 Exported Terms:
-  - Id
+  - map
+  - apply
 
 Exported Types:
-  - Hidden
-  - Id
+  - Apply
+  - Functor
 
 Local Terms:
-  - Hidden
-  - Id
+  - map
+  - apply
 
 Local Types:
-  - Hidden
-  - Id
+  - Apply
+  - Functor
 
 Class Members:
+  - Functor.map
+  - Apply.apply
 
 Errors:

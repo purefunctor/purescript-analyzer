@@ -403,13 +403,11 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Instance { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
-            let resolution = cst.as_ref().and_then(|cst| {
-                let cst = cst.instance_head()?;
-                let cst = cst.qualified()?;
-
+            let class_resolution = cst.as_ref().and_then(|cst| {
+                let head = cst.instance_head()?;
+                let qualified = head.qualified()?;
                 let (qualifier, name) =
-                    recursive::lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-
+                    recursive::lower_qualified_name(&qualified, cst::QualifiedName::upper)?;
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
 
@@ -434,10 +432,15 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 
             let members = recover! {
                 let statements = cst.as_ref()?.instance_statements()?;
-                lower_instance_statements(state, context, &statements)
+                lower_instance_statements(state, context, &statements, class_resolution)
             };
 
-            let kind = TermItemIr::Instance { constraints, resolution, arguments, members };
+            let kind = TermItemIr::Instance {
+                constraints,
+                resolution: class_resolution,
+                arguments,
+                members,
+            };
             state.info.term_item.insert(item_id, kind);
         }
 
@@ -749,6 +752,7 @@ fn lower_instance_statements(
     state: &mut State,
     context: &Context,
     cst: &cst::InstanceStatements,
+    class_resolution: Option<(FileId, TypeItemId)>,
 ) -> Arc<[InstanceMemberGroup]> {
     let children = cst.children().chunk_by(|statement| match statement {
         cst::InstanceMemberStatement::InstanceSignatureStatement(s) => s.name_token().map(|t| {
@@ -793,7 +797,11 @@ fn lower_instance_statements(
 
     in_scope
         .into_iter()
-        .map(|(_, (signature, equations))| {
+        .map(|(name, (signature, equations))| {
+            // Resolve the class member using the class type ID
+            let resolution = class_resolution
+                .and_then(|(_, class_id)| context.resolved.lookup_class_member(class_id, &name));
+
             state.with_scope(|state| {
                 state.push_forall_scope();
                 let signature = signature.and_then(|id| {
@@ -813,7 +821,7 @@ fn lower_instance_statements(
                         ))
                     })
                     .collect();
-                InstanceMemberGroup { signature, equations }
+                InstanceMemberGroup { resolution, signature, equations }
             })
         })
         .collect()

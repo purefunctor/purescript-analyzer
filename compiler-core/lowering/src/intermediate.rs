@@ -293,6 +293,7 @@ pub struct InfixPair<T> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InstanceMemberGroup {
+    pub resolution: Option<(FileId, TermItemId)>,
     pub signature: Option<TypeId>,
     pub equations: Arc<[Equation]>,
 }

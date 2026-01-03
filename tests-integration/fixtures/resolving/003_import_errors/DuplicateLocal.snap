@@ -20,6 +20,8 @@ Local Terms:
 Local Types:
   - Data
 
+Class Members:
+
 Errors:
   - ExistingTerm { existing: (Idx::<File>(9), Idx::<TermItem>(0)), duplicate: (Idx::<File>(9), Idx::<TermItem>(1)) }
   - ExistingType { existing: (Idx::<File>(9), Idx::<TypeItem>(0)), duplicate: (Idx::<File>(9), Idx::<TypeItem>(1)) }

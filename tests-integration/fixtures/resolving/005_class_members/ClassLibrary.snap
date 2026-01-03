@@ -2,27 +2,38 @@
 source: tests-integration/tests/resolving/generated.rs
 expression: report
 ---
-module LibraryExplicit
+module ClassLibrary
 
 Unqualified Imports:
 
 Qualified Imports:
 
 Exported Terms:
-  - Id
+  - compare
+  - show
+  - notEq
+  - eq
 
 Exported Types:
-  - Hidden
-  - Id
+  - Show
+  - Ord
+  - Eq
 
 Local Terms:
-  - Hidden
-  - Id
+  - compare
+  - show
+  - notEq
+  - eq
 
 Local Types:
-  - Hidden
-  - Id
+  - Show
+  - Ord
+  - Eq
 
 Class Members:
+  - Show.show
+  - Eq.eq
+  - Eq.notEq
+  - Ord.compare
 
 Errors:

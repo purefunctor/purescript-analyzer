@@ -2,13 +2,13 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{
     ExportKind, ImplicitItems, ImportId, ImportKind, IndexedModule, IndexingImport, TermItemId,
-    TermItemKind, TypeItemId,
+    TermItemKind, TypeItemId, TypeItemKind,
 };
 use smol_str::SmolStr;
 
 use crate::{
-    ExportSource, ExternalQueries, ResolvedExports, ResolvedImport, ResolvedImportsQualified,
-    ResolvedImportsUnqualified, ResolvedLocals, ResolvingError,
+    ExportSource, ExternalQueries, ResolvedClassMembers, ResolvedExports, ResolvedImport,
+    ResolvedImportsQualified, ResolvedImportsUnqualified, ResolvedLocals, ResolvingError,
 };
 
 #[derive(Default)]
@@ -17,6 +17,7 @@ pub(super) struct State {
     pub(super) qualified: ResolvedImportsQualified,
     pub(super) exports: ResolvedExports,
     pub(super) locals: ResolvedLocals,
+    pub(super) class: ResolvedClassMembers,
     pub(super) errors: Vec<ResolvingError>,
 }
 
@@ -59,6 +60,7 @@ fn resolve_imports(
             resolve_import(
                 queries,
                 &mut state.errors,
+                &mut state.class,
                 resolved_import,
                 indexing_import_id,
                 indexing_import,
@@ -69,6 +71,7 @@ fn resolve_imports(
             resolve_import(
                 queries,
                 &mut state.errors,
+                &mut state.class,
                 &mut resolved_import,
                 indexing_import_id,
                 indexing_import,
@@ -84,6 +87,7 @@ fn resolve_imports(
 fn resolve_import(
     queries: &impl ExternalQueries,
     errors: &mut Vec<ResolvingError>,
+    class_members: &mut ResolvedClassMembers,
     resolved: &mut ResolvedImport,
     indexing_import_id: ImportId,
     indexing_import: &IndexingImport,
@@ -103,27 +107,39 @@ fn resolve_import(
     add_imported_terms(errors, resolved, indexing_import_id, terms);
     add_imported_types(errors, resolved, indexing_import_id, types);
 
-    if matches!(indexing_import.kind, ImportKind::Implicit) {
-        return Ok(());
-    }
+    // Adjust import kinds for explicit/hidden imports BEFORE copying class members
+    if !matches!(indexing_import.kind, ImportKind::Implicit) {
+        for (name, &id) in &indexing_import.terms {
+            if let Some((_, _, kind)) = resolved.terms.get_mut(name) {
+                *kind = indexing_import.kind;
+            } else {
+                errors.push(ResolvingError::InvalidImportItem { id });
+            }
+        }
 
-    for (name, &id) in &indexing_import.terms {
-        if let Some((_, _, kind)) = resolved.terms.get_mut(name) {
-            *kind = indexing_import.kind;
-        } else {
-            errors.push(ResolvingError::InvalidImportItem { id });
+        for (name, &(id, ref implicit)) in &indexing_import.types {
+            if let Some((file, id, kind)) = resolved.types.get_mut(name) {
+                *kind = indexing_import.kind;
+                let Some(implicit) = implicit else { continue };
+                let item = (*file, *id, implicit);
+                resolve_implicit(queries, resolved, indexing_import, item)?;
+            } else {
+                errors.push(ResolvingError::InvalidImportItem { id });
+            };
         }
     }
 
-    for (name, &(id, ref implicit)) in &indexing_import.types {
-        if let Some((file, id, kind)) = resolved.types.get_mut(name) {
-            *kind = indexing_import.kind;
-            let Some(implicit) = implicit else { continue };
-            let item = (*file, *id, implicit);
-            resolve_implicit(queries, resolved, indexing_import, item)?;
-        } else {
-            errors.push(ResolvingError::InvalidImportItem { id });
-        };
+    // Copy class members AFTER kind adjustments so hidden types are properly filtered
+    for (_, _, type_id, import_kind) in resolved.iter_types() {
+        if matches!(import_kind, ImportKind::Hidden) {
+            continue;
+        }
+        for (member_name, member_file, member_id) in
+            import_resolved.class.class_members(type_id)
+        {
+            let member_name = SmolStr::clone(member_name);
+            class_members.insert(type_id, member_name, member_file, member_id);
+        }
     }
 
     Ok(())
@@ -234,6 +250,22 @@ fn add_imported_type(
 fn resolve_exports(state: &mut State, indexed: &IndexedModule, file: FileId) {
     export_module_items(state, indexed, file);
     export_module_imports(state, indexed);
+    export_class_members(state, indexed, file);
+}
+
+fn export_class_members(state: &mut State, indexed: &IndexedModule, file: FileId) {
+    for (type_id, type_item) in indexed.items.iter_types() {
+        if !matches!(type_item.kind, TypeItemKind::Class { .. }) {
+            continue;
+        }
+        for member_term_id in indexed.pairs.class_members(type_id) {
+            let member_item = &indexed.items[member_term_id];
+            if let Some(name) = &member_item.name {
+                let name = SmolStr::clone(name);
+                state.class.insert(type_id, name, file, member_term_id);
+            }
+        }
+    }
 }
 
 fn add_local_terms<'k>(

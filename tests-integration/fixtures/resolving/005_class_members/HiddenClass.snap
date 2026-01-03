@@ -2,14 +2,19 @@
 source: tests-integration/tests/resolving/generated.rs
 expression: report
 ---
-module ImportHiddenConstructor
+module HiddenClass
 
 Unqualified Imports:
 
 Terms:
+  - compare is Implicit
+  - show is Implicit
+  - notEq is Implicit
+  - eq is Implicit
 
 Types:
-  - Hidden is Explicit
+  - Show is Implicit
+  - Ord is Implicit
 
 Qualified Imports:
 
@@ -22,5 +27,7 @@ Local Terms:
 Local Types:
 
 Class Members:
+  - Show.show (imported)
+  - Ord.compare (imported)
 
 Errors:

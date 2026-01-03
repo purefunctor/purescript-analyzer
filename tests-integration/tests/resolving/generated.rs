@@ -57,3 +57,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_004_import_re_exported_constructor_library() { run_test("004_import_re_exported_constructor", "Library"); }
 
 #[rustfmt::skip] #[test] fn test_004_import_re_exported_constructor_main() { run_test("004_import_re_exported_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_005_class_members_class_library() { run_test("005_class_members", "ClassLibrary"); }
+
+#[rustfmt::skip] #[test] fn test_005_class_members_hidden_class() { run_test("005_class_members", "HiddenClass"); }
+
+#[rustfmt::skip] #[test] fn test_005_class_members_imported_class() { run_test("005_class_members", "ImportedClass"); }
+
+#[rustfmt::skip] #[test] fn test_005_class_members_local_class() { run_test("005_class_members", "LocalClass"); }

@@ -27,6 +27,8 @@ Local Terms:
 
 Local Types:
 
+Class Members:
+
 Errors:
   - InvalidImportStatement { id: AstId<syntax::cst::ImportStatement>(7) }
   - InvalidImportStatement { id: AstId<syntax::cst::ImportStatement>(5) }

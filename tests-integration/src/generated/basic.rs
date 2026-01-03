@@ -86,6 +86,24 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     }
 
     writeln!(buffer).unwrap();
+    writeln!(buffer, "Class Members:").unwrap();
+    let indexed = engine.indexed(id).unwrap();
+    let mut class_member_entries: Vec<_> = resolved.class.iter().collect();
+    class_member_entries.sort_by_key(|(class_id, name, _, _)| (class_id.into_raw(), name.as_str()));
+    for (class_id, member_name, member_file, _) in class_member_entries {
+        let class_name: String = if member_file == id {
+            let name = indexed.items[class_id].name.as_ref();
+            name.map_or_else(|| "<unknown>".to_string(), |name| name.to_string())
+        } else {
+            let indexed = engine.indexed(member_file).unwrap();
+            let name = indexed.items[class_id].name.as_ref();
+            name.map_or_else(|| "<imported>".to_string(), |name| name.to_string())
+        };
+        let locality = if member_file == id { "" } else { " (imported)" };
+        writeln!(buffer, "  - {class_name}.{member_name}{locality}").unwrap();
+    }
+
+    writeln!(buffer).unwrap();
     writeln!(buffer, "Errors:").unwrap();
     for error in &resolved.errors {
         writeln!(buffer, "  - {error:?}").unwrap();
