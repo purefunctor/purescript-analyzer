@@ -114,13 +114,17 @@ where
     Ok(residual)
 }
 
-struct ConstraintApplication {
-    file_id: FileId,
-    item_id: TypeItemId,
-    arguments: Vec<TypeId>,
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub(crate) struct ConstraintApplication {
+    pub(crate) file_id: FileId,
+    pub(crate) item_id: TypeItemId,
+    pub(crate) arguments: Vec<TypeId>,
 }
 
-fn constraint_application(state: &mut CheckState, id: TypeId) -> Option<ConstraintApplication> {
+pub(crate) fn constraint_application(
+    state: &mut CheckState,
+    id: TypeId,
+) -> Option<ConstraintApplication> {
     let mut arguments = vec![];
     let mut current_id = id;
     loop {
@@ -164,7 +168,7 @@ where
 }
 
 /// Discovers superclass constraints for a given constraint.
-fn elaborate_superclasses<Q>(
+pub(crate) fn elaborate_superclasses<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     constraint: TypeId,
@@ -206,7 +210,7 @@ where
             bindings.insert(level, argument);
         }
 
-        for &(superclass, _kind) in &class_info.superclasses {
+        for &(superclass, _) in &class_info.superclasses {
             let localized = transfer::localize(state, context, superclass);
             let substituted = ApplyBindings::on(state, &bindings, localized);
             constraints.push(substituted);
@@ -260,7 +264,7 @@ where
     Ok(result)
 }
 
-fn get_class_info<Q>(
+pub(crate) fn get_class_info<Q>(
     state: &CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,

@@ -122,7 +122,7 @@ fn check_type_items<Q: ExternalQueries>(
                 type_item::check_type_item(state, context, *item)?;
 
                 build_data_constructor_types(state, context, slice::from_ref(item))?;
-                state.commit_binding_group(context);
+                state.commit_binding_group(context)?;
             }
             Scc::Mutual(items) => {
                 let with_signature = items
@@ -142,14 +142,14 @@ fn check_type_items<Q: ExternalQueries>(
                 }
 
                 build_data_constructor_types(state, context, &without_signature)?;
-                state.commit_binding_group(context);
+                state.commit_binding_group(context)?;
 
                 for item in &with_signature {
                     type_item::check_type_item(state, context, *item)?;
                 }
 
                 build_data_constructor_types(state, context, &with_signature)?;
-                state.commit_binding_group(context);
+                state.commit_binding_group(context)?;
             }
         }
     }
@@ -304,7 +304,7 @@ fn check_value_groups<Q: ExternalQueries>(
                     state.term_binding_group(context, [*item]);
                 }
                 term_item::check_value_group(state, context, *item)?;
-                state.commit_binding_group(context);
+                state.commit_binding_group(context)?;
             }
             Scc::Mutual(items) => {
                 let with_signature = items
@@ -325,12 +325,12 @@ fn check_value_groups<Q: ExternalQueries>(
                 for item in &without_signature {
                     term_item::check_value_group(state, context, *item)?;
                 }
-                state.commit_binding_group(context);
+                state.commit_binding_group(context)?;
 
                 for item in &with_signature {
                     term_item::check_value_group(state, context, *item)?;
                 }
-                state.commit_binding_group(context);
+                state.commit_binding_group(context)?;
             }
             _ => {}
         }

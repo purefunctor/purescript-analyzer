@@ -1,6 +1,7 @@
 use std::fmt::Write;
 use std::sync::Arc;
 
+use building_types::QueryResult;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use petgraph::prelude::DiGraphMap;
@@ -8,8 +9,12 @@ use petgraph::visit::{DfsPostOrder, Reversed};
 use rustc_hash::FxHashSet;
 use smol_str::SmolStrBuilder;
 
+use crate::ExternalQueries;
+use crate::algorithm::constraint::{
+    ConstraintApplication, constraint_application, elaborate_superclasses,
+};
 use crate::algorithm::fold::Zonk;
-use crate::algorithm::state::CheckState;
+use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::{ShiftLevels, SubstituteUnification, UniToLevel};
 use crate::core::{ForallBinder, RowType, Type, TypeId, debruijn};
 
@@ -52,8 +57,8 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
     Some((quantified, size))
 }
 
-/// Output of constraint quantification.
-pub struct QuantifyConstraints {
+/// The result of generalisation including constraints.
+pub struct QuantifiedWithConstraints {
     /// The quantified type with generalisable constraints.
     pub quantified: TypeId,
     /// The number of quantified type variables.
@@ -73,19 +78,24 @@ pub struct QuantifyConstraints {
 ///
 /// Generalisable constraints are added to the signature before generalisation.
 /// Ambiguous and unsatisfied constraints are returned for error reporting.
-pub fn quantify_with_constraints(
+pub fn quantify_with_constraints<Q>(
     state: &mut CheckState,
+    context: &CheckContext<Q>,
     type_id: TypeId,
     constraints: Vec<TypeId>,
-) -> Option<QuantifyConstraints> {
+) -> QueryResult<Option<QuantifiedWithConstraints>>
+where
+    Q: ExternalQueries,
+{
     if constraints.is_empty() {
-        let (quantified, size) = quantify(state, type_id)?;
-        return Some(QuantifyConstraints {
-            quantified,
-            size,
-            ambiguous: vec![],
-            unsatisfied: vec![],
-        });
+        let Some((quantified, size)) = quantify(state, type_id) else {
+            return Ok(None);
+        };
+
+        let quantified_with_constraints =
+            QuantifiedWithConstraints { quantified, size, ambiguous: vec![], unsatisfied: vec![] };
+
+        return Ok(Some(quantified_with_constraints));
     }
 
     let unsolved_graph = collect_unification(state, type_id);
@@ -108,14 +118,74 @@ pub fn quantify_with_constraints(
     }
 
     // Subtle: stable ordering for consistent output
-    let valid = valid.into_iter().sorted();
+    let valid = valid.into_iter().sorted().collect_vec();
+    let minimized = minimize_by_superclasses(state, context, valid)?;
 
-    let constrained_type = valid.rfold(type_id, |constrained, constraint| {
+    let constrained_type = minimized.into_iter().rfold(type_id, |constrained, constraint| {
         state.storage.intern(Type::Constrained(constraint, constrained))
     });
 
-    let (quantified, size) = quantify(state, constrained_type)?;
-    Some(QuantifyConstraints { quantified, size, ambiguous, unsatisfied })
+    let Some((quantified, size)) = quantify(state, constrained_type) else {
+        return Ok(None);
+    };
+
+    let quantified_with_constraints =
+        QuantifiedWithConstraints { quantified, size, ambiguous, unsatisfied };
+
+    Ok(Some(quantified_with_constraints))
+}
+
+/// Removes constraints that are implied by other constraints via superclass relationships.
+///
+/// For example, given constraints `[Apply f, Applicative f, Functor f]`, this function
+/// returns only `[Applicative f]` because `Applicative` implies both `Apply` and `Functor`.
+///
+/// Uses GHC's algorithm (mkMinimalBySCs): O(n × superclass_depth)
+/// 1. Build the union of all superclass constraints
+/// 2. Filter out constraints that appear in the union
+fn minimize_by_superclasses<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraints: Vec<TypeId>,
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    if constraints.len() <= 1 {
+        return Ok(constraints);
+    }
+
+    // Collect the set of all superclasses, including transitive ones.
+    let mut superclasses = FxHashSet::default();
+    for &constraint in &constraints {
+        for application in superclass_applications(state, context, constraint)? {
+            superclasses.insert(application);
+        }
+    }
+
+    // Remove constraints found in the superclasses, keeping the most specific.
+    let minimized = constraints.into_iter().filter(|&constraint| {
+        constraint_application(state, constraint)
+            .map_or(true, |constraint| !superclasses.contains(&constraint))
+    });
+
+    Ok(minimized.collect_vec())
+}
+
+fn superclass_applications<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraint: TypeId,
+) -> QueryResult<Vec<ConstraintApplication>>
+where
+    Q: ExternalQueries,
+{
+    let mut superclasses = vec![];
+    elaborate_superclasses(state, context, constraint, &mut superclasses)?;
+    Ok(superclasses
+        .into_iter()
+        .filter_map(|constraint| constraint_application(state, constraint))
+        .collect())
 }
 
 fn generate_type_name(id: u32) -> smol_str::SmolStr {

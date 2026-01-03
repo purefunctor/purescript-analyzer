@@ -596,14 +596,16 @@ impl CheckState {
         constraint::solve_constraints(self, context, wanted, given)
     }
 
-    pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>)
+    pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<()>
     where
         Q: ExternalQueries,
     {
         let mut residuals = mem::take(&mut self.binding_group.residual);
         for (item_id, type_id) in mem::take(&mut self.binding_group.terms) {
             let constraints = residuals.remove(&item_id).unwrap_or_default();
-            if let Some(result) = quantify::quantify_with_constraints(self, type_id, constraints) {
+            if let Some(result) =
+                quantify::quantify_with_constraints(self, context, type_id, constraints)?
+            {
                 self.with_error_step(ErrorStep::TermDeclaration(item_id), |this| {
                     for constraint in result.ambiguous {
                         let constraint = transfer::globalize(this, context, constraint);
@@ -636,6 +638,8 @@ impl CheckState {
                 self.checked.synonyms.insert(item_id, synonym);
             }
         }
+
+        Ok(())
     }
 
     /// Executes an action with an [`ErrorStep`] in scope.
