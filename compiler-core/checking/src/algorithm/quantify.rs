@@ -2,11 +2,13 @@ use std::fmt::Write;
 use std::sync::Arc;
 
 use indexmap::IndexSet;
+use itertools::Itertools;
 use petgraph::prelude::DiGraphMap;
 use petgraph::visit::{DfsPostOrder, Reversed};
 use rustc_hash::FxHashSet;
 use smol_str::SmolStrBuilder;
 
+use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::CheckState;
 use crate::algorithm::substitute::{ShiftLevels, SubstituteUnification, UniToLevel};
 use crate::core::{ForallBinder, RowType, Type, TypeId, debruijn};
@@ -89,25 +91,26 @@ pub fn quantify_with_constraints(
     let unsolved_graph = collect_unification(state, type_id);
     let unsolved_nodes: FxHashSet<u32> = unsolved_graph.nodes().collect();
 
-    let mut valid = vec![];
+    let mut valid: FxHashSet<TypeId> = FxHashSet::default();
     let mut ambiguous = vec![];
     let mut unsatisfied = vec![];
 
     for constraint in constraints {
+        let constraint = Zonk::on(state, constraint);
         let unsolved_graph = collect_unification(state, constraint);
         if unsolved_graph.node_count() == 0 {
             unsatisfied.push(constraint);
         } else if unsolved_graph.nodes().all(|unification| unsolved_nodes.contains(&unification)) {
-            valid.push(constraint);
+            valid.insert(constraint);
         } else {
             ambiguous.push(constraint);
         }
     }
 
     // Subtle: stable ordering for consistent output
-    valid.sort();
+    let valid = valid.into_iter().sorted();
 
-    let constrained_type = valid.iter().copied().rfold(type_id, |constrained, constraint| {
+    let constrained_type = valid.rfold(type_id, |constrained, constraint| {
         state.storage.intern(Type::Constrained(constraint, constrained))
     });
 

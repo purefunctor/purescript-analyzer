@@ -20,17 +20,38 @@ pub trait TypeFold {
     fn transform_binder(&mut self, _binder: &mut ForallBinder) {}
 }
 
+/// Zonking normalizes a type by substituting solved unification variables.
+///
+/// Unlike [`CheckState::normalize_type`] which only follows unification
+/// chains at the head, this recursively normalizes the entire type structure.
+///
+/// The simplicity of the [`TypeFold`] implementation is an artefact of how
+/// [`fold_type`] uses [`CheckState::normalize_type`] to inspect a type.
+pub struct Zonk;
+
+impl Zonk {
+    pub fn on(state: &mut CheckState, id: TypeId) -> TypeId {
+        fold_type(state, id, &mut Zonk)
+    }
+}
+
+impl TypeFold for Zonk {
+    fn transform(&mut self, _: &mut CheckState, _: TypeId, _: &Type) -> FoldAction {
+        FoldAction::Continue
+    }
+}
+
 /// Recursively fold over a type, applying the given transformation.
 pub fn fold_type<F: TypeFold>(state: &mut CheckState, id: TypeId, folder: &mut F) -> TypeId {
     let id = state.normalize_type(id);
-    let t = state.storage[id].clone();
+    let ty = state.storage[id].clone();
 
     // Check if transform wants to replace this node
-    if let FoldAction::Replace(id) = folder.transform(state, id, &t) {
+    if let FoldAction::Replace(id) = folder.transform(state, id, &ty) {
         return id;
     }
 
-    match t {
+    match ty {
         Type::Application(function, argument) => {
             let function = fold_type(state, function, folder);
             let argument = fold_type(state, argument, folder);

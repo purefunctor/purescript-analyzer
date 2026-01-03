@@ -243,3 +243,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_115_empty_do_block_main() { run_test("115_empty_do_block", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_116_empty_ado_block_main() { run_test("116_empty_ado_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_117_do_ado_constrained_main() { run_test("117_do_ado_constrained", "Main"); }
