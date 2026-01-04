@@ -154,6 +154,18 @@ impl Bound {
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = (Level, Variable)> {
         self.inner.iter().enumerate().map(|(index, variable)| (Level(index as u32), *variable))
     }
+
+    /// Returns an iterator over variables starting from a given [`Level`].
+    ///
+    /// If the level is out of bounds, returns an empty iterator.
+    pub fn iter_from(&self, level: Level) -> impl Iterator<Item = (Level, Variable)> + '_ {
+        let start = level.0 as usize;
+        let slice = if let Some(slice) = self.inner.get(start..) { slice } else { &[] };
+        slice.iter().enumerate().map(move |(index, &variable)| {
+            let level = level.0 + index as u32;
+            (Level(level), variable)
+        })
+    }
 }
 
 impl ops::Index<Level> for Bound {
@@ -283,5 +295,48 @@ mod tests {
 
         assert_eq!(bound.get_level(zero), None);
         assert_eq!(bound.get_level(one), None);
+    }
+
+    #[test]
+    fn test_iter_from_middle() {
+        let mut bound = Bound::default();
+        bound.bind(Variable::Core);
+        bound.bind(Variable::Core);
+        bound.bind(Variable::Core);
+
+        let items: Vec<_> = bound.iter_from(Level(1)).collect();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].0, Level(1));
+        assert_eq!(items[1].0, Level(2));
+    }
+
+    #[test]
+    fn test_iter_from_start() {
+        let mut bound = Bound::default();
+        bound.bind(Variable::Core);
+        bound.bind(Variable::Core);
+
+        let items: Vec<_> = bound.iter_from(Level(0)).collect();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn test_iter_from_end() {
+        let mut bound = Bound::default();
+        bound.bind(Variable::Core);
+        bound.bind(Variable::Core);
+
+        let items: Vec<_> = bound.iter_from(Level(2)).collect();
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn test_iter_from_past_end() {
+        let mut bound = Bound::default();
+        bound.bind(Variable::Core);
+
+        // Should not panic, just return empty iterator
+        let items: Vec<_> = bound.iter_from(Level(100)).collect();
+        assert!(items.is_empty());
     }
 }
