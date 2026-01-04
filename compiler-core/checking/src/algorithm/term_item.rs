@@ -15,6 +15,15 @@ use crate::algorithm::{
 use crate::core::{Instance, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
+/// Checks signature declarations for terms.
+///
+/// This function checks the term signatures for [`TermItemIr::Foreign`],
+/// [`TermItemIr::ValueGroup`], and [`TermItemIr::Operator`], inserting
+/// them into [`CheckState::checked`] upon completion.
+///
+/// For [`TermItemIr::ValueGroup`] specifically, it also invokes the
+/// [`inspect::collect_signature_variables`] function to collect type
+/// variables that need to be rebound during [`check_value_group`].
 pub fn check_term_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -48,6 +57,7 @@ where
             TermItemIr::Operator { resolution, .. } => {
                 let Some((file_id, term_id)) = *resolution else { return Ok(()) };
                 let id = term::lookup_file_term(state, context, file_id, term_id)?;
+
                 let global_type = transfer::globalize(state, context, id);
                 state.checked.terms.insert(item_id, global_type);
             }
@@ -58,6 +68,7 @@ where
     })
 }
 
+/// Input fields for [`check_instance`].
 pub struct CheckInstance<'a> {
     pub item_id: TermItemId,
     pub constraints: &'a [lowering::TypeId],
@@ -65,6 +76,20 @@ pub struct CheckInstance<'a> {
     pub resolution: &'a Option<(FileId, TypeItemId)>,
 }
 
+/// Checks an instance declaration, deferring instance members.
+///
+/// See [`check_instance_members`] for instance member checking. Instance
+/// members are checked separately to ensure that any value groups that
+/// they depend on exist in the environment already. Value groups can be
+/// checked first because class member signatures are already known.
+///
+/// This function checks the kinds of instance arguments and collects the
+/// implicit variables that must be rebound when checking instance members.
+///
+/// [`core::Instance`] information is inserted onto [`CheckState::checked`]
+/// upon completion.
+///
+/// [`core::Instance`]: crate::core::Instance
 pub fn check_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -190,6 +215,7 @@ where
     unreachable!("fuel exhausted in instantiate_class_kind")
 }
 
+/// Input fields for [`check_value_group`].
 #[derive(Clone, Copy)]
 pub struct CheckValueGroup<'a> {
     pub item_id: TermItemId,
@@ -197,6 +223,10 @@ pub struct CheckValueGroup<'a> {
     pub equations: &'a [lowering::Equation],
 }
 
+/// Checks a value declaration group.
+///
+/// This rule is implemented through the [`inspect::inspect_signature_core`],
+/// [`term::check_equations`], and [`term::infer_equations`] functions.
 pub fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -223,6 +253,7 @@ where
     })
 }
 
+/// Input fields for [`check_instance_members`].
 pub struct CheckInstanceMembers<'a> {
     pub instance_id: TermItemId,
     pub members: &'a [lowering::InstanceMemberGroup],
@@ -232,6 +263,15 @@ pub struct CheckInstanceMembers<'a> {
     pub instance_constraints: &'a [(TypeId, TypeId)],
 }
 
+/// Checks instance member declarations.
+///
+/// As mentioned in [`check_instance`], instance members are checked after
+/// value groups to ensure that any value groups an instance member depends
+/// on are already known.
+///
+/// This function uses the implicit variables collected by [`check_instance`]
+/// and passes them onto [`check_instance_member_group`], which contains most
+/// of the implementation.
 pub fn check_instance_members<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -294,6 +334,7 @@ where
     Ok(global_type.map(|global_type| transfer::localize(state, context, global_type)))
 }
 
+/// Input fields for [`check_instance_member_group`].
 struct CheckInstanceMemberGroup<'a> {
     instance_id: TermItemId,
     instance_bindings: &'a [InstanceHeadBinding],
