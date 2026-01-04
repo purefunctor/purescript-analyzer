@@ -245,3 +245,19 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_116_empty_ado_block_main() { run_test("116_empty_ado_block", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_117_do_ado_constrained_main() { run_test("117_do_ado_constrained", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_118_instance_member_type_match_main() { run_test("118_instance_member_type_match", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_119_instance_member_type_mismatch_main() { run_test("119_instance_member_type_mismatch", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_120_class_explicit_kind_variable_main() { run_test("120_class_explicit_kind_variable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_121_instance_member_inner_forall_main() { run_test("121_instance_member_inner_forall", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_122_instance_member_inner_forall_constraint_main() { run_test("122_instance_member_inner_forall_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_123_incomplete_instance_head_main() { run_test("123_incomplete_instance_head", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_124_instance_member_missing_constraint_main() { run_test("124_instance_member_missing_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_125_instance_member_overly_general_main() { run_test("125_instance_member_overly_general", "Main"); }

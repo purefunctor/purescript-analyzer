@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+show :: forall (a :: Type). Show a => a -> String
+map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). Functor f => (a -> b) -> f a -> f b
+Box :: forall (a :: Type). a -> Box a
+
+Types
+Show :: Type -> Constraint
+Functor :: (Type -> Type) -> Constraint
+Box :: Type -> Type
+
+Errors
+NoInstanceFound { Show ~&1 } at [TermDeclaration(Idx::<TermItem>(3))]

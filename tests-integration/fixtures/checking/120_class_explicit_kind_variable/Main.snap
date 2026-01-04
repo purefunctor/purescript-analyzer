@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+identity :: forall (k :: Type) (a :: Type) (b :: Type) (r :: k). TypeEq a b r => a -> b
+
+Types
+TypeEq :: forall (k :: Type). Type -> Type -> k -> Constraint

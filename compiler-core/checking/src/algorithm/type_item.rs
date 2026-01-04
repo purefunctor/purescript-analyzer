@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use building_types::QueryResult;
 use indexing::TypeItemId;
 use itertools::Itertools;
@@ -327,29 +329,29 @@ where
     };
 
     // Elaborate and globalize superclass constraints
-    let superclasses = constraints
-        .iter()
-        .map(|&constraint| {
-            let (constraint_type, constraint_kind) =
-                kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
-            let constraint_type = transfer::globalize(state, context, constraint_type);
-            let constraint_kind = transfer::globalize(state, context, constraint_kind);
-            Ok((constraint_type, constraint_kind))
-        })
-        .collect::<QueryResult<Vec<_>>>()?;
+    let superclasses = constraints.iter().map(|&constraint| {
+        let (constraint_type, constraint_kind) =
+            kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
+        let constraint_type = transfer::globalize(state, context, constraint_type);
+        let constraint_kind = transfer::globalize(state, context, constraint_kind);
+        Ok((constraint_type, constraint_kind))
+    });
 
-    // Collect type variable levels for binding during elaboration
-    let variable_levels: Vec<_> = type_variables.iter().map(|v| v.level).collect();
+    let superclasses = superclasses.collect::<QueryResult<Arc<_>>>()?;
 
-    // Store class info
-    state.checked.classes.insert(item_id, Class { superclasses, variable_levels });
+    let class = {
+        let quantified_variables = debruijn::Size(0);
+        let kind_variables = debruijn::Size(kind_variables.len() as u32);
+        Class { superclasses, quantified_variables, kind_variables }
+    };
+
+    state.binding_group.classes.insert(item_id, class);
 
     let class_reference = {
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
         type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
             let variable = Variable::Bound(binder.level);
             let variable = state.storage.intern(Type::Variable(variable));
-
             state.storage.intern(Type::Application(reference_type, variable))
         })
     };

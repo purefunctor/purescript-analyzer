@@ -134,9 +134,7 @@ fn resolve_import(
         if matches!(import_kind, ImportKind::Hidden) {
             continue;
         }
-        for (member_name, member_file, member_id) in
-            import_resolved.class.class_members(type_id)
-        {
+        for (member_name, member_file, member_id) in import_resolved.class.class_members(type_id) {
             let member_name = SmolStr::clone(member_name);
             class_members.insert(type_id, member_name, member_file, member_id);
         }

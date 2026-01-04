@@ -124,6 +124,7 @@ pub struct Instance {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Class {
-    pub superclasses: Vec<(TypeId, TypeId)>,
-    pub variable_levels: Vec<debruijn::Level>,
+    pub superclasses: Arc<[(TypeId, TypeId)]>,
+    pub quantified_variables: debruijn::Size,
+    pub kind_variables: debruijn::Size,
 }

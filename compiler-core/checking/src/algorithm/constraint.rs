@@ -21,7 +21,7 @@ use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{transfer, unification};
 use crate::core::{Class, Instance, Variable, debruijn};
-use crate::{ExternalQueries, Type, TypeId};
+use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
@@ -197,7 +197,7 @@ where
             return Ok(());
         }
 
-        let Some(class_info) = get_class_info(state, context, file_id, item_id)? else {
+        let Some(class_info) = lookup_file_class(state, context, file_id, item_id)? else {
             return Ok(());
         };
 
@@ -205,14 +205,15 @@ where
             return Ok(());
         }
 
+        let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
         let mut bindings = FxHashMap::default();
-        for (&level, &argument) in class_info.variable_levels.iter().zip(&arguments) {
+        for (index, &argument) in arguments.iter().enumerate() {
+            let level = debruijn::Level(initial_level + index as u32);
             bindings.insert(level, argument);
         }
 
-        for &(superclass, _) in &class_info.superclasses {
-            let localized = transfer::localize(state, context, superclass);
-            let substituted = ApplyBindings::on(state, &bindings, localized);
+        for &(superclass, _) in class_info.superclasses.iter() {
+            let substituted = ApplyBindings::on(state, &bindings, superclass);
             constraints.push(substituted);
             aux(state, context, substituted, constraints, seen)?;
         }
@@ -237,7 +238,7 @@ where
         state
             .checked
             .instances
-            .iter()
+            .values()
             .filter(|instance| instance.resolution.1 == item_id)
             .cloned()
             .collect_vec()
@@ -245,7 +246,7 @@ where
         let checked = context.queries.checked(file_id)?;
         checked
             .instances
-            .iter()
+            .values()
             .filter(|instance| instance.resolution.1 == item_id)
             .cloned()
             .collect_vec()
@@ -264,8 +265,53 @@ where
     Ok(result)
 }
 
-pub(crate) fn get_class_info<Q>(
-    state: &CheckState,
+fn localize_class<Q>(state: &mut CheckState, context: &CheckContext<Q>, class: &Class) -> Class
+where
+    Q: ExternalQueries,
+{
+    let superclasses = class.superclasses.iter().map(|&(t, k)| {
+        let t = transfer::localize(state, context, t);
+        let k = transfer::localize(state, context, k);
+        (t, k)
+    });
+    Class {
+        superclasses: superclasses.collect(),
+        quantified_variables: class.quantified_variables,
+        kind_variables: class.kind_variables,
+    }
+}
+
+fn lookup_local_class<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+) -> Option<Class>
+where
+    Q: ExternalQueries,
+{
+    if let Some(class) = state.binding_group.lookup_class(item_id) {
+        Some(class)
+    } else {
+        let class = state.checked.lookup_class(item_id)?;
+        Some(localize_class(state, context, &class))
+    }
+}
+
+fn lookup_global_class<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    checked: &CheckedModule,
+    item_id: TypeItemId,
+) -> Option<Class>
+where
+    Q: ExternalQueries,
+{
+    let class = checked.classes.get(&item_id)?;
+    Some(localize_class(state, context, class))
+}
+
+pub(crate) fn lookup_file_class<Q>(
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,
@@ -274,10 +320,10 @@ where
     Q: ExternalQueries,
 {
     if file_id == context.id {
-        Ok(state.checked.classes.get(&item_id).cloned())
+        Ok(lookup_local_class(state, context, item_id))
     } else {
         let checked = context.queries.checked(file_id)?;
-        Ok(checked.classes.get(&item_id).cloned())
+        Ok(lookup_global_class(state, context, &checked, item_id))
     }
 }
 

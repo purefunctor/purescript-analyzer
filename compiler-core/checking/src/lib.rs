@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::{IndexedModule, TermItemId, TypeItemId};
+use indexing::{IndexedModule, InstanceId, TermItemId, TypeItemId};
 use lowering::LoweredModule;
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
@@ -37,7 +37,7 @@ pub struct CheckedModule {
 
     pub operators: FxHashMap<TypeItemId, core::Operator>,
     pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
-    pub instances: Vec<core::Instance>,
+    pub instances: FxHashMap<InstanceId, core::Instance>,
     pub classes: FxHashMap<TypeItemId, core::Class>,
 
     pub errors: Vec<CheckError>,
@@ -54,6 +54,10 @@ impl CheckedModule {
 
     pub fn lookup_synonym(&self, id: TypeItemId) -> Option<core::Synonym> {
         self.synonyms.get(&id).copied()
+    }
+
+    pub fn lookup_class(&self, id: TypeItemId) -> Option<core::Class> {
+        self.classes.get(&id).cloned()
     }
 }
 

@@ -31,7 +31,7 @@ where
     Ok(())
 }
 
-fn infer_equations_core<Q>(
+pub fn infer_equations_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     group_type: TypeId,

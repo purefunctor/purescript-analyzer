@@ -17,7 +17,7 @@ use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, quantify, transfer};
-use crate::core::{ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
+use crate::core::{Class, ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -79,6 +79,26 @@ impl TypeScope {
         self.kinds.unbind(level);
     }
 
+    /// Unbinds variables starting from a level and returns captured implicit bindings.
+    ///
+    /// This is used when checking instances to capture the implicit type variables
+    /// from the instance head before unbinding, so they can be rebound when checking
+    /// instance members.
+    pub fn unbind_implicits(&mut self, level: debruijn::Level) -> Vec<InstanceHeadBinding> {
+        let mut implicits = vec![];
+
+        for (level, variable) in self.bound.iter_from(level) {
+            if let debruijn::Variable::Implicit { node, id } = variable
+                && let Some(&kind) = self.kinds.get(level)
+            {
+                implicits.push(InstanceHeadBinding { node, id, kind });
+            }
+        }
+
+        self.unbind(level);
+        implicits
+    }
+
     pub fn size(&self) -> debruijn::Size {
         self.bound.size()
     }
@@ -127,6 +147,17 @@ impl TermScope {
     }
 }
 
+/// A single implicit variable captured from an instance head.
+///
+/// Instance heads like `instance Show a => Show (Array a)` introduce
+/// implicit type variables that need to be visible when checking instance
+/// member implementations.
+pub struct InstanceHeadBinding {
+    pub node: GraphNodeId,
+    pub id: ImplicitBindingId,
+    pub kind: TypeId,
+}
+
 /// Tracks type variables declared in surface syntax.
 ///
 /// The type checker checks kind/type declarations first before equation
@@ -158,6 +189,7 @@ pub struct SurfaceBindings {
     pub term_item: FxHashMap<TermItemId, Arc<[TypeVariableBindingId]>>,
     pub type_item: FxHashMap<TypeItemId, Arc<[TypeVariableBindingId]>>,
     pub let_binding: FxHashMap<LetBindingNameGroupId, Arc<[TypeVariableBindingId]>>,
+    pub instance_head: FxHashMap<TermItemId, Arc<[InstanceHeadBinding]>>,
 }
 
 impl SurfaceBindings {
@@ -183,6 +215,14 @@ impl SurfaceBindings {
 
     pub fn get_let(&self, id: LetBindingNameGroupId) -> Option<Arc<[TypeVariableBindingId]>> {
         self.let_binding.get(&id).cloned()
+    }
+
+    pub fn insert_instance_head(&mut self, id: TermItemId, v: Arc<[InstanceHeadBinding]>) {
+        self.instance_head.insert(id, v);
+    }
+
+    pub fn get_instance_head(&self, id: TermItemId) -> Option<Arc<[InstanceHeadBinding]>> {
+        self.instance_head.get(&id).cloned()
     }
 }
 
@@ -262,6 +302,7 @@ pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, TypeId>,
     pub synonyms: FxHashMap<TypeItemId, Synonym>,
+    pub classes: FxHashMap<TypeItemId, Class>,
     pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
     pub data: FxHashMap<TypeItemId, CheckedDataLike>,
 }
@@ -277,6 +318,10 @@ impl BindingGroupContext {
 
     pub fn lookup_synonym(&self, id: TypeItemId) -> Option<Synonym> {
         self.synonyms.get(&id).copied()
+    }
+
+    pub fn lookup_class(&self, id: TypeItemId) -> Option<Class> {
+        self.classes.get(&id).cloned()
     }
 }
 
@@ -622,9 +667,14 @@ impl CheckState {
             }
         }
 
+        let mut classes = mem::take(&mut self.binding_group.classes);
         for (item_id, type_id) in mem::take(&mut self.binding_group.types) {
-            if let Some((type_id, _)) = quantify::quantify(self, type_id) {
-                let type_id = transfer::globalize(self, context, type_id);
+            if let Some((quantified_type, quantified_count)) = quantify::quantify(self, type_id) {
+                if let Some(mut class) = classes.remove(&item_id) {
+                    class.quantified_variables = quantified_count;
+                    self.checked.classes.insert(item_id, class);
+                }
+                let type_id = transfer::globalize(self, context, quantified_type);
                 self.checked.types.insert(item_id, type_id);
             }
         }
