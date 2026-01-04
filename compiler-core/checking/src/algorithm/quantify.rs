@@ -166,7 +166,7 @@ where
     // Remove constraints found in the superclasses, keeping the most specific.
     let minimized = constraints.into_iter().filter(|&constraint| {
         constraint_application(state, constraint)
-            .map_or(true, |constraint| !superclasses.contains(&constraint))
+            .is_none_or(|constraint| !superclasses.contains(&constraint))
     });
 
     Ok(minimized.collect_vec())
