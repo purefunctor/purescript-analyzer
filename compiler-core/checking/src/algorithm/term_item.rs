@@ -335,7 +335,7 @@ where
 }
 
 /// Input fields for [`check_instance_member_group`].
-struct CheckInstanceMemberGroup<'a> {
+pub struct CheckInstanceMemberGroup<'a> {
     instance_id: TermItemId,
     instance_bindings: &'a [InstanceHeadBinding],
     member: &'a lowering::InstanceMemberGroup,
@@ -358,7 +358,7 @@ struct CheckInstanceMemberGroup<'a> {
 /// The signature type of a member group must unify with the specialised
 /// type of the class member. The signature cannot be more general than
 /// the specialised type. See tests 118 and 125 for a demonstration.
-fn check_instance_member_group<Q>(
+pub fn check_instance_member_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: CheckInstanceMemberGroup<'_>,

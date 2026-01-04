@@ -9,6 +9,18 @@ use crate::algorithm::{binder, inspect, kind, operator, substitute, transfer, un
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
 
+/// Infers the type of top-level value group equations.
+///
+/// This function depends on the unification variable created for the current
+/// binding group by the [`CheckState::term_binding_group`] function. It uses
+///
+/// group type that [`infer_equations_core`] will check against.
+///
+/// This function solves all constraints generated during inference using the
+/// [`CheckState::solve_constraints`] function, and pushes residual constraints
+/// onto the [`CheckState::binding_group`] for quantification.
+///
+/// See [`CheckState::commit_binding_group`] to see how types are generalised.
 pub fn infer_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -31,6 +43,16 @@ where
     Ok(())
 }
 
+/// Infers the type of value group equations.
+///
+/// This function infers the type of each value equation, and then checks
+/// that it's a subtype of the provided `group_type`. The `group_type` is
+/// usually a unification variable.
+///
+/// This function is used to implement inference for the following:
+/// - [`lowering::TermItemIr::ValueGroup`]
+/// - [`lowering::LetBindingNameGroup`]
+/// - [`lowering::InstanceMemberGroup`]
 pub fn infer_equations_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -66,13 +88,30 @@ where
     Ok(())
 }
 
+/// Checks the type of value group equations.
+///
+/// This function checks each value equation against the signature previously
+/// checked by the [`check_term_signature`] and [`inspect_signature_core`]
+/// functions.
+///
+/// This function depends on a couple of side-effects produced by the
+/// [`inspect_signature_core`] function. Type variables that appear in the
+/// signature are made visible through rebinding, and given constraints
+/// are pushed onto the environment. See the implementation for more details.
+///
+/// This function solves all constraints during checking using the
+/// [`CheckState::solve_constraints`] function, and reports residual
+/// constraints as [`ErrorKind::NoInstanceFound`] errors.
+///
+/// [`check_term_signature`]: crate::algorithm::term_item::check_term_signature
+/// [`inspect_signature_core`]: crate::algorithm::inspect::inspect_signature_core
 pub fn check_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     signature_id: lowering::TypeId,
     signature: inspect::InspectSignature,
     equations: &[lowering::Equation],
-) -> Result<(), building_types::QueryError>
+) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
@@ -236,6 +275,7 @@ where
     infer_expression(state, context, expression)
 }
 
+/// Checks the type of an expression.
 pub fn check_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -252,6 +292,7 @@ where
     })
 }
 
+/// Infers the type of an expression.
 pub fn infer_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -743,7 +784,6 @@ where
     let mut accumulated_type =
         infer_ado_map(state, context, map_type, lambda_type, *head_statement)?;
 
-    //
     // This applies apply_type to the accumulated_type, and then to the
     // inferred type of the expression to update the accumulated_type.
     //
@@ -978,8 +1018,11 @@ where
         return Ok(context.prim.unknown);
     };
 
+    // expression_type := f a
     let expression_type = infer_expression(state, context, expression)?;
 
+    // map_type    := (a -> b) -> f a -> f b
+    // lambda_type := (a -> b)
     let map_applied = check_function_application_core(
         state,
         context,
@@ -991,6 +1034,9 @@ where
         },
     )?;
 
+    // map_applied     := f a -> f b
+    // expression_type := f a
+    // final_type      := f b
     check_function_application_core(
         state,
         context,
@@ -1017,8 +1063,11 @@ where
         return Ok(context.prim.unknown);
     };
 
+    // expression_type := ?f ?a
     let expression_type = infer_expression(state, context, expression)?;
 
+    // apply_type       := f (a -> b) -> f a -> f b
+    // accumulated_type := f (a -> b)
     let apply_applied = check_function_application_core(
         state,
         context,
@@ -1030,6 +1079,9 @@ where
         },
     )?;
 
+    // apply_applied   := f a -> f b
+    // expression_type := f a
+    // final_type      := f b
     check_function_application_core(
         state,
         context,
@@ -1057,9 +1109,13 @@ where
         return Ok(context.prim.unknown);
     };
 
+    // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
+    // lambda_type := a -> m b
     let lambda_type = state.make_function(&[binder_type], accumulated_type);
 
+    // bind_type       := m a -> (a -> m b) -> m b
+    // expression_type := m a
     let bind_applied = check_function_application_core(
         state,
         context,
@@ -1071,6 +1127,9 @@ where
         },
     )?;
 
+    // bind_applied := (a -> m b) -> m b
+    // lambda_type  := a -> m b
+    // final_type   := m b
     check_function_application_core(
         state,
         context,
@@ -1097,8 +1156,11 @@ where
         return Ok(context.prim.unknown);
     };
 
+    // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
 
+    // discard_type    := m a -> (a -> m b) -> m b
+    // expression_type := m a
     let discard_applied = check_function_application_core(
         state,
         context,
@@ -1110,6 +1172,11 @@ where
         },
     )?;
 
+    // Unlike `bind`, we have no binder to check the lambda type with.
+    // Instead, we extract the result type and use the subtype rule.
+    //
+    // discard_applied := (a -> m b) -> m b
+    // result_type     := m b
     let result_type = check_function_application_core(
         state,
         context,
@@ -1123,6 +1190,7 @@ where
     Ok(accumulated_type)
 }
 
+/// Looks up the type of a term.
 pub fn lookup_file_term<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -1196,7 +1264,22 @@ where
     }
 }
 
-fn check_function_application_core<Q, A, F>(
+/// Generic function for application checking.
+///
+/// This function checks that the given `function_t` can be applied to a given
+/// `argument_id`. This function is generic over the argument checking rule,
+/// which is determined by the `check_argument` callback. You may refer to the
+/// implementation commentary for more details.
+///
+/// This function is used to implement the following functions:
+/// - [`check_function_term_application`]
+/// - [`check_constructor_binder_application`]
+///
+/// This function is also used to implement the checking rules for
+/// [`lowering::ExpressionKind::Do`] and [`lowering::ExpressionKind::Ado`].
+///
+/// [`check_constructor_binder_application`]: binder::check_constructor_binder_application
+pub fn check_function_application_core<Q, A, F>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function_t: TypeId,
@@ -1209,11 +1292,27 @@ where
 {
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {
+        // Check that `argument_id :: argument_type`
         Type::Function(argument_type, result_type) => {
             check_argument(state, context, argument_id, argument_type)?;
             Ok(result_type)
         }
 
+        // If `function_t` is a unification variable, we synthesise a function
+        // type using more unification variables to make progress on inference.
+        //
+        // This case allows the type checker to recursively create however many
+        // unification variables it needs when checking an application.
+        //
+        // To visualise, applying a function `?0` against `Int` then `String`:
+        //
+        // ?0 := ?1 -> ?2
+        // ?1 := Int
+        //
+        // ?2 := ?3 -> ?4
+        // ?3 := String
+        //
+        // Int -> String -> ?4
         Type::Unification(unification_id) => {
             let argument_u = state.fresh_unification_type(context);
             let result_u = state.fresh_unification_type(context);
@@ -1225,6 +1324,7 @@ where
             Ok(result_u)
         }
 
+        // Instantiation rule, like `instantiate_type`
         Type::Forall(ref binder, inner) => {
             let binder_level = binder.level;
             let binder_kind = binder.kind;
@@ -1235,6 +1335,7 @@ where
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
+        // Constraint generation, like `instantiate_type`
         Type::Constrained(constraint, constrained) => {
             state.constraints.push_wanted(constraint);
             check_function_application_core(
@@ -1250,7 +1351,7 @@ where
     }
 }
 
-fn check_function_term_application<Q>(
+pub fn check_function_term_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function_t: TypeId,
@@ -1260,17 +1361,6 @@ where
     Q: ExternalQueries,
 {
     check_function_application_core(state, context, function_t, expression_id, check_expression)
-}
-pub fn check_constructor_binder_application<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    constructor_t: TypeId,
-    binder_id: lowering::BinderId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    check_function_application_core(state, context, constructor_t, binder_id, binder::check_binder)
 }
 
 fn check_let_chunks<Q>(
@@ -1396,9 +1486,11 @@ where
     }
 }
 
+/// Instantiates a polymorphic type with unification variables and collects
+/// wanted [`CheckState::constraints`].
 pub fn instantiate_type<Q>(
     state: &mut CheckState,
-    _context: &CheckContext<Q>,
+    _: &CheckContext<Q>,
     id: TypeId,
 ) -> QueryResult<TypeId>
 where
@@ -1406,21 +1498,24 @@ where
 {
     const FUEL: u32 = 1_000_000;
 
-    let mut current_id = id;
+    let mut current = id;
 
     for _ in 0..FUEL {
-        current_id = state.normalize_type(current_id);
-        if let Type::Forall(ref binder, inner_id) = state.storage[current_id] {
-            let binder_level = binder.level;
-            let binder_kind = binder.kind;
-            let unification = state.fresh_unification_kinded(binder_kind);
-            current_id =
-                substitute::SubstituteBound::on(state, binder_level, unification, inner_id);
-        } else if let Type::Constrained(constraint, constrained) = state.storage[current_id] {
-            state.constraints.push_wanted(constraint);
-            current_id = constrained;
-        } else {
-            return Ok(current_id);
+        current = state.normalize_type(current);
+        match state.storage[current] {
+            Type::Forall(ref binder, inner) => {
+                let binder_level = binder.level;
+                let binder_kind = binder.kind;
+                let unification = state.fresh_unification_kinded(binder_kind);
+                current = substitute::SubstituteBound::on(state, binder_level, unification, inner);
+            }
+
+            Type::Constrained(constraint, constrained) => {
+                state.constraints.push_wanted(constraint);
+                current = constrained;
+            }
+
+            _ => return Ok(current),
         }
     }
 

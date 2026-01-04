@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, operator, term, unification};
+use crate::algorithm::{binder, kind, operator, term, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::ErrorStep;
 
@@ -111,7 +111,7 @@ where
                 term::instantiate_type(state, context, constructor_t)?
             } else {
                 for &argument in arguments.iter() {
-                    constructor_t = term::check_constructor_binder_application(
+                    constructor_t = binder::check_constructor_binder_application(
                         state,
                         context,
                         constructor_t,
@@ -249,4 +249,16 @@ where
             binder_core(state, context, *parenthesized, mode)
         }
     }
+}
+
+pub fn check_constructor_binder_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constructor_t: TypeId,
+    binder_id: lowering::BinderId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    term::check_function_application_core(state, context, constructor_t, binder_id, check_binder)
 }
