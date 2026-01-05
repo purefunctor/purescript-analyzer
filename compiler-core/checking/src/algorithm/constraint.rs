@@ -713,7 +713,10 @@ where
     let constraints = instance
         .constraints
         .iter()
-        .map(|(constraint, _)| transfer::localize(state, context, *constraint))
+        .map(|(constraint, _)| {
+            let localized = transfer::localize(state, context, *constraint);
+            ApplyBindings::on(state, &bindings, localized)
+        })
         .collect();
 
     Ok(MatchInstance::Match { constraints, equalities })
