@@ -41,7 +41,12 @@ where
         let mut made_progress = false;
 
         'work: while let Some(wanted) = work_queue.pop_front() {
-            match match_given_instances(state, context, wanted, &given)? {
+            let Some(application) = constraint_application(state, wanted) else {
+                residual.push(wanted);
+                continue;
+            };
+
+            match match_given_instances(state, context, &application, &given)? {
                 Some(MatchInstance::Match { equalities, .. }) => {
                     for (t1, t2) in equalities {
                         if unification::unify(state, context, t1, t2)? {
@@ -53,16 +58,7 @@ where
                 Some(MatchInstance::Apart | MatchInstance::Stuck) | None => (),
             }
 
-            let Some(ConstraintApplication { file_id, item_id, arguments }) =
-                constraint_application(state, wanted)
-            else {
-                residual.push(wanted);
-                continue;
-            };
-
-            if let Some(result) =
-                match_compiler_instances(state, context, file_id, item_id, &arguments)
-            {
+            if let Some(result) = match_compiler_instances(state, context, &application) {
                 match result {
                     MatchInstance::Match { constraints, equalities } => {
                         for (t1, t2) in equalities {
@@ -81,11 +77,12 @@ where
                 }
             }
 
-            let instance_chains = collect_instance_chains(state, context, file_id, item_id)?;
+            let instance_chains =
+                collect_instance_chains(state, context, application.file_id, application.item_id)?;
 
             for chain in instance_chains {
                 'chain: for instance in chain {
-                    match match_instance(state, context, file_id, item_id, &arguments, instance)? {
+                    match match_instance(state, context, &application, instance)? {
                         MatchInstance::Match { constraints, equalities } => {
                             for (t1, t2) in equalities {
                                 if unification::unify(state, context, t1, t2)? {
@@ -672,14 +669,14 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
 fn match_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    file_id: FileId,
-    item_id: TypeItemId,
-    arguments: &[TypeId],
+    wanted: &ConstraintApplication,
     instance: Instance,
 ) -> QueryResult<MatchInstance>
 where
     Q: ExternalQueries,
 {
+    let ConstraintApplication { file_id, item_id, ref arguments } = *wanted;
+
     let mut bindings = FxHashMap::default();
     let mut equalities = vec![];
 
@@ -727,36 +724,30 @@ where
 fn match_given_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    wanted: TypeId,
+    wanted: &ConstraintApplication,
     given: &[TypeId],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
 {
-    let Some(wanted_application) = constraint_application(state, wanted) else {
-        return Ok(None);
-    };
-
     'given: for &given in given {
-        let Some(given_application) = constraint_application(state, given) else {
+        let Some(given) = constraint_application(state, given) else {
             continue;
         };
 
-        if wanted_application.file_id != given_application.file_id
-            || wanted_application.item_id != given_application.item_id
-        {
+        if wanted.file_id != given.file_id || wanted.item_id != given.item_id {
             continue;
         }
 
-        if wanted_application.arguments.len() != given_application.arguments.len() {
+        if wanted.arguments.len() != given.arguments.len() {
             continue;
         }
 
-        let mut match_results = Vec::with_capacity(wanted_application.arguments.len());
+        let mut match_results = Vec::with_capacity(wanted.arguments.len());
         let mut stuck_positions = vec![];
 
         for (index, (&wanted_argument, &given_argument)) in
-            wanted_application.arguments.iter().zip(&given_application.arguments).enumerate()
+            wanted.arguments.iter().zip(&given.arguments).enumerate()
         {
             let match_result = match_given_type(state, wanted_argument, given_argument);
 
@@ -777,8 +768,8 @@ where
 
         if !can_determine_stuck(
             context,
-            wanted_application.file_id,
-            wanted_application.item_id,
+            wanted.file_id,
+            wanted.item_id,
             &match_results,
             &stuck_positions,
         )? {
@@ -786,8 +777,8 @@ where
         }
 
         let equalities = stuck_positions.iter().map(|&index| {
-            let wanted = wanted_application.arguments[index];
-            let given = given_application.arguments[index];
+            let wanted = wanted.arguments[index];
+            let given = given.arguments[index];
             (wanted, given)
         });
 
@@ -804,13 +795,13 @@ where
 fn match_compiler_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    file_id: FileId,
-    item_id: TypeItemId,
-    arguments: &[TypeId],
+    wanted: &ConstraintApplication,
 ) -> Option<MatchInstance>
 where
     Q: ExternalQueries,
 {
+    let ConstraintApplication { file_id, item_id, ref arguments } = *wanted;
+
     if file_id == context.prim_int.file_id {
         if item_id == context.prim_int.add {
             prim_int_add(state, arguments)
