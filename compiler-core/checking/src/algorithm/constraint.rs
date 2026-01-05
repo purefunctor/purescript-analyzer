@@ -8,8 +8,8 @@ use compiler_solved::*;
 use functional_dependency::Fd;
 
 use std::collections::{HashSet, VecDeque};
+use std::iter;
 use std::sync::Arc;
-use std::{iter, mem};
 
 use building_types::QueryResult;
 use files::FileId;
@@ -148,20 +148,19 @@ pub(crate) fn constraint_application(
 fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    mut given: Vec<TypeId>,
-) -> QueryResult<Vec<TypeId>>
+    given: Vec<TypeId>,
+) -> QueryResult<Vec<ConstraintApplication>>
 where
     Q: ExternalQueries,
 {
-    let initial_given = mem::take(&mut given);
+    let mut elaborated = vec![];
 
-    let mut given = vec![];
-    for constraint in initial_given {
-        given.push(constraint);
-        elaborate_superclasses(state, context, constraint, &mut given)?;
+    for constraint in given {
+        elaborated.push(constraint);
+        elaborate_superclasses(state, context, constraint, &mut elaborated)?;
     }
 
-    Ok(given)
+    Ok(elaborated.into_iter().filter_map(|given| constraint_application(state, given)).collect())
 }
 
 /// Discovers superclass constraints for a given constraint.
@@ -725,16 +724,12 @@ fn match_given_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
-    given: &[TypeId],
+    given: &[ConstraintApplication],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
 {
-    'given: for &given in given {
-        let Some(given) = constraint_application(state, given) else {
-            continue;
-        };
-
+    'given: for given in given {
         if wanted.file_id != given.file_id || wanted.item_id != given.item_id {
             continue;
         }
