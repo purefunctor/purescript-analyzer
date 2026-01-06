@@ -7,6 +7,12 @@ use clap::Parser;
 use compiler_scripts::console::style;
 use compiler_scripts::fixtures::fixture_env;
 use compiler_scripts::snapshots::{print_diff, strip_frontmatter};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct PendingSnapshot {
+    path: String,
+}
 
 #[derive(Parser)]
 #[command(about = "Run type checker integration tests with snapshot diffing")]
@@ -88,6 +94,7 @@ fn main() {
     let pending_output = Command::new("cargo")
         .arg("insta")
         .arg("pending-snapshots")
+        .arg("--as-json")
         .stderr(Stdio::null())
         .output()
         .expect("Failed to run cargo insta");
@@ -96,7 +103,7 @@ fn main() {
     let pending = pending.trim();
 
     if pending.is_empty() {
-        println!("{}", style("No pending snapshots!"));
+        println!("{}", style("No pending snapshots.").dim());
         return;
     }
 
@@ -104,18 +111,23 @@ fn main() {
 
     let cwd = env::current_dir().unwrap();
 
-    for snap_path in pending.lines() {
-        let snap_path = snap_path.trim();
-        if snap_path.is_empty() {
+    for line in pending.lines() {
+        let line = line.trim();
+        if line.is_empty() {
             continue;
         }
 
+        let snap_path = match serde_json::from_str::<PendingSnapshot>(line) {
+            Ok(snapshot) => snapshot.path,
+            Err(_) => continue,
+        };
+
         let short_path = snap_path
             .strip_prefix(cwd.to_str().unwrap_or(""))
-            .unwrap_or(snap_path)
+            .unwrap_or(&snap_path)
             .trim_start_matches('/');
 
-        let snap = Path::new(snap_path);
+        let snap = Path::new(&snap_path);
         let snap_new = format!("{}.new", snap_path);
 
         if snap.exists() {
