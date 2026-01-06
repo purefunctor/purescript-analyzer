@@ -5,6 +5,7 @@ use files::FileId;
 use indexing::{TermItemId, TermItemKind, TypeItemId};
 use itertools::Itertools;
 use lowering::TermItemIr;
+use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
@@ -12,7 +13,7 @@ use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
     constraint, inspect, kind, quantify, substitute, term, transfer, unification,
 };
-use crate::core::{Instance, Type, TypeId, Variable, debruijn};
+use crate::core::{Instance, Type, TypeId, Variable, debruijn, pretty};
 use crate::error::{ErrorKind, ErrorStep};
 
 /// Checks signature declarations for terms.
@@ -130,13 +131,25 @@ where
             });
         }
 
+        let mut implicit_kinds = FxHashMap::default();
+
         let mut core_arguments = vec![];
         for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
             let (inferred_type, inferred_kind) =
                 kind::check_surface_kind(state, context, *argument, expected_kind)?;
 
-            let inferred_type = transfer::globalize(state, context, inferred_type);
-            let inferred_kind = transfer::globalize(state, context, inferred_kind);
+            // Unify kinds for Implicit and Bound variables, this instance
+            // declarations like `097_instance_chains` to infer with the
+            // correct kind annotations for the same variables.
+            if let Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) =
+                state.storage[inferred_type]
+            {
+                if let Some(bound_kind) = implicit_kinds.get(&level) {
+                    let _ = unification::unify(state, context, inferred_kind, *bound_kind)?;
+                } else {
+                    implicit_kinds.insert(level, inferred_kind);
+                }
+            }
 
             core_arguments.push((inferred_type, inferred_kind));
         }
@@ -145,23 +158,38 @@ where
         for constraint in constraints.iter() {
             let (inferred_type, inferred_kind) =
                 kind::infer_surface_kind(state, context, *constraint)?;
-
-            let inferred_type = transfer::globalize(state, context, inferred_type);
-            let inferred_kind = transfer::globalize(state, context, inferred_kind);
-
             core_constraints.push((inferred_type, inferred_kind));
         }
 
-        state.checked.instances.insert(
-            instance_id,
-            Instance {
-                arguments: core_arguments,
-                constraints: core_constraints,
-                resolution: (class_file, class_item),
-                chain_id,
-                chain_position,
-            },
-        );
+        let mut instance = Instance {
+            arguments: core_arguments,
+            constraints: core_constraints,
+            resolution: (class_file, class_item),
+            chain_id,
+            chain_position,
+            kind_variables: debruijn::Size(0),
+        };
+
+        instance.kind_variables =
+            quantify::quantify_instance(state, &mut instance).unwrap_or(debruijn::Size(0));
+
+        let arguments = instance.arguments.iter().map(|&(t, k)| {
+            let t = transfer::globalize(state, context, t);
+            let k = transfer::globalize(state, context, k);
+            (t, k)
+        });
+
+        instance.arguments = arguments.collect();
+
+        let constraints = instance.constraints.iter().map(|&(t, k)| {
+            let t = transfer::globalize(state, context, t);
+            let k = transfer::globalize(state, context, k);
+            (t, k)
+        });
+
+        instance.constraints = constraints.collect();
+
+        state.checked.instances.insert(instance_id, instance);
 
         // Capture implicit variables from the instance head before unbinding.
         let implicits = state.type_scope.unbind_implicits(debruijn::Level(size.0));

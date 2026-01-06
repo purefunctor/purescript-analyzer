@@ -15,3 +15,13 @@ Show :: Type -> Constraint
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
 Maybe :: Type -> Type
+
+Classes
+class Show (&0 :: Type)
+class Functor (&0 :: Type -> Type)
+
+Instances
+instance Functor (Box :: Type -> Type)
+  chain: 0
+instance Functor (Maybe :: Type -> Type)
+  chain: 0

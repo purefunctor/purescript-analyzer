@@ -9,3 +9,7 @@ pure :: forall (f :: Type -> Type) (a :: Type). Applicative f => a -> f a
 Types
 Functor :: (Type -> Type) -> Constraint
 Applicative :: (Type -> Type) -> Constraint
+
+Classes
+class Functor (&0 :: Type -> Type)
+class Functor &0 <= Applicative (&0 :: Type -> Type)

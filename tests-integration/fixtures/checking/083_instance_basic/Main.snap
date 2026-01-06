@@ -7,3 +7,10 @@ eq :: forall (a :: Type). Eq a => a -> a -> Boolean
 
 Types
 Eq :: Type -> Constraint
+
+Classes
+class Eq (&0 :: Type)
+
+Instances
+instance Eq &0 => Eq (Array &0 :: Type)
+  chain: 0

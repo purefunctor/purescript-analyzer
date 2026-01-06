@@ -15,8 +15,8 @@ use crate::algorithm::constraint::{
 };
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute::{ShiftLevels, SubstituteUnification, UniToLevel};
-use crate::core::{ForallBinder, RowType, Type, TypeId, debruijn};
+use crate::algorithm::substitute::{ShiftBound, ShiftImplicit, SubstituteUnification, UniToLevel};
+use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -33,12 +33,12 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
     };
 
     // Shift existing bound variable levels to make room for new quantifiers
-    let mut quantified = ShiftLevels::on(state, id, size.0);
+    let mut quantified = ShiftBound::on(state, id, size.0);
     let mut substitutions = UniToLevel::default();
 
     for (index, &id) in unsolved.iter().rev().enumerate() {
         let kind = state.unification.get(id).kind;
-        let kind = ShiftLevels::on(state, kind, size.0);
+        let kind = ShiftBound::on(state, kind, size.0);
         let name = generate_type_name(id);
 
         let index = debruijn::Index(index as u32);
@@ -194,6 +194,118 @@ fn generate_type_name(id: u32) -> smol_str::SmolStr {
     builder.finish()
 }
 
+/// Quantifies unification variables in class type variable kinds.
+///
+/// When a class type variable does not have an explicit kind, a unification
+/// variable is created and potentially generalised if left unsolved. This
+/// function applies the same generalisation algorithm used in the kind signature.
+///
+/// This function returns the number of additional kind variables introduced.
+pub fn quantify_class(state: &mut CheckState, class: &mut Class) -> Option<debruijn::Size> {
+    let mut graph = UniGraph::default();
+    for &kind in &class.type_variable_kinds {
+        collect_unification_into(&mut graph, state, kind);
+    }
+
+    for (t, k) in class.superclasses.iter() {
+        collect_unification_into(&mut graph, state, *t);
+        collect_unification_into(&mut graph, state, *k);
+    }
+
+    if graph.node_count() == 0 {
+        return Some(debruijn::Size(0));
+    }
+
+    let unsolved = ordered_toposort(&graph, state)?;
+    let size = debruijn::Size(unsolved.len() as u32);
+
+    let mut substitutions = UniToLevel::default();
+    for (index, &id) in unsolved.iter().rev().enumerate() {
+        let index = debruijn::Index(index as u32);
+        let level = index.to_level(size)?;
+        substitutions.insert(id, level);
+    }
+
+    let type_variable_kinds = class.type_variable_kinds.iter().map(|&kind| {
+        let kind = ShiftBound::on(state, kind, size.0);
+        SubstituteUnification::on(&substitutions, state, kind)
+    });
+
+    class.type_variable_kinds = type_variable_kinds.collect();
+
+    let superclasses = class.superclasses.iter().map(|&(t, k)| {
+        let t = ShiftBound::on(state, t, size.0);
+        let t = SubstituteUnification::on(&substitutions, state, t);
+        let k = ShiftBound::on(state, k, size.0);
+        let k = SubstituteUnification::on(&substitutions, state, k);
+        (t, k)
+    });
+
+    class.superclasses = superclasses.collect();
+
+    Some(size)
+}
+
+/// Quantifies unification variables in instance argument and constraint kinds.
+///
+/// When an instance type variable does not have an explicit kind, a unification
+/// variable is created and potentially generalised if left unsolved. This function
+/// applies the same generalisation algorithm as [`quantify`].
+///
+/// This function returns the number of additional kind variables introduced.
+pub fn quantify_instance(
+    state: &mut CheckState,
+    instance: &mut Instance,
+) -> Option<debruijn::Size> {
+    let mut graph = UniGraph::default();
+
+    for (t, k) in &instance.arguments {
+        collect_unification_into(&mut graph, state, *t);
+        collect_unification_into(&mut graph, state, *k);
+    }
+
+    for (t, k) in &instance.constraints {
+        collect_unification_into(&mut graph, state, *t);
+        collect_unification_into(&mut graph, state, *k);
+    }
+
+    if graph.node_count() == 0 {
+        return Some(debruijn::Size(0));
+    }
+
+    let unsolved = ordered_toposort(&graph, state)?;
+    let size = debruijn::Size(unsolved.len() as u32);
+
+    let mut substitutions = UniToLevel::default();
+    for (index, &id) in unsolved.iter().rev().enumerate() {
+        let index = debruijn::Index(index as u32);
+        let level = index.to_level(size)?;
+        substitutions.insert(id, level);
+    }
+
+    let arguments = instance.arguments.iter().map(|&(t, k)| {
+        let t = ShiftImplicit::on(state, t, size.0);
+        let t = SubstituteUnification::on(&substitutions, state, t);
+        let k = ShiftImplicit::on(state, k, size.0);
+        let k = SubstituteUnification::on(&substitutions, state, k);
+        (t, k)
+    });
+
+    instance.arguments = arguments.collect();
+
+    let constraints = instance.constraints.iter().map(|&(t, k)| {
+        let t = ShiftImplicit::on(state, t, size.0);
+        let t = SubstituteUnification::on(&substitutions, state, t);
+        let k = ShiftImplicit::on(state, k, size.0);
+        let k = SubstituteUnification::on(&substitutions, state, k);
+        (t, k)
+    });
+
+    instance.constraints = constraints.collect();
+
+    Some(size)
+}
+
 /// Builds a topological sort of the [`UniGraph`].
 ///
 /// This function uses the domain-based sorting of the unification variables
@@ -235,12 +347,12 @@ fn ordered_toposort(graph: &UniGraph, state: &CheckState) -> Option<IndexSet<u32
 
 type UniGraph = DiGraphMap<u32, ()>;
 
-/// Collects unification variables in a [`Type`].
+/// Collects unification variables from a [`Type`] into an existing graph.
 ///
 /// This function also tracks the dependencies between unification
 /// variables such as when unification variables appear in another
 /// unification variable's kind.
-fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
+pub fn collect_unification_into(graph: &mut UniGraph, state: &mut CheckState, id: TypeId) {
     fn aux(graph: &mut UniGraph, state: &mut CheckState, id: TypeId, dependent: Option<u32>) {
         let id = state.normalize_type(id);
         match state.storage[id] {
@@ -306,8 +418,17 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
         }
     }
 
+    aux(graph, state, id, None);
+}
+
+/// Collects unification variables in a [`Type`].
+///
+/// This function also tracks the dependencies between unification
+/// variables such as when unification variables appear in another
+/// unification variable's kind.
+fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
     let mut graph = UniGraph::default();
-    aux(&mut graph, state, id, None);
+    collect_unification_into(&mut graph, state, id);
     graph
 }
 

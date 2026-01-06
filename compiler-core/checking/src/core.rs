@@ -120,11 +120,13 @@ pub struct Instance {
     pub resolution: (FileId, TypeItemId),
     pub chain_id: InstanceChainId,
     pub chain_position: u32,
+    pub kind_variables: debruijn::Size,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Class {
     pub superclasses: Arc<[(TypeId, TypeId)]>,
+    pub type_variable_kinds: Vec<TypeId>,
     pub quantified_variables: debruijn::Size,
     pub kind_variables: debruijn::Size,
 }

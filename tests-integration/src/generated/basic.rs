@@ -3,7 +3,7 @@ use std::fmt::Write;
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
 use files::FileId;
-use indexing::{ImportKind, TermItem, TypeItem};
+use indexing::{ImportKind, TermItem, TypeItem, TypeItemKind};
 use lowering::{
     ExpressionKind, GraphNode, ImplicitTypeVariable, TermVariableResolution, TypeKind,
     TypeVariableResolution,
@@ -308,6 +308,94 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "  Kind = {}", group.kind_variables).unwrap();
         writeln!(snapshot, "  Type = {}", group.type_variables).unwrap();
         writeln!(snapshot).unwrap();
+    }
+
+    if !checked.classes.is_empty() {
+        writeln!(snapshot, "\nClasses").unwrap();
+    }
+    for (type_id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
+        let TypeItemKind::Class { .. } = kind else { continue };
+        let Some(name) = name else { continue };
+        let Some(class) = checked.lookup_class(type_id) else { continue };
+
+        let mut class_line = String::new();
+
+        // Print superclasses first (before <=)
+        if !class.superclasses.is_empty() {
+            for (i, (superclass_type, _)) in class.superclasses.iter().enumerate() {
+                if i > 0 {
+                    class_line.push_str(", ");
+                }
+                let type_str = pretty::print_global(engine, *superclass_type);
+                class_line.push_str(&type_str);
+            }
+            class_line.push_str(" <= ");
+        }
+
+        class_line.push_str(name);
+
+        // Print class type variables with their kinds
+        // level = quantified_variables + kind_variables + index (matches localize_class)
+        for (index, &kind) in class.type_variable_kinds.iter().enumerate() {
+            let level = class.quantified_variables.0 + class.kind_variables.0 + index as u32;
+            let kind_str = pretty::print_global(engine, kind);
+            class_line.push_str(&format!(" (&{level} :: {kind_str})"));
+        }
+
+        writeln!(snapshot, "class {class_line}").unwrap();
+    }
+
+    if !checked.instances.is_empty() {
+        writeln!(snapshot, "\nInstances").unwrap();
+    }
+    let mut instance_entries: Vec<_> = checked.instances.iter().collect();
+    instance_entries.sort_by_key(|(id, _)| format!("{:?}", id));
+    for (_instance_id, instance) in instance_entries {
+        // Build instance head: constraints => ClassName (arg :: kind)...
+        let (class_file, class_type_id) = instance.resolution;
+        let class_name: String = if class_file == id {
+            indexed.items[class_type_id]
+                .name
+                .as_ref()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "<unknown>".to_string())
+        } else {
+            engine
+                .indexed(class_file)
+                .ok()
+                .and_then(|idx| idx.items[class_type_id].name.as_ref().map(|s| s.to_string()))
+                .unwrap_or_else(|| "<imported>".to_string())
+        };
+
+        let mut head = String::new();
+
+        // Print constraints (without kinds)
+        if !instance.constraints.is_empty() {
+            let constraints: Vec<_> = instance
+                .constraints
+                .iter()
+                .map(|(t, _)| pretty::print_global(engine, *t))
+                .collect();
+            if constraints.len() == 1 {
+                head.push_str(&constraints[0]);
+            } else {
+                head.push('(');
+                head.push_str(&constraints.join(", "));
+                head.push(')');
+            }
+            head.push_str(" => ");
+        }
+
+        // Print class name and arguments with kinds
+        head.push_str(&class_name);
+        for (arg_type, arg_kind) in &instance.arguments {
+            let type_str = pretty::print_global(engine, *arg_type);
+            let kind_str = pretty::print_global(engine, *arg_kind);
+            head.push_str(&format!(" ({type_str} :: {kind_str})"));
+        }
+
+        writeln!(snapshot, "instance {head}").unwrap();
+        writeln!(snapshot, "  chain: {}", instance.chain_position).unwrap();
     }
 
     if !checked.errors.is_empty() {

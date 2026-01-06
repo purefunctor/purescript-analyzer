@@ -10,3 +10,10 @@ Types
 True :: Type
 False :: Type
 TypeEq :: forall (t7 :: Type). Type -> Type -> t7 -> Constraint
+
+Classes
+class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: &0)
+
+Instances
+instance TypeEq (&0 :: Type) (&0 :: Type) (True :: Type)
+  chain: 0

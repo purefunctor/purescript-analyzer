@@ -11,3 +11,7 @@ useRelate :: forall (y :: Type). Relate Int String y => y
 Types
 Convert :: Type -> Type -> Constraint
 Relate :: Type -> Type -> Type -> Constraint
+
+Classes
+class Convert (&0 :: Type) (&1 :: Type)
+class Relate (&0 :: Type) (&1 :: Type) (&2 :: Type)

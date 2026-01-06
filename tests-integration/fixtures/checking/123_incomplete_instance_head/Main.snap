@@ -8,5 +8,14 @@ pair :: forall (a :: Type) (b :: Type). Pair a b => a -> b -> { a :: a, b :: b }
 Types
 Pair :: Type -> Type -> Constraint
 
+Classes
+class Pair (&0 :: Type) (&1 :: Type)
+
+Instances
+instance Pair (Int :: Type) (String :: Type)
+  chain: 0
+instance Pair (Int :: Type)
+  chain: 0
+
 Errors
 InstanceHeadMismatch { class_file: Idx::<File>(9), class_item: Idx::<TypeItem>(0), expected: 2, actual: 1 } at [TermDeclaration(Idx::<TermItem>(2))]

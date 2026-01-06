@@ -11,6 +11,10 @@ Types
 Read :: Type -> Constraint
 Show :: Type -> Constraint
 
+Classes
+class Read (&0 :: Type)
+class Show (&0 :: Type)
+
 Errors
 AmbiguousConstraint { Show ??? } at [TermDeclaration(Idx::<TermItem>(2))]
 AmbiguousConstraint { Read ??? } at [TermDeclaration(Idx::<TermItem>(2))]

@@ -9,5 +9,12 @@ test :: Array Boolean
 Types
 Eq :: Type -> Constraint
 
+Classes
+class Eq (&0 :: Type)
+
+Instances
+instance Eq (Int :: Type)
+  chain: 0
+
 Errors
 NoInstanceFound { Eq String } at [TermDeclaration(Idx::<TermItem>(2))]

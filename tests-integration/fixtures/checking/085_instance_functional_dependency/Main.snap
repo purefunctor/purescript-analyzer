@@ -8,3 +8,10 @@ test :: String
 
 Types
 Convert :: Type -> Type -> Constraint
+
+Classes
+class Convert (&0 :: Type) (&1 :: Type)
+
+Instances
+instance Convert (Int :: Type) (String :: Type)
+  chain: 0

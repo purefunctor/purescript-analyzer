@@ -8,3 +8,10 @@ test :: Boolean
 
 Types
 Chain :: forall (t4 :: Type). Type -> t4 -> Type -> Constraint
+
+Classes
+class Chain (&1 :: Type) (&2 :: &0) (&3 :: Type)
+
+Instances
+instance Chain (Int :: Type) (String :: Type) (Boolean :: Type)
+  chain: 0

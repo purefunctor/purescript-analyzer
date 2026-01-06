@@ -339,7 +339,8 @@ where
     let class = {
         let quantified_variables = debruijn::Size(0);
         let kind_variables = debruijn::Size(kind_variables.len() as u32);
-        Class { superclasses, quantified_variables, kind_variables }
+        let type_variable_kinds = type_variables.iter().map(|binder| binder.kind).collect();
+        Class { superclasses, type_variable_kinds, quantified_variables, kind_variables }
     };
 
     state.binding_group.classes.insert(item_id, class);

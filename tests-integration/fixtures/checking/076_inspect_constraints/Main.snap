@@ -33,3 +33,8 @@ NestedConstraint = forall (a :: Type) (b :: Type). Show b => a -> b -> String
   Quantified = :0
   Kind = :0
   Type = :1
+
+
+Classes
+class Show (&0 :: Type)
+class Eq (&0 :: Type)

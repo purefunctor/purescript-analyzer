@@ -11,3 +11,7 @@ test2 :: forall (t13 :: Type). Ord t13 => t13 -> t13 -> Int
 Types
 Eq :: Type -> Constraint
 Ord :: Type -> Constraint
+
+Classes
+class Eq (&0 :: Type)
+class Ord (&0 :: Type)

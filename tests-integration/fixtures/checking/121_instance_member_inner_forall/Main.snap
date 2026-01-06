@@ -9,3 +9,10 @@ Box :: forall (a :: Type). a -> Box a
 Types
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
+
+Classes
+class Functor (&0 :: Type -> Type)
+
+Instances
+instance Functor (Box :: Type -> Type)
+  chain: 0

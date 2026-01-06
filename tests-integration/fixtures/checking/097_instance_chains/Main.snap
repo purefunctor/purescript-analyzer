@@ -11,3 +11,12 @@ test :: { testDiff :: Proxy @Boolean False, testSame :: Proxy @Boolean True }
 Types
 Proxy :: forall (t1 :: Type). t1 -> Type
 TypeEq :: forall (t3 :: Type) (t6 :: Type) (t7 :: Type). t3 -> t6 -> t7 -> Constraint
+
+Classes
+class TypeEq (&3 :: &0) (&4 :: &1) (&5 :: &2)
+
+Instances
+instance TypeEq (&1 :: &0) (&1 :: &0) (True :: Boolean)
+  chain: 0
+instance TypeEq (&2 :: &0) (&3 :: &1) (False :: Boolean)
+  chain: 1

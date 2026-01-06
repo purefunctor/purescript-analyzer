@@ -7,3 +7,10 @@ show :: forall (a :: Type). Show a => a -> String
 
 Types
 Show :: Type -> Constraint
+
+Classes
+class Show (&0 :: Type)
+
+Instances
+instance Show (Int :: Type)
+  chain: 0

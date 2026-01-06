@@ -270,8 +270,17 @@ where
         let k = transfer::localize(state, context, k);
         (t, k)
     });
+
+    let superclasses = superclasses.collect();
+
+    let type_variable_kinds =
+        class.type_variable_kinds.iter().map(|&kind| transfer::localize(state, context, kind));
+
+    let type_variable_kinds = type_variable_kinds.collect();
+
     Class {
-        superclasses: superclasses.collect(),
+        superclasses,
+        type_variable_kinds,
         quantified_variables: class.quantified_variables,
         kind_variables: class.kind_variables,
     }

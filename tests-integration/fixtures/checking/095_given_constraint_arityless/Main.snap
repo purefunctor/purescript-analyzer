@@ -1,6 +1,5 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
@@ -13,3 +12,7 @@ eqBoth :: forall (a :: Type) (b :: Type). Eq a => Eq b => a -> b -> Boolean
 Types
 Eq :: Type -> Constraint
 Coercible :: Type -> Type -> Constraint
+
+Classes
+class Eq (&0 :: Type)
+class Coercible (&0 :: Type) (&1 :: Type)

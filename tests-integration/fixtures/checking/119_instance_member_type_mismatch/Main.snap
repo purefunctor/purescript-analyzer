@@ -8,6 +8,13 @@ show :: forall (a :: Type). Show a => a -> String
 Types
 Show :: Type -> Constraint
 
+Classes
+class Show (&0 :: Type)
+
+Instances
+instance Show (Int :: Type)
+  chain: 0
+
 Errors
 CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1))]
 CannotUnify { Int -> Int, Int -> String } at [TermDeclaration(Idx::<TermItem>(1))]

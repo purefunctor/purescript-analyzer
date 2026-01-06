@@ -11,5 +11,8 @@ Types
 Foo :: Type
 Eq :: Type -> Constraint
 
+Classes
+class Eq (&0 :: Type)
+
 Errors
 NoInstanceFound { Eq Foo } at [TermDeclaration(Idx::<TermItem>(2))]

@@ -261,3 +261,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_124_instance_member_missing_constraint_main() { run_test("124_instance_member_missing_constraint", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_125_instance_member_overly_general_main() { run_test("125_instance_member_overly_general", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_126_instance_phantom_main() { run_test("126_instance_phantom", "Main"); }

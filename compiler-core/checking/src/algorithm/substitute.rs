@@ -35,11 +35,11 @@ impl TypeFold for SubstituteBound {
     }
 }
 
-pub struct ShiftLevels {
+pub struct ShiftBound {
     offset: u32,
 }
 
-impl ShiftLevels {
+impl ShiftBound {
     /// Shifts all bound variable levels in a type by a given offset.
     ///
     /// This is needed when adding new forall binders at the front of a type,
@@ -49,19 +49,55 @@ impl ShiftLevels {
         if offset == 0 {
             return id;
         }
-        fold_type(state, id, &mut ShiftLevels { offset })
+        fold_type(state, id, &mut ShiftBound { offset })
     }
 }
 
-impl TypeFold for ShiftLevels {
+impl TypeFold for ShiftBound {
     fn transform(&mut self, state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
         if let Type::Variable(Variable::Bound(level)) = t {
-            let shifted = debruijn::Level(level.0 + self.offset);
-            return FoldAction::Replace(
-                state.storage.intern(Type::Variable(Variable::Bound(shifted))),
-            );
+            let level = debruijn::Level(level.0 + self.offset);
+            FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level))))
+        } else {
+            FoldAction::Continue
         }
-        FoldAction::Continue
+    }
+
+    fn transform_binder(&mut self, binder: &mut ForallBinder) {
+        binder.level = debruijn::Level(binder.level.0 + self.offset);
+    }
+}
+
+pub struct ShiftImplicit {
+    offset: u32,
+}
+
+impl ShiftImplicit {
+    /// Shifts all bound AND implicit variable levels in a type by a given offset.
+    ///
+    /// This is needed when adding new kind binders to instance heads, where
+    /// implicit variables also need their levels adjusted.
+    pub fn on(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
+        if offset == 0 {
+            return id;
+        }
+        fold_type(state, id, &mut ShiftImplicit { offset })
+    }
+}
+
+impl TypeFold for ShiftImplicit {
+    fn transform(&mut self, state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Bound(level)) => {
+                let level = debruijn::Level(level.0 + self.offset);
+                FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level))))
+            }
+            Type::Variable(Variable::Implicit(level)) => {
+                let level = debruijn::Level(level.0 + self.offset);
+                FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Implicit(level))))
+            }
+            _ => FoldAction::Continue,
+        }
     }
 
     fn transform_binder(&mut self, binder: &mut ForallBinder) {

@@ -671,16 +671,31 @@ impl CheckState {
         for (item_id, type_id) in mem::take(&mut self.binding_group.types) {
             if let Some((quantified_type, quantified_count)) = quantify::quantify(self, type_id) {
                 if let Some(mut class) = classes.remove(&item_id) {
+                    let class_quantified_count =
+                        quantify::quantify_class(self, &mut class).unwrap_or(debruijn::Size(0));
+
+                    debug_assert_eq!(
+                        quantified_count, class_quantified_count,
+                        "critical violation: class type signature and declaration should have the same number of variables"
+                    );
+
                     class.quantified_variables = quantified_count;
-                    class.superclasses = class
-                        .superclasses
+
+                    let superclasses = class.superclasses.iter().map(|&(t, k)| {
+                        let t = transfer::globalize(self, context, t);
+                        let k = transfer::globalize(self, context, k);
+                        (t, k)
+                    });
+
+                    class.superclasses = superclasses.collect();
+
+                    let type_variable_kinds = class
+                        .type_variable_kinds
                         .iter()
-                        .map(|&(t, k)| {
-                            let t = transfer::globalize(self, context, t);
-                            let k = transfer::globalize(self, context, k);
-                            (t, k)
-                        })
-                        .collect();
+                        .map(|&kind| transfer::globalize(self, context, kind));
+
+                    class.type_variable_kinds = type_variable_kinds.collect();
+
                     self.checked.classes.insert(item_id, class);
                 }
                 let type_id = transfer::globalize(self, context, quantified_type);

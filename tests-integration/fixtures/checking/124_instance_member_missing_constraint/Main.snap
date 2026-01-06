@@ -12,5 +12,13 @@ Show :: Type -> Constraint
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
 
+Classes
+class Show (&0 :: Type)
+class Functor (&0 :: Type -> Type)
+
+Instances
+instance Functor (Box :: Type -> Type)
+  chain: 0
+
 Errors
 NoInstanceFound { Show ~&1 } at [TermDeclaration(Idx::<TermItem>(3))]
