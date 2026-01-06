@@ -672,6 +672,15 @@ impl CheckState {
             if let Some((quantified_type, quantified_count)) = quantify::quantify(self, type_id) {
                 if let Some(mut class) = classes.remove(&item_id) {
                     class.quantified_variables = quantified_count;
+                    class.superclasses = class
+                        .superclasses
+                        .iter()
+                        .map(|&(t, k)| {
+                            let t = transfer::globalize(self, context, t);
+                            let k = transfer::globalize(self, context, k);
+                            (t, k)
+                        })
+                        .collect();
                     self.checked.classes.insert(item_id, class);
                 }
                 let type_id = transfer::globalize(self, context, quantified_type);

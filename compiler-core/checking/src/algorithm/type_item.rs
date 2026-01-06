@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, CheckedDataLike};
-use crate::algorithm::{inspect, kind, transfer, unification};
+use crate::algorithm::{inspect, kind, unification};
 use crate::core::{Class, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -328,12 +328,9 @@ where
         return Ok(());
     };
 
-    // Elaborate and globalize superclass constraints
     let superclasses = constraints.iter().map(|&constraint| {
         let (constraint_type, constraint_kind) =
             kind::check_surface_kind(state, context, constraint, context.prim.constraint)?;
-        let constraint_type = transfer::globalize(state, context, constraint_type);
-        let constraint_kind = transfer::globalize(state, context, constraint_kind);
         Ok((constraint_type, constraint_kind))
     });
 
