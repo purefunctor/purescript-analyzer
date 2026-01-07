@@ -365,6 +365,8 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Derive { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
+            let newtype = cst.as_ref().map(|cst| cst.newtype_token().is_some()).unwrap_or(false);
+
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
                 state.push_implicit_scope();
@@ -384,7 +386,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .collect()
             };
 
-            let kind = TermItemIr::Derive { constraints, arguments };
+            let kind = TermItemIr::Derive { newtype, constraints, arguments };
             state.info.term_item.insert(item_id, kind);
         }
 
