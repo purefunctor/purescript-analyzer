@@ -599,7 +599,7 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
         }
 
         // Implicit and Bound variables at the same level represent the same
-        // logical variable. Implicit produces them, Bound consumes them.
+        // logical variable; Implicit binds the variable, Bound consumes it.
         (Type::Variable(Variable::Implicit(w_level)), Type::Variable(Variable::Bound(g_level)))
         | (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Implicit(g_level)))
             if w_level == g_level =>

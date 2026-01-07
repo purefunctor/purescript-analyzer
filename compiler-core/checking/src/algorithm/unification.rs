@@ -83,6 +83,17 @@ where
             subtype(state, context, inner, t2)
         }
 
+        // Implicit and Bound variables at the same level represent the same
+        // logical variable; Implicit binds the variable, Bound consumes it.
+        (
+            Type::Variable(Variable::Implicit(t1_level)),
+            Type::Variable(Variable::Bound(t2_level)),
+        )
+        | (
+            Type::Variable(Variable::Bound(t1_level)),
+            Type::Variable(Variable::Implicit(t2_level)),
+        ) => Ok(t1_level == t2_level),
+
         (_, _) => unify(state, context, t1, t2),
     }
 }
@@ -144,6 +155,17 @@ where
         (_, Type::Unification(unification_id)) => {
             solve(state, context, unification_id, t1)?.is_some()
         }
+
+        // Implicit and Bound variables at the same level represent the same
+        // logical variable; Implicit binds the variable, Bound consumes it.
+        (
+            Type::Variable(Variable::Implicit(t1_level)),
+            Type::Variable(Variable::Bound(t2_level)),
+        )
+        | (
+            Type::Variable(Variable::Bound(t1_level)),
+            Type::Variable(Variable::Implicit(t2_level)),
+        ) => t1_level == t2_level,
 
         (
             Type::Constrained(t1_constraint, t1_inner),
