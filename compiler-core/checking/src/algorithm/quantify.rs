@@ -253,10 +253,7 @@ pub fn quantify_class(state: &mut CheckState, class: &mut Class) -> Option<debru
 /// applies the same generalisation algorithm as [`quantify`].
 ///
 /// This function returns the number of additional kind variables introduced.
-pub fn quantify_instance(
-    state: &mut CheckState,
-    instance: &mut Instance,
-) -> Option<debruijn::Size> {
+pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Option<()> {
     let mut graph = UniGraph::default();
 
     for (t, k) in &instance.arguments {
@@ -270,7 +267,7 @@ pub fn quantify_instance(
     }
 
     if graph.node_count() == 0 {
-        return Some(debruijn::Size(0));
+        return Some(());
     }
 
     let unsolved = ordered_toposort(&graph, state)?;
@@ -303,7 +300,9 @@ pub fn quantify_instance(
 
     instance.constraints = constraints.collect();
 
-    Some(size)
+    instance.kind_variables = size;
+
+    Some(())
 }
 
 /// Builds a topological sort of the [`UniGraph`].

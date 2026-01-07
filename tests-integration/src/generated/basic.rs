@@ -395,7 +395,9 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         }
 
         writeln!(snapshot, "instance {head}").unwrap();
-        writeln!(snapshot, "  chain: {}", instance.chain_position).unwrap();
+        if let checking::core::InstanceKind::Chain { position, .. } = instance.kind {
+            writeln!(snapshot, "  chain: {}", position).unwrap();
+        }
     }
 
     if !checked.errors.is_empty() {

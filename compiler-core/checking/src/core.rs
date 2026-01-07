@@ -114,12 +114,17 @@ impl Synonym {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InstanceKind {
+    Chain { id: InstanceChainId, position: u32 },
+    Derive,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Instance {
     pub arguments: Vec<(TypeId, TypeId)>,
     pub constraints: Vec<(TypeId, TypeId)>,
     pub resolution: (FileId, TypeItemId),
-    pub chain_id: InstanceChainId,
-    pub chain_position: u32,
+    pub kind: InstanceKind,
     pub kind_variables: debruijn::Size,
 }
 

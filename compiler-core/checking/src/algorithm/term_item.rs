@@ -13,7 +13,7 @@ use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
     constraint, inspect, kind, quantify, substitute, term, transfer, unification,
 };
-use crate::core::{Instance, Type, TypeId, Variable, debruijn, pretty};
+use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 /// Checks signature declarations for terms.
@@ -165,13 +165,11 @@ where
             arguments: core_arguments,
             constraints: core_constraints,
             resolution: (class_file, class_item),
-            chain_id,
-            chain_position,
+            kind: InstanceKind::Chain { id: chain_id, position: chain_position },
             kind_variables: debruijn::Size(0),
         };
 
-        instance.kind_variables =
-            quantify::quantify_instance(state, &mut instance).unwrap_or(debruijn::Size(0));
+        quantify::quantify_instance(state, &mut instance);
 
         let arguments = instance.arguments.iter().map(|&(t, k)| {
             let t = transfer::globalize(state, context, t);

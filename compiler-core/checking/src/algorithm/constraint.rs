@@ -20,7 +20,7 @@ use rustc_hash::FxHashMap;
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{transfer, unification};
-use crate::core::{Class, Instance, Variable, debruijn};
+use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
 pub fn solve_constraints<Q>(
@@ -250,12 +250,17 @@ where
 
     let mut grouped: FxHashMap<_, Vec<_>> = FxHashMap::default();
     for instance in instances {
-        grouped.entry(instance.chain_id).or_default().push(instance);
+        if let InstanceKind::Chain { id, .. } = instance.kind {
+            grouped.entry(id).or_default().push(instance);
+        }
     }
 
     let mut result: Vec<Vec<_>> = grouped.into_values().collect();
     for chain in &mut result {
-        chain.sort_by_key(|instance| instance.chain_position);
+        chain.sort_by_key(|instance| match instance.kind {
+            InstanceKind::Chain { position, .. } => position,
+            InstanceKind::Derive => 0,
+        });
     }
 
     Ok(result)
