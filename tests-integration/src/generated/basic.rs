@@ -400,6 +400,57 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         }
     }
 
+    if !checked.derived.is_empty() {
+        writeln!(snapshot, "\nDerived").unwrap();
+    }
+    let mut derived_entries: Vec<_> = checked.derived.iter().collect();
+    derived_entries.sort_by_key(|(id, _)| format!("{:?}", id));
+    for (_derive_id, instance) in derived_entries {
+        let (class_file, class_type_id) = instance.resolution;
+        let class_name: String = if class_file == id {
+            indexed.items[class_type_id]
+                .name
+                .as_ref()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "<unknown>".to_string())
+        } else {
+            engine
+                .indexed(class_file)
+                .ok()
+                .and_then(|idx| idx.items[class_type_id].name.as_ref().map(|s| s.to_string()))
+                .unwrap_or_else(|| "<imported>".to_string())
+        };
+
+        let mut head = String::new();
+
+        // Print constraints (without kinds)
+        if !instance.constraints.is_empty() {
+            let constraints: Vec<_> = instance
+                .constraints
+                .iter()
+                .map(|(t, _)| pretty::print_global(engine, *t))
+                .collect();
+            if constraints.len() == 1 {
+                head.push_str(&constraints[0]);
+            } else {
+                head.push('(');
+                head.push_str(&constraints.join(", "));
+                head.push(')');
+            }
+            head.push_str(" => ");
+        }
+
+        // Print class name and arguments with kinds
+        head.push_str(&class_name);
+        for (arg_type, arg_kind) in &instance.arguments {
+            let type_str = pretty::print_global(engine, *arg_type);
+            let kind_str = pretty::print_global(engine, *arg_kind);
+            head.push_str(&format!(" ({type_str} :: {kind_str})"));
+        }
+
+        writeln!(snapshot, "derive {head}").unwrap();
+    }
+
     if !checked.errors.is_empty() {
         writeln!(snapshot, "\nErrors").unwrap();
     }

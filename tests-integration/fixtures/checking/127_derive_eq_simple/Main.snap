@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
+
+Types
+Proxy :: forall (t1 :: Type). t1 -> Type
+
+Derived
+derive Eq (Proxy @&0 &1 :: Type)

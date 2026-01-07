@@ -68,6 +68,7 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
 
     check_term_signatures(&mut state, &context)?;
     check_instance_heads(&mut state, &context)?;
+    check_derive_heads(&mut state, &context)?;
     check_value_groups(&mut state, &context)?;
     check_instance_members(&mut state, &context)?;
 
@@ -341,6 +342,33 @@ where
         };
 
         term_item::check_instance_members(state, context, check_members)?;
+    }
+
+    Ok(())
+}
+
+fn check_derive_heads<Q>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let items = context.lowered.term_scc.iter().flat_map(|scc| match scc {
+        Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
+        Scc::Mutual(items) => items.as_slice(),
+    });
+
+    for &item_id in items {
+        let Some(TermItemIr::Derive { constraints, arguments, resolution, .. }) =
+            context.lowered.info.get_term_item(item_id)
+        else {
+            continue;
+        };
+
+        let check_derive = term_item::CheckDerive { item_id, constraints, arguments, resolution };
+
+        term_item::check_derive(state, context, check_derive)?;
     }
 
     Ok(())

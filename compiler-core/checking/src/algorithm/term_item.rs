@@ -197,6 +197,112 @@ where
     })
 }
 
+pub struct CheckDerive<'a> {
+    pub item_id: TermItemId,
+    pub constraints: &'a [lowering::TypeId],
+    pub arguments: &'a [lowering::TypeId],
+    pub resolution: &'a Option<(FileId, TypeItemId)>,
+}
+
+pub fn check_derive<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: CheckDerive<'_>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let CheckDerive { item_id, constraints, arguments, resolution } = input;
+    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let Some((class_file, class_item)) = *resolution else {
+            return Ok(());
+        };
+
+        let TermItemKind::Derive { id: derive_id } = context.indexed.items[item_id].kind else {
+            return Ok(());
+        };
+
+        // Save the current size of the environment for unbinding.
+        let size = state.type_scope.size();
+
+        let class_kind = kind::lookup_file_type(state, context, class_file, class_item)?;
+        let expected_kinds = instantiate_class_kind(state, context, class_kind)?;
+
+        if expected_kinds.len() != arguments.len() {
+            state.insert_error(ErrorKind::InstanceHeadMismatch {
+                class_file,
+                class_item,
+                expected: expected_kinds.len(),
+                actual: arguments.len(),
+            });
+        }
+
+        let mut implicit_kinds = FxHashMap::default();
+
+        let mut core_arguments = vec![];
+        for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
+            let (inferred_type, inferred_kind) =
+                kind::check_surface_kind(state, context, *argument, expected_kind)?;
+
+            // Unify kinds for Implicit and Bound variables, this instance
+            // declarations like `097_instance_chains` to infer with the
+            // correct kind annotations for the same variables.
+            if let Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) =
+                state.storage[inferred_type]
+            {
+                if let Some(bound_kind) = implicit_kinds.get(&level) {
+                    let _ = unification::unify(state, context, inferred_kind, *bound_kind)?;
+                } else {
+                    implicit_kinds.insert(level, inferred_kind);
+                }
+            }
+
+            core_arguments.push((inferred_type, inferred_kind));
+        }
+
+        let mut core_constraints = vec![];
+        for constraint in constraints.iter() {
+            let (inferred_type, inferred_kind) =
+                kind::infer_surface_kind(state, context, *constraint)?;
+            core_constraints.push((inferred_type, inferred_kind));
+        }
+
+        let mut instance = Instance {
+            arguments: core_arguments,
+            constraints: core_constraints,
+            resolution: (class_file, class_item),
+            kind: InstanceKind::Derive,
+            kind_variables: debruijn::Size(0),
+        };
+
+        quantify::quantify_instance(state, &mut instance);
+
+        let arguments = instance.arguments.iter().map(|&(t, k)| {
+            let t = transfer::globalize(state, context, t);
+            let k = transfer::globalize(state, context, k);
+            (t, k)
+        });
+
+        instance.arguments = arguments.collect();
+
+        let constraints = instance.constraints.iter().map(|&(t, k)| {
+            let t = transfer::globalize(state, context, t);
+            let k = transfer::globalize(state, context, k);
+            (t, k)
+        });
+
+        instance.constraints = constraints.collect();
+
+        state.checked.derived.insert(derive_id, instance);
+
+        // Capture implicit variables from the instance head before unbinding.
+        let implicits = state.type_scope.unbind_implicits(debruijn::Level(size.0));
+        state.surface_bindings.insert_instance_head(item_id, Arc::from(implicits));
+
+        Ok(())
+    })
+}
+
 /// Instantiates a class kind to extract the expected kinds for instance arguments.
 ///
 /// Class kinds have the form `forall k1 k2. T1 -> T2 -> ... -> Constraint` where:

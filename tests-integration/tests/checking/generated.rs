@@ -263,3 +263,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_125_instance_member_overly_general_main() { run_test("125_instance_member_overly_general", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_126_instance_phantom_main() { run_test("126_instance_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_127_derive_eq_simple_main() { run_test("127_derive_eq_simple", "Main"); }

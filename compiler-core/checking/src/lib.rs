@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::{IndexedModule, InstanceId, TermItemId, TypeItemId};
+use indexing::{DeriveId, IndexedModule, InstanceId, TermItemId, TypeItemId};
 use lowering::LoweredModule;
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
@@ -38,6 +38,7 @@ pub struct CheckedModule {
     pub operators: FxHashMap<TypeItemId, core::Operator>,
     pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
     pub instances: FxHashMap<InstanceId, core::Instance>,
+    pub derived: FxHashMap<DeriveId, core::Instance>,
     pub classes: FxHashMap<TypeItemId, core::Class>,
 
     pub errors: Vec<CheckError>,
