@@ -270,7 +270,13 @@ impl State {
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
         let node = self.graph_scope?;
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
-            if *collecting {
+            if let Some(id) = bindings.get(name) {
+                Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                    binding: false,
+                    node,
+                    id,
+                }))
+            } else if *collecting {
                 let id = bindings.bind(name, id);
                 Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
                     binding: true,
@@ -278,12 +284,7 @@ impl State {
                     id,
                 }))
             } else {
-                let id = bindings.get(name)?;
-                Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
-                    binding: false,
-                    node,
-                    id,
-                }))
+                None
             }
         } else {
             self.graph.traverse(node).find_map(|(node, graph)| match graph {
