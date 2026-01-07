@@ -367,6 +367,14 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 
             let newtype = cst.as_ref().map(|cst| cst.newtype_token().is_some()).unwrap_or(false);
 
+            let resolution = cst.as_ref().and_then(|cst| {
+                let head = cst.instance_head()?;
+                let qualified = head.qualified()?;
+                let (qualifier, name) =
+                    recursive::lower_qualified_name(&qualified, cst::QualifiedName::upper)?;
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+            });
+
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
                 state.push_implicit_scope();
@@ -386,7 +394,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .collect()
             };
 
-            let kind = TermItemIr::Derive { newtype, constraints, arguments };
+            let kind = TermItemIr::Derive { newtype, constraints, resolution, arguments };
             state.info.term_item.insert(item_id, kind);
         }
 
@@ -405,7 +413,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Instance { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
-            let class_resolution = cst.as_ref().and_then(|cst| {
+            let resolution = cst.as_ref().and_then(|cst| {
                 let head = cst.instance_head()?;
                 let qualified = head.qualified()?;
                 let (qualifier, name) =
@@ -434,15 +442,10 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 
             let members = recover! {
                 let statements = cst.as_ref()?.instance_statements()?;
-                lower_instance_statements(state, context, &statements, class_resolution)
+                lower_instance_statements(state, context, &statements, resolution)
             };
 
-            let kind = TermItemIr::Instance {
-                constraints,
-                resolution: class_resolution,
-                arguments,
-                members,
-            };
+            let kind = TermItemIr::Instance { constraints, resolution, arguments, members };
             state.info.term_item.insert(item_id, kind);
         }
 
