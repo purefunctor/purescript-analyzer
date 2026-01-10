@@ -344,6 +344,7 @@ where
     pub prim_symbol: PrimSymbolCore,
     pub prim_row: PrimRowCore,
     pub prim_row_list: PrimRowListCore,
+    pub known_types: KnownTypesCore,
 
     pub id: FileId,
     pub indexed: Arc<IndexedModule>,
@@ -373,6 +374,7 @@ where
         let prim_symbol = PrimSymbolCore::collect(queries, state)?;
         let prim_row = PrimRowCore::collect(queries, state)?;
         let prim_row_list = PrimRowListCore::collect(queries, state)?;
+        let known_types = KnownTypesCore::collect(queries)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
         Ok(CheckContext {
@@ -383,6 +385,7 @@ where
             prim_symbol,
             prim_row,
             prim_row_list,
+            known_types,
             id,
             indexed,
             lowered,
@@ -603,6 +606,34 @@ impl PrimRowListCore {
             cons: lookup.type_constructor("Cons"),
             nil: lookup.type_constructor("Nil"),
         })
+    }
+}
+
+fn fetch_known_type(
+    queries: &impl ExternalQueries,
+    m: &str,
+    n: &str,
+) -> QueryResult<Option<(FileId, TypeItemId)>> {
+    let Some(file_id) = queries.module_file(m) else {
+        return Ok(None);
+    };
+    let resolved = queries.resolved(file_id)?;
+    let Some((file_id, type_id)) = resolved.exports.lookup_type(n) else {
+        return Ok(None);
+    };
+    Ok(Some((file_id, type_id)))
+}
+
+pub struct KnownTypesCore {
+    pub eq: Option<(FileId, TypeItemId)>,
+    pub eq1: Option<(FileId, TypeItemId)>,
+}
+
+impl KnownTypesCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTypesCore> {
+        let eq = fetch_known_type(queries, "Data.Eq", "Eq")?;
+        let eq1 = fetch_known_type(queries, "Data.Eq", "Eq1")?;
+        Ok(KnownTypesCore { eq, eq1 })
     }
 }
 
