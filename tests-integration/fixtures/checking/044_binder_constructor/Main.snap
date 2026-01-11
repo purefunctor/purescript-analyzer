@@ -21,3 +21,16 @@ Types
 Pair :: Type -> Type -> Type
 Maybe :: Type -> Type
 List :: Type -> Type
+
+Data
+Pair
+  Quantified = :0
+  Kind = :0
+
+Maybe
+  Quantified = :0
+  Kind = :0
+
+List
+  Quantified = :0
+  Kind = :0

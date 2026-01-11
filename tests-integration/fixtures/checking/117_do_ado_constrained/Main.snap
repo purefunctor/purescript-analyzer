@@ -25,6 +25,12 @@ Discard :: (Type -> Type) -> Constraint
 Bind :: (Type -> Type) -> Constraint
 Monad :: (Type -> Type) -> Constraint
 
+Data
+Tuple
+  Quantified = :0
+  Kind = :0
+
+
 Classes
 class Functor (&0 :: Type -> Type)
 class Functor &0 <= Apply (&0 :: Type -> Type)

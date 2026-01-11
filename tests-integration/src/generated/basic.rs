@@ -310,6 +310,19 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot).unwrap();
     }
 
+    if !checked.data.is_empty() {
+        writeln!(snapshot, "\nData").unwrap();
+    }
+    for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
+        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. }) = kind else { continue };
+        let Some(name) = name else { continue };
+        let Some(data) = checked.lookup_data(id) else { continue };
+        writeln!(snapshot, "{name}").unwrap();
+        writeln!(snapshot, "  Quantified = {}", data.quantified_variables).unwrap();
+        writeln!(snapshot, "  Kind = {}", data.kind_variables).unwrap();
+        writeln!(snapshot).unwrap();
+    }
+
     if !checked.classes.is_empty() {
         writeln!(snapshot, "\nClasses").unwrap();
     }

@@ -12,6 +12,12 @@ Show :: Type -> Constraint
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
 
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+
 Classes
 class Show (&0 :: Type)
 class Functor (&0 :: Type -> Type)

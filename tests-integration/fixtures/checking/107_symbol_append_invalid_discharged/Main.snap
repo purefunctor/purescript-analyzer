@@ -9,3 +9,8 @@ forceSolve :: forall (t7 :: Symbol). Append "hello" t7 "xyz" => { invalid :: Pro
 
 Types
 Proxy :: forall (k :: Type). k -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1

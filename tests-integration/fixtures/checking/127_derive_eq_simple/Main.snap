@@ -8,5 +8,11 @@ Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
 Types
 Proxy :: forall (t1 :: Type). t1 -> Type
 
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
 Derived
 derive Eq (Proxy @&0 &1 :: Type)

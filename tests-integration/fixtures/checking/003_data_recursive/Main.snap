@@ -8,3 +8,8 @@ Cons :: forall (a :: Type). a -> List a -> List a
 
 Types
 List :: Type -> Type
+
+Data
+List
+  Quantified = :0
+  Kind = :0

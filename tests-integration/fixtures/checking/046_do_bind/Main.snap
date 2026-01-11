@@ -13,3 +13,8 @@ test' :: Effect (Tuple Int Int)
 Types
 Effect :: Type -> Type
 Tuple :: Type -> Type -> Type
+
+Data
+Tuple
+  Quantified = :0
+  Kind = :0

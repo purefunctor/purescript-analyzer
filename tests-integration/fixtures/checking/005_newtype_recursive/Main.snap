@@ -7,3 +7,8 @@ In :: forall (f :: Type -> Type). f (Mu f) -> Mu f
 
 Types
 Mu :: (Type -> Type) -> Type
+
+Data
+Mu
+  Quantified = :0
+  Kind = :0

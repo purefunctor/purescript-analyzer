@@ -242,6 +242,8 @@ where
         if let Some(variable) = kind_variables.first() {
             state.type_scope.unbind(variable.level);
         }
+
+        state.binding_group.data.insert(item_id, data);
     }
 
     Ok(())

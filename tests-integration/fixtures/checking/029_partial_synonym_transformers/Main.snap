@@ -50,3 +50,13 @@ NestedReader = Apply (Apply (ReaderT Int) Identity) Boolean
   Quantified = :0
   Kind = :0
   Type = :0
+
+
+Data
+Identity
+  Quantified = :0
+  Kind = :0
+
+Tuple
+  Quantified = :0
+  Kind = :0

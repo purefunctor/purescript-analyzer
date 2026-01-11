@@ -27,3 +27,12 @@ forceSolve ::
 Types
 Proxy :: forall (k :: Type). k -> Type
 Unit :: Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+Unit
+  Quantified = :0
+  Kind = :0

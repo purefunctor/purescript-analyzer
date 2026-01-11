@@ -40,6 +40,7 @@ pub struct CheckedModule {
     pub instances: FxHashMap<InstanceId, core::Instance>,
     pub derived: FxHashMap<DeriveId, core::Instance>,
     pub classes: FxHashMap<TypeItemId, core::Class>,
+    pub data: FxHashMap<TypeItemId, core::DataLike>,
 
     pub errors: Vec<CheckError>,
 }
@@ -59,6 +60,10 @@ impl CheckedModule {
 
     pub fn lookup_class(&self, id: TypeItemId) -> Option<core::Class> {
         self.classes.get(&id).cloned()
+    }
+
+    pub fn lookup_data(&self, id: TypeItemId) -> Option<core::DataLike> {
+        self.data.get(&id).copied()
     }
 }
 

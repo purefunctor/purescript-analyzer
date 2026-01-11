@@ -135,3 +135,9 @@ pub struct Class {
     pub quantified_variables: debruijn::Size,
     pub kind_variables: debruijn::Size,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DataLike {
+    pub quantified_variables: debruijn::Size,
+    pub kind_variables: debruijn::Size,
+}

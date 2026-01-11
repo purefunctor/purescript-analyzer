@@ -16,6 +16,12 @@ Eq :: Type -> Constraint
 Ord :: Type -> Constraint
 Ordering :: Type
 
+Data
+Ordering
+  Quantified = :0
+  Kind = :0
+
+
 Classes
 class Eq (&0 :: Type)
 class Eq &0 <= Ord (&0 :: Type)

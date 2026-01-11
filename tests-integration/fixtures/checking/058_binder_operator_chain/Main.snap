@@ -12,3 +12,8 @@ matchCons' :: List Int -> Int
 
 Types
 List :: Type -> Type
+
+Data
+List
+  Quantified = :0
+  Kind = :0

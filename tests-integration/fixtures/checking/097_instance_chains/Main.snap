@@ -12,6 +12,12 @@ Types
 Proxy :: forall (t1 :: Type). t1 -> Type
 TypeEq :: forall (t3 :: Type) (t6 :: Type) (t7 :: Type). t3 -> t6 -> t7 -> Constraint
 
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
 Classes
 class TypeEq (&3 :: &0) (&4 :: &1) (&5 :: &2)
 

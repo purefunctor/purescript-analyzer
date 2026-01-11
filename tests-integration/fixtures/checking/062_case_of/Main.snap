@@ -21,3 +21,16 @@ Types
 Maybe :: Type -> Type
 Either :: Type -> Type -> Type
 Tuple :: Type -> Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+Either
+  Quantified = :0
+  Kind = :0
+
+Tuple
+  Quantified = :0
+  Kind = :0

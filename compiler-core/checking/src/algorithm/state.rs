@@ -17,7 +17,7 @@ use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, quantify, transfer};
-use crate::core::{Class, ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
+use crate::core::{Class, DataLike, ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -290,7 +290,7 @@ pub struct CheckedConstructor {
 }
 
 #[derive(Clone)]
-pub struct CheckedDataLike {
+pub struct BindingDataLike {
     pub kind_variables: Vec<ForallBinder>,
     pub type_variables: Vec<ForallBinder>,
     pub result_kind: TypeId,
@@ -304,7 +304,7 @@ pub struct BindingGroupContext {
     pub synonyms: FxHashMap<TypeItemId, Synonym>,
     pub classes: FxHashMap<TypeItemId, Class>,
     pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
-    pub data: FxHashMap<TypeItemId, CheckedDataLike>,
+    pub data: FxHashMap<TypeItemId, BindingDataLike>,
 }
 
 impl BindingGroupContext {
@@ -676,6 +676,10 @@ impl CheckState {
     where
         Q: ExternalQueries,
     {
+        // Process terms to be committed into the CheckedModule. This loops over
+        // the BindingGroupContext::terms and generalises unsolved unification
+        // variables. It also takes into account the residual constraints that
+        // must be generalised or reported as errors.
         let mut residuals = mem::take(&mut self.binding_group.residual);
         for (item_id, type_id) in mem::take(&mut self.binding_group.terms) {
             let constraints = residuals.remove(&item_id).unwrap_or_default();
@@ -698,42 +702,101 @@ impl CheckState {
             }
         }
 
-        let mut classes = mem::take(&mut self.binding_group.classes);
+        // Process data/newtype to be committed into the CheckedModule. This loops
+        // over the BindingGroupContext::data and generalises unsolved unification
+        // variables in their kinds. DataLike is inserted in CheckedModule::data
+        // containing the number of quantified and kind variables in the type.
+        // These are tracked so that the check_derive rule knows exactly how many
+        // kind variables need to be instantiated into unification variables.
+        for (item_id, data_like) in mem::take(&mut self.binding_group.data) {
+            let Some(type_id) = self.binding_group.types.remove(&item_id) else {
+                continue;
+            };
+
+            let Some((quantified_type, quantified_variables)) = quantify::quantify(self, type_id)
+            else {
+                continue;
+            };
+
+            let kind_count = data_like.kind_variables.len() as u32;
+            let kind_variables = debruijn::Size(kind_count);
+
+            let data_like = DataLike { quantified_variables, kind_variables };
+            self.checked.data.insert(item_id, data_like);
+
+            let type_id = transfer::globalize(self, context, quantified_type);
+            self.checked.types.insert(item_id, type_id);
+        }
+
+        // Process class to be committed into the CheckedModule. This loops over
+        // the BindingGroupContext::class and generalises unsolved unification
+        // variables in their kinds. Like DataLike, it stores the number of
+        // quantified and kind variables in the type. This also generalises
+        // the class head itself since class head variables may have unsolved
+        // unification variables on inference mode.
+        for (item_id, mut class) in mem::take(&mut self.binding_group.classes) {
+            let Some(type_id) = self.binding_group.types.remove(&item_id) else {
+                continue;
+            };
+
+            let Some((quantified_type, quantified_variables)) = quantify::quantify(self, type_id)
+            else {
+                continue;
+            };
+
+            let class_quantified_count =
+                quantify::quantify_class(self, &mut class).unwrap_or(debruijn::Size(0));
+
+            debug_assert_eq!(
+                quantified_variables, class_quantified_count,
+                "critical violation: class type signature and declaration should have the same number of variables"
+            );
+
+            class.quantified_variables = quantified_variables;
+
+            let superclasses = class.superclasses.iter().map(|&(t, k)| {
+                let t = transfer::globalize(self, context, t);
+                let k = transfer::globalize(self, context, k);
+                (t, k)
+            });
+
+            class.superclasses = superclasses.collect();
+
+            let type_variable_kinds = class
+                .type_variable_kinds
+                .iter()
+                .map(|&kind| transfer::globalize(self, context, kind));
+
+            class.type_variable_kinds = type_variable_kinds.collect();
+
+            self.checked.classes.insert(item_id, class);
+
+            let type_id = transfer::globalize(self, context, quantified_type);
+            self.checked.types.insert(item_id, type_id);
+        }
+
         for (item_id, type_id) in mem::take(&mut self.binding_group.types) {
-            if let Some((quantified_type, quantified_count)) = quantify::quantify(self, type_id) {
-                if let Some(mut class) = classes.remove(&item_id) {
-                    let class_quantified_count =
-                        quantify::quantify_class(self, &mut class).unwrap_or(debruijn::Size(0));
-
-                    debug_assert_eq!(
-                        quantified_count, class_quantified_count,
-                        "critical violation: class type signature and declaration should have the same number of variables"
-                    );
-
-                    class.quantified_variables = quantified_count;
-
-                    let superclasses = class.superclasses.iter().map(|&(t, k)| {
-                        let t = transfer::globalize(self, context, t);
-                        let k = transfer::globalize(self, context, k);
-                        (t, k)
-                    });
-
-                    class.superclasses = superclasses.collect();
-
-                    let type_variable_kinds = class
-                        .type_variable_kinds
-                        .iter()
-                        .map(|&kind| transfer::globalize(self, context, kind));
-
-                    class.type_variable_kinds = type_variable_kinds.collect();
-
-                    self.checked.classes.insert(item_id, class);
-                }
+            if let Some((quantified_type, _)) = quantify::quantify(self, type_id) {
                 let type_id = transfer::globalize(self, context, quantified_type);
                 self.checked.types.insert(item_id, type_id);
             }
         }
 
+        // Process synonym to be committed into the CheckedModule. This loops
+        // over the BindingGroupContext::synonyms and generalises the synonym
+        // body itself. Kind generalisation is already handled in the previous
+        // loop. The compiler stores synonym bodies as generalised types to
+        // take advantage of existing patterns for instantiation, e.g.
+        //
+        // ```
+        // type Fn a b = a -> b
+        // ```
+        //
+        // is just stored as the following type:
+        //
+        // ```
+        // forall a b. a -> b
+        // ```
         for (item_id, mut synonym) in mem::take(&mut self.binding_group.synonyms) {
             if let Some((synonym_type, quantified_variables)) =
                 quantify::quantify(self, synonym.synonym_type)

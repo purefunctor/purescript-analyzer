@@ -11,6 +11,12 @@ Types
 Eq :: Type -> Constraint
 Foo :: Type
 
+Data
+Foo
+  Quantified = :0
+  Kind = :0
+
+
 Classes
 class Eq (&0 :: Type)
 

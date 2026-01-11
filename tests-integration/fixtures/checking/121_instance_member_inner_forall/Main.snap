@@ -10,6 +10,12 @@ Types
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
 
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+
 Classes
 class Functor (&0 :: Type -> Type)
 

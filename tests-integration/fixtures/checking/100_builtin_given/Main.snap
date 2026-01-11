@@ -39,3 +39,17 @@ MaxN = 5
   Quantified = :0
   Kind = :0
   Type = :0
+
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+N
+  Quantified = :0
+  Kind = :0
+
+Something
+  Quantified = :0
+  Kind = :0

@@ -11,6 +11,16 @@ True :: Type
 False :: Type
 TypeEq :: forall (t7 :: Type). Type -> Type -> t7 -> Constraint
 
+Data
+True
+  Quantified = :0
+  Kind = :0
+
+False
+  Quantified = :0
+  Kind = :0
+
+
 Classes
 class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: &0)
 

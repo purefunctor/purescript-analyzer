@@ -12,3 +12,8 @@ test' :: forall (t60 :: Type -> Type). t60 (Tuple Int String)
 
 Types
 Tuple :: Type -> Type -> Type
+
+Data
+Tuple
+  Quantified = :0
+  Kind = :0

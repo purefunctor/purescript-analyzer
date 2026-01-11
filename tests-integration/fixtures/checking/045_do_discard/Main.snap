@@ -14,3 +14,8 @@ test' :: Effect Unit
 Types
 Effect :: Type -> Type
 Unit :: Type
+
+Data
+Unit
+  Quantified = :0
+  Kind = :0

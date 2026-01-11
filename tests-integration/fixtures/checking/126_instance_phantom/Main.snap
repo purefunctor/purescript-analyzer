@@ -11,6 +11,12 @@ Types
 Phantom :: Type -> Constraint
 Proxy :: forall (t3 :: Type). t3 -> Type
 
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
 Classes
 class Phantom (&0 :: Type)
 

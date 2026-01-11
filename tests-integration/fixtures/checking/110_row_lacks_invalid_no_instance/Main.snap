@@ -10,5 +10,11 @@ forceSolve :: { invalid :: Proxy @(Row Type) ( a :: Int, b :: String ) }
 Types
 Proxy :: forall (k :: Type). k -> Type
 
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
 Errors
 NoInstanceFound { Lacks @Type "b" ( a :: Int, b :: String ) } at [TermDeclaration(Idx::<TermItem>(2))]

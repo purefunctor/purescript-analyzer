@@ -9,7 +9,7 @@ use lowering::{
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
-use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, CheckedDataLike};
+use crate::algorithm::state::{BindingDataLike, CheckContext, CheckState, CheckedConstructor};
 use crate::algorithm::{inspect, kind, unification};
 use crate::core::{Class, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -254,7 +254,7 @@ where
     let type_unbind_level = type_variables.first().map(|variable| variable.level);
     let kind_unbind_level = kind_variables.first().map(|variable| variable.level);
 
-    let data = CheckedDataLike { kind_variables, type_variables, result_kind, constructors };
+    let data = BindingDataLike { kind_variables, type_variables, result_kind, constructors };
     state.binding_group.data.insert(item_id, data);
 
     if let Some(level) = type_unbind_level {

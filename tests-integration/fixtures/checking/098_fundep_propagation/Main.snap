@@ -16,6 +16,12 @@ Z :: Type
 S :: Type -> Type
 And :: forall (t7 :: Type) (t10 :: Type) (t11 :: Type). t7 -> t10 -> t11 -> Constraint
 
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
 Classes
 class IsZero (&2 :: &0) (&3 :: &1)
 class And (&3 :: &0) (&4 :: &1) (&5 :: &2)
