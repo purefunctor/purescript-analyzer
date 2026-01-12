@@ -53,17 +53,8 @@ pub fn lower_module(
     indexed: &IndexedModule,
     resolved: &ResolvedModule,
 ) -> LoweredModule {
-    let algorithm::State {
-        info,
-        graph,
-        nodes,
-        term_graph,
-        type_graph,
-        kind_graph,
-        synonym_graph,
-        mut errors,
-        ..
-    } = algorithm::lower_module(file_id, module, prim, stabilized, indexed, resolved);
+    let algorithm::State { info, graph, nodes, term_graph, type_graph, kind_graph, synonym_graph, mut errors, .. } =
+        algorithm::lower_module(file_id, module, prim, stabilized, indexed, resolved);
 
     let term_scc = tarjan_scc(&term_graph);
     let term_scc = term_scc.into_iter().map(into_scc(&term_graph)).collect();

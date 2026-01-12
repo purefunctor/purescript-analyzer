@@ -70,17 +70,9 @@ fn lookup_local_synonym<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(synonym) = state.binding_group.lookup_synonym(type_id)
-        && let Some(kind) = state.binding_group.lookup_type(type_id)
-    {
-        Some((synonym, kind))
-    } else if let Some(synonym) = state.checked.lookup_synonym(type_id)
-        && let Some(kind) = state.checked.lookup_type(type_id)
-    {
-        Some(localize_synonym_and_kind(state, context, synonym, kind))
-    } else {
-        None
-    }
+    let synonym = state.checked.lookup_synonym(type_id)?;
+    let kind = state.checked.lookup_type(type_id)?;
+    Some(localize_synonym_and_kind(state, context, synonym, kind))
 }
 
 fn lookup_global_synonym<Q>(

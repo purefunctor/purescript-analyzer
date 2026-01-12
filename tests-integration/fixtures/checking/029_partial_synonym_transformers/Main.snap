@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
 expression: report
 ---
 Terms
@@ -54,6 +55,14 @@ NestedReader = Apply (Apply (ReaderT Int) Identity) Boolean
 
 Data
 Identity
+  Quantified = :0
+  Kind = :0
+
+ReaderT
+  Quantified = :0
+  Kind = :0
+
+StateT
   Quantified = :0
   Kind = :0
 

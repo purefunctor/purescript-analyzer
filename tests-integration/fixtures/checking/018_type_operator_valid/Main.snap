@@ -5,11 +5,11 @@ expression: report
 Terms
 
 Types
-Add :: forall (t1 :: Type) (t4 :: Type). t1 -> t4 -> t1
-+ :: forall (t1 :: Type) (t4 :: Type). t1 -> t4 -> t1
+Add :: forall (t0 :: Type) (t2 :: Type). t0 -> t2 -> t0
++ :: forall (t0 :: Type) (t2 :: Type). t0 -> t2 -> t0
 
 Synonyms
-Add = forall (t1 :: Type) (t4 :: Type) (a :: t1) (b :: t4). a
+Add = forall (t0 :: Type) (t2 :: Type) (a :: t0) (b :: t2). a
   Quantified = :2
   Kind = :0
   Type = :2

@@ -565,7 +565,7 @@ where
     Q: ExternalQueries,
 {
     let type_id = if file_id == context.id {
-        if let Some(&k) = state.binding_group.types.get(&type_id) {
+        if let Some(k) = state.binding_group.lookup_type(type_id) {
             k
         } else if let Some(&k) = state.checked.types.get(&type_id) {
             transfer::localize(state, context, k)

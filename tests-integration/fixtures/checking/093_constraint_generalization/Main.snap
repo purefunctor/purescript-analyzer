@@ -4,9 +4,9 @@ expression: report
 ---
 Terms
 eq :: forall (a :: Type). Eq a => a -> a -> Boolean
-test :: forall (t8 :: Type). Eq t8 => t8 -> t8 -> Boolean
+test :: forall (t6 :: Type). Eq t6 => t6 -> t6 -> Boolean
 compare :: forall (a :: Type). Ord a => a -> a -> Int
-test2 :: forall (t13 :: Type). Ord t13 => t13 -> t13 -> Int
+test2 :: forall (t11 :: Type). Ord t11 => t11 -> t11 -> Int
 
 Types
 Eq :: Type -> Constraint

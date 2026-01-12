@@ -265,3 +265,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_126_instance_phantom_main() { run_test("126_instance_phantom", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_127_derive_eq_simple_main() { run_test("127_derive_eq_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_128_type_operator_mutual_main() { run_test("128_type_operator_mutual", "Main"); }

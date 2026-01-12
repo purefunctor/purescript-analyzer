@@ -1,4 +1,5 @@
 pub mod unification;
+use itertools::Itertools;
 pub use unification::*;
 
 use std::collections::VecDeque;
@@ -10,14 +11,14 @@ use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{
     BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule, RecordPunId,
-    TypeVariableBindingId,
+    TypeItemIr, TypeVariableBindingId,
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, quantify, transfer};
-use crate::core::{Class, DataLike, ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
+use crate::core::{Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -289,22 +290,14 @@ pub struct CheckedConstructor {
     pub arguments: Vec<TypeId>,
 }
 
-#[derive(Clone)]
-pub struct BindingDataLike {
-    pub kind_variables: Vec<ForallBinder>,
-    pub type_variables: Vec<ForallBinder>,
-    pub result_kind: TypeId,
-    pub constructors: Vec<CheckedConstructor>,
-}
+#[derive(Clone, Copy)]
+pub struct BindingGroupType(pub TypeId);
 
 #[derive(Default)]
 pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
-    pub types: FxHashMap<TypeItemId, TypeId>,
-    pub synonyms: FxHashMap<TypeItemId, Synonym>,
-    pub classes: FxHashMap<TypeItemId, Class>,
+    pub types: FxHashMap<TypeItemId, BindingGroupType>,
     pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
-    pub data: FxHashMap<TypeItemId, BindingDataLike>,
 }
 
 impl BindingGroupContext {
@@ -313,15 +306,7 @@ impl BindingGroupContext {
     }
 
     pub fn lookup_type(&self, id: TypeItemId) -> Option<TypeId> {
-        self.types.get(&id).copied()
-    }
-
-    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<Synonym> {
-        self.synonyms.get(&id).copied()
-    }
-
-    pub fn lookup_class(&self, id: TypeItemId) -> Option<Class> {
-        self.classes.get(&id).cloned()
+        self.types.get(&id).map(|binding| binding.0)
     }
 }
 
@@ -659,9 +644,71 @@ impl CheckState {
         Q: ExternalQueries,
     {
         for item in group {
-            let t = self.fresh_unification_type(context);
-            self.binding_group.types.insert(item, t);
+            let kind = self.fresh_unification_type(context);
+            self.binding_group.types.insert(item, BindingGroupType(kind));
         }
+    }
+
+    /// Executes a closure with a type binding group in scope.
+    ///
+    /// This inserts pending kinds (unification variables) for the given type
+    /// items, such that recursive or mutually recursive declarations can be
+    /// checked together. The binding group is cleared after the closure returns.
+    pub fn with_type_group<Q, F, T>(
+        &mut self,
+        context: &CheckContext<Q>,
+        group: &[TypeItemId],
+        f: F,
+    ) -> T
+    where
+        Q: ExternalQueries,
+        F: FnOnce(&mut Self) -> T,
+    {
+        // Insert pending kinds for items that need them (non-operators without signatures)
+        let needs_pending = group.iter().filter(|&&item_id| {
+            if let Some(TypeItemIr::Operator { .. }) = context.lowered.info.get_type_item(item_id) {
+                return false;
+            }
+            if self.checked.types.contains_key(&item_id) {
+                return false;
+            }
+            true
+        });
+
+        for item in needs_pending.copied().collect_vec() {
+            let kind = self.fresh_unification_type(context);
+            self.binding_group.types.insert(item, BindingGroupType(kind));
+        }
+
+        // Insert pending kinds for operators (share kind with their target)
+        let operators = group.iter().filter_map(|&item_id| {
+            let TypeItemIr::Operator { resolution, .. } =
+                context.lowered.info.get_type_item(item_id)?
+            else {
+                return None;
+            };
+            let resolution = resolution.as_ref()?;
+            Some((item_id, *resolution))
+        });
+
+        for (operator_id, (file_id, item_id)) in operators {
+            debug_assert!(
+                file_id == context.id && group.contains(&item_id),
+                "invariant violated: expected local target for operator"
+            );
+
+            let kind = self.binding_group.lookup_type(item_id).or_else(|| {
+                let kind = self.checked.types.get(&item_id)?;
+                Some(transfer::localize(self, context, *kind))
+            });
+
+            let kind = kind.expect("invariant violated: expected kind for operator target");
+            self.binding_group.types.insert(operator_id, BindingGroupType(kind));
+        }
+
+        let result = f(self);
+        self.binding_group.types.clear();
+        result
     }
 
     pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
@@ -702,108 +749,12 @@ impl CheckState {
             }
         }
 
-        // Process data/newtype to be committed into the CheckedModule. This loops
-        // over the BindingGroupContext::data and generalises unsolved unification
-        // variables in their kinds. DataLike is inserted in CheckedModule::data
-        // containing the number of quantified and kind variables in the type.
-        // These are tracked so that the check_derive rule knows exactly how many
-        // kind variables need to be instantiated into unification variables.
-        for (item_id, data_like) in mem::take(&mut self.binding_group.data) {
-            let Some(type_id) = self.binding_group.types.remove(&item_id) else {
-                continue;
-            };
-
-            let Some((quantified_type, quantified_variables)) = quantify::quantify(self, type_id)
-            else {
-                continue;
-            };
-
-            let kind_count = data_like.kind_variables.len() as u32;
-            let kind_variables = debruijn::Size(kind_count);
-
-            let data_like = DataLike { quantified_variables, kind_variables };
-            self.checked.data.insert(item_id, data_like);
-
-            let type_id = transfer::globalize(self, context, quantified_type);
-            self.checked.types.insert(item_id, type_id);
-        }
-
-        // Process class to be committed into the CheckedModule. This loops over
-        // the BindingGroupContext::class and generalises unsolved unification
-        // variables in their kinds. Like DataLike, it stores the number of
-        // quantified and kind variables in the type. This also generalises
-        // the class head itself since class head variables may have unsolved
-        // unification variables on inference mode.
-        for (item_id, mut class) in mem::take(&mut self.binding_group.classes) {
-            let Some(type_id) = self.binding_group.types.remove(&item_id) else {
-                continue;
-            };
-
-            let Some((quantified_type, quantified_variables)) = quantify::quantify(self, type_id)
-            else {
-                continue;
-            };
-
-            let class_quantified_count =
-                quantify::quantify_class(self, &mut class).unwrap_or(debruijn::Size(0));
-
-            debug_assert_eq!(
-                quantified_variables, class_quantified_count,
-                "critical violation: class type signature and declaration should have the same number of variables"
-            );
-
-            class.quantified_variables = quantified_variables;
-
-            let superclasses = class.superclasses.iter().map(|&(t, k)| {
-                let t = transfer::globalize(self, context, t);
-                let k = transfer::globalize(self, context, k);
-                (t, k)
-            });
-
-            class.superclasses = superclasses.collect();
-
-            let type_variable_kinds = class
-                .type_variable_kinds
-                .iter()
-                .map(|&kind| transfer::globalize(self, context, kind));
-
-            class.type_variable_kinds = type_variable_kinds.collect();
-
-            self.checked.classes.insert(item_id, class);
-
-            let type_id = transfer::globalize(self, context, quantified_type);
-            self.checked.types.insert(item_id, type_id);
-        }
-
-        for (item_id, type_id) in mem::take(&mut self.binding_group.types) {
-            if let Some((quantified_type, _)) = quantify::quantify(self, type_id) {
+        // Process types to be committed into the CheckedModule. Generalizes
+        // pending kinds for recursive type declarations.
+        for (item_id, BindingGroupType(kind)) in mem::take(&mut self.binding_group.types) {
+            if let Some((quantified_type, _)) = quantify::quantify(self, kind) {
                 let type_id = transfer::globalize(self, context, quantified_type);
                 self.checked.types.insert(item_id, type_id);
-            }
-        }
-
-        // Process synonym to be committed into the CheckedModule. This loops
-        // over the BindingGroupContext::synonyms and generalises the synonym
-        // body itself. Kind generalisation is already handled in the previous
-        // loop. The compiler stores synonym bodies as generalised types to
-        // take advantage of existing patterns for instantiation, e.g.
-        //
-        // ```
-        // type Fn a b = a -> b
-        // ```
-        //
-        // is just stored as the following type:
-        //
-        // ```
-        // forall a b. a -> b
-        // ```
-        for (item_id, mut synonym) in mem::take(&mut self.binding_group.synonyms) {
-            if let Some((synonym_type, quantified_variables)) =
-                quantify::quantify(self, synonym.synonym_type)
-            {
-                synonym.quantified_variables = quantified_variables;
-                synonym.synonym_type = transfer::globalize(self, context, synonym_type);
-                self.checked.synonyms.insert(item_id, synonym);
             }
         }
 

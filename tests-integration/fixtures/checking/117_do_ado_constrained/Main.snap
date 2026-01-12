@@ -10,11 +10,11 @@ pure :: forall (f :: Type -> Type) (a :: Type). Applicative f => a -> f a
 discard :: forall (m :: Type -> Type) (a :: Type) (b :: Type). Discard m => m a -> (a -> m b) -> m b
 bind :: forall (m :: Type -> Type) (a :: Type) (b :: Type). Bind m => m a -> (a -> m b) -> m b
 testDo :: forall (m :: Type -> Type). Monad m => m (Tuple Int String)
-testDo' :: forall (t63 :: Type -> Type). Bind t63 => t63 (Tuple Int String)
+testDo' :: forall (t55 :: Type -> Type). Bind t55 => t55 (Tuple Int String)
 testAdo :: forall (f :: Type -> Type). Applicative f => f (Tuple Int String)
-testAdo' :: forall (t93 :: Type -> Type). Applicative t93 => t93 (Tuple Int String)
+testAdo' :: forall (t85 :: Type -> Type). Applicative t85 => t85 (Tuple Int String)
 testDoDiscard :: forall (m :: Type -> Type). Monad m => m Int
-testDoDiscard' :: forall (t109 :: Type -> Type). Discard t109 => t109 Int
+testDoDiscard' :: forall (t101 :: Type -> Type). Discard t101 => t101 Int
 
 Types
 Tuple :: Type -> Type -> Type

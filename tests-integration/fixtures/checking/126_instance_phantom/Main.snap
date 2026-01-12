@@ -4,12 +4,12 @@ expression: report
 ---
 Terms
 identity :: forall (a :: Type). Phantom a => a -> a
-Proxy :: forall (t3 :: Type) (a :: t3). Proxy @t3 a
-forceSolve :: forall (t10 :: Type) (t11 :: t10). { solution :: Proxy @t10 t11 }
+Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
+forceSolve :: forall (t8 :: Type) (t9 :: t8). { solution :: Proxy @t8 t9 }
 
 Types
 Phantom :: Type -> Constraint
-Proxy :: forall (t3 :: Type). t3 -> Type
+Proxy :: forall (t1 :: Type). t1 -> Type
 
 Data
 Proxy

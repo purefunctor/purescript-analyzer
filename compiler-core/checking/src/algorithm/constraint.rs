@@ -299,12 +299,8 @@ fn lookup_local_class<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(class) = state.binding_group.lookup_class(item_id) {
-        Some(class)
-    } else {
-        let class = state.checked.lookup_class(item_id)?;
-        Some(localize_class(state, context, &class))
-    }
+    let class = state.checked.lookup_class(item_id)?;
+    Some(localize_class(state, context, &class))
 }
 
 fn lookup_global_class<Q>(

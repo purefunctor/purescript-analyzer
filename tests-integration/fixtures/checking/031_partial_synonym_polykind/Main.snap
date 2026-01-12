@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
 expression: report
 ---
 Terms
@@ -73,3 +74,9 @@ EndoFn = forall (a :: Type). Endo Function a
   Quantified = :0
   Kind = :0
   Type = :1
+
+
+Data
+Function
+  Quantified = :0
+  Kind = :0
