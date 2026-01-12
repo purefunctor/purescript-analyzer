@@ -17,4 +17,4 @@ instance Show (Boolean :: Type)
 
 Errors
 CannotUnify { forall (a :: Type). a -> String, Boolean -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Id<checking::core::Type>(31), actual: Id<checking::core::Type>(34) } at [TermDeclaration(Idx::<TermItem>(1))]
+InstanceMemberTypeMismatch { expected: Id<checking::core::Type>(32), actual: Id<checking::core::Type>(35) } at [TermDeclaration(Idx::<TermItem>(1))]

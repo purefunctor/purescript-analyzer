@@ -12,6 +12,9 @@ pub mod binder;
 /// Implements the type class constraint solver.
 pub mod constraint;
 
+/// Implements type class deriving.
+pub mod derive;
+
 /// Implements type folding for traversals that modify.
 pub mod fold;
 
@@ -26,6 +29,9 @@ pub mod operator;
 
 /// Implements generalisation for inferred types.
 pub mod quantify;
+
+/// Safety mechanisms for the type checker.
+pub mod safety;
 
 /// Implements the algorithm's core state structures.
 pub mod state;
@@ -272,15 +278,31 @@ where
     });
 
     for &item_id in items {
-        let Some(TermItemIr::Derive { constraints, arguments, resolution, .. }) =
+        let Some(TermItemIr::Derive { newtype, constraints, arguments, resolution }) =
             context.lowered.info.get_term_item(item_id)
         else {
             continue;
         };
 
-        let check_derive = term_item::CheckDerive { item_id, constraints, arguments, resolution };
+        let Some((class_file, class_id)) = *resolution else {
+            continue;
+        };
 
-        term_item::check_derive(state, context, check_derive)?;
+        let TermItemKind::Derive { id: derive_id } = context.indexed.items[item_id].kind else {
+            continue;
+        };
+
+        let check_derive = derive::CheckDerive {
+            item_id,
+            derive_id,
+            constraints,
+            arguments,
+            class_file,
+            class_id,
+            is_newtype: *newtype,
+        };
+
+        derive::check_derive(state, context, check_derive)?;
     }
 
     Ok(())

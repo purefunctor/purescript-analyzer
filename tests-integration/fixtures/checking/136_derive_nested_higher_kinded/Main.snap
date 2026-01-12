@@ -1,0 +1,52 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+T :: forall (t4 :: Type) (f :: t4 -> Type) (g :: Type -> t4). f (g Int) -> T f g
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+U :: forall (f :: Type -> Type). f (Maybe Int) -> U f
+V :: forall (t20 :: Type) (f :: t20 -> Type) (g :: Int -> t20). f (g 42) -> V f g
+
+Types
+T :: forall (t4 :: Type). (t4 -> Type) -> (Type -> t4) -> Type
+Maybe :: Type -> Type
+U :: (Type -> Type) -> Type
+V :: forall (t20 :: Type). (t20 -> Type) -> (Int -> t20) -> Type
+
+Data
+T
+  Quantified = :1
+  Kind = :0
+
+Maybe
+  Quantified = :0
+  Kind = :0
+
+U
+  Quantified = :0
+  Kind = :0
+
+V
+  Quantified = :1
+  Kind = :0
+
+
+Derived
+derive Eq1 &0 => Eq (V @Type &0 &1 :: Type)
+derive Ord1 &0 => Ord (V @Type &0 &1 :: Type)
+derive Eq1 &0 => Eq (T @Type &0 &1 :: Type)
+derive Ord1 &0 => Ord (T @Type &0 &1 :: Type)
+derive Eq &0 => Eq (Maybe &0 :: Type)
+derive Ord &0 => Ord (Maybe &0 :: Type)
+derive Eq1 &0 => Eq (U &0 :: Type)
+derive Ord1 &0 => Ord (U &0 :: Type)
+
+Errors
+NoInstanceFound { Eq1 &1 } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Ord1 &1 } at [TermDeclaration(Idx::<TermItem>(2))]
+NoInstanceFound { Eq (Maybe Int) } at [TermDeclaration(Idx::<TermItem>(8))]
+NoInstanceFound { Ord (Maybe Int) } at [TermDeclaration(Idx::<TermItem>(9))]
+NoInstanceFound { Eq (&1 42) } at [TermDeclaration(Idx::<TermItem>(11))]
+NoInstanceFound { Ord (&1 42) } at [TermDeclaration(Idx::<TermItem>(12))]

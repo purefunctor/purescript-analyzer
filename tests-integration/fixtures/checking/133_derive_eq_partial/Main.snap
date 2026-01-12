@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Left :: forall (a :: Type) (b :: Type). a -> Either a b
+Right :: forall (a :: Type) (b :: Type). b -> Either a b
+
+Types
+Either :: Type -> Type -> Type
+
+Data
+Either
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Eq &0 => Eq (Either Int &0 :: Type)
+derive Eq (Either Int &0 :: Type)
+
+Errors
+NoInstanceFound { Eq &0 } at [TermDeclaration(Idx::<TermItem>(3))]

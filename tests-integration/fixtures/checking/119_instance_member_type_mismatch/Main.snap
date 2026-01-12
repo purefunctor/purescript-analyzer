@@ -18,4 +18,4 @@ instance Show (Int :: Type)
 Errors
 CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1))]
 CannotUnify { Int -> Int, Int -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Id<checking::core::Type>(31), actual: Id<checking::core::Type>(33) } at [TermDeclaration(Idx::<TermItem>(1))]
+InstanceMemberTypeMismatch { expected: Id<checking::core::Type>(32), actual: Id<checking::core::Type>(34) } at [TermDeclaration(Idx::<TermItem>(1))]

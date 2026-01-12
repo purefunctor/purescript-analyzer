@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+MkBox :: Int -> Box
+MkPair :: Int -> Boolean -> Pair
+
+Types
+Box :: Type
+Pair :: Type
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+Pair
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Eq (Box :: Type)
+derive Eq (Pair :: Type)

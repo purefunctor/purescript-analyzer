@@ -1,0 +1,346 @@
+//! Implements type class deriving for PureScript.
+
+mod higher_kinded;
+
+use building_types::QueryResult;
+use files::FileId;
+use indexing::{DeriveId, TermItemId, TypeItemId};
+use itertools::Itertools;
+
+use crate::ExternalQueries;
+use crate::algorithm::safety::safe_loop;
+use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::{kind, quantify, substitute, transfer};
+use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
+use crate::error::{ErrorKind, ErrorStep};
+
+/// Input fields for [`check_derive`].
+pub struct CheckDerive<'a> {
+    pub item_id: TermItemId,
+    pub derive_id: DeriveId,
+    pub constraints: &'a [lowering::TypeId],
+    pub arguments: &'a [lowering::TypeId],
+    pub class_file: FileId,
+    pub class_id: TypeItemId,
+    pub is_newtype: bool,
+}
+
+struct ElaboratedDerive {
+    derive_id: DeriveId,
+    constraints: Vec<(TypeId, TypeId)>,
+    arguments: Vec<(TypeId, TypeId)>,
+    class_file: FileId,
+    class_id: TypeItemId,
+}
+
+/// Checks a derived instance.
+pub fn check_derive<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: CheckDerive<'_>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let CheckDerive {
+        item_id,
+        derive_id,
+        constraints,
+        arguments,
+        class_file,
+        class_id,
+        is_newtype,
+    } = input;
+
+    if is_newtype {
+        return Ok(());
+    }
+
+    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        // Save the current size of the environment for unbinding.
+        let size = state.type_scope.size();
+
+        let mut core_arguments = vec![];
+        for argument in arguments.iter() {
+            let (inferred_type, inferred_kind) =
+                kind::infer_surface_kind(state, context, *argument)?;
+            core_arguments.push((inferred_type, inferred_kind));
+        }
+
+        let mut core_constraints = vec![];
+        for constraint in constraints.iter() {
+            let (inferred_type, inferred_kind) =
+                kind::infer_surface_kind(state, context, *constraint)?;
+            core_constraints.push((inferred_type, inferred_kind));
+        }
+
+        let elaborated = ElaboratedDerive {
+            derive_id,
+            constraints: core_constraints,
+            arguments: core_arguments,
+            class_file,
+            class_id,
+        };
+
+        let class = (class_file, class_id);
+
+        let is_eq = context.known_types.eq == Some(class);
+        let is_ord = context.known_types.ord == Some(class);
+
+        if is_eq || is_ord {
+            check_derive_class(state, context, &elaborated)?;
+        } else {
+            state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+        };
+
+        // Unbind type variables bound during elaboration.
+        state.type_scope.unbind(debruijn::Level(size.0));
+
+        Ok(())
+    })
+}
+
+fn check_derive_class<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: &ElaboratedDerive,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let [(derived_type, _)] = input.arguments[..] else {
+        state.insert_error(ErrorKind::DeriveInvalidArity {
+            class_file: input.class_file,
+            class_id: input.class_id,
+            expected: 1,
+            actual: input.arguments.len(),
+        });
+        return Ok(());
+    };
+
+    let Some((data_file, data_id)) = extract_type_constructor(state, derived_type) else {
+        let global_type = transfer::globalize(state, context, derived_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+        return Ok(());
+    };
+
+    let mut instance = Instance {
+        arguments: input.arguments.clone(),
+        constraints: input.constraints.clone(),
+        resolution: (input.class_file, input.class_id),
+        kind: InstanceKind::Derive,
+        kind_variables: debruijn::Size(0),
+    };
+
+    quantify::quantify_instance(state, &mut instance);
+
+    let global_arguments = instance.arguments.iter().map(|&(t, k)| {
+        let t = transfer::globalize(state, context, t);
+        let k = transfer::globalize(state, context, k);
+        (t, k)
+    });
+
+    let global_arguments = global_arguments.collect_vec();
+
+    let global_constraints = instance.constraints.iter().map(|&(t, k)| {
+        let t = transfer::globalize(state, context, t);
+        let k = transfer::globalize(state, context, k);
+        (t, k)
+    });
+
+    let global_constraints = global_constraints.collect_vec();
+
+    // Register derived instances to allow recursive references.
+    state.checked.derived.insert(
+        input.derive_id,
+        Instance {
+            arguments: global_arguments,
+            constraints: global_constraints,
+            resolution: (input.class_file, input.class_id),
+            kind: InstanceKind::Derive,
+            kind_variables: instance.kind_variables,
+        },
+    );
+
+    for (constraint_type, _) in &input.constraints {
+        state.constraints.push_given(*constraint_type);
+    }
+
+    let class = (input.class_file, input.class_id);
+    generate_field_constraints(state, context, data_file, data_id, derived_type, class)?;
+
+    let residual = state.solve_constraints(context)?;
+    for constraint in residual {
+        let constraint = transfer::globalize(state, context, constraint);
+        state.insert_error(ErrorKind::NoInstanceFound { constraint });
+    }
+
+    Ok(())
+}
+
+fn extract_type_constructor(
+    state: &mut CheckState,
+    mut type_id: TypeId,
+) -> Option<(FileId, TypeItemId)> {
+    safe_loop! {
+        type_id = state.normalize_type(type_id);
+        match state.storage[type_id] {
+            Type::Constructor(file, id) => return Some((file, id)),
+            Type::Application(function, _) => type_id = function,
+            Type::KindApplication(function, _) => type_id = function,
+            _ => return None,
+        }
+    }
+}
+
+/// Extracts type and kind arguments from an application.
+///
+/// This function returns both type and kind arguments as constructors
+/// have both. These are used to instantiate the constructor type with
+/// arguments from the instance head.
+fn extract_type_arguments(state: &mut CheckState, applied_type: TypeId) -> Vec<TypeId> {
+    let mut arguments = vec![];
+    let mut current_id = applied_type;
+
+    safe_loop! {
+        current_id = state.normalize_type(current_id);
+        match state.storage[current_id] {
+            Type::Application(function, argument) => {
+                arguments.push(argument);
+                current_id = function;
+            }
+            Type::KindApplication(function, argument) => {
+                arguments.push(argument);
+                current_id = function;
+            }
+            _ => break,
+        }
+    }
+
+    arguments.reverse();
+    arguments
+}
+
+fn lookup_local_term_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    term_id: TermItemId,
+) -> QueryResult<Option<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let global_type = if file_id == context.id {
+        state.checked.terms.get(&term_id).copied()
+    } else {
+        let checked = context.queries.checked(file_id)?;
+        checked.terms.get(&term_id).copied()
+    };
+    Ok(global_type.map(|global_type| transfer::localize(state, context, global_type)))
+}
+
+/// Generates constraints for all fields of across all constructors.
+///
+/// For Eq/Ord, this function uses special handling to emit `Eq1` and `Ord1` for
+/// higher-kinded type variables of kind `Type -> Type` that appear applied in
+/// the constructor fields.
+fn generate_field_constraints<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    data_file: FileId,
+    data_id: TypeItemId,
+    derived_type: TypeId,
+    class: (FileId, TypeItemId),
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let constructors = if data_file == context.id {
+        context.indexed.pairs.data_constructors(data_id).collect_vec()
+    } else {
+        let indexed = context.queries.indexed(data_file)?;
+        indexed.pairs.data_constructors(data_id).collect_vec()
+    };
+
+    let class1 = if context.known_types.eq == Some(class) {
+        context.known_types.eq1
+    } else if context.known_types.ord == Some(class) {
+        context.known_types.ord1
+    } else {
+        None
+    };
+
+    for constructor_id in constructors {
+        let constructor_type = lookup_local_term_type(state, context, data_file, constructor_id)?;
+        let Some(constructor_type) = constructor_type else { continue };
+
+        let field_types = extract_constructor_fields(state, constructor_type, derived_type);
+        for field_type in field_types {
+            higher_kinded::generate_constraint(state, context, field_type, class, class1);
+        }
+    }
+
+    Ok(())
+}
+
+/// Extracts constructor fields from a constructor.
+///
+/// This function uses [`extract_type_arguments`] to deconstruct the instance
+/// head, then uses [`substitute::SubstituteBound`] to effectively specialise
+/// the constructor type for the instance head in particular. Consider the ff:
+///
+/// ```purescript
+/// data Either a b = Left a | Right b
+///
+/// derive instance Eq (Either Int b)
+/// -- Left :: Int -> Either Int b
+/// -- Right :: b -> Either Int b
+///
+/// data Proxy a = Proxy
+///
+/// derive instance Eq (Proxy @Type Int)
+/// -- Proxy :: Proxy @Type Int
+/// ```
+fn extract_constructor_fields(
+    state: &mut CheckState,
+    constructor_type: TypeId,
+    derived_type: TypeId,
+) -> Vec<TypeId> {
+    let type_arguments = extract_type_arguments(state, derived_type);
+    let mut arguments_iter = type_arguments.into_iter();
+    let mut current_id = constructor_type;
+
+    safe_loop! {
+        current_id = state.normalize_type(current_id);
+        match &state.storage[current_id] {
+            Type::Forall(binder, inner) => {
+                let binder_level = binder.level;
+                let binder_kind = binder.kind;
+                let inner = *inner;
+
+                let argument_type = arguments_iter.next().unwrap_or_else(|| {
+                    let skolem = Variable::Skolem(binder_level, binder_kind);
+                    state.storage.intern(Type::Variable(skolem))
+                });
+
+                current_id = substitute::SubstituteBound::on(state, binder_level, argument_type, inner);
+            }
+            _ => break,
+        }
+    }
+
+    let mut fields = vec![];
+
+    safe_loop! {
+        current_id = state.normalize_type(current_id);
+        match state.storage[current_id] {
+            Type::Function(argument, result) => {
+                fields.push(argument);
+                current_id = result;
+            }
+            _ => break,
+        }
+    }
+
+    fields
+}

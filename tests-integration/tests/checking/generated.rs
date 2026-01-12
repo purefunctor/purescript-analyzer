@@ -267,3 +267,19 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_127_derive_eq_simple_main() { run_test("127_derive_eq_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_128_type_operator_mutual_main() { run_test("128_type_operator_mutual", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_129_derive_eq_with_fields_main() { run_test("129_derive_eq_with_fields", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_130_derive_eq_parameterized_main() { run_test("130_derive_eq_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_131_derive_eq_missing_instance_main() { run_test("131_derive_eq_missing_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_132_derive_eq_1_higher_kinded_main() { run_test("132_derive_eq_1_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_133_derive_eq_partial_main() { run_test("133_derive_eq_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_134_derive_ord_simple_main() { run_test("134_derive_ord_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_135_derive_ord_1_higher_kinded_main() { run_test("135_derive_ord_1_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_136_derive_nested_higher_kinded_main() { run_test("136_derive_nested_higher_kinded", "Main"); }

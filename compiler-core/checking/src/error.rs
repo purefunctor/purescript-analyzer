@@ -25,9 +25,22 @@ pub enum ErrorKind {
     AmbiguousConstraint {
         constraint: TypeId,
     },
+    CannotDeriveClass {
+        class_file: files::FileId,
+        class_id: indexing::TypeItemId,
+    },
+    CannotDeriveForType {
+        type_id: TypeId,
+    },
     CannotUnify {
         t1: TypeId,
         t2: TypeId,
+    },
+    DeriveInvalidArity {
+        class_file: files::FileId,
+        class_id: indexing::TypeItemId,
+        expected: usize,
+        actual: usize,
     },
     EmptyAdoBlock,
     EmptyDoBlock,

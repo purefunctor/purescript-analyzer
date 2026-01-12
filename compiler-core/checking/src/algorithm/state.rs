@@ -418,6 +418,7 @@ impl<'r, 's> PrimLookup<'r, 's> {
 
 pub struct PrimCore {
     pub t: TypeId,
+    pub type_to_type: TypeId,
     pub function: TypeId,
     pub array: TypeId,
     pub record: TypeId,
@@ -438,8 +439,12 @@ impl PrimCore {
         let resolved = queries.resolved(queries.prim_id())?;
         let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim");
 
+        let t = lookup.type_constructor("Type");
+        let type_to_type = lookup.intern(Type::Function(t, t));
+
         Ok(PrimCore {
-            t: lookup.type_constructor("Type"),
+            t,
+            type_to_type,
             function: lookup.type_constructor("Function"),
             array: lookup.type_constructor("Array"),
             record: lookup.type_constructor("Record"),
@@ -611,13 +616,17 @@ fn fetch_known_type(
 pub struct KnownTypesCore {
     pub eq: Option<(FileId, TypeItemId)>,
     pub eq1: Option<(FileId, TypeItemId)>,
+    pub ord: Option<(FileId, TypeItemId)>,
+    pub ord1: Option<(FileId, TypeItemId)>,
 }
 
 impl KnownTypesCore {
     fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTypesCore> {
         let eq = fetch_known_type(queries, "Data.Eq", "Eq")?;
         let eq1 = fetch_known_type(queries, "Data.Eq", "Eq1")?;
-        Ok(KnownTypesCore { eq, eq1 })
+        let ord = fetch_known_type(queries, "Data.Ord", "Ord")?;
+        let ord1 = fetch_known_type(queries, "Data.Ord", "Ord1")?;
+        Ok(KnownTypesCore { eq, eq1, ord, ord1 })
     }
 }
 

@@ -230,22 +230,37 @@ fn collect_instance_chains<Q>(
 where
     Q: ExternalQueries,
 {
-    let instances = if file_id == context.id {
-        state
+    let (instances, derived) = if file_id == context.id {
+        let instances = state
             .checked
             .instances
             .values()
-            .filter(|instance| instance.resolution.1 == item_id)
+            .filter(|instance| instance.resolution == (file_id, item_id))
             .cloned()
-            .collect_vec()
+            .collect_vec();
+        let derived = state
+            .checked
+            .derived
+            .values()
+            .filter(|instance| instance.resolution == (file_id, item_id))
+            .cloned()
+            .collect_vec();
+        (instances, derived)
     } else {
         let checked = context.queries.checked(file_id)?;
-        checked
+        let instances = checked
             .instances
             .values()
-            .filter(|instance| instance.resolution.1 == item_id)
+            .filter(|instance| instance.resolution == (file_id, item_id))
             .cloned()
-            .collect_vec()
+            .collect_vec();
+        let derived = checked
+            .derived
+            .values()
+            .filter(|instance| instance.resolution == (file_id, item_id))
+            .cloned()
+            .collect_vec();
+        (instances, derived)
     };
 
     let mut grouped: FxHashMap<_, Vec<_>> = FxHashMap::default();
@@ -261,6 +276,10 @@ where
             InstanceKind::Chain { position, .. } => position,
             InstanceKind::Derive => 0,
         });
+    }
+
+    for instance in derived {
+        result.push(vec![instance]);
     }
 
     Ok(result)
