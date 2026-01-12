@@ -12,21 +12,17 @@ use crate::error::{ErrorKind, ErrorStep};
 /// Infers the type of top-level value group equations.
 ///
 /// This function depends on the unification variable created for the current
-/// binding group by the [`CheckState::term_binding_group`] function. It uses
+/// binding group by [`CheckState::with_term_group`]. This function returns
+/// the inferred type and residual constraints for later generalisation via
+/// [`term_item::commit_value_group`].
 ///
-/// group type that [`infer_equations_core`] will check against.
-///
-/// This function solves all constraints generated during inference using the
-/// [`CheckState::solve_constraints`] function, and pushes residual constraints
-/// onto the [`CheckState::binding_group`] for quantification.
-///
-/// See [`CheckState::commit_binding_group`] to see how types are generalised.
+/// [`term_item::commit_value_group`]: crate::algorithm::term_item::commit_value_group
 pub fn infer_equations<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TermItemId,
     equations: &[lowering::Equation],
-) -> QueryResult<()>
+) -> QueryResult<(TypeId, Vec<TypeId>)>
 where
     Q: ExternalQueries,
 {
@@ -37,10 +33,8 @@ where
 
     infer_equations_core(state, context, group_type, equations)?;
 
-    let residual = state.solve_constraints(context)?;
-    state.binding_group.residual.insert(item_id, residual);
-
-    Ok(())
+    let residual_constraints = state.solve_constraints(context)?;
+    Ok((group_type, residual_constraints))
 }
 
 /// Infers the type of value group equations.

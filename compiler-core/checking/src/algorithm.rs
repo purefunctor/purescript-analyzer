@@ -133,7 +133,7 @@ where
                 }
             }
             Scc::Recursive(id) => {
-                state.with_type_group(context, slice::from_ref(id), |state| {
+                state.with_type_group(context, [*id], |state| {
                     if let Some(item) = type_item::check_type_item(state, context, *id)? {
                         type_item::commit_type_item(state, context, *id, item)?;
                     }
@@ -304,42 +304,52 @@ where
 
     for scc in &context.lowered.term_scc {
         match scc {
-            Scc::Base(item) | Scc::Recursive(item) => {
-                let Some(value_group) = extract_value_group(*item) else {
+            Scc::Base(id) | Scc::Recursive(id) => {
+                let Some(value_group) = extract_value_group(*id) else {
                     continue;
                 };
-                if !state.checked.terms.contains_key(item) && value_group.signature.is_none() {
-                    state.term_binding_group(context, [*item]);
-                }
-                term_item::check_value_group(state, context, value_group)?;
-                state.commit_binding_group(context)?;
+                state.with_term_group(context, [*id], |state| {
+                    if let Some(item) = term_item::check_value_group(state, context, value_group)? {
+                        term_item::commit_value_group(state, context, *id, item)?;
+                    }
+                    Ok(())
+                })?;
             }
-            Scc::Mutual(items) => {
+            Scc::Mutual(mutual) => {
                 let value_groups =
-                    items.iter().filter_map(|&id| extract_value_group(id)).collect_vec();
+                    mutual.iter().filter_map(|&id| extract_value_group(id)).collect_vec();
 
                 let with_signature = value_groups
                     .iter()
-                    .filter(|value_group| state.checked.terms.contains_key(&value_group.item_id))
+                    .filter(|value_group| value_group.signature.is_some())
+                    .copied()
                     .collect_vec();
 
                 let without_signature = value_groups
                     .iter()
                     .filter(|value_group| value_group.signature.is_none())
+                    .copied()
                     .collect_vec();
 
                 let group = without_signature.iter().map(|value_group| value_group.item_id);
-                state.term_binding_group(context, group);
-
-                for value_group in without_signature {
-                    term_item::check_value_group(state, context, *value_group)?;
-                }
-                state.commit_binding_group(context)?;
+                state.with_term_group(context, group, |state| {
+                    let mut groups = vec![];
+                    for value_group in &without_signature {
+                        if let Some(group) =
+                            term_item::check_value_group(state, context, *value_group)?
+                        {
+                            groups.push((value_group.item_id, group));
+                        }
+                    }
+                    for (item_id, group) in groups {
+                        term_item::commit_value_group(state, context, item_id, group)?;
+                    }
+                    Ok(())
+                })?;
 
                 for value_group in with_signature {
-                    term_item::check_value_group(state, context, *value_group)?;
+                    term_item::check_value_group(state, context, value_group)?;
                 }
-                state.commit_binding_group(context)?;
             }
         }
     }

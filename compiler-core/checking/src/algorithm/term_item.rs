@@ -15,6 +15,12 @@ use crate::algorithm::{
 use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
+#[derive(Clone)]
+pub struct InferredValueGroup {
+    pub inferred_type: TypeId,
+    pub residual_constraints: Vec<TypeId>,
+}
+
 /// Checks signature declarations for terms.
 ///
 /// This function checks the term signatures for [`TermItemIr::Foreign`],
@@ -324,13 +330,13 @@ pub struct CheckValueGroup<'a> {
 
 /// Checks a value declaration group.
 ///
-/// This rule is implemented through the [`inspect::inspect_signature_core`],
-/// [`term::check_equations`], and [`term::infer_equations`] functions.
+/// This function optionally returns [`InferredValueGroup`]
+/// for value declarations that do not have a signature.
 pub fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: CheckValueGroup<'_>,
-) -> QueryResult<()>
+) -> QueryResult<Option<InferredValueGroup>>
 where
     Q: ExternalQueries,
 {
@@ -345,11 +351,49 @@ where
             let signature =
                 inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
 
-            term::check_equations(state, context, *signature_id, signature, equations)
+            term::check_equations(state, context, *signature_id, signature, equations)?;
+            Ok(None)
         } else {
-            term::infer_equations(state, context, item_id, equations)
+            let (inferred_type, residual_constraints) =
+                term::infer_equations(state, context, item_id, equations)?;
+            Ok(Some(InferredValueGroup { inferred_type, residual_constraints }))
         }
     })
+}
+
+/// Generalises an [`InferredValueGroup`].
+pub fn commit_value_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    inferred: InferredValueGroup,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let InferredValueGroup { inferred_type, residual_constraints } = inferred;
+
+    let Some(result) =
+        quantify::quantify_with_constraints(state, context, inferred_type, residual_constraints)?
+    else {
+        return Ok(());
+    };
+
+    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        for constraint in result.ambiguous {
+            let constraint = transfer::globalize(state, context, constraint);
+            state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
+        }
+        for constraint in result.unsatisfied {
+            let constraint = transfer::globalize(state, context, constraint);
+            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+        }
+    });
+
+    let type_id = transfer::globalize(state, context, result.quantified);
+    state.checked.terms.insert(item_id, type_id);
+
+    Ok(())
 }
 
 /// Input fields for [`check_instance_members`].

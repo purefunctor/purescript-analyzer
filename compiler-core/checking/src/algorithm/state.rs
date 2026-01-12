@@ -17,7 +17,7 @@ use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
-use crate::algorithm::{constraint, quantify, transfer};
+use crate::algorithm::{constraint, transfer};
 use crate::core::{Type, TypeId, TypeInterner, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
@@ -297,7 +297,6 @@ pub struct BindingGroupType(pub TypeId);
 pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub types: FxHashMap<TypeItemId, BindingGroupType>,
-    pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
 }
 
 impl BindingGroupContext {
@@ -623,49 +622,47 @@ impl KnownTypesCore {
 }
 
 impl CheckState {
-    pub fn term_binding_group<Q>(
+    /// Executes the given closure with a term binding group in scope.
+    ///
+    /// This inserts unification variables for the given term items such that
+    /// recursive or mutually recursive declarations can be checked together.
+    pub fn with_term_group<Q, F, T>(
         &mut self,
         context: &CheckContext<Q>,
         group: impl IntoIterator<Item = TermItemId>,
-    ) where
-        Q: ExternalQueries,
-    {
-        for item in group {
-            let t = self.fresh_unification_type(context);
-            self.binding_group.terms.insert(item, t);
-        }
-    }
-
-    pub fn type_binding_group<Q>(
-        &mut self,
-        context: &CheckContext<Q>,
-        group: impl IntoIterator<Item = TypeItemId>,
-    ) where
-        Q: ExternalQueries,
-    {
-        for item in group {
-            let kind = self.fresh_unification_type(context);
-            self.binding_group.types.insert(item, BindingGroupType(kind));
-        }
-    }
-
-    /// Executes a closure with a type binding group in scope.
-    ///
-    /// This inserts pending kinds (unification variables) for the given type
-    /// items, such that recursive or mutually recursive declarations can be
-    /// checked together. The binding group is cleared after the closure returns.
-    pub fn with_type_group<Q, F, T>(
-        &mut self,
-        context: &CheckContext<Q>,
-        group: &[TypeItemId],
         f: F,
     ) -> T
     where
         Q: ExternalQueries,
         F: FnOnce(&mut Self) -> T,
     {
-        // Insert pending kinds for items that need them (non-operators without signatures)
-        let needs_pending = group.iter().filter(|&&item_id| {
+        for item in group {
+            if !self.checked.terms.contains_key(&item) {
+                let t = self.fresh_unification_type(context);
+                self.binding_group.terms.insert(item, t);
+            }
+        }
+
+        let result = f(self);
+        self.binding_group.terms.clear();
+        result
+    }
+
+    /// Executes the given closure with a type binding group in scope.
+    ///
+    /// This inserts unification variables for the given type items such that
+    /// recursive or mutually recursive declarations can be checked together.
+    pub fn with_type_group<Q, F, T>(
+        &mut self,
+        context: &CheckContext<Q>,
+        group: impl AsRef<[TypeItemId]>,
+        f: F,
+    ) -> T
+    where
+        Q: ExternalQueries,
+        F: FnOnce(&mut Self) -> T,
+    {
+        let needs_pending = group.as_ref().iter().filter(|&&item_id| {
             if let Some(TypeItemIr::Operator { .. }) = context.lowered.info.get_type_item(item_id) {
                 return false;
             }
@@ -680,8 +677,7 @@ impl CheckState {
             self.binding_group.types.insert(item, BindingGroupType(kind));
         }
 
-        // Insert pending kinds for operators (share kind with their target)
-        let operators = group.iter().filter_map(|&item_id| {
+        let operators = group.as_ref().iter().filter_map(|&item_id| {
             let TypeItemIr::Operator { resolution, .. } =
                 context.lowered.info.get_type_item(item_id)?
             else {
@@ -693,7 +689,7 @@ impl CheckState {
 
         for (operator_id, (file_id, item_id)) in operators {
             debug_assert!(
-                file_id == context.id && group.contains(&item_id),
+                file_id == context.id && group.as_ref().contains(&item_id),
                 "invariant violated: expected local target for operator"
             );
 
@@ -717,48 +713,6 @@ impl CheckState {
     {
         let (wanted, given) = self.constraints.take();
         constraint::solve_constraints(self, context, wanted, given)
-    }
-
-    pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<()>
-    where
-        Q: ExternalQueries,
-    {
-        // Process terms to be committed into the CheckedModule. This loops over
-        // the BindingGroupContext::terms and generalises unsolved unification
-        // variables. It also takes into account the residual constraints that
-        // must be generalised or reported as errors.
-        let mut residuals = mem::take(&mut self.binding_group.residual);
-        for (item_id, type_id) in mem::take(&mut self.binding_group.terms) {
-            let constraints = residuals.remove(&item_id).unwrap_or_default();
-            if let Some(result) =
-                quantify::quantify_with_constraints(self, context, type_id, constraints)?
-            {
-                self.with_error_step(ErrorStep::TermDeclaration(item_id), |this| {
-                    for constraint in result.ambiguous {
-                        let constraint = transfer::globalize(this, context, constraint);
-                        this.insert_error(ErrorKind::AmbiguousConstraint { constraint });
-                    }
-                    for constraint in result.unsatisfied {
-                        let constraint = transfer::globalize(this, context, constraint);
-                        this.insert_error(ErrorKind::NoInstanceFound { constraint });
-                    }
-                });
-
-                let type_id = transfer::globalize(self, context, result.quantified);
-                self.checked.terms.insert(item_id, type_id);
-            }
-        }
-
-        // Process types to be committed into the CheckedModule. Generalizes
-        // pending kinds for recursive type declarations.
-        for (item_id, BindingGroupType(kind)) in mem::take(&mut self.binding_group.types) {
-            if let Some((quantified_type, _)) = quantify::quantify(self, kind) {
-                let type_id = transfer::globalize(self, context, quantified_type);
-                self.checked.types.insert(item_id, type_id);
-            }
-        }
-
-        Ok(())
     }
 
     /// Executes an action with an [`ErrorStep`] in scope.
