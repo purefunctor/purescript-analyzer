@@ -224,7 +224,11 @@ where
             }
         },
 
-        lowering::TypeKind::Wildcard => Ok(unknown),
+        lowering::TypeKind::Wildcard => {
+            let k = state.fresh_unification_type(context);
+            let t = state.fresh_unification_kinded(k);
+            Ok((t, k))
+        }
 
         lowering::TypeKind::Record { items, tail } => {
             let expected_kind =
