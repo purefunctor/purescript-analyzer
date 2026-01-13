@@ -22,5 +22,9 @@ Pair
 
 
 Derived
+derive Bifunctor (Either :: Type -> Type -> Type)
+derive Bifoldable (Either :: Type -> Type -> Type)
 derive Bitraversable (Either :: Type -> Type -> Type)
+derive Bifunctor (Pair :: Type -> Type -> Type)
+derive Bifoldable (Pair :: Type -> Type -> Type)
 derive Bitraversable (Pair :: Type -> Type -> Type)

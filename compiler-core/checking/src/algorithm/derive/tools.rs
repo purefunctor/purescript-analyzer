@@ -5,9 +5,11 @@ use files::FileId;
 use indexing::{DeriveId, TermItemId, TypeItemId};
 use itertools::Itertools;
 
+use rustc_hash::FxHashMap;
+
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{quantify, transfer};
+use crate::algorithm::{constraint, quantify, substitute, transfer};
 use crate::core::{Instance, InstanceKind, Type, TypeId, debruijn};
 use crate::error::ErrorKind;
 
@@ -36,6 +38,47 @@ pub fn push_given_constraints(state: &mut CheckState, constraints: &[(TypeId, Ty
     for (constraint_type, _) in constraints {
         state.constraints.push_given(*constraint_type);
     }
+}
+
+/// Emits wanted constraints for the superclasses of the class being derived.
+///
+/// When deriving `Traversable (Compose f g)`, this emits:
+/// - `Functor (Compose f g)`
+/// - `Foldable (Compose f g)`
+///
+/// These constraints ensure that the derived instance has all required
+/// instances available, which is a pre-requisite for code generation.
+pub fn emit_superclass_constraints<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: &ElaboratedDerive,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(class_info) =
+        constraint::lookup_file_class(state, context, input.class_file, input.class_id)?
+    else {
+        return Ok(());
+    };
+
+    if class_info.superclasses.is_empty() {
+        return Ok(());
+    }
+
+    let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
+    let mut bindings = FxHashMap::default();
+    for (index, &(argument_type, _)) in input.arguments.iter().enumerate() {
+        let level = debruijn::Level(initial_level + index as u32);
+        bindings.insert(level, argument_type);
+    }
+
+    for &(superclass, _) in class_info.superclasses.iter() {
+        let specialized = substitute::SubstituteBindings::on(state, &bindings, superclass);
+        state.constraints.push_wanted(specialized);
+    }
+
+    Ok(())
 }
 
 /// Solves constraints and reports any unsatisfied constraints as errors.

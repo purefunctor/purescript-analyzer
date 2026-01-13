@@ -17,4 +17,6 @@ WrapBoth
 
 
 Derived
+derive (Functor &0, Functor &1) => Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
+derive (Foldable &0, Foldable &1) => Bifoldable (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
 derive (Traversable &0, Traversable &1) => Bitraversable (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)

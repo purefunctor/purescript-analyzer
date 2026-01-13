@@ -28,6 +28,12 @@ Const
 
 
 Derived
+derive Functor (Identity :: Type -> Type)
+derive Foldable (Identity :: Type -> Type)
 derive Traversable (Identity :: Type -> Type)
+derive Functor (Maybe :: Type -> Type)
+derive Foldable (Maybe :: Type -> Type)
 derive Traversable (Maybe :: Type -> Type)
+derive Functor (Const @Type &0 :: Type -> Type)
+derive Foldable (Const @Type &0 :: Type -> Type)
 derive Traversable (Const @Type &0 :: Type -> Type)

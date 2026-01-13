@@ -28,3 +28,4 @@ derive Ord &1 => Ord (WrapNoOrd1 @Type &0 &1 :: Type)
 
 Errors
 NoInstanceFound { Ord1 &0 } at [TermDeclaration(Idx::<TermItem>(5))]
+NoInstanceFound { Eq1 &0 } at [TermDeclaration(Idx::<TermItem>(5))]

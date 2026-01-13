@@ -15,10 +15,11 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::visit::CollectFileReferences;
 use crate::algorithm::{transfer, unification};
 use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
@@ -77,8 +78,7 @@ where
                 }
             }
 
-            let instance_chains =
-                collect_instance_chains(state, context, application.file_id, application.item_id)?;
+            let instance_chains = collect_instance_chains(state, context, &application)?;
 
             for chain in instance_chains {
                 'chain: for instance in chain {
@@ -221,68 +221,67 @@ where
     aux(state, context, constraint, constraints, &mut seen)
 }
 
+/// Collects instance chains for a constraint from all eligible files.
 fn collect_instance_chains<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    file_id: FileId,
-    item_id: TypeItemId,
+    application: &ConstraintApplication,
 ) -> QueryResult<Vec<Vec<Instance>>>
 where
     Q: ExternalQueries,
 {
-    let (instances, derived) = if file_id == context.id {
-        let instances = state
-            .checked
-            .instances
-            .values()
-            .filter(|instance| instance.resolution == (file_id, item_id))
-            .cloned()
-            .collect_vec();
-        let derived = state
-            .checked
-            .derived
-            .values()
-            .filter(|instance| instance.resolution == (file_id, item_id))
-            .cloned()
-            .collect_vec();
-        (instances, derived)
-    } else {
-        let checked = context.queries.checked(file_id)?;
-        let instances = checked
-            .instances
-            .values()
-            .filter(|instance| instance.resolution == (file_id, item_id))
-            .cloned()
-            .collect_vec();
-        let derived = checked
-            .derived
-            .values()
-            .filter(|instance| instance.resolution == (file_id, item_id))
-            .cloned()
-            .collect_vec();
-        (instances, derived)
+    let class_file = application.file_id;
+    let class_id = application.item_id;
+
+    let mut files_to_search = FxHashSet::default();
+    files_to_search.insert(class_file);
+
+    for &argument in &application.arguments {
+        CollectFileReferences::on(state, argument, &mut files_to_search);
+    }
+
+    let mut all_instances = vec![];
+
+    let mut copy_from = |checked: &CheckedModule| {
+        let instances = checked.instances.values();
+        let derived = checked.derived.values();
+
+        let matching = iter::chain(instances, derived)
+            .filter(|instance| instance.resolution == (class_file, class_id))
+            .cloned();
+
+        all_instances.extend(matching);
     };
 
-    let mut grouped: FxHashMap<_, Vec<_>> = FxHashMap::default();
-    for instance in instances {
-        if let InstanceKind::Chain { id, .. } = instance.kind {
-            grouped.entry(id).or_default().push(instance);
+    for &file_id in &files_to_search {
+        if file_id == context.id {
+            copy_from(&state.checked);
+        } else {
+            let checked = context.queries.checked(file_id)?;
+            copy_from(&checked);
         }
     }
 
-    let mut result: Vec<Vec<_>> = grouped.into_values().collect();
-    for chain in &mut result {
+    let mut chain_map: FxHashMap<_, Vec<_>> = FxHashMap::default();
+    let mut all_chains: Vec<Vec<_>> = vec![];
+
+    for instance in all_instances {
+        if let InstanceKind::Chain { id, .. } = instance.kind {
+            chain_map.entry(id).or_default().push(instance)
+        } else {
+            all_chains.push(vec![instance])
+        }
+    }
+
+    for (_, mut chain) in chain_map {
         chain.sort_by_key(|instance| match instance.kind {
             InstanceKind::Chain { position, .. } => position,
             InstanceKind::Derive => 0,
         });
+        all_chains.push(chain);
     }
 
-    for instance in derived {
-        result.push(vec![instance]);
-    }
-
-    Ok(result)
+    Ok(all_chains)
 }
 
 fn localize_class<Q>(state: &mut CheckState, context: &CheckContext<Q>, class: &Class) -> Class

@@ -18,6 +18,9 @@ pub mod derive;
 /// Implements type folding for traversals that modify.
 pub mod fold;
 
+/// Implements type visiting for read-only traversals.
+pub mod visit;
+
 /// Implements type signature inspection.
 pub mod inspect;
 

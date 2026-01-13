@@ -36,6 +36,7 @@ where
 
     let contravariant = Some((input.class_file, input.class_id));
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     let config = VarianceConfig::Single((Variance::Contravariant, contravariant));
@@ -73,6 +74,7 @@ where
     let contravariant = context.known_types.contravariant;
     let functor = context.known_types.functor;
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     let config = VarianceConfig::Pair(

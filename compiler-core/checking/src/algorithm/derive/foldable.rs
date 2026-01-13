@@ -36,6 +36,7 @@ where
 
     let foldable = Some((input.class_file, input.class_id));
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     let config = VarianceConfig::Single((Variance::Covariant, foldable));
@@ -72,6 +73,7 @@ where
     // Bifoldable derivation emits Foldable constraints for wrapped parameters.
     let foldable = context.known_types.foldable;
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     let config =

@@ -134,3 +134,33 @@ impl TypeFold for SubstituteUnification<'_> {
         FoldAction::Continue
     }
 }
+
+pub type LevelToType = FxHashMap<debruijn::Level, TypeId>;
+
+pub struct SubstituteBindings<'a> {
+    bindings: &'a LevelToType,
+}
+
+impl SubstituteBindings<'_> {
+    /// Substitutes bound and implicit variables using a level-based mapping.
+    ///
+    /// This is used to specialize class superclasses with instance arguments.
+    /// For example, when deriving `Traversable (Compose f g)`, the superclass
+    /// `Functor t` becomes `Functor (Compose f g)` by binding `t`'s level to
+    /// `Compose f g`.
+    pub fn on(state: &mut CheckState, bindings: &LevelToType, id: TypeId) -> TypeId {
+        fold_type(state, id, &mut SubstituteBindings { bindings })
+    }
+}
+
+impl TypeFold for SubstituteBindings<'_> {
+    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+                let id = self.bindings.get(level).copied().unwrap_or(id);
+                FoldAction::Replace(id)
+            }
+            _ => FoldAction::Continue,
+        }
+    }
+}

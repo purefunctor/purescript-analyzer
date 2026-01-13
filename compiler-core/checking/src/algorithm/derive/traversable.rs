@@ -36,6 +36,7 @@ where
 
     let traversable = Some((input.class_file, input.class_id));
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     let config = VarianceConfig::Single((Variance::Covariant, traversable));
@@ -72,6 +73,7 @@ where
     // Bitraversable derivation emits Traversable constraints for wrapped parameters.
     let traversable = context.known_types.traversable;
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     let config = VarianceConfig::Pair(

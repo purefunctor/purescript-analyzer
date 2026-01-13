@@ -149,6 +149,7 @@ where
 
     let class = (input.class_file, input.class_id);
     tools::push_given_constraints(state, &input.constraints);
+    tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
 
     generate_field_constraints(state, context, data_file, data_id, derived_type, class)?;

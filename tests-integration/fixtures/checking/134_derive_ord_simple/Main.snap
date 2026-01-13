@@ -42,5 +42,4 @@ derive Eq (ContainsNoOrd :: Type)
 derive Ord (ContainsNoOrd :: Type)
 
 Errors
-NoInstanceFound { Eq NoOrd } at [TermDeclaration(Idx::<TermItem>(9))]
 NoInstanceFound { Ord NoOrd } at [TermDeclaration(Idx::<TermItem>(10))]
