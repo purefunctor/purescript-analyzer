@@ -407,7 +407,23 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
             head.push_str(&format!(" ({type_str} :: {kind_str})"));
         }
 
-        writeln!(snapshot, "instance {head}").unwrap();
+        // Format kind variables as forall binders
+        let forall_prefix = if instance.kind_variables.is_empty() {
+            String::new()
+        } else {
+            let binders: Vec<_> = instance
+                .kind_variables
+                .iter()
+                .enumerate()
+                .map(|(i, kind)| {
+                    let kind_str = pretty::print_global(engine, *kind);
+                    format!("(&{i} :: {kind_str})")
+                })
+                .collect();
+            format!("forall {}. ", binders.join(" "))
+        };
+
+        writeln!(snapshot, "instance {forall_prefix}{head}").unwrap();
         if let checking::core::InstanceKind::Chain { position, .. } = instance.kind {
             writeln!(snapshot, "  chain: {}", position).unwrap();
         }
@@ -461,7 +477,23 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
             head.push_str(&format!(" ({type_str} :: {kind_str})"));
         }
 
-        writeln!(snapshot, "derive {head}").unwrap();
+        // Format kind variables as forall binders
+        let forall_prefix = if instance.kind_variables.is_empty() {
+            String::new()
+        } else {
+            let binders: Vec<_> = instance
+                .kind_variables
+                .iter()
+                .enumerate()
+                .map(|(i, kind)| {
+                    let kind_str = pretty::print_global(engine, *kind);
+                    format!("(&{i} :: {kind_str})")
+                })
+                .collect();
+            format!("forall {}. ", binders.join(" "))
+        };
+
+        writeln!(snapshot, "derive {forall_prefix}{head}").unwrap();
     }
 
     if !checked.errors.is_empty() {
@@ -493,6 +525,16 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
                 writeln!(
                     snapshot,
                     "AmbiguousConstraint {{ {constraint_pretty} }} at {:?}",
+                    &error.step
+                )
+                .unwrap();
+            }
+            checking::error::ErrorKind::InstanceMemberTypeMismatch { expected, actual } => {
+                let expected_pretty = pretty::print_global(engine, expected);
+                let actual_pretty = pretty::print_global(engine, actual);
+                writeln!(
+                    snapshot,
+                    "InstanceMemberTypeMismatch {{ expected: {expected_pretty}, actual: {actual_pretty} }} at {:?}",
                     &error.step
                 )
                 .unwrap();

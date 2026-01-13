@@ -155,7 +155,7 @@ where
             constraints: core_constraints,
             resolution: (class_file, class_item),
             kind: InstanceKind::Chain { id: chain_id, position: chain_position },
-            kind_variables: debruijn::Size(0),
+            kind_variables: vec![],
         };
 
         quantify::quantify_instance(state, &mut instance);
@@ -314,6 +314,7 @@ pub struct CheckInstanceMembers<'a> {
     pub class_id: TypeItemId,
     pub instance_arguments: &'a [(TypeId, TypeId)],
     pub instance_constraints: &'a [(TypeId, TypeId)],
+    pub kind_variables: &'a [TypeId],
 }
 
 /// Checks instance member declarations.
@@ -340,6 +341,7 @@ where
         class_id,
         instance_arguments,
         instance_constraints,
+        kind_variables,
     } = input;
 
     // Fetch implicit variables captured by check_instance.
@@ -358,6 +360,7 @@ where
                 class_id,
                 instance_arguments,
                 instance_constraints,
+                kind_variables,
             },
         )?;
     }
@@ -396,6 +399,7 @@ pub struct CheckInstanceMemberGroup<'a> {
     class_id: TypeItemId,
     instance_arguments: &'a [(TypeId, TypeId)],
     instance_constraints: &'a [(TypeId, TypeId)],
+    kind_variables: &'a [TypeId],
 }
 
 /// Checks an instance member group against its specialized class member type.
@@ -427,11 +431,18 @@ where
         class_id,
         instance_arguments,
         instance_constraints,
+        kind_variables,
     } = input;
 
     state.with_error_step(ErrorStep::TermDeclaration(instance_id), |state| {
         // Save the current size of the environment for unbinding.
         let size = state.type_scope.size();
+
+        // Bind kind variables generalised after instance head checking.
+        for &kind_variable in kind_variables {
+            let kind = transfer::localize(state, context, kind_variable);
+            state.type_scope.bind_core(kind);
+        }
 
         for binding in instance_bindings {
             state.type_scope.bind_implicit(binding.node, binding.id, binding.kind);
@@ -477,10 +488,9 @@ where
             if let Some(specialized_type) = specialized_type {
                 let unified = unification::unify(state, context, member_type, specialized_type)?;
                 if !unified {
-                    state.insert_error(ErrorKind::InstanceMemberTypeMismatch {
-                        expected: specialized_type,
-                        actual: member_type,
-                    });
+                    let expected = transfer::globalize(state, context, specialized_type);
+                    let actual = transfer::globalize(state, context, member_type);
+                    state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
                 }
             }
 
@@ -494,10 +504,9 @@ where
 
             let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
             if !matches {
-                state.insert_error(ErrorKind::InstanceMemberTypeMismatch {
-                    expected: specialized_type,
-                    actual: inferred_type,
-                });
+                let expected = transfer::globalize(state, context, specialized_type);
+                let actual = transfer::globalize(state, context, inferred_type);
+                state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
             }
 
             let residual = state.solve_constraints(context)?;
@@ -555,10 +564,11 @@ where
         (t, k)
     });
 
+    let arguments = arguments.collect_vec();
     let kind_variables = class_info.quantified_variables.0 + class_info.kind_variables.0;
 
     let mut kind_variables = 0..kind_variables;
-    let mut arguments = arguments.collect_vec().into_iter();
+    let mut arguments = arguments.into_iter();
 
     while let normalized = state.normalize_type(specialized)
         && let Type::Forall(binder, inner) = &state.storage[normalized]

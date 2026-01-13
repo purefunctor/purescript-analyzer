@@ -19,7 +19,6 @@ pub struct ForallBinder {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Variable {
-    Implicit(debruijn::Level),
     Skolem(debruijn::Level, TypeId),
     Bound(debruijn::Level),
     Free(SmolStr),
@@ -125,7 +124,7 @@ pub struct Instance {
     pub constraints: Vec<(TypeId, TypeId)>,
     pub resolution: (FileId, TypeItemId),
     pub kind: InstanceKind,
-    pub kind_variables: debruijn::Size,
+    pub kind_variables: Vec<TypeId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

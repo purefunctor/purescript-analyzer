@@ -83,17 +83,6 @@ where
             subtype(state, context, inner, t2)
         }
 
-        // Implicit and Bound variables at the same level represent the same
-        // logical variable; Implicit binds the variable, Bound consumes it.
-        (
-            Type::Variable(Variable::Implicit(t1_level)),
-            Type::Variable(Variable::Bound(t2_level)),
-        )
-        | (
-            Type::Variable(Variable::Bound(t1_level)),
-            Type::Variable(Variable::Implicit(t2_level)),
-        ) => Ok(t1_level == t2_level),
-
         (_, _) => unify(state, context, t1, t2),
     }
 }
@@ -155,17 +144,6 @@ where
         (_, Type::Unification(unification_id)) => {
             solve(state, context, unification_id, t1)?.is_some()
         }
-
-        // Implicit and Bound variables at the same level represent the same
-        // logical variable; Implicit binds the variable, Bound consumes it.
-        (
-            Type::Variable(Variable::Implicit(t1_level)),
-            Type::Variable(Variable::Bound(t2_level)),
-        )
-        | (
-            Type::Variable(Variable::Bound(t1_level)),
-            Type::Variable(Variable::Implicit(t2_level)),
-        ) => t1_level == t2_level,
 
         (
             Type::Constrained(t1_constraint, t1_inner),
@@ -315,15 +293,14 @@ pub fn promote_type(
         }
 
         Type::Variable(ref variable) => {
-            let unification = state.unification.get(unification_id);
             // A bound variable escapes if its level >= the unification variable's domain.
             // This means the variable was bound at or after the unification was created.
-            if let Variable::Bound(level) = variable
-                && level.0 >= unification.domain.0
-            {
-                return false;
+            if let Variable::Bound(level) = variable {
+                let unification = state.unification.get(unification_id);
+                if level.0 >= unification.domain.0 {
+                    return false;
+                }
             }
-
             true
         }
 

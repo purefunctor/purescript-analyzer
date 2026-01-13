@@ -485,23 +485,19 @@ fn match_type(
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (_, Type::Variable(variable)) => {
-            if let Variable::Implicit(level) | Variable::Bound(level) = variable {
-                if let Some(&bound) = bindings.get(level) {
-                    match can_unify(state, wanted, bound) {
-                        CanUnify::Equal => MatchType::Match,
-                        CanUnify::Apart => MatchType::Apart,
-                        CanUnify::Unify => {
-                            equalities.push((wanted, bound));
-                            MatchType::Match
-                        }
+        (_, Type::Variable(Variable::Bound(level))) => {
+            if let Some(&bound) = bindings.get(level) {
+                match can_unify(state, wanted, bound) {
+                    CanUnify::Equal => MatchType::Match,
+                    CanUnify::Apart => MatchType::Apart,
+                    CanUnify::Unify => {
+                        equalities.push((wanted, bound));
+                        MatchType::Match
                     }
-                } else {
-                    bindings.insert(*level, wanted);
-                    MatchType::Match
                 }
             } else {
-                MatchType::Apart
+                bindings.insert(*level, wanted);
+                MatchType::Match
             }
         }
 
@@ -612,15 +608,6 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
             }
         }
 
-        // Implicit and Bound variables at the same level represent the same
-        // logical variable; Implicit binds the variable, Bound consumes it.
-        (Type::Variable(Variable::Implicit(w_level)), Type::Variable(Variable::Bound(g_level)))
-        | (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Implicit(g_level)))
-            if w_level == g_level =>
-        {
-            MatchType::Match
-        }
-
         _ => MatchType::Apart,
     }
 }
@@ -628,9 +615,9 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
 /// Determines if two types [`CanUnify`].
 ///
 /// This is used in [`match_type`], where if two different types bind to the
-/// same [`Variable::Implicit`] or [`Variable::Bound`] variable, we determine
-/// if the types can actually unify before generating an equality. This is
-/// effectively a pure version of the [`unify`] function.
+/// same [`Variable::Bound`] variable, we determine if the types can actually
+/// unify before generating an equality. This is effectively a pure version
+/// of the [`unify`] function.
 ///
 /// [`unify`]: crate::algorithm::unification::unify
 fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
@@ -899,7 +886,7 @@ impl<'a> ApplyBindings<'a> {
 impl TypeFold for ApplyBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level)) => {
                 let id = self.bindings.get(level).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }

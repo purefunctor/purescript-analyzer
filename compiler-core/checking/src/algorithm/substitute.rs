@@ -92,10 +92,6 @@ impl TypeFold for ShiftImplicit {
                 let level = debruijn::Level(level.0 + self.offset);
                 FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level))))
             }
-            Type::Variable(Variable::Implicit(level)) => {
-                let level = debruijn::Level(level.0 + self.offset);
-                FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Implicit(level))))
-            }
             _ => FoldAction::Continue,
         }
     }
@@ -156,7 +152,7 @@ impl SubstituteBindings<'_> {
 impl TypeFold for SubstituteBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level)) => {
                 let id = self.bindings.get(level).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }

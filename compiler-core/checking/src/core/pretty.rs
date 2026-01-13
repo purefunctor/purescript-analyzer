@@ -478,7 +478,6 @@ fn render_variable<'a>(
     context: &TraversalContext,
 ) -> Doc<'a> {
     match variable {
-        Variable::Implicit(level) => arena.text(format!("{}", level)),
         Variable::Skolem(level, _) => arena.text(format!("~{}", level)),
         Variable::Bound(level) => {
             let name = context.names.get(&level.0).cloned();

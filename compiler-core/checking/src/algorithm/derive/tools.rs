@@ -115,7 +115,7 @@ pub fn register_derived_instance<Q>(
         constraints,
         resolution: (class_file, class_id),
         kind: InstanceKind::Derive,
-        kind_variables: debruijn::Size(0),
+        kind_variables: vec![],
     };
 
     quantify::quantify_instance(state, &mut instance);

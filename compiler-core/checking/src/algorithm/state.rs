@@ -37,6 +37,13 @@ impl TypeScope {
         level
     }
 
+    pub fn bind_core(&mut self, kind: TypeId) -> debruijn::Level {
+        let variable = debruijn::Variable::Core;
+        let level = self.bound.bind(variable);
+        self.kinds.insert(level, kind);
+        level
+    }
+
     pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Level> {
         let variable = debruijn::Variable::Forall(id);
         self.bound.level_of(variable)

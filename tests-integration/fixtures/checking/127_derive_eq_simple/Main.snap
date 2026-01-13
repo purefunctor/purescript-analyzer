@@ -27,7 +27,7 @@ ContainsNoEq
 
 
 Derived
-derive Eq (Proxy @&0 &1 :: Type)
+derive forall (&0 :: Type). Eq (Proxy @&0 &1 :: Type)
 derive Eq (ContainsNoEq :: Type)
 
 Errors

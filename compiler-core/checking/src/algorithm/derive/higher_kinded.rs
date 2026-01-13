@@ -88,9 +88,7 @@ where
 fn lookup_variable_kind(state: &CheckState, variable: &Variable) -> Option<TypeId> {
     match variable {
         Variable::Skolem(_, kind) => Some(*kind),
-        Variable::Bound(level) | Variable::Implicit(level) => {
-            state.type_scope.kinds.get(*level).copied()
-        }
+        Variable::Bound(level) => state.type_scope.kinds.get(*level).copied(),
         Variable::Free(_) => None,
     }
 }

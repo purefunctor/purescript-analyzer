@@ -280,6 +280,14 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
         substitutions.insert(id, level);
     }
 
+    let kind_variables = substitutions.iter().map(|(&id, &level)| {
+        let kind = state.unification.get(id).kind;
+        (level, kind)
+    });
+
+    let kind_variables = kind_variables.sorted_by_key(|(level, _)| *level);
+    let kind_variables = kind_variables.map(|(_, kind)| kind).collect_vec();
+
     let arguments = instance.arguments.iter().map(|&(t, k)| {
         let t = ShiftImplicit::on(state, t, size.0);
         let t = SubstituteUnification::on(&substitutions, state, t);
@@ -300,7 +308,7 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
 
     instance.constraints = constraints.collect();
 
-    instance.kind_variables = size;
+    instance.kind_variables = kind_variables;
 
     Some(())
 }

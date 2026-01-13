@@ -252,6 +252,7 @@ where
 
         let instance_arguments = instance.arguments.clone();
         let instance_constraints = instance.constraints.clone();
+        let kind_variables = instance.kind_variables.clone();
 
         let check_members = term_item::CheckInstanceMembers {
             instance_id: item_id,
@@ -260,6 +261,7 @@ where
             class_id,
             instance_arguments: &instance_arguments,
             instance_constraints: &instance_constraints,
+            kind_variables: &kind_variables,
         };
 
         term_item::check_instance_members(state, context, check_members)?;

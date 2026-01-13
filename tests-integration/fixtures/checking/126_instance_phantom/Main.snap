@@ -21,5 +21,5 @@ Classes
 class Phantom (&0 :: Type)
 
 Instances
-instance Phantom (Proxy @&0 &1 :: Type)
+instance forall (&0 :: Type). Phantom (Proxy @&0 &1 :: Type)
   chain: 0
