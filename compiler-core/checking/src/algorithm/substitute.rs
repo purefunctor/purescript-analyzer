@@ -68,39 +68,6 @@ impl TypeFold for ShiftBound {
     }
 }
 
-pub struct ShiftImplicit {
-    offset: u32,
-}
-
-impl ShiftImplicit {
-    /// Shifts all bound AND implicit variable levels in a type by a given offset.
-    ///
-    /// This is needed when adding new kind binders to instance heads, where
-    /// implicit variables also need their levels adjusted.
-    pub fn on(state: &mut CheckState, id: TypeId, offset: u32) -> TypeId {
-        if offset == 0 {
-            return id;
-        }
-        fold_type(state, id, &mut ShiftImplicit { offset })
-    }
-}
-
-impl TypeFold for ShiftImplicit {
-    fn transform(&mut self, state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
-        match t {
-            Type::Variable(Variable::Bound(level)) => {
-                let level = debruijn::Level(level.0 + self.offset);
-                FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level))))
-            }
-            _ => FoldAction::Continue,
-        }
-    }
-
-    fn transform_binder(&mut self, binder: &mut ForallBinder) {
-        binder.level = debruijn::Level(binder.level.0 + self.offset);
-    }
-}
-
 pub type UniToLevel = FxHashMap<u32, debruijn::Level>;
 
 pub struct SubstituteUnification<'a> {

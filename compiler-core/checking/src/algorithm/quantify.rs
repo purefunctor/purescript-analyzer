@@ -15,7 +15,7 @@ use crate::algorithm::constraint::{
 };
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute::{ShiftBound, ShiftImplicit, SubstituteUnification, UniToLevel};
+use crate::algorithm::substitute::{ShiftBound, SubstituteUnification, UniToLevel};
 use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
@@ -289,9 +289,9 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
     let kind_variables = kind_variables.map(|(_, kind)| kind).collect_vec();
 
     let arguments = instance.arguments.iter().map(|&(t, k)| {
-        let t = ShiftImplicit::on(state, t, size.0);
+        let t = ShiftBound::on(state, t, size.0);
         let t = SubstituteUnification::on(&substitutions, state, t);
-        let k = ShiftImplicit::on(state, k, size.0);
+        let k = ShiftBound::on(state, k, size.0);
         let k = SubstituteUnification::on(&substitutions, state, k);
         (t, k)
     });
@@ -299,9 +299,9 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
     instance.arguments = arguments.collect();
 
     let constraints = instance.constraints.iter().map(|&(t, k)| {
-        let t = ShiftImplicit::on(state, t, size.0);
+        let t = ShiftBound::on(state, t, size.0);
         let t = SubstituteUnification::on(&substitutions, state, t);
-        let k = ShiftImplicit::on(state, k, size.0);
+        let k = ShiftBound::on(state, k, size.0);
         let k = SubstituteUnification::on(&substitutions, state, k);
         (t, k)
     });
