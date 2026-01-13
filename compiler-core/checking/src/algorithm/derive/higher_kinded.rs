@@ -18,17 +18,16 @@ use crate::core::{RowType, Type, TypeId, Variable};
 /// Given `f :: Type -> Type` and deriving `Eq`
 ///
 /// For a field type like `f Int`
-/// - Emits `Eq1 f` instead of `Eq (f Int)`
+/// - Emits `Eq1 f`
 ///
 /// For a field type like `f (g Int)`
-/// - Emits `Eq1 f` instead of `Eq (f (g Int))`
-/// - Emits `Eq1 g` instead of `Eq (g Int)`
+/// - Emits `Eq1 f`, `Eq (g Int)`
 ///
-/// For nominal types like `Array (f Int)`
-/// - Emits `Class (Array (f Int))`
+/// For nominal types like `Array Int`
+/// - Emits `Eq (Array Int)`
 ///
-/// For records like `{ a :: f Int }`
-/// - Each field is traversed, emits `Eq1 f`
+/// For records like `{ a :: Int, b :: f Int }`
+/// - Emits `Eq Int` and `Eq1 f`
 pub fn generate_constraint<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -48,7 +47,7 @@ pub fn generate_constraint<Q>(
                 if let Some(class1) = class1 {
                     tools::emit_constraint(state, class1, function);
                 }
-                generate_constraint(state, context, argument, class, class1);
+                tools::emit_constraint(state, class, argument);
             } else {
                 tools::emit_constraint(state, class, type_id);
             }

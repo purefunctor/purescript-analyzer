@@ -44,7 +44,7 @@ derive Eq1 &0 => Eq (U &0 :: Type)
 derive Ord1 &0 => Ord (U &0 :: Type)
 
 Errors
-NoInstanceFound { Eq1 &1 } at [TermDeclaration(Idx::<TermItem>(1))]
-NoInstanceFound { Ord1 &1 } at [TermDeclaration(Idx::<TermItem>(2))]
+NoInstanceFound { Eq (&1 Int) } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Ord (&1 Int) } at [TermDeclaration(Idx::<TermItem>(2))]
 NoInstanceFound { Eq (&1 42) } at [TermDeclaration(Idx::<TermItem>(11))]
 NoInstanceFound { Ord (&1 42) } at [TermDeclaration(Idx::<TermItem>(12))]
