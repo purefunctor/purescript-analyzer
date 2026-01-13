@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Vector :: forall (n :: Int) (a :: Type). Array a -> Vector n a
+
+Types
+Vector :: Int -> Type -> Type
+
+Data
+Vector
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Show &1 => Show (Vector &0 &1 :: Type)

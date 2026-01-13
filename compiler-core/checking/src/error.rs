@@ -57,6 +57,9 @@ pub enum ErrorKind {
     InvalidTypeOperator {
         id: TypeId,
     },
+    ExpectedNewtype {
+        type_id: TypeId,
+    },
     NoInstanceFound {
         constraint: TypeId,
     },

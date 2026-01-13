@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Pair :: forall (t1 :: Type) (a :: Type) (b :: t1). a -> Pair @t1 a b
+
+Types
+Pair :: forall (t1 :: Type). Type -> t1 -> Type
+
+Data
+Pair
+  Quantified = :1
+  Kind = :0
+
+
+Derived
+derive Show (Pair @Type Int String :: Type)

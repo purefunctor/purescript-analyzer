@@ -52,10 +52,6 @@ where
         is_newtype,
     } = input;
 
-    if is_newtype {
-        return Ok(());
-    }
-
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
         // Save the current size of the environment for unbinding.
         let size = state.type_scope.size();
@@ -82,16 +78,20 @@ where
             class_id,
         };
 
-        let class = (class_file, class_id);
-
-        let is_eq = context.known_types.eq == Some(class);
-        let is_ord = context.known_types.ord == Some(class);
-
-        if is_eq || is_ord {
-            check_derive_class(state, context, &elaborated)?;
+        if is_newtype {
+            check_newtype_derive(state, context, &elaborated)?;
         } else {
-            state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
-        };
+            let class = (class_file, class_id);
+
+            let is_eq = context.known_types.eq == Some(class);
+            let is_ord = context.known_types.ord == Some(class);
+
+            if is_eq || is_ord {
+                check_derive_class(state, context, &elaborated)?;
+            } else {
+                state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+            };
+        }
 
         // Unbind type variables bound during elaboration.
         state.type_scope.unbind(debruijn::Level(size.0));
@@ -178,6 +178,105 @@ where
     Ok(())
 }
 
+fn check_newtype_derive<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: &ElaboratedDerive,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let [ref preceding_arguments @ .., (newtype_type, _)] = input.arguments[..] else {
+        return Ok(());
+    };
+
+    let insert_error =
+        |state: &mut CheckState, context: &CheckContext<Q>, kind: fn(TypeId) -> ErrorKind| {
+            let global = transfer::globalize(state, context, newtype_type);
+            state.insert_error(kind(global));
+        };
+
+    let Some((newtype_file, newtype_id)) = extract_type_constructor(state, newtype_type) else {
+        insert_error(state, context, |type_id| ErrorKind::CannotDeriveForType { type_id });
+        return Ok(());
+    };
+
+    if newtype_file != context.id {
+        insert_error(state, context, |type_id| ErrorKind::CannotDeriveForType { type_id });
+        return Ok(());
+    }
+
+    if !is_newtype(context, newtype_file, newtype_id)? {
+        insert_error(state, context, |type_id| ErrorKind::ExpectedNewtype { type_id });
+        return Ok(());
+    }
+
+    let inner_type = get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
+
+    let mut instance = Instance {
+        arguments: input.arguments.clone(),
+        constraints: input.constraints.clone(),
+        resolution: (input.class_file, input.class_id),
+        kind: InstanceKind::Derive,
+        kind_variables: debruijn::Size(0),
+    };
+
+    quantify::quantify_instance(state, &mut instance);
+
+    let global_arguments = instance.arguments.iter().map(|&(t, k)| {
+        let t = transfer::globalize(state, context, t);
+        let k = transfer::globalize(state, context, k);
+        (t, k)
+    });
+
+    let global_arguments = global_arguments.collect_vec();
+
+    let global_constraints = instance.constraints.iter().map(|&(t, k)| {
+        let t = transfer::globalize(state, context, t);
+        let k = transfer::globalize(state, context, k);
+        (t, k)
+    });
+
+    let global_constraints = global_constraints.collect_vec();
+
+    state.checked.derived.insert(
+        input.derive_id,
+        Instance {
+            arguments: global_arguments,
+            constraints: global_constraints,
+            resolution: (input.class_file, input.class_id),
+            kind: InstanceKind::Derive,
+            kind_variables: instance.kind_variables,
+        },
+    );
+
+    for (constraint_type, _) in &input.constraints {
+        state.constraints.push_given(*constraint_type);
+    }
+
+    // Build `Class t1 t2 Inner` given the constraint `Class t1 t2 Newtype`
+    let delegate_constraint = {
+        let class_type = state.storage.intern(Type::Constructor(input.class_file, input.class_id));
+
+        let preceding_arguments =
+            preceding_arguments.iter().fold(class_type, |function, (argument, _)| {
+                state.storage.intern(Type::Application(function, *argument))
+            });
+
+        state.storage.intern(Type::Application(preceding_arguments, inner_type))
+    };
+
+    state.constraints.push_wanted(delegate_constraint);
+
+    let residual = state.solve_constraints(context)?;
+    for constraint in residual {
+        let constraint = transfer::globalize(state, context, constraint);
+        state.insert_error(ErrorKind::NoInstanceFound { constraint });
+    }
+
+    Ok(())
+}
+
 fn extract_type_constructor(
     state: &mut CheckState,
     mut type_id: TypeId,
@@ -191,6 +290,24 @@ fn extract_type_constructor(
             _ => return None,
         }
     }
+}
+
+/// Checks if a type item is a newtype by examining its indexed kind.
+fn is_newtype<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let is_newtype = if file_id == context.id {
+        matches!(context.indexed.items[type_id].kind, indexing::TypeItemKind::Newtype { .. })
+    } else {
+        let indexed = context.queries.indexed(file_id)?;
+        matches!(indexed.items[type_id].kind, indexing::TypeItemKind::Newtype { .. })
+    };
+    Ok(is_newtype)
 }
 
 /// Extracts type and kind arguments from an application.
@@ -237,6 +354,40 @@ where
         checked.terms.get(&term_id).copied()
     };
     Ok(global_type.map(|global_type| transfer::localize(state, context, global_type)))
+}
+
+/// Gets the inner type for a newtype, specialized with type arguments.
+///
+/// Newtypes have exactly one constructor with exactly one field.
+/// This function extracts that field type, substituting any type parameters.
+fn get_newtype_inner<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    newtype_file: FileId,
+    newtype_id: TypeItemId,
+    newtype_type: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let constructors = if newtype_file == context.id {
+        context.indexed.pairs.data_constructors(newtype_id).collect_vec()
+    } else {
+        let indexed = context.queries.indexed(newtype_file)?;
+        indexed.pairs.data_constructors(newtype_id).collect_vec()
+    };
+
+    let [constructor_id] = constructors[..] else {
+        return Ok(context.prim.unknown);
+    };
+
+    let constructor_type = lookup_local_term_type(state, context, newtype_file, constructor_id)?;
+    let Some(constructor_type) = constructor_type else {
+        return Ok(context.prim.unknown);
+    };
+
+    let fields = extract_constructor_fields(state, constructor_type, newtype_type);
+    Ok(fields.into_iter().next().unwrap_or(context.prim.unknown))
 }
 
 /// Generates constraints for all fields of across all constructors.

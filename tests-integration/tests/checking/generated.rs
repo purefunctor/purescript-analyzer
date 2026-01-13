@@ -283,3 +283,21 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_135_derive_ord_1_higher_kinded_main() { run_test("135_derive_ord_1_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_136_derive_nested_higher_kinded_main() { run_test("136_derive_nested_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_137_derive_newtype_simple_main() { run_test("137_derive_newtype_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_138_derive_newtype_parameterized_main() { run_test("138_derive_newtype_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_139_derive_newtype_with_given_main() { run_test("139_derive_newtype_with_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_140_derive_newtype_recursive_main() { run_test("140_derive_newtype_recursive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_141_derive_newtype_phantom_main() { run_test("141_derive_newtype_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_142_derive_newtype_not_newtype_main() { run_test("142_derive_newtype_not_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_143_derive_newtype_missing_instance_main() { run_test("143_derive_newtype_missing_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_144_derive_newtype_missing_given_main() { run_test("144_derive_newtype_missing_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_145_derive_newtype_multi_param_main() { run_test("145_derive_newtype_multi_param", "Main"); }
