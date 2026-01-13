@@ -352,14 +352,14 @@ fn check_variance_field<Q>(
 
     match state.storage[type_id].clone() {
         Type::Variable(Variable::Skolem(level, _)) => {
-            if let Some(param) = skolems.get(level) {
-                if variance != param.expected {
-                    let global = transfer::globalize(state, context, type_id);
-                    if variance == Variance::Covariant {
-                        state.insert_error(ErrorKind::CovariantOccurrence { type_id: global });
-                    } else {
-                        state.insert_error(ErrorKind::ContravariantOccurrence { type_id: global });
-                    }
+            if let Some(parameter) = skolems.get(level)
+                && variance != parameter.expected
+            {
+                let global = transfer::globalize(state, context, type_id);
+                if variance == Variance::Covariant {
+                    state.insert_error(ErrorKind::CovariantOccurrence { type_id: global });
+                } else {
+                    state.insert_error(ErrorKind::ContravariantOccurrence { type_id: global });
                 }
             }
         }
@@ -432,7 +432,7 @@ fn contains_skolem_level(state: &mut CheckState, type_id: TypeId, target: debrui
 
         Type::Row(RowType { ref fields, tail }) => {
             fields.iter().any(|f| contains_skolem_level(state, f.id, target))
-                || tail.map_or(false, |t| contains_skolem_level(state, t, target))
+                || tail.is_some_and(|t| contains_skolem_level(state, t, target))
         }
 
         Type::Forall(_, inner) | Type::Constrained(_, inner) | Type::Kinded(inner, _) => {
