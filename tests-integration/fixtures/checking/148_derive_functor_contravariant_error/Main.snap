@@ -1,0 +1,35 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Predicate :: forall (a :: Type). (a -> Boolean) -> Predicate a
+Reader :: forall (r :: Type) (a :: Type). (r -> a) -> Reader r a
+Cont :: forall (r :: Type) (a :: Type). ((a -> r) -> r) -> Cont r a
+
+Types
+Predicate :: Type -> Type
+Reader :: Type -> Type -> Type
+Cont :: Type -> Type -> Type
+
+Data
+Predicate
+  Quantified = :0
+  Kind = :0
+
+Reader
+  Quantified = :0
+  Kind = :0
+
+Cont
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Functor (Predicate :: Type -> Type)
+derive Functor (Reader &0 :: Type -> Type)
+derive Functor (Cont &0 :: Type -> Type)
+
+Errors
+ContravariantOccurrence { type_id: Id<checking::core::Type>(31) } at [TermDeclaration(Idx::<TermItem>(1))]

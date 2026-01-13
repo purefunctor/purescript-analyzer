@@ -301,3 +301,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_144_derive_newtype_missing_given_main() { run_test("144_derive_newtype_missing_given", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_145_derive_newtype_multi_param_main() { run_test("145_derive_newtype_multi_param", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_146_derive_functor_simple_main() { run_test("146_derive_functor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_147_derive_functor_higher_kinded_main() { run_test("147_derive_functor_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_148_derive_functor_contravariant_error_main() { run_test("148_derive_functor_contravariant_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_149_derive_bifunctor_simple_main() { run_test("149_derive_bifunctor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_150_derive_bifunctor_higher_kinded_main() { run_test("150_derive_bifunctor_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_151_derive_bifunctor_missing_functor_main() { run_test("151_derive_bifunctor_missing_functor", "Main"); }

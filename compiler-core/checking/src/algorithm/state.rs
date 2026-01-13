@@ -618,6 +618,8 @@ pub struct KnownTypesCore {
     pub eq1: Option<(FileId, TypeItemId)>,
     pub ord: Option<(FileId, TypeItemId)>,
     pub ord1: Option<(FileId, TypeItemId)>,
+    pub functor: Option<(FileId, TypeItemId)>,
+    pub bifunctor: Option<(FileId, TypeItemId)>,
 }
 
 impl KnownTypesCore {
@@ -626,7 +628,9 @@ impl KnownTypesCore {
         let eq1 = fetch_known_type(queries, "Data.Eq", "Eq1")?;
         let ord = fetch_known_type(queries, "Data.Ord", "Ord")?;
         let ord1 = fetch_known_type(queries, "Data.Ord", "Ord1")?;
-        Ok(KnownTypesCore { eq, eq1, ord, ord1 })
+        let functor = fetch_known_type(queries, "Data.Functor", "Functor")?;
+        let bifunctor = fetch_known_type(queries, "Data.Bifunctor", "Bifunctor")?;
+        Ok(KnownTypesCore { eq, eq1, ord, ord1, functor, bifunctor })
     }
 }
 

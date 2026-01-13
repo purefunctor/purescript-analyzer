@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Left :: forall (a :: Type) (b :: Type). a -> Either a b
+Right :: forall (a :: Type) (b :: Type). b -> Either a b
+Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Const2 ::
+  forall (t5 :: Type) (t6 :: Type) (e :: Type) (a :: t5) (b :: t6). e -> Const2 @t5 @t6 e a b
+
+Types
+Either :: Type -> Type -> Type
+Pair :: Type -> Type -> Type
+Const2 :: forall (t5 :: Type) (t6 :: Type). Type -> t5 -> t6 -> Type
+
+Data
+Either
+  Quantified = :0
+  Kind = :0
+
+Pair
+  Quantified = :0
+  Kind = :0
+
+Const2
+  Quantified = :2
+  Kind = :0
+
+
+Derived
+derive Bifunctor (Either :: Type -> Type -> Type)
+derive Bifunctor (Pair :: Type -> Type -> Type)
+derive Bifunctor (Const2 @&0 @&1 &2 :: &0 -> &1 -> Type)

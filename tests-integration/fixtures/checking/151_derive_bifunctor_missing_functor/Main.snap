@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+WrapBoth ::
+  forall (t6 :: Type) (t10 :: Type) (f :: t6 -> Type) (g :: t10 -> Type) (a :: t6) (b :: t10).
+    f a -> g b -> WrapBoth @t6 @t10 f g a b
+
+Types
+WrapBoth :: forall (t6 :: Type) (t10 :: Type). (t6 -> Type) -> (t10 -> Type) -> t6 -> t10 -> Type
+
+Data
+WrapBoth
+  Quantified = :2
+  Kind = :0
+
+
+Derived
+derive Bifunctor (WrapBoth @&0 @&1 &2 &3 :: &0 -> &1 -> Type)
+
+Errors
+DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]
+DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]

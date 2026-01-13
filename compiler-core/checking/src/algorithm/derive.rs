@@ -1,5 +1,6 @@
 //! Implements type class deriving for PureScript.
 
+mod functor;
 mod higher_kinded;
 
 use building_types::QueryResult;
@@ -85,9 +86,15 @@ where
 
             let is_eq = context.known_types.eq == Some(class);
             let is_ord = context.known_types.ord == Some(class);
+            let is_functor = context.known_types.functor == Some(class);
+            let is_bifunctor = context.known_types.bifunctor == Some(class);
 
             if is_eq || is_ord {
                 check_derive_class(state, context, &elaborated)?;
+            } else if is_functor {
+                functor::check_derive_functor(state, context, &elaborated)?;
+            } else if is_bifunctor {
+                functor::check_derive_bifunctor(state, context, &elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };
@@ -277,7 +284,7 @@ where
     Ok(())
 }
 
-fn extract_type_constructor(
+pub(crate) fn extract_type_constructor(
     state: &mut CheckState,
     mut type_id: TypeId,
 ) -> Option<(FileId, TypeItemId)> {
@@ -315,7 +322,7 @@ where
 /// This function returns both type and kind arguments as constructors
 /// have both. These are used to instantiate the constructor type with
 /// arguments from the instance head.
-fn extract_type_arguments(state: &mut CheckState, applied_type: TypeId) -> Vec<TypeId> {
+pub(crate) fn extract_type_arguments(state: &mut CheckState, applied_type: TypeId) -> Vec<TypeId> {
     let mut arguments = vec![];
     let mut current_id = applied_type;
 
@@ -338,7 +345,7 @@ fn extract_type_arguments(state: &mut CheckState, applied_type: TypeId) -> Vec<T
     arguments
 }
 
-fn lookup_local_term_type<Q>(
+pub(crate) fn lookup_local_term_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,

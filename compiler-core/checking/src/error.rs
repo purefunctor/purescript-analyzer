@@ -32,6 +32,9 @@ pub enum ErrorKind {
     CannotDeriveForType {
         type_id: TypeId,
     },
+    ContravariantOccurrence {
+        type_id: TypeId,
+    },
     CannotUnify {
         t1: TypeId,
         t2: TypeId,
@@ -42,6 +45,7 @@ pub enum ErrorKind {
         expected: usize,
         actual: usize,
     },
+    DeriveMissingFunctor,
     EmptyAdoBlock,
     EmptyDoBlock,
     InstanceHeadMismatch {
