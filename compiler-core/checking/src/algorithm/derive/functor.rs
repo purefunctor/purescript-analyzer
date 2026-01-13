@@ -2,9 +2,9 @@
 
 use building_types::QueryResult;
 
-use super::variance::{Variance, VarianceConfig, generate_variance_constraints};
-use super::tools;
 use crate::ExternalQueries;
+use crate::algorithm::derive::tools;
+use crate::algorithm::derive::variance::{Variance, VarianceConfig, generate_variance_constraints};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
 use crate::error::ErrorKind;
