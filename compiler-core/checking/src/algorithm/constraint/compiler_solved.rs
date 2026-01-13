@@ -575,3 +575,20 @@ where
 
     Some(MatchInstance::Match { constraints: vec![], equalities: vec![(list, result)] })
 }
+
+pub fn prim_coercible(state: &mut CheckState, arguments: &[TypeId]) -> Option<MatchInstance> {
+    let &[left, right] = arguments else {
+        return None;
+    };
+
+    let left = state.normalize_type(left);
+    let right = state.normalize_type(right);
+
+    // Reflexivity
+    if left == right {
+        return Some(MatchInstance::Match { constraints: vec![], equalities: vec![] });
+    }
+
+    // TODO: placeholder used for `derive instance Newtype`
+    Some(MatchInstance::Match { constraints: vec![], equalities: vec![] })
+}

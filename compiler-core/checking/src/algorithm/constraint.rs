@@ -864,6 +864,12 @@ where
         } else {
             None
         }
+    } else if file_id == context.prim_coerce.file_id {
+        if item_id == context.prim_coerce.coercible {
+            prim_coercible(state, arguments)
+        } else {
+            None
+        }
     } else {
         None
     }
