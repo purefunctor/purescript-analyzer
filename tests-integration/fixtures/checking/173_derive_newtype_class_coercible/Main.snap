@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+UserId :: Int -> UserId
+wrapUserId :: Int -> UserId
+unwrapUserId :: UserId -> Int
+Wrapper :: forall (a :: Type). a -> Wrapper a
+wrapWrapper :: forall (a :: Type). a -> Wrapper a
+unwrapWrapper :: forall (a :: Type). Wrapper a -> a
+
+Types
+UserId :: Type
+Wrapper :: Type -> Type
+
+Data
+UserId
+  Quantified = :0
+  Kind = :0
+
+Wrapper
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Newtype (UserId :: Type) (Int :: Type)
+derive Newtype (Wrapper &0 :: Type) (&0 :: Type)

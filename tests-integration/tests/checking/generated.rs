@@ -347,3 +347,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_167_derive_eq_1_main() { run_test("167_derive_eq_1", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_168_derive_ord_1_main() { run_test("168_derive_ord_1", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_169_derive_newtype_class_simple_main() { run_test("169_derive_newtype_class_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_170_derive_newtype_class_parameterized_main() { run_test("170_derive_newtype_class_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_171_derive_newtype_class_not_newtype_main() { run_test("171_derive_newtype_class_not_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_172_derive_generic_simple_main() { run_test("172_derive_generic_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_173_derive_newtype_class_coercible_main() { run_test("173_derive_newtype_class_coercible", "Main"); }

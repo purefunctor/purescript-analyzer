@@ -335,7 +335,9 @@ where
     pub prim_symbol: PrimSymbolCore,
     pub prim_row: PrimRowCore,
     pub prim_row_list: PrimRowListCore,
+    pub prim_coerce: PrimCoerceCore,
     pub known_types: KnownTypesCore,
+    pub known_generic: Option<KnownGeneric>,
 
     pub id: FileId,
     pub indexed: Arc<IndexedModule>,
@@ -365,7 +367,9 @@ where
         let prim_symbol = PrimSymbolCore::collect(queries, state)?;
         let prim_row = PrimRowCore::collect(queries, state)?;
         let prim_row_list = PrimRowListCore::collect(queries, state)?;
+        let prim_coerce = PrimCoerceCore::collect(queries)?;
         let known_types = KnownTypesCore::collect(queries)?;
+        let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
         Ok(CheckContext {
@@ -376,7 +380,9 @@ where
             prim_symbol,
             prim_row,
             prim_row_list,
+            prim_coerce,
             known_types,
+            known_generic,
             id,
             indexed,
             lowered,
@@ -605,6 +611,26 @@ impl PrimRowListCore {
     }
 }
 
+pub struct PrimCoerceCore {
+    pub file_id: FileId,
+    pub coercible: TypeItemId,
+}
+
+impl PrimCoerceCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimCoerceCore> {
+        let file_id = queries
+            .module_file("Prim.Coerce")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Coerce not found"));
+
+        let resolved = queries.resolved(file_id)?;
+        let (_, coercible) = resolved.exports.lookup_type("Coercible").unwrap_or_else(|| {
+            unreachable!("invariant violated: Coercible not in Prim.Coerce")
+        });
+
+        Ok(PrimCoerceCore { file_id, coercible })
+    }
+}
+
 fn fetch_known_type(
     queries: &impl ExternalQueries,
     m: &str,
@@ -620,6 +646,22 @@ fn fetch_known_type(
     Ok(Some((file_id, type_id)))
 }
 
+fn fetch_known_constructor(
+    queries: &impl ExternalQueries,
+    storage: &mut TypeInterner,
+    m: &str,
+    n: &str,
+) -> QueryResult<Option<TypeId>> {
+    let Some(file_id) = queries.module_file(m) else {
+        return Ok(None);
+    };
+    let resolved = queries.resolved(file_id)?;
+    let Some((file_id, type_id)) = resolved.exports.lookup_type(n) else {
+        return Ok(None);
+    };
+    Ok(Some(storage.intern(Type::Constructor(file_id, type_id))))
+}
+
 pub struct KnownTypesCore {
     pub eq: Option<(FileId, TypeItemId)>,
     pub eq1: Option<(FileId, TypeItemId)>,
@@ -633,6 +675,8 @@ pub struct KnownTypesCore {
     pub bifoldable: Option<(FileId, TypeItemId)>,
     pub traversable: Option<(FileId, TypeItemId)>,
     pub bitraversable: Option<(FileId, TypeItemId)>,
+    pub newtype: Option<(FileId, TypeItemId)>,
+    pub generic: Option<(FileId, TypeItemId)>,
 }
 
 impl KnownTypesCore {
@@ -650,6 +694,8 @@ impl KnownTypesCore {
         let bifoldable = fetch_known_type(queries, "Data.Bifoldable", "Bifoldable")?;
         let traversable = fetch_known_type(queries, "Data.Traversable", "Traversable")?;
         let bitraversable = fetch_known_type(queries, "Data.Bitraversable", "Bitraversable")?;
+        let newtype = fetch_known_type(queries, "Data.Newtype", "Newtype")?;
+        let generic = fetch_known_type(queries, "Data.Generic.Rep", "Generic")?;
         Ok(KnownTypesCore {
             eq,
             eq1,
@@ -663,7 +709,55 @@ impl KnownTypesCore {
             bifoldable,
             traversable,
             bitraversable,
+            newtype,
+            generic,
         })
+    }
+}
+
+pub struct KnownGeneric {
+    pub no_constructors: TypeId,
+    pub constructor: TypeId,
+    pub sum: TypeId,
+    pub product: TypeId,
+    pub no_arguments: TypeId,
+    pub argument: TypeId,
+}
+
+impl KnownGeneric {
+    fn collect(
+        queries: &impl ExternalQueries,
+        storage: &mut TypeInterner,
+    ) -> QueryResult<Option<KnownGeneric>> {
+        let Some(no_constructors) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "NoConstructors")?
+        else {
+            return Ok(None);
+        };
+        let Some(constructor) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Constructor")?
+        else {
+            return Ok(None);
+        };
+        let Some(sum) = fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Sum")? else {
+            return Ok(None);
+        };
+        let Some(product) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Product")?
+        else {
+            return Ok(None);
+        };
+        let Some(no_arguments) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "NoArguments")?
+        else {
+            return Ok(None);
+        };
+        let Some(argument) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Argument")?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(KnownGeneric { no_constructors, constructor, sum, product, no_arguments, argument }))
     }
 }
 

@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+NotANewtype :: Int -> NotANewtype
+
+Types
+NotANewtype :: Type
+
+Data
+NotANewtype
+  Quantified = :0
+  Kind = :0
+
+
+Errors
+ExpectedNewtype { type_id: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(1))]

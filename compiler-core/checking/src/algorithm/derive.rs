@@ -4,7 +4,9 @@ mod contravariant;
 mod eq1;
 mod foldable;
 mod functor;
+mod generic;
 mod higher_kinded;
+mod newtype;
 mod tools;
 mod traversable;
 mod variance;
@@ -116,6 +118,10 @@ where
                 eq1::check_derive_eq1(state, context, elaborated)?;
             } else if class_is(known_types.ord1) {
                 eq1::check_derive_ord1(state, context, elaborated)?;
+            } else if class_is(known_types.newtype) {
+                newtype::check_derive_newtype(state, context, elaborated)?;
+            } else if class_is(known_types.generic) {
+                generic::check_derive_generic(state, context, elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };
@@ -217,7 +223,7 @@ where
     tools::solve_and_report_constraints(state, context)
 }
 
-pub(crate) fn extract_type_constructor(
+pub fn extract_type_constructor(
     state: &mut CheckState,
     mut type_id: TypeId,
 ) -> Option<(FileId, TypeItemId)> {

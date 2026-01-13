@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+UserId :: Int -> UserId
+
+Types
+UserId :: Type
+
+Data
+UserId
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Newtype (UserId :: Type) (Int :: Type)
