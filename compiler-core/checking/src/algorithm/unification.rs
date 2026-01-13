@@ -83,6 +83,11 @@ where
             subtype(state, context, inner, t2)
         }
 
+        (Type::Constrained(constraint, inner), _) => {
+            state.constraints.push_wanted(constraint);
+            subtype(state, context, inner, t2)
+        }
+
         (_, _) => unify(state, context, t1, t2),
     }
 }
