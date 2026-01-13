@@ -313,3 +313,19 @@ pub fn check(source: &str) -> JsValue {
 
     serde_wasm_bindgen::to_value(&result).unwrap()
 }
+
+/// Register an external module (from a package) with the engine.
+#[wasm_bindgen]
+pub fn register_module(module_name: &str, source: &str) {
+    ENGINE.with_borrow_mut(|engine| {
+        engine.register_external_module(module_name, source);
+    });
+}
+
+/// Clear all external modules (packages), keeping Prim and user modules.
+#[wasm_bindgen]
+pub fn clear_packages() {
+    ENGINE.with_borrow_mut(|engine| {
+        engine.clear_external_modules();
+    });
+}

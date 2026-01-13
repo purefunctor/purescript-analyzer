@@ -48,6 +48,8 @@ pub struct WasmQueryEngine {
 
     prim_id: FileId,
     user_id: Option<FileId>,
+    /// FileIds of external (package) modules, for cleanup
+    external_ids: Vec<FileId>,
 }
 
 impl WasmQueryEngine {
@@ -78,6 +80,52 @@ impl WasmQueryEngine {
             interned: RefCell::new(interned),
             prim_id: prim_id.expect("invariant violated: Prim must exist"),
             user_id: None,
+            external_ids: Vec::new(),
+        }
+    }
+
+    /// Register an external module (from a package).
+    /// Returns the FileId for the module.
+    pub fn register_external_module(&mut self, module_name: &str, source: &str) -> FileId {
+        let path = format!("pkg://registry/{module_name}.purs");
+        let id = self.files.borrow_mut().insert(path.as_str(), source);
+
+        self.input.borrow_mut().content.insert(id, Arc::from(source));
+
+        let name_id = self.interned.borrow_mut().module.intern(module_name);
+        self.input.borrow_mut().module.insert(name_id, id);
+
+        self.external_ids.push(id);
+        id
+    }
+
+    /// Clear all external modules (packages), keeping Prim and user modules.
+    pub fn clear_external_modules(&mut self) {
+        let mut derived = self.derived.borrow_mut();
+        let mut input = self.input.borrow_mut();
+
+        for id in self.external_ids.drain(..) {
+            input.content.remove(&id);
+            derived.parsed.remove(&id);
+            derived.stabilized.remove(&id);
+            derived.indexed.remove(&id);
+            derived.lowered.remove(&id);
+            derived.resolved.remove(&id);
+            derived.bracketed.remove(&id);
+            derived.sectioned.remove(&id);
+            derived.checked.remove(&id);
+        }
+
+        // Also clear caches for user module since imports may have changed
+        if let Some(user_id) = self.user_id {
+            derived.parsed.remove(&user_id);
+            derived.stabilized.remove(&user_id);
+            derived.indexed.remove(&user_id);
+            derived.lowered.remove(&user_id);
+            derived.resolved.remove(&user_id);
+            derived.bracketed.remove(&user_id);
+            derived.sectioned.remove(&user_id);
+            derived.checked.remove(&user_id);
         }
     }
 

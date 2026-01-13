@@ -6,8 +6,10 @@ interface Props {
 }
 
 const tabs: { id: Mode; label: string }[] = [
-  { id: "cst", label: "CST Preview" },
+  { id: "getstarted", label: "Get Started" },
   { id: "typechecker", label: "Type Checker" },
+  { id: "cst", label: "CST Preview" },
+  { id: "packages", label: "Packages" },
 ];
 
 export function Tabs({ activeTab, onTabChange }: Props) {
