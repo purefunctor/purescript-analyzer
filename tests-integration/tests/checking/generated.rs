@@ -333,3 +333,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_160_derive_bifoldable_simple_main() { run_test("160_derive_bifoldable_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_161_derive_bifoldable_higher_kinded_main() { run_test("161_derive_bifoldable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_162_derive_traversable_simple_main() { run_test("162_derive_traversable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_163_derive_traversable_higher_kinded_main() { run_test("163_derive_traversable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_164_derive_bitraversable_simple_main() { run_test("164_derive_bitraversable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_165_derive_bitraversable_higher_kinded_main() { run_test("165_derive_bitraversable_higher_kinded", "Main"); }

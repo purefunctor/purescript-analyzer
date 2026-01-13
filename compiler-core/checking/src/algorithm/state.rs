@@ -624,6 +624,8 @@ pub struct KnownTypesCore {
     pub profunctor: Option<(FileId, TypeItemId)>,
     pub foldable: Option<(FileId, TypeItemId)>,
     pub bifoldable: Option<(FileId, TypeItemId)>,
+    pub traversable: Option<(FileId, TypeItemId)>,
+    pub bitraversable: Option<(FileId, TypeItemId)>,
 }
 
 impl KnownTypesCore {
@@ -639,6 +641,8 @@ impl KnownTypesCore {
         let profunctor = fetch_known_type(queries, "Data.Profunctor", "Profunctor")?;
         let foldable = fetch_known_type(queries, "Data.Foldable", "Foldable")?;
         let bifoldable = fetch_known_type(queries, "Data.Bifoldable", "Bifoldable")?;
+        let traversable = fetch_known_type(queries, "Data.Traversable", "Traversable")?;
+        let bitraversable = fetch_known_type(queries, "Data.Bitraversable", "Bitraversable")?;
         Ok(KnownTypesCore {
             eq,
             eq1,
@@ -650,6 +654,8 @@ impl KnownTypesCore {
             profunctor,
             foldable,
             bifoldable,
+            traversable,
+            bitraversable,
         })
     }
 }

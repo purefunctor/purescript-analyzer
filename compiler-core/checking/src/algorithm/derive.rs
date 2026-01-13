@@ -5,6 +5,7 @@ mod foldable;
 mod functor;
 mod higher_kinded;
 mod tools;
+mod traversable;
 mod variance;
 
 use building_types::QueryResult;
@@ -106,6 +107,10 @@ where
                 foldable::check_derive_foldable(state, context, elaborated)?;
             } else if class_is(known_types.bifoldable) {
                 foldable::check_derive_bifoldable(state, context, elaborated)?;
+            } else if class_is(known_types.traversable) {
+                traversable::check_derive_traversable(state, context, elaborated)?;
+            } else if class_is(known_types.bitraversable) {
+                traversable::check_derive_bitraversable(state, context, elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };

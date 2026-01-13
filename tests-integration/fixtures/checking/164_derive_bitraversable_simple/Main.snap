@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Left :: forall (a :: Type) (b :: Type). a -> Either a b
+Right :: forall (a :: Type) (b :: Type). b -> Either a b
+Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+
+Types
+Either :: Type -> Type -> Type
+Pair :: Type -> Type -> Type
+
+Data
+Either
+  Quantified = :0
+  Kind = :0
+
+Pair
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Bitraversable (Either :: Type -> Type -> Type)
+derive Bitraversable (Pair :: Type -> Type -> Type)
