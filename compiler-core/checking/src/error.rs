@@ -35,6 +35,9 @@ pub enum ErrorKind {
     ContravariantOccurrence {
         type_id: TypeId,
     },
+    CovariantOccurrence {
+        type_id: TypeId,
+    },
     CannotUnify {
         t1: TypeId,
         t2: TypeId,

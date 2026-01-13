@@ -313,3 +313,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_150_derive_bifunctor_higher_kinded_main() { run_test("150_derive_bifunctor_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_151_derive_bifunctor_missing_functor_main() { run_test("151_derive_bifunctor_missing_functor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_152_derive_contravariant_simple_main() { run_test("152_derive_contravariant_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_153_derive_contravariant_error_main() { run_test("153_derive_contravariant_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_154_derive_profunctor_simple_main() { run_test("154_derive_profunctor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_155_derive_profunctor_error_main() { run_test("155_derive_profunctor_error", "Main"); }

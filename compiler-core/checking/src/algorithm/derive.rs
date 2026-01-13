@@ -26,7 +26,6 @@ pub struct CheckDerive<'a> {
     pub is_newtype: bool,
 }
 
-
 /// Checks a derived instance.
 pub fn check_derive<Q>(
     state: &mut CheckState,
@@ -81,6 +80,8 @@ where
             let is_ord = context.known_types.ord == Some(class);
             let is_functor = context.known_types.functor == Some(class);
             let is_bifunctor = context.known_types.bifunctor == Some(class);
+            let is_contravariant = context.known_types.contravariant == Some(class);
+            let is_profunctor = context.known_types.profunctor == Some(class);
 
             if is_eq || is_ord {
                 check_derive_class(state, context, elaborated)?;
@@ -88,6 +89,10 @@ where
                 functor::check_derive_functor(state, context, elaborated)?;
             } else if is_bifunctor {
                 functor::check_derive_bifunctor(state, context, elaborated)?;
+            } else if is_contravariant {
+                functor::check_derive_contravariant(state, context, elaborated)?;
+            } else if is_profunctor {
+                functor::check_derive_profunctor(state, context, elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };

@@ -7,8 +7,8 @@
 use files::FileId;
 use indexing::TypeItemId;
 
-use crate::algorithm::derive::tools;
 use crate::ExternalQueries;
+use crate::algorithm::derive::tools;
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::core::{RowType, Type, TypeId, Variable};
@@ -94,4 +94,3 @@ fn lookup_variable_kind(state: &CheckState, variable: &Variable) -> Option<TypeI
         Variable::Free(_) => None,
     }
 }
-
