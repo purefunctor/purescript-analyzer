@@ -1,8 +1,11 @@
 //! Implements type class deriving for PureScript.
 
+mod contravariant;
+mod foldable;
 mod functor;
 mod higher_kinded;
 mod tools;
+mod variance;
 
 use building_types::QueryResult;
 use files::FileId;
@@ -86,25 +89,23 @@ where
         if is_newtype {
             check_newtype_derive(state, context, elaborated)?;
         } else {
-            let class = (class_file, class_id);
+            let class_is = |known| Some((class_file, class_id)) == known;
+            let known_types = &context.known_types;
 
-            let is_eq = context.known_types.eq == Some(class);
-            let is_ord = context.known_types.ord == Some(class);
-            let is_functor = context.known_types.functor == Some(class);
-            let is_bifunctor = context.known_types.bifunctor == Some(class);
-            let is_contravariant = context.known_types.contravariant == Some(class);
-            let is_profunctor = context.known_types.profunctor == Some(class);
-
-            if is_eq || is_ord {
+            if class_is(known_types.eq) || class_is(known_types.ord) {
                 check_derive_class(state, context, elaborated)?;
-            } else if is_functor {
+            } else if class_is(known_types.functor) {
                 functor::check_derive_functor(state, context, elaborated)?;
-            } else if is_bifunctor {
+            } else if class_is(known_types.bifunctor) {
                 functor::check_derive_bifunctor(state, context, elaborated)?;
-            } else if is_contravariant {
-                functor::check_derive_contravariant(state, context, elaborated)?;
-            } else if is_profunctor {
-                functor::check_derive_profunctor(state, context, elaborated)?;
+            } else if class_is(known_types.contravariant) {
+                contravariant::check_derive_contravariant(state, context, elaborated)?;
+            } else if class_is(known_types.profunctor) {
+                contravariant::check_derive_profunctor(state, context, elaborated)?;
+            } else if class_is(known_types.foldable) {
+                foldable::check_derive_foldable(state, context, elaborated)?;
+            } else if class_is(known_types.bifoldable) {
+                foldable::check_derive_bifoldable(state, context, elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };

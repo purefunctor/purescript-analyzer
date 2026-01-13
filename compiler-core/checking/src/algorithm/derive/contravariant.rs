@@ -1,4 +1,4 @@
-//! Implements derive for Functor and Bifunctor.
+//! Implements derive for Contravariant and Profunctor.
 
 use building_types::QueryResult;
 
@@ -9,8 +9,8 @@ use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
 use crate::error::ErrorKind;
 
-/// Checks a derive instance for Functor.
-pub fn check_derive_functor<Q>(
+/// Checks a derive instance for Contravariant.
+pub fn check_derive_contravariant<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
@@ -34,18 +34,18 @@ where
         return Ok(());
     };
 
-    let functor = Some((input.class_file, input.class_id));
+    let contravariant = Some((input.class_file, input.class_id));
     tools::push_given_constraints(state, &input.constraints);
     tools::register_derived_instance(state, context, input);
 
-    let config = VarianceConfig::Single((Variance::Covariant, functor));
+    let config = VarianceConfig::Single((Variance::Contravariant, contravariant));
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
 
     tools::solve_and_report_constraints(state, context)
 }
 
-/// Checks a derive instance for Bifunctor.
-pub fn check_derive_bifunctor<Q>(
+/// Checks a derive instance for Profunctor.
+pub fn check_derive_profunctor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
@@ -69,13 +69,16 @@ where
         return Ok(());
     };
 
-    // Bifunctor derivation emits Functor constraints for wrapped parameters.
+    // Profunctor: first param is contravariant, second is covariant.
+    let contravariant = context.known_types.contravariant;
     let functor = context.known_types.functor;
     tools::push_given_constraints(state, &input.constraints);
     tools::register_derived_instance(state, context, input);
 
-    let config =
-        VarianceConfig::Pair((Variance::Covariant, functor), (Variance::Covariant, functor));
+    let config = VarianceConfig::Pair(
+        (Variance::Contravariant, contravariant),
+        (Variance::Covariant, functor),
+    );
 
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
 

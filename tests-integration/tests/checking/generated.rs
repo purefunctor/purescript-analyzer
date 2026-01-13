@@ -325,3 +325,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_156_derive_bifunctor_insufficient_params_main() { run_test("156_derive_bifunctor_insufficient_params", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_157_derive_functor_insufficient_params_main() { run_test("157_derive_functor_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_158_derive_foldable_simple_main() { run_test("158_derive_foldable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_159_derive_foldable_higher_kinded_main() { run_test("159_derive_foldable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_160_derive_bifoldable_simple_main() { run_test("160_derive_bifoldable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_161_derive_bifoldable_higher_kinded_main() { run_test("161_derive_bifoldable_higher_kinded", "Main"); }
