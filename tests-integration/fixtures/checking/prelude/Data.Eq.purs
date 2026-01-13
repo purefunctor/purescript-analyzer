@@ -8,3 +8,6 @@ class Eq1 f where
 
 instance Eq Int where
   eq _ _ = true
+
+instance Eq Boolean where
+  eq _ _ = true

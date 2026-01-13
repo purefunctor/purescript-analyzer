@@ -3,12 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-MkBox :: Int -> Box
+MkNoEq :: NoEq
+MkBox :: NoEq -> Box
 
 Types
+NoEq :: Type
 Box :: Type
 
 Data
+NoEq
+  Quantified = :0
+  Kind = :0
+
 Box
   Quantified = :0
   Kind = :0
@@ -18,4 +24,4 @@ Derived
 derive Eq (Box :: Type)
 
 Errors
-NoInstanceFound { Eq Int } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Eq NoEq } at [TermDeclaration(Idx::<TermItem>(2))]
