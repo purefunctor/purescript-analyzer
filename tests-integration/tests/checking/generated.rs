@@ -321,3 +321,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_154_derive_profunctor_simple_main() { run_test("154_derive_profunctor_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_155_derive_profunctor_error_main() { run_test("155_derive_profunctor_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_156_derive_bifunctor_insufficient_params_main() { run_test("156_derive_bifunctor_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_157_derive_functor_insufficient_params_main() { run_test("157_derive_functor_insufficient_params", "Main"); }

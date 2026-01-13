@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Triple :: forall (a :: Type) (b :: Type) (c :: Type). a -> b -> c -> Triple a b c
+
+Types
+Triple :: Type -> Type -> Type -> Type
+
+Data
+Triple
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive Bifunctor (Triple Int String :: Type -> Type)
+
+Errors
+CannotDeriveForType { type_id: Id<checking::core::Type>(25) } at [TermDeclaration(Idx::<TermItem>(1))]

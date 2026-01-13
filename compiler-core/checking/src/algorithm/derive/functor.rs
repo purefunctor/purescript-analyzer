@@ -8,7 +8,6 @@
 use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
-use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::algorithm::derive::{extract_type_arguments, tools};
@@ -36,29 +35,45 @@ impl Variance {
 
 /// A derived type parameter with its expected variance and wrapper class.
 #[derive(Clone, Copy)]
-struct DerivedParam {
+struct DerivedParameter {
     level: debruijn::Level,
     /// Expected variance for this parameter.
     expected: Variance,
     /// The class to emit when this parameter appears wrapped in a type application.
     /// For Functor/Bifunctor this is Functor, for Contravariant/Profunctor's first
     /// param this is Contravariant.
-    wrapper_class: Option<(FileId, TypeItemId)>,
+    class: Option<(FileId, TypeItemId)>,
+}
+
+impl DerivedParameter {
+    fn new(level: debruijn::Level, (expected, class): ParameterConfig) -> DerivedParameter {
+        DerivedParameter { level, expected, class }
+    }
 }
 
 /// Tracks the Skolem variables representing derived type parameters.
-struct DerivedSkolems {
-    /// Parameters being mapped over with their variance requirements.
-    /// - `Functor`: one param (Covariant, Functor)
-    /// - `Contravariant`: one param (Contravariant, Contravariant)
-    /// - `Bifunctor`: two params (Covariant, Functor), (Covariant, Functor)
-    /// - `Profunctor`: two params (Contravariant, Contravariant), (Covariant, Functor)
-    params: Vec<DerivedParam>,
+///
+/// - `Invalid`: Insufficient type parameters for derivation
+/// - `Single`: Functor (covariant) or Contravariant (contravariant)
+/// - `Pair`: Bifunctor (both covariant) or Profunctor (contra, covariant)
+enum DerivedSkolems {
+    Invalid,
+    Single(DerivedParameter),
+    Pair(DerivedParameter, DerivedParameter),
 }
 
 impl DerivedSkolems {
-    fn get(&self, level: debruijn::Level) -> Option<&DerivedParam> {
-        self.params.iter().find(|p| p.level == level)
+    fn get(&self, level: debruijn::Level) -> Option<&DerivedParameter> {
+        self.iter().find(|p| p.level == level)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &DerivedParameter> {
+        let (first, second) = match self {
+            DerivedSkolems::Invalid => (None, None),
+            DerivedSkolems::Single(a) => (Some(a), None),
+            DerivedSkolems::Pair(a, b) => (Some(a), Some(b)),
+        };
+        first.into_iter().chain(second)
     }
 }
 
@@ -91,7 +106,7 @@ where
     tools::push_given_constraints(state, &input.constraints);
     tools::register_derived_instance(state, context, input);
 
-    let config = VarianceConfig::new([(Variance::Covariant, functor)]);
+    let config = VarianceConfig::Single((Variance::Covariant, functor));
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
 
     tools::solve_and_report_constraints(state, context)
@@ -128,7 +143,7 @@ where
     tools::register_derived_instance(state, context, input);
 
     let config =
-        VarianceConfig::new([(Variance::Covariant, functor), (Variance::Covariant, functor)]);
+        VarianceConfig::Pair((Variance::Covariant, functor), (Variance::Covariant, functor));
 
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
 
@@ -164,7 +179,7 @@ where
     tools::push_given_constraints(state, &input.constraints);
     tools::register_derived_instance(state, context, input);
 
-    let config = VarianceConfig::new([(Variance::Contravariant, contravariant)]);
+    let config = VarianceConfig::Single((Variance::Contravariant, contravariant));
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
 
     tools::solve_and_report_constraints(state, context)
@@ -201,10 +216,10 @@ where
     tools::push_given_constraints(state, &input.constraints);
     tools::register_derived_instance(state, context, input);
 
-    let config = VarianceConfig::new([
+    let config = VarianceConfig::Pair(
         (Variance::Contravariant, contravariant),
         (Variance::Covariant, functor),
-    ]);
+    );
 
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
 
@@ -215,16 +230,9 @@ where
 type ParameterConfig = (Variance, Option<(FileId, TypeItemId)>);
 
 /// Configuration for variance-aware derivation.
-struct VarianceConfig {
-    /// Expected variance and wrapper class for each derived parameter.
-    /// Ordered from first to last (e.g., for `data T a b`, index 0 is `a`).
-    params: Vec<ParameterConfig>,
-}
-
-impl VarianceConfig {
-    fn new(params: impl IntoIterator<Item = ParameterConfig>) -> Self {
-        Self { params: params.into_iter().collect() }
-    }
+enum VarianceConfig {
+    Single(ParameterConfig),
+    Pair(ParameterConfig, ParameterConfig),
 }
 
 /// Generates variance-aware constraints for Functor-like derivation.
@@ -244,10 +252,13 @@ where
     for constructor_id in constructors {
         let constructor_type =
             super::lookup_local_term_type(state, context, data_file, constructor_id)?;
-        let Some(constructor_type) = constructor_type else { continue };
+
+        let Some(constructor_type) = constructor_type else {
+            continue;
+        };
 
         let (fields, skolems) =
-            extract_fields_with_skolems(state, constructor_type, derived_type, &config);
+            extract_fields_with_skolems(state, context, constructor_type, derived_type, &config);
 
         for field_type in fields {
             check_variance_field(state, context, field_type, Variance::Covariant, &skolems);
@@ -261,12 +272,16 @@ where
 ///
 /// Uses the variance configuration to assign expected variance and wrapper class
 /// to each derived parameter's Skolem variable.
-fn extract_fields_with_skolems(
+fn extract_fields_with_skolems<Q>(
     state: &mut CheckState,
+    context: &CheckContext<Q>,
     constructor_type: TypeId,
     derived_type: TypeId,
     config: &VarianceConfig,
-) -> (Vec<TypeId>, DerivedSkolems) {
+) -> (Vec<TypeId>, DerivedSkolems)
+where
+    Q: ExternalQueries,
+{
     let type_arguments = extract_type_arguments(state, derived_type);
     let mut arguments_iter = type_arguments.into_iter();
     let mut current_id = constructor_type;
@@ -293,15 +308,20 @@ fn extract_fields_with_skolems(
     }
 
     // The last N levels correspond to the N derived parameters.
-    // Take last N via rev().take(N), then restore original order.
-    let param_count = config.params.len();
-    let derived_levels: Vec<_> = levels.into_iter().rev().take(param_count).collect();
-    let params = derived_levels
-        .into_iter()
-        .rev()
-        .zip(config.params.iter())
-        .map(|(level, &(expected, wrapper_class))| DerivedParam { level, expected, wrapper_class })
-        .collect_vec();
+    let skolems = match (config, &levels[..]) {
+        (VarianceConfig::Single(config), [.., a]) => {
+            DerivedSkolems::Single(DerivedParameter::new(*a, *config))
+        }
+        (VarianceConfig::Pair(a_config, b_config), [.., a, b]) => DerivedSkolems::Pair(
+            DerivedParameter::new(*a, *a_config),
+            DerivedParameter::new(*b, *b_config),
+        ),
+        _ => {
+            let global_type = transfer::globalize(state, context, derived_type);
+            state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+            DerivedSkolems::Invalid
+        }
+    };
 
     let mut fields = vec![];
     safe_loop! {
@@ -315,7 +335,7 @@ fn extract_fields_with_skolems(
         }
     }
 
-    (fields, DerivedSkolems { params })
+    (fields, skolems)
 }
 
 /// Checks a field type for variance violations and emits wrapper class constraints.
@@ -355,10 +375,9 @@ fn check_variance_field<Q>(
             if function == context.prim.record {
                 check_variance_field(state, context, argument, variance, skolems);
             } else {
-                // Check each derived parameter that appears in the argument
-                for param in &skolems.params {
-                    if contains_skolem_level(state, argument, param.level) {
-                        if variance != param.expected {
+                for parameter in skolems.iter() {
+                    if contains_skolem_level(state, argument, parameter.level) {
+                        if variance != parameter.expected {
                             let global = transfer::globalize(state, context, type_id);
                             if variance == Variance::Covariant {
                                 state.insert_error(ErrorKind::CovariantOccurrence {
@@ -369,8 +388,8 @@ fn check_variance_field<Q>(
                                     type_id: global,
                                 });
                             }
-                        } else if let Some(wrapper_class) = param.wrapper_class {
-                            tools::emit_constraint(state, wrapper_class, function);
+                        } else if let Some(class) = parameter.class {
+                            tools::emit_constraint(state, class, function);
                         } else {
                             state.insert_error(ErrorKind::DeriveMissingFunctor);
                         }
