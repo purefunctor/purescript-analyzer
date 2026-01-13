@@ -29,5 +29,5 @@ Choice
 
 Derived
 derive Profunctor (Fn :: Type -> Type -> Type)
-derive Profunctor (ConstR @&0 &1 :: Type -> &0 -> Type)
+derive Profunctor (ConstR @Type &0 :: Type -> Type -> Type)
 derive Profunctor (Choice :: Type -> Type -> Type)

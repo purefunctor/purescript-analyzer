@@ -29,5 +29,5 @@ Maybe
 
 Derived
 derive Functor (Identity :: Type -> Type)
-derive Functor (Const @&0 &1 :: &0 -> Type)
+derive Functor (Const @Type &0 :: Type -> Type)
 derive Functor (Maybe :: Type -> Type)

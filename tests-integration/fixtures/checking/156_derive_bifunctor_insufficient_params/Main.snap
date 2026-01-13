@@ -18,4 +18,5 @@ Derived
 derive Bifunctor (Triple Int String :: Type -> Type)
 
 Errors
-CannotDeriveForType { type_id: Id<checking::core::Type>(25) } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(21))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]

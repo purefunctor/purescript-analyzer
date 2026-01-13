@@ -27,7 +27,7 @@ WrapBothNoConstraint
 
 Derived
 derive (Functor &0, Functor &1) => Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
-derive Bifunctor (WrapBothNoConstraint @&0 @&1 &2 &3 :: &0 -> &1 -> Type)
+derive Bifunctor (WrapBothNoConstraint @Type @Type &0 &1 :: Type -> Type -> Type)
 
 Errors
 NoInstanceFound { Functor &0 } at [TermDeclaration(Idx::<TermItem>(3))]

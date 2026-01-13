@@ -17,7 +17,7 @@ WrapBoth
 
 
 Derived
-derive Bifunctor (WrapBoth @&0 @&1 &2 &3 :: &0 -> &1 -> Type)
+derive Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
 
 Errors
 DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]

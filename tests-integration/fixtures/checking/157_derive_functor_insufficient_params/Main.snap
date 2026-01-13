@@ -25,5 +25,7 @@ derive Functor (Pair Int String :: Type)
 derive Functor (Unit :: Type)
 
 Errors
-CannotDeriveForType { type_id: Id<checking::core::Type>(21) } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(19))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(34) } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(3)), CheckingKind(AstId<syntax::cst::Type>(28))]
 CannotDeriveForType { type_id: Id<checking::core::Type>(17) } at [TermDeclaration(Idx::<TermItem>(3))]

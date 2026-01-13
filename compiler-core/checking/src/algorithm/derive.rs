@@ -11,7 +11,7 @@ use indexing::{DeriveId, TermItemId, TypeItemId};
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute, transfer};
+use crate::algorithm::{kind, substitute, term_item, transfer};
 use crate::core::{Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -49,10 +49,22 @@ where
         // Save the current size of the environment for unbinding.
         let size = state.type_scope.size();
 
+        let class_kind = kind::lookup_file_type(state, context, class_file, class_id)?;
+        let expected_kinds = term_item::instantiate_class_kind(state, context, class_kind)?;
+
+        if expected_kinds.len() != arguments.len() {
+            state.insert_error(ErrorKind::InstanceHeadMismatch {
+                class_file,
+                class_item: class_id,
+                expected: expected_kinds.len(),
+                actual: arguments.len(),
+            });
+        }
+
         let mut core_arguments = vec![];
-        for argument in arguments.iter() {
+        for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
             let (inferred_type, inferred_kind) =
-                kind::infer_surface_kind(state, context, *argument)?;
+                kind::check_surface_kind(state, context, *argument, expected_kind)?;
             core_arguments.push((inferred_type, inferred_kind));
         }
 

@@ -194,7 +194,7 @@ where
 ///
 /// This function instantiates kind variables as unification variables and
 /// extracts the argument kinds to check them against instance arguments.
-fn instantiate_class_kind<Q>(
+pub fn instantiate_class_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_kind: TypeId,

@@ -31,4 +31,4 @@ Const2
 Derived
 derive Bifunctor (Either :: Type -> Type -> Type)
 derive Bifunctor (Pair :: Type -> Type -> Type)
-derive Bifunctor (Const2 @&0 @&1 &2 :: &0 -> &1 -> Type)
+derive Bifunctor (Const2 @Type @Type &0 :: Type -> Type -> Type)
