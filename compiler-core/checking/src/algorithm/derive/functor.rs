@@ -9,12 +9,13 @@ use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
 
+use crate::algorithm::derive::tools;
 use crate::ExternalQueries;
-use crate::algorithm::derive::{ElaboratedDerive, extract_type_arguments};
+use crate::algorithm::derive::extract_type_arguments;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{quantify, substitute, transfer};
-use crate::core::{Instance, InstanceKind, RowType, Type, TypeId, Variable, debruijn};
+use crate::algorithm::{substitute, transfer};
+use crate::core::{RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
 /// Variance of a type position.
@@ -51,7 +52,7 @@ impl DerivedSkolems {
 pub fn check_derive_functor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    input: &ElaboratedDerive,
+    input: tools::ElaboratedDerive,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -72,68 +73,20 @@ where
         return Ok(());
     };
 
-    let mut instance = Instance {
-        arguments: input.arguments.clone(),
-        constraints: input.constraints.clone(),
-        resolution: (input.class_file, input.class_id),
-        kind: InstanceKind::Derive,
-        kind_variables: debruijn::Size(0),
-    };
-
-    quantify::quantify_instance(state, &mut instance);
-
-    let global_arguments = instance
-        .arguments
-        .iter()
-        .map(|&(t, k)| {
-            let t = transfer::globalize(state, context, t);
-            let k = transfer::globalize(state, context, k);
-            (t, k)
-        })
-        .collect_vec();
-
-    let global_constraints = instance
-        .constraints
-        .iter()
-        .map(|&(t, k)| {
-            let t = transfer::globalize(state, context, t);
-            let k = transfer::globalize(state, context, k);
-            (t, k)
-        })
-        .collect_vec();
-
-    state.checked.derived.insert(
-        input.derive_id,
-        Instance {
-            arguments: global_arguments,
-            constraints: global_constraints,
-            resolution: (input.class_file, input.class_id),
-            kind: InstanceKind::Derive,
-            kind_variables: instance.kind_variables,
-        },
-    );
-
-    for (constraint_type, _) in &input.constraints {
-        state.constraints.push_given(*constraint_type);
-    }
-
     let functor = Some((input.class_file, input.class_id));
+    tools::push_given_constraints(state, &input.constraints);
+    tools::register_derived_instance(state, context, input);
+
     generate_functor_constraints(state, context, data_file, data_id, derived_type, functor, 1)?;
 
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
-
-    Ok(())
+    tools::solve_and_report_constraints(state, context)
 }
 
 /// Checks a derive instance for Bifunctor.
 pub fn check_derive_bifunctor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    input: &ElaboratedDerive,
+    input: tools::ElaboratedDerive,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -154,62 +107,14 @@ where
         return Ok(());
     };
 
-    let mut instance = Instance {
-        arguments: input.arguments.clone(),
-        constraints: input.constraints.clone(),
-        resolution: (input.class_file, input.class_id),
-        kind: InstanceKind::Derive,
-        kind_variables: debruijn::Size(0),
-    };
-
-    quantify::quantify_instance(state, &mut instance);
-
-    let global_arguments = instance
-        .arguments
-        .iter()
-        .map(|&(t, k)| {
-            let t = transfer::globalize(state, context, t);
-            let k = transfer::globalize(state, context, k);
-            (t, k)
-        })
-        .collect_vec();
-
-    let global_constraints = instance
-        .constraints
-        .iter()
-        .map(|&(t, k)| {
-            let t = transfer::globalize(state, context, t);
-            let k = transfer::globalize(state, context, k);
-            (t, k)
-        })
-        .collect_vec();
-
-    state.checked.derived.insert(
-        input.derive_id,
-        Instance {
-            arguments: global_arguments,
-            constraints: global_constraints,
-            resolution: (input.class_file, input.class_id),
-            kind: InstanceKind::Derive,
-            kind_variables: instance.kind_variables,
-        },
-    );
-
-    for (constraint_type, _) in &input.constraints {
-        state.constraints.push_given(*constraint_type);
-    }
-
     // Bifunctor derivation emits Functor constraints for wrapped parameters.
     let functor = context.known_types.functor;
+    tools::push_given_constraints(state, &input.constraints);
+    tools::register_derived_instance(state, context, input);
+
     generate_functor_constraints(state, context, data_file, data_id, derived_type, functor, 2)?;
 
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
-
-    Ok(())
+    tools::solve_and_report_constraints(state, context)
 }
 
 /// Generates variance-aware constraints for Functor/Bifunctor derivation.
@@ -225,12 +130,7 @@ fn generate_functor_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    let constructors = if data_file == context.id {
-        context.indexed.pairs.data_constructors(data_id).collect_vec()
-    } else {
-        let indexed = context.queries.indexed(data_file)?;
-        indexed.pairs.data_constructors(data_id).collect_vec()
-    };
+    let constructors = tools::lookup_data_constructors(context, data_file, data_id)?;
 
     for constructor_id in constructors {
         let constructor_type =
@@ -338,7 +238,7 @@ fn check_functor_field<Q>(
                     let global = transfer::globalize(state, context, type_id);
                     state.insert_error(ErrorKind::ContravariantOccurrence { type_id: global });
                 } else if let Some(functor) = functor {
-                    emit_constraint(state, functor, function);
+                    tools::emit_constraint(state, functor, function);
                 } else {
                     state.insert_error(ErrorKind::DeriveMissingFunctor);
                 }
@@ -396,13 +296,3 @@ fn contains_derived_skolem(
     }
 }
 
-/// Emits a constraint `Class type_id`.
-fn emit_constraint(
-    state: &mut CheckState,
-    (class_file, class_id): (FileId, TypeItemId),
-    type_id: TypeId,
-) {
-    let class_type = state.storage.intern(Type::Constructor(class_file, class_id));
-    let constraint = state.storage.intern(Type::Application(class_type, type_id));
-    state.constraints.push_wanted(constraint);
-}

@@ -7,6 +7,7 @@
 use files::FileId;
 use indexing::TypeItemId;
 
+use crate::algorithm::derive::tools;
 use crate::ExternalQueries;
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
@@ -45,11 +46,11 @@ pub fn generate_constraint<Q>(
                 generate_constraint(state, context, argument, class, class1);
             } else if is_variable_type_type(state, context, function) {
                 if let Some(class1) = class1 {
-                    emit_constraint(state, class1, function);
+                    tools::emit_constraint(state, class1, function);
                 }
                 generate_constraint(state, context, argument, class, class1);
             } else {
-                emit_constraint(state, class, type_id);
+                tools::emit_constraint(state, class, type_id);
             }
         }
         Type::Row(RowType { ref fields, .. }) => {
@@ -58,7 +59,7 @@ pub fn generate_constraint<Q>(
             }
         }
         _ => {
-            emit_constraint(state, class, type_id);
+            tools::emit_constraint(state, class, type_id);
         }
     }
 }
@@ -94,12 +95,3 @@ fn lookup_variable_kind(state: &CheckState, variable: &Variable) -> Option<TypeI
     }
 }
 
-fn emit_constraint(
-    state: &mut CheckState,
-    (class_file, class_id): (FileId, TypeItemId),
-    type_id: TypeId,
-) {
-    let class_type = state.storage.intern(Type::Constructor(class_file, class_id));
-    let constraint = state.storage.intern(Type::Application(class_type, type_id));
-    state.constraints.push_wanted(constraint);
-}

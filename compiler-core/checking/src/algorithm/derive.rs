@@ -2,17 +2,17 @@
 
 mod functor;
 mod higher_kinded;
+mod tools;
 
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{DeriveId, TermItemId, TypeItemId};
-use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, quantify, substitute, transfer};
-use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
+use crate::algorithm::{kind, substitute, transfer};
+use crate::core::{Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 /// Input fields for [`check_derive`].
@@ -26,13 +26,6 @@ pub struct CheckDerive<'a> {
     pub is_newtype: bool,
 }
 
-struct ElaboratedDerive {
-    derive_id: DeriveId,
-    constraints: Vec<(TypeId, TypeId)>,
-    arguments: Vec<(TypeId, TypeId)>,
-    class_file: FileId,
-    class_id: TypeItemId,
-}
 
 /// Checks a derived instance.
 pub fn check_derive<Q>(
@@ -71,7 +64,7 @@ where
             core_constraints.push((inferred_type, inferred_kind));
         }
 
-        let elaborated = ElaboratedDerive {
+        let elaborated = tools::ElaboratedDerive {
             derive_id,
             constraints: core_constraints,
             arguments: core_arguments,
@@ -80,7 +73,7 @@ where
         };
 
         if is_newtype {
-            check_newtype_derive(state, context, &elaborated)?;
+            check_newtype_derive(state, context, elaborated)?;
         } else {
             let class = (class_file, class_id);
 
@@ -90,11 +83,11 @@ where
             let is_bifunctor = context.known_types.bifunctor == Some(class);
 
             if is_eq || is_ord {
-                check_derive_class(state, context, &elaborated)?;
+                check_derive_class(state, context, elaborated)?;
             } else if is_functor {
-                functor::check_derive_functor(state, context, &elaborated)?;
+                functor::check_derive_functor(state, context, elaborated)?;
             } else if is_bifunctor {
-                functor::check_derive_bifunctor(state, context, &elaborated)?;
+                functor::check_derive_bifunctor(state, context, elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };
@@ -110,7 +103,7 @@ where
 fn check_derive_class<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    input: &ElaboratedDerive,
+    input: tools::ElaboratedDerive,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -131,64 +124,19 @@ where
         return Ok(());
     };
 
-    let mut instance = Instance {
-        arguments: input.arguments.clone(),
-        constraints: input.constraints.clone(),
-        resolution: (input.class_file, input.class_id),
-        kind: InstanceKind::Derive,
-        kind_variables: debruijn::Size(0),
-    };
-
-    quantify::quantify_instance(state, &mut instance);
-
-    let global_arguments = instance.arguments.iter().map(|&(t, k)| {
-        let t = transfer::globalize(state, context, t);
-        let k = transfer::globalize(state, context, k);
-        (t, k)
-    });
-
-    let global_arguments = global_arguments.collect_vec();
-
-    let global_constraints = instance.constraints.iter().map(|&(t, k)| {
-        let t = transfer::globalize(state, context, t);
-        let k = transfer::globalize(state, context, k);
-        (t, k)
-    });
-
-    let global_constraints = global_constraints.collect_vec();
-
-    // Register derived instances to allow recursive references.
-    state.checked.derived.insert(
-        input.derive_id,
-        Instance {
-            arguments: global_arguments,
-            constraints: global_constraints,
-            resolution: (input.class_file, input.class_id),
-            kind: InstanceKind::Derive,
-            kind_variables: instance.kind_variables,
-        },
-    );
-
-    for (constraint_type, _) in &input.constraints {
-        state.constraints.push_given(*constraint_type);
-    }
-
     let class = (input.class_file, input.class_id);
+    tools::push_given_constraints(state, &input.constraints);
+    tools::register_derived_instance(state, context, input);
+
     generate_field_constraints(state, context, data_file, data_id, derived_type, class)?;
 
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
-
-    Ok(())
+    tools::solve_and_report_constraints(state, context)
 }
 
 fn check_newtype_derive<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    input: &ElaboratedDerive,
+    input: tools::ElaboratedDerive,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -220,47 +168,6 @@ where
 
     let inner_type = get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
 
-    let mut instance = Instance {
-        arguments: input.arguments.clone(),
-        constraints: input.constraints.clone(),
-        resolution: (input.class_file, input.class_id),
-        kind: InstanceKind::Derive,
-        kind_variables: debruijn::Size(0),
-    };
-
-    quantify::quantify_instance(state, &mut instance);
-
-    let global_arguments = instance.arguments.iter().map(|&(t, k)| {
-        let t = transfer::globalize(state, context, t);
-        let k = transfer::globalize(state, context, k);
-        (t, k)
-    });
-
-    let global_arguments = global_arguments.collect_vec();
-
-    let global_constraints = instance.constraints.iter().map(|&(t, k)| {
-        let t = transfer::globalize(state, context, t);
-        let k = transfer::globalize(state, context, k);
-        (t, k)
-    });
-
-    let global_constraints = global_constraints.collect_vec();
-
-    state.checked.derived.insert(
-        input.derive_id,
-        Instance {
-            arguments: global_arguments,
-            constraints: global_constraints,
-            resolution: (input.class_file, input.class_id),
-            kind: InstanceKind::Derive,
-            kind_variables: instance.kind_variables,
-        },
-    );
-
-    for (constraint_type, _) in &input.constraints {
-        state.constraints.push_given(*constraint_type);
-    }
-
     // Build `Class t1 t2 Inner` given the constraint `Class t1 t2 Newtype`
     let delegate_constraint = {
         let class_type = state.storage.intern(Type::Constructor(input.class_file, input.class_id));
@@ -273,15 +180,12 @@ where
         state.storage.intern(Type::Application(preceding_arguments, inner_type))
     };
 
+    tools::push_given_constraints(state, &input.constraints);
+    tools::register_derived_instance(state, context, input);
+
     state.constraints.push_wanted(delegate_constraint);
 
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
-
-    Ok(())
+    tools::solve_and_report_constraints(state, context)
 }
 
 pub(crate) fn extract_type_constructor(
@@ -377,12 +281,7 @@ fn get_newtype_inner<Q>(
 where
     Q: ExternalQueries,
 {
-    let constructors = if newtype_file == context.id {
-        context.indexed.pairs.data_constructors(newtype_id).collect_vec()
-    } else {
-        let indexed = context.queries.indexed(newtype_file)?;
-        indexed.pairs.data_constructors(newtype_id).collect_vec()
-    };
+    let constructors = tools::lookup_data_constructors(context, newtype_file, newtype_id)?;
 
     let [constructor_id] = constructors[..] else {
         return Ok(context.prim.unknown);
@@ -413,12 +312,7 @@ fn generate_field_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    let constructors = if data_file == context.id {
-        context.indexed.pairs.data_constructors(data_id).collect_vec()
-    } else {
-        let indexed = context.queries.indexed(data_file)?;
-        indexed.pairs.data_constructors(data_id).collect_vec()
-    };
+    let constructors = tools::lookup_data_constructors(context, data_file, data_id)?;
 
     let class1 = if context.known_types.eq == Some(class) {
         context.known_types.eq1
