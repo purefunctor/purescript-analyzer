@@ -1,6 +1,7 @@
 //! Implements type class deriving for PureScript.
 
 mod contravariant;
+mod eq1;
 mod foldable;
 mod functor;
 mod higher_kinded;
@@ -111,6 +112,10 @@ where
                 traversable::check_derive_traversable(state, context, elaborated)?;
             } else if class_is(known_types.bitraversable) {
                 traversable::check_derive_bitraversable(state, context, elaborated)?;
+            } else if class_is(known_types.eq1) {
+                eq1::check_derive_eq1(state, context, elaborated)?;
+            } else if class_is(known_types.ord1) {
+                eq1::check_derive_ord1(state, context, elaborated)?;
             } else {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
             };

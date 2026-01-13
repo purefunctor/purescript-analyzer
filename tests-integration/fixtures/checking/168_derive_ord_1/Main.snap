@@ -1,0 +1,57 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Id :: forall (a :: Type). a -> Id a
+Wrap :: forall (t5 :: Type) (f :: t5 -> Type) (a :: t5). f a -> Wrap @t5 f a
+Compose ::
+  forall (t12 :: Type) (t16 :: Type) (f :: t12 -> Type) (g :: t16 -> t12) (a :: t16).
+    f (g a) -> Compose @t16 f g a
+NoOrd :: forall (a :: Type). a -> NoOrd a
+
+Types
+Id :: Type -> Type
+Wrap :: forall (t5 :: Type). (t5 -> Type) -> t5 -> Type
+Compose :: forall (t12 :: Type) (t16 :: Type). (t12 -> Type) -> (t16 -> t12) -> t16 -> Type
+NoOrd :: Type -> Type
+
+Data
+Id
+  Quantified = :0
+  Kind = :0
+
+Wrap
+  Quantified = :1
+  Kind = :0
+
+Compose
+  Quantified = :2
+  Kind = :0
+
+NoOrd
+  Quantified = :0
+  Kind = :0
+
+
+Derived
+derive forall (&0 :: Type). (Eq1 &1, Eq (&2 &3)) => Eq (Compose @Type @&0 &1 &2 &3 :: Type)
+derive forall (&0 :: Type). (Ord1 &1, Ord (&2 &3)) => Ord (Compose @Type @&0 &1 &2 &3 :: Type)
+derive Eq1 &0 => Eq1 (Compose @Type @Type &0 &1 :: Type -> Type)
+derive Ord1 &0 => Ord1 (Compose @Type @Type &0 &1 :: Type -> Type)
+derive Eq &0 => Eq (NoOrd &0 :: Type)
+derive Eq1 (NoOrd :: Type -> Type)
+derive Ord1 (NoOrd :: Type -> Type)
+derive Eq &0 => Eq (Id &0 :: Type)
+derive Eq1 (Id :: Type -> Type)
+derive Ord &0 => Ord (Id &0 :: Type)
+derive Ord1 (Id :: Type -> Type)
+derive (Eq1 &0, Eq &1) => Eq (Wrap @Type &0 &1 :: Type)
+derive Eq1 &0 => Eq1 (Wrap @Type &0 :: Type -> Type)
+derive (Ord1 &0, Ord &1) => Ord (Wrap @Type &0 &1 :: Type)
+derive Ord1 &0 => Ord1 (Wrap @Type &0 :: Type -> Type)
+
+Errors
+NoInstanceFound { Eq (&1 ~&2) } at [TermDeclaration(Idx::<TermItem>(13))]
+NoInstanceFound { Ord (&1 ~&2) } at [TermDeclaration(Idx::<TermItem>(14))]
+NoInstanceFound { Ord (NoOrd ~&0) } at [TermDeclaration(Idx::<TermItem>(18))]

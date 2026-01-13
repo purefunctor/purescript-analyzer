@@ -343,3 +343,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_165_derive_bitraversable_higher_kinded_main() { run_test("165_derive_bitraversable_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_166_derive_traversable_missing_superclass_main() { run_test("166_derive_traversable_missing_superclass", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_167_derive_eq_1_main() { run_test("167_derive_eq_1", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_168_derive_ord_1_main() { run_test("168_derive_ord_1", "Main"); }
