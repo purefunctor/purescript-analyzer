@@ -109,7 +109,7 @@ fn check_type_signatures<Q>(
 where
     Q: ExternalQueries,
 {
-    for scc in &context.lowered.type_scc {
+    for scc in &context.grouped.type_scc {
         let items = match scc {
             Scc::Base(id) | Scc::Recursive(id) => slice::from_ref(id),
             Scc::Mutual(items) => items,
@@ -134,7 +134,7 @@ fn check_type_definitions<Q>(
 where
     Q: ExternalQueries,
 {
-    for scc in &context.lowered.type_scc {
+    for scc in &context.grouped.type_scc {
         match scc {
             Scc::Base(id) => {
                 if let Some(item) = type_item::check_type_item(state, context, *id)? {
@@ -175,7 +175,7 @@ fn check_term_signatures<Q>(
 where
     Q: ExternalQueries,
 {
-    for scc in &context.lowered.term_scc {
+    for scc in &context.grouped.term_scc {
         match scc {
             Scc::Base(item) | Scc::Recursive(item) => {
                 term_item::check_term_signature(state, context, *item)?;
@@ -198,7 +198,7 @@ fn check_instance_heads<Q>(
 where
     Q: ExternalQueries,
 {
-    let items = context.lowered.term_scc.iter().flat_map(|scc| match scc {
+    let items = context.grouped.term_scc.iter().flat_map(|scc| match scc {
         Scc::Base(id) | Scc::Recursive(id) => slice::from_ref(id),
         Scc::Mutual(id) => id,
     });
@@ -226,7 +226,7 @@ fn check_instance_members<Q>(
 where
     Q: ExternalQueries,
 {
-    let items = context.lowered.term_scc.iter().flat_map(|scc| match scc {
+    let items = context.grouped.term_scc.iter().flat_map(|scc| match scc {
         Scc::Base(id) | Scc::Recursive(id) => slice::from_ref(id),
         Scc::Mutual(id) => id,
     });
@@ -277,7 +277,7 @@ fn check_derive_heads<Q>(
 where
     Q: ExternalQueries,
 {
-    let items = context.lowered.term_scc.iter().flat_map(|scc| match scc {
+    let items = context.grouped.term_scc.iter().flat_map(|scc| match scc {
         Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
         Scc::Mutual(items) => items.as_slice(),
     });
@@ -329,7 +329,7 @@ where
         Some(term_item::CheckValueGroup { item_id, signature, equations })
     };
 
-    for scc in &context.lowered.term_scc {
+    for scc in &context.grouped.term_scc {
         match scc {
             Scc::Base(id) | Scc::Recursive(id) => {
                 let Some(value_group) = extract_value_group(*id) else {

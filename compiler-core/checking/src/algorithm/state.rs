@@ -10,8 +10,8 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{
-    BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule, RecordPunId,
-    TypeItemIr, TypeVariableBindingId,
+    BinderId, GroupedModule, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
+    RecordPunId, TypeItemIr, TypeVariableBindingId,
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
@@ -342,6 +342,7 @@ where
     pub id: FileId,
     pub indexed: Arc<IndexedModule>,
     pub lowered: Arc<LoweredModule>,
+    pub grouped: Arc<GroupedModule>,
     pub bracketed: Arc<Bracketed>,
     pub sectioned: Arc<Sectioned>,
 
@@ -359,6 +360,7 @@ where
     ) -> QueryResult<CheckContext<'a, Q>> {
         let indexed = queries.indexed(id)?;
         let lowered = queries.lowered(id)?;
+        let grouped = queries.grouped(id)?;
         let bracketed = queries.bracketed(id)?;
         let sectioned = queries.sectioned(id)?;
         let prim = PrimCore::collect(queries, state)?;
@@ -386,6 +388,7 @@ where
             id,
             indexed,
             lowered,
+            grouped,
             bracketed,
             sectioned,
             prim_indexed,

@@ -7,7 +7,7 @@ use building_types::{ModuleNameId, ModuleNameInterner, QueryProxy, QueryResult};
 use checking::{CheckedModule, Type, TypeId, TypeInterner};
 use files::{FileId, Files};
 use indexing::IndexedModule;
-use lowering::LoweredModule;
+use lowering::{GroupedModule, LoweredModule};
 use parsing::FullParsedModule;
 use prim_constants::MODULE_MAP;
 use resolving::ResolvedModule;
@@ -26,6 +26,7 @@ struct DerivedStorage {
     stabilized: FxHashMap<FileId, Arc<StabilizedModule>>,
     indexed: FxHashMap<FileId, Arc<IndexedModule>>,
     lowered: FxHashMap<FileId, Arc<LoweredModule>>,
+    grouped: FxHashMap<FileId, Arc<GroupedModule>>,
     resolved: FxHashMap<FileId, Arc<ResolvedModule>>,
     bracketed: FxHashMap<FileId, Arc<sugar::Bracketed>>,
     sectioned: FxHashMap<FileId, Arc<sugar::Sectioned>>,
@@ -90,6 +91,7 @@ impl WasmQueryEngine {
             derived.stabilized.remove(&existing_id);
             derived.indexed.remove(&existing_id);
             derived.lowered.remove(&existing_id);
+            derived.grouped.remove(&existing_id);
             derived.resolved.remove(&existing_id);
             derived.bracketed.remove(&existing_id);
             derived.sectioned.remove(&existing_id);
@@ -125,6 +127,7 @@ impl QueryProxy for WasmQueryEngine {
     type Stabilized = Arc<StabilizedModule>;
     type Indexed = Arc<IndexedModule>;
     type Lowered = Arc<LoweredModule>;
+    type Grouped = Arc<GroupedModule>;
     type Resolved = Arc<ResolvedModule>;
     type Bracketed = Arc<sugar::Bracketed>;
     type Sectioned = Arc<sugar::Sectioned>;
@@ -189,6 +192,19 @@ impl QueryProxy for WasmQueryEngine {
 
         self.derived.borrow_mut().lowered.insert(id, lowered.clone());
         Ok(lowered)
+    }
+
+    fn grouped(&self, id: FileId) -> QueryResult<Self::Grouped> {
+        if let Some(cached) = self.derived.borrow().grouped.get(&id) {
+            return Ok(cached.clone());
+        }
+
+        let lowered = self.lowered(id)?;
+        let indexed = self.indexed(id)?;
+        let grouped = Arc::new(lowering::group_module(&indexed, &lowered));
+
+        self.derived.borrow_mut().grouped.insert(id, grouped.clone());
+        Ok(grouped)
     }
 
     fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved> {

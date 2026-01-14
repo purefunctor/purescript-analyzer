@@ -12,7 +12,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::LoweredModule;
+use lowering::GroupedModule;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
@@ -28,8 +28,8 @@ fn is_recursive_synonym<Q>(
 where
     Q: ExternalQueries,
 {
-    let is_recursive = |lowered: &LoweredModule| {
-        lowered.errors.iter().any(|error| {
+    let is_recursive = |groups: &GroupedModule| {
+        groups.cycle_errors.iter().any(|error| {
             if let lowering::LoweringError::RecursiveSynonym(recursive) = error {
                 recursive.group.contains(&item_id)
             } else {
@@ -39,9 +39,9 @@ where
     };
 
     let is_recursive = if file_id == context.id {
-        is_recursive(context.lowered.as_ref())
+        is_recursive(context.grouped.as_ref())
     } else {
-        is_recursive(context.queries.lowered(file_id)?.as_ref())
+        is_recursive(context.queries.grouped(file_id)?.as_ref())
     };
 
     Ok(is_recursive)

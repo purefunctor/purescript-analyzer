@@ -119,7 +119,7 @@ where
 
     let constructor_name = if data_file == context.id {
         let indexed = &context.indexed;
-        constructor_name(&indexed)
+        constructor_name(indexed)
     } else {
         let indexed = context.queries.indexed(data_file)?;
         constructor_name(&indexed)

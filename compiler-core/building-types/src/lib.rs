@@ -14,6 +14,7 @@ pub enum QueryKey {
     Stabilized(FileId),
     Indexed(FileId),
     Lowered(FileId),
+    Grouped(FileId),
     Resolved(FileId),
     Bracketed(FileId),
     Sectioned(FileId),
@@ -35,6 +36,7 @@ pub trait QueryProxy {
     type Stabilized;
     type Indexed;
     type Lowered;
+    type Grouped;
     type Resolved;
     type Bracketed;
     type Sectioned;
@@ -47,6 +49,8 @@ pub trait QueryProxy {
     fn indexed(&self, id: FileId) -> QueryResult<Self::Indexed>;
 
     fn lowered(&self, id: FileId) -> QueryResult<Self::Lowered>;
+
+    fn grouped(&self, id: FileId) -> QueryResult<Self::Grouped>;
 
     fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved>;
 

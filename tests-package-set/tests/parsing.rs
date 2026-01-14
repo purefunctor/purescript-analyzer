@@ -159,6 +159,15 @@ fn test_parallel_parse_package_set() {
     let start = Instant::now();
     source.par_iter().for_each(|&id| {
         let engine = engine.snapshot();
+        let grouped = engine.grouped(id);
+        assert!(grouped.is_ok());
+    });
+    let grouped = start.elapsed();
+    println!("Grouped {grouped:?}");
+
+    let start = Instant::now();
+    source.par_iter().for_each(|&id| {
+        let engine = engine.snapshot();
         let bracketed = engine.bracketed(id);
         assert!(bracketed.is_ok());
     });
@@ -185,6 +194,6 @@ fn test_parallel_parse_package_set() {
 
     println!(
         "Total {:?}",
-        parsing + cst_id + indexing + resolving + lowering + bracketing + sectioning + checking
+        parsing + cst_id + indexing + resolving + lowering + grouped + bracketing + sectioning + checking
     );
 }

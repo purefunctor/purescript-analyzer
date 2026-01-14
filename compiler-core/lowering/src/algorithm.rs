@@ -12,7 +12,7 @@ use itertools::Itertools;
 use petgraph::prelude::DiGraphMap;
 use resolving::ResolvedModule;
 use rowan::ast::AstNode;
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smol_str::SmolStr;
 use stabilizing::{ExpectId, StabilizedModule};
 use syntax::cst;
@@ -37,11 +37,10 @@ pub(crate) struct State {
     pub(crate) current_let_binding: Option<LetBindingNameGroupId>,
     pub(crate) current_let_scope: Option<GraphNodeId>,
 
-    pub(crate) term_graph: ItemGraph<TermItemId>,
-    pub(crate) type_graph: ItemGraph<TypeItemId>,
-
-    pub(crate) kind_graph: ItemGraph<TypeItemId>,
-    pub(crate) synonym_graph: ItemGraph<TypeItemId>,
+    pub(crate) term_edges: FxHashSet<(TermItemId, TermItemId)>,
+    pub(crate) type_edges: FxHashSet<(TypeItemId, TypeItemId)>,
+    pub(crate) kind_edges: FxHashSet<(TypeItemId, TypeItemId)>,
+    pub(crate) synonym_edges: FxHashSet<(TypeItemId, TypeItemId)>,
     pub(crate) let_binding_graph: ItemGraph<LetBindingNameGroupId>,
 
     pub(crate) errors: Vec<LoweringError>,
@@ -69,19 +68,16 @@ impl State {
     fn begin_term(&mut self, id: TermItemId) {
         self.current_term = Some(id);
         self.current_type = None;
-        self.term_graph.add_node(id);
     }
 
     fn begin_type(&mut self, id: TypeItemId) {
         self.current_term = None;
         self.current_type = Some(id);
         self.current_synonym = None;
-        self.type_graph.add_node(id);
     }
 
     fn begin_synonym(&mut self, id: TypeItemId) {
         self.current_synonym = Some(id);
-        self.synonym_graph.add_node(id);
     }
 
     fn end_synonym(&mut self) {
@@ -90,7 +86,6 @@ impl State {
 
     fn begin_kind(&mut self, id: TypeItemId) {
         self.current_kind = Some(id);
-        self.kind_graph.add_node(id);
     }
 
     fn end_kind(&mut self) {
@@ -206,7 +201,7 @@ impl State {
         if context.file_id == file_id
             && let Some(current_id) = self.current_term
         {
-            self.term_graph.add_edge(current_id, term_id, ());
+            self.term_edges.insert((current_id, term_id));
         }
 
         Some((file_id, term_id))
@@ -251,16 +246,16 @@ impl State {
         if context.file_id == file_id
             && let Some(current_id) = self.current_type
         {
-            self.type_graph.add_edge(current_id, type_id, ());
+            self.type_edges.insert((current_id, type_id));
 
             if let Some(synonym_id) = self.current_synonym
                 && let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind
             {
-                self.synonym_graph.add_edge(synonym_id, type_id, ());
+                self.synonym_edges.insert((synonym_id, type_id));
             }
 
             if let Some(kind_id) = self.current_kind {
-                self.kind_graph.add_edge(kind_id, type_id, ());
+                self.kind_edges.insert((kind_id, type_id));
             }
         }
 
@@ -478,8 +473,6 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         }
 
         TermItemKind::Value { signature, equations } => {
-            state.term_graph.add_node(item_id);
-
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;

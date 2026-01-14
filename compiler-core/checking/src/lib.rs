@@ -9,7 +9,7 @@ use std::sync::Arc;
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
 use indexing::{DeriveId, IndexedModule, InstanceId, TermItemId, TypeItemId};
-use lowering::LoweredModule;
+use lowering::{GroupedModule, LoweredModule};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 
@@ -19,6 +19,7 @@ pub trait ExternalQueries:
     QueryProxy<
         Indexed = Arc<IndexedModule>,
         Lowered = Arc<LoweredModule>,
+        Grouped = Arc<GroupedModule>,
         Resolved = Arc<ResolvedModule>,
         Bracketed = Arc<sugar::Bracketed>,
         Sectioned = Arc<sugar::Sectioned>,

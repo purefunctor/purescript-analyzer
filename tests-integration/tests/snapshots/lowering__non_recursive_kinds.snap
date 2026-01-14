@@ -1,16 +1,5 @@
 ---
 source: tests-integration/tests/lowering.rs
-expression: lowered.errors
+expression: errors
 ---
-[
-    NotInScope(
-        TypeConstructor {
-            id: AstId<syntax::cst::TypeConstructor>(14),
-        },
-    ),
-    NotInScope(
-        TypeConstructor {
-            id: AstId<syntax::cst::TypeConstructor>(19),
-        },
-    ),
-]
+[]
