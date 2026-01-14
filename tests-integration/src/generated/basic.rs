@@ -342,7 +342,8 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     instance_entries.sort_by_key(|(id, _)| format!("{:?}", id));
     for (_instance_id, instance) in instance_entries {
         let class_name = resolve_class_name(engine, &indexed, id, instance.resolution);
-        let head = format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
+        let head =
+            format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
         let forall_prefix = format_forall_prefix(engine, &instance.kind_variables);
         writeln!(snapshot, "instance {forall_prefix}{head}").unwrap();
         if let checking::core::InstanceKind::Chain { position, .. } = instance.kind {
@@ -357,7 +358,8 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     derived_entries.sort_by_key(|(id, _)| format!("{:?}", id));
     for (_derive_id, instance) in derived_entries {
         let class_name = resolve_class_name(engine, &indexed, id, instance.resolution);
-        let head = format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
+        let head =
+            format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
         let forall_prefix = format_forall_prefix(engine, &instance.kind_variables);
         writeln!(snapshot, "derive {forall_prefix}{head}").unwrap();
     }
@@ -377,10 +379,17 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
                 writeln!(snapshot, "NoInstanceFound {{ {} }} at {step:?}", pp(constraint)).unwrap();
             }
             AmbiguousConstraint { constraint } => {
-                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", pp(constraint)).unwrap();
+                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", pp(constraint))
+                    .unwrap();
             }
             InstanceMemberTypeMismatch { expected, actual } => {
-                writeln!(snapshot, "InstanceMemberTypeMismatch {{ expected: {}, actual: {} }} at {step:?}", pp(expected), pp(actual)).unwrap();
+                writeln!(
+                    snapshot,
+                    "InstanceMemberTypeMismatch {{ expected: {}, actual: {} }} at {step:?}",
+                    pp(expected),
+                    pp(actual)
+                )
+                .unwrap();
             }
             _ => {
                 writeln!(snapshot, "{:?} at {step:?}", error.kind).unwrap();
@@ -399,11 +408,7 @@ fn resolve_class_name(
 ) -> String {
     let (class_file, class_type_id) = resolution;
     if class_file == current_file {
-        indexed.items[class_type_id]
-            .name
-            .as_deref()
-            .unwrap_or("<unknown>")
-            .to_string()
+        indexed.items[class_type_id].name.as_deref().unwrap_or("<unknown>").to_string()
     } else {
         engine
             .indexed(class_file)
@@ -422,10 +427,8 @@ fn format_instance_head(
     let mut head = String::new();
 
     if !constraints.is_empty() {
-        let formatted: Vec<_> = constraints
-            .iter()
-            .map(|(t, _)| pretty::print_global(engine, *t))
-            .collect();
+        let formatted: Vec<_> =
+            constraints.iter().map(|(t, _)| pretty::print_global(engine, *t)).collect();
         if formatted.len() == 1 {
             head.push_str(&formatted[0]);
         } else {

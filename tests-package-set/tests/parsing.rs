@@ -194,6 +194,14 @@ fn test_parallel_parse_package_set() {
 
     println!(
         "Total {:?}",
-        parsing + cst_id + indexing + resolving + lowering + grouped + bracketing + sectioning + checking
+        parsing
+            + cst_id
+            + indexing
+            + resolving
+            + lowering
+            + grouped
+            + bracketing
+            + sectioning
+            + checking
     );
 }

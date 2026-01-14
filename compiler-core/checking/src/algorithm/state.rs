@@ -10,7 +10,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{
-    BinderId, GroupedModule, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
+    BinderId, GraphNodeId, GroupedModule, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
     RecordPunId, TypeItemIr, TypeVariableBindingId,
 };
 use resolving::ResolvedModule;
@@ -626,9 +626,10 @@ impl PrimCoerceCore {
             .unwrap_or_else(|| unreachable!("invariant violated: Prim.Coerce not found"));
 
         let resolved = queries.resolved(file_id)?;
-        let (_, coercible) = resolved.exports.lookup_type("Coercible").unwrap_or_else(|| {
-            unreachable!("invariant violated: Coercible not in Prim.Coerce")
-        });
+        let (_, coercible) = resolved
+            .exports
+            .lookup_type("Coercible")
+            .unwrap_or_else(|| unreachable!("invariant violated: Coercible not in Prim.Coerce"));
 
         Ok(PrimCoerceCore { file_id, coercible })
     }
@@ -742,7 +743,8 @@ impl KnownGeneric {
         else {
             return Ok(None);
         };
-        let Some(sum) = fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Sum")? else {
+        let Some(sum) = fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Sum")?
+        else {
             return Ok(None);
         };
         let Some(product) =
@@ -760,7 +762,14 @@ impl KnownGeneric {
         else {
             return Ok(None);
         };
-        Ok(Some(KnownGeneric { no_constructors, constructor, sum, product, no_arguments, argument }))
+        Ok(Some(KnownGeneric {
+            no_constructors,
+            constructor,
+            sum,
+            product,
+            no_arguments,
+            argument,
+        }))
     }
 }
 
