@@ -26,7 +26,7 @@ where
         return Ok(());
     };
 
-    let Some((newtype_file, newtype_id)) = super::extract_type_constructor(state, newtype_type)
+    let Some((newtype_file, newtype_id)) = derive::extract_type_constructor(state, newtype_type)
     else {
         let global_type = transfer::globalize(state, context, newtype_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });

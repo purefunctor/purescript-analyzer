@@ -15,7 +15,7 @@ use files::FileId;
 use indexing::TypeItemId;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::tools;
+use crate::algorithm::derive::{self, tools};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
 use crate::core::{Type, Variable, debruijn};
@@ -81,7 +81,7 @@ where
         return Ok(());
     };
 
-    if super::extract_type_constructor(state, derived_type).is_none() {
+    if derive::extract_type_constructor(state, derived_type).is_none() {
         let global_type = transfer::globalize(state, context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
         return Ok(());

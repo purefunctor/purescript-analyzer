@@ -8,7 +8,7 @@ use files::FileId;
 use indexing::TypeItemId;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::{extract_type_arguments, tools};
+use crate::algorithm::derive::{self, extract_type_arguments, tools};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer};
@@ -98,7 +98,7 @@ where
 
     for constructor_id in constructors {
         let constructor_type =
-            super::lookup_local_term_type(state, context, data_file, constructor_id)?;
+            derive::lookup_local_term_type(state, context, data_file, constructor_id)?;
 
         let Some(constructor_type) = constructor_type else {
             continue;

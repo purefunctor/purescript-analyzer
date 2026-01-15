@@ -3,8 +3,8 @@
 use building_types::QueryResult;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::tools;
 use crate::algorithm::derive::variance::{Variance, VarianceConfig, generate_variance_constraints};
+use crate::algorithm::derive::{self, tools};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::transfer;
 use crate::error::ErrorKind;
@@ -28,7 +28,7 @@ where
         return Ok(());
     };
 
-    let Some((data_file, data_id)) = super::extract_type_constructor(state, derived_type) else {
+    let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let global_type = transfer::globalize(state, context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
         return Ok(());
@@ -64,7 +64,7 @@ where
         return Ok(());
     };
 
-    let Some((data_file, data_id)) = super::extract_type_constructor(state, derived_type) else {
+    let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let global_type = transfer::globalize(state, context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
         return Ok(());

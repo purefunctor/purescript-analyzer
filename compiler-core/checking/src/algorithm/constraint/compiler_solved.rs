@@ -11,10 +11,11 @@ use petgraph::graphmap::DiGraphMap;
 use rustc_hash::FxHashSet;
 use smol_str::SmolStr;
 
-use super::MatchInstance;
+use crate::algorithm::constraint::{self, MatchInstance};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{constraint, derive, kind, substitute};
+use crate::algorithm::{derive, kind, substitute};
+
 use crate::core::{Role, RowField, RowType};
 use crate::{ExternalQueries, Type, TypeId};
 
@@ -44,21 +45,21 @@ pub fn prim_int_add(state: &mut CheckState, arguments: &[TypeId]) -> Option<Matc
     match (left_int, right_int, sum_int) {
         (Some(left), Some(right), _) => {
             let result = state.storage.intern(Type::Integer(left + right));
-            if super::can_unify(state, sum, result).is_apart() {
+            if constraint::can_unify(state, sum, result).is_apart() {
                 return Some(MatchInstance::Apart);
             }
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(sum, result)] })
         }
         (Some(left), _, Some(sum)) => {
             let result = state.storage.intern(Type::Integer(sum - left));
-            if super::can_unify(state, right, result).is_apart() {
+            if constraint::can_unify(state, right, result).is_apart() {
                 return Some(MatchInstance::Apart);
             }
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(right, result)] })
         }
         (_, Some(right), Some(sum)) => {
             let result = state.storage.intern(Type::Integer(sum - right));
-            if super::can_unify(state, left, result).is_apart() {
+            if constraint::can_unify(state, left, result).is_apart() {
                 return Some(MatchInstance::Apart);
             }
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(left, result)] })
@@ -86,7 +87,7 @@ pub fn prim_int_mul(state: &mut CheckState, arguments: &[TypeId]) -> Option<Matc
 
     let result = state.storage.intern(Type::Integer(left_int * right_int));
 
-    if super::can_unify(state, product, result).is_apart() {
+    if constraint::can_unify(state, product, result).is_apart() {
         return Some(MatchInstance::Apart);
     }
 
@@ -120,7 +121,7 @@ where
             Ordering::Greater => context.prim_ordering.gt,
         };
 
-        if super::can_unify(state, ordering, result).is_apart() {
+        if constraint::can_unify(state, ordering, result).is_apart() {
             return Some(MatchInstance::Apart);
         }
 
@@ -199,7 +200,7 @@ where
         (false, false) => return Some(MatchInstance::Stuck),
     };
 
-    if super::can_unify(state, ordering, result).is_apart() {
+    if constraint::can_unify(state, ordering, result).is_apart() {
         return Some(MatchInstance::Apart);
     }
 
@@ -221,7 +222,7 @@ pub fn prim_int_to_string(state: &mut CheckState, arguments: &[TypeId]) -> Optio
     let value: SmolStr = value.to_string().into();
     let result = state.storage.intern(Type::String(StringKind::String, value));
 
-    if super::can_unify(state, symbol, result).is_apart() {
+    if constraint::can_unify(state, symbol, result).is_apart() {
         return Some(MatchInstance::Apart);
     }
 
@@ -392,7 +393,7 @@ fn merge_row_fields(
             EitherOrBoth::Both(left, right) => {
                 let left_type = state.normalize_type(left.id);
                 let right_type = state.normalize_type(right.id);
-                if super::can_unify(state, left_type, right_type).is_apart() {
+                if constraint::can_unify(state, left_type, right_type).is_apart() {
                     return None;
                 }
                 result.push(left.clone());
@@ -423,7 +424,7 @@ fn subtract_row_fields(
                 Ordering::Equal => {
                     let field_ty = state.normalize_type(field.id);
                     let removed_ty = state.normalize_type(remove_field.id);
-                    if super::can_unify(state, field_ty, removed_ty).is_apart() {
+                    if constraint::can_unify(state, field_ty, removed_ty).is_apart() {
                         return None;
                     }
                     equalities.push((field.id, remove_field.id));
@@ -1145,7 +1146,7 @@ fn check_reflectable_match(
     actual: TypeId,
     expected: TypeId,
 ) -> Option<MatchInstance> {
-    if super::can_unify(state, actual, expected).is_apart() {
+    if constraint::can_unify(state, actual, expected).is_apart() {
         Some(MatchInstance::Apart)
     } else {
         Some(MatchInstance::Match { constraints: vec![], equalities: vec![(actual, expected)] })
