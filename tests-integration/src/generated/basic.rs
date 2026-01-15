@@ -306,8 +306,9 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "\nRoles").unwrap();
     }
     for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. } | TypeItemKind::Foreign { .. }) =
-            kind
+        let (TypeItemKind::Data { .. }
+        | TypeItemKind::Newtype { .. }
+        | TypeItemKind::Foreign { .. }) = kind
         else {
             continue;
         };
