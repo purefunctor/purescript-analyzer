@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
+expression: report
+---
+Terms
+invalidTransLt :: Proxy @(Row Int) ( left :: 10, right :: 1 )
+invalidTransGt :: Proxy @(Row Int) ( left :: 1, right :: 10 )
+invalidLt :: Proxy @(Row Int) ( left :: 5, right :: 1 )
+invalidGt :: Proxy @(Row Int) ( left :: 1, right :: 5 )
+invalidEq :: Proxy @(Row Int) ( left :: 1, right :: 5 )
+
+Types
+
+Errors
+NoInstanceFound { Compare 10 5 LT } at [TermDeclaration(Idx::<TermItem>(0))]
+NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(0))]
+NoInstanceFound { Compare 1 5 GT } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Compare 5 10 GT } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(2))]
+NoInstanceFound { Compare 1 5 GT } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Compare 1 5 EQ } at [TermDeclaration(Idx::<TermItem>(4))]

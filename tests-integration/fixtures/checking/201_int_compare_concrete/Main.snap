@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 12
+expression: report
+---
+Terms
+litLt :: Proxy @(Row Int) ( left :: 0, right :: 1 )
+litGt :: Proxy @(Row Int) ( left :: 1, right :: 0 )
+litEq :: Proxy @(Row Int) ( left :: 0, right :: 0 )
+testTransLt :: Proxy @(Row Int) ( left :: 1, right :: 10 )
+testTransLtEq :: Proxy @(Row Int) ( left :: 1, right :: 5 )
+testTransEqLt :: Proxy @(Row Int) ( left :: 5, right :: 10 )
+testTransGt :: Proxy @(Row Int) ( left :: 10, right :: 1 )
+testTransGtEq :: Proxy @(Row Int) ( left :: 10, right :: 5 )
+testTransEqGt :: Proxy @(Row Int) ( left :: 5, right :: 1 )
+testTransEq :: Proxy @(Row Int) ( left :: 5, right :: 5 )
+testTransSymmLt :: Proxy @(Row Int) ( left :: 1, right :: 10 )
+testTransSymmGt :: Proxy @(Row Int) ( left :: 10, right :: 1 )
+
+Types

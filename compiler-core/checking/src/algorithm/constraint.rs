@@ -59,7 +59,7 @@ where
                 Some(MatchInstance::Apart | MatchInstance::Stuck) | None => (),
             }
 
-            match match_compiler_instances(state, context, &application)? {
+            match match_compiler_instances(state, context, &application, &given)? {
                 Some(MatchInstance::Match { constraints, equalities }) => {
                     for (t1, t2) in equalities {
                         if unification::unify(state, context, t1, t2)? {
@@ -816,6 +816,7 @@ fn match_compiler_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
+    given: &[ConstraintApplication],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
@@ -828,7 +829,7 @@ where
         } else if item_id == context.prim_int.mul {
             prim_int_mul(state, arguments)
         } else if item_id == context.prim_int.compare {
-            prim_int_compare(state, context, arguments)
+            prim_int_compare(state, context, arguments, given)
         } else if item_id == context.prim_int.to_string {
             prim_int_to_string(state, arguments)
         } else {

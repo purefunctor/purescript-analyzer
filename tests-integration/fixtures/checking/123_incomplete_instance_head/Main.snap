@@ -18,4 +18,4 @@ instance Pair (Int :: Type)
   chain: 0
 
 Errors
-InstanceHeadMismatch { class_file: Idx::<File>(25), class_item: Idx::<TypeItem>(0), expected: 2, actual: 1 } at [TermDeclaration(Idx::<TermItem>(2))]
+InstanceHeadMismatch { class_file: Idx::<File>(26), class_item: Idx::<TypeItem>(0), expected: 2, actual: 1 } at [TermDeclaration(Idx::<TermItem>(2))]

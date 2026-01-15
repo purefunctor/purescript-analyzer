@@ -6,6 +6,8 @@ use files::FileId;
 use indexing::TypeItemId;
 use itertools::{EitherOrBoth, izip};
 use lowering::StringKind;
+use petgraph::algo::has_path_connecting;
+use petgraph::graphmap::DiGraphMap;
 use rustc_hash::FxHashSet;
 use smol_str::SmolStr;
 
@@ -98,6 +100,7 @@ pub fn prim_int_compare<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     arguments: &[TypeId],
+    given: &[constraint::ConstraintApplication],
 ) -> Option<MatchInstance>
 where
     Q: ExternalQueries,
@@ -110,18 +113,93 @@ where
     let right = state.normalize_type(right);
     let ordering = state.normalize_type(ordering);
 
-    let Some(left_int) = extract_integer(state, left) else {
-        return Some(MatchInstance::Stuck);
-    };
+    let left_int = extract_integer(state, left);
+    let right_int = extract_integer(state, right);
 
-    let Some(right_int) = extract_integer(state, right) else {
-        return Some(MatchInstance::Stuck);
-    };
+    if let (Some(left_int), Some(right_int)) = (left_int, right_int) {
+        let result = match left_int.cmp(&right_int) {
+            Ordering::Less => context.prim_ordering.lt,
+            Ordering::Equal => context.prim_ordering.eq,
+            Ordering::Greater => context.prim_ordering.gt,
+        };
 
-    let result = match left_int.cmp(&right_int) {
-        Ordering::Less => context.prim_ordering.lt,
-        Ordering::Equal => context.prim_ordering.eq,
-        Ordering::Greater => context.prim_ordering.gt,
+        if super::can_unify(state, ordering, result).is_apart() {
+            return Some(MatchInstance::Apart);
+        }
+
+        return Some(MatchInstance::Match {
+            constraints: vec![],
+            equalities: vec![(ordering, result)],
+        });
+    }
+
+    prim_int_compare_transitive(state, context, left, right, ordering, given)
+}
+
+/// Uses a graph-based approach to derive ordering relationships transitively.
+///
+/// We build a directed graph where `a -> b` means `a < b`:
+/// - `Compare a b LT`: add edge `a -> b`
+/// - `Compare a b EQ`: add edges `a -> b` and `b -> a`
+/// - `Compare a b GT`: add edge `b -> a` (since `a > b` means `b < a`)
+///
+/// Then we compute reachability to determine the ordering:
+/// - Path from `left` to `right` only: LT
+/// - Path from `right` to `left` only: GT
+/// - Paths in both directions: EQ
+/// - No path: Unknown/Stuck
+fn prim_int_compare_transitive<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+    ordering: TypeId,
+    given: &[constraint::ConstraintApplication],
+) -> Option<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let prim_int = &context.prim_int;
+    let lt = context.prim_ordering.lt;
+    let eq = context.prim_ordering.eq;
+    let gt = context.prim_ordering.gt;
+
+    let mut graph: DiGraphMap<TypeId, ()> = DiGraphMap::new();
+
+    for constraint in given {
+        if constraint.file_id != prim_int.file_id || constraint.item_id != prim_int.compare {
+            continue;
+        }
+
+        let &[a, b, ordering] = constraint.arguments.as_slice() else { continue };
+
+        let a = state.normalize_type(a);
+        let b = state.normalize_type(b);
+
+        let ordering = state.normalize_type(ordering);
+
+        if ordering == lt {
+            // a < b: add edge a -> b
+            graph.add_edge(a, b, ());
+        } else if ordering == eq {
+            // a = b: add edges both ways
+            graph.add_edge(a, b, ());
+            graph.add_edge(b, a, ());
+        } else if ordering == gt {
+            // a > b means b < a: add edge b -> a
+            graph.add_edge(b, a, ());
+        }
+    }
+
+    // Check reachability in both directions
+    let left_reaches_right = has_path_connecting(&graph, left, right, None);
+    let right_reaches_left = has_path_connecting(&graph, right, left, None);
+
+    let result = match (left_reaches_right, right_reaches_left) {
+        (true, true) => eq,
+        (true, false) => lt,
+        (false, true) => gt,
+        (false, false) => return Some(MatchInstance::Stuck),
     };
 
     if super::can_unify(state, ordering, result).is_apart() {

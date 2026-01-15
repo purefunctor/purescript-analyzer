@@ -409,3 +409,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_198_coercible_higher_kinded_multi_main() { run_test("198_coercible_higher_kinded_multi", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_199_coercible_higher_kinded_polykinded_main() { run_test("199_coercible_higher_kinded_polykinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_200_int_compare_transitive_main() { run_test("200_int_compare_transitive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_201_int_compare_concrete_main() { run_test("201_int_compare_concrete", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_202_int_compare_invalid_main() { run_test("202_int_compare_invalid", "Main"); }
