@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+Nil :: forall (a :: Type). List a
+Cons :: forall (a :: Type). a -> List a -> List a
+coerceContainerDifferent :: Container Maybe -> Container List
+
+Types
+Maybe :: Type -> Type
+List :: Type -> Type
+Container :: (Type -> Type) -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+List
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+List = [Representational]
+Container = [Representational]
+
+Errors
+NoInstanceFound { Coercible (Maybe ~&0) (List ~&0) } at [TermDeclaration(Idx::<TermItem>(4))]

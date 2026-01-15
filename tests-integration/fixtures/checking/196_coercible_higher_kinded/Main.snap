@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+coerceContainer :: Container @(Type -> Type) Maybe -> Container @(Type -> Type) MaybeAlias
+coerceContainerReverse :: Container @(Type -> Type) MaybeAlias -> Container @(Type -> Type) Maybe
+
+Types

@@ -15,6 +15,7 @@ use crate::algorithm::derive;
 use crate::algorithm::kind;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::substitute;
 use crate::core::{Role, RowField, RowType};
 use crate::{ExternalQueries, Type, TypeId};
 
@@ -621,6 +622,10 @@ where
         return Ok(Some(result));
     }
 
+    if let Some(result) = try_higher_kinded_coercion(state, context, left, right)? {
+        return Ok(Some(result));
+    }
+
     if let Some(result) = try_row_coercion(state, context, left, right) {
         return Ok(Some(result));
     }
@@ -659,32 +664,36 @@ where
 {
     let mut hidden_newtype: Option<(FileId, TypeItemId)> = None;
 
-    if let Some((file_id, type_id)) = derive::extract_type_constructor(state, left) {
-        if is_newtype(context, file_id, type_id)? {
-            if is_constructor_in_scope(context, file_id, type_id)? {
-                let inner = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
-                let constraint = make_coercible_constraint(state, context, inner, right);
-                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
-                    constraints: vec![constraint],
-                    equalities: vec![],
-                }));
-            } else {
-                hidden_newtype = Some((file_id, type_id));
+    if has_type_kind(state, context, left)? {
+        if let Some((file_id, type_id)) = derive::extract_type_constructor(state, left) {
+            if is_newtype(context, file_id, type_id)? {
+                if is_constructor_in_scope(context, file_id, type_id)? {
+                    let inner = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
+                    let constraint = make_coercible_constraint(state, context, inner, right);
+                    return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
+                        constraints: vec![constraint],
+                        equalities: vec![],
+                    }));
+                } else {
+                    hidden_newtype = Some((file_id, type_id));
+                }
             }
         }
     }
 
-    if let Some((file_id, type_id)) = derive::extract_type_constructor(state, right) {
-        if is_newtype(context, file_id, type_id)? {
-            if is_constructor_in_scope(context, file_id, type_id)? {
-                let inner = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
-                let constraint = make_coercible_constraint(state, context, left, inner);
-                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
-                    constraints: vec![constraint],
-                    equalities: vec![],
-                }));
-            } else if hidden_newtype.is_none() {
-                hidden_newtype = Some((file_id, type_id));
+    if has_type_kind(state, context, right)? {
+        if let Some((file_id, type_id)) = derive::extract_type_constructor(state, right) {
+            if is_newtype(context, file_id, type_id)? {
+                if is_constructor_in_scope(context, file_id, type_id)? {
+                    let inner = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
+                    let constraint = make_coercible_constraint(state, context, left, inner);
+                    return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
+                        constraints: vec![constraint],
+                        equalities: vec![],
+                    }));
+                } else if hidden_newtype.is_none() {
+                    hidden_newtype = Some((file_id, type_id));
+                }
             }
         }
     }
@@ -694,6 +703,19 @@ where
     }
 
     Ok(NewtypeCoercionResult::NotApplicable)
+}
+
+fn has_type_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    type_id: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let kind = kind::elaborate_kind(state, context, type_id)?;
+    let kind = state.normalize_type(kind);
+    Ok(kind == context.prim.t)
 }
 
 fn is_newtype<Q>(
@@ -873,6 +895,100 @@ where
     }
 
     Some(MatchInstance::Match { constraints, equalities: vec![] })
+}
+
+fn try_higher_kinded_coercion<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<Option<MatchInstance>>
+where
+    Q: ExternalQueries,
+{
+    // Let's say we're attempting to coerce the following types:
+    //
+    // data Maybe :: forall k. k -> Type -> Type
+    // data Maybe n a = Just a | Nothing
+    //
+    // newtype MaybeAlias :: forall k. k -> Type -> Type
+    // newtype MaybeAlias n a = MaybeAlias (Maybe n a)
+    //
+    // solve[Coercible Maybe MaybeAlias]
+    //
+    // In order to solve coercion for higher-kinded types like
+    // this, we need to be able to solve the following coercion.
+    //
+    // solve[Coercible (Maybe ~a) (MaybeAlias ~a)]
+    //
+    // To begin, we get the kinds of these types
+    //
+    // left_kind  := forall k. k -> Type -> Type
+    // right_kind := forall k. k -> Type -> Type
+    let left_kind = kind::elaborate_kind(state, context, left)?;
+    let right_kind = kind::elaborate_kind(state, context, right)?;
+
+    // decompose_kind_for_coercion instantiates the variables into
+    // skolem variables, then returns the first argument, which in
+    // this case is the already-skolemized `~k`
+    //
+    // left_kind_applied := Maybe @~k
+    // left_domain       := ~k
+    let Some((left_kind_applied, left_domain)) =
+        decompose_kind_for_coercion(state, left, left_kind)
+    else {
+        return Ok(None);
+    };
+
+    // right_kind_applied := MaybeAlias @~k
+    // right_domain       := ~k
+    let Some((right_kind_applied, right_domain)) =
+        decompose_kind_for_coercion(state, right, right_kind)
+    else {
+        return Ok(None);
+    };
+
+    if constraint::can_unify(state, left_domain, right_domain).is_apart() {
+        return Ok(Some(MatchInstance::Apart));
+    }
+
+    // Given left_domain ~ right_domain, create a skolem kinded by `~k`
+    let argument = state.fresh_skolem_kinded(left_domain);
+
+    // Finally, we can saturated left_kind_applied and right_kind_applied
+    //
+    // left  := Maybe      @~k (~a :: ~k)
+    // right := MaybeAlias @~k (~a :: ~k)
+    //
+    // Finally, we emit `left <~> right` as a constraint and rely on the
+    // remaining rules to solve this for us, particularly newtype coercion.
+    let left = state.storage.intern(Type::Application(left_kind_applied, argument));
+    let right = state.storage.intern(Type::Application(right_kind_applied, argument));
+    let constraint = make_coercible_constraint(state, context, left, right);
+
+    Ok(Some(MatchInstance::Match { constraints: vec![constraint], equalities: vec![] }))
+}
+
+fn decompose_kind_for_coercion(
+    state: &mut CheckState,
+    mut type_id: TypeId,
+    mut kind_id: TypeId,
+) -> Option<(TypeId, TypeId)> {
+    safe_loop! {
+        kind_id = state.normalize_type(kind_id);
+
+        let forall = match &state.storage[kind_id] {
+            Type::Forall(binder, inner) => Some((binder.kind, binder.level, *inner)),
+            Type::Function(domain, _) => return Some((type_id, *domain)),
+            _ => return None,
+        };
+
+        if let Some((binder_kind, binder_level, inner_kind)) = forall {
+            let fresh_kind = state.fresh_skolem_kinded(binder_kind);
+            type_id = state.storage.intern(Type::KindApplication(type_id, fresh_kind));
+            kind_id = substitute::SubstituteBound::on(state, binder_level, fresh_kind, inner_kind);
+        }
+    }
 }
 
 fn make_coercible_constraint<Q>(

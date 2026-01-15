@@ -401,3 +401,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_194_coercible_transitivity_main() { run_test("194_coercible_transitivity", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_195_coercible_nested_records_main() { run_test("195_coercible_nested_records", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_196_coercible_higher_kinded_main() { run_test("196_coercible_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_197_coercible_higher_kinded_error_main() { run_test("197_coercible_higher_kinded_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_198_coercible_higher_kinded_multi_main() { run_test("198_coercible_higher_kinded_multi", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_199_coercible_higher_kinded_polykinded_main() { run_test("199_coercible_higher_kinded_polykinded", "Main"); }

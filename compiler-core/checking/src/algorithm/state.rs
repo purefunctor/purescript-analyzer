@@ -18,7 +18,7 @@ use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, transfer};
-use crate::core::{Type, TypeId, TypeInterner, debruijn};
+use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -921,6 +921,14 @@ impl CheckState {
         Q: ExternalQueries,
     {
         self.fresh_unification_kinded(context.prim.t)
+    }
+
+    /// Creates a fresh skolem variable with the provided kind.
+    pub fn fresh_skolem_kinded(&mut self, kind: TypeId) -> TypeId {
+        let domain = self.type_scope.size();
+        let level = debruijn::Level(domain.0);
+        let skolem = Variable::Skolem(level, kind);
+        self.storage.intern(Type::Variable(skolem))
     }
 }
 

@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Just :: forall (k :: Type) (n :: k) (a :: Type). a -> Maybe @k n a
+Nothing :: forall (k :: Type) (n :: k) (a :: Type). Maybe @k n a
+MaybeAlias :: forall (k :: Type) (n :: k) (a :: Type). Maybe @k n a -> MaybeAlias @k n a
+coerceContainer :: Container Maybe -> Container MaybeAlias
+coerceContainerReverse :: Container MaybeAlias -> Container Maybe
+
+Types
+Maybe :: forall (k :: Type). k -> Type -> Type
+MaybeAlias :: forall (k :: Type). k -> Type -> Type
+Container :: (Type -> Type -> Type) -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :1
+
+MaybeAlias
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Maybe = [Phantom, Representational]
+MaybeAlias = [Representational, Representational]
+Container = [Representational]
