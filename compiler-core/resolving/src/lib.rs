@@ -141,6 +141,37 @@ impl ResolvedModule {
     ) -> Option<(FileId, TermItemId)> {
         self.class.lookup(class_id, name)
     }
+
+    pub fn is_term_in_scope(
+        &self,
+        prim: &ResolvedModule,
+        file_id: FileId,
+        item_id: TermItemId,
+    ) -> bool {
+        if self.locals.contains_term(file_id, item_id) {
+            return true;
+        }
+
+        for imports in self.unqualified.values() {
+            for import in imports {
+                if import.contains_term(file_id, item_id) {
+                    return true;
+                }
+            }
+        }
+
+        for import in self.qualified.values() {
+            if import.contains_term(file_id, item_id) {
+                return true;
+            }
+        }
+
+        if prim.exports.contains_term(file_id, item_id) {
+            return true;
+        }
+
+        false
+    }
 }
 
 type ResolvedImportsUnqualified = FxHashMap<SmolStr, Vec<ResolvedImport>>;
@@ -159,6 +190,10 @@ impl ResolvedLocals {
 
     pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
         self.types.get(name).copied()
+    }
+
+    pub fn contains_term(&self, file: FileId, term: TermItemId) -> bool {
+        self.terms.values().any(|&(f, t)| f == file && t == term)
     }
 
     pub fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
@@ -189,6 +224,10 @@ impl ResolvedExports {
 
     pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId)> {
         self.types.get(name).copied().map(|(f, i, _)| (f, i))
+    }
+
+    pub fn contains_term(&self, file: FileId, term: TermItemId) -> bool {
+        self.terms.values().any(|&(f, t, _)| f == file && t == term)
     }
 
     pub fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId)> {
@@ -223,6 +262,12 @@ impl ResolvedImport {
 
     pub fn lookup_type(&self, name: &str) -> Option<(FileId, TypeItemId, ImportKind)> {
         self.types.get(name).copied()
+    }
+
+    pub fn contains_term(&self, file: FileId, term: TermItemId) -> bool {
+        self.terms
+            .values()
+            .any(|&(f, t, kind)| f == file && t == term && !matches!(kind, ImportKind::Hidden))
     }
 
     pub fn iter_terms(&self) -> impl Iterator<Item = (&SmolStr, FileId, TermItemId, ImportKind)> {
