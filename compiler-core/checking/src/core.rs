@@ -135,6 +135,24 @@ pub struct Class {
     pub kind_variables: debruijn::Size,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Role {
+    Phantom,
+    Representational,
+    Nominal,
+}
+
+impl From<lowering::Role> for Role {
+    fn from(role: lowering::Role) -> Self {
+        match role {
+            lowering::Role::Phantom => Role::Phantom,
+            lowering::Role::Representational => Role::Representational,
+            lowering::Role::Nominal => Role::Nominal,
+            lowering::Role::Unknown => Role::Phantom,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DataLike {
     pub quantified_variables: debruijn::Size,
