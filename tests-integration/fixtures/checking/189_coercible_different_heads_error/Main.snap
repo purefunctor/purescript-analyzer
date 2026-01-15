@@ -1,0 +1,31 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+Left :: forall (a :: Type) (b :: Type). a -> Either a b
+Right :: forall (a :: Type) (b :: Type). b -> Either a b
+coerceDifferent :: Maybe Int -> Either Int String
+
+Types
+Maybe :: Type -> Type
+Either :: Type -> Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+Either
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+Either = [Representational, Representational]
+
+Errors
+NoInstanceFound { Coercible @Type (Maybe Int) (Either Int String) } at [TermDeclaration(Idx::<TermItem>(4))]

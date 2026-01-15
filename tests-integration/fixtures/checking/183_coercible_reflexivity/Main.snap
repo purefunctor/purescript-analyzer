@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+testInt :: Int -> Int
+testString :: String -> String
+testPoly :: forall (a :: Type). a -> a
+
+Types

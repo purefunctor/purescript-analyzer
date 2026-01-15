@@ -375,3 +375,29 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_181_role_declaration_loosen_error_main() { run_test("181_role_declaration_loosen_error", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_182_role_declaration_foreign_main() { run_test("182_role_declaration_foreign", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_183_coercible_reflexivity_main() { run_test("183_coercible_reflexivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_184_coercible_newtype_wrap_main() { run_test("184_coercible_newtype_wrap", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_185_coercible_phantom_main() { run_test("185_coercible_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_186_coercible_representational_main() { run_test("186_coercible_representational", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_187_coercible_array_main() { run_test("187_coercible_array", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_188_coercible_record_main() { run_test("188_coercible_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_189_coercible_different_heads_error_main() { run_test("189_coercible_different_heads_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_190_coercible_nominal_main() { run_test("190_coercible_nominal", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_191_coercible_newtype_hidden_main() { run_test("191_coercible_newtype_hidden", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_192_coercible_newtype_qualified_main() { run_test("192_coercible_newtype_qualified", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_193_coercible_newtype_open_hidden_main() { run_test("193_coercible_newtype_open_hidden", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_194_coercible_transitivity_main() { run_test("194_coercible_transitivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_195_coercible_nested_records_main() { run_test("195_coercible_nested_records", "Main"); }

@@ -59,23 +59,21 @@ where
                 Some(MatchInstance::Apart | MatchInstance::Stuck) | None => (),
             }
 
-            if let Some(result) = match_compiler_instances(state, context, &application) {
-                match result {
-                    MatchInstance::Match { constraints, equalities } => {
-                        for (t1, t2) in equalities {
-                            if unification::unify(state, context, t1, t2)? {
-                                made_progress = true;
-                            }
+            match match_compiler_instances(state, context, &application)? {
+                Some(MatchInstance::Match { constraints, equalities }) => {
+                    for (t1, t2) in equalities {
+                        if unification::unify(state, context, t1, t2)? {
+                            made_progress = true;
                         }
-                        work_queue.extend(constraints);
-                        continue 'work;
                     }
-                    MatchInstance::Apart => (),
-                    MatchInstance::Stuck => {
-                        residual.push(wanted);
-                        continue 'work;
-                    }
+                    work_queue.extend(constraints);
+                    continue 'work;
                 }
+                Some(MatchInstance::Stuck) => {
+                    residual.push(wanted);
+                    continue 'work;
+                }
+                Some(MatchInstance::Apart) | None => (),
             }
 
             let instance_chains = collect_instance_chains(state, context, &application)?;
@@ -818,13 +816,13 @@ fn match_compiler_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
-) -> Option<MatchInstance>
+) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
 {
     let ConstraintApplication { file_id, item_id, ref arguments } = *wanted;
 
-    if file_id == context.prim_int.file_id {
+    let match_instance = if file_id == context.prim_int.file_id {
         if item_id == context.prim_int.add {
             prim_int_add(state, arguments)
         } else if item_id == context.prim_int.mul {
@@ -866,13 +864,15 @@ where
         }
     } else if file_id == context.prim_coerce.file_id {
         if item_id == context.prim_coerce.coercible {
-            prim_coercible(state, arguments)
+            return prim_coercible(state, context, arguments);
         } else {
             None
         }
     } else {
         None
-    }
+    };
+
+    Ok(match_instance)
 }
 
 struct ApplyBindings<'a> {

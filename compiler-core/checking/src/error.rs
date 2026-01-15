@@ -93,6 +93,10 @@ pub enum ErrorKind {
         declared: crate::core::Role,
         inferred: crate::core::Role,
     },
+    CoercibleConstructorNotInScope {
+        file_id: files::FileId,
+        item_id: indexing::TypeItemId,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -1,0 +1,59 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Name :: String -> Name
+Age :: Int -> Age
+Person :: { age :: Age, name :: Name } -> Person
+Company :: { ceo :: Person, name :: Name } -> Company
+unwrapCompany :: Company -> { ceo :: Person, name :: Name }
+fullyUnwrap :: Company -> { ceo :: { age :: Int, name :: String }, name :: String }
+fullyWrap :: { ceo :: { age :: Int, name :: String }, name :: String } -> Company
+unwrapPerson :: Person -> { age :: Int, name :: String }
+nestedFieldCoerce :: { person :: Person } -> { person :: { age :: Int, name :: String } }
+arrayOfRecords :: Array { name :: Name } -> Array { name :: String }
+
+Types
+Name :: Type
+Age :: Type
+Person :: Type
+Company :: Type
+RawPerson :: Type
+RawCompany :: Type
+
+Synonyms
+RawPerson = { age :: Int, name :: String }
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+RawCompany = { ceo :: { age :: Int, name :: String }, name :: String }
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+
+Data
+Name
+  Quantified = :0
+  Kind = :0
+
+Age
+  Quantified = :0
+  Kind = :0
+
+Person
+  Quantified = :0
+  Kind = :0
+
+Company
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Name = []
+Age = []
+Person = []
+Company = []

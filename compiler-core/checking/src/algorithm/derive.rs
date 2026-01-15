@@ -306,7 +306,7 @@ where
 ///
 /// Newtypes have exactly one constructor with exactly one field.
 /// This function extracts that field type, substituting any type parameters.
-fn get_newtype_inner<Q>(
+pub fn get_newtype_inner<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     newtype_file: FileId,

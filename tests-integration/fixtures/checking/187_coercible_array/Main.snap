@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Age :: Int -> Age
+coerceArray :: Array Age -> Array Int
+coerceArrayReverse :: Array Int -> Array Age
+
+Types
+Age :: Type
+
+Data
+Age
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Age = []
