@@ -331,12 +331,14 @@ where
     pub queries: &'a Q,
     pub prim: PrimCore,
     pub prim_int: PrimIntCore,
+    pub prim_boolean: PrimBooleanCore,
     pub prim_ordering: PrimOrderingCore,
     pub prim_symbol: PrimSymbolCore,
     pub prim_row: PrimRowCore,
     pub prim_row_list: PrimRowListCore,
     pub prim_coerce: PrimCoerceCore,
     pub known_types: KnownTypesCore,
+    pub known_reflectable: KnownReflectableCore,
     pub known_generic: Option<KnownGeneric>,
 
     pub id: FileId,
@@ -367,12 +369,14 @@ where
         let sectioned = queries.sectioned(id)?;
         let prim = PrimCore::collect(queries, state)?;
         let prim_int = PrimIntCore::collect(queries, state)?;
+        let prim_boolean = PrimBooleanCore::collect(queries, state)?;
         let prim_ordering = PrimOrderingCore::collect(queries, state)?;
         let prim_symbol = PrimSymbolCore::collect(queries, state)?;
         let prim_row = PrimRowCore::collect(queries, state)?;
         let prim_row_list = PrimRowListCore::collect(queries, state)?;
         let prim_coerce = PrimCoerceCore::collect(queries)?;
         let known_types = KnownTypesCore::collect(queries)?;
+        let known_reflectable = KnownReflectableCore::collect(queries, &mut state.storage)?;
         let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
         let resolved = queries.resolved(id)?;
         let prim_id = queries.prim_id();
@@ -382,12 +386,14 @@ where
             queries,
             prim,
             prim_int,
+            prim_boolean,
             prim_ordering,
             prim_symbol,
             prim_row,
             prim_row_list,
             prim_coerce,
             known_types,
+            known_reflectable,
             known_generic,
             id,
             indexed,
@@ -507,6 +513,30 @@ impl PrimIntCore {
             mul: lookup.type_item("Mul"),
             compare: lookup.type_item("Compare"),
             to_string: lookup.type_item("ToString"),
+        })
+    }
+}
+
+pub struct PrimBooleanCore {
+    pub true_: TypeId,
+    pub false_: TypeId,
+}
+
+impl PrimBooleanCore {
+    fn collect(
+        queries: &impl ExternalQueries,
+        state: &mut CheckState,
+    ) -> QueryResult<PrimBooleanCore> {
+        let file_id = queries
+            .module_file("Prim.Boolean")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Boolean not found"));
+
+        let resolved = queries.resolved(file_id)?;
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.Boolean");
+
+        Ok(PrimBooleanCore {
+            true_: lookup.type_constructor("True"),
+            false_: lookup.type_constructor("False"),
         })
     }
 }
@@ -722,6 +752,24 @@ impl KnownTypesCore {
             newtype,
             generic,
         })
+    }
+}
+
+pub struct KnownReflectableCore {
+    pub is_symbol: Option<(FileId, TypeItemId)>,
+    pub reflectable: Option<(FileId, TypeItemId)>,
+    pub ordering: Option<TypeId>,
+}
+
+impl KnownReflectableCore {
+    fn collect(
+        queries: &impl ExternalQueries,
+        storage: &mut TypeInterner,
+    ) -> QueryResult<KnownReflectableCore> {
+        let is_symbol = fetch_known_type(queries, "Data.Symbol", "IsSymbol")?;
+        let reflectable = fetch_known_type(queries, "Data.Reflectable", "Reflectable")?;
+        let ordering = fetch_known_constructor(queries, storage, "Data.Ordering", "Ordering")?;
+        Ok(KnownReflectableCore { is_symbol, reflectable, ordering })
     }
 }
 

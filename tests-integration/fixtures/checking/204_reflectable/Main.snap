@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+testSymbol :: String
+testSymbol' :: String
+testInt :: Int
+testInt' :: Int
+testTrue :: Boolean
+testTrue' :: Boolean
+testFalse :: Boolean
+testFalse' :: Boolean
+testLT :: Ordering
+testLT' :: Ordering
+testEQ :: Ordering
+testEQ' :: Ordering
+testGT :: Ordering
+testGT' :: Ordering
+
+Types

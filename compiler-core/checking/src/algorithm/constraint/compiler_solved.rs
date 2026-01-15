@@ -1084,3 +1084,73 @@ where
     let coercible = state.storage.intern(Type::Application(coercible, left));
     state.storage.intern(Type::Application(coercible, right))
 }
+
+pub fn prim_is_symbol(state: &mut CheckState, arguments: &[TypeId]) -> Option<MatchInstance> {
+    let &[symbol] = arguments else { return None };
+    let symbol = state.normalize_type(symbol);
+
+    if extract_symbol(state, symbol).is_some() {
+        Some(MatchInstance::Match { constraints: vec![], equalities: vec![] })
+    } else if matches!(state.storage[symbol], Type::Unification(_)) {
+        Some(MatchInstance::Stuck)
+    } else {
+        Some(MatchInstance::Apart)
+    }
+}
+
+pub fn prim_reflectable<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: &[TypeId],
+) -> Option<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let &[v, t] = arguments else { return None };
+
+    let v = state.normalize_type(v);
+    let t = state.normalize_type(t);
+
+    if extract_symbol(state, v).is_some() {
+        let expected = context.prim.string;
+        return check_reflectable_match(state, t, expected);
+    }
+
+    if extract_integer(state, v).is_some() {
+        let expected = context.prim.int;
+        return check_reflectable_match(state, t, expected);
+    }
+
+    if v == context.prim_boolean.true_ || v == context.prim_boolean.false_ {
+        let expected = context.prim.boolean;
+        return check_reflectable_match(state, t, expected);
+    }
+
+    if v == context.prim_ordering.lt
+        || v == context.prim_ordering.eq
+        || v == context.prim_ordering.gt
+    {
+        let Some(expected) = context.known_reflectable.ordering else {
+            return Some(MatchInstance::Stuck);
+        };
+        return check_reflectable_match(state, t, expected);
+    }
+
+    if matches!(state.storage[v], Type::Unification(_)) {
+        return Some(MatchInstance::Stuck);
+    }
+
+    Some(MatchInstance::Apart)
+}
+
+fn check_reflectable_match(
+    state: &mut CheckState,
+    actual: TypeId,
+    expected: TypeId,
+) -> Option<MatchInstance> {
+    if super::can_unify(state, actual, expected).is_apart() {
+        Some(MatchInstance::Apart)
+    } else {
+        Some(MatchInstance::Match { constraints: vec![], equalities: vec![(actual, expected)] })
+    }
+}

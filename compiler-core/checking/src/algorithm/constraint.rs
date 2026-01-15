@@ -869,6 +869,10 @@ where
         } else {
             None
         }
+    } else if context.known_reflectable.is_symbol == Some((file_id, item_id)) {
+        prim_is_symbol(state, arguments)
+    } else if context.known_reflectable.reflectable == Some((file_id, item_id)) {
+        prim_reflectable(state, context, arguments)
     } else {
         None
     };

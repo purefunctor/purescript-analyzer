@@ -415,3 +415,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_201_int_compare_concrete_main() { run_test("201_int_compare_concrete", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_202_int_compare_invalid_main() { run_test("202_int_compare_invalid", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_203_is_symbol_main() { run_test("203_is_symbol", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_204_reflectable_main() { run_test("204_reflectable", "Main"); }
