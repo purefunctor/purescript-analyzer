@@ -345,8 +345,10 @@ where
     pub grouped: Arc<GroupedModule>,
     pub bracketed: Arc<Bracketed>,
     pub sectioned: Arc<Sectioned>,
+    pub resolved: Arc<ResolvedModule>,
 
     pub prim_indexed: Arc<IndexedModule>,
+    pub prim_resolved: Arc<ResolvedModule>,
 }
 
 impl<'a, Q> CheckContext<'a, Q>
@@ -372,8 +374,10 @@ where
         let prim_coerce = PrimCoerceCore::collect(queries)?;
         let known_types = KnownTypesCore::collect(queries)?;
         let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
+        let resolved = queries.resolved(id)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
+        let prim_resolved = queries.resolved(prim_id)?;
         Ok(CheckContext {
             queries,
             prim,
@@ -391,7 +395,9 @@ where
             grouped,
             bracketed,
             sectioned,
+            resolved,
             prim_indexed,
+            prim_resolved,
         })
     }
 }
